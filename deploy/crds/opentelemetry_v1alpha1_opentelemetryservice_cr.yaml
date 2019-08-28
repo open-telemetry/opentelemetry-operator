@@ -1,0 +1,6 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryService
+metadata:
+  name: example-opentelemetryservice
+spec:
+  replicas: 3
