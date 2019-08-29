@@ -35,6 +35,10 @@ spec:
           type: object
         spec:
           properties:
+            args:
+              additionalProperties:
+                type: string
+              type: object
             config:
               description: +required
               type: string

@@ -13,14 +13,14 @@ OUTPUT_BINARY ?= "$(BIN_DIR)/$(OPERATOR_NAME)"
 VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/version"
 LD_FLAGS ?= "-X=$(VERSION_PKG).Version=$(OPERATOR_VERSION)"
 
-PACKAGES := $(shell go list ./cmd/... ./pkg/...)
+PACKAGES := $(shell go list ./cmd/... ./pkg/... ./version/...)
 
 .DEFAULT_GOAL := build
 
 .PHONY: check
-check:
+check: format ensure-generate-is-noop
 	@echo Checking...
-	@go fmt $(PACKAGES) > $(FMT_LOG)
+	@git diff -s --exit-code . || (echo "Build failed: one or more source files aren't properly formatted. Run 'make format' and update your PR." && exit 1)
 
 .PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: generate
@@ -29,17 +29,12 @@ ensure-generate-is-noop: generate
 .PHONY: format
 format:
 	@echo Formatting code...
-	@go fmt $(PACKAGES)
-
-.PHONY: lint
-lint:
-	@echo Linting...
-	@$(GOPATH)/bin/golint -set_exit_status=1 $(PACKAGES)
+	@goimports -w -local "github.com/open-telemetry/opentelemetry-operator" .
 
 .PHONY: security
 security:
 	@echo Security...
-	@$(GOPATH)/bin/gosec -quiet $(PACKAGES) 2>/dev/null
+	@gosec -quiet $(PACKAGES) 2>/dev/null
 
 .PHONY: build
 build: format
@@ -68,21 +63,21 @@ generate:
 	@operator-sdk generate openapi
 
 .PHONY: test
-test:
-	@echo Running tests...
+test: unit-tests
+
+.PHONY: unit-tests
+unit-tests:
+	@echo Running unit tests...
+	@go test $(PACKAGES) -cover -coverprofile=cover.out
 
 .PHONY: all
-all: check format lint security build test
+all: check format security build test
 
 .PHONY: ci
-ci: ensure-generate-is-noop all
-
-.PHONY: scorecard
-scorecard:
-	@operator-sdk scorecard --cr-manifest deploy/examples/simplest.yaml --csv-path deploy/olm-catalog/jaeger.clusterserviceversion.yaml --init-timeout 30
+ci: install-tools ensure-generate-is-noop all
 
 .PHONY: install-tools
 install-tools:
 	@go get -u \
-		golang.org/x/lint/golint \
-		github.com/securego/gosec/cmd/gosec
+		github.com/securego/gosec/cmd/gosec \
+		golang.org/x/tools/cmd/goimports
