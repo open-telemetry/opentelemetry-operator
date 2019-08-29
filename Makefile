@@ -68,7 +68,7 @@ test: unit-tests
 .PHONY: unit-tests
 unit-tests:
 	@echo Running unit tests...
-	@go test $(PACKAGES) -cover -coverprofile=cover.out
+	@go test $(PACKAGES) -cover -coverprofile=coverage.txt -covermode=atomic -race
 
 .PHONY: all
 all: check format security build test

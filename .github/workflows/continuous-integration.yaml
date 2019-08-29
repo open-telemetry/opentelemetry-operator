@@ -12,3 +12,8 @@ jobs:
 
     - name: "basic checks"
       run: ./.ci/script.sh
+
+    - name: "upload test coverage report"
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      run: ./.ci/upload-test-coverage.sh
