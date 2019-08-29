@@ -38,7 +38,7 @@ Once minikube has finished starting, get the Operator running:
 make run
 ```
 
-At this point, a Jaeger instance can be installed:
+At this point, an OpenTelemetry Service instance can be installed:
 
 ```
 kubectl apply -f deploy/examples/simplest.yaml
@@ -58,4 +58,4 @@ The Operator SDK generates the `pkg/apis/opentelemetry/v1alpha1//zz_generated.*.
 
 #### Tests
 
-Right now, there are no tests on this repo yet. This will change really soon.
+Right now, there are only unit tests in this repository. They can be executed via `make unit-tests`. End-to-end tests are planned, and should be executed via `make e2e-tests`. All tests, including unit and end-to-end, will be executed when `make test` is called.

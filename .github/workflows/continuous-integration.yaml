@@ -1,0 +1,14 @@
+name: "Continuous Integration"
+on: [push, pull_request]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: jpkrohling/setup-operator-sdk@v1-release
+      with:
+        operator-sdk-version: v0.10.0
+
+    - name: "basic checks"
+      run: ./.ci/script.sh

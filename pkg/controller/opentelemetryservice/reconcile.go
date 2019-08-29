@@ -23,6 +23,24 @@ type ReconcileOpenTelemetryService struct {
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
+
+	// the list of reconciliation functions to execute
+	reconcileFuncs []func(context.Context) error
+}
+
+// New constructs a ReconcileOpenTelemetryService based on the client and scheme, with the default reconciliation functions
+func New(client client.Client, scheme *runtime.Scheme) *ReconcileOpenTelemetryService {
+	r := &ReconcileOpenTelemetryService{
+		client: client,
+		scheme: scheme,
+	}
+	r.reconcileFuncs = []func(context.Context) error{
+		r.reconcileConfigMap,
+		r.reconcileService,
+		r.reconcileDeployment,
+	}
+
+	return r
 }
 
 // Reconcile reads that state of the cluster for a OpenTelemetryService object and makes changes based on the state read
@@ -46,7 +64,8 @@ func (r *ReconcileOpenTelemetryService) Reconcile(request reconcile.Request) (re
 	}
 
 	// set the execution context for this reconcile loop
-	ctx := context.WithValue(context.Background(), opentelemetry.Instance, instance)
+	ctx := context.WithValue(context.Background(), opentelemetry.ContextInstance, instance)
+	ctx = context.WithValue(ctx, opentelemetry.ContextLogger, reqLogger)
 
 	if err := r.handleReconcile(ctx); err != nil {
 		return reconcile.Result{}, err
@@ -57,13 +76,12 @@ func (r *ReconcileOpenTelemetryService) Reconcile(request reconcile.Request) (re
 
 // handleReconcile compares the existing state vs. the expected state and performs the necessary actions to make the two match
 func (r *ReconcileOpenTelemetryService) handleReconcile(ctx context.Context) error {
-	funcs := []func(context.Context) error{
-		r.reconcileConfigMap,
-		r.reconcileService,
-		r.reconcileDeployment,
+	if nil == r.reconcileFuncs {
+		// nothing to do!
+		return nil
 	}
 
-	for _, f := range funcs {
+	for _, f := range r.reconcileFuncs {
 		if err := f(ctx); err != nil {
 			return err
 		}
@@ -74,6 +92,6 @@ func (r *ReconcileOpenTelemetryService) handleReconcile(ctx context.Context) err
 
 // setControllerReference should be used by the individual reconcile functions to establish the ownership of the underlying resources
 func (r *ReconcileOpenTelemetryService) setControllerReference(ctx context.Context, object v1.Object) error {
-	instance := ctx.Value(opentelemetry.Instance).(*v1alpha1.OpenTelemetryService)
+	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryService)
 	return controllerutil.SetControllerReference(instance, object, r.scheme)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -36,16 +37,38 @@ func (r *ReconcileOpenTelemetryService) reconcileDeployment(ctx context.Context)
 }
 
 func deployment(ctx context.Context) *appsv1.Deployment {
-	instance := ctx.Value(opentelemetry.Instance).(*v1alpha1.OpenTelemetryService)
+	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryService)
+	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 	name := fmt.Sprintf("%s-collector", instance.Name)
 
 	labels := commonLabels(ctx)
 	labels["app.kubernetes.io/name"] = name
 
 	specAnnotations := instance.Annotations
+	if specAnnotations == nil {
+		specAnnotations = map[string]string{}
+	}
+
 	specAnnotations["prometheus.io/scrape"] = "true"
 	specAnnotations["prometheus.io/port"] = "8888"
 	specAnnotations["prometheus.io/path"] = "/metrics"
+
+	argsMap := instance.Spec.Args
+	if argsMap == nil {
+		argsMap = map[string]string{}
+	}
+
+	if _, exists := argsMap["config"]; exists {
+		logger.Info("the 'config' flag isn't allowed and is being ignored")
+	}
+
+	// this effectively overrides any 'config' entry that might exist in the CR
+	argsMap["config"] = fmt.Sprintf("/conf/%s", opentelemetry.CollectorConfigMapEntry)
+
+	var args []string
+	for k, v := range argsMap {
+		args = append(args, fmt.Sprintf("--%s=%s", k, v))
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -72,9 +95,7 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 							Name:      name,
 							MountPath: "/conf",
 						}},
-						Args: []string{
-							fmt.Sprintf("--config=/conf/%s", opentelemetry.CollectorConfigMapEntry),
-						},
+						Args: args,
 					}},
 					Volumes: []corev1.Volume{{
 						Name: name,

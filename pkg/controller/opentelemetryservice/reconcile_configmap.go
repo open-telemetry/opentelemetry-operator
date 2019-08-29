@@ -15,15 +15,11 @@ import (
 
 // reconcileDeployment reconciles the deployment(s) required for the instance in the current context
 func (r *ReconcileOpenTelemetryService) reconcileConfigMap(ctx context.Context) error {
-	desired, err := configMap(ctx)
-	if err != nil {
-		return err
-	}
-
+	desired := configMap(ctx)
 	r.setControllerReference(ctx, desired)
 
 	expected := &corev1.ConfigMap{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, expected)
+	err := r.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, expected)
 	if err != nil && errors.IsNotFound(err) {
 		if err := r.client.Create(ctx, desired); err != nil {
 			return err
@@ -38,8 +34,8 @@ func (r *ReconcileOpenTelemetryService) reconcileConfigMap(ctx context.Context) 
 	return nil
 }
 
-func configMap(ctx context.Context) (*corev1.ConfigMap, error) {
-	instance := ctx.Value(opentelemetry.Instance).(*v1alpha1.OpenTelemetryService)
+func configMap(ctx context.Context) *corev1.ConfigMap {
+	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryService)
 	name := fmt.Sprintf("%s-collector", instance.Name)
 
 	labels := commonLabels(ctx)
@@ -55,5 +51,5 @@ func configMap(ctx context.Context) (*corev1.ConfigMap, error) {
 		Data: map[string]string{
 			opentelemetry.CollectorConfigMapEntry: instance.Spec.Config,
 		},
-	}, nil
+	}
 }

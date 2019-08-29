@@ -10,7 +10,7 @@ import (
 
 // commonLabels return the common labels to all objects that are part of a managed OpenTelemetryService
 func commonLabels(ctx context.Context) map[string]string {
-	instance := ctx.Value(opentelemetry.Instance).(*v1alpha1.OpenTelemetryService)
+	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryService)
 	base := instance.Labels
 	if nil == base {
 		base = map[string]string{}

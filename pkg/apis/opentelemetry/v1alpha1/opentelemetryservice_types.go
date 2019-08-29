@@ -4,17 +4,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // OpenTelemetryServiceSpec defines the desired state of OpenTelemetryService
 // +k8s:openapi-gen=true
 type OpenTelemetryServiceSpec struct {
-	// +optional
-	Replicas *int32 `json:"replicas,omitempty"`
-
 	// +required
 	Config string `json:"config,omitempty"`
+
+	// +optional
+	Args map[string]string `json:"args,omitempty"`
+
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // OpenTelemetryServiceStatus defines the observed state of OpenTelemetryService
