@@ -1,4 +1,4 @@
-[![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc]
+[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc]
 
 # OpenTelemetry Operator for Kubernetes
 
@@ -57,6 +57,8 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
   
 [Apache 2.0 License](./LICENSE).
 
+[github-workflow]: https://github.com/jpkrohling/opentelemetry-operator/actions
+[github-workflow-img]: https://github.com/jpkrohling/opentelemetry-operator/workflows/Continuous%20Integration/badge.svg
 [goreport-img]: https://goreportcard.com/badge/github.com/jpkrohling/opentelemetry-operator
 [goreport]: https://goreportcard.com/report/github.com/jpkrohling/opentelemetry-operator
 [godoc-img]: https://godoc.org/github.com/jpkrohling/opentelemetry-operator?status.svg
