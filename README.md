@@ -1,4 +1,4 @@
-[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc]
+[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc] [![Maintainability][code-climate-img]][code-climate] [![codecov][codecov-img]][codecov]
 
 # OpenTelemetry Operator for Kubernetes
 
@@ -63,3 +63,7 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 [goreport]: https://goreportcard.com/report/github.com/jpkrohling/opentelemetry-operator
 [godoc-img]: https://godoc.org/github.com/jpkrohling/opentelemetry-operator?status.svg
 [godoc]: https://godoc.org/github.com/jpkrohling/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1#OpenTelemetryService
+[code-climate]: https://codeclimate.com/github/jpkrohling/opentelemetry-operator/maintainability
+[code-climate-img]: https://api.codeclimate.com/v1/badges/7bb215eea77fc9c24484/maintainability
+[codecov]: https://codecov.io/gh/jpkrohling/opentelemetry-operator
+[codecov-img]: https://codecov.io/gh/jpkrohling/opentelemetry-operator/branch/master/graph/badge.svg
