@@ -91,6 +91,12 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryServiceSpec(ref common.
 							Format: "int32",
 						},
 					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},

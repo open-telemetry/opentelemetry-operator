@@ -15,6 +15,9 @@ type OpenTelemetryServiceSpec struct {
 
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// +optional
+	Image string `json:"image,omitempty"`
 }
 
 // OpenTelemetryServiceStatus defines the observed state of OpenTelemetryService
