@@ -1,6 +1,7 @@
 module github.com/open-telemetry/opentelemetry-operator
 
 require (
+	github.com/NYTimes/gziphandler v1.0.1 // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.0
 	github.com/golang/protobuf v1.3.2 // indirect
