@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/controller"
 	"github.com/open-telemetry/opentelemetry-operator/version"
 )
@@ -58,6 +59,9 @@ func main() {
 	// Add flags registered by imported packages (e.g. glog and
 	// controller-runtime)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+
+	// Add flags related to this operator
+	pflag.CommandLine.AddFlagSet(opentelemetry.FlagSet())
 
 	pflag.Parse()
 

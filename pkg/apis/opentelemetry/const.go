@@ -14,4 +14,7 @@ const (
 
 	// CollectorConfigMapEntry represents the configuration file name for the collector
 	CollectorConfigMapEntry = "collector.yaml"
+
+	// OtelSvcImageConfigKey represents the key to override the OpenTelemetry Service container image
+	OtelSvcImageConfigKey = "otelsvc-image"
 )

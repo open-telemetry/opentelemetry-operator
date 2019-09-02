@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/spf13/viper"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -40,6 +41,11 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryService)
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 	name := fmt.Sprintf("%s-collector", instance.Name)
+
+	image := instance.Spec.Image
+	if len(image) == 0 {
+		image = viper.GetString(opentelemetry.OtelSvcImageConfigKey)
+	}
 
 	labels := commonLabels(ctx)
 	labels["app.kubernetes.io/name"] = name
@@ -90,7 +96,7 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:  "opentelemetry-service",
-						Image: "quay.io/jpkroehling/opentelemetry-service:latest",
+						Image: image,
 						VolumeMounts: []corev1.VolumeMount{{
 							Name:      name,
 							MountPath: "/conf",

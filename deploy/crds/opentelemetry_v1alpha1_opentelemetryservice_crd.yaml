@@ -42,6 +42,8 @@ spec:
             config:
               description: +required
               type: string
+            image:
+              type: string
             replicas:
               format: int32
               type: integer
