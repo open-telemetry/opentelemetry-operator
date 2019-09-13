@@ -17,8 +17,13 @@ PACKAGES := $(shell go list ./cmd/... ./pkg/... ./version/...)
 
 .DEFAULT_GOAL := build
 
+.PHONY: discard-go-mod-changes
+discard-go-mod-changes:
+	@# 'go list' will update go.mod/go.sum and there's no way to prevent it (not even with -mod=readonly)
+	@git checkout -- go.mod go.sum
+
 .PHONY: check
-check: format ensure-generate-is-noop
+check: format ensure-generate-is-noop discard-go-mod-changes
 	@echo Checking...
 	@git diff -s --exit-code . || (echo "Build failed: one or more source files aren't properly formatted. Run 'make format' and update your PR." && exit 1)
 
