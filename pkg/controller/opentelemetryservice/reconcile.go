@@ -2,6 +2,7 @@ package opentelemetryservice
 
 import (
 	"context"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +47,11 @@ func New(client client.Client, scheme *runtime.Scheme) *ReconcileOpenTelemetrySe
 // Reconcile reads that state of the cluster for a OpenTelemetryService object and makes changes based on the state read
 // and what is in the OpenTelemetryService.Spec
 func (r *ReconcileOpenTelemetryService) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reqLogger := log.WithValues(
+		"Request.Namespace", request.Namespace,
+		"Request.Name", request.Name,
+		"Request.ID", time.Now().UTC().Unix(),
+	)
 	reqLogger.Info("Reconciling OpenTelemetryService")
 
 	// Fetch the OpenTelemetryService instance
@@ -71,6 +76,7 @@ func (r *ReconcileOpenTelemetryService) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
+	reqLogger.Info("Finished reconciling OpenTelemetryService")
 	return reconcile.Result{}, nil
 }
 

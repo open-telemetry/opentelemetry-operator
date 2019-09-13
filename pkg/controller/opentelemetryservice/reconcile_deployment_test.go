@@ -102,5 +102,5 @@ func TestDefaultImage(t *testing.T) {
 
 	// verify
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
-	assert.Equal(t, "quay.io/jpkroehling/opentelemetry-service:latest", d.Spec.Template.Spec.Containers[0].Image)
+	assert.Contains(t, d.Spec.Template.Spec.Containers[0].Image, "quay.io/opentelemetry/opentelemetry-service")
 }

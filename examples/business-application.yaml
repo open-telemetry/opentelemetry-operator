@@ -1,0 +1,32 @@
+# when `simplest.yaml` is deployed, this is how an application containing the Jaeger client can be configured to use otelsvc
+# in this case, we make use of the jaeger-agent as a sidecar, and the jaeger-agent connects to otelsvc via gRPC
+# this is suitable when the application is already configured to talk to Jaeger via UDP
+# for greenfield applications, the OpenTelemetry client should be preferred
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: jaegertracing/vertx-create-span:operator-e2e-tests
+      - name: jaeger-agent
+        image: jaegertracing/jaeger-agent:1.14.0
+        args:
+        - --reporter.grpc.host-port=dns:///simplest-collector-headless.default:14250
+        - --reporter.type=grpc
+        ports:
+        - containerPort: 5778
+          name: config-rest
+          protocol: TCP
+        - containerPort: 6831
+          name: jg-compact-trft
+          protocol: TCP

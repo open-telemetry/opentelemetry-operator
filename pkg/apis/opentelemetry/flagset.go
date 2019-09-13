@@ -21,7 +21,7 @@ func FlagSet() *pflag.FlagSet {
 		fs = pflag.NewFlagSet("opentelemetry-operator", pflag.ExitOnError)
 		fs.String(
 			OtelSvcImageConfigKey,
-			"quay.io/jpkroehling/opentelemetry-service:latest",
+			"quay.io/opentelemetry/opentelemetry-service:v0.0.2",
 			"The default image to use for OpenTelemetry Service when not specified in the individual custom resource (CR)",
 		)
 		viper.BindPFlag(OtelSvcImageConfigKey, fs.Lookup(OtelSvcImageConfigKey))

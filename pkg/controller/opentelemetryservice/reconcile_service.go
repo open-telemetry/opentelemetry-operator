@@ -16,17 +16,23 @@ import (
 
 // reconcileService reconciles the service(s) required for the instance in the current context
 func (r *ReconcileOpenTelemetryService) reconcileService(ctx context.Context) error {
-	desired := service(ctx)
-	r.setControllerReference(ctx, desired)
+	svcs := []*corev1.Service{
+		service(ctx),
+		headless(ctx),
+	}
+	for _, svc := range svcs {
+		desired := svc
+		r.setControllerReference(ctx, desired)
 
-	expected := &corev1.Service{}
-	err := r.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, expected)
-	if err != nil && errors.IsNotFound(err) {
-		if err := r.client.Create(ctx, desired); err != nil {
+		expected := &corev1.Service{}
+		err := r.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, expected)
+		if err != nil && errors.IsNotFound(err) {
+			if err := r.client.Create(ctx, desired); err != nil {
+				return err
+			}
+		} else if err != nil {
 			return err
 		}
-	} else if err != nil {
-		return err
 	}
 
 	// it exists already, merge the two if the end result isn't identical to the existing one
@@ -70,4 +76,11 @@ func service(ctx context.Context) *corev1.Service {
 		},
 	}
 
+}
+
+func headless(ctx context.Context) *corev1.Service {
+	h := service(ctx)
+	h.Name = fmt.Sprintf("%s-headless", h.Name)
+	h.Spec.ClusterIP = "None"
+	return h
 }
