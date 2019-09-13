@@ -21,6 +21,15 @@ func TestProperService(t *testing.T) {
 	assert.Equal(t, s.Spec.Selector, s.Labels) // shortcut, as they are the same at this point
 }
 
+func TestProperHeadlessService(t *testing.T) {
+	// test
+	s := headless(ctx)
+
+	// verify
+	assert.Equal(t, s.Name, "my-otelsvc-collector-headless")
+	assert.Equal(t, s.Spec.ClusterIP, "None")
+}
+
 func TestProperReconcileService(t *testing.T) {
 	// prepare
 	req := reconcile.Request{}
@@ -33,8 +42,10 @@ func TestProperReconcileService(t *testing.T) {
 	cl.List(ctx, client.InNamespace(instance.Namespace), list)
 
 	// we assert the correctness of the service in another test
-	assert.Len(t, list.Items, 1)
+	assert.Len(t, list.Items, 2)
 
 	// we assert the correctness of the reference in another test
-	assert.Len(t, list.Items[0].OwnerReferences, 1)
+	for _, item := range list.Items {
+		assert.Len(t, item.OwnerReferences, 1)
+	}
 }

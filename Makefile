@@ -43,11 +43,11 @@ build: format
 
 .PHONY: run
 run: crd
-	@operator-sdk up local OPERATOR_NAME=$(OPERATOR_NAME) --go-ldflags "-X $(VERSION_PKG).Version=$(OPERATOR_VERSION) -X $(VERSION_PKG).BuildDate=$(VERSION_DATE)"
+	@OPERATOR_NAME=$(OPERATOR_NAME) operator-sdk up local --go-ldflags "-X $(VERSION_PKG).Version=$(OPERATOR_VERSION) -X $(VERSION_PKG).BuildDate=$(VERSION_DATE)"
 
 .PHONY: run-debug
 run-debug: crd
-	@operator-sdk up local --operator-flags "--log-level=debug" OPERATOR_NAME=$(OPERATOR_NAME)
+	@OPERATOR_NAME=$(OPERATOR_NAME) operator-sdk up local --operator-flags "--log-level=debug"
 
 .PHONY: clean
 clean:
