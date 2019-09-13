@@ -2,6 +2,7 @@ package opentelemetryservice
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -50,7 +51,7 @@ func (r *ReconcileOpenTelemetryService) Reconcile(request reconcile.Request) (re
 	reqLogger := log.WithValues(
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
-		"Request.ID", time.Now().UTC().Unix(),
+		"Request.ID", time.Now().UTC().UnixNano(),
 	)
 	reqLogger.Info("Reconciling OpenTelemetryService")
 
@@ -62,6 +63,7 @@ func (r *ReconcileOpenTelemetryService) Reconcile(request reconcile.Request) (re
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
+			reqLogger.Info("OpenTelemetryService was deleted, reconciliation terminated")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -89,7 +91,7 @@ func (r *ReconcileOpenTelemetryService) handleReconcile(ctx context.Context) err
 
 	for _, f := range r.reconcileFuncs {
 		if err := f(ctx); err != nil {
-			return err
+			return fmt.Errorf("reconciliation failed: %v", err)
 		}
 	}
 

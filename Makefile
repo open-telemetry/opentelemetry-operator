@@ -52,7 +52,7 @@ run: crd
 
 .PHONY: run-debug
 run-debug: crd
-	@OPERATOR_NAME=$(OPERATOR_NAME) operator-sdk up local --operator-flags "--log-level=debug"
+	@OPERATOR_NAME=$(OPERATOR_NAME) operator-sdk up local --operator-flags "--zap-level=2"
 
 .PHONY: clean
 clean:
