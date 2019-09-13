@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
@@ -18,21 +19,19 @@ import (
 
 // reconcileDeployment reconciles the deployment(s) required for the instance in the current context
 func (r *ReconcileOpenTelemetryService) reconcileDeployment(ctx context.Context) error {
-	desired := deployment(ctx)
-	r.setControllerReference(ctx, desired)
-
-	expected := &appsv1.Deployment{}
-	err := r.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, expected)
-	if err != nil && errors.IsNotFound(err) {
-		if err := r.client.Create(ctx, desired); err != nil {
-			return err
-		}
-	} else if err != nil {
-		return err
+	desired := []*appsv1.Deployment{
+		deployment(ctx),
 	}
 
-	// it exists already, merge the two if the end result isn't identical to the existing one
-	// TODO(jpkroehling)
+	// first, handle the create/update parts
+	if err := r.reconcileExpectedDeployments(ctx, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the expected deployments: %v", err)
+	}
+
+	// then, delete the extra objects
+	if err := r.deleteDeployments(ctx, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the deployments to be deleted: %v", err)
+	}
 
 	return nil
 }
@@ -119,4 +118,83 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 			},
 		},
 	}
+}
+
+func (r *ReconcileOpenTelemetryService) reconcileExpectedDeployments(ctx context.Context, expected []*appsv1.Deployment) error {
+	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
+	for _, obj := range expected {
+		desired := obj
+		r.setControllerReference(ctx, desired)
+
+		existing := &appsv1.Deployment{}
+		err := r.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, existing)
+		if err != nil && errors.IsNotFound(err) {
+			if err := r.client.Create(ctx, desired); err != nil {
+				return fmt.Errorf("failed to create: %v", err)
+			}
+
+			logger.WithValues("deployment.name", desired.Name, "deployment.namespace", desired.Namespace).V(2).Info("created")
+			continue
+		} else if err != nil {
+			return fmt.Errorf("failed to get: %v", err)
+		}
+
+		// it exists already, merge the two if the end result isn't identical to the existing one
+		updated := existing.DeepCopy()
+		if updated.Annotations == nil {
+			updated.Annotations = map[string]string{}
+		}
+		if updated.Labels == nil {
+			updated.Labels = map[string]string{}
+		}
+
+		updated.Spec = desired.Spec
+		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
+
+		for k, v := range desired.ObjectMeta.Annotations {
+			updated.ObjectMeta.Annotations[k] = v
+		}
+		for k, v := range desired.ObjectMeta.Labels {
+			updated.ObjectMeta.Labels[k] = v
+		}
+
+		if err := r.client.Update(ctx, updated); err != nil {
+			return fmt.Errorf("failed to apply changes: %v", err)
+		}
+		logger.V(2).Info("applied", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
+	}
+
+	return nil
+}
+
+func (r *ReconcileOpenTelemetryService) deleteDeployments(ctx context.Context, expected []*appsv1.Deployment) error {
+	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryService)
+	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
+
+	opts := client.InNamespace(instance.Namespace).MatchingLabels(map[string]string{
+		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", instance.Namespace, instance.Name),
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+	})
+	list := &appsv1.DeploymentList{}
+	if err := r.client.List(ctx, opts, list); err != nil {
+		return fmt.Errorf("failed to list: %v", err)
+	}
+
+	for _, existing := range list.Items {
+		del := true
+		for _, keep := range expected {
+			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
+				del = false
+			}
+		}
+
+		if del {
+			if err := r.client.Delete(ctx, &existing); err != nil {
+				return fmt.Errorf("failed to delete: %v", err)
+			}
+			logger.V(2).Info("deleted", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)
+		}
+	}
+
+	return nil
 }

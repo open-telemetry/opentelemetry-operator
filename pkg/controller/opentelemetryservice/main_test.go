@@ -26,7 +26,7 @@ var (
 
 // TestMain ensures that all tests in this package have a fresh and sane instance of the common resources
 func TestMain(m *testing.M) {
-	schem := scheme.Scheme
+	schem = scheme.Scheme
 	schem.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.OpenTelemetryService{})
 
 	gvk := v1alpha1.SchemeGroupVersion.WithKind("OpenTelemetryService")
