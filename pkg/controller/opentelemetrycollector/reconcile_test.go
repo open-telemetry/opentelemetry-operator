@@ -23,6 +23,11 @@ func TestProperReconcile(t *testing.T) {
 		req        reconcile.Request
 	)
 
+	clients := &Clients{
+		client: fake.NewFakeClient(instance),
+	}
+	reconciler := New(schem, clients)
+
 	called := false
 	reconciler.reconcileFuncs = []func(context.Context) error{
 		func(ctx context.Context) error {
@@ -46,8 +51,10 @@ func TestProperReconcile(t *testing.T) {
 
 func TestReconcileDeletedObject(t *testing.T) {
 	// prepare
-	cl := fake.NewFakeClient() // no objects
-	reconciler := New(cl, schem)
+	clients := &Clients{
+		client: fake.NewFakeClient(),
+	}
+	reconciler := New(schem, clients)
 
 	req := reconcile.Request{}
 	reconciler.reconcileFuncs = []func(context.Context) error{
@@ -68,6 +75,10 @@ func TestReconcileDeletedObject(t *testing.T) {
 
 func TestReconcileFailsFast(t *testing.T) {
 	// prepare
+	clients := &Clients{
+		client: fake.NewFakeClient(instance),
+	}
+	reconciler := New(schem, clients)
 	req := reconcile.Request{}
 	reconciler.reconcileFuncs = []func(context.Context) error{
 		func(context.Context) error {
@@ -88,6 +99,10 @@ func TestReconcileFailsFast(t *testing.T) {
 
 func TestReconcileFuncsAreCalled(t *testing.T) {
 	// prepare
+	clients := &Clients{
+		client: fake.NewFakeClient(instance),
+	}
+	reconciler := New(schem, clients)
 	called := false
 	reconciler.reconcileFuncs = []func(context.Context) error{
 		func(context.Context) error {
@@ -106,6 +121,10 @@ func TestReconcileFuncsAreCalled(t *testing.T) {
 
 func TestNilReconcileFuncs(t *testing.T) {
 	// prepare
+	clients := &Clients{
+		client: fake.NewFakeClient(instance),
+	}
+	reconciler := New(schem, clients)
 	reconciler.reconcileFuncs = nil
 
 	// test
@@ -117,6 +136,10 @@ func TestNilReconcileFuncs(t *testing.T) {
 
 func TestSetControllerReference(t *testing.T) {
 	// prepare
+	clients := &Clients{
+		client: fake.NewFakeClient(instance),
+	}
+	reconciler := New(schem, clients)
 	d := &appsv1.Deployment{}
 
 	// sanity check

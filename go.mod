@@ -2,6 +2,7 @@ module github.com/open-telemetry/opentelemetry-operator
 
 require (
 	github.com/Azure/go-autorest v13.0.1+incompatible // indirect
+	github.com/coreos/prometheus-operator v0.29.0
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.0
 	github.com/golang/protobuf v1.3.2 // indirect
@@ -20,6 +21,7 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
+	k8s.io/apiextensions-apiserver v0.0.0-20190918161926-8f644eb6e783
 	k8s.io/apimachinery v0.0.0-20190913080033-27d36303b655
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/kube-openapi v0.0.0-20190401085232-94e1e7b7574c

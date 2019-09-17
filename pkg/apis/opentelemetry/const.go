@@ -26,4 +26,7 @@ const (
 
 	// OtelColImageConfigKey represents the key to override the OpenTelemetry Collector container image
 	OtelColImageConfigKey = "otelcol-image"
+
+	// SvcMonitorAvailable represents the key that indicates whether a ServiceMonitor CRD is known to the cluster
+	SvcMonitorAvailable = "svc-monitor-avail"
 )

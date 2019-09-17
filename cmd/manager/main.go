@@ -18,6 +18,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	"github.com/operator-framework/operator-sdk/pkg/restmapper"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -54,6 +55,8 @@ func printVersion() {
 }
 
 func main() {
+	ctx := context.Background()
+
 	// Add the zap logger flag set to the CLI. The flag set must
 	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())
@@ -92,7 +95,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
 	// Become the leader before proceeding
 	err = leader.Become(ctx, "opentelemetry-operator-lock")
 	if err != nil {
@@ -148,15 +150,18 @@ func main() {
 	// CreateServiceMonitors will automatically create the prometheus-operator ServiceMonitor resources
 	// necessary to configure Prometheus to scrape metrics from this operator.
 	services := []*v1.Service{service}
+	svcMonitorAvail := true
 	_, err = metrics.CreateServiceMonitors(cfg, namespace, services)
 	if err != nil {
 		log.Info("Could not create ServiceMonitor object", "error", err.Error())
 		// If this operator is deployed to a cluster without the prometheus-operator running, it will return
 		// ErrServiceMonitorNotPresent, which can be used to safely skip ServiceMonitor creation.
 		if err == metrics.ErrServiceMonitorNotPresent {
+			svcMonitorAvail = false
 			log.Info("Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
 		}
 	}
+	viper.Set(opentelemetry.SvcMonitorAvailable, svcMonitorAvail)
 
 	log.Info("Starting the Cmd.")
 

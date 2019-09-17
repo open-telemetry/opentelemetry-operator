@@ -10,7 +10,7 @@ At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetr
 
 To install the operator, run:
 ```
-kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/crds/opentelemetry_v1alpha1_opentelemetrycollector_crd.yaml
+kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/crds/opentelemetry.io_opentelemetrycollectors_crd.yaml
 kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/service_account.yaml
 kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/role.yaml
 kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/role_binding.yaml
@@ -53,6 +53,27 @@ At this point, the Operator does *not* validate the contents of the configuratio
 ### Deployment modes
 
 The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet` or as a `Deployment` (default). Look at the `examples/daemonset.yaml` for reference.
+
+## Prometheus ServiceMonitor objects
+
+When the Prometheus Operator is available in the same cluster as the OpenTelemetry Operator, the OpenTelemetry Operator will automatically create the relevant `ServiceMonitor` objects:
+
+* One set for the OpenTelemetry Operator itself
+* One set for each managed OpenTelemetry instance
+
+Refer to the Prometheus Operator for complete instructions on how to do a production-quality installation. For development purposes, the following will do:
+
+```console
+$ kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/v0.33.0/bundle.yaml
+```
+
+When deploying the example `simplest.yaml`, the following `ServiceMonitor` will be created once the Prometheus Operator is available:
+
+```console
+$ kubectl get servicemonitors simplest-collector
+NAME                 AGE
+simplest-collector   103s
+```
 
 ## Contributing and Developing
 

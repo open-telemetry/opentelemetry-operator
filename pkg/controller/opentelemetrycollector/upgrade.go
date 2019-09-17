@@ -22,7 +22,7 @@ func (r *ReconcileOpenTelemetryCollector) applyUpgrades(ctx context.Context) err
 		if otelcol.Status.Version != currentVersions.OpenTelemetryCollector {
 			// in theory, the version from the Status could be higher than currentVersions.Jaeger, but we let the upgrade routine
 			// check/handle it
-			u, err := upgrade.ManagedInstance(ctx, r.client, otelcol)
+			u, err := upgrade.ManagedInstance(ctx, r.clients.client, otelcol)
 			if err != nil {
 				return err
 			}

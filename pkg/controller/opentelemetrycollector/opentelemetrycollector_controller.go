@@ -16,12 +16,7 @@ var log = logf.Log.WithName("controller_opentelemetrycollector")
 // Add creates a new OpenTelemetryCollector Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
-}
-
-// newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return New(mgr.GetClient(), mgr.GetScheme())
+	return add(mgr, WithManager(mgr))
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler

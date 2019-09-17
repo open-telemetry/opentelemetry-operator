@@ -22,8 +22,10 @@ func TestApplyUpgrades(t *testing.T) {
 	}
 	ctx := context.WithValue(context.Background(), opentelemetry.ContextInstance, instance)
 	ctx = context.WithValue(ctx, opentelemetry.ContextLogger, logf.Log.WithName("unit-tests"))
-	cl = fake.NewFakeClient(instance)
-	reconciler = New(cl, schem)
+	clients := &Clients{
+		client: fake.NewFakeClient(instance),
+	}
+	reconciler := New(schem, clients)
 
 	// test
 	err := reconciler.applyUpgrades(ctx)

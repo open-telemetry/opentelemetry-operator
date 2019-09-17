@@ -74,8 +74,11 @@ func TestProperReconcileDaemonSet(t *testing.T) {
 	// prepare
 	instance := *instance
 	instance.Spec.Mode = opentelemetry.ModeDaemonSet
-	cl := fake.NewFakeClient(&instance)
-	reconciler := New(cl, schem)
+
+	clients := &Clients{
+		client: fake.NewFakeClient(&instance),
+	}
+	reconciler := New(schem, clients)
 	req := reconcile.Request{}
 
 	// test
@@ -83,7 +86,7 @@ func TestProperReconcileDaemonSet(t *testing.T) {
 
 	// verify
 	list := &appsv1.DaemonSetList{}
-	cl.List(ctx, list, client.InNamespace(instance.Namespace))
+	clients.client.List(ctx, list, client.InNamespace(instance.Namespace))
 
 	// we assert the correctness of the service in another test
 	assert.Len(t, list.Items, 1)
@@ -141,15 +144,17 @@ func TestUpdateDaemonSet(t *testing.T) {
 	// prepare
 	instance := *instance
 	instance.Spec.Mode = opentelemetry.ModeDaemonSet
-	cl := fake.NewFakeClient(&instance)
-	reconciler := New(cl, schem)
+	clients := &Clients{
+		client: fake.NewFakeClient(&instance),
+	}
+	reconciler := New(schem, clients)
 	req := reconcile.Request{}
 	reconciler.Reconcile(req)
 
 	// sanity check
 	name := fmt.Sprintf("%s-collector", instance.Name)
 	persisted := &appsv1.DaemonSet{}
-	err := cl.Get(ctx, types.NamespacedName{Name: name, Namespace: instance.Namespace}, persisted)
+	err := clients.client.Get(ctx, types.NamespacedName{Name: name, Namespace: instance.Namespace}, persisted)
 	assert.NoError(t, err)
 
 	// prepare the test object
@@ -164,7 +169,7 @@ func TestUpdateDaemonSet(t *testing.T) {
 
 	// verify
 	persisted = &appsv1.DaemonSet{}
-	assert.NoError(t, cl.Get(ctx, types.NamespacedName{Name: name, Namespace: updated.Namespace}, persisted))
+	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: name, Namespace: updated.Namespace}, persisted))
 	assert.Len(t, persisted.Spec.Template.Spec.Containers, 1)
 	assert.Equal(t, "custom-image", persisted.Spec.Template.Spec.Containers[0].Image)
 }
@@ -174,12 +179,14 @@ func TestDeleteExtraDaemonSet(t *testing.T) {
 	c := daemonSet(ctx)
 	c.Name = "extra-daemonSet"
 
-	cl := fake.NewFakeClient(c)
-	reconciler := New(cl, schem)
+	clients := &Clients{
+		client: fake.NewFakeClient(c),
+	}
+	reconciler := New(schem, clients)
 
 	// sanity check
 	persisted := &appsv1.DaemonSet{}
-	assert.NoError(t, cl.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
+	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
 
 	// test
 	err := reconciler.reconcileDaemonSet(ctx)
@@ -187,7 +194,7 @@ func TestDeleteExtraDaemonSet(t *testing.T) {
 
 	// verify
 	persisted = &appsv1.DaemonSet{}
-	err = cl.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
+	err = clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
 
 	assert.Empty(t, persisted.Name)
 	assert.Error(t, err) // not found

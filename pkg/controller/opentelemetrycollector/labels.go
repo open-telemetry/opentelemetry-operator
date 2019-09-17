@@ -11,9 +11,13 @@ import (
 // commonLabels return the common labels to all objects that are part of a managed OpenTelemetryCollector
 func commonLabels(ctx context.Context) map[string]string {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
-	base := instance.Labels
-	if nil == base {
-		base = map[string]string{}
+
+	// new map every time, so that we don't touch the instance's label
+	base := map[string]string{}
+	if nil != instance.Labels {
+		for k, v := range instance.Labels {
+			base[k] = v
+		}
 	}
 
 	base["app.kubernetes.io/managed-by"] = "opentelemetry-operator"

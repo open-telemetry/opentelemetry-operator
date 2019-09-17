@@ -20,6 +20,7 @@ import (
 func (r *ReconcileOpenTelemetryCollector) reconcileService(ctx context.Context) error {
 	svcs := []*corev1.Service{
 		service(ctx),
+		monitoringService(ctx),
 		headless(ctx),
 	}
 
@@ -66,13 +67,32 @@ func service(ctx context.Context) *corev1.Service {
 			},
 		},
 	}
-
 }
 
 func headless(ctx context.Context) *corev1.Service {
 	h := service(ctx)
 	h.Name = fmt.Sprintf("%s-headless", h.Name)
 	h.Spec.ClusterIP = "None"
+	return h
+}
+
+func monitoringService(ctx context.Context) *corev1.Service {
+	h := service(ctx)
+	h.Name = fmt.Sprintf("%s-monitoring", h.Name)
+
+	// duplicate the map, as we want to change the h.Labels but not the selector
+	labels := map[string]string{}
+	for k, v := range h.Labels {
+		labels[k] = v
+	}
+	labels["app.kubernetes.io/name"] = h.Name
+	h.Labels = labels
+
+	h.Spec.Ports = []corev1.ServicePort{{
+		Name:       "monitoring",
+		Port:       8888,
+		TargetPort: intstr.FromInt(8888),
+	}}
 	return h
 }
 
@@ -83,9 +103,9 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServices(ctx context.
 		r.setControllerReference(ctx, desired)
 
 		existing := &corev1.Service{}
-		err := r.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, existing)
+		err := r.clients.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, existing)
 		if err != nil && errors.IsNotFound(err) {
-			if err := r.client.Create(ctx, desired); err != nil {
+			if err := r.clients.client.Create(ctx, desired); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -118,7 +138,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServices(ctx context.
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if err := r.client.Update(ctx, updated); err != nil {
+		if err := r.clients.client.Update(ctx, updated); err != nil {
 			return fmt.Errorf("failed to apply changes to service: %v", err)
 		}
 		logger.V(2).Info("applied", "service.name", desired.Name, "service.namespace", desired.Namespace)
@@ -139,7 +159,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteServices(ctx context.Context, ex
 		}),
 	}
 	list := &corev1.ServiceList{}
-	if err := r.client.List(ctx, list, opts...); err != nil {
+	if err := r.clients.client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
 
@@ -152,7 +172,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteServices(ctx context.Context, ex
 		}
 
 		if del {
-			if err := r.client.Delete(ctx, &existing); err != nil {
+			if err := r.clients.client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "service.name", existing.Name, "service.namespace", existing.Namespace)
