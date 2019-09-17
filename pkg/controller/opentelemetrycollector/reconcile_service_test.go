@@ -33,8 +33,22 @@ func TestProperHeadlessService(t *testing.T) {
 	assert.Equal(t, s.Spec.ClusterIP, "None")
 }
 
+func TestProperMonitoringService(t *testing.T) {
+	// test
+	s := monitoringService(ctx)
+
+	// verify
+	assert.Equal(t, s.Name, "my-otelcol-collector-monitoring")
+	assert.Len(t, s.Spec.Ports, 1)
+	assert.Equal(t, int32(8888), s.Spec.Ports[0].Port)
+}
+
 func TestProperReconcileService(t *testing.T) {
 	// prepare
+	clients := &Clients{
+		client: fake.NewFakeClient(instance),
+	}
+	reconciler := New(schem, clients)
 	req := reconcile.Request{}
 
 	// test
@@ -42,10 +56,10 @@ func TestProperReconcileService(t *testing.T) {
 
 	// verify
 	list := &corev1.ServiceList{}
-	cl.List(ctx, list, client.InNamespace(instance.Namespace))
+	clients.client.List(ctx, list, client.InNamespace(instance.Namespace))
 
 	// we assert the correctness of the service in another test
-	assert.Len(t, list.Items, 2)
+	assert.Len(t, list.Items, 3)
 
 	// we assert the correctness of the reference in another test
 	for _, item := range list.Items {
@@ -73,12 +87,14 @@ func TestUpdateService(t *testing.T) {
 	// the cluster has assigned an IP to this service already
 	c.Spec.ClusterIP = "172.172.172.172"
 
-	cl := fake.NewFakeClient(c)
-	reconciler := New(cl, schem)
+	clients := &Clients{
+		client: fake.NewFakeClient(c),
+	}
+	reconciler := New(schem, clients)
 
 	// sanity check
 	persisted := &corev1.Service{}
-	assert.NoError(t, cl.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
+	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
 	assert.Len(t, persisted.Spec.Ports, 1)
 	assert.Equal(t, int32(12345), persisted.Spec.Ports[0].Port)
 
@@ -88,7 +104,7 @@ func TestUpdateService(t *testing.T) {
 
 	// verify
 	persisted = &corev1.Service{}
-	err = cl.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
+	err = clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
 	assert.Equal(t, int32(14250), persisted.Spec.Ports[0].Port)
 	assert.Equal(t, "172.172.172.172", persisted.Spec.ClusterIP) // the assigned IP is kept
 }
@@ -98,12 +114,14 @@ func TestDeleteExtraService(t *testing.T) {
 	c := service(ctx)
 	c.Name = "extra-service"
 
-	cl := fake.NewFakeClient(c)
-	reconciler := New(cl, schem)
+	clients := &Clients{
+		client: fake.NewFakeClient(c),
+	}
+	reconciler := New(schem, clients)
 
 	// sanity check
 	persisted := &corev1.Service{}
-	assert.NoError(t, cl.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
+	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
 
 	// test
 	err := reconciler.reconcileService(ctx)
@@ -111,7 +129,7 @@ func TestDeleteExtraService(t *testing.T) {
 
 	// verify
 	persisted = &corev1.Service{}
-	err = cl.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
+	err = clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
 
 	assert.Empty(t, persisted.Name)
 	assert.Error(t, err) // not found

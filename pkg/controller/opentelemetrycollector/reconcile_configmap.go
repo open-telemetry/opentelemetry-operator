@@ -61,9 +61,9 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedConfigMaps(ctx contex
 		r.setControllerReference(ctx, desired)
 
 		existing := &corev1.ConfigMap{}
-		err := r.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, existing)
+		err := r.clients.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, existing)
 		if err != nil && errors.IsNotFound(err) {
-			if err := r.client.Create(ctx, desired); err != nil {
+			if err := r.clients.client.Create(ctx, desired); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -93,7 +93,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedConfigMaps(ctx contex
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if err := r.client.Update(ctx, updated); err != nil {
+		if err := r.clients.client.Update(ctx, updated); err != nil {
 			return fmt.Errorf("failed to apply changes: %v", err)
 		}
 		logger.V(2).Info("applied", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)
@@ -114,7 +114,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteConfigMaps(ctx context.Context, 
 		}),
 	}
 	list := &corev1.ConfigMapList{}
-	if err := r.client.List(ctx, list, opts...); err != nil {
+	if err := r.clients.client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
 
@@ -127,7 +127,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteConfigMaps(ctx context.Context, 
 		}
 
 		if del {
-			if err := r.client.Delete(ctx, &existing); err != nil {
+			if err := r.clients.client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "configmap.name", existing.Name, "configmap.namespace", existing.Namespace)

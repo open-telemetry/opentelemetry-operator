@@ -69,7 +69,7 @@ clean:
 
 .PHONY: crd
 crd:
-	@kubectl create -f deploy/crds/opentelemetry_v1alpha1_opentelemetrycollector_crd.yaml 2>&1 | grep -v "already exists" || true
+	@kubectl create -f deploy/crds/opentelemetry.io_opentelemetrycollectors_crd.yaml 2>&1 | grep -v "already exists" || true
 
 .PHONY: generate
 generate:
@@ -94,3 +94,8 @@ ci: install-tools ensure-generate-is-noop all
 install-tools:
 	@curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b ${GOPATH}/bin 2.0.0
 	@go install golang.org/x/tools/cmd/goimports
+
+.PHONY: install-prometheus-operator
+install-prometheus-operator:
+	@echo Installing Prometheus Operator bundle
+	@kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	monclientv1 "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
@@ -23,24 +25,46 @@ var _ reconcile.Reconciler = &ReconcileOpenTelemetryCollector{}
 type ReconcileOpenTelemetryCollector struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
 	scheme *runtime.Scheme
+
+	// the clients that compose this reconciler
+	clients *Clients
 
 	// the list of reconciliation functions to execute
 	reconcileFuncs []func(context.Context) error
 }
 
+// Clients holds all the clients that the reconciler might need to hold
+type Clients struct {
+	client client.Client
+
+	// some places are using the rich REST client
+	monclient monclientv1.MonitoringV1Interface
+}
+
+// WithManager creates a new reconciler based on the manager information
+func WithManager(manager manager.Manager) *ReconcileOpenTelemetryCollector {
+	monclient := monclientv1.NewForConfigOrDie(manager.GetConfig())
+	clients := &Clients{
+		client:    manager.GetClient(),
+		monclient: monclient,
+	}
+
+	return New(manager.GetScheme(), clients)
+}
+
 // New constructs a ReconcileOpenTelemetryCollector based on the client and scheme, with the default reconciliation functions
-func New(client client.Client, scheme *runtime.Scheme) *ReconcileOpenTelemetryCollector {
+func New(scheme *runtime.Scheme, clients *Clients) *ReconcileOpenTelemetryCollector {
 	r := &ReconcileOpenTelemetryCollector{
-		client: client,
-		scheme: scheme,
+		scheme:  scheme,
+		clients: clients,
 	}
 	r.reconcileFuncs = []func(context.Context) error{
 		r.reconcileConfigMap,
 		r.reconcileService,
 		r.reconcileDeployment,
 		r.reconcileDaemonSet,
+		r.reconcileServiceMonitor,
 	}
 
 	return r
@@ -58,7 +82,7 @@ func (r *ReconcileOpenTelemetryCollector) Reconcile(request reconcile.Request) (
 
 	// Fetch the OpenTelemetryCollector instance
 	instance := &v1alpha1.OpenTelemetryCollector{}
-	err := r.client.Get(context.Background(), request.NamespacedName, instance)
+	err := r.clients.client.Get(context.Background(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -86,13 +110,13 @@ func (r *ReconcileOpenTelemetryCollector) Reconcile(request reconcile.Request) (
 	}
 
 	// update the status object, which might have also been updated
-	if err := r.client.Status().Update(ctx, instance); err != nil {
+	if err := r.clients.client.Status().Update(ctx, instance); err != nil {
 		reqLogger.Error(err, "failed to store the custom resource's status")
 		return reconcile.Result{}, err
 	}
 
 	// apply it back, as it might have been updated
-	if err := r.client.Update(ctx, instance); err != nil {
+	if err := r.clients.client.Update(ctx, instance); err != nil {
 		reqLogger.Error(err, "failed to store back the custom resource")
 		return reconcile.Result{}, err
 	}

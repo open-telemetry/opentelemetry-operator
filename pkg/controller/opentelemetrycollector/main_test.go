@@ -8,8 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
@@ -17,11 +15,9 @@ import (
 )
 
 var (
-	instance   *v1alpha1.OpenTelemetryCollector
-	ctx        context.Context
-	reconciler *ReconcileOpenTelemetryCollector
-	schem      *runtime.Scheme
-	cl         client.Client
+	instance *v1alpha1.OpenTelemetryCollector
+	ctx      context.Context
+	schem    *runtime.Scheme
 )
 
 // TestMain ensures that all tests in this package have a fresh and sane instance of the common resources
@@ -48,9 +44,6 @@ func TestMain(m *testing.M) {
 	}
 	ctx = context.WithValue(context.Background(), opentelemetry.ContextInstance, instance)
 	ctx = context.WithValue(ctx, opentelemetry.ContextLogger, logf.Log.WithName("unit-tests"))
-
-	cl = fake.NewFakeClient(instance)
-	reconciler = New(cl, schem)
 
 	os.Exit(m.Run())
 }
