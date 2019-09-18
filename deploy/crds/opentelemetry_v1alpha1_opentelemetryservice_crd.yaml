@@ -53,8 +53,11 @@ spec:
             replicas:
               format: int32
               type: integer
+            version:
+              type: string
           required:
           - replicas
+          - version
           type: object
   version: v1alpha1
   versions:

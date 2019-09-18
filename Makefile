@@ -3,17 +3,19 @@ OPERATOR_VERSION ?= "$(shell git describe --tags)"
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 GO_FLAGS ?= GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=on
-KUBERNETES_CONFIG ?= "$(HOME)/.kube/config"
+KUBERNETES_CONFIG ?= "${HOME}/.kube/config"
 WATCH_NAMESPACE ?= ""
 BIN_DIR ?= "build/_output/bin"
 
-NAMESPACE ?= "$(USER)"
-BUILD_IMAGE ?= "$(NAMESPACE)/$(OPERATOR_NAME):latest"
-OUTPUT_BINARY ?= "$(BIN_DIR)/$(OPERATOR_NAME)"
-VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/version"
-LD_FLAGS ?= "-X=$(VERSION_PKG).Version=$(OPERATOR_VERSION)"
+NAMESPACE ?= "${USER}"
+BUILD_IMAGE ?= "${NAMESPACE}/${OPERATOR_NAME}:latest"
+OUTPUT_BINARY ?= "${BIN_DIR}/${OPERATOR_NAME}"
+VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/pkg/version"
+LD_FLAGS ?= "-X ${VERSION_PKG}.version=${OPERATOR_VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelSvc=${OTELSVC_VERSION}"
 
-PACKAGES := $(shell go list ./cmd/... ./pkg/... ./version/...)
+OTELSVC_VERSION ?= "$(shell grep -v '\#' opentelemetry.version | grep opentelemetry-service | awk -F= '{print $$2}')"
+
+PACKAGES := $(shell go list ./cmd/... ./pkg/...)
 
 .DEFAULT_GOAL := build
 
@@ -39,20 +41,26 @@ format:
 .PHONY: security
 security:
 	@echo Security...
-	@gosec -quiet $(PACKAGES) 2>/dev/null
+	@gosec -quiet ${PACKAGES} 2>/dev/null
 
 .PHONY: build
 build: format
-	@echo Building...
-	@operator-sdk build ${BUILD_IMAGE} --go-build-args "-ldflags ${LD_FLAGS}"
+	@echo Building operator binary...
+	@${GO_FLAGS} go build -o ${OUTPUT_BINARY} -ldflags ${LD_FLAGS} ./cmd/manager/main.go
+
+.PHONY: container
+container:
+	@echo Building container...
+	@mkdir -p build/_output
+	@docker build -f build/Dockerfile -t ${BUILD_IMAGE} . > build/_output/build-container.log 2>&1
 
 .PHONY: run
 run: crd
-	@OPERATOR_NAME=$(OPERATOR_NAME) operator-sdk up local --go-ldflags "-X $(VERSION_PKG).Version=$(OPERATOR_VERSION) -X $(VERSION_PKG).BuildDate=$(VERSION_DATE)"
+	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk up local --go-ldflags ${LD_FLAGS}
 
 .PHONY: run-debug
 run-debug: crd
-	@OPERATOR_NAME=$(OPERATOR_NAME) operator-sdk up local --operator-flags "--zap-level=2"
+	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk up local --operator-flags "--zap-level=2" --go-ldflags ${LD_FLAGS}
 
 .PHONY: clean
 clean:
@@ -73,7 +81,7 @@ test: unit-tests
 .PHONY: unit-tests
 unit-tests:
 	@echo Running unit tests...
-	@go test $(PACKAGES) -cover -coverprofile=coverage.txt -covermode=atomic -race
+	@go test ${PACKAGES} -cover -coverprofile=coverage.txt -covermode=atomic -race
 
 .PHONY: all
 all: check format security build test

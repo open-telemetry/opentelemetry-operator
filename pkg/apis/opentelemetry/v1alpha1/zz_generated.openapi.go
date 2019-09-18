@@ -116,8 +116,14 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryServiceStatus(ref commo
 							Format: "int32",
 						},
 					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
-				Required: []string{"replicas"},
+				Required: []string{"replicas", "version"},
 			},
 		},
 		Dependencies: []string{},
