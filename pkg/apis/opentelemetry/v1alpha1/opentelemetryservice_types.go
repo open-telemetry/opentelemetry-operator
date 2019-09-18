@@ -23,7 +23,8 @@ type OpenTelemetryServiceSpec struct {
 // OpenTelemetryServiceStatus defines the observed state of OpenTelemetryService
 // +k8s:openapi-gen=true
 type OpenTelemetryServiceStatus struct {
-	Replicas int32 `json:"replicas"`
+	Replicas int32  `json:"replicas"`
+	Version  string `json:"version"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

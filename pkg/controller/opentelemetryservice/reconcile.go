@@ -74,7 +74,25 @@ func (r *ReconcileOpenTelemetryService) Reconcile(request reconcile.Request) (re
 	ctx := context.WithValue(context.Background(), opentelemetry.ContextInstance, instance)
 	ctx = context.WithValue(ctx, opentelemetry.ContextLogger, reqLogger)
 
+	if err := r.applyUpgrades(ctx); err != nil {
+		reqLogger.Error(err, "failed to upgrade the custom resource and its underlying resources, reconciliation aborted")
+		return reconcile.Result{}, err
+	}
+
 	if err := r.handleReconcile(ctx); err != nil {
+		reqLogger.Error(err, "failed to reconcile custom resource")
+		return reconcile.Result{}, err
+	}
+
+	// update the status object, which might have also been updated
+	if err := r.client.Status().Update(ctx, instance); err != nil {
+		reqLogger.Error(err, "failed to store the custom resource's status")
+		return reconcile.Result{}, err
+	}
+
+	// apply it back, as it might have been updated
+	if err := r.client.Update(ctx, instance); err != nil {
+		reqLogger.Error(err, "failed to store back the custom resource")
 		return reconcile.Result{}, err
 	}
 

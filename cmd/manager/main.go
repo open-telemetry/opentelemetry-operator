@@ -17,7 +17,6 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	"github.com/operator-framework/operator-sdk/pkg/restmapper"
-	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -29,7 +28,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/controller"
-	"github.com/open-telemetry/opentelemetry-operator/version"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/upgrade"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/version"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -41,13 +41,15 @@ var (
 var log = logf.Log.WithName("cmd")
 
 func printVersion() {
+	v := version.Get()
 	log.Info("Starting the OpenTelemetry Operator",
-		"opentelemetry-operator", version.Version,
-		"build-date", version.BuildDate,
-		"go-version", runtime.Version(),
+		"opentelemetry-operator", v.Operator,
+		"opentelemetry-service", v.OpenTelemetryService,
+		"build-date", v.BuildDate,
+		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
 		"go-os", runtime.GOOS,
-		"operator-sdk-version", sdkVersion.Version,
+		"operator-sdk-version", v.OperatorSdk,
 	)
 }
 
@@ -90,7 +92,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	// Become the leader before proceeding
 	err = leader.Become(ctx, "opentelemetry-operator-lock")
 	if err != nil {
@@ -115,6 +117,11 @@ func main() {
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
+	}
+
+	ctxUpgrade := context.WithValue(ctx, opentelemetry.ContextLogger, logf.Log.WithName("upgrade_opentelemetryservice"))
+	if err := upgrade.ManagedInstances(ctxUpgrade, mgr.GetClient()); err != nil {
+		log.Error(err, "failed to upgrade managed instances")
 	}
 
 	// Setup all Controllers
