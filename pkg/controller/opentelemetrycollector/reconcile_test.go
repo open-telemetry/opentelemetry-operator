@@ -1,4 +1,4 @@
-package opentelemetryservice
+package opentelemetrycollector
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 func TestProperReconcile(t *testing.T) {
 	// prepare
 	var (
-		reconciled *v1alpha1.OpenTelemetryService
+		reconciled *v1alpha1.OpenTelemetryCollector
 		logger     logr.Logger
 		req        reconcile.Request
 	)
@@ -27,7 +27,7 @@ func TestProperReconcile(t *testing.T) {
 	reconciler.reconcileFuncs = []func(context.Context) error{
 		func(ctx context.Context) error {
 			called = true
-			reconciled = ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryService)
+			reconciled = ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 			logger = ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 			return nil
 		},

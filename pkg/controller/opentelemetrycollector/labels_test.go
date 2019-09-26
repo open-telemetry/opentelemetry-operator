@@ -1,4 +1,4 @@
-package opentelemetryservice
+package opentelemetrycollector
 
 import (
 	"context"
@@ -13,9 +13,9 @@ import (
 
 func TestNilLabels(t *testing.T) {
 	// prepare
-	instance := &v1alpha1.OpenTelemetryService{
+	instance := &v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-otelsvc",
+			Name:      "my-otelcol",
 			Namespace: "observability",
 			Labels:    nil,
 		},
@@ -35,9 +35,9 @@ func TestNilLabels(t *testing.T) {
 
 func TestInstanceName(t *testing.T) {
 	// prepare
-	instance := &v1alpha1.OpenTelemetryService{
+	instance := &v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-otelsvc",
+			Name:      "my-otelcol",
 			Namespace: "observability",
 			Labels:    nil,
 		},
@@ -48,5 +48,5 @@ func TestInstanceName(t *testing.T) {
 	labels := commonLabels(ctx)
 
 	// verify
-	assert.Equal(t, labels["app.kubernetes.io/instance"], "observability.my-otelsvc")
+	assert.Equal(t, labels["app.kubernetes.io/instance"], "observability.my-otelcol")
 }

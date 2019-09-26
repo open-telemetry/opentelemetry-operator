@@ -1,4 +1,4 @@
-package opentelemetryservice
+package opentelemetrycollector
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func TestProperDeployment(t *testing.T) {
 	d := deployment(ctx)
 
 	// verify
-	assert.Equal(t, d.Name, "my-otelsvc-collector")
+	assert.Equal(t, d.Name, "my-otelcol-collector")
 	assert.Equal(t, d.Annotations["custom-annotation"], "custom-annotation-value")
 	assert.Equal(t, d.Labels["custom-label"], "custom-value")
 	assert.Equal(t, d.Labels["app.kubernetes.io/name"], d.Name)
@@ -31,8 +31,8 @@ func TestProperDeployment(t *testing.T) {
 
 func TestDeploymentOverridesConfig(t *testing.T) {
 	// prepare
-	instance := &v1alpha1.OpenTelemetryService{
-		Spec: v1alpha1.OpenTelemetryServiceSpec{
+	instance := &v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Args: map[string]string{"config": "custom-path"},
 		},
 	}
@@ -68,8 +68,8 @@ func TestProperReconcileDeployment(t *testing.T) {
 
 func TestOverrideImageFromCustomResource(t *testing.T) {
 	// prepare
-	instance := &v1alpha1.OpenTelemetryService{
-		Spec: v1alpha1.OpenTelemetryServiceSpec{
+	instance := &v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Image: "myrepo/custom-image:version",
 		},
 	}
@@ -85,7 +85,7 @@ func TestOverrideImageFromCustomResource(t *testing.T) {
 
 func TestOverrideImageFromCLI(t *testing.T) {
 	// prepare
-	viper.Set(opentelemetry.OtelSvcImageConfigKey, "myrepo/custom-image-cli:version")
+	viper.Set(opentelemetry.OtelColImageConfigKey, "myrepo/custom-image-cli:version")
 	defer viper.Reset()
 
 	// test
@@ -105,7 +105,7 @@ func TestDefaultImage(t *testing.T) {
 
 	// verify
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
-	assert.Contains(t, d.Spec.Template.Spec.Containers[0].Image, "quay.io/opentelemetry/opentelemetry-service")
+	assert.Contains(t, d.Spec.Template.Spec.Containers[0].Image, "quay.io/opentelemetry/opentelemetry-collector")
 }
 
 func TestUpdateDeployment(t *testing.T) {

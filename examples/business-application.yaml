@@ -1,5 +1,5 @@
-# when `simplest.yaml` is deployed, this is how an application containing the Jaeger client can be configured to use otelsvc
-# in this case, we make use of the jaeger-agent as a sidecar, and the jaeger-agent connects to otelsvc via gRPC
+# when `simplest.yaml` is deployed, this is how an application containing the Jaeger client can be configured to use otelcol
+# in this case, we make use of the jaeger-agent as a sidecar, and the jaeger-agent connects to otelcol via gRPC
 # this is suitable when the application is already configured to talk to Jaeger via UDP
 # for greenfield applications, the OpenTelemetry client should be preferred
 apiVersion: apps/v1

@@ -44,7 +44,7 @@ func printVersion() {
 	v := version.Get()
 	log.Info("Starting the OpenTelemetry Operator",
 		"opentelemetry-operator", v.Operator,
-		"opentelemetry-service", v.OpenTelemetryService,
+		"opentelemetry-collector", v.OpenTelemetryCollector,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
@@ -119,7 +119,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctxUpgrade := context.WithValue(ctx, opentelemetry.ContextLogger, logf.Log.WithName("upgrade_opentelemetryservice"))
+	ctxUpgrade := context.WithValue(ctx, opentelemetry.ContextLogger, logf.Log.WithName("upgrade_opentelemetrycollector"))
 	if err := upgrade.ManagedInstances(ctxUpgrade, mgr.GetClient()); err != nil {
 		log.Error(err, "failed to upgrade managed instances")
 	}

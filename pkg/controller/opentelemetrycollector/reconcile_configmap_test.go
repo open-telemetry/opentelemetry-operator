@@ -1,4 +1,4 @@
-package opentelemetryservice
+package opentelemetrycollector
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func TestProperConfigMap(t *testing.T) {
 	c := configMap(ctx)
 
 	// verify
-	assert.Equal(t, c.Name, "my-otelsvc-collector")
+	assert.Equal(t, c.Name, "my-otelcol-collector")
 	assert.Equal(t, c.Annotations["custom-annotation"], "custom-annotation-value")
 	assert.Equal(t, c.Labels["custom-label"], "custom-value")
 	assert.Equal(t, c.Labels["app.kubernetes.io/name"], c.Name)

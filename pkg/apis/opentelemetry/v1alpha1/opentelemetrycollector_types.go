@@ -4,9 +4,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// OpenTelemetryServiceSpec defines the desired state of OpenTelemetryService
+// OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector
 // +k8s:openapi-gen=true
-type OpenTelemetryServiceSpec struct {
+type OpenTelemetryCollectorSpec struct {
 	// +required
 	Config string `json:"config,omitempty"`
 
@@ -20,37 +20,37 @@ type OpenTelemetryServiceSpec struct {
 	Image string `json:"image,omitempty"`
 }
 
-// OpenTelemetryServiceStatus defines the observed state of OpenTelemetryService
+// OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector
 // +k8s:openapi-gen=true
-type OpenTelemetryServiceStatus struct {
+type OpenTelemetryCollectorStatus struct {
 	Replicas int32  `json:"replicas"`
 	Version  string `json:"version"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// OpenTelemetryService is the Schema for the opentelemetryservices API
+// OpenTelemetryCollector is the Schema for the opentelemetrycollectors API
 // +k8s:openapi-gen=true
-// +kubebuilder:resource:shortName=otelsvc;otelsvcs
+// +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas
-type OpenTelemetryService struct {
+type OpenTelemetryCollector struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OpenTelemetryServiceSpec   `json:"spec,omitempty"`
-	Status OpenTelemetryServiceStatus `json:"status,omitempty"`
+	Spec   OpenTelemetryCollectorSpec   `json:"spec,omitempty"`
+	Status OpenTelemetryCollectorStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// OpenTelemetryServiceList contains a list of OpenTelemetryService
-type OpenTelemetryServiceList struct {
+// OpenTelemetryCollectorList contains a list of OpenTelemetryCollector
+type OpenTelemetryCollectorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []OpenTelemetryService `json:"items"`
+	Items           []OpenTelemetryCollector `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&OpenTelemetryService{}, &OpenTelemetryServiceList{})
+	SchemeBuilder.Register(&OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
 }
