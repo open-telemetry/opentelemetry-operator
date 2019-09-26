@@ -22,6 +22,7 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryService(ref common.Refe
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "OpenTelemetryService is the Schema for the opentelemetryservices API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -65,6 +66,7 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryServiceSpec(ref common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "OpenTelemetryServiceSpec defines the desired state of OpenTelemetryService",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"config": {
 						SchemaProps: spec.SchemaProps{
@@ -76,6 +78,7 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryServiceSpec(ref common.
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -100,7 +103,6 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryServiceSpec(ref common.
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -109,6 +111,7 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryServiceStatus(ref commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "OpenTelemetryServiceStatus defines the observed state of OpenTelemetryService",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
@@ -126,6 +129,5 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryServiceStatus(ref commo
 				Required: []string{"replicas", "version"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
