@@ -1,4 +1,4 @@
-package opentelemetryservice
+package opentelemetrycollector
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 )
 
 // reconcileConfigMap reconciles the config map(s) required for the instance in the current context
-func (r *ReconcileOpenTelemetryService) reconcileConfigMap(ctx context.Context) error {
+func (r *ReconcileOpenTelemetryCollector) reconcileConfigMap(ctx context.Context) error {
 	desired := []*corev1.ConfigMap{
 		configMap(ctx),
 	}
@@ -35,7 +35,7 @@ func (r *ReconcileOpenTelemetryService) reconcileConfigMap(ctx context.Context) 
 }
 
 func configMap(ctx context.Context) *corev1.ConfigMap {
-	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryService)
+	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	name := fmt.Sprintf("%s-collector", instance.Name)
 
 	labels := commonLabels(ctx)
@@ -54,7 +54,7 @@ func configMap(ctx context.Context) *corev1.ConfigMap {
 	}
 }
 
-func (r *ReconcileOpenTelemetryService) reconcileExpectedConfigMaps(ctx context.Context, expected []*corev1.ConfigMap) error {
+func (r *ReconcileOpenTelemetryCollector) reconcileExpectedConfigMaps(ctx context.Context, expected []*corev1.ConfigMap) error {
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 	for _, obj := range expected {
 		desired := obj
@@ -102,8 +102,8 @@ func (r *ReconcileOpenTelemetryService) reconcileExpectedConfigMaps(ctx context.
 	return nil
 }
 
-func (r *ReconcileOpenTelemetryService) deleteConfigMaps(ctx context.Context, expected []*corev1.ConfigMap) error {
-	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryService)
+func (r *ReconcileOpenTelemetryCollector) deleteConfigMaps(ctx context.Context, expected []*corev1.ConfigMap) error {
+	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 
 	opts := client.InNamespace(instance.Namespace).MatchingLabels(map[string]string{

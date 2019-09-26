@@ -38,11 +38,11 @@ Once minikube has finished starting, get the Operator running:
 make run
 ```
 
-At this point, an OpenTelemetry Service instance can be installed:
+At this point, an OpenTelemetry Collector instance can be installed:
 
 ```
 kubectl apply -f deploy/examples/simplest.yaml
-kubectl get otelsvcs
+kubectl get otelcols
 kubectl get pods
 ```
 
@@ -54,7 +54,7 @@ kubectl delete -f deploy/examples/simplest.yaml
 
 #### Model changes
 
-The Operator SDK generates the `pkg/apis/opentelemetry/v1alpha1//zz_generated.*.go` files via the command `make generate`. This should be executed whenever there's a model change (`pkg/apis/opentelemetry/v1alpha1//opentelemetryservice_types.go`)
+The Operator SDK generates the `pkg/apis/opentelemetry/v1alpha1//zz_generated.*.go` files via the command `make generate`. This should be executed whenever there's a model change (`pkg/apis/opentelemetry/v1alpha1//opentelemetrycollector_types.go`)
 
 #### Tests
 

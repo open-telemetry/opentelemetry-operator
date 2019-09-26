@@ -1,4 +1,4 @@
-package opentelemetryservice
+package opentelemetrycollector
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 
 func TestApplyUpgrades(t *testing.T) {
 	// prepare
-	instance := &v1alpha1.OpenTelemetryService{
-		Status: v1alpha1.OpenTelemetryServiceStatus{
+	instance := &v1alpha1.OpenTelemetryCollector{
+		Status: v1alpha1.OpenTelemetryCollectorStatus{
 			Version: "0.0.1",
 		},
 	}
@@ -31,5 +31,5 @@ func TestApplyUpgrades(t *testing.T) {
 	// verify
 	assert.NoError(t, err)
 	assert.NotEqual(t, "0.0.1", instance.Status.Version)
-	assert.Equal(t, version.Get().OpenTelemetryService, instance.Status.Version)
+	assert.Equal(t, version.Get().OpenTelemetryCollector, instance.Status.Version)
 }

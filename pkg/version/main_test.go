@@ -6,14 +6,14 @@ import (
 	"gotest.tools/assert"
 )
 
-func TestDefaultOpenTelemetryService(t *testing.T) {
-	assert.Equal(t, "0.0.0", DefaultOpenTelemetryService())
+func TestDefaultOpenTelemetryCollector(t *testing.T) {
+	assert.Equal(t, "0.0.0", DefaultOpenTelemetryCollector())
 }
 
-func TestCurrentOpenTelemetryService(t *testing.T) {
-	otelSvc = "0.0.2" // set during the build
+func TestCurrentOpenTelemetryCollector(t *testing.T) {
+	otelCol = "0.0.2" // set during the build
 	defer func() {
-		otelSvc = ""
+		otelCol = ""
 	}()
-	assert.Equal(t, "0.0.2", Get().OpenTelemetryService)
+	assert.Equal(t, "0.0.2", Get().OpenTelemetryCollector)
 }

@@ -1,5 +1,5 @@
 apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryService
+kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:

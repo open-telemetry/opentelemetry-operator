@@ -8,7 +8,7 @@ import (
 
 type version struct {
 	v       string
-	upgrade func(client client.Client, otelsvc *v1alpha1.OpenTelemetryService) (*v1alpha1.OpenTelemetryService, error)
+	upgrade func(client client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error)
 	next    *version
 }
 
@@ -24,6 +24,6 @@ var (
 	}
 )
 
-func noop(client client.Client, otelsvc *v1alpha1.OpenTelemetryService) (*v1alpha1.OpenTelemetryService, error) {
-	return otelsvc, nil
+func noop(client client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+	return otelcol, nil
 }

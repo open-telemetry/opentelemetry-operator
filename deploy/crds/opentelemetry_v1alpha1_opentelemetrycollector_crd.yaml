@@ -8,9 +8,15 @@ spec:
     kind: OpenTelemetryCollector
     listKind: OpenTelemetryCollectorList
     plural: opentelemetrycollectors
+    shortNames:
+    - otelcol
+    - otelcols
     singular: opentelemetrycollector
   scope: Namespaced
   subresources:
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
     status: {}
   validation:
     openAPIV3Schema:
@@ -28,8 +34,30 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            args:
+              additionalProperties:
+                type: string
+              type: object
+            config:
+              description: +required
+              type: string
+            image:
+              type: string
+            replicas:
+              format: int32
+              type: integer
           type: object
         status:
+          properties:
+            replicas:
+              format: int32
+              type: integer
+            version:
+              type: string
+          required:
+          - replicas
+          - version
           type: object
   version: v1alpha1
   versions:

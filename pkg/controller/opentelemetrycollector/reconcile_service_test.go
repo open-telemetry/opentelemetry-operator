@@ -1,4 +1,4 @@
-package opentelemetryservice
+package opentelemetrycollector
 
 import (
 	"testing"
@@ -17,7 +17,7 @@ func TestProperService(t *testing.T) {
 	s := service(ctx)
 
 	// verify
-	assert.Equal(t, s.Name, "my-otelsvc-collector")
+	assert.Equal(t, s.Name, "my-otelcol-collector")
 	assert.Equal(t, s.Annotations["custom-annotation"], "custom-annotation-value")
 	assert.Equal(t, s.Labels["custom-label"], "custom-value")
 	assert.Equal(t, s.Labels["app.kubernetes.io/name"], s.Name)
@@ -29,7 +29,7 @@ func TestProperHeadlessService(t *testing.T) {
 	s := headless(ctx)
 
 	// verify
-	assert.Equal(t, s.Name, "my-otelsvc-collector-headless")
+	assert.Equal(t, s.Name, "my-otelcol-collector-headless")
 	assert.Equal(t, s.Spec.ClusterIP, "None")
 }
 

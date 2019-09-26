@@ -1,4 +1,4 @@
-package opentelemetryservice
+package opentelemetrycollector
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -11,9 +11,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
 )
 
-var log = logf.Log.WithName("controller_opentelemetryservice")
+var log = logf.Log.WithName("controller_opentelemetrycollector")
 
-// Add creates a new OpenTelemetryService Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new OpenTelemetryCollector Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -27,13 +27,13 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("opentelemetryservice-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("opentelemetrycollector-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to primary resource OpenTelemetryService
-	err = c.Watch(&source.Kind{Type: &v1alpha1.OpenTelemetryService{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource OpenTelemetryCollector
+	err = c.Watch(&source.Kind{Type: &v1alpha1.OpenTelemetryCollector{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
