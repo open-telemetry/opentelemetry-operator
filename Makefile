@@ -3,6 +3,7 @@ OPERATOR_VERSION ?= "$(shell git describe --tags)"
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 GO_FLAGS ?= GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=on
+GOPATH ?= $(shell go env GOPATH)
 KUBERNETES_CONFIG ?= "${HOME}/.kube/config"
 WATCH_NAMESPACE ?= ""
 BIN_DIR ?= "build/_output/bin"
@@ -91,6 +92,5 @@ ci: install-tools ensure-generate-is-noop all
 
 .PHONY: install-tools
 install-tools:
-	@go get -u \
-		github.com/securego/gosec/cmd/gosec \
-		golang.org/x/tools/cmd/goimports
+	@curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b ${GOPATH}/bin 2.0.0
+	@go install golang.org/x/tools/cmd/goimports
