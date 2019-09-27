@@ -97,6 +97,12 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryCollectorSpec(ref commo
 							Format: "",
 						},
 					},
+					"mode": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},

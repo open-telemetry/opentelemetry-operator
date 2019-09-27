@@ -29,3 +29,8 @@ func FlagSet() *pflag.FlagSet {
 
 	return fs
 }
+
+// ResetFlagSet will set the cached flagset to nil
+func ResetFlagSet() {
+	fs = nil
+}

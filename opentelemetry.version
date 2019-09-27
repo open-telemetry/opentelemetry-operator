@@ -2,4 +2,4 @@
 # by default with the OpenTelemetry Operator. This would usually be the latest 
 # stable OpenTelemetry version. When you update this file, make sure to update the
 # the docs as well.
-opentelemetry-service=0.0.2
+opentelemetry-collector=0.0.2

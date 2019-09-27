@@ -44,6 +44,11 @@ spec:
               type: string
             image:
               type: string
+            mode:
+              enum:
+              - daemonset
+              - deployment
+              type: string
             replicas:
               format: int32
               type: integer
