@@ -2,6 +2,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 )
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector
@@ -18,6 +20,10 @@ type OpenTelemetryCollectorSpec struct {
 
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// +optional
+	// +kubebuilder:validation:Enum=daemonset,deployment
+	Mode opentelemetry.Mode `json:"mode,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector

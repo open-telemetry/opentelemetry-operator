@@ -17,35 +17,35 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
 )
 
-// reconcileDeployment reconciles the deployment(s) required for the instance in the current context
-func (r *ReconcileOpenTelemetryCollector) reconcileDeployment(ctx context.Context) error {
-	desired := deployments(ctx)
+// reconcileDaemonSet reconciles the daemonSet(s) required for the instance in the current context
+func (r *ReconcileOpenTelemetryCollector) reconcileDaemonSet(ctx context.Context) error {
+	desired := daemonSets(ctx)
 
 	// first, handle the create/update parts
-	if err := r.reconcileExpectedDeployments(ctx, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected deployments: %v", err)
+	if err := r.reconcileExpectedDaemonSets(ctx, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the expected daemonSets: %v", err)
 	}
 
 	// then, delete the extra objects
-	if err := r.deleteDeployments(ctx, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the deployments to be deleted: %v", err)
+	if err := r.deleteDaemonSets(ctx, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the daemonSets to be deleted: %v", err)
 	}
 
 	return nil
 }
 
-func deployments(ctx context.Context) []*appsv1.Deployment {
+func daemonSets(ctx context.Context) []*appsv1.DaemonSet {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 
-	var desired []*appsv1.Deployment
-	if len(instance.Spec.Mode) == 0 || instance.Spec.Mode == opentelemetry.ModeDeployment {
-		desired = append(desired, deployment(ctx))
+	var desired []*appsv1.DaemonSet
+	if instance.Spec.Mode == opentelemetry.ModeDaemonSet {
+		desired = append(desired, daemonSet(ctx))
 	}
 
 	return desired
 }
 
-func deployment(ctx context.Context) *appsv1.Deployment {
+func daemonSet(ctx context.Context) *appsv1.DaemonSet {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 	name := fmt.Sprintf("%s-collector", instance.Name)
@@ -84,15 +84,14 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
 
-	return &appsv1.Deployment{
+	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   instance.Namespace,
 			Labels:      labels,
 			Annotations: instance.Annotations,
 		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: instance.Spec.Replicas,
+		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -129,20 +128,20 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 	}
 }
 
-func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDeployments(ctx context.Context, expected []*appsv1.Deployment) error {
+func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDaemonSets(ctx context.Context, expected []*appsv1.DaemonSet) error {
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 	for _, obj := range expected {
 		desired := obj
 		r.setControllerReference(ctx, desired)
 
-		existing := &appsv1.Deployment{}
+		existing := &appsv1.DaemonSet{}
 		err := r.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, existing)
 		if err != nil && errors.IsNotFound(err) {
 			if err := r.client.Create(ctx, desired); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
-			logger.WithValues("deployment.name", desired.Name, "deployment.namespace", desired.Namespace).V(2).Info("created")
+			logger.WithValues("daemonSet.name", desired.Name, "daemonSet.namespace", desired.Namespace).V(2).Info("created")
 			continue
 		} else if err != nil {
 			return fmt.Errorf("failed to get: %v", err)
@@ -170,13 +169,13 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDeployments(ctx conte
 		if err := r.client.Update(ctx, updated); err != nil {
 			return fmt.Errorf("failed to apply changes: %v", err)
 		}
-		logger.V(2).Info("applied", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
+		logger.V(2).Info("applied", "daemonSet.name", desired.Name, "daemonSet.namespace", desired.Namespace)
 	}
 
 	return nil
 }
 
-func (r *ReconcileOpenTelemetryCollector) deleteDeployments(ctx context.Context, expected []*appsv1.Deployment) error {
+func (r *ReconcileOpenTelemetryCollector) deleteDaemonSets(ctx context.Context, expected []*appsv1.DaemonSet) error {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 
@@ -184,7 +183,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteDeployments(ctx context.Context,
 		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", instance.Namespace, instance.Name),
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 	})
-	list := &appsv1.DeploymentList{}
+	list := &appsv1.DaemonSetList{}
 	if err := r.client.List(ctx, opts, list); err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
@@ -201,7 +200,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteDeployments(ctx context.Context,
 			if err := r.client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
-			logger.V(2).Info("deleted", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)
+			logger.V(2).Info("deleted", "daemonSet.name", existing.Name, "daemonSet.namespace", existing.Namespace)
 		}
 	}
 
