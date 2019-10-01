@@ -19,8 +19,8 @@ kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-ope
 
 Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry Collector (otelcol) instance, like:
 
-```
-kubectl apply -f - <<EOF
+```console
+$ kubectl apply -f - <<EOF
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
@@ -41,6 +41,7 @@ spec:
         receivers: [jaeger]
         processors: [queued-retry]
         exporters: [logging]
+EOF
 ```
 
 This will create an OpenTelemetry Collector instance named `simplest`, exposing a `jaeger-grpc` port to consume spans from your instrumented applications and exporting those spans via `jaeger-grpc` to a remote Jaeger collector.
@@ -48,6 +49,10 @@ This will create an OpenTelemetry Collector instance named `simplest`, exposing 
 The `config` node holds the `YAML` that should be passed down as-is to the underlying OpenTelemetry Collector instances. Refer to the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-service) documentation for a reference of the possible entries.
 
 At this point, the Operator does *not* validate the contents of the configuration file: if the configuration is invalid, the instance will still be created but the underlying OpenTelemetry Collector might crash.
+
+### Deployment modes
+
+The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet` or as a `Deployment` (default). Look at the `examples/daemonset.yaml` for reference.
 
 ## Contributing and Developing
 
