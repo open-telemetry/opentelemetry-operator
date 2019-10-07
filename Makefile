@@ -51,7 +51,7 @@ build: format
 
 .PHONY: container
 container:
-	@echo Building container...
+	@echo Building container ${BUILD_IMAGE}...
 	@mkdir -p build/_output
 	@docker build -f build/Dockerfile -t ${BUILD_IMAGE} . > build/_output/build-container.log 2>&1
 
