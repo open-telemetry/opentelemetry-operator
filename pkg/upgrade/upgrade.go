@@ -18,7 +18,7 @@ func ManagedInstances(ctx context.Context, c client.Client) error {
 	logger.Info("looking for managed instances to upgrade")
 
 	list := &v1alpha1.OpenTelemetryCollectorList{}
-	if err := c.List(ctx, &client.ListOptions{}, list); err != nil {
+	if err := c.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to get list of otelcol instances: %v", err)
 	}
 

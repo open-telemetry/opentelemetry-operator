@@ -83,7 +83,7 @@ func TestProperReconcileDaemonSet(t *testing.T) {
 
 	// verify
 	list := &appsv1.DaemonSetList{}
-	cl.List(ctx, client.InNamespace(instance.Namespace), list)
+	cl.List(ctx, list, client.InNamespace(instance.Namespace))
 
 	// we assert the correctness of the service in another test
 	assert.Len(t, list.Items, 1)

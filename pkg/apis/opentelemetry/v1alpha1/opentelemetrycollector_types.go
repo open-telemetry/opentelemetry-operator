@@ -22,7 +22,7 @@ type OpenTelemetryCollectorSpec struct {
 	Image string `json:"image,omitempty"`
 
 	// +optional
-	// +kubebuilder:validation:Enum=daemonset,deployment
+	// +kubebuilder:validation:Enum=daemonset;deployment
 	Mode opentelemetry.Mode `json:"mode,omitempty"`
 }
 

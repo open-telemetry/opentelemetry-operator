@@ -20,6 +20,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
+      description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
+        API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -34,17 +36,19 @@ spec:
         metadata:
           type: object
         spec:
+          description: OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector
           properties:
             args:
               additionalProperties:
                 type: string
               type: object
             config:
-              description: +required
               type: string
             image:
               type: string
             mode:
+              description: Mode represents how the collector should be deployed (deployment
+                vs. daemonset)
               enum:
               - daemonset
               - deployment
@@ -54,6 +58,8 @@ spec:
               type: integer
           type: object
         status:
+          description: OpenTelemetryCollectorStatus defines the observed state of
+            OpenTelemetryCollector
           properties:
             replicas:
               format: int32
@@ -64,6 +70,7 @@ spec:
           - replicas
           - version
           type: object
+      type: object
   version: v1alpha1
   versions:
   - name: v1alpha1
