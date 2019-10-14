@@ -38,7 +38,7 @@ func TestProperReconcileConfigMap(t *testing.T) {
 
 	// verify
 	list := &corev1.ConfigMapList{}
-	cl.List(ctx, client.InNamespace(instance.Namespace), list)
+	cl.List(ctx, list, client.InNamespace(instance.Namespace))
 
 	// we assert the correctness of the service in another test
 	assert.Len(t, list.Items, 1)

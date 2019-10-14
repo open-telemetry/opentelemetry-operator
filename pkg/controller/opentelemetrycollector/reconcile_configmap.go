@@ -106,12 +106,15 @@ func (r *ReconcileOpenTelemetryCollector) deleteConfigMaps(ctx context.Context, 
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 
-	opts := client.InNamespace(instance.Namespace).MatchingLabels(map[string]string{
-		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", instance.Namespace, instance.Name),
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-	})
+	opts := []client.ListOption{
+		client.InNamespace(instance.Namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", instance.Namespace, instance.Name),
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		}),
+	}
 	list := &corev1.ConfigMapList{}
-	if err := r.client.List(ctx, opts, list); err != nil {
+	if err := r.client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
 
