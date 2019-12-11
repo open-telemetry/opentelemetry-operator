@@ -48,7 +48,7 @@ func daemonSets(ctx context.Context) []*appsv1.DaemonSet {
 func daemonSet(ctx context.Context) *appsv1.DaemonSet {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
-	name := fmt.Sprintf("%s-collector", instance.Name)
+	name := resourceName(instance.Name)
 
 	image := instance.Spec.Image
 	if len(image) == 0 {

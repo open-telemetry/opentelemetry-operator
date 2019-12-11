@@ -155,3 +155,10 @@ func TestSetControllerReference(t *testing.T) {
 	assert.Equal(t, instance.TypeMeta.Kind, d.OwnerReferences[0].Kind)
 
 }
+
+func TestNameGeneration(t *testing.T) {
+	instanceName := "test"
+	expectedResourceName := "test-collector"
+
+	assert.Equal(t, expectedResourceName, resourceName(instanceName))
+}

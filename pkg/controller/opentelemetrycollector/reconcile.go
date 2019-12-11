@@ -146,3 +146,7 @@ func (r *ReconcileOpenTelemetryCollector) setControllerReference(ctx context.Con
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	return controllerutil.SetControllerReference(instance, object, r.scheme)
 }
+
+func resourceName(instanceName string) string {
+	return fmt.Sprintf("%s-collector", instanceName)
+}
