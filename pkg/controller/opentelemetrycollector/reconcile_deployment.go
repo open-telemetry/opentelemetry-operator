@@ -48,7 +48,7 @@ func deployments(ctx context.Context) []*appsv1.Deployment {
 func deployment(ctx context.Context) *appsv1.Deployment {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
-	name := fmt.Sprintf("%s-collector", instance.Name)
+	name := resourceName(instance.Name)
 
 	image := instance.Spec.Image
 	if len(image) == 0 {

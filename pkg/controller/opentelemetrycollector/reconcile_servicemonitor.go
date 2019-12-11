@@ -42,7 +42,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileServiceMonitor(ctx context.Co
 
 func serviceMonitor(ctx context.Context) *monitoringv1.ServiceMonitor {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
-	name := fmt.Sprintf("%s-collector", instance.Name)
+	name := resourceName(instance.Name)
 
 	labels := commonLabels(ctx)
 	labels["app.kubernetes.io/name"] = name

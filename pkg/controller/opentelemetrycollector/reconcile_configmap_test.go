@@ -2,7 +2,6 @@ package opentelemetrycollector
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -61,7 +60,7 @@ func TestUpdateConfigMap(t *testing.T) {
 	reconciler.Reconcile(req)
 
 	// sanity check
-	name := fmt.Sprintf("%s-collector", instance.Name)
+	name := resourceName(instance.Name)
 	persisted := &corev1.ConfigMap{}
 	err := clients.client.Get(ctx, types.NamespacedName{Name: name, Namespace: instance.Namespace}, persisted)
 	assert.NoError(t, err)

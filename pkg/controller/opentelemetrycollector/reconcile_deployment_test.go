@@ -2,7 +2,6 @@ package opentelemetrycollector
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -145,7 +144,7 @@ func TestUpdateDeployment(t *testing.T) {
 	reconciler.Reconcile(req)
 
 	// sanity check
-	name := fmt.Sprintf("%s-collector", instance.Name)
+	name := resourceName(instance.Name)
 	persisted := &appsv1.Deployment{}
 	err := clients.client.Get(ctx, types.NamespacedName{Name: name, Namespace: instance.Namespace}, persisted)
 	assert.NoError(t, err)
