@@ -28,6 +28,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/controller"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/version"
@@ -121,9 +122,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctxUpgrade := context.WithValue(ctx, opentelemetry.ContextLogger, logf.Log.WithName("upgrade_opentelemetrycollector"))
-	if err := upgrade.ManagedInstances(ctxUpgrade, mgr.GetClient()); err != nil {
-		log.Error(err, "failed to upgrade managed instances")
+	// Setup client set
+	if cl, err := client.ForManager(mgr); err == nil {
+		ctxUpgrade := context.WithValue(ctx, opentelemetry.ContextLogger, logf.Log.WithName("upgrade_opentelemetrycollector"))
+		if err := upgrade.ManagedInstances(ctxUpgrade, cl); err != nil {
+			log.Error(err, "failed to upgrade managed instances")
+		}
+	} else {
+		log.Error(err, "failed to obtain a set of clients to perform the upgrade")
 	}
 
 	// Setup all Controllers
@@ -162,8 +168,6 @@ func main() {
 		}
 	}
 	viper.Set(opentelemetry.SvcMonitorAvailable, svcMonitorAvail)
-
-	log.Info("Starting the Cmd.")
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {

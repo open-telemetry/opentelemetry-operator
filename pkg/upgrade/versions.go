@@ -1,14 +1,13 @@
 package upgrade
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
 )
 
 type version struct {
 	v       string
-	upgrade func(client client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error)
+	upgrade func(cl *client.Clientset, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error)
 	next    *version
 }
 
@@ -24,6 +23,6 @@ var (
 	}
 )
 
-func noop(client client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func noop(cl *client.Clientset, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	return otelcol, nil
 }

@@ -4,17 +4,19 @@ import (
 	"context"
 	"testing"
 
+	fakemon "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
-	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
+	fakeotclient "github.com/open-telemetry/opentelemetry-operator/pkg/client/versioned/fake"
 )
 
 func TestProperDaemonSet(t *testing.T) {
@@ -74,18 +76,20 @@ func TestProperReconcileDaemonSet(t *testing.T) {
 	instance := *instance
 	instance.Spec.Mode = opentelemetry.ModeDaemonSet
 
-	clients := &Clients{
-		client: fake.NewFakeClient(&instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(&instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
 
 	// test
 	reconciler.Reconcile(req)
 
 	// verify
-	list := &appsv1.DaemonSetList{}
-	clients.client.List(ctx, list, client.InNamespace(instance.Namespace))
+	list, err := clients.Kubernetes.AppsV1().DaemonSets(instance.Namespace).List(metav1.ListOptions{})
+	assert.NoError(t, err)
 
 	// we assert the correctness of the service in another test
 	assert.Len(t, list.Items, 1)
@@ -143,17 +147,18 @@ func TestUpdateDaemonSet(t *testing.T) {
 	// prepare
 	instance := *instance
 	instance.Spec.Mode = opentelemetry.ModeDaemonSet
-	clients := &Clients{
-		client: fake.NewFakeClient(&instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(&instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
 	reconciler.Reconcile(req)
 
 	// sanity check
 	name := resourceName(instance.Name)
-	persisted := &appsv1.DaemonSet{}
-	err := clients.client.Get(ctx, types.NamespacedName{Name: name, Namespace: instance.Namespace}, persisted)
+	persisted, err := clients.Kubernetes.AppsV1().DaemonSets(instance.Namespace).Get(name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	// prepare the test object
@@ -167,8 +172,8 @@ func TestUpdateDaemonSet(t *testing.T) {
 	reconciler.reconcileDaemonSet(ctx)
 
 	// verify
-	persisted = &appsv1.DaemonSet{}
-	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: name, Namespace: updated.Namespace}, persisted))
+	persisted, err = clients.Kubernetes.AppsV1().DaemonSets(instance.Namespace).Get(name, metav1.GetOptions{})
+	assert.NoError(t, err)
 	assert.Len(t, persisted.Spec.Template.Spec.Containers, 1)
 	assert.Equal(t, "custom-image", persisted.Spec.Template.Spec.Containers[0].Image)
 }
@@ -177,24 +182,25 @@ func TestDeleteExtraDaemonSet(t *testing.T) {
 	// prepare
 	c := daemonSet(ctx)
 	c.Name = "extra-daemonSet"
+	c.Namespace = instance.Namespace
 
-	clients := &Clients{
-		client: fake.NewFakeClient(c),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(c),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(),
 	}
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted := &appsv1.DaemonSet{}
-	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
+	persisted, err := clients.Kubernetes.AppsV1().DaemonSets(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
 
 	// test
-	err := reconciler.reconcileDaemonSet(ctx)
+	err = reconciler.reconcileDaemonSet(ctx)
 	assert.NoError(t, err)
 
 	// verify
-	persisted = &appsv1.DaemonSet{}
-	err = clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
-
-	assert.Empty(t, persisted.Name)
+	persisted, err = clients.Kubernetes.AppsV1().DaemonSets(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	assert.Nil(t, persisted)
 	assert.Error(t, err) // not found
 }

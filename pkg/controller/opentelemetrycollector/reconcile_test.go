@@ -5,14 +5,18 @@ import (
 	"errors"
 	"testing"
 
+	fakemon "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
+	fakeotclient "github.com/open-telemetry/opentelemetry-operator/pkg/client/versioned/fake"
 )
 
 func TestProperReconcile(t *testing.T) {
@@ -23,10 +27,13 @@ func TestProperReconcile(t *testing.T) {
 		req        reconcile.Request
 	)
 
-	clients := &Clients{
-		client: fake.NewFakeClient(instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
+	req.Namespace = instance.Namespace
 
 	called := false
 	reconciler.reconcileFuncs = []func(context.Context) error{
@@ -51,12 +58,14 @@ func TestProperReconcile(t *testing.T) {
 
 func TestReconcileDeletedObject(t *testing.T) {
 	// prepare
-	clients := &Clients{
-		client: fake.NewFakeClient(),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(),
 	}
 	reconciler := New(schem, clients)
 
-	req := reconcile.Request{}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
 	reconciler.reconcileFuncs = []func(context.Context) error{
 		func(context.Context) error {
 			assert.Fail(t, "shouldn't have been called")
@@ -75,11 +84,13 @@ func TestReconcileDeletedObject(t *testing.T) {
 
 func TestReconcileFailsFast(t *testing.T) {
 	// prepare
-	clients := &Clients{
-		client: fake.NewFakeClient(instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
 	reconciler.reconcileFuncs = []func(context.Context) error{
 		func(context.Context) error {
 			return errors.New("the server made a boo boo")
@@ -99,8 +110,10 @@ func TestReconcileFailsFast(t *testing.T) {
 
 func TestReconcileFuncsAreCalled(t *testing.T) {
 	// prepare
-	clients := &Clients{
-		client: fake.NewFakeClient(instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(),
 	}
 	reconciler := New(schem, clients)
 	called := false
@@ -121,8 +134,10 @@ func TestReconcileFuncsAreCalled(t *testing.T) {
 
 func TestNilReconcileFuncs(t *testing.T) {
 	// prepare
-	clients := &Clients{
-		client: fake.NewFakeClient(instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(),
 	}
 	reconciler := New(schem, clients)
 	reconciler.reconcileFuncs = nil
@@ -136,8 +151,10 @@ func TestNilReconcileFuncs(t *testing.T) {
 
 func TestSetControllerReference(t *testing.T) {
 	// prepare
-	clients := &Clients{
-		client: fake.NewFakeClient(instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(),
 	}
 	reconciler := New(schem, clients)
 	d := &appsv1.Deployment{}

@@ -8,9 +8,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
@@ -104,10 +103,11 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServices(ctx context.
 		// #nosec G104 (CWE-703): Errors unhandled.
 		r.setControllerReference(ctx, desired)
 
-		existing := &corev1.Service{}
-		err := r.clients.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, existing)
+		svcs := r.clientset.Kubernetes.CoreV1().Services(desired.Namespace)
+
+		existing, err := svcs.Get(desired.Name, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			if err := r.clients.client.Create(ctx, desired); err != nil {
+			if desired, err = svcs.Create(desired); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -140,7 +140,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServices(ctx context.
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if err := r.clients.client.Update(ctx, updated); err != nil {
+		if updated, err = svcs.Update(updated); err != nil {
 			return fmt.Errorf("failed to apply changes to service: %v", err)
 		}
 		logger.V(2).Info("applied", "service.name", desired.Name, "service.namespace", desired.Namespace)
@@ -152,16 +152,16 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServices(ctx context.
 func (r *ReconcileOpenTelemetryCollector) deleteServices(ctx context.Context, expected []*corev1.Service) error {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
+	svcs := r.clientset.Kubernetes.CoreV1().Services(instance.Namespace)
 
-	opts := []client.ListOption{
-		client.InNamespace(instance.Namespace),
-		client.MatchingLabels(map[string]string{
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{
 			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", instance.Namespace, instance.Name),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		}),
+		}).String(),
 	}
-	list := &corev1.ServiceList{}
-	if err := r.clients.client.List(ctx, list, opts...); err != nil {
+	list, err := svcs.List(opts)
+	if err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
 
@@ -174,7 +174,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteServices(ctx context.Context, ex
 		}
 
 		if del {
-			if err := r.clients.client.Delete(ctx, &existing); err != nil {
+			if err := svcs.Delete(existing.Name, &metav1.DeleteOptions{}); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "service.name", existing.Name, "service.namespace", existing.Namespace)

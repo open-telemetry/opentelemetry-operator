@@ -40,6 +40,7 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas
+// +genclient
 type OpenTelemetryCollector struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -60,3 +61,6 @@ type OpenTelemetryCollectorList struct {
 func init() {
 	SchemeBuilder.Register(&OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
 }
+
+// AddToScheme is an alias to SchemeBuilder.AddToScheme, to please client-gen
+var AddToScheme = SchemeBuilder.AddToScheme

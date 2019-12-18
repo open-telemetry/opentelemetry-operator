@@ -10,8 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
@@ -136,10 +135,11 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDaemonSets(ctx contex
 		// #nosec G104 (CWE-703): Errors unhandled.
 		r.setControllerReference(ctx, desired)
 
-		existing := &appsv1.DaemonSet{}
-		err := r.clients.client.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, existing)
+		dsets := r.clientset.Kubernetes.AppsV1().DaemonSets(desired.Namespace)
+
+		existing, err := dsets.Get(desired.Name, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			if err := r.clients.client.Create(ctx, desired); err != nil {
+			if existing, err = dsets.Create(desired); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -168,7 +168,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDaemonSets(ctx contex
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if err := r.clients.client.Update(ctx, updated); err != nil {
+		if updated, err = dsets.Update(updated); err != nil {
 			return fmt.Errorf("failed to apply changes: %v", err)
 		}
 		logger.V(2).Info("applied", "daemonSet.name", desired.Name, "daemonSet.namespace", desired.Namespace)
@@ -180,16 +180,16 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDaemonSets(ctx contex
 func (r *ReconcileOpenTelemetryCollector) deleteDaemonSets(ctx context.Context, expected []*appsv1.DaemonSet) error {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
+	dsets := r.clientset.Kubernetes.AppsV1().DaemonSets(instance.Namespace)
 
-	opts := []client.ListOption{
-		client.InNamespace(instance.Namespace),
-		client.MatchingLabels(map[string]string{
+	opts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{
 			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", instance.Namespace, instance.Name),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		}),
+		}).String(),
 	}
-	list := &appsv1.DaemonSetList{}
-	if err := r.clients.client.List(ctx, list, opts...); err != nil {
+	list, err := dsets.List(opts)
+	if err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
 
@@ -202,7 +202,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteDaemonSets(ctx context.Context, 
 		}
 
 		if del {
-			if err := r.clients.client.Delete(ctx, &existing); err != nil {
+			if err := dsets.Delete(existing.Name, &metav1.DeleteOptions{}); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "daemonSet.name", existing.Name, "daemonSet.namespace", existing.Namespace)

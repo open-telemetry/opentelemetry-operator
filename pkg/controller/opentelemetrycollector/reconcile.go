@@ -5,17 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	monclientv1 "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
 )
 
 // blank assignment to verify that ReconcileOpenTelemetryCollector implements reconcile.Reconciler
@@ -28,36 +27,27 @@ type ReconcileOpenTelemetryCollector struct {
 	scheme *runtime.Scheme
 
 	// the clients that compose this reconciler
-	clients *Clients
+	clientset *client.Clientset
 
 	// the list of reconciliation functions to execute
 	reconcileFuncs []func(context.Context) error
 }
 
-// Clients holds all the clients that the reconciler might need to hold
-type Clients struct {
-	client client.Client
-
-	// some places are using the rich REST client
-	monclient monclientv1.MonitoringV1Interface
-}
-
 // WithManager creates a new reconciler based on the manager information
-func WithManager(manager manager.Manager) *ReconcileOpenTelemetryCollector {
-	monclient := monclientv1.NewForConfigOrDie(manager.GetConfig())
-	clients := &Clients{
-		client:    manager.GetClient(),
-		monclient: monclient,
+func WithManager(manager manager.Manager) (*ReconcileOpenTelemetryCollector, error) {
+	cl, err := client.ForManager(manager)
+	if err != nil {
+		return nil, err
 	}
 
-	return New(manager.GetScheme(), clients)
+	return New(manager.GetScheme(), cl), nil
 }
 
 // New constructs a ReconcileOpenTelemetryCollector based on the client and scheme, with the default reconciliation functions
-func New(scheme *runtime.Scheme, clients *Clients) *ReconcileOpenTelemetryCollector {
+func New(scheme *runtime.Scheme, clientset *client.Clientset) *ReconcileOpenTelemetryCollector {
 	r := &ReconcileOpenTelemetryCollector{
-		scheme:  scheme,
-		clients: clients,
+		scheme:    scheme,
+		clientset: clientset,
 	}
 	r.reconcileFuncs = []func(context.Context) error{
 		r.reconcileConfigMap,
@@ -80,9 +70,10 @@ func (r *ReconcileOpenTelemetryCollector) Reconcile(request reconcile.Request) (
 	)
 	reqLogger.Info("Reconciling OpenTelemetryCollector")
 
+	otelCols := r.clientset.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors(request.Namespace)
+
 	// Fetch the OpenTelemetryCollector instance
-	instance := &v1alpha1.OpenTelemetryCollector{}
-	err := r.clients.client.Get(context.Background(), request.NamespacedName, instance)
+	instance, err := otelCols.Get(request.Name, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -110,13 +101,13 @@ func (r *ReconcileOpenTelemetryCollector) Reconcile(request reconcile.Request) (
 	}
 
 	// update the status object, which might have also been updated
-	if err := r.clients.client.Status().Update(ctx, instance); err != nil {
+	if instance, err = otelCols.UpdateStatus(instance); err != nil {
 		reqLogger.Error(err, "failed to store the custom resource's status")
 		return reconcile.Result{}, err
 	}
 
 	// apply it back, as it might have been updated
-	if err := r.clients.client.Update(ctx, instance); err != nil {
+	if _, err := otelCols.Update(instance); err != nil {
 		reqLogger.Error(err, "failed to store back the custom resource")
 		return reconcile.Result{}, err
 	}
