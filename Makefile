@@ -8,7 +8,7 @@ KUBERNETES_CONFIG ?= "${HOME}/.kube/config"
 WATCH_NAMESPACE ?= ""
 BIN_DIR ?= "build/_output/bin"
 
-NAMESPACE ?= "${USER}"
+NAMESPACE ?= "quay.io/${USER}"
 BUILD_IMAGE ?= "${NAMESPACE}/${OPERATOR_NAME}:latest"
 OUTPUT_BINARY ?= "${BIN_DIR}/${OPERATOR_NAME}"
 VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/pkg/version"
