@@ -74,6 +74,8 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServiceMonitors(ctx c
 
 	for _, obj := range expected {
 		desired := obj
+
+		// #nosec G104 (CWE-703): Errors unhandled.
 		r.setControllerReference(ctx, desired)
 
 		existing, err := r.clients.monclient.ServiceMonitors(desired.Namespace).Get(desired.Name, metav1.GetOptions{})

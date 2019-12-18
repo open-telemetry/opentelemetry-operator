@@ -24,6 +24,7 @@ func FlagSet() *pflag.FlagSet {
 			"quay.io/opentelemetry/opentelemetry-collector:v0.0.2",
 			"The default image to use for OpenTelemetry Collector when not specified in the individual custom resource (CR)",
 		)
+		// #nosec G104 (CWE-703): Errors unhandled.
 		viper.BindPFlag(OtelColImageConfigKey, fs.Lookup(OtelColImageConfigKey))
 	}
 

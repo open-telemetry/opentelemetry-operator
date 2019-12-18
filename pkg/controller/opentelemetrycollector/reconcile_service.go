@@ -100,6 +100,8 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServices(ctx context.
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 	for _, obj := range expected {
 		desired := obj
+
+		// #nosec G104 (CWE-703): Errors unhandled.
 		r.setControllerReference(ctx, desired)
 
 		existing := &corev1.Service{}
