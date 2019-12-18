@@ -16,8 +16,6 @@ LD_FLAGS ?= "-X ${VERSION_PKG}.version=${OPERATOR_VERSION} -X ${VERSION_PKG}.bui
 
 OTELSVC_VERSION ?= "$(shell grep -v '\#' opentelemetry.version | grep opentelemetry-collector | awk -F= '{print $$2}')"
 
-PACKAGES := $(shell go list ./cmd/... ./pkg/...)
-
 .DEFAULT_GOAL := build
 
 .PHONY: discard-go-mod-changes
@@ -42,7 +40,7 @@ format:
 .PHONY: security
 security:
 	@echo Security...
-	@gosec -quiet ${PACKAGES} 2>/dev/null
+	@gosec -quiet ./... 2>/dev/null
 
 .PHONY: build
 build: format
@@ -82,7 +80,7 @@ test: unit-tests
 .PHONY: unit-tests
 unit-tests:
 	@echo Running unit tests...
-	@go test ${PACKAGES} -cover -coverprofile=coverage.txt -covermode=atomic -race
+	@go test ./... -cover -coverprofile=coverage.txt -covermode=atomic -race
 
 .PHONY: all
 all: check format security build test
