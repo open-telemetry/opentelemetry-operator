@@ -1,4 +1,5 @@
 [![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc] [![Maintainability][code-climate-img]][code-climate] [![codecov][codecov-img]][codecov]
+[![Repository on Quay](https://quay.io/repository/opentelemetry/opentelemetry-operator/status "Repository on Quay")](https://quay.io/repository/opentelemetry/opentelemetry-operator)
 
 # OpenTelemetry Operator for Kubernetes
 
