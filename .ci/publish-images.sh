@@ -16,8 +16,14 @@ BUILD_IMAGE=${BUILD_IMAGE:-"${BASE_BUILD_IMAGE}:${OPERATOR_VERSION}"}
 echo "Building image ${BUILD_IMAGE}"
 make install-tools build container BUILD_IMAGE="${BUILD_IMAGE}"
 
+if [ -n "${MAJOR_MINOR}" ]; then
+    MAJOR_MINOR_IMAGE="${BASE_BUILD_IMAGE}:${MAJOR_MINOR}"
+    docker tag "${BUILD_IMAGE}" "${MAJOR_MINOR_IMAGE}"
+    docker push "${MAJOR_MINOR_IMAGE}"
+fi
+
 ## now, push to quay.io
-if [ -n ${QUAY_USERNAME} -a -n ${QUAY_PASSWORD} ]; then
+if [ -n "${QUAY_USERNAME}" -a -n "${QUAY_PASSWORD}" ]; then
     echo "Performing a 'docker login' for Quay"
     echo "${QUAY_PASSWORD}" | docker login -u "${QUAY_USERNAME}" quay.io --password-stdin
 
@@ -27,7 +33,7 @@ if [ -n ${QUAY_USERNAME} -a -n ${QUAY_PASSWORD} ]; then
     echo "Pushing 'quay.io/${BUILD_IMAGE}'"
     docker push "quay.io/${BUILD_IMAGE}"
 
-    if [ -n ${MAJOR_MINOR_IMAGE} ]; then
+    if [ -n "${MAJOR_MINOR_IMAGE}" ]; then
         echo "Pushing 'quay.io/${MAJOR_MINOR_IMAGE}' to quay.io"
         docker tag "${MAJOR_MINOR_IMAGE}" "quay.io/${MAJOR_MINOR_IMAGE}"
         docker push "quay.io/${MAJOR_MINOR_IMAGE}"

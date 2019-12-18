@@ -4,7 +4,7 @@ GOFMT=goimports
 
 command -v ${GOFMT} > /dev/null
 if [ $? != 0 ]; then
-    if [ -z ${GOPATH} ]; then
+    if [ -n "${GOPATH}" ]; then
         GOFMT="${GOPATH}/bin/goimports"
     fi
 fi
