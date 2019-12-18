@@ -3,13 +3,17 @@ package opentelemetrycollector
 import (
 	"testing"
 
+	fakemon "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
+	fakeotclient "github.com/open-telemetry/opentelemetry-operator/pkg/client/versioned/fake"
 )
 
 func TestProperService(t *testing.T) {
@@ -45,18 +49,20 @@ func TestProperMonitoringService(t *testing.T) {
 
 func TestProperReconcileService(t *testing.T) {
 	// prepare
-	clients := &Clients{
-		client: fake.NewFakeClient(instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
 
 	// test
 	reconciler.Reconcile(req)
 
 	// verify
-	list := &corev1.ServiceList{}
-	clients.client.List(ctx, list, client.InNamespace(instance.Namespace))
+	list, err := clients.Kubernetes.CoreV1().Services(instance.Namespace).List(metav1.ListOptions{})
+	assert.NoError(t, err)
 
 	// we assert the correctness of the service in another test
 	assert.Len(t, list.Items, 3)
@@ -70,6 +76,7 @@ func TestProperReconcileService(t *testing.T) {
 func TestUpdateService(t *testing.T) {
 	// prepare
 	c := service(ctx)
+	c.Namespace = instance.Namespace
 
 	// right now, there's nothing we can do at the CR level that influences the underlying
 	// service object, so, we simulate a change made manually by some admin, changing the port
@@ -87,24 +94,26 @@ func TestUpdateService(t *testing.T) {
 	// the cluster has assigned an IP to this service already
 	c.Spec.ClusterIP = "172.172.172.172"
 
-	clients := &Clients{
-		client: fake.NewFakeClient(c),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(c),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted := &corev1.Service{}
-	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
+	persisted, err := clients.Kubernetes.CoreV1().Services(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
 	assert.Len(t, persisted.Spec.Ports, 1)
 	assert.Equal(t, int32(12345), persisted.Spec.Ports[0].Port)
 
 	// test
-	err := reconciler.reconcileService(ctx)
+	err = reconciler.reconcileService(ctx)
 	assert.NoError(t, err)
 
 	// verify
-	persisted = &corev1.Service{}
-	err = clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
+	persisted, err = clients.Kubernetes.CoreV1().Services(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
 	assert.Equal(t, int32(14250), persisted.Spec.Ports[0].Port)
 	assert.Equal(t, "172.172.172.172", persisted.Spec.ClusterIP) // the assigned IP is kept
 }
@@ -113,24 +122,25 @@ func TestDeleteExtraService(t *testing.T) {
 	// prepare
 	c := service(ctx)
 	c.Name = "extra-service"
+	c.Namespace = instance.Namespace
 
-	clients := &Clients{
-		client: fake.NewFakeClient(c),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(c),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted := &corev1.Service{}
-	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
+	persisted, err := clients.Kubernetes.CoreV1().Services(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
 
 	// test
-	err := reconciler.reconcileService(ctx)
+	err = reconciler.reconcileService(ctx)
 	assert.NoError(t, err)
 
 	// verify
-	persisted = &corev1.Service{}
-	err = clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
-
-	assert.Empty(t, persisted.Name)
+	persisted, err = clients.Kubernetes.CoreV1().Services(c.Namespace).Get(c.Name, metav1.GetOptions{})
 	assert.Error(t, err) // not found
+	assert.Nil(t, persisted)
 }

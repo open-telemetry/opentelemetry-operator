@@ -4,15 +4,17 @@ import (
 	"context"
 	"testing"
 
+	fakemon "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
+	fakeotclient "github.com/open-telemetry/opentelemetry-operator/pkg/client/versioned/fake"
 )
 
 func TestProperConfigMap(t *testing.T) {
@@ -29,19 +31,21 @@ func TestProperConfigMap(t *testing.T) {
 
 func TestProperReconcileConfigMap(t *testing.T) {
 	// prepare
-	clients := &Clients{
-		client: fake.NewFakeClient(instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
 
 	// test
 	_, err := reconciler.Reconcile(req)
 	assert.NoError(t, err)
 
 	// verify
-	list := &corev1.ConfigMapList{}
-	clients.client.List(ctx, list, client.InNamespace(instance.Namespace))
+	list, err := clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).List(metav1.ListOptions{})
+	assert.NoError(t, err)
 
 	// we assert the correctness of the service in another test
 	assert.Len(t, list.Items, 1)
@@ -52,17 +56,18 @@ func TestProperReconcileConfigMap(t *testing.T) {
 
 func TestUpdateConfigMap(t *testing.T) {
 	// prepare
-	clients := &Clients{
-		client: fake.NewFakeClient(instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
 	reconciler.Reconcile(req)
 
 	// sanity check
 	name := resourceName(instance.Name)
-	persisted := &corev1.ConfigMap{}
-	err := clients.client.Get(ctx, types.NamespacedName{Name: name, Namespace: instance.Namespace}, persisted)
+	persisted, err := clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).Get(name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, "the-config-in-yaml-format", persisted.Data[opentelemetry.CollectorConfigMapEntry])
 
@@ -77,8 +82,8 @@ func TestUpdateConfigMap(t *testing.T) {
 	reconciler.reconcileConfigMap(ctx)
 
 	// verify
-	persisted = &corev1.ConfigMap{}
-	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: name, Namespace: updated.Namespace}, persisted))
+	persisted, err = clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).Get(name, metav1.GetOptions{})
+	assert.NoError(t, err)
 	assert.Equal(t, "updated-config-map", persisted.Data[opentelemetry.CollectorConfigMapEntry])
 }
 
@@ -86,24 +91,25 @@ func TestDeleteExtraConfigMap(t *testing.T) {
 	// prepare
 	c := configMap(ctx)
 	c.Name = "extra-config-map"
+	c.Namespace = instance.Namespace
 
-	clients := &Clients{
-		client: fake.NewFakeClient(c),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(c),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted := &corev1.ConfigMap{}
-	assert.NoError(t, clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted))
+	persisted, err := clients.Kubernetes.CoreV1().ConfigMaps(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
 
 	// test
-	err := reconciler.reconcileConfigMap(ctx)
+	err = reconciler.reconcileConfigMap(ctx)
 	assert.NoError(t, err)
 
 	// verify
-	persisted = &corev1.ConfigMap{}
-	err = clients.client.Get(ctx, types.NamespacedName{Name: c.Name, Namespace: c.Namespace}, persisted)
-
-	assert.Empty(t, persisted.Name)
+	persisted, err = clients.Kubernetes.CoreV1().ConfigMaps(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	assert.Nil(t, persisted)
 	assert.Error(t, err) // not found
 }

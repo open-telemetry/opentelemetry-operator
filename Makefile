@@ -24,12 +24,12 @@ discard-go-mod-changes:
 	@git checkout -- go.mod go.sum
 
 .PHONY: check
-check: format ensure-generate-is-noop discard-go-mod-changes
+check: ensure-generate-is-noop discard-go-mod-changes
 	@echo Checking...
 	@git diff -s --exit-code . || (echo "Build failed: one or more source files aren't properly formatted. Run 'make format' and update your PR." && exit 1)
 
 .PHONY: ensure-generate-is-noop
-ensure-generate-is-noop: generate
+ensure-generate-is-noop: generate client-gen format
 	@git diff -s --exit-code pkg/apis/opentelemetry/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the deep copy functions aren't up to date. Run 'make generate' and update your PR." && exit 1)
 
 .PHONY: format
@@ -92,8 +92,16 @@ ci: install-tools ensure-generate-is-noop all
 install-tools:
 	@curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b ${GOPATH}/bin 2.0.0
 	@go install golang.org/x/tools/cmd/goimports
+	@go install k8s.io/code-generator/cmd/client-gen
 
 .PHONY: install-prometheus-operator
 install-prometheus-operator:
 	@echo Installing Prometheus Operator bundle
 	@kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml
+
+.PHONY: client-gen
+client-gen: internal-client-gen format
+
+.PHONY: internal-client-gen
+internal-client-gen:
+	@client-gen --input "opentelemetry/v1alpha1" --input-base github.com/open-telemetry/opentelemetry-operator/pkg/apis --go-header-file /dev/null --output-package github.com/open-telemetry/opentelemetry-operator/pkg/client --clientset-name versioned --output-base ../../../

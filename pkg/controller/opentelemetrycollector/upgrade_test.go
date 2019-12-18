@@ -4,12 +4,15 @@ import (
 	"context"
 	"testing"
 
+	fakemon "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/stretchr/testify/assert"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"k8s.io/client-go/kubernetes/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
+	fakeotclient "github.com/open-telemetry/opentelemetry-operator/pkg/client/versioned/fake"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/version"
 )
 
@@ -22,8 +25,10 @@ func TestApplyUpgrades(t *testing.T) {
 	}
 	ctx := context.WithValue(context.Background(), opentelemetry.ContextInstance, instance)
 	ctx = context.WithValue(ctx, opentelemetry.ContextLogger, logf.Log.WithName("unit-tests"))
-	clients := &Clients{
-		client: fake.NewFakeClient(instance),
+	clients := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(),
 	}
 	reconciler := New(schem, clients)
 

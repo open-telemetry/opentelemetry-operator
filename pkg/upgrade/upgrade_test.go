@@ -4,16 +4,18 @@ import (
 	"context"
 	"testing"
 
+	fakemon "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
+	fakeotclient "github.com/open-telemetry/opentelemetry-operator/pkg/client/versioned/fake"
 )
 
 func TestVersionUpgradeToLatest(t *testing.T) {
@@ -28,21 +30,24 @@ func TestVersionUpgradeToLatest(t *testing.T) {
 		},
 	}
 	existing.Status.Version = "0.0.1" // this is the first version we have an upgrade function
-	objs := []runtime.Object{existing}
 
 	s := scheme.Scheme
 	s.AddKnownTypes(v1alpha1.SchemeGroupVersion,
 		&v1alpha1.OpenTelemetryCollector{},
 		&v1alpha1.OpenTelemetryCollectorList{},
 	)
-	cl := fake.NewFakeClient(objs...)
+	cl := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(existing),
+	}
 
 	// test
 	assert.NoError(t, ManagedInstances(ctx, cl))
 
 	// verify
-	persisted := &v1alpha1.OpenTelemetryCollector{}
-	assert.NoError(t, cl.Get(context.Background(), nsn, persisted))
+	persisted, err := cl.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors("").Get(nsn.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
 	assert.Equal(t, latest.v, persisted.Status.Version)
 }
 
@@ -57,20 +62,23 @@ func TestUnknownVersion(t *testing.T) {
 		},
 	}
 	existing.Status.Version = "0.0.0" // we don't know how to upgrade from 0.0.0
-	objs := []runtime.Object{existing}
 
 	s := scheme.Scheme
 	s.AddKnownTypes(v1alpha1.SchemeGroupVersion,
 		&v1alpha1.OpenTelemetryCollector{},
 		&v1alpha1.OpenTelemetryCollectorList{},
 	)
-	cl := fake.NewFakeClient(objs...)
+	cl := &client.Clientset{
+		Kubernetes:    fake.NewSimpleClientset(),
+		Monitoring:    fakemon.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(existing),
+	}
 
 	// test
 	assert.NoError(t, ManagedInstances(ctx, cl))
 
 	// verify
-	persisted := &v1alpha1.OpenTelemetryCollector{}
-	assert.NoError(t, cl.Get(context.Background(), nsn, persisted))
+	persisted, err := cl.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors("").Get(nsn.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
 	assert.Equal(t, "0.0.0", persisted.Status.Version)
 }

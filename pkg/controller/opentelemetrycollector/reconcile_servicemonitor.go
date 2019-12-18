@@ -78,9 +78,11 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServiceMonitors(ctx c
 		// #nosec G104 (CWE-703): Errors unhandled.
 		r.setControllerReference(ctx, desired)
 
-		existing, err := r.clients.monclient.ServiceMonitors(desired.Namespace).Get(desired.Name, metav1.GetOptions{})
+		svcMons := r.clientset.Monitoring.MonitoringV1().ServiceMonitors(desired.Namespace)
+
+		existing, err := svcMons.Get(desired.Name, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			if desired, err = r.clients.monclient.ServiceMonitors(desired.Namespace).Create(desired); err != nil {
+			if desired, err = svcMons.Create(desired); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -109,7 +111,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServiceMonitors(ctx c
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if _, err = r.clients.monclient.ServiceMonitors(desired.Namespace).Update(updated); err != nil {
+		if _, err = svcMons.Update(updated); err != nil {
 			return fmt.Errorf("failed to apply changes to service monitor: %v", err)
 		}
 		logger.V(2).Info("applied", "svcmon.name", desired.Name, "svcmon.namespace", desired.Namespace)
@@ -129,7 +131,9 @@ func (r *ReconcileOpenTelemetryCollector) deleteServiceMonitors(ctx context.Cont
 		}).String(),
 	}
 
-	list, err := r.clients.monclient.ServiceMonitors(instance.Namespace).List(opts)
+	svcMons := r.clientset.Monitoring.MonitoringV1().ServiceMonitors(instance.Namespace)
+
+	list, err := svcMons.List(opts)
 	if err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
@@ -143,7 +147,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteServiceMonitors(ctx context.Cont
 		}
 
 		if del {
-			if err := r.clients.monclient.ServiceMonitors(instance.Namespace).Delete(existing.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := svcMons.Delete(existing.Name, &metav1.DeleteOptions{}); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "svcmon.name", existing.Name, "svcmon.namespace", existing.Namespace)
