@@ -35,7 +35,7 @@ ensure-generate-is-noop: generate
 .PHONY: format
 format:
 	@echo Formatting code...
-	@goimports -w -local "github.com/open-telemetry/opentelemetry-operator" .
+	@GOPATH=${GOPATH} .ci/format.sh
 
 .PHONY: security
 security:
