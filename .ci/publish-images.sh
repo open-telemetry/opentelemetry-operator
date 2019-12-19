@@ -15,6 +15,11 @@ BUILD_IMAGE=${BUILD_IMAGE:-"${BASE_BUILD_IMAGE}:${OPERATOR_VERSION}"}
 
 echo "Building image ${BUILD_IMAGE}"
 make install-tools build container BUILD_IMAGE="${BUILD_IMAGE}"
+RT=$?
+if [ ${RT} != 0 ]; then
+    echo "Failed to build the operator's container image."
+    exit ${RT}
+fi
 
 if [ -n "${MAJOR_MINOR}" ]; then
     MAJOR_MINOR_IMAGE="${BASE_BUILD_IMAGE}:${MAJOR_MINOR}"
@@ -40,4 +45,5 @@ if [ -n "${QUAY_USERNAME}" -a -n "${QUAY_PASSWORD}" ]; then
     fi
 else
     echo "Couldn't publish images to ${BUILD_IMAGE}, as the credentials aren't set"
+    exit 1
 fi
