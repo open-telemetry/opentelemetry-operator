@@ -9,6 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -154,16 +155,19 @@ func TestSetControllerReference(t *testing.T) {
 	clients := &client.Clientset{
 		Kubernetes:    fake.NewSimpleClientset(),
 		Monitoring:    fakemon.NewSimpleClientset(),
-		OpenTelemetry: fakeotclient.NewSimpleClientset(),
+		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	d := &appsv1.Deployment{}
+	d := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{
+		Namespace: instance.Namespace,
+	}}
 
 	// sanity check
 	assert.Len(t, d.OwnerReferences, 0)
 
 	// test
-	reconciler.setControllerReference(ctx, d)
+	err := reconciler.setControllerReference(ctx, d)
+	assert.NoError(t, err)
 
 	// verify
 	assert.Len(t, d.OwnerReferences, 1)
