@@ -11,11 +11,11 @@ At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetr
 
 To install the operator, run:
 ```
-kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/crds/opentelemetry.io_opentelemetrycollectors_crd.yaml
-kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/service_account.yaml
-kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/role.yaml
-kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/role_binding.yaml
-kubectl create -f https://raw.githubusercontent.com/jpkrohling/opentelemetry-operator/master/deploy/operator.yaml
+kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/crds/opentelemetry.io_opentelemetrycollectors_crd.yaml
+kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/service_account.yaml
+kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/role.yaml
+kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/role_binding.yaml
+kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/operator.yaml
 ```
 
 Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry Collector (otelcol) instance, like:
@@ -84,13 +84,13 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
   
 [Apache 2.0 License](./LICENSE).
 
-[github-workflow]: https://github.com/jpkrohling/opentelemetry-operator/actions
-[github-workflow-img]: https://github.com/jpkrohling/opentelemetry-operator/workflows/Continuous%20Integration/badge.svg
-[goreport-img]: https://goreportcard.com/badge/github.com/jpkrohling/opentelemetry-operator
-[goreport]: https://goreportcard.com/report/github.com/jpkrohling/opentelemetry-operator
-[godoc-img]: https://godoc.org/github.com/jpkrohling/opentelemetry-operator?status.svg
-[godoc]: https://godoc.org/github.com/jpkrohling/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1#OpenTelemetryCollector
-[code-climate]: https://codeclimate.com/github/jpkrohling/opentelemetry-operator/maintainability
+[github-workflow]: https://github.com/open-telemetry/opentelemetry-operator/actions
+[github-workflow-img]: https://github.com/open-telemetry/opentelemetry-operator/workflows/Continuous%20Integration/badge.svg
+[goreport-img]: https://goreportcard.com/badge/github.com/open-telemetry/opentelemetry-operator
+[goreport]: https://goreportcard.com/report/github.com/open-telemetry/opentelemetry-operator
+[godoc-img]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator?status.svg
+[godoc]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1#OpenTelemetryCollector
+[code-climate]: https://codeclimate.com/github/open-telemetry/opentelemetry-operator/maintainability
 [code-climate-img]: https://api.codeclimate.com/v1/badges/7bb215eea77fc9c24484/maintainability
-[codecov]: https://codecov.io/gh/jpkrohling/opentelemetry-operator
-[codecov-img]: https://codecov.io/gh/jpkrohling/opentelemetry-operator/branch/master/graph/badge.svg
+[codecov]: https://codecov.io/gh/open-telemetry/opentelemetry-operator
+[codecov-img]: https://codecov.io/gh/open-telemetry/opentelemetry-operator/branch/master/graph/badge.svg
