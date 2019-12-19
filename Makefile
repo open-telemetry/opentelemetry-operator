@@ -56,11 +56,7 @@ container:
 
 .PHONY: run
 run: crd
-	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk up local --go-ldflags ${LD_FLAGS}
-
-.PHONY: run-debug
-run-debug: crd
-	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk up local --operator-flags "--zap-level=2" --go-ldflags ${LD_FLAGS}
+	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk up local --operator-flags "--zap-devel" --go-ldflags ${LD_FLAGS}
 
 .PHONY: clean
 clean:
