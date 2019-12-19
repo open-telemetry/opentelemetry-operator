@@ -13,13 +13,15 @@ type version struct {
 
 var (
 	v0_0_1 = version{v: "0.0.1", upgrade: noop, next: &v0_0_2}
-	v0_0_2 = version{v: "0.0.2", upgrade: upgrade0_0_2}
+	v0_0_2 = version{v: "0.0.2", upgrade: noop, next: &v0_2_0}
+	v0_2_0 = version{v: "0.2.0", upgrade: upgrade0_2_0}
 
-	latest = &v0_0_2
+	latest = &v0_2_0
 
 	versions = map[string]version{
 		v0_0_1.v: v0_0_1,
 		v0_0_2.v: v0_0_2,
+		v0_2_0.v: v0_2_0,
 	}
 )
 
