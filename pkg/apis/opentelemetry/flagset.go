@@ -1,10 +1,13 @@
 package opentelemetry
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/version"
 )
 
 var (
@@ -18,10 +21,12 @@ func FlagSet() *pflag.FlagSet {
 		mu.Lock()
 		defer mu.Unlock()
 
+		otelColVersion := version.Get().OpenTelemetryCollector
+
 		fs = pflag.NewFlagSet("opentelemetry-operator", pflag.ExitOnError)
 		fs.String(
 			OtelColImageConfigKey,
-			"quay.io/opentelemetry/opentelemetry-collector:v0.0.2",
+			fmt.Sprintf("quay.io/opentelemetry/opentelemetry-collector:v%s", otelColVersion),
 			"The default image to use for OpenTelemetry Collector when not specified in the individual custom resource (CR)",
 		)
 		// #nosec G104 (CWE-703): Errors unhandled.

@@ -32,16 +32,17 @@ spec:
       jaeger:
 
     processors:
-      queued-retry:
+      queued_retry:
 
     exporters:
       logging:
 
-    pipelines:
-      traces:
-        receivers: [jaeger]
-        processors: [queued-retry]
-        exporters: [logging]
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: [queued_retry]
+          exporters: [logging]
 EOF
 ```
 
