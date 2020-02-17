@@ -56,7 +56,7 @@ container:
 
 .PHONY: run
 run: crd
-	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk up local --operator-flags "--zap-devel" --go-ldflags ${LD_FLAGS}
+	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk run --local --operator-flags "--zap-devel" --go-ldflags ${LD_FLAGS}
 
 .PHONY: clean
 clean:
@@ -71,17 +71,12 @@ generate: internal-generate format
 
 .PHONY: internal-generate
 internal-generate:
-	@echo Generating deepcopy...
-	@operator-sdk generate k8s
+	@GOPATH=${GOPATH} ./.ci/generate.sh
 
-	@echo Generating CRDs...
-	@operator-sdk generate crds
-
-	@echo Generating clients...
-	@client-gen --input "opentelemetry/v1alpha1" --input-base github.com/open-telemetry/opentelemetry-operator/pkg/apis --go-header-file /dev/null --output-package github.com/open-telemetry/opentelemetry-operator/pkg/client --clientset-name versioned --output-base ../../../
-
-	@echo Generating OpenAPI...
-	@openapi-gen --logtostderr=true -o "" -i ./pkg/apis/opentelemetry/v1alpha1 -O zz_generated.openapi -p ./pkg/apis/opentelemetry/v1alpha1 -h /dev/null -r "-"
+.PHONY: lint
+lint:
+	@echo Linting...
+	@GOPATH=${GOPATH} ./.ci/lint.sh
 
 .PHONY: test
 test: unit-tests
@@ -92,7 +87,7 @@ unit-tests:
 	@go test ./... -cover -coverprofile=coverage.txt -covermode=atomic -race
 
 .PHONY: all
-all: check format security build test
+all: check format lint security build test
 
 .PHONY: ci
 ci: install-tools ensure-generate-is-noop all
@@ -100,9 +95,10 @@ ci: install-tools ensure-generate-is-noop all
 .PHONY: install-tools
 install-tools:
 	@curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b ${GOPATH}/bin 2.0.0
-	@go install golang.org/x/tools/cmd/goimports
-	@go install k8s.io/code-generator/cmd/client-gen
-	@go install k8s.io/kube-openapi/cmd/openapi-gen
+	@go install \
+		golang.org/x/tools/cmd/goimports \
+		k8s.io/code-generator/cmd/client-gen \
+		k8s.io/kube-openapi/cmd/openapi-gen
 
 .PHONY: install-prometheus-operator
 install-prometheus-operator:
