@@ -34,6 +34,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +kubebuilder:validation:Enum=daemonset;deployment
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Mode opentelemetry.Mode `json:"mode,omitempty"`
+
+	// ServiceAccount indicates the name of an existing service account to use with this instance.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	ServiceAccount string `json:"serviceAccount,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector
