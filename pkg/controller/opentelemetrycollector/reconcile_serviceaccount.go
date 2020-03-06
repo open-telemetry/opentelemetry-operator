@@ -20,7 +20,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileServiceAccount(ctx context.Co
 
 	svcs := []*corev1.ServiceAccount{}
 	if len(instance.Spec.ServiceAccount) == 0 {
-		// if this has been specified and is not empty, we manage the service account
+		// if there's no Service Account specified we create one and manage it ourselves
 		svcs = append(svcs, serviceAccount(ctx))
 	}
 

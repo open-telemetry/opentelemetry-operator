@@ -104,10 +104,10 @@ func TestProperReconcileServiceAccount(t *testing.T) {
 	list, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).List(metav1.ListOptions{})
 	assert.NoError(t, err)
 
-	// we assert the correctness of the service in another test
+	// we assert the correctness of the service account in another test
 	assert.Len(t, list.Items, 1)
 
-	// we assert the correctness of the reference in another test
+	// we assert the correctness of the reference in another test (TestSetControllerReference)
 	for _, item := range list.Items {
 		assert.Len(t, item.OwnerReferences, 1)
 	}
@@ -129,6 +129,8 @@ func TestUpdateServiceAccount(t *testing.T) {
 	// sanity check
 	persisted, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
+	assert.Contains(t, persisted.Labels, "some-key")
+	assert.NotContains(t, persisted.Labels, "app.kubernetes.io/name")
 
 	// test
 	reconciler.reconcileServiceAccount(ctx)
