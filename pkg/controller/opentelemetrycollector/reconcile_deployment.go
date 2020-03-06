@@ -101,6 +101,7 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 					Annotations: specAnnotations,
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName: ServiceAccountNameFor(ctx),
 					Containers: []corev1.Container{{
 						Name:  "opentelemetry-collector",
 						Image: image,

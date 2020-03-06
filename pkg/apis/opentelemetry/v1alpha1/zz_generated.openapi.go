@@ -113,6 +113,13 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryCollectorSpec(ref commo
 							Format:      "",
 						},
 					},
+					"serviceAccount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccount indicates the name of an existing service account to use with this instance.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
