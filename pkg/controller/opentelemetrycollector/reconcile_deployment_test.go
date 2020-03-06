@@ -7,6 +7,7 @@ import (
 	fakemon "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
@@ -197,4 +198,33 @@ func TestDeleteExtraDeployment(t *testing.T) {
 	persisted, err = clients.Kubernetes.AppsV1().Deployments(c.Namespace).Get(c.Name, metav1.GetOptions{})
 	assert.Nil(t, persisted)
 	assert.Error(t, err) // not found
+}
+
+func TestDeploymentWithVolumes(t *testing.T) {
+	// prepare
+	instance := &v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Volumes: []v1.Volume{{
+				Name: "tls-certs-volume",
+			}},
+			VolumeMounts: []v1.VolumeMount{{
+				Name: "tls-certs-volumemount",
+			}},
+		},
+	}
+	ctx := context.WithValue(ctx, opentelemetry.ContextInstance, instance)
+
+	// test
+	d := deployment(ctx)
+
+	// verify
+	assert.Len(t, d.Spec.Template.Spec.Volumes, 2) // config + the one from the CR
+	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
+	assert.Len(t, d.Spec.Template.Spec.Containers[0].VolumeMounts, 2) // config + the one from the CR
+
+	// the deployment should contain the volume we specified
+	assert.Contains(t, d.Spec.Template.Spec.Volumes, instance.Spec.Volumes[0])
+
+	// the deployment should contain the volumemount we specified
+	assert.Contains(t, d.Spec.Template.Spec.Containers[0].VolumeMounts, instance.Spec.VolumeMounts[0])
 }

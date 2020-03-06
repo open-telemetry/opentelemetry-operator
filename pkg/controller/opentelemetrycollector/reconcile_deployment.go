@@ -83,6 +83,32 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
 
+	configMapVolumeName := fmt.Sprintf("reserved-%s", name)
+	volumeMounts := []corev1.VolumeMount{{
+		Name:      configMapVolumeName,
+		MountPath: "/conf",
+	}}
+	volumes := []corev1.Volume{{
+		Name: configMapVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: name},
+				Items: []corev1.KeyToPath{{
+					Key:  opentelemetry.CollectorConfigMapEntry,
+					Path: opentelemetry.CollectorConfigMapEntry,
+				}},
+			},
+		},
+	}}
+
+	if len(instance.Spec.VolumeMounts) > 0 {
+		volumeMounts = append(volumeMounts, instance.Spec.VolumeMounts...)
+	}
+
+	if len(instance.Spec.Volumes) > 0 {
+		volumes = append(volumes, instance.Spec.Volumes...)
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -103,26 +129,12 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					ServiceAccountName: ServiceAccountNameFor(ctx),
 					Containers: []corev1.Container{{
-						Name:  "opentelemetry-collector",
-						Image: image,
-						VolumeMounts: []corev1.VolumeMount{{
-							Name:      name,
-							MountPath: "/conf",
-						}},
-						Args: args,
+						Name:         "opentelemetry-collector",
+						Image:        image,
+						VolumeMounts: volumeMounts,
+						Args:         args,
 					}},
-					Volumes: []corev1.Volume{{
-						Name: name,
-						VolumeSource: corev1.VolumeSource{
-							ConfigMap: &corev1.ConfigMapVolumeSource{
-								LocalObjectReference: corev1.LocalObjectReference{Name: name},
-								Items: []corev1.KeyToPath{{
-									Key:  opentelemetry.CollectorConfigMapEntry,
-									Path: opentelemetry.CollectorConfigMapEntry,
-								}},
-							},
-						},
-					}},
+					Volumes: volumes,
 				},
 			},
 		},
