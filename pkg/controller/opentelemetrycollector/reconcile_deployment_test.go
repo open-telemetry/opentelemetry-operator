@@ -28,6 +28,7 @@ func TestProperDeployment(t *testing.T) {
 	assert.Equal(t, d.Annotations["custom-annotation"], "custom-annotation-value")
 	assert.Equal(t, d.Labels["custom-label"], "custom-value")
 	assert.Equal(t, d.Labels["app.kubernetes.io/name"], d.Name)
+	assert.Equal(t, ServiceAccountNameFor(ctx), d.Spec.Template.Spec.ServiceAccountName)
 }
 
 func TestProperDeployments(t *testing.T) {

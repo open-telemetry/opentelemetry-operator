@@ -64,6 +64,10 @@ spec:
                 OpenTelemetry Collector
               format: int32
               type: integer
+            serviceAccount:
+              description: ServiceAccount indicates the name of an existing service
+                account to use with this instance.
+              type: string
           type: object
         status:
           description: OpenTelemetryCollectorStatus defines the observed state of
