@@ -50,6 +50,7 @@ func New(scheme *runtime.Scheme, clientset *client.Clientset) *ReconcileOpenTele
 		clientset: clientset,
 	}
 	r.reconcileFuncs = []func(context.Context) error{
+		r.reconcileServiceAccount,
 		r.reconcileConfigMap,
 		r.reconcileService,
 		r.reconcileDeployment,
