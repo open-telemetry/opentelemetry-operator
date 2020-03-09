@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
@@ -39,6 +40,18 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	ServiceAccount string `json:"serviceAccount,omitempty"`
+
+	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
+	// +optional
+	// +listType=set
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// Volumes represents which volumes to use in the underlying collector deployment(s).
+	// +optional
+	// +listType=set
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Volumes []v1.Volume `json:"volumes,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector
