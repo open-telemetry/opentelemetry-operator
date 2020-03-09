@@ -83,7 +83,7 @@ func deployment(ctx context.Context) *appsv1.Deployment {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
 
-	configMapVolumeName := fmt.Sprintf("reserved-%s", name)
+	configMapVolumeName := fmt.Sprintf("otc-internal-%s", name)
 	volumeMounts := []corev1.VolumeMount{{
 		Name:      configMapVolumeName,
 		MountPath: "/conf",
