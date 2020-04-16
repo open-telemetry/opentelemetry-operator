@@ -27,10 +27,13 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
+  image: otel/opentelemetry-collector:latest
   config: |
     receivers:
       jaeger:
-
+        protocols:
+          grpc:
+            endpoint: "localhost:14250"
     processors:
       queued_retry:
 
@@ -45,6 +48,8 @@ spec:
           exporters: [logging]
 EOF
 ```
+**_WARNING:_** Until the OpenTelemetry Collector format is stable, changes may be required in the above example to remain
+compatible with the latest version of the OpenTelemetry Collector image being referenced.
 
 This will create an OpenTelemetry Collector instance named `simplest`, exposing a `jaeger-grpc` port to consume spans from your instrumented applications and exporting those spans via `logging`, which writes the spans to the console (`stdout`) of the OpenTelemetry Collector instance that receives the span.
 
