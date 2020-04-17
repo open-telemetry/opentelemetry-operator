@@ -33,7 +33,6 @@ spec:
       jaeger:
         protocols:
           grpc:
-            endpoint: "localhost:14250"
     processors:
       queued_retry:
 
