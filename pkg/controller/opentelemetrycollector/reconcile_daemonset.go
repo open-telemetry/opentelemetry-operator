@@ -137,9 +137,9 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDaemonSets(ctx contex
 
 		dsets := r.clientset.Kubernetes.AppsV1().DaemonSets(desired.Namespace)
 
-		existing, err := dsets.Get(desired.Name, metav1.GetOptions{})
+		existing, err := dsets.Get(ctx, desired.Name, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			if existing, err = dsets.Create(desired); err != nil {
+			if existing, err = dsets.Create(ctx, desired, metav1.CreateOptions{}); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -168,7 +168,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDaemonSets(ctx contex
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if updated, err = dsets.Update(updated); err != nil {
+		if updated, err = dsets.Update(ctx, updated, metav1.UpdateOptions{}); err != nil {
 			return fmt.Errorf("failed to apply changes: %v", err)
 		}
 		logger.V(2).Info("applied", "daemonSet.name", desired.Name, "daemonSet.namespace", desired.Namespace)
@@ -188,7 +188,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteDaemonSets(ctx context.Context, 
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}).String(),
 	}
-	list, err := dsets.List(opts)
+	list, err := dsets.List(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
@@ -202,7 +202,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteDaemonSets(ctx context.Context, 
 		}
 
 		if del {
-			if err := dsets.Delete(existing.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := dsets.Delete(ctx, existing.Name, metav1.DeleteOptions{}); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "daemonSet.name", existing.Name, "daemonSet.namespace", existing.Namespace)

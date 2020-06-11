@@ -123,7 +123,7 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryCollectorSpec(ref commo
 					"volumeMounts": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
-								"x-kubernetes-list-type": "set",
+								"x-kubernetes-list-type": "atomic",
 							},
 						},
 						SchemaProps: spec.SchemaProps{
@@ -141,7 +141,7 @@ func schema_pkg_apis_opentelemetry_v1alpha1_OpenTelemetryCollectorSpec(ref commo
 					"volumes": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
-								"x-kubernetes-list-type": "set",
+								"x-kubernetes-list-type": "atomic",
 							},
 						},
 						SchemaProps: spec.SchemaProps{
