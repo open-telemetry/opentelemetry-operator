@@ -7,8 +7,6 @@ ENV OPERATOR=/usr/local/bin/opentelemetry-operator \
 # install operator binary
 COPY build/_output/bin/opentelemetry-operator ${OPERATOR}
 
-COPY build/bin /usr/local/bin
-
 ENTRYPOINT [${OPERATOR}]
 
 USER ${USER_UID}

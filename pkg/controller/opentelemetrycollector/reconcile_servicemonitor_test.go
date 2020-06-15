@@ -1,6 +1,7 @@
 package opentelemetrycollector
 
 import (
+	"context"
 	"testing"
 
 	fakemon "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
@@ -43,12 +44,12 @@ func TestProperReconcileServiceMonitor(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// test
-	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}}
 	_, err := reconciler.Reconcile(req)
 	assert.NoError(t, err)
 
 	// verify
-	list, err := clients.Monitoring.MonitoringV1().ServiceMonitors(instance.Namespace).List(metav1.ListOptions{})
+	list, err := clients.Monitoring.MonitoringV1().ServiceMonitors(instance.Namespace).List(context.Background(), metav1.ListOptions{})
 	require.NoError(t, err)
 
 	// we assert the correctness of the service in another test
@@ -78,14 +79,14 @@ func TestUpdateServiceMonitor(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// sanity check
-	_, err := clients.Monitoring.MonitoringV1().ServiceMonitors(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	_, err := clients.Monitoring.MonitoringV1().ServiceMonitors(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	// test
 	assert.NoError(t, reconciler.reconcileServiceMonitor(ctx))
 
 	// verify
-	_, err = clients.Monitoring.MonitoringV1().ServiceMonitors(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	_, err = clients.Monitoring.MonitoringV1().ServiceMonitors(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 }
 
@@ -106,14 +107,14 @@ func TestDeleteExtraServiceMonitor(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// sanity check
-	_, err := clients.Monitoring.MonitoringV1().ServiceMonitors(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	_, err := clients.Monitoring.MonitoringV1().ServiceMonitors(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	// test
 	assert.NoError(t, reconciler.reconcileServiceMonitor(ctx))
 
 	// verify
-	persisted, err := clients.Monitoring.MonitoringV1().ServiceMonitors(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err := clients.Monitoring.MonitoringV1().ServiceMonitors(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.Nil(t, persisted)
 	assert.Error(t, err) // not found
 }

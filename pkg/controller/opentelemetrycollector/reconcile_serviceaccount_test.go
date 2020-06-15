@@ -68,7 +68,7 @@ func TestUnmanagedServiceAccount(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.NotNil(t, persisted)
 
@@ -76,13 +76,13 @@ func TestUnmanagedServiceAccount(t *testing.T) {
 	reconciler.reconcileServiceAccount(ctx)
 
 	// verify that the service account still exists and is not with the operator's labels
-	existing, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(c.Name, metav1.GetOptions{})
+	existing, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Nil(t, existing.Labels)
 
 	// verify that a service account with the name that the operator would create does *not* exist
 	managed := serviceAccount(ctx)
-	managed, err = clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(managed.Name, metav1.GetOptions{})
+	managed, err = clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(context.Background(), managed.Name, metav1.GetOptions{})
 	assert.Error(t, err) // not found
 	assert.Nil(t, managed)
 }
@@ -95,13 +95,13 @@ func TestProperReconcileServiceAccount(t *testing.T) {
 		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}}
 
 	// test
 	reconciler.Reconcile(req)
 
 	// verify
-	list, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).List(metav1.ListOptions{})
+	list, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 
 	// we assert the correctness of the service account in another test
@@ -127,7 +127,7 @@ func TestUpdateServiceAccount(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err := clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Contains(t, persisted.Labels, "some-key")
 	assert.NotContains(t, persisted.Labels, "app.kubernetes.io/name")
@@ -136,7 +136,7 @@ func TestUpdateServiceAccount(t *testing.T) {
 	reconciler.reconcileServiceAccount(ctx)
 
 	// verify
-	persisted, err = clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err = clients.Kubernetes.CoreV1().ServiceAccounts(instance.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Contains(t, persisted.Labels, "some-key")
 	assert.Equal(t, persisted.Name, persisted.Labels["app.kubernetes.io/name"])
@@ -156,7 +156,7 @@ func TestDeleteExtraServiceAccount(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted, err := clients.Kubernetes.CoreV1().ServiceAccounts(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err := clients.Kubernetes.CoreV1().ServiceAccounts(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	// test
@@ -164,7 +164,7 @@ func TestDeleteExtraServiceAccount(t *testing.T) {
 	assert.NoError(t, err)
 
 	// verify
-	persisted, err = clients.Kubernetes.CoreV1().ServiceAccounts(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err = clients.Kubernetes.CoreV1().ServiceAccounts(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.Error(t, err) // not found
 	assert.Nil(t, persisted)
 }

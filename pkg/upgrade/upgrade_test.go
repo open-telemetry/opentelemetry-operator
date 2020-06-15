@@ -46,7 +46,7 @@ func TestVersionUpgradeToLatest(t *testing.T) {
 	assert.NoError(t, ManagedInstances(ctx, cl))
 
 	// verify
-	persisted, err := cl.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors("").Get(nsn.Name, metav1.GetOptions{})
+	persisted, err := cl.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors("").Get(context.Background(), nsn.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, latest.v, persisted.Status.Version)
 }
@@ -78,7 +78,7 @@ func TestUnknownVersion(t *testing.T) {
 	assert.NoError(t, ManagedInstances(ctx, cl))
 
 	// verify
-	persisted, err := cl.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors("").Get(nsn.Name, metav1.GetOptions{})
+	persisted, err := cl.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors("").Get(context.Background(), nsn.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, "0.0.0", persisted.Status.Version)
 }

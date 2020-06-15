@@ -64,9 +64,9 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServiceAccounts(ctx c
 
 		svcs := r.clientset.Kubernetes.CoreV1().ServiceAccounts(desired.Namespace)
 
-		existing, err := svcs.Get(desired.Name, metav1.GetOptions{})
+		existing, err := svcs.Get(ctx, desired.Name, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			if desired, err = svcs.Create(desired); err != nil {
+			if desired, err = svcs.Create(ctx, desired, metav1.CreateOptions{}); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -93,7 +93,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServiceAccounts(ctx c
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if updated, err = svcs.Update(updated); err != nil {
+		if updated, err = svcs.Update(ctx, updated, metav1.UpdateOptions{}); err != nil {
 			return fmt.Errorf("failed to apply changes to service account: %v", err)
 		}
 		logger.V(2).Info("applied", "serviceAccount.name", desired.Name, "serviceAccount.namespace", desired.Namespace)
@@ -113,7 +113,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteServiceAccounts(ctx context.Cont
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}).String(),
 	}
-	list, err := svcs.List(opts)
+	list, err := svcs.List(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
@@ -127,7 +127,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteServiceAccounts(ctx context.Cont
 		}
 
 		if del {
-			if err := svcs.Delete(existing.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := svcs.Delete(ctx, existing.Name, metav1.DeleteOptions{}); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "serviceAccount.name", existing.Name, "serviceAccount.namespace", existing.Namespace)
