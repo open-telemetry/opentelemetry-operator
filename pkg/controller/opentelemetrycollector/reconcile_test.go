@@ -35,6 +35,7 @@ func TestProperReconcile(t *testing.T) {
 	}
 	reconciler := New(schem, clients)
 	req.Namespace = instance.Namespace
+	req.Name = instance.Name
 
 	called := false
 	reconciler.reconcileFuncs = []func(context.Context) error{
@@ -91,7 +92,7 @@ func TestReconcileFailsFast(t *testing.T) {
 		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}}
 	reconciler.reconcileFuncs = []func(context.Context) error{
 		func(context.Context) error {
 			return errors.New("the server made a boo boo")

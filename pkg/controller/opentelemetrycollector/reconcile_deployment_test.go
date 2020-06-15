@@ -80,13 +80,13 @@ func TestProperReconcileDeployment(t *testing.T) {
 		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}}
 
 	// test
 	reconciler.Reconcile(req)
 
 	// verify
-	list, err := clients.Kubernetes.AppsV1().Deployments(instance.Namespace).List(metav1.ListOptions{})
+	list, err := clients.Kubernetes.AppsV1().Deployments(instance.Namespace).List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 
 	// we assert the correctness of the service in another test
@@ -148,12 +148,12 @@ func TestUpdateDeployment(t *testing.T) {
 		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}}
 	reconciler.Reconcile(req)
 
 	// sanity check
 	name := resourceName(instance.Name)
-	persisted, err := clients.Kubernetes.AppsV1().Deployments(instance.Namespace).Get(name, metav1.GetOptions{})
+	persisted, err := clients.Kubernetes.AppsV1().Deployments(instance.Namespace).Get(context.Background(), name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	// prepare the test object
@@ -167,7 +167,7 @@ func TestUpdateDeployment(t *testing.T) {
 	reconciler.reconcileDeployment(ctx)
 
 	// verify
-	persisted, err = clients.Kubernetes.AppsV1().Deployments(instance.Namespace).Get(name, metav1.GetOptions{})
+	persisted, err = clients.Kubernetes.AppsV1().Deployments(instance.Namespace).Get(context.Background(), name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, persisted.Spec.Template.Spec.Containers, 1)
 	assert.Equal(t, "custom-image", persisted.Spec.Template.Spec.Containers[0].Image)
@@ -187,7 +187,7 @@ func TestDeleteExtraDeployment(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted, err := clients.Kubernetes.AppsV1().Deployments(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err := clients.Kubernetes.AppsV1().Deployments(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	// test
@@ -195,7 +195,7 @@ func TestDeleteExtraDeployment(t *testing.T) {
 	assert.NoError(t, err)
 
 	// verify
-	persisted, err = clients.Kubernetes.AppsV1().Deployments(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err = clients.Kubernetes.AppsV1().Deployments(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.Nil(t, persisted)
 	assert.Error(t, err) // not found
 }

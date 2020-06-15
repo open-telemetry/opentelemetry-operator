@@ -63,9 +63,9 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedConfigMaps(ctx contex
 
 		cmaps := r.clientset.Kubernetes.CoreV1().ConfigMaps(desired.Namespace)
 
-		existing, err := cmaps.Get(desired.Name, metav1.GetOptions{})
+		existing, err := cmaps.Get(ctx, desired.Name, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			if desired, err = cmaps.Create(desired); err != nil {
+			if desired, err = cmaps.Create(ctx, desired, metav1.CreateOptions{}); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -95,7 +95,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedConfigMaps(ctx contex
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if updated, err = cmaps.Update(updated); err != nil {
+		if updated, err = cmaps.Update(ctx, updated, metav1.UpdateOptions{}); err != nil {
 			return fmt.Errorf("failed to apply changes: %v", err)
 		}
 		logger.V(2).Info("applied", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)
@@ -115,7 +115,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteConfigMaps(ctx context.Context, 
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}).String(),
 	}
-	list, err := cmaps.List(opts)
+	list, err := cmaps.List(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
@@ -129,7 +129,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteConfigMaps(ctx context.Context, 
 		}
 
 		if del {
-			if err := cmaps.Delete(existing.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := cmaps.Delete(ctx, existing.Name, metav1.DeleteOptions{}); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "configmap.name", existing.Name, "configmap.namespace", existing.Namespace)

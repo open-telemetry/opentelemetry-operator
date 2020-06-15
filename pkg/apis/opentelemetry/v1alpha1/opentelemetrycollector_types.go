@@ -43,13 +43,13 @@ type OpenTelemetryCollectorSpec struct {
 
 	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
 	// +optional
-	// +listType=set
+	// +listType=atomic
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 
 	// Volumes represents which volumes to use in the underlying collector deployment(s).
 	// +optional
-	// +listType=set
+	// +listType=atomic
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Volumes []v1.Volume `json:"volumes,omitempty"`
 }

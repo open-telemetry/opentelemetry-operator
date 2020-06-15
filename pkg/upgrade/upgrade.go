@@ -18,7 +18,7 @@ func ManagedInstances(ctx context.Context, c *client.Clientset) error {
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 	logger.Info("looking for managed instances to upgrade")
 
-	list, err := c.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors("").List(metav1.ListOptions{})
+	list, err := c.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get list of otelcol instances: %v", err)
 	}
@@ -32,7 +32,7 @@ func ManagedInstances(ctx context.Context, c *client.Clientset) error {
 
 		if !reflect.DeepEqual(otelcol, j) {
 			// the CR has changed, store it!
-			otelcol, err = c.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors(otelcol.Namespace).Update(otelcol)
+			otelcol, err = c.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors(otelcol.Namespace).Update(ctx, otelcol, metav1.UpdateOptions{})
 			if err != nil {
 				logger.Error(err, "failed to store the upgraded otelcol instances", "name", otelcol.Name, "namespace", otelcol.Namespace)
 				return err
