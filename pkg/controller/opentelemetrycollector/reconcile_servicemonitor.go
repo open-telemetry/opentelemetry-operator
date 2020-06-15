@@ -80,9 +80,9 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServiceMonitors(ctx c
 
 		svcMons := r.clientset.Monitoring.MonitoringV1().ServiceMonitors(desired.Namespace)
 
-		existing, err := svcMons.Get(desired.Name, metav1.GetOptions{})
+		existing, err := svcMons.Get(ctx, desired.Name, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			if desired, err = svcMons.Create(desired); err != nil {
+			if desired, err = svcMons.Create(ctx, desired, metav1.CreateOptions{}); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -111,7 +111,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServiceMonitors(ctx c
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if _, err = svcMons.Update(updated); err != nil {
+		if _, err = svcMons.Update(ctx, updated, metav1.UpdateOptions{}); err != nil {
 			return fmt.Errorf("failed to apply changes to service monitor: %v", err)
 		}
 		logger.V(2).Info("applied", "svcmon.name", desired.Name, "svcmon.namespace", desired.Namespace)
@@ -133,7 +133,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteServiceMonitors(ctx context.Cont
 
 	svcMons := r.clientset.Monitoring.MonitoringV1().ServiceMonitors(instance.Namespace)
 
-	list, err := svcMons.List(opts)
+	list, err := svcMons.List(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
@@ -147,7 +147,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteServiceMonitors(ctx context.Cont
 		}
 
 		if del {
-			if err := svcMons.Delete(existing.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := svcMons.Delete(ctx, existing.Name, metav1.DeleteOptions{}); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "svcmon.name", existing.Name, "svcmon.namespace", existing.Namespace)

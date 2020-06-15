@@ -37,14 +37,14 @@ func TestProperReconcileConfigMap(t *testing.T) {
 		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}}
 
 	// test
 	_, err := reconciler.Reconcile(req)
 	assert.NoError(t, err)
 
 	// verify
-	list, err := clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).List(metav1.ListOptions{})
+	list, err := clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 
 	// we assert the correctness of the service in another test
@@ -62,12 +62,12 @@ func TestUpdateConfigMap(t *testing.T) {
 		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}}
 	reconciler.Reconcile(req)
 
 	// sanity check
 	name := resourceName(instance.Name)
-	persisted, err := clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).Get(name, metav1.GetOptions{})
+	persisted, err := clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).Get(context.Background(), name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, "the-config-in-yaml-format", persisted.Data[opentelemetry.CollectorConfigMapEntry])
 
@@ -82,7 +82,7 @@ func TestUpdateConfigMap(t *testing.T) {
 	reconciler.reconcileConfigMap(ctx)
 
 	// verify
-	persisted, err = clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).Get(name, metav1.GetOptions{})
+	persisted, err = clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).Get(context.Background(), name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, "updated-config-map", persisted.Data[opentelemetry.CollectorConfigMapEntry])
 }
@@ -101,7 +101,7 @@ func TestDeleteExtraConfigMap(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted, err := clients.Kubernetes.CoreV1().ConfigMaps(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err := clients.Kubernetes.CoreV1().ConfigMaps(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	// test
@@ -109,7 +109,7 @@ func TestDeleteExtraConfigMap(t *testing.T) {
 	assert.NoError(t, err)
 
 	// verify
-	persisted, err = clients.Kubernetes.CoreV1().ConfigMaps(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err = clients.Kubernetes.CoreV1().ConfigMaps(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.Nil(t, persisted)
 	assert.Error(t, err) // not found
 }

@@ -151,9 +151,9 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDeployments(ctx conte
 
 		deps := r.clientset.Kubernetes.AppsV1().Deployments(desired.Namespace)
 
-		existing, err := deps.Get(desired.Name, metav1.GetOptions{})
+		existing, err := deps.Get(ctx, desired.Name, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			if existing, err = deps.Create(desired); err != nil {
+			if existing, err = deps.Create(ctx, desired, metav1.CreateOptions{}); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
 
@@ -182,7 +182,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedDeployments(ctx conte
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if updated, err = deps.Update(updated); err != nil {
+		if updated, err = deps.Update(ctx, updated, metav1.UpdateOptions{}); err != nil {
 			return fmt.Errorf("failed to apply changes: %v", err)
 		}
 		logger.V(2).Info("applied", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
@@ -202,7 +202,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteDeployments(ctx context.Context,
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}).String(),
 	}
-	list, err := deps.List(opts)
+	list, err := deps.List(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("failed to list: %v", err)
 	}
@@ -216,7 +216,7 @@ func (r *ReconcileOpenTelemetryCollector) deleteDeployments(ctx context.Context,
 		}
 
 		if del {
-			if err := deps.Delete(existing.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := deps.Delete(ctx, existing.Name, metav1.DeleteOptions{}); err != nil {
 				return fmt.Errorf("failed to delete: %v", err)
 			}
 			logger.V(2).Info("deleted", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)

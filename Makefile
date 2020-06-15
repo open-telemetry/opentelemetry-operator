@@ -56,7 +56,7 @@ container:
 
 .PHONY: run
 run: crd
-	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk run --local --namespace="${WATCH_NAMESPACE}" --operator-flags "--zap-devel" --go-ldflags ${LD_FLAGS}
+	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk run local --watch-namespace="${WATCH_NAMESPACE}" --operator-flags "--zap-devel" --go-ldflags ${LD_FLAGS}
 
 .PHONY: clean
 clean:

@@ -64,6 +64,9 @@ func New(scheme *runtime.Scheme, clientset *client.Clientset) *ReconcileOpenTele
 // Reconcile reads that state of the cluster for a OpenTelemetryCollector object and makes changes based on the state read
 // and what is in the OpenTelemetryCollector.Spec
 func (r *ReconcileOpenTelemetryCollector) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	// the base context for this whole reconciliation loop
+	ctx := context.Background()
+
 	reqLogger := log.WithValues(
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
@@ -74,7 +77,7 @@ func (r *ReconcileOpenTelemetryCollector) Reconcile(request reconcile.Request) (
 	otelCols := r.clientset.OpenTelemetry.OpentelemetryV1alpha1().OpenTelemetryCollectors(request.Namespace)
 
 	// Fetch the OpenTelemetryCollector instance
-	instance, err := otelCols.Get(request.Name, v1.GetOptions{})
+	instance, err := otelCols.Get(ctx, request.Name, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -88,7 +91,7 @@ func (r *ReconcileOpenTelemetryCollector) Reconcile(request reconcile.Request) (
 	}
 
 	// set the execution context for this reconcile loop
-	ctx := context.WithValue(context.Background(), opentelemetry.ContextInstance, instance)
+	ctx = context.WithValue(ctx, opentelemetry.ContextInstance, instance)
 	ctx = context.WithValue(ctx, opentelemetry.ContextLogger, reqLogger)
 
 	if err := r.applyUpgrades(ctx); err != nil {
@@ -102,13 +105,13 @@ func (r *ReconcileOpenTelemetryCollector) Reconcile(request reconcile.Request) (
 	}
 
 	// update the status object, which might have also been updated
-	if instance, err = otelCols.UpdateStatus(instance); err != nil {
+	if instance, err = otelCols.UpdateStatus(ctx, instance, v1.UpdateOptions{}); err != nil {
 		reqLogger.Error(err, "failed to store the custom resource's status")
 		return reconcile.Result{}, err
 	}
 
 	// apply it back, as it might have been updated
-	if _, err := otelCols.Update(instance); err != nil {
+	if _, err := otelCols.Update(ctx, instance, v1.UpdateOptions{}); err != nil {
 		reqLogger.Error(err, "failed to store back the custom resource")
 		return reconcile.Result{}, err
 	}

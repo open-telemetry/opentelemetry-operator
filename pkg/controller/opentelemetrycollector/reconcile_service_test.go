@@ -1,6 +1,7 @@
 package opentelemetrycollector
 
 import (
+	"context"
 	"testing"
 
 	fakemon "github.com/coreos/prometheus-operator/pkg/client/versioned/fake"
@@ -55,13 +56,13 @@ func TestProperReconcileService(t *testing.T) {
 		OpenTelemetry: fakeotclient.NewSimpleClientset(instance),
 	}
 	reconciler := New(schem, clients)
-	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace}}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}}
 
 	// test
 	reconciler.Reconcile(req)
 
 	// verify
-	list, err := clients.Kubernetes.CoreV1().Services(instance.Namespace).List(metav1.ListOptions{})
+	list, err := clients.Kubernetes.CoreV1().Services(instance.Namespace).List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 
 	// we assert the correctness of the service in another test
@@ -102,7 +103,7 @@ func TestUpdateService(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted, err := clients.Kubernetes.CoreV1().Services(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err := clients.Kubernetes.CoreV1().Services(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, persisted.Spec.Ports, 1)
 	assert.Equal(t, int32(12345), persisted.Spec.Ports[0].Port)
@@ -112,7 +113,7 @@ func TestUpdateService(t *testing.T) {
 	assert.NoError(t, err)
 
 	// verify
-	persisted, err = clients.Kubernetes.CoreV1().Services(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err = clients.Kubernetes.CoreV1().Services(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, int32(14250), persisted.Spec.Ports[0].Port)
 	assert.Equal(t, "172.172.172.172", persisted.Spec.ClusterIP) // the assigned IP is kept
@@ -132,7 +133,7 @@ func TestDeleteExtraService(t *testing.T) {
 	reconciler := New(schem, clients)
 
 	// sanity check
-	persisted, err := clients.Kubernetes.CoreV1().Services(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err := clients.Kubernetes.CoreV1().Services(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	// test
@@ -140,7 +141,7 @@ func TestDeleteExtraService(t *testing.T) {
 	assert.NoError(t, err)
 
 	// verify
-	persisted, err = clients.Kubernetes.CoreV1().Services(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	persisted, err = clients.Kubernetes.CoreV1().Services(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.Error(t, err) // not found
 	assert.Nil(t, persisted)
 }
