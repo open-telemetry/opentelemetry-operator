@@ -12,10 +12,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/client"
 	fakeotclient "github.com/open-telemetry/opentelemetry-operator/pkg/client/versioned/fake"
 )
+
+var logger = logf.Log.WithName("logger")
 
 func TestProperService(t *testing.T) {
 	// test
@@ -115,7 +119,7 @@ func TestUpdateService(t *testing.T) {
 	// verify
 	persisted, err = clients.Kubernetes.CoreV1().Services(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
-	assert.Equal(t, int32(14250), persisted.Spec.Ports[0].Port)
+	assert.Equal(t, int32(1234), persisted.Spec.Ports[0].Port)
 	assert.Equal(t, "172.172.172.172", persisted.Spec.ClusterIP) // the assigned IP is kept
 }
 
@@ -144,4 +148,24 @@ func TestDeleteExtraService(t *testing.T) {
 	persisted, err = clients.Kubernetes.CoreV1().Services(c.Namespace).Get(context.Background(), c.Name, metav1.GetOptions{})
 	assert.Error(t, err) // not found
 	assert.Nil(t, persisted)
+}
+
+func TestServiceWithoutPorts(t *testing.T) {
+	for _, tt := range []string{
+		"",
+		"🦄",
+		"receivers:\n  myreceiver:\n    endpoint:",
+		"receivers:\n  myreceiver:\n    endpoint: 0.0.0.0",
+	} {
+		// prepare
+		i := *instance
+		i.Spec.Config = tt
+		c := context.WithValue(ctx, opentelemetry.ContextInstance, &i)
+
+		// test
+		s := service(c)
+
+		// verify
+		assert.Nil(t, s, "expected no ports from a configuration like: %s", tt)
+	}
 }

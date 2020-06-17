@@ -26,7 +26,7 @@ func TestProperConfigMap(t *testing.T) {
 	assert.Equal(t, c.Annotations["custom-annotation"], "custom-annotation-value")
 	assert.Equal(t, c.Labels["custom-label"], "custom-value")
 	assert.Equal(t, c.Labels["app.kubernetes.io/name"], c.Name)
-	assert.Equal(t, c.Data[opentelemetry.CollectorConfigMapEntry], "the-config-in-yaml-format")
+	assert.Equal(t, c.Data[opentelemetry.CollectorConfigMapEntry], baseTestConfig)
 }
 
 func TestProperReconcileConfigMap(t *testing.T) {
@@ -69,7 +69,7 @@ func TestUpdateConfigMap(t *testing.T) {
 	name := resourceName(instance.Name)
 	persisted, err := clients.Kubernetes.CoreV1().ConfigMaps(instance.Namespace).Get(context.Background(), name, metav1.GetOptions{})
 	assert.NoError(t, err)
-	assert.Equal(t, "the-config-in-yaml-format", persisted.Data[opentelemetry.CollectorConfigMapEntry])
+	assert.Equal(t, baseTestConfig, persisted.Data[opentelemetry.CollectorConfigMapEntry])
 
 	// prepare the test object
 	updated := *instance
