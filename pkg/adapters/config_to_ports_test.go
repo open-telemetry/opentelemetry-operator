@@ -1,42 +1,23 @@
 package adapters
 
 import (
+	"context"
+	"errors"
 	"testing"
 
-	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/parser"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var logger logr.Logger = logf.Log.WithName("unit-tests")
-
-func TestParsePortFromEndpoint(t *testing.T) {
-	for _, tt := range []struct {
-		endpoint      string
-		expected      int32
-		errorExpected bool
-	}{
-		// prepare
-		{"http://localhost:1234", 1234, false},
-		{"0.0.0.0:1234", 1234, false},
-		{":1234", 1234, false},
-		{"no-port", 0, true},
-	} {
-
-		// test
-		val, err := portFromEndpoint(tt.endpoint)
-
-		// verify
-		if tt.errorExpected {
-			assert.Error(t, err)
-		} else {
-			assert.NoError(t, err)
-		}
-
-		assert.Equal(t, tt.expected, val, "wrong port from endpoint %s: %d", tt.endpoint, val)
-	}
-}
+var (
+	logger        = logf.Log.WithName("unit-tests")
+	ctxWithLogger = context.WithValue(context.Background(), opentelemetry.ContextLogger, logger)
+)
 
 func TestExtractPortsFromConfig(t *testing.T) {
 	// prepare
@@ -64,7 +45,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	// test
 	config, err := ConfigFromString(configStr)
 	require.NoError(t, err)
-	ports, err := ConfigToReceiverPorts(logger, config)
+	ports, err := ConfigToReceiverPorts(ctxWithLogger, config)
 
 	// verify
 	assert.NoError(t, err)
@@ -119,7 +100,7 @@ func TestNoPortsParsed(t *testing.T) {
 		require.NoError(t, err)
 
 		// test
-		ports, err := ConfigToReceiverPorts(logger, config)
+		ports, err := ConfigToReceiverPorts(ctxWithLogger, config)
 
 		// verify
 		assert.Equal(t, tt.expected, err)
@@ -138,7 +119,7 @@ func TestInvalidReceiver(t *testing.T) {
 		// test
 		config, err := ConfigFromString(tt)
 		require.NoError(t, err)
-		ports, err := ConfigToReceiverPorts(logger, config)
+		ports, err := ConfigToReceiverPorts(ctxWithLogger, config)
 
 		// verify
 		assert.NoError(t, err)
@@ -148,33 +129,46 @@ func TestInvalidReceiver(t *testing.T) {
 
 }
 
-func TestPortName(t *testing.T) {
-	for _, tt := range []struct {
-		candidate string
-		port      int32
-		expected  string
-	}{
-		{
-			candidate: "my-receiver",
-			port:      123,
-			expected:  "my-receiver",
+func TestParserFailed(t *testing.T) {
+	// prepare
+	mockParserCalled := false
+	mockParser := &mockParser{
+		portsFunc: func(context.Context) ([]v1.ServicePort, error) {
+			mockParserCalled = true
+			return nil, errors.New("mocked error")
 		},
-		{
-			candidate: "long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name",
-			port:      123,
-			expected:  "port-123",
-		},
-		{
-			candidate: "my-🦄-receiver",
-			port:      123,
-			expected:  "port-123",
-		},
-		{
-			candidate: "-my-receiver",
-			port:      123,
-			expected:  "port-123",
-		},
-	} {
-		assert.Equal(t, tt.expected, portName(tt.candidate, tt.port))
 	}
+	parser.Register("mock", func(name string, config map[interface{}]interface{}) parser.ReceiverParser {
+		return mockParser
+	})
+
+	config := map[interface{}]interface{}{
+		"receivers": map[interface{}]interface{}{
+			"mock": map[interface{}]interface{}{},
+		},
+	}
+
+	// test
+	ports, err := ConfigToReceiverPorts(ctxWithLogger, config)
+
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 0)
+	assert.True(t, mockParserCalled)
+}
+
+type mockParser struct {
+	portsFunc func(context.Context) ([]corev1.ServicePort, error)
+}
+
+func (m *mockParser) Ports(ctx context.Context) ([]corev1.ServicePort, error) {
+	if m.portsFunc != nil {
+		return m.portsFunc(ctx)
+	}
+
+	return nil, nil
+}
+
+func (m *mockParser) ParserName() string {
+	return "__mock-adapters"
 }

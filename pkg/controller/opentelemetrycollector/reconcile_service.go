@@ -55,7 +55,7 @@ func service(ctx context.Context) *corev1.Service {
 			return nil
 		}
 
-		ports, err = adapters.ConfigToReceiverPorts(logger, config)
+		ports, err = adapters.ConfigToReceiverPorts(ctx, config)
 		if err != nil {
 			logger.Error(err, "couldn't build the service for this instance")
 			return nil

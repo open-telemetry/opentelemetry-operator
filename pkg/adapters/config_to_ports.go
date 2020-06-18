@@ -1,13 +1,12 @@
 package adapters
 
 import (
+	"context"
 	"errors"
-	"fmt"
-	"regexp"
-	"strconv"
-	"strings"
 
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/parser"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -17,20 +16,12 @@ var (
 
 	// ErrReceiversNotAMap indicates that the receivers property isn't a map of values
 	ErrReceiversNotAMap = errors.New("receivers property in the configuration doesn't contain valid receivers")
-
-	// DNS_LABEL constraints: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
-	dnsLabelValidation = regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
-)
-
-const (
-	defaultGRPCPort          int32 = 14250
-	defaultThriftHTTPPort    int32 = 14268
-	defaultThriftCompactPort int32 = 6831
-	defaultThriftBinaryPort  int32 = 6832
 )
 
 // ConfigToReceiverPorts converts the incoming configuration object into a set of service ports required by the receivers.
-func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
+func ConfigToReceiverPorts(ctx context.Context, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
+	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
+
 	// now, we gather which ports we might need to open
 	// for that, we get all the receivers and check their `endpoint` properties,
 	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
@@ -63,122 +54,21 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 			continue
 		}
 
-		// Jaeger has multiple protocols, each on its own endpoint, so, we parse it separately
-		if strings.HasPrefix(key.(string), "jaeger") {
-			jaegerPorts := parseJaegerEndpoints(logger, key.(string), receiver)
-			if len(jaegerPorts) > 0 {
-				ports = append(ports, jaegerPorts...)
-			}
+		rcvrName := key.(string)
+		rcvrParser := parser.For(rcvrName, receiver)
+
+		rcvrPorts, err := rcvrParser.Ports(ctx)
+		if err != nil {
+			// should we break the process and return an error, or just ignore this faulty parser
+			// and let the other parsers add their ports to the service? right now, the best
+			// option seems to be to log the failures and move on, instead of failing them all
+			logger.Error(err, "parser for '%s' has returned an error: %v", rcvrName, err)
 			continue
 		}
 
-		port := parseGenericReceiverEndpoint(logger, key.(string), receiver)
-		if port != nil {
-			ports = append(ports, *port)
+		if len(rcvrPorts) > 0 {
+			ports = append(ports, rcvrPorts...)
 		}
 	}
-
 	return ports, nil
-}
-
-func parseJaegerEndpoints(logger logr.Logger, name string, receiver map[interface{}]interface{}) []corev1.ServicePort {
-	ports := []corev1.ServicePort{}
-
-	for _, protocol := range []struct {
-		name        string
-		defaultPort int32
-	}{
-		{
-			name:        "grpc",
-			defaultPort: defaultGRPCPort,
-		},
-		{
-			name:        "thrift_http",
-			defaultPort: defaultThriftHTTPPort,
-		},
-		{
-			name:        "thrift_compact",
-			defaultPort: defaultThriftCompactPort,
-		},
-		{
-			name:        "thrift_binary",
-			defaultPort: defaultThriftBinaryPort,
-		},
-	} {
-		// do we have the protocol specified at all?
-		if receiverProtocol, ok := receiver[protocol.name]; ok {
-			// we have the specified protocol, we definitely need a service port
-			nameWithProtocol := fmt.Sprintf("%s-%s", name, protocol.name)
-			var protocolPort *corev1.ServicePort
-
-			// do we have a configuration block for the protocol?
-			settings, ok := receiverProtocol.(map[interface{}]interface{})
-			if ok {
-				protocolPort = parseGenericReceiverEndpoint(logger, nameWithProtocol, settings)
-			}
-
-			// have we parsed a port based on the configuration block?
-			// if not, we use the default port
-			if protocolPort == nil {
-				protocolPort = &corev1.ServicePort{
-					Name: portName(nameWithProtocol, protocol.defaultPort),
-					Port: protocol.defaultPort,
-				}
-			}
-
-			// at this point, we *have* a port specified, add it to the list of ports
-			ports = append(ports, *protocolPort)
-		}
-	}
-
-	return ports
-}
-
-func parseGenericReceiverEndpoint(logger logr.Logger, name string, receiver map[interface{}]interface{}) *corev1.ServicePort {
-	endpoint, ok := receiver["endpoint"]
-	if !ok {
-		logger.Info("receiver doesn't have an endpoint")
-		return nil
-	}
-
-	switch endpoint := endpoint.(type) {
-	case string:
-		port, err := portFromEndpoint(endpoint)
-		if err != nil {
-			logger.WithValues("endpoint", endpoint).Info("couldn't parse the endpoint's port")
-			return nil
-		}
-
-		return &corev1.ServicePort{
-			Name: portName(name, port),
-			Port: port,
-		}
-	default:
-		logger.Info("receiver's endpoint isn't a string")
-	}
-
-	return nil
-}
-
-func portName(receiverName string, port int32) string {
-	if len(receiverName) > 63 {
-		return fmt.Sprintf("port-%d", port)
-	}
-
-	candidate := strings.ReplaceAll(receiverName, "/", "-")
-	candidate = strings.ReplaceAll(candidate, "_", "-")
-
-	if !dnsLabelValidation.MatchString(candidate) {
-		return fmt.Sprintf("port-%d", port)
-	}
-
-	// matches the pattern and has less than 63 chars -- the candidate name is good to go!
-	return candidate
-}
-
-func portFromEndpoint(endpoint string) (int32, error) {
-	i := strings.LastIndex(endpoint, ":") + 1
-	part := endpoint[i:]
-	port, err := strconv.Atoi(part)
-	return int32(port), err
 }
