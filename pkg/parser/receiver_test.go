@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 )
 
 var (

@@ -8,9 +8,10 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 )
 
 var (
