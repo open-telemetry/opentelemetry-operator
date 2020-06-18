@@ -47,18 +47,22 @@ func service(ctx context.Context) *corev1.Service {
 	// whereas 'labels' refers to the service
 	selector := labels
 
-	config, err := adapters.ConfigFromCtx(ctx)
-	if err != nil {
-		logger.Error(err, "couldn't extract the configuration from the context")
-		return nil
+	ports := instance.Spec.Ports
+	if len(ports) == 0 {
+		config, err := adapters.ConfigFromCtx(ctx)
+		if err != nil {
+			logger.Error(err, "couldn't extract the configuration from the context")
+			return nil
+		}
+
+		ports, err = adapters.ConfigToReceiverPorts(logger, config)
+		if err != nil {
+			logger.Error(err, "couldn't build the service for this instance")
+			return nil
+		}
 	}
 
-	ports, err := adapters.ConfigToReceiverPorts(logger, config)
-	if err != nil {
-		logger.Error(err, "couldn't build the service for this instance")
-		return nil
-	}
-
+	// if we have no ports, we don't need a service
 	if len(ports) == 0 {
 		return nil
 	}

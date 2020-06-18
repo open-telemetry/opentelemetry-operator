@@ -169,3 +169,22 @@ func TestServiceWithoutPorts(t *testing.T) {
 		assert.Nil(t, s, "expected no ports from a configuration like: %s", tt)
 	}
 }
+
+func TestOverridePorts(t *testing.T) {
+	// prepare
+	i := *instance
+	i.Spec.Ports = []corev1.ServicePort{{
+		Name: "my-port",
+		Port: int32(1234),
+	}}
+	c := context.WithValue(ctx, opentelemetry.ContextInstance, &i)
+
+	// test
+	s := service(c)
+
+	// verify
+	assert.NotNil(t, s)
+	assert.Len(t, s.Spec.Ports, 1)
+	assert.Equal(t, int32(1234), s.Spec.Ports[0].Port)
+	assert.Equal(t, "my-port", s.Spec.Ports[0].Name)
+}

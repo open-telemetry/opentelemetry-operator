@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigFromCtx(t *testing.T) {
