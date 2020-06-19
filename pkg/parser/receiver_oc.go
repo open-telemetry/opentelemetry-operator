@@ -2,7 +2,7 @@ package parser
 
 const parserNameOpenCensus = "__opencensus"
 
-// NewOpenCensusReceiverParser builds a new parser for Zipkin receivers
+// NewOpenCensusReceiverParser builds a new parser for OpenCensus receivers
 func NewOpenCensusReceiverParser(name string, config map[interface{}]interface{}) ReceiverParser {
 	return &GenericReceiver{
 		name:        name,

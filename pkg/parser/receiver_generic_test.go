@@ -43,6 +43,7 @@ func TestDownstreamParsers(t *testing.T) {
 	}{
 		{"zipkin", parserNameZipkin, 9411, NewZipkinReceiverParser},
 		{"opencensus", parserNameOpenCensus, 55678, NewOpenCensusReceiverParser},
+		{"otlp", parserNameOTLP, 55680, NewOTLPReceiverParser},
 	} {
 
 		t.Run("Builder", func(t *testing.T) {
