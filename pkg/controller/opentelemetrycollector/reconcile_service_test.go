@@ -188,3 +188,88 @@ func TestOverridePorts(t *testing.T) {
 	assert.Equal(t, int32(1234), s.Spec.Ports[0].Port)
 	assert.Equal(t, "my-port", s.Spec.Ports[0].Name)
 }
+
+func TestAddExplicitPorts(t *testing.T) {
+	for _, tt := range []struct {
+		name          string // the test case name
+		instancePorts []corev1.ServicePort
+		expectedPorts map[int32]bool
+		expectedNames map[string]bool
+	}{
+		{
+			name: "NewPort",
+			instancePorts: []corev1.ServicePort{{
+				Name: "my-port",
+				Port: int32(1235),
+			}},
+			// "first" (1234) comes from a receiver in .Spec.Config
+			expectedNames: map[string]bool{"first": false, "my-port": false},
+			expectedPorts: map[int32]bool{1234: false, 1235: false},
+		},
+		{
+			name: "FallbackPortName",
+			instancePorts: []corev1.ServicePort{{
+				Name: "first", // clashes with a receiver from .Spec.Config
+				Port: int32(1235),
+			}},
+			expectedNames: map[string]bool{"port-1234": false, "first": false},
+			expectedPorts: map[int32]bool{1234: false, 1235: false},
+		},
+		{
+			name: "FallbackPortNameClashes",
+			instancePorts: []corev1.ServicePort{
+				{
+					Name: "first", // clashes with the port 1234 from the receiver in .Spec.Config
+					Port: int32(1235),
+				},
+				{
+					Name: "port-1234", // the "first" port will be renamed to port-1234, clashes with this one
+					Port: int32(1236),
+				},
+			},
+			expectedNames: map[string]bool{"first": false, "port-1234": false},
+			expectedPorts: map[int32]bool{1235: false, 1236: false}, // the inferred port 1234 is skipped
+		},
+		{
+			name: "SkipExistingPortName",
+			instancePorts: []corev1.ServicePort{{
+				Name: "my-port",
+				Port: int32(1234),
+			}},
+			expectedNames: map[string]bool{"my-port": false},
+			expectedPorts: map[int32]bool{1234: false},
+		},
+	} {
+		t.Run("TestAddExplicitPorts-"+tt.name, func(t *testing.T) {
+			// prepare
+			i := *instance
+			i.Spec.Ports = tt.instancePorts
+			c := context.WithValue(ctx, opentelemetry.ContextInstance, &i)
+
+			// test
+			s := service(c)
+
+			// verify
+			assert.NotNil(t, s)
+
+			for _, p := range s.Spec.Ports {
+				if _, ok := tt.expectedPorts[p.Port]; !ok {
+					assert.Fail(t, "found a port that we didn't expect", "port number: %d", p.Port)
+				}
+				tt.expectedPorts[p.Port] = true
+
+				if _, ok := tt.expectedNames[p.Name]; !ok {
+					assert.Fail(t, "found a port name that we didn't expect", "port name: %s", p.Name)
+				}
+				tt.expectedNames[p.Name] = true
+			}
+
+			for k, v := range tt.expectedPorts {
+				assert.True(t, v, "the port %s should have been part of the result", k)
+			}
+			for k, v := range tt.expectedNames {
+				assert.True(t, v, "the port name %s should have been part of the result", k)
+			}
+		})
+	}
+}

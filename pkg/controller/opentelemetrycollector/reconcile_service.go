@@ -47,7 +47,7 @@ func service(ctx context.Context) *corev1.Service {
 	// whereas 'labels' refers to the service
 	selector := labels
 
-	ports := instance.Spec.Ports
+	ports := []corev1.ServicePort{}
 	if len(ports) == 0 {
 		config, err := adapters.ConfigFromCtx(ctx)
 		if err != nil {
@@ -60,6 +60,25 @@ func service(ctx context.Context) *corev1.Service {
 			logger.Error(err, "couldn't build the service for this instance")
 			return nil
 		}
+	}
+
+	if len(instance.Spec.Ports) > 0 {
+		// we should add all the ports from the CR
+		// there are two cases where problems might occur:
+		// 1) when the port number is already being used by a receiver
+		// 2) same, but for the port name
+		//
+		// in the first case, we remove the port we inferred from the list
+		// in the second case, we rename our inferred port to something like "port-%d"
+		portNumbers, portNames := extractPortNumbersAndNames(instance.Spec.Ports)
+		resultingInferredPorts := []corev1.ServicePort{}
+		for _, inferred := range ports {
+			if filtered := filterPort(inferred, portNumbers, portNames); filtered != nil {
+				resultingInferredPorts = append(resultingInferredPorts, *filtered)
+			}
+		}
+
+		ports = append(instance.Spec.Ports, resultingInferredPorts...)
 	}
 
 	// if we have no ports, we don't need a service
@@ -208,4 +227,38 @@ func serviceLabels(ctx context.Context, name string) map[string]string {
 	labels := commonLabels(ctx)
 	labels["app.kubernetes.io/name"] = name
 	return labels
+}
+
+func filterPort(candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {
+	if portNumbers[candidate.Port] {
+		return nil
+	}
+
+	// do we have the port name there already?
+	if portNames[candidate.Name] {
+		// there's already a port with the same name! do we have a 'port-%d' already?
+		fallbackName := fmt.Sprintf("port-%d", candidate.Port)
+		if portNames[fallbackName] {
+			// that wasn't expected, better skip this port
+			return nil
+		}
+
+		candidate.Name = fallbackName
+		return &candidate
+	}
+
+	// this port is unique, return as is
+	return &candidate
+}
+
+func extractPortNumbersAndNames(ports []corev1.ServicePort) (map[int32]bool, map[string]bool) {
+	numbers := map[int32]bool{}
+	names := map[string]bool{}
+
+	for _, port := range ports {
+		numbers[port.Port] = true
+		names[port.Name] = true
+	}
+
+	return numbers, names
 }

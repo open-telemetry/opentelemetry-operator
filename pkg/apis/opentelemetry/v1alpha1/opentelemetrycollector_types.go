@@ -54,8 +54,8 @@ type OpenTelemetryCollectorSpec struct {
 	Volumes []v1.Volume `json:"volumes,omitempty"`
 
 	// Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator
-	// will attempt to infer the required ports by parsing the .Spec.Config property but this can be overridden
-	// by setting this property.
+	// will attempt to infer the required ports by parsing the .Spec.Config property but this property can be
+	// used to open aditional ports that can't be inferred by the operator, like for custom receivers.
 	// +optional
 	// +listType=atomic
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
