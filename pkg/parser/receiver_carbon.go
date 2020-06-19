@@ -1,6 +1,6 @@
 package parser
 
-const parserNameCarbon = "__Carbon"
+const parserNameCarbon = "__carbon"
 
 // NewCarbonReceiverParser builds a new parser for Carbon receivers, from the contrib repository
 func NewCarbonReceiverParser(name string, config map[interface{}]interface{}) ReceiverParser {

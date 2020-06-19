@@ -47,6 +47,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 		// contrib receivers
 		{"carbon", parserNameCarbon, 2003, NewCarbonReceiverParser},
+		{"collectd", parserNameCollectd, 8081, NewCollectdReceiverParser},
 	} {
 
 		t.Run("Builder", func(t *testing.T) {
