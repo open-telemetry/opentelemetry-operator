@@ -12,15 +12,18 @@ var _ ReceiverParser = &GenericReceiver{}
 
 // GenericReceiver is a special parser for generic receivers. It doesn't self-register and should be created/used directly
 type GenericReceiver struct {
-	name   string
-	config map[interface{}]interface{}
+	name        string
+	config      map[interface{}]interface{}
+	defaultPort int32
+	parserName  string
 }
 
 // NewGenericReceiverParser builds a new parser for generic receivers
 func NewGenericReceiverParser(name string, config map[interface{}]interface{}) ReceiverParser {
 	return &GenericReceiver{
-		name:   name,
-		config: config,
+		name:       name,
+		config:     config,
+		parserName: parserNameGeneric,
 	}
 }
 
@@ -31,10 +34,17 @@ func (g *GenericReceiver) Ports(ctx context.Context) ([]corev1.ServicePort, erro
 		return []corev1.ServicePort{*port}, nil
 	}
 
+	if g.defaultPort > 0 {
+		return []corev1.ServicePort{{
+			Port: g.defaultPort,
+			Name: portName(g.name, g.defaultPort),
+		}}, nil
+	}
+
 	return []corev1.ServicePort{}, nil
 }
 
 // ParserName returns the name of this parser
 func (g *GenericReceiver) ParserName() string {
-	return parserNameGeneric
+	return g.parserName
 }
