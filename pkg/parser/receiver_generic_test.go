@@ -51,6 +51,7 @@ func TestDownstreamParsers(t *testing.T) {
 		{"sapm", parserNameSAPM, 7276, NewSAPMReceiverParser},
 		{"signalfx", parserNameSignalFx, 7276, NewSignalFxReceiverParser},
 		{"wavefront", parserNameWavefront, 2003, NewWavefrontReceiverParser},
+		{"zipkin-scribe", parserNameZipkinScribe, 9410, NewZipkinScribeReceiverParser},
 	} {
 
 		t.Run("Builder", func(t *testing.T) {
