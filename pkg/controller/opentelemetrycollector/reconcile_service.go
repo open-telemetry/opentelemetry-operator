@@ -47,19 +47,16 @@ func service(ctx context.Context) *corev1.Service {
 	// whereas 'labels' refers to the service
 	selector := labels
 
-	ports := []corev1.ServicePort{}
-	if len(ports) == 0 {
-		config, err := adapters.ConfigFromCtx(ctx)
-		if err != nil {
-			logger.Error(err, "couldn't extract the configuration from the context")
-			return nil
-		}
+	config, err := adapters.ConfigFromCtx(ctx)
+	if err != nil {
+		logger.Error(err, "couldn't extract the configuration from the context")
+		return nil
+	}
 
-		ports, err = adapters.ConfigToReceiverPorts(ctx, config)
-		if err != nil {
-			logger.Error(err, "couldn't build the service for this instance")
-			return nil
-		}
+	ports, err := adapters.ConfigToReceiverPorts(ctx, config)
+	if err != nil {
+		logger.Error(err, "couldn't build the service for this instance")
+		return nil
 	}
 
 	if len(instance.Spec.Ports) > 0 {
@@ -73,7 +70,7 @@ func service(ctx context.Context) *corev1.Service {
 		portNumbers, portNames := extractPortNumbersAndNames(instance.Spec.Ports)
 		resultingInferredPorts := []corev1.ServicePort{}
 		for _, inferred := range ports {
-			if filtered := filterPort(inferred, portNumbers, portNames); filtered != nil {
+			if filtered := filterPort(logger, inferred, portNumbers, portNames); filtered != nil {
 				resultingInferredPorts = append(resultingInferredPorts, *filtered)
 			}
 		}
@@ -229,7 +226,7 @@ func serviceLabels(ctx context.Context, name string) map[string]string {
 	return labels
 }
 
-func filterPort(candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {
+func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {
 	if portNumbers[candidate.Port] {
 		return nil
 	}
@@ -240,6 +237,10 @@ func filterPort(candidate corev1.ServicePort, portNumbers map[int32]bool, portNa
 		fallbackName := fmt.Sprintf("port-%d", candidate.Port)
 		if portNames[fallbackName] {
 			// that wasn't expected, better skip this port
+			logger.V(2).Info("a port name specified in the CR clashes with an inferred port name, and the fallback port name clashes with another port name! Skipping this port.",
+				"inferred-port-name", candidate.Name,
+				"fallback-port-name", fallbackName,
+			)
 			return nil
 		}
 

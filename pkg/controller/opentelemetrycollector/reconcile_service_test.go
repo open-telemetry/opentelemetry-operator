@@ -231,7 +231,7 @@ func TestAddExplicitPorts(t *testing.T) {
 			expectedPorts: map[int32]bool{1235: false, 1236: false}, // the inferred port 1234 is skipped
 		},
 		{
-			name: "SkipExistingPortName",
+			name: "SkipExistingPortNumber",
 			instancePorts: []corev1.ServicePort{{
 				Name: "my-port",
 				Port: int32(1234),
