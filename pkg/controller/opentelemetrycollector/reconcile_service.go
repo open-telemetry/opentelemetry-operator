@@ -17,10 +17,12 @@ import (
 
 // reconcileService reconciles the service(s) required for the instance in the current context
 func (r *ReconcileOpenTelemetryCollector) reconcileService(ctx context.Context) error {
-	svcs := []*corev1.Service{
-		service(ctx),
-		monitoringService(ctx),
-		headless(ctx),
+	svcs := []*corev1.Service{}
+	for _, s := range []*corev1.Service{service(ctx), monitoringService(ctx), headless(ctx)} {
+		// add only the non-nil to the list
+		if s != nil {
+			svcs = append(svcs, s)
+		}
 	}
 
 	// first, handle the create/update parts
