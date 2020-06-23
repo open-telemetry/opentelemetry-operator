@@ -15,9 +15,13 @@ import (
 )
 
 var (
-	instance *v1alpha1.OpenTelemetryCollector
-	ctx      context.Context
-	schem    *runtime.Scheme
+	instance       *v1alpha1.OpenTelemetryCollector
+	ctx            context.Context
+	schem          *runtime.Scheme
+	baseTestConfig = `receivers:
+  first:
+    endpoint: localhost:1234
+`
 )
 
 // TestMain ensures that all tests in this package have a fresh and sane instance of the common resources
@@ -39,7 +43,7 @@ func TestMain(m *testing.M) {
 			Annotations: map[string]string{"custom-annotation": "custom-annotation-value"},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: "the-config-in-yaml-format",
+			Config: baseTestConfig,
 		},
 	}
 	ctx = context.WithValue(context.Background(), opentelemetry.ContextInstance, instance)

@@ -6,6 +6,7 @@ spec:
   config: |
     receivers:
       jaeger:
+        grpc:
 
     processors:
       queued_retry:
