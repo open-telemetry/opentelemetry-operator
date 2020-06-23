@@ -6,21 +6,23 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	errs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/pkg/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1"
 )
 
 // reconcileService reconciles the service(s) required for the instance in the current context
 func (r *ReconcileOpenTelemetryCollector) reconcileService(ctx context.Context) error {
-	svcs := []*corev1.Service{
-		service(ctx),
-		monitoringService(ctx),
-		headless(ctx),
+	svcs := []*corev1.Service{}
+	for _, s := range []*corev1.Service{service(ctx), monitoringService(ctx), headless(ctx)} {
+		// add only the non-nil to the list
+		if s != nil {
+			svcs = append(svcs, s)
+		}
 	}
 
 	// first, handle the create/update parts
@@ -38,14 +40,50 @@ func (r *ReconcileOpenTelemetryCollector) reconcileService(ctx context.Context) 
 
 func service(ctx context.Context) *corev1.Service {
 	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
-	name := resourceName(instance.Name)
+	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 
-	labels := commonLabels(ctx)
-	labels["app.kubernetes.io/name"] = name
+	name := resourceName(instance.Name)
+	labels := serviceLabels(ctx, name)
 
 	// by coincidence, the selector is the same as the label, but note that the selector points to the deployment
 	// whereas 'labels' refers to the service
 	selector := labels
+
+	config, err := adapters.ConfigFromCtx(ctx)
+	if err != nil {
+		logger.Error(err, "couldn't extract the configuration from the context")
+		return nil
+	}
+
+	ports, err := adapters.ConfigToReceiverPorts(ctx, config)
+	if err != nil {
+		logger.Error(err, "couldn't build the service for this instance")
+		return nil
+	}
+
+	if len(instance.Spec.Ports) > 0 {
+		// we should add all the ports from the CR
+		// there are two cases where problems might occur:
+		// 1) when the port number is already being used by a receiver
+		// 2) same, but for the port name
+		//
+		// in the first case, we remove the port we inferred from the list
+		// in the second case, we rename our inferred port to something like "port-%d"
+		portNumbers, portNames := extractPortNumbersAndNames(instance.Spec.Ports)
+		resultingInferredPorts := []corev1.ServicePort{}
+		for _, inferred := range ports {
+			if filtered := filterPort(logger, inferred, portNumbers, portNames); filtered != nil {
+				resultingInferredPorts = append(resultingInferredPorts, *filtered)
+			}
+		}
+
+		ports = append(instance.Spec.Ports, resultingInferredPorts...)
+	}
+
+	// if we have no ports, we don't need a service
+	if len(ports) == 0 {
+		return nil
+	}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -57,42 +95,42 @@ func service(ctx context.Context) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Selector:  selector,
 			ClusterIP: "",
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "jaeger-grpc",
-					Port:       14250,
-					TargetPort: intstr.FromInt(14250),
-				},
-			},
+			Ports:     ports,
 		},
 	}
 }
 
 func headless(ctx context.Context) *corev1.Service {
 	h := service(ctx)
+	if h == nil {
+		return nil
+	}
+
 	h.Name = fmt.Sprintf("%s-headless", h.Name)
 	h.Spec.ClusterIP = "None"
 	return h
 }
 
 func monitoringService(ctx context.Context) *corev1.Service {
-	h := service(ctx)
-	h.Name = fmt.Sprintf("%s-monitoring", h.Name)
+	instance := ctx.Value(opentelemetry.ContextInstance).(*v1alpha1.OpenTelemetryCollector)
+	name := fmt.Sprintf("%s-monitoring", resourceName(instance.Name))
 
-	// duplicate the map, as we want to change the h.Labels but not the selector
-	labels := map[string]string{}
-	for k, v := range h.Labels {
-		labels[k] = v
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   instance.Namespace,
+			Labels:      serviceLabels(ctx, name),
+			Annotations: instance.Annotations,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector:  serviceLabels(ctx, resourceName(instance.Name)),
+			ClusterIP: "",
+			Ports: []corev1.ServicePort{{
+				Name: "monitoring",
+				Port: 8888,
+			}},
+		},
 	}
-	labels["app.kubernetes.io/name"] = h.Name
-	h.Labels = labels
-
-	h.Spec.Ports = []corev1.ServicePort{{
-		Name:       "monitoring",
-		Port:       8888,
-		TargetPort: intstr.FromInt(8888),
-	}}
-	return h
 }
 
 func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServices(ctx context.Context, expected []*corev1.Service) error {
@@ -106,7 +144,7 @@ func (r *ReconcileOpenTelemetryCollector) reconcileExpectedServices(ctx context.
 		svcs := r.clientset.Kubernetes.CoreV1().Services(desired.Namespace)
 
 		existing, err := svcs.Get(ctx, desired.Name, metav1.GetOptions{})
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && errs.IsNotFound(err) {
 			if desired, err = svcs.Create(ctx, desired, metav1.CreateOptions{}); err != nil {
 				return fmt.Errorf("failed to create: %v", err)
 			}
@@ -182,4 +220,48 @@ func (r *ReconcileOpenTelemetryCollector) deleteServices(ctx context.Context, ex
 	}
 
 	return nil
+}
+
+func serviceLabels(ctx context.Context, name string) map[string]string {
+	labels := commonLabels(ctx)
+	labels["app.kubernetes.io/name"] = name
+	return labels
+}
+
+func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {
+	if portNumbers[candidate.Port] {
+		return nil
+	}
+
+	// do we have the port name there already?
+	if portNames[candidate.Name] {
+		// there's already a port with the same name! do we have a 'port-%d' already?
+		fallbackName := fmt.Sprintf("port-%d", candidate.Port)
+		if portNames[fallbackName] {
+			// that wasn't expected, better skip this port
+			logger.V(2).Info("a port name specified in the CR clashes with an inferred port name, and the fallback port name clashes with another port name! Skipping this port.",
+				"inferred-port-name", candidate.Name,
+				"fallback-port-name", fallbackName,
+			)
+			return nil
+		}
+
+		candidate.Name = fallbackName
+		return &candidate
+	}
+
+	// this port is unique, return as is
+	return &candidate
+}
+
+func extractPortNumbersAndNames(ports []corev1.ServicePort) (map[int32]bool, map[string]bool) {
+	numbers := map[int32]bool{}
+	names := map[string]bool{}
+
+	for _, port := range ports {
+		numbers[port.Port] = true
+		names[port.Name] = true
+	}
+
+	return numbers, names
 }
