@@ -13,7 +13,9 @@ func TestJaegerParserRegistration(t *testing.T) {
 
 func TestJaegerMinimalReceiverConfiguration(t *testing.T) {
 	builder := NewJaegerReceiverParser("jaeger", map[interface{}]interface{}{
-		"grpc": map[interface{}]interface{}{},
+		"protocols": map[interface{}]interface{}{
+			"grpc": map[interface{}]interface{}{},
+		},
 	})
 
 	// test
@@ -27,8 +29,10 @@ func TestJaegerMinimalReceiverConfiguration(t *testing.T) {
 
 func TestJaegerOverrideReceiverProtocolPort(t *testing.T) {
 	builder := NewJaegerReceiverParser("jaeger", map[interface{}]interface{}{
-		"grpc": map[interface{}]interface{}{
-			"endpoint": "0.0.0.0:1234",
+		"protocols": map[interface{}]interface{}{
+			"grpc": map[interface{}]interface{}{
+				"endpoint": "0.0.0.0:1234",
+			},
 		},
 	})
 
@@ -43,10 +47,12 @@ func TestJaegerOverrideReceiverProtocolPort(t *testing.T) {
 
 func TestJaegerDefaultPorts(t *testing.T) {
 	builder := NewJaegerReceiverParser("jaeger", map[interface{}]interface{}{
-		"grpc":           map[interface{}]interface{}{},
-		"thrift_http":    map[interface{}]interface{}{},
-		"thrift_compact": map[interface{}]interface{}{},
-		"thrift_binary":  map[interface{}]interface{}{},
+		"protocols": map[interface{}]interface{}{
+			"grpc":           map[interface{}]interface{}{},
+			"thrift_http":    map[interface{}]interface{}{},
+			"thrift_compact": map[interface{}]interface{}{},
+			"thrift_binary":  map[interface{}]interface{}{},
+		},
 	})
 
 	expectedResults := map[string]struct {

@@ -34,13 +34,15 @@ func TestExtractPortsFromConfig(t *testing.T) {
   examplereceiver/without-endpoint:
     notendpoint: "0.0.0.0:12347"
   jaeger:
-    grpc:
-    thrift_compact:
-    thrift_binary:
-      endpoint: 0.0.0.0:6833
+    protocols:
+      grpc:
+      thrift_compact:
+      thrift_binary:
+        endpoint: 0.0.0.0:6833
   jaeger/custom:
-    thrift_http:
-      endpoint: 0.0.0.0:15268
+    protocols:
+      thrift_http:
+        endpoint: 0.0.0.0:15268
 `
 
 	// test
