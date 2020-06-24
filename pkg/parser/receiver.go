@@ -59,7 +59,7 @@ func singlePortFromConfigEndpoint(ctx context.Context, name string, config map[i
 	logger := ctx.Value(opentelemetry.ContextLogger).(logr.Logger)
 	endpoint, ok := config["endpoint"]
 	if !ok {
-		logger.Info("receiver doesn't have an endpoint")
+		logger.V(2).Info("receiver doesn't have an endpoint")
 		return nil
 	}
 

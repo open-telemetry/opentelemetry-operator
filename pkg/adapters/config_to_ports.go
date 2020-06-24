@@ -51,8 +51,8 @@ func ConfigToReceiverPorts(ctx context.Context, config map[interface{}]interface
 	for key, val := range receivers {
 		receiver, ok := val.(map[interface{}]interface{})
 		if !ok {
-			logger.Info("receiver doesn't seem to be a map of properties")
-			continue
+			logger.Info("receiver doesn't seem to be a map of properties", "receiver", key)
+			receiver = map[interface{}]interface{}{}
 		}
 
 		rcvrName := key.(string)
