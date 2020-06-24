@@ -49,7 +49,7 @@ func TestDownstreamParsers(t *testing.T) {
 		{"carbon", parserNameCarbon, 2003, NewCarbonReceiverParser},
 		{"collectd", parserNameCollectd, 8081, NewCollectdReceiverParser},
 		{"sapm", parserNameSAPM, 7276, NewSAPMReceiverParser},
-		{"signalfx", parserNameSignalFx, 7276, NewSignalFxReceiverParser},
+		{"signalfx", parserNameSignalFx, 9943, NewSignalFxReceiverParser},
 		{"wavefront", parserNameWavefront, 2003, NewWavefrontReceiverParser},
 		{"zipkin-scribe", parserNameZipkinScribe, 9410, NewZipkinScribeReceiverParser},
 	} {
