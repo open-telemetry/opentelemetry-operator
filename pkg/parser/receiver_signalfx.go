@@ -7,7 +7,7 @@ func NewSignalFxReceiverParser(name string, config map[interface{}]interface{}) 
 	return &GenericReceiver{
 		name:        name,
 		config:      config,
-		defaultPort: 7276,
+		defaultPort: 9943,
 		parserName:  parserNameSignalFx,
 	}
 }
