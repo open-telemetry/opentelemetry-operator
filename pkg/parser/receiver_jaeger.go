@@ -26,9 +26,16 @@ type JaegerReceiverParser struct {
 
 // NewJaegerReceiverParser builds a new parser for Jaeger receivers
 func NewJaegerReceiverParser(name string, config map[interface{}]interface{}) ReceiverParser {
+	if protocols, ok := config["protocols"].(map[interface{}]interface{}); ok {
+		return &JaegerReceiverParser{
+			name:   name,
+			config: protocols,
+		}
+	}
+
 	return &JaegerReceiverParser{
 		name:   name,
-		config: config,
+		config: map[interface{}]interface{}{},
 	}
 }
 
