@@ -99,3 +99,4 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 [code-climate-img]: https://api.codeclimate.com/v1/badges/7bb215eea77fc9c24484/maintainability
 [codecov]: https://codecov.io/gh/open-telemetry/opentelemetry-operator
 [codecov-img]: https://codecov.io/gh/open-telemetry/opentelemetry-operator/branch/master/graph/badge.svg
+
