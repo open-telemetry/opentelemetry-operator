@@ -15,7 +15,7 @@ spec:
       serviceAccountName: opentelemetry-operator
       containers:
         - name: opentelemetry-operator
-          image: quay.io/opentelemetry/opentelemetry-operator:v0.0.2
+          image: quay.io/opentelemetry/opentelemetry-operator:v0.2.0
           command:
           - opentelemetry-operator
           imagePullPolicy: Always
