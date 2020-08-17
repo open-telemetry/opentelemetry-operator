@@ -6,4 +6,4 @@ opentelemetry-collector=0.2.0
 
 # DO NOT EDIT the next value, it is updated automatically during the release.
 # Represents the current (latest) release of the OpenTelemetry Operator.
-operator=0.0.2
+operator=0.2.0
