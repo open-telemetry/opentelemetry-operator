@@ -1,106 +1,143 @@
-OPERATOR_NAME ?= opentelemetry-operator
-OPERATOR_VERSION ?= "$(shell git describe --tags)"
+# Current Operator version
+VERSION ?= "$(shell git describe --tags)"
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/version"
+OTELSVC_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
+LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELSVC_VERSION}"
 
-GO_FLAGS ?= GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=on
-GOPATH ?= $(shell go env GOPATH)
-KUBERNETES_CONFIG ?= "${HOME}/.kube/config"
-WATCH_NAMESPACE ?= ""
-BIN_DIR ?= "build/_output/bin"
+# Default bundle image tag
+BUNDLE_IMG ?= controller-bundle:$(VERSION)
+# Options for 'bundle-build'
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-NAMESPACE ?= "quay.io/${USER}"
-BUILD_IMAGE ?= "${NAMESPACE}/${OPERATOR_NAME}:latest"
-OUTPUT_BINARY ?= "${BIN_DIR}/${OPERATOR_NAME}"
-VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/pkg/version"
-LD_FLAGS ?= "-X ${VERSION_PKG}.version=${OPERATOR_VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELSVC_VERSION}"
+# Image URL to use all building/pushing image targets
+IMG ?= controller:latest
+# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+CRD_OPTIONS ?= "crd:trivialVersions=true"
 
-OTELSVC_VERSION ?= "$(shell grep -v '\#' opentelemetry.version | grep opentelemetry-collector | awk -F= '{print $$2}')"
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
 
-.DEFAULT_GOAL := build
+# If we are running in CI, run ginkgo with the recommended CI settings
+ifeq (,$(CI))
+GINKGO_OPTS=-r
+else
+GINKGO_OPTS=-r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race --progress --compilers=2 -v
+endif
 
-.PHONY: discard-go-mod-changes
-discard-go-mod-changes:
-	@# 'go list' will update go.mod/go.sum and there's no way to prevent it (not even with -mod=readonly)
-	@git checkout -- go.mod go.sum
+all: manager
+ci: test
 
-.PHONY: check
-check: ensure-generate-is-noop discard-go-mod-changes
-	@echo Checking...
-	@git diff -s --exit-code . || (echo "Build failed: one or more source files aren't properly formatted. Run 'make format' and update your PR." && exit 1)
+# Run tests
+test: ginkgo generate fmt vet manifests
+	$(GINKGO) $(GINKGO_OPTS)
 
-.PHONY: ensure-generate-is-noop
-ensure-generate-is-noop: generate format
-	@git diff -s --exit-code pkg/apis/opentelemetry/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the deep copy functions aren't up to date. Run 'make generate' and update your PR." && exit 1)
-	@git diff -s --exit-code pkg/client/versioned || (echo "Build failed: the versioned clients aren't up to date. Run 'make generate'." && exit 1)
+# Build manager binary
+manager: generate fmt vet
+	go build -o bin/manager main.go
 
-.PHONY: format
-format:
-	@echo Formatting code...
-	@GOPATH=${GOPATH} .ci/format.sh
+# Run against the configured Kubernetes cluster in ~/.kube/config
+run: generate fmt vet manifests
+	go run -ldflags ${LD_FLAGS} ./main.go
 
-.PHONY: security
-security:
-	@echo Security...
-	@gosec -quiet ./... 2>/dev/null
+# Install CRDs into a cluster
+install: manifests kustomize
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
-.PHONY: build
-build: format
-	@echo Building operator binary...
-	@${GO_FLAGS} go build -o ${OUTPUT_BINARY} -ldflags ${LD_FLAGS} ./cmd/manager/main.go
+# Uninstall CRDs from a cluster
+uninstall: manifests kustomize
+	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-.PHONY: container
-container:
-	@echo Building container ${BUILD_IMAGE}...
-	@mkdir -p build/_output
-	@BUILD_IMAGE=${BUILD_IMAGE} ./.ci/build-container.sh
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: manifests kustomize
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-.PHONY: run
-run: crd
-	@OPERATOR_NAME=${OPERATOR_NAME} operator-sdk run local --watch-namespace="${WATCH_NAMESPACE}" --operator-flags "--zap-devel" --go-ldflags ${LD_FLAGS}
+# Generate manifests e.g. CRD, RBAC etc.
+manifests: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-.PHONY: clean
-clean:
-	@echo Cleaning...
+# Run go fmt against code
+fmt:
+	go fmt ./...
 
-.PHONY: crd
-crd:
-	@kubectl create -f deploy/crds/opentelemetry.io_opentelemetrycollectors_crd.yaml 2>&1 | grep -v "already exists" || true
+# Run go vet against code
+vet:
+	go vet ./...
 
-.PHONY: generate
-generate: internal-generate format
+# Generate code
+generate: controller-gen
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-.PHONY: internal-generate
-internal-generate:
-	@GOPATH=${GOPATH} ./.ci/generate.sh
+# Build the docker image
+docker-build: test
+	docker build . -t ${IMG}
 
-.PHONY: lint
-lint:
-	@echo Linting...
-	@GOPATH=${GOPATH} ./.ci/lint.sh
+# Push the docker image
+docker-push:
+	docker push ${IMG}
 
-.PHONY: test
-test: unit-tests
+# find or download controller-gen
+# download controller-gen if necessary
+controller-gen:
+ifeq (, $(shell which controller-gen))
+	@{ \
+	set -e ;\
+	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$CONTROLLER_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
+	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	}
+CONTROLLER_GEN=$(GOBIN)/controller-gen
+else
+CONTROLLER_GEN=$(shell which controller-gen)
+endif
 
-.PHONY: unit-tests
-unit-tests:
-	@echo Running unit tests...
-	@go test ./... -cover -coverprofile=coverage.txt -covermode=atomic -race
+# find or download ginkgo
+# download ginkgo if necessary
+ginkgo:
+ifeq (, $(shell which ginkgo))
+	@{ \
+	set -e ;\
+	go get github.com/onsi/ginkgo/ginkgo@v1.11.0 ;\
+	}
+GINKGO=$(GOBIN)/ginkgo
+else
+GINKGO=$(shell which ginkgo)
+endif
 
-.PHONY: all
-all: check format lint security build test
+kustomize:
+ifeq (, $(shell which kustomize))
+	@{ \
+	set -e ;\
+	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+	}
+KUSTOMIZE=$(GOBIN)/kustomize
+else
+KUSTOMIZE=$(shell which kustomize)
+endif
 
-.PHONY: ci
-ci: install-tools ensure-generate-is-noop all
+# Generate bundle manifests and metadata, then validate generated files.
+bundle: manifests
+	operator-sdk generate kustomize manifests -q
+	kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	operator-sdk bundle validate ./bundle
 
-.PHONY: install-tools
-install-tools:
-	@curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b ${GOPATH}/bin 2.0.0
-	@go install \
-		golang.org/x/tools/cmd/goimports \
-		k8s.io/code-generator/cmd/client-gen \
-		k8s.io/kube-openapi/cmd/openapi-gen
-
-.PHONY: install-prometheus-operator
-install-prometheus-operator:
-	@echo Installing Prometheus Operator bundle
-	@kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml
+# Build the bundle image.
+bundle-build:
+	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
