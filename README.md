@@ -5,17 +5,13 @@
 
 The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](https://coreos.com/operators/).
 
-At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-service) as the only managed component.
+At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) as the only managed component.
 
 ## Getting started
 
-To install the operator, run:
+To run the operator locally, run:
 ```
-kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/crds/opentelemetry.io_opentelemetrycollectors_crd.yaml
-kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/service_account.yaml
-kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/role.yaml
-kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/role_binding.yaml
-kubectl create -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-operator/master/deploy/operator.yaml
+make install run
 ```
 
 Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry Collector (otelcol) instance, like:
@@ -27,7 +23,6 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  image: otel/opentelemetry-collector:latest
   config: |
     receivers:
       jaeger:
@@ -52,7 +47,7 @@ compatible with the latest version of the OpenTelemetry Collector image being re
 
 This will create an OpenTelemetry Collector instance named `simplest`, exposing a `jaeger-grpc` port to consume spans from your instrumented applications and exporting those spans via `logging`, which writes the spans to the console (`stdout`) of the OpenTelemetry Collector instance that receives the span.
 
-The `config` node holds the `YAML` that should be passed down as-is to the underlying OpenTelemetry Collector instances. Refer to the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-service) documentation for a reference of the possible entries.
+The `config` node holds the `YAML` that should be passed down as-is to the underlying OpenTelemetry Collector instances. Refer to the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) documentation for a reference of the possible entries.
 
 At this point, the Operator does *not* validate the contents of the configuration file: if the configuration is invalid, the instance will still be created but the underlying OpenTelemetry Collector might crash.
 
@@ -60,30 +55,18 @@ At this point, the Operator does *not* validate the contents of the configuratio
 
 The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet` or as a `Deployment` (default). Look at the `examples/daemonset.yaml` for reference.
 
-## Prometheus ServiceMonitor objects
-
-When the Prometheus Operator is available in the same cluster as the OpenTelemetry Operator, the OpenTelemetry Operator will automatically create the relevant `ServiceMonitor` objects:
-
-* One set for the OpenTelemetry Operator itself
-* One set for each managed OpenTelemetry instance
-
-Refer to the Prometheus Operator for complete instructions on how to do a production-quality installation. For development purposes, the following will do:
-
-```console
-$ kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/v0.33.0/bundle.yaml
-```
-
-When deploying the example `simplest.yaml`, the following `ServiceMonitor` will be created once the Prometheus Operator is available:
-
-```console
-$ kubectl get servicemonitors simplest-collector
-NAME                 AGE
-simplest-collector   103s
-```
-
 ## Contributing and Developing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Testing
+
+With an existing cluster (such as `minikube`), run:
+```
+USE_EXISTING_CLUSTER=true make test
+```
+
+Tests can also be run without an existing cluster. For that, install [`kubebuilder`](https://book.kubebuilder.io/quick-start.html#installation). In this case, the tests will bootstrap `etcd` and `kubernetes-api-server` for the tests. Run against an existing cluster whenever possible, though.
 
 ## License
   

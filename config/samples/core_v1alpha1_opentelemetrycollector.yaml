@@ -1,0 +1,23 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: opentelemetrycollector-sample
+spec:
+  config: |
+    receivers:
+      jaeger:
+        protocols: 
+          grpc:
+
+    processors:
+      queued_retry:
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: [queued_retry]
+          exporters: [logging]

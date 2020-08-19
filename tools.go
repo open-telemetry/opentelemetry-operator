@@ -1,3 +1,0 @@
-// +build tools
-
-package tools
