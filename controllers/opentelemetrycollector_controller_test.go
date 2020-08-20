@@ -26,7 +26,7 @@ import (
 
 var _ = Describe("OpenTelemetryCollector controller", func() {
 	logger := logf.Log.WithName("unit-tests")
-	cfg := config.DefaultConfig()
+	cfg := config.New()
 	cfg.FlagSet().Parse([]string{})
 
 	It("should generate the underlying objects on reconciliation", func() {
