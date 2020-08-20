@@ -45,8 +45,8 @@ type Config struct {
 	// config state
 	collectorImage          string
 	collectorConfigMapEntry string
-	plt                     platform.Platform
-	v                       version.Version
+	platform                platform.Platform
+	version                 version.Version
 }
 
 // New constructs a new configuration based on the given options
@@ -56,8 +56,8 @@ func New(opts ...Option) Config {
 		autoDetectFrequency:     defaultAutoDetectFrequency,
 		collectorConfigMapEntry: defaultCollectorConfigMapEntry,
 		logger:                  logf.Log.WithName("config"),
-		plt:                     platform.Unknown,
-		v:                       version.Get(),
+		platform:                platform.Unknown,
+		version:                 version.Get(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -66,7 +66,7 @@ func New(opts ...Option) Config {
 	// this is derived from another option, so, we need to first parse the options, then set a default
 	// if there's no explicit value being set
 	if len(o.collectorImage) == 0 {
-		o.collectorImage = fmt.Sprintf("quay.io/opentelemetry/opentelemetry-collector:v%s", o.v.OpenTelemetryCollector)
+		o.collectorImage = fmt.Sprintf("quay.io/opentelemetry/opentelemetry-collector:v%s", o.version.OpenTelemetryCollector)
 	}
 
 	return Config{
@@ -76,8 +76,8 @@ func New(opts ...Option) Config {
 		collectorConfigMapEntry: o.collectorConfigMapEntry,
 		logger:                  o.logger,
 		onChange:                o.onChange,
-		plt:                     o.plt,
-		v:                       o.v,
+		platform:                o.platform,
+		version:                 o.version,
 	}
 }
 
@@ -116,15 +116,15 @@ func (c *Config) AutoDetect() error {
 	c.logger.V(2).Info("auto-detecting the configuration based on the environment")
 
 	// TODO: once new things need to be detected, extract this into individual detection routines
-	if c.plt == platform.Unknown {
+	if c.platform == platform.Unknown {
 		plt, err := c.autoDetect.Platform()
 		if err != nil {
 			return err
 		}
 
-		if c.plt != plt {
+		if c.platform != plt {
 			c.logger.V(1).Info("platform detected", "platform", plt)
-			c.plt = plt
+			c.platform = plt
 			changed = true
 		}
 	}
@@ -154,5 +154,5 @@ func (c *Config) CollectorConfigMapEntry() string {
 
 // Platform represents the type of the platform this operator is running
 func (c *Config) Platform() platform.Platform {
-	return c.plt
+	return c.platform
 }

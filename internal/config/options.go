@@ -23,8 +23,8 @@ type options struct {
 	collectorConfigMapEntry string
 	logger                  logr.Logger
 	onChange                []func() error
-	plt                     platform.Platform
-	v                       version.Version
+	platform                platform.Platform
+	version                 version.Version
 }
 
 func (options) AutoDetect(a autodetect.AutoDetect) Option {
@@ -62,11 +62,11 @@ func (options) OnChange(f func() error) Option {
 }
 func (options) Platform(plt platform.Platform) Option {
 	return func(o *options) {
-		o.plt = plt
+		o.platform = plt
 	}
 }
 func (options) Version(v version.Version) Option {
 	return func(o *options) {
-		o.v = v
+		o.version = v
 	}
 }
