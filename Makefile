@@ -48,7 +48,7 @@ manager: generate fmt vet
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	go run -ldflags ${LD_FLAGS} ./main.go
+	go run -ldflags ${LD_FLAGS} ./main.go --zap-devel
 
 # Install CRDs into a cluster
 install: manifests kustomize
