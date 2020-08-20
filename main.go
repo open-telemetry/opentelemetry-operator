@@ -52,19 +52,9 @@ func init() {
 }
 
 func main() {
-	logger := zap.New(zap.UseDevMode(true))
-
-	v := version.Get()
-	logger.Info("Starting the OpenTelemetry Operator",
-		"opentelemetry-operator", v.Operator,
-		"opentelemetry-collector", v.OpenTelemetryCollector,
-		"build-date", v.BuildDate,
-		"go-version", v.Go,
-		"go-arch", runtime.GOARCH,
-		"go-os", runtime.GOOS,
-	)
-
 	// registers any flags that underlying libraries might use
+	opts := zap.Options{}
+	opts.BindFlags(flag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 
 	var metricsAddr string
@@ -75,12 +65,23 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 
 	// Add flags related to this operator
+	v := version.Get()
 	config := config.WithVersion(v)
 	pflag.CommandLine.AddFlagSet(config.FlagSet())
 
 	pflag.Parse()
 
+	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
+
+	logger.Info("Starting the OpenTelemetry Operator",
+		"opentelemetry-operator", v.Operator,
+		"opentelemetry-collector", v.OpenTelemetryCollector,
+		"build-date", v.BuildDate,
+		"go-version", v.Go,
+		"go-arch", runtime.GOARCH,
+		"go-os", runtime.GOOS,
+	)
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if found {
