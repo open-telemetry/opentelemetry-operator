@@ -35,6 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	// +kubebuilder:scaffold:imports
 )
@@ -57,6 +58,7 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 
+	// Add flags related to this operator
 	var metricsAddr string
 	var enableLeaderElection bool
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -66,7 +68,17 @@ func main() {
 
 	// Add flags related to this operator
 	v := version.Get()
-	config := config.WithVersion(v)
+	restConfig := ctrl.GetConfigOrDie()
+
+	// builds the operator's configuration
+	ad, err := autodetect.New(restConfig)
+	cfgOpts := config.Options
+	config := config.New(
+		cfgOpts.Logger(ctrl.Log.WithName("config")),
+		cfgOpts.Version(v),
+		cfgOpts.AutoDetect(ad),
+	)
+
 	pflag.CommandLine.AddFlagSet(config.FlagSet())
 
 	pflag.Parse()
@@ -108,6 +120,14 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
+	}
+
+	// run the auto-detect mechanism for the configuration
+	err = mgr.Add(manager.RunnableFunc(func(<-chan struct{}) error {
+		return config.StartAutoDetect()
+	}))
+	if err != nil {
+		setupLog.Error(err, "failed to start the auto-detect mechanism")
 	}
 
 	// adds the upgrade mechanism to be executed once the manager is ready
