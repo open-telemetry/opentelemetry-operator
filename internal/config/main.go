@@ -16,28 +16,68 @@ package config
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/go-logr/logr"
+	"github.com/spf13/pflag"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
-	"github.com/spf13/pflag"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
+)
+
+const (
+	defaultAutoDetectFrequency     = 5 * time.Second
+	defaultCollectorConfigMapEntry = "collector.yaml"
 )
 
 // Config holds the static configuration for this operator
 type Config struct {
-	v                       version.Version
+	// Registers a callback, to be called once a configuration change happens
+	OnChange func() error
+
+	logger              logr.Logger
+	autoDetect          autodetect.AutoDetect
+	autoDetectFrequency time.Duration
+	onChange            []func() error
+
+	// config state
 	collectorImage          string
 	collectorConfigMapEntry string
+	plt                     platform.Platform
+	v                       version.Version
 }
 
-// DefaultConfig builds a new configuration populated with the default, immutable values
-func DefaultConfig() Config {
-	return WithVersion(version.Get())
-}
+// New constructs a new configuration based on the given options
+func New(opts ...Option) Config {
+	// initialize with the default values
+	o := options{
+		autoDetectFrequency:     defaultAutoDetectFrequency,
+		collectorConfigMapEntry: defaultCollectorConfigMapEntry,
+		logger:                  logf.Log.WithName("config"),
+		plt:                     platform.Unknown,
+		v:                       version.Get(),
+	}
+	for _, opt := range opts {
+		opt(&o)
+	}
 
-// WithVersion builds a new configuration using the provided version object
-func WithVersion(v version.Version) Config {
+	// this is derived from another option, so, we need to first parse the options, then set a default
+	// if there's no explicit value being set
+	if len(o.collectorImage) == 0 {
+		o.collectorImage = fmt.Sprintf("quay.io/opentelemetry/opentelemetry-collector:v%s", o.v.OpenTelemetryCollector)
+	}
+
 	return Config{
-		v:                       v,
-		collectorConfigMapEntry: "collector.yaml",
+		autoDetect:              o.autoDetect,
+		autoDetectFrequency:     o.autoDetectFrequency,
+		collectorImage:          o.collectorImage,
+		collectorConfigMapEntry: o.collectorConfigMapEntry,
+		logger:                  o.logger,
+		onChange:                o.onChange,
+		plt:                     o.plt,
+		v:                       o.v,
 	}
 }
 
@@ -46,11 +86,60 @@ func (c *Config) FlagSet() *pflag.FlagSet {
 	fs := pflag.NewFlagSet("opentelemetry-operator", pflag.ExitOnError)
 	pflag.StringVar(&c.collectorImage,
 		"otelcol-image",
-		fmt.Sprintf("quay.io/opentelemetry/opentelemetry-collector:v%s", c.v.OpenTelemetryCollector),
+		c.collectorImage,
 		"The default image to use for OpenTelemetry Collector when not specified in the individual custom resource (CR)",
 	)
 
 	return fs
+}
+
+// StartAutoDetect attempts to automatically detect relevant information for this operator. This will block until the first
+// run is executed and will schedule periodic updates.
+func (c *Config) StartAutoDetect() error {
+	err := c.AutoDetect()
+	go c.periodicAutoDetect()
+
+	return err
+}
+
+func (c *Config) periodicAutoDetect() {
+	ticker := time.NewTicker(c.autoDetectFrequency)
+
+	for range ticker.C {
+		c.AutoDetect()
+	}
+}
+
+// AutoDetect attempts to automatically detect relevant information for this operator.
+func (c *Config) AutoDetect() error {
+	changed := false
+	c.logger.V(2).Info("auto-detecting the configuration based on the environment")
+
+	// TODO: once new things need to be detected, extract this into individual detection routines
+	if c.plt == platform.Unknown {
+		plt, err := c.autoDetect.Platform()
+		if err != nil {
+			return err
+		}
+
+		if c.plt != plt {
+			c.logger.V(1).Info("platform detected", "platform", plt)
+			c.plt = plt
+			changed = true
+		}
+	}
+
+	if changed {
+		for _, callback := range c.onChange {
+			if err := callback(); err != nil {
+				// we don't fail if the callback failed, as the auto-detection itself
+				// did work
+				c.logger.Error(err, "configuration change notification failed for callback")
+			}
+		}
+	}
+
+	return nil
 }
 
 // CollectorImage represents the flag to override the OpenTelemetry Collector container image.
@@ -61,4 +150,9 @@ func (c *Config) CollectorImage() string {
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
 func (c *Config) CollectorConfigMapEntry() string {
 	return c.collectorConfigMapEntry
+}
+
+// Platform represents the type of the platform this operator is running
+func (c *Config) Platform() platform.Platform {
+	return c.plt
 }
