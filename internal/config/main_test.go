@@ -17,11 +17,10 @@ var _ = Describe("Config", func() {
 
 	It("should build new configuration with given options", func() {
 		// prepare
-		cfgOpts := config.Options
 		cfg := config.New(
-			cfgOpts.CollectorImage("some-image"),
-			cfgOpts.CollectorConfigMapEntry("some-config.yaml"),
-			cfgOpts.Platform(platform.Kubernetes),
+			config.WithCollectorImage("some-image"),
+			config.WithCollectorConfigMapEntry("some-config.yaml"),
+			config.WithPlatform(platform.Kubernetes),
 		)
 
 		// test
@@ -35,8 +34,7 @@ var _ = Describe("Config", func() {
 		v := version.Version{
 			OpenTelemetryCollector: "the-version",
 		}
-		cfgOpts := config.Options
-		cfg := config.New(cfgOpts.Version(v))
+		cfg := config.New(config.WithVersion(v))
 
 		// test
 		Expect(cfg.CollectorImage()).To(ContainSubstring("the-version"))
@@ -50,10 +48,9 @@ var _ = Describe("Config", func() {
 				return platform.OpenShift, nil
 			},
 		}
-		cfgOpts := config.Options
 		cfg := config.New(
-			cfgOpts.AutoDetect(mock),
-			cfgOpts.OnChange(func() error {
+			config.WithAutoDetect(mock),
+			config.WithOnChange(func() error {
 				calledBack = true
 				return nil
 			}),
@@ -81,10 +78,9 @@ var _ = Describe("Config", func() {
 				return platform.Unknown, nil
 			},
 		}
-		cfgOpts := config.Options
 		cfg := config.New(
-			cfgOpts.AutoDetect(mock),
-			cfgOpts.AutoDetectFrequency(100*time.Millisecond),
+			config.WithAutoDetect(mock),
+			config.WithAutoDetectFrequency(100*time.Millisecond),
 		)
 
 		// sanity check
