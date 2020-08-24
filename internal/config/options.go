@@ -13,9 +13,6 @@ import (
 // Option represents one specific configuration option
 type Option func(c *options)
 
-// Options represents the possible options for the configuration
-var Options options
-
 type options struct {
 	autoDetect              autodetect.AutoDetect
 	autoDetectFrequency     time.Duration
@@ -27,32 +24,32 @@ type options struct {
 	version                 version.Version
 }
 
-func (options) AutoDetect(a autodetect.AutoDetect) Option {
+func WithAutoDetect(a autodetect.AutoDetect) Option {
 	return func(o *options) {
 		o.autoDetect = a
 	}
 }
-func (options) AutoDetectFrequency(t time.Duration) Option {
+func WithAutoDetectFrequency(t time.Duration) Option {
 	return func(o *options) {
 		o.autoDetectFrequency = t
 	}
 }
-func (options) CollectorImage(s string) Option {
+func WithCollectorImage(s string) Option {
 	return func(o *options) {
 		o.collectorImage = s
 	}
 }
-func (options) CollectorConfigMapEntry(s string) Option {
+func WithCollectorConfigMapEntry(s string) Option {
 	return func(o *options) {
 		o.collectorConfigMapEntry = s
 	}
 }
-func (options) Logger(logger logr.Logger) Option {
+func WithLogger(logger logr.Logger) Option {
 	return func(o *options) {
 		o.logger = logger
 	}
 }
-func (options) OnChange(f func() error) Option {
+func WithOnChange(f func() error) Option {
 	return func(o *options) {
 		if o.onChange == nil {
 			o.onChange = []func() error{}
@@ -60,12 +57,12 @@ func (options) OnChange(f func() error) Option {
 		o.onChange = append(o.onChange, f)
 	}
 }
-func (options) Platform(plt platform.Platform) Option {
+func WithPlatform(plt platform.Platform) Option {
 	return func(o *options) {
 		o.platform = plt
 	}
 }
-func (options) Version(v version.Version) Option {
+func WithVersion(v version.Version) Option {
 	return func(o *options) {
 		o.version = v
 	}
