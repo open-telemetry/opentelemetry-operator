@@ -72,11 +72,10 @@ func main() {
 
 	// builds the operator's configuration
 	ad, err := autodetect.New(restConfig)
-	cfgOpts := config.Options
 	config := config.New(
-		cfgOpts.Logger(ctrl.Log.WithName("config")),
-		cfgOpts.Version(v),
-		cfgOpts.AutoDetect(ad),
+		config.WithLogger(ctrl.Log.WithName("config")),
+		config.WithVersion(v),
+		config.WithAutoDetect(ad),
 	)
 
 	pflag.CommandLine.AddFlagSet(config.FlagSet())
