@@ -5,6 +5,6 @@ resources:
 - group: core
   kind: OpenTelemetryCollector
   version: v1alpha1
-version: 3-alpha
+version: 2
 plugins:
   go.operator-sdk.io/v2-alpha: {}
