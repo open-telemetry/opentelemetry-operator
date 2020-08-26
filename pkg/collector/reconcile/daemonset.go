@@ -19,9 +19,7 @@ import (
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -29,11 +27,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
+// +kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
+
 // DaemonSets reconciles the daemon set(s) required for the instance in the current context
 func DaemonSets(ctx context.Context, params Params) error {
 	desired := []appsv1.DaemonSet{}
 	if params.Instance.Spec.Mode == "daemonset" {
-		desired = append(desired, desiredDaemonSet(ctx, params))
+		desired = append(desired, collector.DaemonSet(params.Config, params.Log, params.Instance))
 	}
 
 	// first, handle the create/update parts
@@ -47,101 +47,6 @@ func DaemonSets(ctx context.Context, params Params) error {
 	}
 
 	return nil
-}
-
-func desiredDaemonSet(ctx context.Context, params Params) appsv1.DaemonSet {
-	name := fmt.Sprintf("%s-collector", params.Instance.Name)
-
-	image := params.Instance.Spec.Image
-	if len(image) == 0 {
-		image = params.Config.CollectorImage()
-	}
-
-	labels := collector.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = name
-
-	annotations := params.Instance.Annotations
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-
-	annotations["prometheus.io/scrape"] = "true"
-	annotations["prometheus.io/port"] = "8888"
-	annotations["prometheus.io/path"] = "/metrics"
-
-	argsMap := params.Instance.Spec.Args
-	if argsMap == nil {
-		argsMap = map[string]string{}
-	}
-
-	if _, exists := argsMap["config"]; exists {
-		params.Log.Info("the 'config' flag isn't allowed and is being ignored")
-	}
-
-	// this effectively overrides any 'config' entry that might exist in the CR
-	argsMap["config"] = fmt.Sprintf("/conf/%s", params.Config.CollectorConfigMapEntry())
-
-	var args []string
-	for k, v := range argsMap {
-		args = append(args, fmt.Sprintf("--%s=%s", k, v))
-	}
-
-	configMapVolumeName := fmt.Sprintf("otc-internal-%s", name)
-	volumeMounts := []corev1.VolumeMount{{
-		Name:      configMapVolumeName,
-		MountPath: "/conf",
-	}}
-	volumes := []corev1.Volume{{
-		Name: configMapVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: name},
-				Items: []corev1.KeyToPath{{
-					Key:  params.Config.CollectorConfigMapEntry(),
-					Path: params.Config.CollectorConfigMapEntry(),
-				}},
-			},
-		},
-	}}
-
-	if len(params.Instance.Spec.VolumeMounts) > 0 {
-		volumeMounts = append(volumeMounts, params.Instance.Spec.VolumeMounts...)
-	}
-
-	if len(params.Instance.Spec.Volumes) > 0 {
-		volumes = append(volumes, params.Instance.Spec.Volumes...)
-	}
-
-	return appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   params.Instance.Namespace,
-			Labels:      labels,
-			Annotations: params.Instance.Annotations,
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
-					Annotations: annotations,
-				},
-				Spec: corev1.PodSpec{
-					ServiceAccountName: ServiceAccountNameFor(params.Instance),
-					Containers: []corev1.Container{{
-						Name:         "opentelemetry-collector",
-						Image:        image,
-						VolumeMounts: volumeMounts,
-						Args:         args,
-					}},
-					Volumes: volumes,
-				},
-			},
-		},
-	}
-
 }
 
 func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.DaemonSet) error {
