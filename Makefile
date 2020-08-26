@@ -17,9 +17,10 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG_PREFIX ?= quay.io/${USER}
+IMG ?= ${IMG_PREFIX}/opentelemetry-operator:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true"
+CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -27,6 +28,9 @@ GOBIN=$(shell go env GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
+
+# by default, do not run the manager with webhooks enabled. This only affects local runs, not the build or in-cluster deployments.
+ENABLE_WEBHOOKS ?= false
 
 # If we are running in CI, run ginkgo with the recommended CI settings
 ifeq (,$(CI))
@@ -48,7 +52,7 @@ manager: generate fmt vet
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	go run -ldflags ${LD_FLAGS} ./main.go --zap-devel
+	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) go run -ldflags ${LD_FLAGS} ./main.go --zap-devel
 
 # Install CRDs into a cluster
 install: manifests kustomize
@@ -81,11 +85,14 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test
-	docker build . -t ${IMG}
+	docker build -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELSVC_VERSION=${OTELSVC_VERSION} .
 
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+cert-manager:
+	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.16.1/cert-manager.yaml
 
 # find or download controller-gen
 # download controller-gen if necessary
