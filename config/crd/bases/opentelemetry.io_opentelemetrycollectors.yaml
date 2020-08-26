@@ -17,6 +17,7 @@ spec:
     - otelcol
     - otelcols
     singular: opentelemetrycollector
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     scale:
