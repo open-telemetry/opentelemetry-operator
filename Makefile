@@ -29,6 +29,9 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# by default, do not run the manager with webhooks enabled. This only affects local runs, not the build or in-cluster deployments.
+ENABLE_WEBHOOKS ?= false
+
 # If we are running in CI, run ginkgo with the recommended CI settings
 ifeq (,$(CI))
 GINKGO_OPTS=-r
@@ -49,7 +52,7 @@ manager: generate fmt vet
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	go run -ldflags ${LD_FLAGS} ./main.go --zap-devel
+	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) go run -ldflags ${LD_FLAGS} ./main.go --zap-devel
 
 # Install CRDs into a cluster
 install: manifests kustomize

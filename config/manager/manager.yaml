@@ -27,7 +27,7 @@ spec:
         - /manager
         args:
         - --enable-leader-election
-        image: quay.io/opentelemetry/opentelemetry-operator:master
+        image: controller
         name: manager
         resources:
           limits:
