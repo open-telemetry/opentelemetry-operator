@@ -10,6 +10,21 @@ rules:
   - ""
   resources:
   - configmaps
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
   verbs:
   - create
   - delete
