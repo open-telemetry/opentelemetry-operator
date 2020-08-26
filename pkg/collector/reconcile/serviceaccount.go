@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
@@ -31,8 +32,9 @@ import (
 
 // ServiceAccounts reconciles the service account(s) required for the instance in the current context
 func ServiceAccounts(ctx context.Context, params Params) error {
-	desired := []corev1.ServiceAccount{
-		collector.ServiceAccount(params.Instance),
+	desired := []corev1.ServiceAccount{}
+	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
+		desired = append(desired, collector.ServiceAccount(params.Instance))
 	}
 
 	// first, handle the create/update parts

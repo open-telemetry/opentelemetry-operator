@@ -41,7 +41,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
 
-	// Mode represents how the collector should be deployed (deployment vs. daemonset)
+	// Mode represents how the collector should be deployed (deployment, daemonset or sidecar)
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Mode Mode `json:"mode,omitempty"`

@@ -12,21 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
+package sidecar_test
 
-type (
-	// Mode represents how the collector should be deployed (deployment vs. daemonset)
-	// +kubebuilder:validation:Enum=daemonset;deployment;sidecar
-	Mode string
+import (
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-const (
-	// ModeDaemonSet specifies that the collector should be deployed as a Kubernetes DaemonSet
-	ModeDaemonSet Mode = "daemonset"
-
-	// ModeDeployment specifies that the collector should be deployed as a Kubernetes Deployment
-	ModeDeployment Mode = "deployment"
-
-	// ModeSidecar specifies that the collector should be deployed as a sidecar to pods
-	ModeSidecar Mode = "sidecar"
-)
+func TestSidecar(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Sidecar Suite")
+}
