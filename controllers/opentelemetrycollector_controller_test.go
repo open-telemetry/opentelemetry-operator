@@ -43,6 +43,9 @@ var _ = Describe("OpenTelemetryCollector controller", func() {
 				Name:      nsn.Name,
 				Namespace: nsn.Namespace,
 			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Mode: v1alpha1.ModeDeployment,
+			},
 		}
 		err := k8sClient.Create(context.Background(), created)
 		Expect(err).ToNot(HaveOccurred())
