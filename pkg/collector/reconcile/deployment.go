@@ -32,7 +32,7 @@ import (
 // Deployments reconciles the deployment(s) required for the instance in the current context
 func Deployments(ctx context.Context, params Params) error {
 	desired := []appsv1.Deployment{}
-	if len(params.Instance.Spec.Mode) == 0 || params.Instance.Spec.Mode == "deployment" {
+	if params.Instance.Spec.Mode == "deployment" {
 		desired = append(desired, desiredDeployment(ctx, params))
 	}
 

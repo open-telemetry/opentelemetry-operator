@@ -43,7 +43,6 @@ type OpenTelemetryCollectorSpec struct {
 
 	// Mode represents how the collector should be deployed (deployment vs. daemonset)
 	// +optional
-	// +kubebuilder:validation:Enum=daemonset;deployment
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Mode Mode `json:"mode,omitempty"`
 

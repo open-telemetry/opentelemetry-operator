@@ -36,6 +36,10 @@ var _ webhook.Defaulter = &OpenTelemetryCollector{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *OpenTelemetryCollector) Default() {
+	if len(r.Spec.Mode) == 0 {
+		r.Spec.Mode = ModeDeployment
+	}
+
 	opentelemetrycollectorlog.Info("default", "name", r.Name)
 }
 
