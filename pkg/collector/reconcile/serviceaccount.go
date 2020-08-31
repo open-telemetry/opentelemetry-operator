@@ -20,19 +20,19 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
+
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 // ServiceAccounts reconciles the service account(s) required for the instance in the current context
 func ServiceAccounts(ctx context.Context, params Params) error {
 	desired := []corev1.ServiceAccount{
-		desiredServiceAccount(ctx, params),
+		collector.ServiceAccount(params.Instance),
 	}
 
 	// first, handle the create/update parts
@@ -46,22 +46,6 @@ func ServiceAccounts(ctx context.Context, params Params) error {
 	}
 
 	return nil
-}
-
-func desiredServiceAccount(ctx context.Context, params Params) corev1.ServiceAccount {
-	name := fmt.Sprintf("%s-collector", params.Instance.Name)
-
-	labels := collector.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = name
-
-	return corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   params.Instance.Namespace,
-			Labels:      labels,
-			Annotations: params.Instance.Annotations,
-		},
-	}
 }
 
 func expectedServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
@@ -140,13 +124,4 @@ func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1
 	}
 
 	return nil
-}
-
-// ServiceAccountNameFor returns the name of the service account for the given context
-func ServiceAccountNameFor(instance v1alpha1.OpenTelemetryCollector) string {
-	if len(instance.Spec.ServiceAccount) == 0 {
-		return fmt.Sprintf("%s-collector", instance.Name)
-	}
-
-	return instance.Spec.ServiceAccount
 }
