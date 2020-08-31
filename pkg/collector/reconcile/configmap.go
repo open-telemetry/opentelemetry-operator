@@ -26,7 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
+
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 // ConfigMaps reconciles the config map(s) required for the instance in the current context
 func ConfigMaps(ctx context.Context, params Params) error {
@@ -48,8 +51,7 @@ func ConfigMaps(ctx context.Context, params Params) error {
 }
 
 func desiredConfigMap(ctx context.Context, params Params) corev1.ConfigMap {
-	name := fmt.Sprintf("%s-collector", params.Instance.Name)
-
+	name := naming.ConfigMap(params.Instance)
 	labels := collector.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name
 
