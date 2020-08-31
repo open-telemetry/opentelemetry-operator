@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,10 +26,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
+
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 
 // Services reconciles the service(s) required for the instance in the current context
 func Services(ctx context.Context, params Params) error {
@@ -57,10 +60,8 @@ func Services(ctx context.Context, params Params) error {
 }
 
 func desiredService(ctx context.Context, params Params) *corev1.Service {
-	name := fmt.Sprintf("%s-collector", params.Instance.Name)
-
 	labels := collector.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = name
+	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
 	// by coincidence, the selector is the same as the label, but note that the selector points to the deployment
 	// whereas 'labels' refers to the service
@@ -105,7 +106,7 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
+			Name:        naming.Service(params.Instance),
 			Namespace:   params.Instance.Namespace,
 			Labels:      labels,
 			Annotations: params.Instance.Annotations,
@@ -124,23 +125,21 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 		return nil
 	}
 
-	h.Name = fmt.Sprintf("%s-headless", h.Name)
+	h.Name = naming.HeadlessService(params.Instance)
 	h.Spec.ClusterIP = "None"
 	return h
 }
 
 func monitoringService(ctx context.Context, params Params) *corev1.Service {
-	name := fmt.Sprintf("%s-collector-monitoring", params.Instance.Name)
-
 	labels := collector.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = name
+	labels["app.kubernetes.io/name"] = naming.MonitoringService(params.Instance)
 
 	selector := collector.Labels(params.Instance)
 	selector["app.kubernetes.io/name"] = fmt.Sprintf("%s-collector", params.Instance.Name)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
+			Name:        naming.MonitoringService(params.Instance),
 			Namespace:   params.Instance.Namespace,
 			Labels:      labels,
 			Annotations: params.Instance.Annotations,
