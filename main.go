@@ -30,10 +30,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	opentelemetryiov1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/podinjector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
@@ -72,13 +74,13 @@ func main() {
 
 	// builds the operator's configuration
 	ad, err := autodetect.New(restConfig)
-	config := config.New(
+	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),
 		config.WithVersion(v),
 		config.WithAutoDetect(ad),
 	)
 
-	pflag.CommandLine.AddFlagSet(config.FlagSet())
+	pflag.CommandLine.AddFlagSet(cfg.FlagSet())
 
 	pflag.Parse()
 
@@ -123,7 +125,7 @@ func main() {
 
 	// run the auto-detect mechanism for the configuration
 	err = mgr.Add(manager.RunnableFunc(func(<-chan struct{}) error {
-		return config.StartAutoDetect()
+		return cfg.StartAutoDetect()
 	}))
 	if err != nil {
 		setupLog.Error(err, "failed to start the auto-detect mechanism")
@@ -141,7 +143,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 		Scheme: mgr.GetScheme(),
-		Config: config,
+		Config: cfg,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
 		os.Exit(1)
@@ -152,6 +154,10 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
+
+		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
+			Handler: podinjector.NewPodSidecarInjector(cfg, ctrl.Log.WithName("sidecar"), mgr.GetClient()),
+		})
 	}
 	// +kubebuilder:scaffold:builder
 

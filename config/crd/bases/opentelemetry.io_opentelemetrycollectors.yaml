@@ -59,11 +59,12 @@ spec:
                 Collector.
               type: string
             mode:
-              description: Mode represents how the collector should be deployed (deployment
-                vs. daemonset)
+              description: Mode represents how the collector should be deployed (deployment,
+                daemonset or sidecar)
               enum:
               - daemonset
               - deployment
+              - sidecar
               type: string
             ports:
               description: Ports allows a set of ports to be exposed by the underlying
