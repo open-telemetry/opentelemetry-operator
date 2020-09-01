@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
@@ -36,13 +37,14 @@ import (
 // Services reconciles the service(s) required for the instance in the current context
 func Services(ctx context.Context, params Params) error {
 	desired := []corev1.Service{}
-
-	type builder func(context.Context, Params) *corev1.Service
-	for _, builder := range []builder{desiredService, headless, monitoringService} {
-		svc := builder(ctx, params)
-		// add only the non-nil to the list
-		if svc != nil {
-			desired = append(desired, *svc)
+	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
+		type builder func(context.Context, Params) *corev1.Service
+		for _, builder := range []builder{desiredService, headless, monitoringService} {
+			svc := builder(ctx, params)
+			// add only the non-nil to the list
+			if svc != nil {
+				desired = append(desired, *svc)
+			}
 		}
 	}
 
