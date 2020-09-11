@@ -66,7 +66,7 @@ func New(opts ...Option) Config {
 	// this is derived from another option, so, we need to first parse the options, then set a default
 	// if there's no explicit value being set
 	if len(o.collectorImage) == 0 {
-		o.collectorImage = fmt.Sprintf("quay.io/opentelemetry/opentelemetry-collector:v%s", o.version.OpenTelemetryCollector)
+		o.collectorImage = fmt.Sprintf("otel/opentelemetry-collector:v%s", o.version.OpenTelemetryCollector)
 	}
 
 	return Config{
