@@ -8,7 +8,7 @@ import (
 
 var (
 	// ErrInvalidYAML represents an error in the format of the configuration file
-	ErrInvalidYAML = errors.New("couldn't parse the opentelemetry-collector configuration to assemble a list of ports for the service")
+	ErrInvalidYAML = errors.New("couldn't parse the opentelemetry-collector configuration")
 )
 
 // ConfigFromString extracts a configuration map from the given string.

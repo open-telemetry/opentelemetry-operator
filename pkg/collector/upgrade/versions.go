@@ -21,8 +21,8 @@ var (
 			upgrade: upgrade0_2_10,
 		},
 		{
-			Version: *semver.MustParse("0.5.0"),
-			upgrade: noop,
+			Version: *semver.MustParse("0.9.0"),
+			upgrade: upgrade0_9_0,
 		},
 	}
 
