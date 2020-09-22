@@ -59,6 +59,31 @@ var _ = Describe("Upgrade", func() {
 		Expect(k8sClient.Delete(context.Background(), &existing))
 	})
 
+	It("should upgrade up to the latest known version", func() {
+		// prepare
+		nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
+		existing := v1alpha1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      nsn.Name,
+				Namespace: nsn.Namespace,
+				Labels: map[string]string{
+					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				},
+			},
+		}
+		existing.Status.Version = "0.8.0"
+
+		currentV := version.Get()
+		currentV.OpenTelemetryCollector = "0.10.0" // we don't have a 0.10.0 upgrade, but we have a 0.9.0
+
+		// test
+		res, err := upgrade.ManagedInstance(context.Background(), logger, currentV, k8sClient, existing)
+
+		// verify
+		Expect(err).To(Succeed())
+		Expect(res.Status.Version).To(Equal("0.10.0"))
+	})
+
 	DescribeTable("versions should not be changed", func(v string, expectedV string, failureExpected bool) {
 		// prepare
 		nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
@@ -87,7 +112,7 @@ var _ = Describe("Upgrade", func() {
 		// verify
 		Expect(res.Status.Version).To(Equal(expectedV))
 	},
-		Entry("new-instance", "0", upgrade.Latest.String(), false),
+		Entry("new-instance", "", "", false),
 		Entry("newer-than-our-newest", "100.0.0", "100.0.0", false),
 		Entry("unparseable", "unparseable", "unparseable", true),
 	)

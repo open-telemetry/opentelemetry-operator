@@ -79,12 +79,15 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && errors.IsNotFound(err) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
-				if errors.IsAlreadyExists(err) {
+				if errors.IsAlreadyExists(err) && retry {
 					// let's try again? we probably had multiple updates at one, and now it exists already
 					if err := expectedConfigMaps(ctx, params, expected, false); err != nil {
 						// somethin else happened now...
 						return err
 					}
+
+					// we succeeded in the retry, exit this attempt
+					return nil
 				}
 				return fmt.Errorf("failed to create: %w", err)
 			}

@@ -64,7 +64,6 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Versi
 func ManagedInstance(ctx context.Context, logger logr.Logger, currentV version.Version, cl client.Client, otelcol v1alpha1.OpenTelemetryCollector) (v1alpha1.OpenTelemetryCollector, error) {
 	// this is likely a new instance, assume it's already up to date
 	if otelcol.Status.Version == "" {
-		otelcol.Status.Version = currentV.OpenTelemetryCollector
 		return otelcol, nil
 	}
 
@@ -75,7 +74,7 @@ func ManagedInstance(ctx context.Context, logger logr.Logger, currentV version.V
 	}
 
 	if instanceV.GreaterThan(&Latest.Version) {
-		logger.Info("skipping upgrade for OpenTelemetry Collector instance, as it's newer than our latest version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
+		logger.Info("skipping upgrade for OpenTelemetry Collector instance, as it's newer than our latest version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version, "latest", Latest.Version.String())
 		return otelcol, nil
 	}
 
@@ -93,6 +92,9 @@ func ManagedInstance(ctx context.Context, logger logr.Logger, currentV version.V
 			otelcol = *upgraded
 		}
 	}
+
+	// at the end of the process, we are up to date with the latest known version, which is what we have from versions.txt
+	otelcol.Status.Version = currentV.OpenTelemetryCollector
 
 	logger.V(1).Info("final version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
 	return otelcol, nil

@@ -40,6 +40,13 @@ func (r *OpenTelemetryCollector) Default() {
 		r.Spec.Mode = ModeDeployment
 	}
 
+	if r.Labels == nil {
+		r.Labels = map[string]string{}
+	}
+	if r.Labels["app.kubernetes.io/managed-by"] == "" {
+		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
+	}
+
 	opentelemetrycollectorlog.Info("default", "name", r.Name)
 }
 

@@ -3,7 +3,6 @@ kind: OpenTelemetryCollector
 metadata:
   name: opentelemetrycollector-sample
 spec:
-  mode: deployment
   config: |
     receivers:
       jaeger:
