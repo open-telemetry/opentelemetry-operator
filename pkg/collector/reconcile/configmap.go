@@ -38,13 +38,13 @@ func ConfigMaps(ctx context.Context, params Params) error {
 	}
 
 	// first, handle the create/update parts
-	if err := expectedConfigMaps(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected deployments: %v", err)
+	if err := expectedConfigMaps(ctx, params, desired, true); err != nil {
+		return fmt.Errorf("failed to reconcile the expected configmaps: %v", err)
 	}
 
 	// then, delete the extra objects
 	if err := deleteConfigMaps(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the deployments to be deleted: %v", err)
+		return fmt.Errorf("failed to reconcile the configmaps to be deleted: %v", err)
 	}
 
 	return nil
@@ -68,7 +68,7 @@ func desiredConfigMap(ctx context.Context, params Params) corev1.ConfigMap {
 	}
 }
 
-func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap) error {
+func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap, retry bool) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -79,6 +79,13 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && errors.IsNotFound(err) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
+				if errors.IsAlreadyExists(err) {
+					// let's try again? we probably had multiple updates at one, and now it exists already
+					if err := expectedConfigMaps(ctx, params, expected, false); err != nil {
+						// somethin else happened now...
+						return err
+					}
+				}
 				return fmt.Errorf("failed to create: %w", err)
 			}
 			params.Log.V(2).Info("created", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)

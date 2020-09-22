@@ -66,7 +66,7 @@ func New(opts ...Option) Config {
 	// this is derived from another option, so, we need to first parse the options, then set a default
 	// if there's no explicit value being set
 	if len(o.collectorImage) == 0 {
-		o.collectorImage = fmt.Sprintf("otel/opentelemetry-collector:v%s", o.version.OpenTelemetryCollector)
+		o.collectorImage = fmt.Sprintf("otel/opentelemetry-collector:%s", o.version.OpenTelemetryCollector)
 	}
 
 	return Config{
@@ -155,4 +155,9 @@ func (c *Config) CollectorConfigMapEntry() string {
 // Platform represents the type of the platform this operator is running
 func (c *Config) Platform() platform.Platform {
 	return c.platform
+}
+
+// Version holds the versions used by this operator
+func (c *Config) Version() version.Version {
+	return c.version
 }

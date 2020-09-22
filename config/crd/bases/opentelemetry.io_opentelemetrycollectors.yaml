@@ -8,6 +8,18 @@ metadata:
   creationTimestamp: null
   name: opentelemetrycollectors.opentelemetry.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.mode
+    description: Deployment Mode
+    name: Mode
+    type: string
+  - JSONPath: .status.version
+    description: OpenTelemetry Version
+    name: Version
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: opentelemetry.io
   names:
     kind: OpenTelemetryCollector
@@ -1376,9 +1388,6 @@ spec:
               type: integer
             version:
               type: string
-          required:
-          - replicas
-          - version
           type: object
       type: object
   version: v1alpha1

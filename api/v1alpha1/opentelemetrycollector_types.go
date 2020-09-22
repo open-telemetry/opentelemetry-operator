@@ -74,14 +74,20 @@ type OpenTelemetryCollectorSpec struct {
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector
 type OpenTelemetryCollectorStatus struct {
-	Replicas int32  `json:"replicas"`
-	Version  string `json:"version"`
+	// +optional
+	Replicas int32 `json:"replicas"`
+
+	// +optional
+	Version string `json:"version"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas
+// +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // OpenTelemetryCollector is the Schema for the opentelemetrycollectors API
 type OpenTelemetryCollector struct {
