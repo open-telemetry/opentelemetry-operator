@@ -74,11 +74,14 @@ type OpenTelemetryCollectorSpec struct {
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector
 type OpenTelemetryCollectorStatus struct {
+	// Version of the managed OpenTelemetry Collector (operand)
 	// +optional
-	Replicas int32 `json:"replicas"`
+	Version string `json:"version,omitempty"`
 
+	// Messages about actions performed by the operator on this resource.
 	// +optional
-	Version string `json:"version"`
+	// +listType=atomic
+	Messages []string `json:"messages,omitempty"`
 }
 
 // +kubebuilder:object:root=true

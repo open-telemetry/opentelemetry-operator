@@ -50,5 +50,6 @@ var _ = Describe("Upgrade to v0.9.0", func() {
 		Expect(res.Spec.Config).To(ContainSubstring(`compression: "on"`))
 		Expect(res.Spec.Config).ToNot(ContainSubstring("reconnection_delay"))
 		Expect(res.Spec.Config).To(ContainSubstring("num_workers: 123"))
+		Expect(res.Status.Messages[0]).To(ContainSubstring("upgrade to v0.9.0 removed the property reconnection_delay for exporter"))
 	})
 })

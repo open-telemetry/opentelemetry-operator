@@ -27,29 +27,30 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Versi
 		return fmt.Errorf("failed to list: %w", err)
 	}
 
-	for _, j := range list.Items {
-		otelcol, err := ManagedInstance(ctx, logger, ver, cl, j)
+	for _, original := range list.Items {
+		upgraded, err := ManagedInstance(ctx, logger, ver, cl, original)
 		if err != nil {
 			// nothing to do at this level, just go to the next instance
 			continue
 		}
 
-		if !reflect.DeepEqual(otelcol, j) {
+		if !reflect.DeepEqual(upgraded, original) {
 			// the resource update overrides the status, so, keep it so that we can reset it later
-			st := otelcol.Status
-			if err := cl.Update(ctx, &otelcol); err != nil {
-				logger.Error(err, "failed to apply changes to instance", "name", otelcol.Name, "namespace", otelcol.Namespace)
+			st := upgraded.Status
+			patch := client.MergeFrom(&original)
+			if err := cl.Patch(ctx, &upgraded, patch); err != nil {
+				logger.Error(err, "failed to apply changes to instance", "name", upgraded.Name, "namespace", upgraded.Namespace)
 				continue
 			}
 
 			// the status object requires its own update
-			otelcol.Status = st
-			if err := cl.Status().Update(ctx, &otelcol); err != nil {
-				logger.Error(err, "failed to apply changes to instance's status object", "name", otelcol.Name, "namespace", otelcol.Namespace)
+			upgraded.Status = st
+			if err := cl.Status().Patch(ctx, &upgraded, patch); err != nil {
+				logger.Error(err, "failed to apply changes to instance's status object", "name", upgraded.Name, "namespace", upgraded.Namespace)
 				continue
 			}
 
-			logger.Info("instance upgraded", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
+			logger.Info("instance upgraded", "name", upgraded.Name, "namespace", upgraded.Namespace, "version", upgraded.Status.Version)
 		}
 	}
 

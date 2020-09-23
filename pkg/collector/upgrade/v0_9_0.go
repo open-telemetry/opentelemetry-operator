@@ -32,6 +32,7 @@ func upgrade0_9_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*
 			case map[interface{}]interface{}:
 				// delete is a noop if there's no such entry
 				delete(exporter, "reconnection_delay")
+				otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.9.0 removed the property reconnection_delay for exporter %q", k))
 				exporters[k] = exporter
 			case string:
 				if len(exporter) == 0 {
