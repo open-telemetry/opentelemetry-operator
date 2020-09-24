@@ -85,6 +85,11 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 				reconcile.DaemonSets,
 				true,
 			},
+			{
+				"opentelemetry",
+				reconcile.Self,
+				true,
+			},
 		}
 	}
 
