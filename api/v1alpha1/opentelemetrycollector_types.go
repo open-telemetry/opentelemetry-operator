@@ -74,6 +74,10 @@ type OpenTelemetryCollectorSpec struct {
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector
 type OpenTelemetryCollectorStatus struct {
+	// Replicas is currently not being set and might be removed in the next version.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+
 	// Version of the managed OpenTelemetry Collector (operand)
 	// +optional
 	Version string `json:"version,omitempty"`
