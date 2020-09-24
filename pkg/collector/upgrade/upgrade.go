@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"reflect"
 
+	semver "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
 // ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary
-func ManagedInstances(ctx context.Context, logger logr.Logger, cl client.Client) error {
+func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Version, cl client.Client) error {
 	logger.Info("looking for managed instances to upgrade")
 
 	opts := []client.ListOption{
@@ -25,29 +27,30 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, cl client.Client)
 		return fmt.Errorf("failed to list: %w", err)
 	}
 
-	for _, j := range list.Items {
-		otelcol, err := ManagedInstance(ctx, logger, cl, &j)
+	for _, original := range list.Items {
+		upgraded, err := ManagedInstance(ctx, logger, ver, cl, original)
 		if err != nil {
 			// nothing to do at this level, just go to the next instance
 			continue
 		}
 
-		if !reflect.DeepEqual(otelcol, j) {
+		if !reflect.DeepEqual(upgraded, original) {
 			// the resource update overrides the status, so, keep it so that we can reset it later
-			st := otelcol.Status
-			if err := cl.Update(ctx, otelcol); err != nil {
-				logger.Error(err, "failed to apply changes to instance", "name", otelcol.Name, "namespace", otelcol.Namespace)
+			st := upgraded.Status
+			patch := client.MergeFrom(&original)
+			if err := cl.Patch(ctx, &upgraded, patch); err != nil {
+				logger.Error(err, "failed to apply changes to instance", "name", upgraded.Name, "namespace", upgraded.Namespace)
 				continue
 			}
 
 			// the status object requires its own update
-			otelcol.Status = st
-			if err := cl.Status().Update(ctx, otelcol); err != nil {
-				logger.Error(err, "failed to apply changes to instance's status object", "name", otelcol.Name, "namespace", otelcol.Namespace)
+			upgraded.Status = st
+			if err := cl.Status().Patch(ctx, &upgraded, patch); err != nil {
+				logger.Error(err, "failed to apply changes to instance's status object", "name", upgraded.Name, "namespace", upgraded.Namespace)
 				continue
 			}
 
-			logger.Info("instance upgraded", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
+			logger.Info("instance upgraded", "name", upgraded.Name, "namespace", upgraded.Namespace, "version", upgraded.Status.Version)
 		}
 	}
 
@@ -59,22 +62,40 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, cl client.Client)
 }
 
 // ManagedInstance performs the necessary changes to bring the given otelcol instance to the current version
-func ManagedInstance(ctx context.Context, logger logr.Logger, cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-	if v, ok := versions[otelcol.Status.Version]; ok {
-		// we don't need to run the upgrade function for the version 'v', only the next ones
-		for n := v.next; n != nil; n = n.next {
-			// performs the upgrade to version 'n'
-			upgraded, err := n.upgrade(cl, otelcol)
+func ManagedInstance(ctx context.Context, logger logr.Logger, currentV version.Version, cl client.Client, otelcol v1alpha1.OpenTelemetryCollector) (v1alpha1.OpenTelemetryCollector, error) {
+	// this is likely a new instance, assume it's already up to date
+	if otelcol.Status.Version == "" {
+		return otelcol, nil
+	}
+
+	instanceV, err := semver.NewVersion(otelcol.Status.Version)
+	if err != nil {
+		logger.Error(err, "failed to parse version for OpenTelemetry Collector instance", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
+		return otelcol, err
+	}
+
+	if instanceV.GreaterThan(&Latest.Version) {
+		logger.Info("skipping upgrade for OpenTelemetry Collector instance, as it's newer than our latest version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version, "latest", Latest.Version.String())
+		return otelcol, nil
+	}
+
+	for _, available := range versions {
+		if available.GreaterThan(instanceV) {
+			upgraded, err := available.upgrade(cl, &otelcol)
+
 			if err != nil {
 				logger.Error(err, "failed to upgrade managed otelcol instances", "name", otelcol.Name, "namespace", otelcol.Namespace)
 				return otelcol, err
 			}
 
-			logger.V(1).Info("step upgrade", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", n.Tag)
-			upgraded.Status.Version = n.Tag
-			otelcol = upgraded
+			logger.V(1).Info("step upgrade", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", available.String())
+			upgraded.Status.Version = available.String()
+			otelcol = *upgraded
 		}
 	}
+
+	// at the end of the process, we are up to date with the latest known version, which is what we have from versions.txt
+	otelcol.Status.Version = currentV.OpenTelemetryCollector
 
 	logger.V(1).Info("final version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
 	return otelcol, nil
