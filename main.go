@@ -133,7 +133,7 @@ func main() {
 
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(<-chan struct{}) error {
-		return upgrade.ManagedInstances(context.Background(), ctrl.Log.WithName("upgrade"), mgr.GetClient())
+		return upgrade.ManagedInstances(context.Background(), ctrl.Log.WithName("upgrade"), v, mgr.GetClient())
 	}))
 	if err != nil {
 		setupLog.Error(err, "failed to upgrade managed instances")

@@ -8,6 +8,18 @@ metadata:
   creationTimestamp: null
   name: opentelemetrycollectors.opentelemetry.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.mode
+    description: Deployment Mode
+    name: Mode
+    type: string
+  - JSONPath: .status.version
+    description: OpenTelemetry Version
+    name: Version
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: opentelemetry.io
   names:
     kind: OpenTelemetryCollector
@@ -1371,14 +1383,16 @@ spec:
           description: OpenTelemetryCollectorStatus defines the observed state of
             OpenTelemetryCollector
           properties:
-            replicas:
-              format: int32
-              type: integer
+            messages:
+              description: Messages that you should know about actions performed by
+                the operator on this resource.
+              items:
+                type: string
+              type: array
+              x-kubernetes-list-type: atomic
             version:
+              description: Version of the managed OpenTelemetry Collector (operand)
               type: string
-          required:
-          - replicas
-          - version
           type: object
       type: object
   version: v1alpha1
