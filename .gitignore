@@ -15,8 +15,15 @@ bin
 *.coverprofile
 
 # Kubernetes Generated files - skip generated files, except for vendored files
-
 !vendor/**/zz_generated.*
+
+# Operator SDK generated files
+bundle
+bundle.Dockerfile
+bundle.tar.gz
+
+# Release artifacts
+dist
 
 # editor and IDE paraphernalia
 .idea

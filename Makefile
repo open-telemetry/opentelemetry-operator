@@ -1,9 +1,9 @@
 # Current Operator version
-VERSION ?= "$(shell git describe --tags)"
+VERSION ?= "$(shell git describe --tags | grep -Po "([\d\.]+)")" ## version, without the 'v' prefix
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/version"
-OTELSVC_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
-LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELSVC_VERSION}"
+OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
+LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION}"
 
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
@@ -18,7 +18,8 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= quay.io/${USER}
-IMG ?= ${IMG_PREFIX}/opentelemetry-operator:latest
+IMG ?= ${IMG_PREFIX}:${VERSION}
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -62,10 +63,19 @@ install: manifests kustomize
 uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests kustomize
+# Set the controller image parameters
+set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+release-artifacts: set-image-controller bundle
+	mkdir -p dist
+	$(KUSTOMIZE) build config/default -o dist/opentelemetry-operator.yaml
+	tar czf dist/bundle.tar.gz bundle
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -85,7 +95,7 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test
-	docker build -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELSVC_VERSION=${OTELSVC_VERSION} .
+	docker build -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} .
 
 # Push the docker image
 docker-push:
