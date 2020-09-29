@@ -1,0 +1,94 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v0.19.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+  name: opentelemetry-operator.vX.Y.Z
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
+        API
+      kind: OpenTelemetryCollector
+      name: opentelemetrycollectors.core.opentelemetry.io
+      specDescriptors:
+      - description: Args is the set of arguments to pass to the OpenTelemetry Collector
+          binary
+        displayName: Args
+        path: args
+      - description: Config is the raw JSON to be used as the collector's configuration.
+          Refer to the OpenTelemetry Collector documentation for details.
+        displayName: Config
+        path: config
+      - description: Image indicates the container image to use for the OpenTelemetry
+          Collector.
+        displayName: Image
+        path: image
+      - description: Mode represents how the collector should be deployed (deployment,
+          daemonset or sidecar)
+        displayName: Mode
+        path: mode
+      - description: Ports allows a set of ports to be exposed by the underlying v1.Service.
+          By default, the operator will attempt to infer the required ports by parsing
+          the .Spec.Config property but this property can be used to open aditional
+          ports that can't be inferred by the operator, like for custom receivers.
+        displayName: Ports
+        path: ports
+      - description: Replicas is the number of pod instances for the underlying OpenTelemetry
+          Collector
+        displayName: Replicas
+        path: replicas
+      - description: ServiceAccount indicates the name of an existing service account
+          to use with this instance.
+        displayName: Service Account
+        path: serviceAccount
+      - description: VolumeMounts represents the mount points to use in the underlying
+          collector deployment(s)
+        displayName: Volume Mounts
+        path: volumeMounts
+      - description: Volumes represents which volumes to use in the underlying collector
+          deployment(s).
+        displayName: Volumes
+        path: volumes
+      version: v1alpha1
+  description: Provides the OpenTelemetry components, including the Collector
+  displayName: Community OpenTelemetry Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - opentelemetry
+  - tracing
+  - logging
+  - metrics
+  - monitoring
+  - troubleshooting
+  links:
+  - name: Opentelemetry Operator
+    url: https://opentelemetry-operator.domain
+  maintainers:
+  - email: jpkroehling@redhat.com
+    name: Juraci Paixão Kröhling
+  maturity: alpha
+  provider:
+    name: OpenTelemetry Community
+    url: https://github.com/open-telemetry/opentelemetry-operator
+  version: 0.0.0

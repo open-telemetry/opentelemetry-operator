@@ -1,0 +1,38 @@
+name: "Prepare the release"
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/setup-go@v1
+      with:
+        go-version: '1.14.4'
+    - uses: actions/checkout@v1
+
+    - name: "generate release resources"
+      run: make release-artifacts IMG_PREFIX="quay.io/opentelemetry/opentelemetry-operator"
+
+    - name: "publish the images"
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+        QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+      run: ./.ci/publish-images.sh
+
+    - name: "publish the bundle image"
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+        QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+      run: ./.ci/publish-bundle-images.sh
+
+    - name: "create the release in GitHub"
+      env:
+        GH_WRITE_TOKEN: ${{ secrets.GH_WRITE_TOKEN }}
+      run: ./.ci/create-release-github.sh
