@@ -9,7 +9,7 @@ At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetr
 
 ## Getting started
 
-To install the operator in an existing cluster, make sure you have `cert-manager` installed and run:
+To install the operator in an existing cluster, make sure you have [`cert-manager` installed](https://cert-manager.io/docs/installation/) and run:
 ```
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
