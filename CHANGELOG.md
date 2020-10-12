@@ -1,7 +1,13 @@
 Changes by Version
 ==================
 
-0.11.0 (unreleased)
+0.12.0 (2020-10-12)
+-------------------
+
+* Bumped OpenTelemetry Collector to v0.12.0 ([#81](https://github.com/open-telemetry/opentelemetry-operator/pull/81), [@jpkrohling](https://github.com/jpkrohling))
+* Remove use of deprecated controller runtime log API ([#78](https://github.com/open-telemetry/opentelemetry-operator/pull/78), [@bvwells](https://github.com/bvwells))
+
+0.11.0 (2020-09-30)
 -------------------
 
 - Initial release after the migration to `kubebuilder`
