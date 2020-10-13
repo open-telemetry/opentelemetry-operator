@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/go-logr/logr v0.2.1
 	github.com/onsi/ginkgo v1.14.1 // keep the Makefile in sync!
-	github.com/onsi/gomega v1.10.2
+	github.com/onsi/gomega v1.10.3
 	github.com/spf13/pflag v1.0.5
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.19.2
