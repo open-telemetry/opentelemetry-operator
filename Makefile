@@ -149,12 +149,30 @@ else
 KUSTOMIZE=$(shell which kustomize)
 endif
 
+operator-sdk:
+ifeq (, $(shell which operator-sdk))
+	@{ \
+	set -e ;\
+	OPERATOR_SDK_TMP_DIR=$$(mktemp -d) ;\
+	cd $$OPERATOR_SDK_TMP_DIR ;\
+	git clone https://github.com/operator-framework/operator-sdk . ;\
+	git checkout -q v0.19.0 ;\
+	make install ;\
+	rm -rf $$OPERATOR_SDK_TMP_DIR ;\
+	}
+OPERATOR_SDK=$(GOBIN)/operator-sdk
+else
+OPERATOR_SDK=$(shell which operator-sdk)
+endif
+
 # Generate bundle manifests and metadata, then validate generated files.
 bundle: manifests
-	operator-sdk generate kustomize manifests -q
-	kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate ./bundle
+	$(OPERATOR_SDK) generate kustomize manifests -q
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(OPERATOR_SDK) bundle validate ./bundle
 
 # Build the bundle image.
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+tools: ginkgo kustomize controller-gen operator-sdk
