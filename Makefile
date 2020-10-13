@@ -127,7 +127,7 @@ ginkgo:
 ifeq (, $(shell which ginkgo))
 	@{ \
 	set -e ;\
-	go get github.com/onsi/ginkgo/ginkgo@v1.14.1 ;\
+	go get github.com/onsi/ginkgo/ginkgo@v1.14.2 ;\
 	}
 GINKGO=$(GOBIN)/ginkgo
 else
