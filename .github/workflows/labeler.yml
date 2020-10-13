@@ -11,3 +11,4 @@ jobs:
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
         configuration-path: .github/labeler-needs-triage.yaml
+        enable-versioned-regex: 0
