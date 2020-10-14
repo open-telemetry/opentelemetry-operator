@@ -1,0 +1,11 @@
+pull_request_rules:
+  - name: Automatic merge when all checks pass and the PR is approved
+    conditions:
+      - "#approved-reviews-by>=1"
+      - "-draft"
+      - "status-success=unit-tests"
+      - "status-success=EasyCLA"
+    actions:
+      merge:
+        method: squash
+        commit_message: title+body
