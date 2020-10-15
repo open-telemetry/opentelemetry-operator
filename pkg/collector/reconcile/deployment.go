@@ -90,7 +90,7 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 		// editting Update with Patch
 		patch := client.MergeFrom(&params.Instance)
 
-		if err := params.Client.Patch(ctx, &changed, patch); err != nil {
+		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
 
