@@ -153,20 +153,18 @@ operator-sdk:
 ifeq (, $(shell which operator-sdk))
 	@{ \
 	set -e ;\
-	OPERATOR_SDK_TMP_DIR=$$(mktemp -d) ;\
-	cd $$OPERATOR_SDK_TMP_DIR ;\
-	git clone https://github.com/operator-framework/operator-sdk . ;\
-	git checkout -q v0.19.0 ;\
-	make install ;\
-	rm -rf $$OPERATOR_SDK_TMP_DIR ;\
+	echo "" ;\
+	echo "ERROR: operator-sdk not found." ;\
+	echo "Please check https://sdk.operatorframework.io for installation instructions and try again." ;\
+	echo "" ;\
+	exit 1 ;\
 	}
-OPERATOR_SDK=$(GOBIN)/operator-sdk
 else
 OPERATOR_SDK=$(shell which operator-sdk)
 endif
 
 # Generate bundle manifests and metadata, then validate generated files.
-bundle: manifests
+bundle: operator-sdk manifests
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
