@@ -86,9 +86,17 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if err := params.Client.Update(ctx, updated); err != nil {
+		// editting Update with Patch
+		patch := client.MergeFrom(&params.Instance)
+
+		if err := params.Client.Patch(ctx, &changed, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
+
+
+		// if err := params.Client.Update(ctx, updated); err != nil {
+		// 	return fmt.Errorf("failed to apply changes: %w", err)
+		// }
 
 		params.Log.V(2).Info("applied", "serviceaccount.name", desired.Name, "serviceaccount.namespace", desired.Namespace)
 	}
