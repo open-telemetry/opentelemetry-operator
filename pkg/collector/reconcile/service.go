@@ -193,17 +193,11 @@ func expectedServices(ctx context.Context, params Params, expected []corev1.Serv
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		// editting Update with Patch
 		patch := client.MergeFrom(&params.Instance)
 
-		// if err := params.Client.Patch(ctx, &changed, patch); err != nil {
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
-
-		// if err := params.Client.Update(ctx, updated); err != nil {
-		// 	return fmt.Errorf("failed to apply changes: %w", err)
-		// }
 
 		params.Log.V(2).Info("applied", "service.name", desired.Name, "service.namespace", desired.Namespace)
 	}
