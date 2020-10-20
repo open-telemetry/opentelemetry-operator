@@ -86,7 +86,9 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if err := params.Client.Update(ctx, updated); err != nil {
+		patch := client.MergeFrom(&params.Instance)
+
+		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
 
