@@ -58,10 +58,16 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		volumeMounts = append(volumeMounts, otelcol.Spec.VolumeMounts...)
 	}
 
+	var envVars = otelcol.Spec.Env
+	if otelcol.Spec.Env == nil {
+		envVars = []corev1.EnvVar{}
+	}
+
 	return corev1.Container{
 		Name:         naming.Container(),
 		Image:        image,
 		VolumeMounts: volumeMounts,
 		Args:         args,
+		Env:          envVars,
 	}
 }
