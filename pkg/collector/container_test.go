@@ -81,4 +81,39 @@ var _ = Describe("Container", func() {
 		Expect(c.VolumeMounts).To(HaveLen(2))
 		Expect(c.VolumeMounts[1].Name).To(Equal("custom-volume-mount"))
 	})
+
+	It("should allow for env vars to be overriden", func() {
+		otelcol := v1alpha1.OpenTelemetryCollector{
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Env: []corev1.EnvVar{
+					{
+						Name:  "foo",
+						Value: "bar",
+					},
+				},
+			},
+		}
+
+		cfg := config.New()
+
+		// test
+		c := Container(cfg, logger, otelcol)
+
+		Expect(c.Env).To(HaveLen(1))
+		Expect(c.Env[0].Name).To(Equal("foo"))
+		Expect(c.Env[0].Value).To(Equal("bar"))
+	})
+
+	It("should allow for empty env vars by default", func() {
+		otelcol := v1alpha1.OpenTelemetryCollector{
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+		}
+
+		cfg := config.New()
+
+		// test
+		c := Container(cfg, logger, otelcol)
+
+		Expect(c.Env).To(BeEmpty())
+	})
 })
