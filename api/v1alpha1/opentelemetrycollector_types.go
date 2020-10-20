@@ -70,6 +70,12 @@ type OpenTelemetryCollectorSpec struct {
 	// +listType=atomic
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Ports []v1.ServicePort `json:"ports,omitempty"`
+
+	// ENV vars to set on the OpenTelemetry Collector's Pods. These can then in certain cases be
+	// consumed in the config file for the Collector.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Env []v1.EnvVar `json:"env,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector
