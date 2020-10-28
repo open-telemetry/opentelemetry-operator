@@ -24,7 +24,8 @@ var _ = Describe("Autodetect", func() {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write(output)
+				_, err = w.Write(output)
+				Expect(err).ToNot(HaveOccurred())
 			}))
 			defer server.Close()
 

@@ -60,7 +60,8 @@ var _ = Describe("Config", func() {
 		Expect(cfg.Platform()).To(Equal(platform.Unknown))
 
 		// test
-		cfg.AutoDetect()
+		err := cfg.AutoDetect()
+		Expect(err).ToNot(HaveOccurred())
 
 		// verify
 		Expect(cfg.Platform()).To(Equal(platform.OpenShift))
@@ -87,7 +88,8 @@ var _ = Describe("Config", func() {
 		Expect(cfg.Platform()).To(Equal(platform.Unknown))
 
 		// test
-		cfg.StartAutoDetect()
+		err := cfg.StartAutoDetect()
+		Expect(err).ToNot(HaveOccurred())
 
 		// verify
 		wg.Wait()

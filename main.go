@@ -74,6 +74,11 @@ func main() {
 
 	// builds the operator's configuration
 	ad, err := autodetect.New(restConfig)
+	if err != nil {
+		setupLog.Error(err, "failed to setup auto-detect routine")
+		os.Exit(1)
+	}
+
 	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),
 		config.WithVersion(v),
