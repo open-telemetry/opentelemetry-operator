@@ -6,6 +6,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 )
 
+//nolint unused
 func noop(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	return otelcol, nil
 }

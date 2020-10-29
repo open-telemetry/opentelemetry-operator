@@ -72,7 +72,9 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 	for _, obj := range expected {
 		desired := obj
 
-		controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme)
+		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+			return fmt.Errorf("failed to set controller reference: %w", err)
+		}
 
 		existing := &corev1.ConfigMap{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
@@ -142,7 +144,8 @@ func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.Conf
 		return fmt.Errorf("failed to list: %w", err)
 	}
 
-	for _, existing := range list.Items {
+	for i := range list.Items {
+		existing := list.Items[i]
 		del := true
 		for _, keep := range expected {
 			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {

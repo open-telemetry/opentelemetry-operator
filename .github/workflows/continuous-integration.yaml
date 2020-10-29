@@ -10,6 +10,13 @@ jobs:
         go-version: '1.14.4'
     - uses: actions/checkout@v1
 
+    - name: Lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.29
+        args: --enable=gosec,maligned,misspell
+        only-new-issues: true
+
     - name: "install kubebuilder"
       run: ./hack/install-kubebuilder.sh
 
