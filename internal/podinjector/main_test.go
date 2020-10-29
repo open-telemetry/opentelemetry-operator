@@ -312,8 +312,8 @@ var _ = Describe("PodInjector", func() {
 				err := k8sClient.Create(context.Background(), &tt.ns)
 				Expect(err).ToNot(HaveOccurred())
 
-				for _, otelcol := range tt.otelcols {
-					err = k8sClient.Create(context.Background(), &otelcol)
+				for i := range tt.otelcols {
+					err := k8sClient.Create(context.Background(), &tt.otelcols[i])
 					Expect(err).ToNot(HaveOccurred())
 				}
 
@@ -347,8 +347,8 @@ var _ = Describe("PodInjector", func() {
 				Expect(res.Patches).To(HaveLen(0))
 
 				// cleanup
-				for _, otelcol := range tt.otelcols {
-					Expect(k8sClient.Delete(context.Background(), &otelcol)).ToNot(HaveOccurred())
+				for i := range tt.otelcols {
+					Expect(k8sClient.Delete(context.Background(), &tt.otelcols[i])).ToNot(HaveOccurred())
 				}
 				Expect(k8sClient.Delete(context.Background(), &tt.ns)).ToNot(HaveOccurred())
 			})
@@ -393,7 +393,8 @@ var _ = Describe("PodInjector", func() {
 				decoder, err := admission.NewDecoder(scheme.Scheme)
 				Expect(err).ToNot(HaveOccurred())
 				injector := NewPodSidecarInjector(cfg, logger, k8sClient)
-				injector.InjectDecoder(decoder)
+				err = injector.InjectDecoder(decoder)
+				Expect(err).ToNot(HaveOccurred())
 
 				// test
 				res := injector.Handle(context.Background(), tt.req)

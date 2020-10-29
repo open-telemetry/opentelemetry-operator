@@ -106,7 +106,9 @@ func (c *Config) periodicAutoDetect() {
 	ticker := time.NewTicker(c.autoDetectFrequency)
 
 	for range ticker.C {
-		c.AutoDetect()
+		if err := c.AutoDetect(); err != nil {
+			c.logger.Info("auto-detection failed", "error", err)
+		}
 	}
 }
 

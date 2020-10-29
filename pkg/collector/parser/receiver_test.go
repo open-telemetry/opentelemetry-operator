@@ -88,7 +88,6 @@ var _ = Describe("Receiver", func() {
 })
 
 type mockParser struct {
-	portsFunc func() ([]corev1.ServicePort, error)
 }
 
 func (m *mockParser) Ports() ([]corev1.ServicePort, error) {

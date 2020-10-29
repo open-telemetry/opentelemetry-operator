@@ -27,14 +27,15 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Versi
 		return fmt.Errorf("failed to list: %w", err)
 	}
 
-	for _, original := range list.Items {
+	for i := range list.Items {
+		original := list.Items[i]
 		upgraded, err := ManagedInstance(ctx, logger, ver, cl, original)
 		if err != nil {
 			// nothing to do at this level, just go to the next instance
 			continue
 		}
 
-		if !reflect.DeepEqual(upgraded, original) {
+		if !reflect.DeepEqual(upgraded, list.Items[i]) {
 			// the resource update overrides the status, so, keep it so that we can reset it later
 			st := upgraded.Status
 			patch := client.MergeFrom(&original)

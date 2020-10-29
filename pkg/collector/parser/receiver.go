@@ -103,7 +103,7 @@ func portName(receiverName string, port int32) string {
 func portFromEndpoint(endpoint string) (int32, error) {
 	i := strings.LastIndex(endpoint, ":") + 1
 	part := endpoint[i:]
-	port, err := strconv.Atoi(part)
+	port, err := strconv.ParseInt(part, 10, 0)
 	return int32(port), err
 }
 

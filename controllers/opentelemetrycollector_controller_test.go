@@ -27,7 +27,7 @@ import (
 var _ = Describe("OpenTelemetryCollector controller", func() {
 	logger := logf.Log.WithName("unit-tests")
 	cfg := config.New()
-	cfg.FlagSet().Parse([]string{})
+	cfg.FlagSet().Parse([]string{}) //nolint errcheck
 
 	It("should generate the underlying objects on reconciliation", func() {
 		// prepare
@@ -35,7 +35,7 @@ var _ = Describe("OpenTelemetryCollector controller", func() {
 		reconciler := controllers.NewReconciler(controllers.Params{
 			Client: k8sClient,
 			Log:    logger,
-			Scheme: scheme.Scheme,
+			Scheme: testScheme,
 			Config: cfg,
 		})
 		created := &v1alpha1.OpenTelemetryCollector{
@@ -221,6 +221,7 @@ var _ = Describe("OpenTelemetryCollector controller", func() {
 		Skip("this test requires a real cluster, otherwise the GetConfigOrDie will die")
 		// prepare
 		mgr, err := manager.New(k8sconfig.GetConfigOrDie(), manager.Options{})
+		Expect(err).ToNot(HaveOccurred())
 		reconciler := controllers.NewReconciler(controllers.Params{})
 
 		// test

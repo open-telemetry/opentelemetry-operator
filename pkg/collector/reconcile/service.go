@@ -161,7 +161,9 @@ func expectedServices(ctx context.Context, params Params, expected []corev1.Serv
 	for _, obj := range expected {
 		desired := obj
 
-		controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme)
+		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+			return fmt.Errorf("failed to set controller reference: %w", err)
+		}
 
 		existing := &corev1.Service{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
@@ -218,7 +220,8 @@ func deleteServices(ctx context.Context, params Params, expected []corev1.Servic
 		return fmt.Errorf("failed to list: %w", err)
 	}
 
-	for _, existing := range list.Items {
+	for i := range list.Items {
+		existing := list.Items[i]
 		del := true
 		for _, keep := range expected {
 			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
