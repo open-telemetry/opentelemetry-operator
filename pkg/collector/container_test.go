@@ -82,7 +82,7 @@ var _ = Describe("Container", func() {
 		Expect(c.VolumeMounts[1].Name).To(Equal("custom-volume-mount"))
 	})
 
-	It("should allow for env vars to be overriden", func() {
+	It("should allow for env vars to be overridden", func() {
 		otelcol := v1alpha1.OpenTelemetryCollector{
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
 				Env: []corev1.EnvVar{
