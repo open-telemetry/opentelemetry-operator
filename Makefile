@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= "$(shell git describe --tags | grep -Po "([\d\.]+)")" ## version, without the 'v' prefix
+VERSION ?= "$(shell git describe --tags | sed 's/^v//')"
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/version"
 OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
@@ -18,7 +18,8 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= quay.io/${USER}
-IMG ?= ${IMG_PREFIX}:${VERSION}
+IMG_REPO ?= opentelemetry-operator
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
@@ -103,6 +104,9 @@ docker-push:
 
 cert-manager:
 	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.16.1/cert-manager.yaml
+	kubectl wait --for=condition=available deployment cert-manager -n cert-manager
+	kubectl wait --for=condition=available deployment cert-manager-cainjector -n cert-manager
+	kubectl wait --for=condition=available deployment cert-manager-webhook -n cert-manager
 
 # find or download controller-gen
 # download controller-gen if necessary
