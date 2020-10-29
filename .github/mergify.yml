@@ -10,6 +10,8 @@ pull_request_rules:
       - "#approved-reviews-by>=1"
       - "-draft"
       - "status-success=unit-tests"
+      - "status-success=lint"
+      - "status-success=security"
       - "status-success=EasyCLA"
     actions:
       merge:
