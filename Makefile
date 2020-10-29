@@ -103,7 +103,7 @@ docker-push:
 	docker push ${IMG}
 
 cert-manager:
-	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.16.1/cert-manager.yaml
+	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.0.3/cert-manager.yaml
 	kubectl wait --for=condition=available deployment cert-manager -n cert-manager
 	kubectl wait --for=condition=available deployment cert-manager-cainjector -n cert-manager
 	kubectl wait --for=condition=available deployment cert-manager-webhook -n cert-manager
