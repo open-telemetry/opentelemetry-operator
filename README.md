@@ -14,11 +14,6 @@ To install the operator in an existing cluster, make sure you have [`cert-manage
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
 
-For development purposes, you might want to run the operator as a local process in your laptop:
-```
-make install run
-```
-
 Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry Collector (otelcol) instance, like:
 
 ```console
@@ -60,37 +55,9 @@ At this point, the Operator does *not* validate the contents of the configuratio
 
 The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet` or as a `Deployment` (default). Look at the `examples/daemonset.yaml` for reference.
 
-## Running with the webhooks
-
-When running `make run`, the webhooks aren't effective as it starts the manager in the local machine instead of in-cluster. To test the webhooks, you'll need to:
-
-1. configure a proxy between the Kubernetes API server and your host, so that it can contact the webhook in your local machine
-1. create the TLS certificates and place them, by default, on `/tmp/k8s-webhook-server/serving-certs/tls.crt`. The Kubernetes API server has also to be configured to trust the CA used to generate those certs.
-
-In general, it's just easier to deploy the manager in a Kubernetes cluster instead. For that, you'll need the `cert-manager` installed. You can install it by running:
-
-```console
-make cert-manager
-```
-
-Once it's ready, the following can be used to build and deploy a manager, along with the required webhook configuration:
-
-```
-make manifests docker-build docker-push deploy
-```
-
 ## Contributing and Developing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Testing
-
-With an existing cluster (such as `minikube`), run:
-```
-USE_EXISTING_CLUSTER=true make test
-```
-
-Tests can also be run without an existing cluster. For that, install [`kubebuilder`](https://book.kubebuilder.io/quick-start.html#installation). In this case, the tests will bootstrap `etcd` and `kubernetes-api-server` for the tests. Run against an existing cluster whenever possible, though.
 
 ## License
   
