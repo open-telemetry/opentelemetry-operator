@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package platform contains target platforms this operator might run on
 package platform
 
 // Platform holds the auto-detected platform type
