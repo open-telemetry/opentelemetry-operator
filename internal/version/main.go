@@ -1,4 +1,4 @@
-// Package version contains the operator's version, as well as versions of underlying components
+// Package version contains the operator's version, as well as versions of underlying components.
 package version
 
 import (

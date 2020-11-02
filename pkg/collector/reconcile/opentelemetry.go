@@ -1,4 +1,4 @@
-// Package reconcile contains reconciliation logic for OpenTelemetry Collector components
+// Package reconcile contains reconciliation logic for OpenTelemetry Collector components.
 package reconcile
 
 import (

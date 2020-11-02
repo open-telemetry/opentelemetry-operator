@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package sidecar contains operations related to sidecar manipulation (add, update, remove)
+// Package sidecar contains operations related to sidecar manipulation (add, update, remove).
 package sidecar
 
 import (

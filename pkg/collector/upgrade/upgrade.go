@@ -1,4 +1,4 @@
-// Package upgrade handles the upgrade routine from one OpenTelemetry Collector to the next
+// Package upgrade handles the upgrade routine from one OpenTelemetry Collector to the next.
 package upgrade
 
 import (

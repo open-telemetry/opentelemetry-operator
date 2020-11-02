@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package controllers contains the main controller, where the reconciliation starts
+// Package controllers contains the main controller, where the reconciliation starts.
 package controllers
 
 import (

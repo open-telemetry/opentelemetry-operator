@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package podinjector contains the webhook that injects sidecars into pods
+// Package podinjector contains the webhook that injects sidecars into pods.
 package podinjector
 
 import (
