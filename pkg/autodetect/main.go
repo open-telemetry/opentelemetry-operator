@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package autodetect is for auto-detecting traits from the environment (platform, APIs, ...).
 package autodetect
 
 import (

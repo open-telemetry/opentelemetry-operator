@@ -71,44 +71,7 @@ Tests can also be run without an existing cluster. For that, install [`kubebuild
 
 ## Project Structure
 
-Here's a general overview of the directories from this operator and what to expect in each one of them:
-
-```
-.
-├── api               # the CRDs that are handled by this operator
-│   └── v1alpha1      # the (currently) only CRD version we have
-├── build             # where the binaries are placed after `make manager`
-├── config            # the Kustomize resources that are used to assemble the operator's deployment units
-│   ├── certmanager   # Kustomize options dealing with cert-manager
-│   ├── crd           # Kustomize options for our CRDs
-│   │   ├── bases     # auto generated based on the code annotations (`make manifests`)
-│   │   └── patches   # patches to apply to the generated CRD
-│   ├── default       # Kustomize's "entry point", generating the distribution YAML file
-│   ├── manager       # the operator's Deployment
-│   ├── manifests     # the resulting CSV
-│   │   └── bases
-│   ├── prometheus    # ServiceMonitor that exposes our operator's metrics
-│   ├── rbac          # RBAC rules
-│   ├── samples       # Set of examples of how to accomplish specific scenarios. Those are bundled in the final CSV
-│   └── webhook       # Webhook configuration and service
-├── controllers       # our main controller, where the reconciliation starts
-├── hack              # utility scripts
-├── internal          # code shared with our internal packages
-│   ├── config        # our operator's runtime configuration
-│   ├── podinjector   # the webhook that injects sidecars into pods
-│   └── version       # our version, as well as versions of underlying components
-├── local             # local resources that shouldn't be added to the version control, like CRs used for dev/testing
-└── pkg               # packages that are exporter and are part of the public API for this module
-    ├── autodetect    # auto detect traits from the environment (platform, APIs, ...)
-    ├── collector     # code that handles OpenTelemetry Collector
-    │   ├── adapters  # data conversion
-    │   ├── parser    # parses the OpenTelemetry Collector configuration
-    │   ├── reconcile # reconciliation logic for OpenTelemetry Collector components
-    │   └── upgrade   # handles the upgrade routine from one OpenTelemetry Collector to the next
-    ├── naming        # determines the names for components (containers, services, ...)
-    ├── platform      # target platforms this operator might run
-    └── sidecar       # operations related to sidecar manipulation (add, update, remove)
-```
+For a general overview of the directories from this operator and what to expect in each one of them, please check out the [official GoDoc](https://godoc.org/github.com/open-telemetry/opentelemetry-operator) or the [locally-hosted GoDoc](http://localhost:6060/pkg/github.com/open-telemetry/opentelemetry-operator/)
 
 ## Contributing
 

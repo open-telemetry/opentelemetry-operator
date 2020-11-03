@@ -1,3 +1,4 @@
+// Package naming is for determining the names for components (containers, services, ...).
 package naming
 
 import (
