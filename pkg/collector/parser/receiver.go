@@ -1,3 +1,4 @@
+// Package parser is for parsing the OpenTelemetry Collector configuration.
 package parser
 
 import (
