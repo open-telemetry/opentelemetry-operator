@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package config contains the operator's runtime configuration.
 package config
 
 import (

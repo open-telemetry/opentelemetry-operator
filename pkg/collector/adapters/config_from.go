@@ -1,3 +1,4 @@
+// Package adapters is for data conversion.
 package adapters
 
 import (
