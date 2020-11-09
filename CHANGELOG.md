@@ -1,6 +1,12 @@
 Changes by Version
 ==================
 
+0.14.0 (2020-11-09)
+-------------------
+* Bumped OpenTelemetry Collector to v0.14.0 ([#112](https://github.com/open-telemetry/opentelemetry-operator/pull/112), [@jpkrohling](https://github.com/jpkrohling)) 
+
+_Note: The `tailsampling` processor was moved to the contrib repository, requiring a manual intervention in case this processor is being used: either replace the image with the contrib one (v0.14.0, which includes this processor), or remove the processor._
+
 0.13.0 (2020-10-22)
 -------------------
 
