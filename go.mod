@@ -5,9 +5,8 @@ go 1.13
 require (
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/go-logr/logr v0.3.0
-	github.com/onsi/ginkgo v1.14.2 // keep the Makefile in sync!
-	github.com/onsi/gomega v1.10.3
 	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.4.0
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.19.4
 	k8s.io/apimachinery v0.19.4

@@ -1,44 +1,40 @@
 package collector_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"testing"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/stretchr/testify/assert"
 )
 
-var _ = Describe("Deployment", func() {
-	logger := logf.Log.WithName("unit-tests")
+func TestDeploymentNewDefault(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+	cfg := config.New()
 
-	It("should build a default new deployment", func() {
-		// prepare
-		otelcol := v1alpha1.OpenTelemetryCollector{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "my-instance",
-			},
-		}
-		cfg := config.New()
+	// test
+	d := Deployment(cfg, logger, otelcol)
 
-		// test
-		d := Deployment(cfg, logger, otelcol)
+	// verify
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 
-		// verify
-		Expect(d.Name).To(Equal("my-instance-collector"))
-		Expect(d.Labels["app.kubernetes.io/name"]).To(Equal("my-instance-collector"))
-		Expect(d.Annotations["prometheus.io/scrape"]).To(Equal("true"))
-		Expect(d.Annotations["prometheus.io/port"]).To(Equal("8888"))
-		Expect(d.Annotations["prometheus.io/path"]).To(Equal("/metrics"))
+	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
 
-		Expect(d.Spec.Template.Spec.Containers).To(HaveLen(1))
+	// none of the default annotations should propagate down to the pod
+	assert.Empty(t, d.Spec.Template.Annotations)
 
-		// none of the default annotations should propagate down to the pod
-		Expect(d.Spec.Template.Annotations).To(BeEmpty())
-
-		// the pod selector should match the pod spec's labels
-		Expect(d.Spec.Template.Labels).To(Equal(d.Spec.Selector.MatchLabels))
-	})
-})
+	// the pod selector should match the pod spec's labels
+	assert.Equal(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
+}

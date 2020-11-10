@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 
@@ -15,55 +15,62 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
-var _ = Describe("Autodetect", func() {
-	DescribeTable("detect platform based on available API groups",
-		func(expected platform.Platform, apiGroupList *metav1.APIGroupList) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				output, err := json.Marshal(apiGroupList)
-				Expect(err).ToNot(HaveOccurred())
-
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_, err = w.Write(output)
-				Expect(err).ToNot(HaveOccurred())
-			}))
-			defer server.Close()
-
-			autoDetect, err := autodetect.New(&rest.Config{Host: server.URL})
-			Expect(err).ToNot(HaveOccurred())
-
-			// test
-			plt, err := autoDetect.Platform()
-
-			// verify
-			Expect(err).ToNot(HaveOccurred())
-			Expect(plt).To(Equal(expected))
+func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
+	for _, tt := range []struct {
+		apiGroupList *metav1.APIGroupList
+		expected     platform.Platform
+	}{
+		{
+			&metav1.APIGroupList{},
+			platform.Kubernetes,
 		},
-
-		Entry("kubernetes", platform.Kubernetes, &metav1.APIGroupList{}),
-		Entry("openshift", platform.OpenShift, &metav1.APIGroupList{
-			Groups: []metav1.APIGroup{
-				{
-					Name: "route.openshift.io",
+		{
+			&metav1.APIGroupList{
+				Groups: []metav1.APIGroup{
+					{
+						Name: "route.openshift.io",
+					},
 				},
 			},
-		}),
-	)
-
-	It("should return unknown platform when errors occur", func() {
+			platform.OpenShift,
+		},
+	} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			w.WriteHeader(http.StatusInternalServerError)
+			output, err := json.Marshal(tt.apiGroupList)
+			require.NoError(t, err)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, err = w.Write(output)
+			require.NoError(t, err)
 		}))
 		defer server.Close()
 
 		autoDetect, err := autodetect.New(&rest.Config{Host: server.URL})
-		Expect(err).ToNot(HaveOccurred())
+		require.NoError(t, err)
 
 		// test
 		plt, err := autoDetect.Platform()
 
 		// verify
-		Expect(err).To(HaveOccurred())
-		Expect(plt).To(Equal(platform.Unknown))
-	})
-})
+		assert.NoError(t, err)
+		assert.Equal(t, tt.expected, plt)
+	}
+}
+
+func TestUnknownPlatformOnError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	autoDetect, err := autodetect.New(&rest.Config{Host: server.URL})
+	require.NoError(t, err)
+
+	// test
+	plt, err := autoDetect.Platform()
+
+	// verify
+	assert.Error(t, err)
+	assert.Equal(t, platform.Unknown, plt)
+}

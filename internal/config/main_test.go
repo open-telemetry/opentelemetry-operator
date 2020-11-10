@@ -2,10 +2,11 @@ package config_test
 
 import (
 	"sync"
+	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -13,88 +14,85 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
-var _ = Describe("Config", func() {
+func TestNewConfig(t *testing.T) {
+	// prepare
+	cfg := config.New(
+		config.WithCollectorImage("some-image"),
+		config.WithCollectorConfigMapEntry("some-config.yaml"),
+		config.WithPlatform(platform.Kubernetes),
+	)
 
-	It("should build new configuration with given options", func() {
-		// prepare
-		cfg := config.New(
-			config.WithCollectorImage("some-image"),
-			config.WithCollectorConfigMapEntry("some-config.yaml"),
-			config.WithPlatform(platform.Kubernetes),
-		)
+	// test
+	assert.Equal(t, "some-image", cfg.CollectorImage())
+	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry())
+	assert.Equal(t, platform.Kubernetes, cfg.Platform())
+}
 
-		// test
-		Expect(cfg.CollectorImage()).To(Equal("some-image"))
-		Expect(cfg.CollectorConfigMapEntry()).To(Equal("some-config.yaml"))
-		Expect(cfg.Platform()).To(Equal(platform.Kubernetes))
-	})
+func TestOverrideVersion(t *testing.T) {
+	// prepare
+	v := version.Version{
+		OpenTelemetryCollector: "the-version",
+	}
+	cfg := config.New(config.WithVersion(v))
 
-	It("should use the version as part of the default image", func() {
-		// prepare
-		v := version.Version{
-			OpenTelemetryCollector: "the-version",
-		}
-		cfg := config.New(config.WithVersion(v))
+	// test
+	assert.Contains(t, cfg.CollectorImage(), "the-version")
+}
 
-		// test
-		Expect(cfg.CollectorImage()).To(ContainSubstring("the-version"))
-	})
+func TestCallbackOnChanges(t *testing.T) {
+	// prepare
+	calledBack := false
+	mock := &mockAutoDetect{
+		PlatformFunc: func() (platform.Platform, error) {
+			return platform.OpenShift, nil
+		},
+	}
+	cfg := config.New(
+		config.WithAutoDetect(mock),
+		config.WithOnChange(func() error {
+			calledBack = true
+			return nil
+		}),
+	)
 
-	It("should callback when configuration changes happen", func() {
-		// prepare
-		calledBack := false
-		mock := &mockAutoDetect{
-			PlatformFunc: func() (platform.Platform, error) {
-				return platform.OpenShift, nil
-			},
-		}
-		cfg := config.New(
-			config.WithAutoDetect(mock),
-			config.WithOnChange(func() error {
-				calledBack = true
-				return nil
-			}),
-		)
+	// sanity check
+	require.Equal(t, platform.Unknown, cfg.Platform())
 
-		// sanity check
-		Expect(cfg.Platform()).To(Equal(platform.Unknown))
+	// test
+	err := cfg.AutoDetect()
+	require.NoError(t, err)
 
-		// test
-		err := cfg.AutoDetect()
-		Expect(err).ToNot(HaveOccurred())
+	// verify
+	assert.Equal(t, platform.OpenShift, cfg.Platform())
+	assert.True(t, calledBack)
+}
 
-		// verify
-		Expect(cfg.Platform()).To(Equal(platform.OpenShift))
-		Expect(calledBack).To(BeTrue())
-	})
+func TestAutoDetectInBackground(t *testing.T) {
+	// prepare
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	mock := &mockAutoDetect{
+		PlatformFunc: func() (platform.Platform, error) {
+			wg.Done()
+			// returning Unknown will cause the auto-detection to keep trying to detect the platform
+			return platform.Unknown, nil
+		},
+	}
+	cfg := config.New(
+		config.WithAutoDetect(mock),
+		config.WithAutoDetectFrequency(100*time.Millisecond),
+	)
 
-	It("should run the auto-detect routine in the background", func() {
-		// prepare
-		wg := &sync.WaitGroup{}
-		wg.Add(2)
-		mock := &mockAutoDetect{
-			PlatformFunc: func() (platform.Platform, error) {
-				wg.Done()
-				// returning Unknown will cause the auto-detection to keep trying to detect the platform
-				return platform.Unknown, nil
-			},
-		}
-		cfg := config.New(
-			config.WithAutoDetect(mock),
-			config.WithAutoDetectFrequency(100*time.Millisecond),
-		)
+	// sanity check
+	require.Equal(t, platform.Unknown, cfg.Platform())
 
-		// sanity check
-		Expect(cfg.Platform()).To(Equal(platform.Unknown))
+	// test
+	err := cfg.StartAutoDetect()
+	require.NoError(t, err)
 
-		// test
-		err := cfg.StartAutoDetect()
-		Expect(err).ToNot(HaveOccurred())
-
-		// verify
-		wg.Wait()
-	})
-})
+	// verify
+	wg.Wait()
+}
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
