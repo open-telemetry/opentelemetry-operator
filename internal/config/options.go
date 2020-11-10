@@ -22,6 +22,7 @@ type options struct {
 	onChange                []func() error
 	platform                platform.Platform
 	version                 version.Version
+	watchedNamespaces       []string
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -65,5 +66,10 @@ func WithPlatform(plt platform.Platform) Option {
 func WithVersion(v version.Version) Option {
 	return func(o *options) {
 		o.version = v
+	}
+}
+func WithWatchedNamespaces(nss []string) Option {
+	return func(o *options) {
+		o.watchedNamespaces = nss
 	}
 }

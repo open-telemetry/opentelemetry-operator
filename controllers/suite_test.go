@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controllers_test
+package controllers
 
 import (
 	"fmt"
@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
@@ -32,6 +33,7 @@ import (
 var k8sClient client.Client
 var testEnv *envtest.Environment
 var testScheme *runtime.Scheme = scheme.Scheme
+var logger = logf.Log.WithName("unit-tests")
 
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{

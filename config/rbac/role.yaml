@@ -76,6 +76,26 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
+  - opentelemetrycollectordistributions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - opentelemetrycollectordistributions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - opentelemetry.io
+  resources:
   - opentelemetrycollectors
   verbs:
   - create

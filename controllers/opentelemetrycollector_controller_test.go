@@ -1,4 +1,4 @@
-package controllers_test
+package controllers
 
 import (
 	"context"
@@ -15,23 +15,19 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 )
-
-var logger = logf.Log.WithName("unit-tests")
 
 func TestNewObjectsOnReconciliation(t *testing.T) {
 	// prepare
 	cfg := config.New()
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewReconciler(controllers.Params{
+	reconciler := NewReconciler(Params{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: testScheme,
@@ -109,9 +105,9 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 func TestContinueOnRecoverableFailure(t *testing.T) {
 	// prepare
 	taskCalled := false
-	reconciler := controllers.NewReconciler(controllers.Params{
+	reconciler := NewReconciler(Params{
 		Log: logger,
-		Tasks: []controllers.Task{
+		Tasks: []Task{
 			{
 				Name: "should-fail",
 				Do: func(context.Context, reconcile.Params) error {
@@ -143,12 +139,12 @@ func TestBreakOnUnrecoverableError(t *testing.T) {
 	taskCalled := false
 	expectedErr := errors.New("should fail!")
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewReconciler(controllers.Params{
+	reconciler := NewReconciler(Params{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: scheme.Scheme,
 		Config: cfg,
-		Tasks: []controllers.Task{
+		Tasks: []Task{
 			{
 				Name: "should-fail",
 				Do: func(context.Context, reconcile.Params) error {
@@ -193,12 +189,12 @@ func TestSkipWhenInstanceDoesNotExist(t *testing.T) {
 	// prepare
 	cfg := config.New()
 	nsn := types.NamespacedName{Name: "non-existing-my-instance", Namespace: "default"}
-	reconciler := controllers.NewReconciler(controllers.Params{
+	reconciler := NewReconciler(Params{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: scheme.Scheme,
 		Config: cfg,
-		Tasks: []controllers.Task{
+		Tasks: []Task{
 			{
 				Name: "should-not-be-called",
 				Do: func(context.Context, reconcile.Params) error {
@@ -226,7 +222,7 @@ func TestRegisterWithManager(t *testing.T) {
 	mgr, err := manager.New(k8sconfig.GetConfigOrDie(), manager.Options{})
 	require.NoError(t, err)
 
-	reconciler := controllers.NewReconciler(controllers.Params{})
+	reconciler := NewReconciler(Params{})
 
 	// test
 	err = reconciler.SetupWithManager(mgr)

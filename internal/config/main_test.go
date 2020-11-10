@@ -7,7 +7,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
@@ -92,6 +94,34 @@ func TestAutoDetectInBackground(t *testing.T) {
 
 	// verify
 	wg.Wait()
+}
+
+func TestDistributionFound(t *testing.T) {
+	// prepare
+	cfg := config.New()
+	expected := v1alpha1.OpenTelemetryCollectorDistribution{
+		ObjectMeta: v1.ObjectMeta{Namespace: "my-ns", Name: "my-dist"},
+		Command:    []string{"some-custom-command"},
+		Image:      "some-custom-image",
+	}
+	cfg.SetDistributions([]v1alpha1.OpenTelemetryCollectorDistribution{expected})
+
+	// test
+	dist := cfg.Distribution("my-ns", "my-dist")
+
+	// verify
+	assert.Equal(t, expected, *dist)
+}
+
+func TestDistributionNotFound(t *testing.T) {
+	// prepare
+	cfg := config.New()
+
+	// test
+	dist := cfg.Distribution("my-ns", "my-dist")
+
+	// verify
+	assert.Nil(t, dist)
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)

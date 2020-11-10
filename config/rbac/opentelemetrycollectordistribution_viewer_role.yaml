@@ -1,0 +1,20 @@
+# permissions for end users to view opentelemetrycollectordistributions.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: opentelemetrycollectordistribution-viewer-role
+rules:
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - opentelemetrycollectordistributions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - opentelemetrycollectordistributions/status
+  verbs:
+  - get

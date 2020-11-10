@@ -26,8 +26,21 @@ import (
 )
 
 // Container builds a container for the given collector
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
-	image := otelcol.Spec.Image
+func Container(cfg *config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
+	var image string
+	var cmd []string
+	if len(otelcol.Spec.DistributionName) > 0 {
+		distribution := cfg.Distribution(otelcol.Namespace, otelcol.Spec.DistributionName)
+		if distribution != nil {
+			image = distribution.Image
+			cmd = distribution.Command
+		} else {
+			logger.V(1).Info("the requested distribution couldn't be found", "namespace", otelcol.Namespace, "distributionName", otelcol.Spec.DistributionName)
+		}
+	} else {
+		image = otelcol.Spec.Image
+	}
+
 	if len(image) == 0 {
 		image = cfg.CollectorImage()
 	}
@@ -63,11 +76,17 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		envVars = []corev1.EnvVar{}
 	}
 
-	return corev1.Container{
+	container := corev1.Container{
 		Name:         naming.Container(),
 		Image:        image,
 		VolumeMounts: volumeMounts,
 		Args:         args,
 		Env:          envVars,
 	}
+
+	if len(cmd) > 0 {
+		container.Command = cmd
+	}
+
+	return container
 }

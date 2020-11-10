@@ -15,7 +15,7 @@ spec:
     - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
         API
       kind: OpenTelemetryCollector
-      name: opentelemetrycollectors.core.opentelemetry.io
+      name: opentelemetrycollectors.opentelemetry.io
       specDescriptors:
       - description: Args is the set of arguments to pass to the OpenTelemetry Collector
           binary

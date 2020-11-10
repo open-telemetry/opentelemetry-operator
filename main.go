@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	opentelemetryiov1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	v1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/podinjector"
@@ -49,8 +49,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(opentelemetryiov1alpha1.AddToScheme(scheme))
+	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -79,10 +78,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
+	if found {
+		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
+	} else {
+		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
+	}
+
 	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),
 		config.WithVersion(v),
 		config.WithAutoDetect(ad),
+		config.WithWatchedNamespaces(strings.Split(watchNamespace, ",")),
 	)
 
 	pflag.CommandLine.AddFlagSet(cfg.FlagSet())
@@ -100,13 +107,6 @@ func main() {
 		"go-arch", runtime.GOARCH,
 		"go-os", runtime.GOOS,
 	)
-
-	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
-	if found {
-		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
-	} else {
-		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
-	}
 
 	mgrOptions := ctrl.Options{
 		Scheme:             scheme,
@@ -144,6 +144,26 @@ func main() {
 		setupLog.Error(err, "failed to upgrade managed instances")
 	}
 
+	distReconciler := controllers.NewDistributionReconciler(controllers.Params{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollectorDistribution"),
+		Scheme: mgr.GetScheme(),
+		Config: cfg,
+	})
+	if err = distReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollectorDistribution")
+		os.Exit(1)
+	}
+	err = mgr.Add(manager.RunnableFunc(func(<-chan struct{}) error {
+		// the operator will reconcile all individual distributions upon bootstrap, but we need to make sure
+		// the distributions are loaded before the first otelcol reconciliation, and we don't currently have the
+		// guarantee that this will happen, thus, we need this manual step here
+		return distReconciler.LoadDistributions()
+	}))
+	if err != nil {
+		setupLog.Error(err, "failed to obtain the existing list of available distributions")
+	}
+
 	if err = controllers.NewReconciler(controllers.Params{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
@@ -154,8 +174,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	// +kubebuilder:scaffold:builder
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&opentelemetryiov1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
@@ -164,7 +186,6 @@ func main() {
 			Handler: podinjector.NewPodSidecarInjector(cfg, ctrl.Log.WithName("sidecar"), mgr.GetClient()),
 		})
 	}
-	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

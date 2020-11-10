@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/pflag"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
@@ -48,10 +49,12 @@ type Config struct {
 	collectorConfigMapEntry string
 	platform                platform.Platform
 	version                 version.Version
+	distributions           []v1alpha1.OpenTelemetryCollectorDistribution
+	watchedNamespaces       []string
 }
 
 // New constructs a new configuration based on the given options
-func New(opts ...Option) Config {
+func New(opts ...Option) *Config {
 	// initialize with the default values
 	o := options{
 		autoDetectFrequency:     defaultAutoDetectFrequency,
@@ -70,7 +73,7 @@ func New(opts ...Option) Config {
 		o.collectorImage = fmt.Sprintf("otel/opentelemetry-collector:%s", o.version.OpenTelemetryCollector)
 	}
 
-	return Config{
+	return &Config{
 		autoDetect:              o.autoDetect,
 		autoDetectFrequency:     o.autoDetectFrequency,
 		collectorImage:          o.collectorImage,
@@ -79,6 +82,7 @@ func New(opts ...Option) Config {
 		onChange:                o.onChange,
 		platform:                o.platform,
 		version:                 o.version,
+		watchedNamespaces:       o.watchedNamespaces,
 	}
 }
 
@@ -163,4 +167,28 @@ func (c *Config) Platform() platform.Platform {
 // Version holds the versions used by this operator
 func (c *Config) Version() version.Version {
 	return c.version
+}
+
+// SetDistributions updates the current list of distributions
+func (c *Config) SetDistributions(ds []v1alpha1.OpenTelemetryCollectorDistribution) {
+	for _, d := range ds {
+		c.logger.V(1).Info("adding to the list of distributions", "namespace", d.Namespace, "name", d.Name)
+	}
+	c.distributions = ds
+}
+
+// Distribution returns the distribution for the given name and namespace in case it's known, or nil if it's not registered
+func (c *Config) Distribution(namespace, name string) *v1alpha1.OpenTelemetryCollectorDistribution {
+	for _, d := range c.distributions {
+		if d.Namespace == namespace && d.Name == name {
+			return &d
+		}
+	}
+
+	return nil
+}
+
+// WatchedNamespaces contains the list of namespaces being watched by this operator
+func (c *Config) WatchedNamespaces() []string {
+	return c.watchedNamespaces
 }

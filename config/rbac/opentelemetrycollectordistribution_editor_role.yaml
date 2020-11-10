@@ -1,0 +1,24 @@
+# permissions for end users to edit opentelemetrycollectordistributions.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: opentelemetrycollectordistribution-editor-role
+rules:
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - opentelemetrycollectordistributions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - opentelemetrycollectordistributions/status
+  verbs:
+  - get

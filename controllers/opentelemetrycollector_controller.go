@@ -37,7 +37,7 @@ type OpenTelemetryCollectorReconciler struct {
 	client.Client
 	log    logr.Logger
 	scheme *runtime.Scheme
-	config config.Config
+	config *config.Config
 	tasks  []Task
 }
 
@@ -46,15 +46,6 @@ type Task struct {
 	Name        string
 	Do          func(context.Context, reconcile.Params) error
 	BailOnError bool
-}
-
-// Params is the set of options to build a new openTelemetryCollectorReconciler
-type Params struct {
-	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
-	Config config.Config
-	Tasks  []Task
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects

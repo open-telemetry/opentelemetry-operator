@@ -1,0 +1,7 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollectorDistribution
+metadata:
+  name: my-custom-distribution
+image: quay.io/namespace/image:version
+cmd:
+- /path/to/binary # not required if the image has an appropriate entrypoint defined

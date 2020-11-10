@@ -1,0 +1,25 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: using-custom-distribution
+spec:
+  mode: deployment
+  distributionName: my-custom-distribution
+  config: |
+    receivers:
+      jaeger:
+        protocols: 
+          grpc:
+
+    processors:
+      queued_retry:
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: [queued_retry]
+          exporters: [logging]

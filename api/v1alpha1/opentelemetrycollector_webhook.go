@@ -15,10 +15,16 @@
 package v1alpha1
 
 import (
+	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+)
+
+var (
+	errCannotSetBothDistributionNameAndImage = errors.New("cannot specify both a DistributionName and an Image")
 )
 
 // log is for logging in this package.
@@ -57,12 +63,22 @@ var _ webhook.Validator = &OpenTelemetryCollector{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *OpenTelemetryCollector) ValidateCreate() error {
 	opentelemetrycollectorlog.Info("validate create", "name", r.Name)
+
+	if len(r.Spec.DistributionName) > 0 && len(r.Spec.Image) > 0 {
+		return errCannotSetBothDistributionNameAndImage
+	}
+
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) error {
 	opentelemetrycollectorlog.Info("validate update", "name", r.Name)
+
+	if len(r.Spec.DistributionName) > 0 && len(r.Spec.Image) > 0 {
+		return errCannotSetBothDistributionNameAndImage
+	}
+
 	return nil
 }
 

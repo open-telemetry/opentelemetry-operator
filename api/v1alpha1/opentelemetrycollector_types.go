@@ -37,9 +37,17 @@ type OpenTelemetryCollectorSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Image indicates the container image to use for the OpenTelemetry Collector.
+	// Deprecated. Use a DistributionName pointing to a distribution with a custom image instead. This field will be be noop in v0.16 and removed in v0.17.
+	// Cannot be specified when a DistributionName is set.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
+
+	// Distribution specifies which distribution to use for this instance. In case the distribution does not exist, this resource will wait until it is created.
+	// Cannot be specified when an Image is set.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	DistributionName string `json:"distributionName,omitempty"`
 
 	// Mode represents how the collector should be deployed (deployment, daemonset or sidecar)
 	// +optional

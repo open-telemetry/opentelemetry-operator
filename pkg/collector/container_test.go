@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
@@ -106,15 +107,44 @@ func TestContainerEnvVarsOverridden(t *testing.T) {
 }
 
 func TestContainerEmptyEnvVarsByDefault(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
-	}
-
 	cfg := config.New()
+	otelcol := v1alpha1.OpenTelemetryCollector{}
 
 	// test
 	c := Container(cfg, logger, otelcol)
 
 	// verify
 	assert.Empty(t, c.Env)
+}
+
+func TestContainerForDistribution(t *testing.T) {
+	// prepare
+	cfg := config.New()
+	cfg.SetDistributions([]v1alpha1.OpenTelemetryCollectorDistribution{
+		{
+			ObjectMeta: v1.ObjectMeta{
+				Namespace: "my-ns",
+				Name:      "my-dist",
+			},
+			Image:   "quay.io/myns/my-otelcol:v1.0.0",
+			Command: []string{"/path/to/command"},
+		},
+	})
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: v1.ObjectMeta{
+			Namespace: "my-ns",
+			Name:      "my-otelcol",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			DistributionName: "my-dist",
+		},
+	}
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, []string{"/path/to/command"}, c.Command)
+	assert.Equal(t, "quay.io/myns/my-otelcol:v1.0.0", c.Image)
 }

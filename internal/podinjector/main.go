@@ -53,14 +53,14 @@ type PodSidecarInjector interface {
 
 // the implementation
 type podSidecarInjector struct {
-	config  config.Config
+	config  *config.Config
 	logger  logr.Logger
 	client  client.Client
 	decoder *admission.Decoder
 }
 
 // NewPodSidecarInjector creates a new PodSidecarInjector
-func NewPodSidecarInjector(cfg config.Config, logger logr.Logger, cl client.Client) PodSidecarInjector {
+func NewPodSidecarInjector(cfg *config.Config, logger logr.Logger, cl client.Client) PodSidecarInjector {
 	return &podSidecarInjector{
 		config: cfg,
 		logger: logger,

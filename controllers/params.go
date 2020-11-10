@@ -12,22 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package reconcile
+package controllers
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-// Params holds the reconciliation-specific parameters
+// Params is the set of options to build new reconcilers
 type Params struct {
-	Config   *config.Config
-	Client   client.Client
-	Instance v1alpha1.OpenTelemetryCollector
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
+	client.Client
+	Log    logr.Logger
+	Scheme *runtime.Scheme
+	Config *config.Config
+	Tasks  []Task
 }

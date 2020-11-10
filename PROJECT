@@ -1,10 +1,10 @@
 domain: opentelemetry.io
-layout: go.kubebuilder.io/v2
 repo: github.com/open-telemetry/opentelemetry-operator
 resources:
 - group: core
   kind: OpenTelemetryCollector
   version: v1alpha1
-version: 2
-plugins:
-  go.operator-sdk.io/v2-alpha: {}
+- group: core
+  kind: OpenTelemetryCollectorDistribution
+  version: v1alpha1
+version: "2"

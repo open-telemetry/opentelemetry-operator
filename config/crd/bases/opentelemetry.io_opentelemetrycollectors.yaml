@@ -66,6 +66,11 @@ spec:
               description: Config is the raw JSON to be used as the collector's configuration.
                 Refer to the OpenTelemetry Collector documentation for details.
               type: string
+            distributionName:
+              description: Distribution specifies which distribution to use for this
+                instance. In case the distribution does not exist, this resource will
+                wait until it is created. Cannot be specified when an Image is set.
+              type: string
             env:
               description: ENV vars to set on the OpenTelemetry Collector's Pods.
                 These can then in certain cases be consumed in the config file for
@@ -173,7 +178,9 @@ spec:
               type: array
             image:
               description: Image indicates the container image to use for the OpenTelemetry
-                Collector.
+                Collector. Deprecated. Use a DistributionName pointing to a distribution
+                with a custom image instead. This field will be be noop in v0.16 and
+                removed in v0.17. Cannot be specified when a DistributionName is set.
               type: string
             mode:
               description: Mode represents how the collector should be deployed (deployment,
