@@ -48,22 +48,27 @@ func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 	for _, protocol := range []struct {
 		name        string
 		defaultPort int32
+		protocol    corev1.Protocol
 	}{
 		{
 			name:        "grpc",
 			defaultPort: defaultGRPCPort,
+			protocol:    corev1.ProtocolTCP,
 		},
 		{
 			name:        "thrift_http",
 			defaultPort: defaultThriftHTTPPort,
+			protocol:    corev1.ProtocolTCP,
 		},
 		{
 			name:        "thrift_compact",
 			defaultPort: defaultThriftCompactPort,
+			protocol:    corev1.ProtocolUDP,
 		},
 		{
 			name:        "thrift_binary",
 			defaultPort: defaultThriftBinaryPort,
+			protocol:    corev1.ProtocolUDP,
 		},
 	} {
 		// do we have the protocol specified at all?
@@ -82,9 +87,13 @@ func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			// if not, we use the default port
 			if protocolPort == nil {
 				protocolPort = &corev1.ServicePort{
-					Name: portName(nameWithProtocol, protocol.defaultPort),
-					Port: protocol.defaultPort,
+					Name:     portName(nameWithProtocol, protocol.defaultPort),
+					Port:     protocol.defaultPort,
+					Protocol: protocol.protocol,
 				}
+			} else {
+				// port from configuration block has been used, but protocol needs to be set
+				protocolPort.Protocol = protocol.protocol
 			}
 
 			// at this point, we *have* a port specified, add it to the list of ports
