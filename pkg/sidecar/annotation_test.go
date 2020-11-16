@@ -15,27 +15,24 @@
 package sidecar_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
-	. "github.com/onsi/gomega"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 )
 
-var _ = Describe("Annotation", func() {
-
-	DescribeTable("determine the right effective annotation value",
-		func(expected string, pod corev1.Pod, ns corev1.Namespace) {
-			// test
-			annValue := sidecar.AnnotationValue(ns, pod)
-
-			// verify
-			Expect(annValue).To(Equal(expected))
-		},
-
-		Entry("pod-true-overrides-ns",
+func TestEffectiveAnnotationValue(t *testing.T) {
+	for _, tt := range []struct {
+		desc     string
+		expected string
+		pod      corev1.Pod
+		ns       corev1.Namespace
+	}{
+		{
+			"pod-true-overrides-ns",
 			"true",
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -51,9 +48,10 @@ var _ = Describe("Annotation", func() {
 					},
 				},
 			},
-		),
+		},
 
-		Entry("ns-has-concrete-instance",
+		{
+			"ns-has-concrete-instance",
 			"some-instance",
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -69,9 +67,10 @@ var _ = Describe("Annotation", func() {
 					},
 				},
 			},
-		),
+		},
 
-		Entry("pod-has-concrete-instance",
+		{
+			"pod-has-concrete-instance",
 			"some-instance-from-pod",
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -87,9 +86,10 @@ var _ = Describe("Annotation", func() {
 					},
 				},
 			},
-		),
+		},
 
-		Entry("pod-has-explicit-false",
+		{
+			"pod-has-explicit-false",
 			"false",
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -105,9 +105,10 @@ var _ = Describe("Annotation", func() {
 					},
 				},
 			},
-		),
+		},
 
-		Entry("pod-has-no-annotations",
+		{
+			"pod-has-no-annotations",
 			"some-instance",
 			corev1.Pod{},
 			corev1.Namespace{
@@ -117,9 +118,10 @@ var _ = Describe("Annotation", func() {
 					},
 				},
 			},
-		),
+		},
 
-		Entry("ns-has-no-annotations",
+		{
+			"ns-has-no-annotations",
 			"true",
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -129,7 +131,14 @@ var _ = Describe("Annotation", func() {
 				},
 			},
 			corev1.Namespace{},
-		),
-	)
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			// test
+			annValue := sidecar.AnnotationValue(tt.ns, tt.pod)
 
-})
+			// verify
+			assert.Equal(t, tt.expected, annValue)
+		})
+	}
+}

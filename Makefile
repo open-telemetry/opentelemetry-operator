@@ -34,19 +34,19 @@ endif
 # by default, do not run the manager with webhooks enabled. This only affects local runs, not the build or in-cluster deployments.
 ENABLE_WEBHOOKS ?= false
 
-# If we are running in CI, run ginkgo with the recommended CI settings
+# If we are running in CI, run go test in verbose mode
 ifeq (,$(CI))
-GINKGO_OPTS=-r
+GOTEST_OPTS=-race
 else
-GINKGO_OPTS=-r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race --progress --compilers=2 -v
+GOTEST_OPTS=-race -v
 endif
 
 all: manager
 ci: test
 
 # Run tests
-test: ginkgo generate fmt vet manifests
-	$(GINKGO) $(GINKGO_OPTS)
+test: generate fmt vet manifests
+	go test ${GOTEST_OPTS} ./...
 
 # Build manager binary
 manager: generate fmt vet
@@ -123,19 +123,6 @@ ifeq (, $(shell which controller-gen))
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
-endif
-
-# find or download ginkgo
-# download ginkgo if necessary
-ginkgo:
-ifeq (, $(shell which ginkgo))
-	@{ \
-	set -e ;\
-	go get github.com/onsi/ginkgo/ginkgo@v1.14.2 ;\
-	}
-GINKGO=$(GOBIN)/ginkgo
-else
-GINKGO=$(shell which ginkgo)
 endif
 
 kustomize:
