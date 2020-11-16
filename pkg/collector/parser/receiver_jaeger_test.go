@@ -1,101 +1,95 @@
-package parser_test
+package parser
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/parser"
+	"github.com/stretchr/testify/assert"
 )
 
-var _ = Describe("Jaeger receiver", func() {
-	logger := logf.Log.WithName("unit-tests")
+func TestJaegerSelfRegisters(t *testing.T) {
+	// verify
+	assert.True(t, IsRegistered("jaeger"))
+}
 
-	It("should have self registered", func() {
-		// verify
-		Expect(parser.IsRegistered("jaeger")).To(BeTrue())
+func TestJaegerIsFoundByName(t *testing.T) {
+	// test
+	p := For(logger, "jaeger", map[interface{}]interface{}{})
+
+	// verify
+	assert.Equal(t, "__jaeger", p.ParserName())
+}
+
+func TestJaegerMinimalConfiguration(t *testing.T) {
+	// prepare
+	builder := NewJaegerReceiverParser(logger, "jaeger", map[interface{}]interface{}{
+		"protocols": map[interface{}]interface{}{
+			"grpc": map[interface{}]interface{}{},
+		},
 	})
 
-	It("should be found via its parser name", func() {
-		// test
-		p := parser.For(logger, "jaeger", map[interface{}]interface{}{})
+	// test
+	ports, err := builder.Ports()
 
-		// verify
-		Expect(p.ParserName()).To(Equal("__jaeger"))
-	})
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 1)
+	assert.EqualValues(t, 14250, ports[0].Port)
+}
 
-	It("should build with a minimal configuration", func() {
-		// prepare
-		builder := parser.NewJaegerReceiverParser(logger, "jaeger", map[interface{}]interface{}{
-			"protocols": map[interface{}]interface{}{
-				"grpc": map[interface{}]interface{}{},
+func TestJaegerPortsOverridden(t *testing.T) {
+	// prepare
+	builder := NewJaegerReceiverParser(logger, "jaeger", map[interface{}]interface{}{
+		"protocols": map[interface{}]interface{}{
+			"grpc": map[interface{}]interface{}{
+				"endpoint": "0.0.0.0:1234",
 			},
-		})
-
-		// test
-		ports, err := builder.Ports()
-
-		// verify
-		Expect(err).ToNot(HaveOccurred())
-		Expect(ports).To(HaveLen(1))
-		Expect(ports[0].Port).To(BeEquivalentTo(14250))
+		},
 	})
 
-	It("should allow ports to be overridden", func() {
-		// prepare
-		builder := parser.NewJaegerReceiverParser(logger, "jaeger", map[interface{}]interface{}{
-			"protocols": map[interface{}]interface{}{
-				"grpc": map[interface{}]interface{}{
-					"endpoint": "0.0.0.0:1234",
-				},
-			},
-		})
+	// test
+	ports, err := builder.Ports()
 
-		// test
-		ports, err := builder.Ports()
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 1)
+	assert.EqualValues(t, 1234, ports[0].Port)
+}
 
-		// verify
-		Expect(err).ToNot(HaveOccurred())
-		Expect(ports).To(HaveLen(1))
-		Expect(ports[0].Port).To(BeEquivalentTo(1234))
+func TestJaegerExposeDefaultPorts(t *testing.T) {
+	// prepare
+	builder := NewJaegerReceiverParser(logger, "jaeger", map[interface{}]interface{}{
+		"protocols": map[interface{}]interface{}{
+			"grpc":           map[interface{}]interface{}{},
+			"thrift_http":    map[interface{}]interface{}{},
+			"thrift_compact": map[interface{}]interface{}{},
+			"thrift_binary":  map[interface{}]interface{}{},
+		},
 	})
 
-	It("should expose the default ports", func() {
-		// prepare
-		builder := parser.NewJaegerReceiverParser(logger, "jaeger", map[interface{}]interface{}{
-			"protocols": map[interface{}]interface{}{
-				"grpc":           map[interface{}]interface{}{},
-				"thrift_http":    map[interface{}]interface{}{},
-				"thrift_compact": map[interface{}]interface{}{},
-				"thrift_binary":  map[interface{}]interface{}{},
-			},
-		})
+	expectedResults := map[string]struct {
+		portNumber int32
+		seen       bool
+	}{
+		"jaeger-grpc":           {portNumber: 14250},
+		"jaeger-thrift-http":    {portNumber: 14268},
+		"jaeger-thrift-compact": {portNumber: 6831},
+		"jaeger-thrift-binary":  {portNumber: 6832},
+	}
 
-		expectedResults := map[string]struct {
-			portNumber int32
-			seen       bool
-		}{
-			"jaeger-grpc":           {portNumber: 14250},
-			"jaeger-thrift-http":    {portNumber: 14268},
-			"jaeger-thrift-compact": {portNumber: 6831},
-			"jaeger-thrift-binary":  {portNumber: 6832},
-		}
+	// test
+	ports, err := builder.Ports()
 
-		// test
-		ports, err := builder.Ports()
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 4)
 
-		// verify
-		Expect(err).ToNot(HaveOccurred())
-		Expect(ports).To(HaveLen(4))
-
-		for _, port := range ports {
-			r := expectedResults[port.Name]
-			r.seen = true
-			expectedResults[port.Name] = r
-			Expect(port.Port).To(BeEquivalentTo(r.portNumber))
-		}
-		for k, v := range expectedResults {
-			Expect(v.seen).To(BeTrue(), "the port %s wasn't included in the service ports", k)
-		}
-	})
-})
+	for _, port := range ports {
+		r := expectedResults[port.Name]
+		r.seen = true
+		expectedResults[port.Name] = r
+		assert.EqualValues(t, r.portNumber, port.Port)
+	}
+	for k, v := range expectedResults {
+		assert.True(t, v.seen, "the port %s wasn't included in the service ports", k)
+	}
+}

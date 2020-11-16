@@ -1,8 +1,9 @@
 package collector_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
@@ -11,41 +12,38 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-var _ = Describe("Volume", func() {
-	It("should build a new default volume", func() {
-		// prepare
-		otelcol := v1alpha1.OpenTelemetryCollector{}
-		cfg := config.New()
+func TestVolumeNewDefault(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{}
+	cfg := config.New()
 
-		// test
-		volumes := Volumes(cfg, otelcol)
+	// test
+	volumes := Volumes(cfg, otelcol)
 
-		// verify
-		Expect(volumes).To(HaveLen(1))
+	// verify
+	assert.Len(t, volumes, 1)
 
-		// check that it's the otc-internal volume, with the config map
-		Expect(volumes[0].Name).To(Equal(naming.ConfigMapVolume()))
-	})
+	// check that it's the otc-internal volume, with the config map
+	assert.Equal(t, naming.ConfigMapVolume(), volumes[0].Name)
+}
 
-	It("should allow more volumes to be added", func() {
-		// prepare
-		otelcol := v1alpha1.OpenTelemetryCollector{
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Volumes: []corev1.Volume{{
-					Name: "my-volume",
-				}},
-			},
-		}
-		cfg := config.New()
+func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Volumes: []corev1.Volume{{
+				Name: "my-volume",
+			}},
+		},
+	}
+	cfg := config.New()
 
-		// test
-		volumes := Volumes(cfg, otelcol)
+	// test
+	volumes := Volumes(cfg, otelcol)
 
-		// verify
-		Expect(volumes).To(HaveLen(2))
+	// verify
+	assert.Len(t, volumes, 2)
 
-		// check that it's the otc-internal volume, with the config map
-		Expect(volumes[1].Name).To(Equal("my-volume"))
-	})
-
-})
+	// check that it's the otc-internal volume, with the config map
+	assert.Equal(t, "my-volume", volumes[1].Name)
+}
