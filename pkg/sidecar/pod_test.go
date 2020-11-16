@@ -15,9 +15,9 @@
 package sidecar_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
-	. "github.com/onsi/gomega"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -28,114 +28,121 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 )
 
-var _ = Describe("Pod", func() {
-	logger := logf.Log.WithName("unit-tests")
+var logger = logf.Log.WithName("unit-tests")
 
-	It("should add sidecar when none exists", func() {
-		// prepare
-		pod := corev1.Pod{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{Name: "my-app"},
-				},
-				// cross-test: the pod has a volume already, make sure we don't remove it
-				Volumes: []corev1.Volume{{}},
+func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
+	// prepare
+	pod := corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{Name: "my-app"},
 			},
-		}
-		otelcol := v1alpha1.OpenTelemetryCollector{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "otelcol-sample",
-				Namespace: "some-app",
+			// cross-test: the pod has a volume already, make sure we don't remove it
+			Volumes: []corev1.Volume{{}},
+		},
+	}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "otelcol-sample",
+			Namespace: "some-app",
+		},
+	}
+	cfg := config.New(config.WithCollectorImage("some-default-image"))
+
+	// test
+	changed, err := sidecar.Add(cfg, logger, otelcol, pod)
+
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, changed.Spec.Containers, 2)
+	assert.Len(t, changed.Spec.Volumes, 2)
+	assert.Equal(t, "some-app.otelcol-sample", changed.Labels["sidecar.opentelemetry.io/injected"])
+}
+
+// this situation should never happen in the current code path, but it should not fail
+// if it's asked to add a new sidecar. The caller is expected to have called ExistsIn before.
+func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
+	// prepare
+	pod := corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{Name: "my-app"},
+				{Name: naming.Container()},
 			},
-		}
-		cfg := config.New(config.WithCollectorImage("some-default-image"))
+		},
+	}
+	otelcol := v1alpha1.OpenTelemetryCollector{}
+	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
-		// test
-		changed, err := sidecar.Add(cfg, logger, otelcol, pod)
+	// test
+	changed, err := sidecar.Add(cfg, logger, otelcol, pod)
 
-		// verify
-		Expect(err).ToNot(HaveOccurred())
-		Expect(changed.Spec.Containers).To(HaveLen(2))
-		Expect(changed.Spec.Volumes).To(HaveLen(2))
-		Expect(changed.Labels["sidecar.opentelemetry.io/injected"]).To(Equal("some-app.otelcol-sample"))
-	})
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, changed.Spec.Containers, 3)
+}
 
-	// this situation should never happen in the current code path, but it should not fail
-	// if it's asked to add a new sidecar. The caller is expected to have called ExistsIn before.
-	It("should add sidecar, even when one exists", func() {
-		// prepare
-		pod := corev1.Pod{
+func TestRemoveSidecar(t *testing.T) {
+	// prepare
+	pod := corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{Name: "my-app"},
+				{Name: naming.Container()},
+				{Name: naming.Container()}, // two sidecars! should remove both
+			},
+		},
+	}
+
+	// test
+	changed, err := sidecar.Remove(pod)
+
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, changed.Spec.Containers, 1)
+}
+
+func TestRemoveNonExistingSidecar(t *testing.T) {
+	// prepare
+	pod := corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{Name: "my-app"},
+			},
+		},
+	}
+
+	// test
+	changed, err := sidecar.Remove(pod)
+
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, changed.Spec.Containers, 1)
+}
+
+func TestExistsIn(t *testing.T) {
+	for _, tt := range []struct {
+		desc     string
+		expected bool
+		pod      corev1.Pod
+	}{
+		{"has-sidecar", true, corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{Name: "my-app"},
 					{Name: naming.Container()},
 				},
 			},
-		}
-		otelcol := v1alpha1.OpenTelemetryCollector{}
-		cfg := config.New(config.WithCollectorImage("some-default-image"))
+		}},
 
-		// test
-		changed, err := sidecar.Add(cfg, logger, otelcol, pod)
-
-		// verify
-		Expect(err).ToNot(HaveOccurred())
-		Expect(changed.Spec.Containers).To(HaveLen(3))
-	})
-
-	It("should remove the sidecar", func() {
-		// prepare
-		pod := corev1.Pod{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{Name: "my-app"},
-					{Name: naming.Container()},
-					{Name: naming.Container()}, // two sidecars! should remove both
-				},
-			},
-		}
-
-		// test
-		changed, err := sidecar.Remove(pod)
-
-		// verify
-		Expect(err).ToNot(HaveOccurred())
-		Expect(changed.Spec.Containers).To(HaveLen(1))
-	})
-
-	It("should not fail to remove when sidecar doesn't exist", func() {
-		// prepare
-		pod := corev1.Pod{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{Name: "my-app"},
-				},
-			},
-		}
-
-		// test
-		changed, err := sidecar.Remove(pod)
-
-		// verify
-		Expect(err).ToNot(HaveOccurred())
-		Expect(changed.Spec.Containers).To(HaveLen(1))
-	})
-
-	DescribeTable("determine whether the pod has a sidecar already", func(expected bool, pod corev1.Pod) {
-		Expect(sidecar.ExistsIn(pod)).To(Equal(expected))
-	},
-		Entry("has-sidecar", true, corev1.Pod{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{Name: "my-app"},
-					{Name: naming.Container()},
-				},
-			},
-		}),
-		Entry("does-not-have-sidecar", false, corev1.Pod{
+		{"does-not-have-sidecar", false, corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{},
 			},
-		}),
-	)
-})
+		}},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			assert.Equal(t, tt.expected, sidecar.ExistsIn(tt.pod))
+		})
+	}
+}
