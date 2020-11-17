@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/go-logr/logr v0.3.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.6.1
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.19.4
 	k8s.io/apimachinery v0.19.4
