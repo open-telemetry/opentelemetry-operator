@@ -87,14 +87,13 @@ func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			// if not, we use the default port
 			if protocolPort == nil {
 				protocolPort = &corev1.ServicePort{
-					Name:     portName(nameWithProtocol, protocol.defaultPort),
-					Port:     protocol.defaultPort,
-					Protocol: protocol.protocol,
+					Name: portName(nameWithProtocol, protocol.defaultPort),
+					Port: protocol.defaultPort,
 				}
-			} else {
-				// port from configuration block has been used, but protocol needs to be set
-				protocolPort.Protocol = protocol.protocol
 			}
+
+			// set the appropriate TCP/UDP protocol for this kind of receiver protocol
+			protocolPort.Protocol = protocol.protocol
 
 			// at this point, we *have* a port specified, add it to the list of ports
 			ports = append(ports, *protocolPort)
