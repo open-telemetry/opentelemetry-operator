@@ -70,14 +70,14 @@ func TestJaegerExposeDefaultPorts(t *testing.T) {
 	})
 
 	expectedResults := map[string]struct {
-		portNumber int32
-		seen       bool
-		protocol   corev1.Protocol
+		portNumber        int32
+		seen              bool
+		transportProtocol corev1.Protocol
 	}{
-		"jaeger-grpc":           {portNumber: 14250, protocol: corev1.ProtocolTCP},
-		"jaeger-thrift-http":    {portNumber: 14268, protocol: corev1.ProtocolTCP},
-		"jaeger-thrift-compact": {portNumber: 6831, protocol: corev1.ProtocolUDP},
-		"jaeger-thrift-binary":  {portNumber: 6832, protocol: corev1.ProtocolUDP},
+		"jaeger-grpc":           {portNumber: 14250, transportProtocol: corev1.ProtocolTCP},
+		"jaeger-thrift-http":    {portNumber: 14268, transportProtocol: corev1.ProtocolTCP},
+		"jaeger-thrift-compact": {portNumber: 6831, transportProtocol: corev1.ProtocolUDP},
+		"jaeger-thrift-binary":  {portNumber: 6832, transportProtocol: corev1.ProtocolUDP},
 	}
 
 	// test
@@ -92,7 +92,7 @@ func TestJaegerExposeDefaultPorts(t *testing.T) {
 		r.seen = true
 		expectedResults[port.Name] = r
 		assert.EqualValues(t, r.portNumber, port.Port)
-		assert.EqualValues(t, r.protocol, port.Protocol)
+		assert.EqualValues(t, r.transportProtocol, port.Protocol)
 	}
 	for k, v := range expectedResults {
 		assert.True(t, v.seen, "the port %s wasn't included in the service ports", k)
