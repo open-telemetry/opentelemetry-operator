@@ -1,6 +1,10 @@
 Changes by Version
 ==================
 
+0.15.0 (2020-11-27)
+-------------------
+* Bumped OpenTelemetry Collector to v0.15.0 ([#131](https://github.com/open-telemetry/opentelemetry-operator/pull/131), [@jpkrohling](https://github.com/jpkrohling)) 
+
 0.14.0 (2020-11-09)
 -------------------
 * Bumped OpenTelemetry Collector to v0.14.0 ([#112](https://github.com/open-telemetry/opentelemetry-operator/pull/112), [@jpkrohling](https://github.com/jpkrohling)) 
