@@ -46,24 +46,29 @@ func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 	ports := []corev1.ServicePort{}
 
 	for _, protocol := range []struct {
-		name        string
-		defaultPort int32
+		name              string
+		defaultPort       int32
+		transportProtocol corev1.Protocol
 	}{
 		{
-			name:        "grpc",
-			defaultPort: defaultGRPCPort,
+			name:              "grpc",
+			defaultPort:       defaultGRPCPort,
+			transportProtocol: corev1.ProtocolTCP,
 		},
 		{
-			name:        "thrift_http",
-			defaultPort: defaultThriftHTTPPort,
+			name:              "thrift_http",
+			defaultPort:       defaultThriftHTTPPort,
+			transportProtocol: corev1.ProtocolTCP,
 		},
 		{
-			name:        "thrift_compact",
-			defaultPort: defaultThriftCompactPort,
+			name:              "thrift_compact",
+			defaultPort:       defaultThriftCompactPort,
+			transportProtocol: corev1.ProtocolUDP,
 		},
 		{
-			name:        "thrift_binary",
-			defaultPort: defaultThriftBinaryPort,
+			name:              "thrift_binary",
+			defaultPort:       defaultThriftBinaryPort,
+			transportProtocol: corev1.ProtocolUDP,
 		},
 	} {
 		// do we have the protocol specified at all?
@@ -86,6 +91,9 @@ func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 					Port: protocol.defaultPort,
 				}
 			}
+
+			// set the appropriate transport protocol (i.e. TCP/UDP) for this kind of receiver protocol
+			protocolPort.Protocol = protocol.transportProtocol
 
 			// at this point, we *have* a port specified, add it to the list of ports
 			ports = append(ports, *protocolPort)
