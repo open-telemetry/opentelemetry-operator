@@ -21,7 +21,7 @@ jobs:
         operator-sdk-version: v0.19.0
 
     - name: "generate release resources"
-      run: make release-artifacts IMG_PREFIX="quay.io/opentelemetry/opentelemetry-operator"
+      run: make release-artifacts IMG_PREFIX="quay.io/opentelemetry"
 
     - name: "publish the images"
       env:
