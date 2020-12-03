@@ -52,7 +52,6 @@ func TestDownstreamParsers(t *testing.T) {
 	}{
 		{"zipkin", "zipkin", "__zipkin", 9411, parser.NewZipkinReceiverParser},
 		{"opencensus", "opencensus", "__opencensus", 55678, parser.NewOpenCensusReceiverParser},
-		{"otlp", "otlp", "__otlp", 55680, parser.NewOTLPReceiverParser},
 
 		// contrib receivers
 		{"carbon", "carbon", "__carbon", 2003, parser.NewCarbonReceiverParser},
