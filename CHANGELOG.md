@@ -1,6 +1,14 @@
 Changes by Version
 ==================
 
+0.16.0 (2020-12-03)
+-------------------
+* Bumped OpenTelemetry Collector to v0.16.0 ([#135](https://github.com/open-telemetry/opentelemetry-operator/pull/135), [@jpkrohling](https://github.com/jpkrohling))
+* Fix image prefix for release image ([#133](https://github.com/open-telemetry/opentelemetry-operator/pull/133), [@jpkrohling](https://github.com/jpkrohling))
+* Explicitly set Service Port Protocol for Jaeger Receivers ([#117](https://github.com/open-telemetry/opentelemetry-operator/pull/117), [@KingJ](https://github.com/KingJ))
+
+_Note: The default port for the OTLP receiver has been changed from 55680 to 4317. To keep compatibility with your existing workload, the operator is now generating a service with the two port numbers by default. Both have 4317 as the target port._
+
 0.15.0 (2020-11-27)
 -------------------
 * Bumped OpenTelemetry Collector to v0.15.0 ([#131](https://github.com/open-telemetry/opentelemetry-operator/pull/131), [@jpkrohling](https://github.com/jpkrohling)) 
