@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/admission/v1beta1"
+	admv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -110,7 +110,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 
 			// the actual request we see in the webhook
 			req := admission.Request{
-				AdmissionRequest: v1beta1.AdmissionRequest{
+				AdmissionRequest: admv1.AdmissionRequest{
 					Namespace: tt.ns.Name,
 					Object: runtime.RawExtension{
 						Raw: encoded,
@@ -323,7 +323,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 
 			// the actual request we see in the webhook
 			req := admission.Request{
-				AdmissionRequest: v1beta1.AdmissionRequest{
+				AdmissionRequest: admv1.AdmissionRequest{
 					Namespace: tt.ns.Name,
 					Object: runtime.RawExtension{
 						Raw: encoded,
@@ -378,7 +378,7 @@ func TestFailOnInvalidRequest(t *testing.T) {
 				require.NoError(t, err)
 
 				return admission.Request{
-					AdmissionRequest: v1beta1.AdmissionRequest{
+					AdmissionRequest: admv1.AdmissionRequest{
 						Namespace: "non-existing",
 						Object: runtime.RawExtension{
 							Raw: encoded,
