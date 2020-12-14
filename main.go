@@ -129,7 +129,7 @@ func main() {
 	}
 
 	// run the auto-detect mechanism for the configuration
-	err = mgr.Add(manager.RunnableFunc(func(<-chan struct{}) error {
+	err = mgr.Add(manager.RunnableFunc(func(_ context.Context) error {
 		return cfg.StartAutoDetect()
 	}))
 	if err != nil {
@@ -137,8 +137,8 @@ func main() {
 	}
 
 	// adds the upgrade mechanism to be executed once the manager is ready
-	err = mgr.Add(manager.RunnableFunc(func(<-chan struct{}) error {
-		return upgrade.ManagedInstances(context.Background(), ctrl.Log.WithName("upgrade"), v, mgr.GetClient())
+	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
+		return upgrade.ManagedInstances(c, ctrl.Log.WithName("upgrade"), v, mgr.GetClient())
 	}))
 	if err != nil {
 		setupLog.Error(err, "failed to upgrade managed instances")
