@@ -72,11 +72,10 @@ set-image-controller: manifests kustomize
 deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-release-artifacts: set-image-controller bundle
+# Generates the released manifests
+release-artifacts: set-image-controller
 	mkdir -p dist
 	$(KUSTOMIZE) build config/default -o dist/opentelemetry-operator.yaml
-	tar czf dist/bundle.tar.gz bundle
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -94,12 +93,12 @@ vet:
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-# Build the docker image
-docker-build: test
+# Build the container image, used only for local dev purposes
+container: test
 	docker build -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} .
 
-# Push the docker image
-docker-push:
+# Push the container image, used only for local dev purposes
+container-push:
 	docker push ${IMG}
 
 cert-manager:
@@ -160,7 +159,7 @@ bundle: operator-sdk manifests
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
-# Build the bundle image.
+# Build the bundle image, used only for local dev purposes
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 

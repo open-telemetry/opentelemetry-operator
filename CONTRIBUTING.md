@@ -47,7 +47,7 @@ make cert-manager
 Once it's ready, the following can be used to build and deploy a manager, along with the required webhook configuration:
 
 ```
-make manifests docker-build docker-push deploy
+make manifests container container-push deploy
 ```
 
 By default, it will generate an image following the format `quay.io/${USER}/opentelemetry-operator:${VERSION}`. You can set the following env vars in front of the `make` command to override parts or the entirety of the image:
