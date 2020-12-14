@@ -53,7 +53,7 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err = reconciler.Reconcile(req)
+	_, err = reconciler.Reconcile(context.Background(), req)
 
 	// verify
 	require.NoError(t, err)
@@ -179,7 +179,7 @@ func TestBreakOnUnrecoverableError(t *testing.T) {
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err = reconciler.Reconcile(req)
+	_, err = reconciler.Reconcile(context.Background(), req)
 
 	// verify
 	assert.Equal(t, expectedErr, err)
@@ -213,7 +213,7 @@ func TestSkipWhenInstanceDoesNotExist(t *testing.T) {
 	req := k8sreconcile.Request{
 		NamespacedName: nsn,
 	}
-	_, err := reconciler.Reconcile(req)
+	_, err := reconciler.Reconcile(context.Background(), req)
 
 	// verify
 	assert.NoError(t, err)
