@@ -154,9 +154,9 @@ OPERATOR_SDK=$(shell which operator-sdk)
 endif
 
 # Generate bundle manifests and metadata, then validate generated files.
-bundle: operator-sdk manifests
+bundle: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) generate kustomize manifests -q
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --manifests --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
 # Build the bundle image, used only for local dev purposes

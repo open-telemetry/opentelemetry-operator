@@ -88,3 +88,58 @@ Every bug fix should be accompanied with a unit test, so that we can prevent reg
 ### Documentation, typos, ...
 
 They are mostly welcome!
+
+## Operator SDK
+
+Coming soon, but for the moment:
+
+Build the operator
+```
+BUNDLE_VERSION=0.16.0
+make set-image-controller IMG=quay.io/jpkroehling/opentelemetry-operator
+make bundle
+make bundle-build BUNDLE_IMG=quay.io/jpkroehling/opentelemetry-operator-bundle:${BUNDLE_VERSION}
+podman push quay.io/jpkroehling/opentelemetry-operator-bundle:${BUNDLE_VERSION}
+opm index add --bundles quay.io/jpkroehling/opentelemetry-operator-bundle:${BUNDLE_VERSION} --tag quay.io/jpkroehling/opentelemetry-operator-index:${BUNDLE_VERSION}
+podman push quay.io/jpkroehling/opentelemetry-operator-index:${BUNDLE_VERSION}
+```
+
+Setup OLM (not needed on OpenShift):
+```
+cd ${OLM_HOME}
+kubectl create -f deploy/upstream/quickstart/crds.yaml
+kubectl create -f deploy/upstream/quickstart/olm.yaml
+kubectl wait --for=condition=available deployment packageserver -n olm
+kubectl wait --for=condition=available deployment olm-operator -n olm
+kubectl wait --for=condition=available deployment catalog-operator -n olm
+```
+
+Install the operator
+```
+kubectl apply -f - <<EOF
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: opentelemetry-operator-manifests
+  namespace: openshift-operators # or olm for Kubernetes
+spec:
+  sourceType: grpc
+  image: quay.io/jpkroehling/opentelemetry-operator-index:${BUNDLE_VERSION}
+EOF
+kubectl wait --for=condition=ready pod -l olm.catalogSource=opentelemetry-operator-manifests -n olm
+
+kubectl apply -f - <<EOF
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: opentelemetry-operator-subscription
+  namespace: openshift-operators # or just operators on Kubernetes
+spec:
+  channel: "alpha"
+  installPlanApproval: Automatic
+  name: opentelemetry-operator
+  source: opentelemetry-operator-manifests
+  sourceNamespace: openshift-operators
+EOF
+
+```
