@@ -18,3 +18,4 @@ $ docker run --rm  -v "${PWD}:/app" pavolloffay/gch:latest --oauth-token ${GH_WR
 Remove the commits that are not relevant to users, like:
 * CI or testing-specific commits (e2e, unit test, ...)
 * bug fixes for problems that are not part of a release yet
+* version bumps for internal dependencies
