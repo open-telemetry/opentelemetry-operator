@@ -21,12 +21,12 @@ type (
 )
 
 const (
-	// ModeDaemonSet specifies that the collector should be deployed as a Kubernetes DaemonSet
+	// ModeDaemonSet specifies that the collector should be deployed as a Kubernetes DaemonSet.
 	ModeDaemonSet Mode = "daemonset"
 
-	// ModeDeployment specifies that the collector should be deployed as a Kubernetes Deployment
+	// ModeDeployment specifies that the collector should be deployed as a Kubernetes Deployment.
 	ModeDeployment Mode = "deployment"
 
-	// ModeSidecar specifies that the collector should be deployed as a sidecar to pods
+	// ModeSidecar specifies that the collector should be deployed as a sidecar to pods.
 	ModeSidecar Mode = "sidecar"
 )

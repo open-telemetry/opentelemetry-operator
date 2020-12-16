@@ -34,7 +34,7 @@ func (r *OpenTelemetryCollector) SetupWebhookWithManager(mgr ctrl.Manager) error
 
 var _ webhook.Defaulter = &OpenTelemetryCollector{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) Default() {
 	if len(r.Spec.Mode) == 0 {
 		r.Spec.Mode = ModeDeployment
@@ -54,19 +54,19 @@ func (r *OpenTelemetryCollector) Default() {
 
 var _ webhook.Validator = &OpenTelemetryCollector{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateCreate() error {
 	opentelemetrycollectorlog.Info("validate create", "name", r.Name)
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) error {
 	opentelemetrycollectorlog.Info("validate update", "name", r.Name)
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateDelete() error {
 	opentelemetrycollectorlog.Info("validate delete", "name", r.Name)
 	return nil

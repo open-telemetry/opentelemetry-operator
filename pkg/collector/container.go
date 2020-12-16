@@ -25,7 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-// Container builds a container for the given collector
+// Container builds a container for the given collector.
 func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
 	image := otelcol.Spec.Image
 	if len(image) == 0 {

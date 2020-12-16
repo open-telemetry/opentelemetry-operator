@@ -31,7 +31,7 @@ import (
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
-// ConfigMaps reconciles the config map(s) required for the instance in the current context
+// ConfigMaps reconciles the config map(s) required for the instance in the current context.
 func ConfigMaps(ctx context.Context, params Params) error {
 	desired := []corev1.ConfigMap{
 		desiredConfigMap(ctx, params),
@@ -50,7 +50,7 @@ func ConfigMaps(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredConfigMap(ctx context.Context, params Params) corev1.ConfigMap {
+func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	name := naming.ConfigMap(params.Instance)
 	labels := collector.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name

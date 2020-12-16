@@ -20,7 +20,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 )
 
-// Labels return the common labels to all objects that are part of a managed OpenTelemetryCollector
+// Labels return the common labels to all objects that are part of a managed OpenTelemetryCollector.
 func Labels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
