@@ -33,7 +33,7 @@ const (
 	defaultCollectorConfigMapEntry = "collector.yaml"
 )
 
-// Config holds the static configuration for this operator
+// Config holds the static configuration for this operator.
 type Config struct {
 	// Registers a callback, to be called once a configuration change happens
 	OnChange func() error
@@ -50,7 +50,7 @@ type Config struct {
 	version                 version.Version
 }
 
-// New constructs a new configuration based on the given options
+// New constructs a new configuration based on the given options.
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
@@ -82,7 +82,7 @@ func New(opts ...Option) Config {
 	}
 }
 
-// FlagSet binds the flags to the user-modifiable values of the operator's configuration
+// FlagSet binds the flags to the user-modifiable values of the operator's configuration.
 func (c *Config) FlagSet() *pflag.FlagSet {
 	fs := pflag.NewFlagSet("opentelemetry-operator", pflag.ExitOnError)
 	pflag.StringVar(&c.collectorImage,
@@ -155,12 +155,12 @@ func (c *Config) CollectorConfigMapEntry() string {
 	return c.collectorConfigMapEntry
 }
 
-// Platform represents the type of the platform this operator is running
+// Platform represents the type of the platform this operator is running.
 func (c *Config) Platform() platform.Platform {
 	return c.platform
 }
 
-// Version holds the versions used by this operator
+// Version holds the versions used by this operator.
 func (c *Config) Version() version.Version {
 	return c.version
 }

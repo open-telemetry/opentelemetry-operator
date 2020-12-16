@@ -23,7 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-// Volumes builds the volumes for the given instance, including the config map volume
+// Volumes builds the volumes for the given instance, including the config map volume.
 func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev1.Volume {
 	volumes := []corev1.Volume{{
 		Name: naming.ConfigMapVolume(),

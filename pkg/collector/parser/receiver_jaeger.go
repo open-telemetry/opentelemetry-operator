@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package parser
 
 import (
@@ -18,14 +32,14 @@ const (
 	defaultThriftBinaryPort  int32 = 6832
 )
 
-// JaegerReceiverParser parses the configuration for Jaeger-specific receivers
+// JaegerReceiverParser parses the configuration for Jaeger-specific receivers.
 type JaegerReceiverParser struct {
 	logger logr.Logger
 	name   string
 	config map[interface{}]interface{}
 }
 
-// NewJaegerReceiverParser builds a new parser for Jaeger receivers
+// NewJaegerReceiverParser builds a new parser for Jaeger receivers.
 func NewJaegerReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
 	if protocols, ok := config["protocols"].(map[interface{}]interface{}); ok {
 		return &JaegerReceiverParser{
@@ -41,7 +55,7 @@ func NewJaegerReceiverParser(logger logr.Logger, name string, config map[interfa
 	}
 }
 
-// Ports returns all the service ports for all protocols in this parser
+// Ports returns all the service ports for all protocols in this parser.
 func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 	ports := []corev1.ServicePort{}
 
@@ -103,7 +117,7 @@ func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 	return ports, nil
 }
 
-// ParserName returns the name of this parser
+// ParserName returns the name of this parser.
 func (j *JaegerReceiverParser) ParserName() string {
 	return parserNameJaeger
 }
