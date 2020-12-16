@@ -29,7 +29,7 @@ import (
 
 // +kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 
-// DaemonSets reconciles the daemon set(s) required for the instance in the current context
+// DaemonSets reconciles the daemon set(s) required for the instance in the current context.
 func DaemonSets(ctx context.Context, params Params) error {
 	desired := []appsv1.DaemonSet{}
 	if params.Instance.Spec.Mode == "daemonset" {

@@ -34,7 +34,7 @@ import (
 
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 
-// Services reconciles the service(s) required for the instance in the current context
+// Services reconciles the service(s) required for the instance in the current context.
 func Services(ctx context.Context, params Params) error {
 	desired := []corev1.Service{}
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {

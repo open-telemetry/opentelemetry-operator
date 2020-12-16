@@ -31,7 +31,7 @@ const (
 	label = "sidecar.opentelemetry.io/injected"
 )
 
-// Add a new sidecar container to the given pod, based on the given OpenTelemetryCollector
+// Add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 func Add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod) (corev1.Pod, error) {
 	// add the container
 	volumes := collector.Volumes(cfg, otelcol)
@@ -47,7 +47,7 @@ func Add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCo
 	return pod, nil
 }
 
-// Remove the sidecar container from the given pod
+// Remove the sidecar container from the given pod.
 func Remove(pod corev1.Pod) (corev1.Pod, error) {
 	if !ExistsIn(pod) {
 		return pod, nil
@@ -63,7 +63,7 @@ func Remove(pod corev1.Pod) (corev1.Pod, error) {
 	return pod, nil
 }
 
-// ExistsIn checks whether a sidecar container exists in the given pod
+// ExistsIn checks whether a sidecar container exists in the given pod.
 func ExistsIn(pod corev1.Pod) bool {
 	for _, container := range pod.Spec.Containers {
 		if container.Name == naming.Container() {

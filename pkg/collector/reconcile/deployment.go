@@ -29,7 +29,7 @@ import (
 
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
 
-// Deployments reconciles the deployment(s) required for the instance in the current context
+// Deployments reconciles the deployment(s) required for the instance in the current context.
 func Deployments(ctx context.Context, params Params) error {
 	desired := []appsv1.Deployment{}
 	if params.Instance.Spec.Mode == "deployment" {

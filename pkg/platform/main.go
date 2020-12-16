@@ -15,17 +15,17 @@
 // Package platform contains target platforms this operator might run on.
 package platform
 
-// Platform holds the auto-detected platform type
+// Platform holds the auto-detected platform type.
 type Platform int
 
 const (
-	// Unknown is used when the current platform can't be determined
+	// Unknown is used when the current platform can't be determined.
 	Unknown Platform = iota
 
-	// OpenShift represents a platform of type OpenShift
+	// OpenShift represents a platform of type OpenShift.
 	OpenShift Platform = iota
 
-	// Kubernetes represents a platform of type Kubernetes
+	// Kubernetes represents a platform of type Kubernetes.
 	Kubernetes
 )
 
