@@ -25,7 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-// DaemonSet builds the deployment for the given instance
+// DaemonSet builds the deployment for the given instance.
 func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.DaemonSet {
 	labels := Labels(otelcol)
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)

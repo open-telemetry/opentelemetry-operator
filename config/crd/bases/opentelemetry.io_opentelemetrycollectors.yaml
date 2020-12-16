@@ -39,7 +39,7 @@ spec:
   validation:
     openAPIV3Schema:
       description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
-        API
+        API.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -54,7 +54,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector
+          description: OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
           properties:
             args:
               additionalProperties:
@@ -1703,7 +1703,7 @@ spec:
           type: object
         status:
           description: OpenTelemetryCollectorStatus defines the observed state of
-            OpenTelemetryCollector
+            OpenTelemetryCollector.
           properties:
             messages:
               description: Messages about actions performed by the operator on this

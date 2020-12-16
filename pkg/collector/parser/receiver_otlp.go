@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package parser
 
 import (
@@ -18,14 +32,14 @@ const (
 	defaultOTLPHTTPPort       int32 = 55681
 )
 
-// OTLPReceiverParser parses the configuration for OTLP receivers
+// OTLPReceiverParser parses the configuration for OTLP receivers.
 type OTLPReceiverParser struct {
 	logger logr.Logger
 	name   string
 	config map[interface{}]interface{}
 }
 
-// NewOTLPReceiverParser builds a new parser for OTLP receivers
+// NewOTLPReceiverParser builds a new parser for OTLP receivers.
 func NewOTLPReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
 	if protocols, ok := config["protocols"].(map[interface{}]interface{}); ok {
 		return &OTLPReceiverParser{
@@ -41,7 +55,7 @@ func NewOTLPReceiverParser(logger logr.Logger, name string, config map[interface
 	}
 }
 
-// Ports returns all the service ports for all protocols in this parser
+// Ports returns all the service ports for all protocols in this parser.
 func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 	ports := []corev1.ServicePort{}
 
@@ -98,7 +112,7 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 	return ports, nil
 }
 
-// ParserName returns the name of this parser
+// ParserName returns the name of this parser.
 func (o *OTLPReceiverParser) ParserName() string {
 	return parserNameOTLP
 }

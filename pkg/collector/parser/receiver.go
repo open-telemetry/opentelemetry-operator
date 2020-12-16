@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Package parser is for parsing the OpenTelemetry Collector configuration.
 package parser
 
@@ -17,7 +31,7 @@ var (
 	dnsLabelValidation = regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
 )
 
-// ReceiverParser is an interface that should be implemented by all receiver parsers
+// ReceiverParser is an interface that should be implemented by all receiver parsers.
 type ReceiverParser interface {
 	// Ports returns the service ports parsed based on the receiver's configuration
 	Ports() ([]corev1.ServicePort, error)
@@ -26,13 +40,13 @@ type ReceiverParser interface {
 	ParserName() string
 }
 
-// Builder specifies the signature required for parser builders
+// Builder specifies the signature required for parser builders.
 type Builder func(logr.Logger, string, map[interface{}]interface{}) ReceiverParser
 
-// registry holds a record of all known parsers
+// registry holds a record of all known parsers.
 var registry = make(map[string]Builder)
 
-// BuilderFor returns a parser builder for the given receiver name
+// BuilderFor returns a parser builder for the given receiver name.
 func BuilderFor(name string) Builder {
 	builder := registry[receiverType(name)]
 	if builder == nil {
@@ -42,18 +56,18 @@ func BuilderFor(name string) Builder {
 	return builder
 }
 
-// For returns a new parser for the given receiver name + config
+// For returns a new parser for the given receiver name + config.
 func For(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
 	builder := BuilderFor(name)
 	return builder(logger, name, config)
 }
 
-// Register adds a new parser builder to the list of known builders
+// Register adds a new parser builder to the list of known builders.
 func Register(name string, builder Builder) {
 	registry[name] = builder
 }
 
-// IsRegistered checks whether a parser is registered with the given name
+// IsRegistered checks whether a parser is registered with the given name.
 func IsRegistered(name string) bool {
 	_, ok := registry[name]
 	return ok

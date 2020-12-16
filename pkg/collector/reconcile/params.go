@@ -23,7 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-// Params holds the reconciliation-specific parameters
+// Params holds the reconciliation-specific parameters.
 type Params struct {
 	Config   config.Config
 	Client   client.Client

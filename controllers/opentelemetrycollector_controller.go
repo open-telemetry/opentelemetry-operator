@@ -32,7 +32,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 )
 
-// OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object
+// OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
 type OpenTelemetryCollectorReconciler struct {
 	client.Client
 	log    logr.Logger
@@ -41,14 +41,14 @@ type OpenTelemetryCollectorReconciler struct {
 	tasks  []Task
 }
 
-// Task represents a reconciliation task to be executed by the reconciler
+// Task represents a reconciliation task to be executed by the reconciler.
 type Task struct {
 	Name        string
 	Do          func(context.Context, reconcile.Params) error
 	BailOnError bool
 }
 
-// Params is the set of options to build a new openTelemetryCollectorReconciler
+// Params is the set of options to build a new openTelemetryCollectorReconciler.
 type Params struct {
 	client.Client
 	Log    logr.Logger
@@ -57,7 +57,7 @@ type Params struct {
 	Tasks  []Task
 }
 
-// NewReconciler creates a new reconciler for OpenTelemetryCollector objects
+// NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
 func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	if len(p.Tasks) == 0 {
 		p.Tasks = []Task{
@@ -106,7 +106,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 
-// Reconcile the current state of an OpenTelemetry collector resource with the desired state
+// Reconcile the current state of an OpenTelemetry collector resource with the desired state.
 func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.log.WithValues("opentelemetrycollector", req.NamespacedName)
@@ -138,7 +138,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl
 	return ctrl.Result{}, nil
 }
 
-// RunTasks runs all the tasks associated with this reconciler
+// RunTasks runs all the tasks associated with this reconciler.
 func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
@@ -152,7 +152,7 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 	return nil
 }
 
-// SetupWithManager tells the manager what our controller is interested in
+// SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).

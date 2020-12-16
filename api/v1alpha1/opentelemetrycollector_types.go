@@ -19,7 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector
+// OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// +required
@@ -78,7 +78,7 @@ type OpenTelemetryCollectorSpec struct {
 	Env []v1.EnvVar `json:"env,omitempty"`
 }
 
-// OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector
+// OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
 type OpenTelemetryCollectorStatus struct {
 	// Replicas is currently not being set and might be removed in the next version.
 	// +optional
@@ -102,7 +102,7 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
-// OpenTelemetryCollector is the Schema for the opentelemetrycollectors API
+// OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
 type OpenTelemetryCollector struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -113,7 +113,7 @@ type OpenTelemetryCollector struct {
 
 // +kubebuilder:object:root=true
 
-// OpenTelemetryCollectorList contains a list of OpenTelemetryCollector
+// OpenTelemetryCollectorList contains a list of OpenTelemetryCollector.
 type OpenTelemetryCollectorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

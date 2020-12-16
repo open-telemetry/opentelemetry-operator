@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Package upgrade handles the upgrade routine from one OpenTelemetry Collector to the next.
 package upgrade
 
@@ -14,7 +28,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
-// ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary
+// ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary.
 func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Version, cl client.Client) error {
 	logger.Info("looking for managed instances to upgrade")
 
@@ -63,7 +77,7 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Versi
 	return nil
 }
 
-// ManagedInstance performs the necessary changes to bring the given otelcol instance to the current version
+// ManagedInstance performs the necessary changes to bring the given otelcol instance to the current version.
 func ManagedInstance(ctx context.Context, logger logr.Logger, currentV version.Version, cl client.Client, otelcol v1alpha1.OpenTelemetryCollector) (v1alpha1.OpenTelemetryCollector, error) {
 	// this is likely a new instance, assume it's already up to date
 	if otelcol.Status.Version == "" {

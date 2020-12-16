@@ -30,7 +30,7 @@ import (
 
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
-// ServiceAccounts reconciles the service account(s) required for the instance in the current context
+// ServiceAccounts reconciles the service account(s) required for the instance in the current context.
 func ServiceAccounts(ctx context.Context, params Params) error {
 	desired := []corev1.ServiceAccount{}
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {

@@ -45,13 +45,13 @@ var (
 
 var _ PodSidecarInjector = (*podSidecarInjector)(nil)
 
-// PodSidecarInjector is a webhook handler that analyzes new pods and injects appropriate sidecars into it
+// PodSidecarInjector is a webhook handler that analyzes new pods and injects appropriate sidecars into it.
 type PodSidecarInjector interface {
 	admission.Handler
 	admission.DecoderInjector
 }
 
-// the implementation
+// the implementation.
 type podSidecarInjector struct {
 	config  config.Config
 	logger  logr.Logger
@@ -59,7 +59,7 @@ type podSidecarInjector struct {
 	decoder *admission.Decoder
 }
 
-// NewPodSidecarInjector creates a new PodSidecarInjector
+// NewPodSidecarInjector creates a new PodSidecarInjector.
 func NewPodSidecarInjector(cfg config.Config, logger logr.Logger, cl client.Client) PodSidecarInjector {
 	return &podSidecarInjector{
 		config: cfg,
@@ -144,7 +144,7 @@ func (p *podSidecarInjector) mutate(ctx context.Context, ns corev1.Namespace, po
 
 func (p *podSidecarInjector) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.OpenTelemetryCollector, error) {
 	if strings.EqualFold(ann, "true") {
-		return p.selectCollectorInstance(ctx, ns, ann)
+		return p.selectCollectorInstance(ctx, ns)
 	}
 
 	otelcol := v1alpha1.OpenTelemetryCollector{}
@@ -160,7 +160,7 @@ func (p *podSidecarInjector) getCollectorInstance(ctx context.Context, ns corev1
 	return otelcol, nil
 }
 
-func (p *podSidecarInjector) selectCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.OpenTelemetryCollector, error) {
+func (p *podSidecarInjector) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1alpha1.OpenTelemetryCollector, error) {
 	otelcols := v1alpha1.OpenTelemetryCollectorList{}
 	if err := p.client.List(ctx, &otelcols, client.InNamespace(ns.Name)); err != nil {
 		return v1alpha1.OpenTelemetryCollector{}, err
