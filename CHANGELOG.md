@@ -1,6 +1,11 @@
 Changes by Version
 ==================
 
+0.17.0 (2020-12-16)
+-------------------
+* Bumped OpenTelemetry Collector to v0.17.0 ([#144](https://github.com/open-telemetry/opentelemetry-operator/pull/144), [@jpkrohling](https://github.com/jpkrohling))
+* Refactor how images are pushed ([#138](https://github.com/open-telemetry/opentelemetry-operator/pull/138), [@jpkrohling](https://github.com/jpkrohling))
+
 0.16.0 (2020-12-03)
 -------------------
 * Bumped OpenTelemetry Collector to v0.16.0 ([#135](https://github.com/open-telemetry/opentelemetry-operator/pull/135), [@jpkrohling](https://github.com/jpkrohling))
