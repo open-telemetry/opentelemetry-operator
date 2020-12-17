@@ -70,6 +70,18 @@ func main() {
 
 	// Add flags related to this operator
 	v := version.Get()
+	logger := zap.New(zap.UseFlagOptions(&opts))
+	ctrl.SetLogger(logger)
+
+	logger.Info("Starting the OpenTelemetry Operator",
+		"opentelemetry-operator", v.Operator,
+		"opentelemetry-collector", v.OpenTelemetryCollector,
+		"build-date", v.BuildDate,
+		"go-version", v.Go,
+		"go-arch", runtime.GOARCH,
+		"go-os", runtime.GOOS,
+	)
+
 	restConfig := ctrl.GetConfigOrDie()
 
 	// builds the operator's configuration
@@ -88,18 +100,6 @@ func main() {
 	pflag.CommandLine.AddFlagSet(cfg.FlagSet())
 
 	pflag.Parse()
-
-	logger := zap.New(zap.UseFlagOptions(&opts))
-	ctrl.SetLogger(logger)
-
-	logger.Info("Starting the OpenTelemetry Operator",
-		"opentelemetry-operator", v.Operator,
-		"opentelemetry-collector", v.OpenTelemetryCollector,
-		"build-date", v.BuildDate,
-		"go-version", v.Go,
-		"go-arch", runtime.GOARCH,
-		"go-os", runtime.GOOS,
-	)
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if found {
