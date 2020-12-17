@@ -15,6 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Unshallow 
+        run: git fetch --prune --unshallow
+
+      - name: Describe the current state 
+        run: git describe --tags
+
       - name: Set env vars for the job
         run: |
           grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print "OTELCOL_VERSION="$2}' >> $GITHUB_ENV
@@ -63,8 +69,8 @@ jobs:
           labels: ${{ steps.docker_meta.outputs.labels }}
           build-args: |
             VERSION_PKG=github.com/open-telemetry/opentelemetry-operator/internal/version
-            VERSION=${VERSION}
-            VERSION_DATE=${VERSION_DATE}
-            OTELCOL_VERSION=${OTELCOL_VERSION}
+            VERSION=${{ env.VERSION }}
+            VERSION_DATE=${{ env.VERSION_DATE }}
+            OTELCOL_VERSION=${{ env.OTELCOL_VERSION }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
