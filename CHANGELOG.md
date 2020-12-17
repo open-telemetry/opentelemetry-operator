@@ -1,6 +1,12 @@
 Changes by Version
 ==================
 
+0.17.1 (2020-12-17)
+-------------------
+* Set env vars correctly in workflow steps ([#152](https://github.com/open-telemetry/opentelemetry-operator/pull/152), [@jpkrohling](https://github.com/jpkrohling))
+* Add permissions for leases.coordination.k8s.io ([#151](https://github.com/open-telemetry/opentelemetry-operator/pull/151), [@jpkrohling](https://github.com/jpkrohling))
+* Adjust container image tags ([#148](https://github.com/open-telemetry/opentelemetry-operator/pull/148), [@jpkrohling](https://github.com/jpkrohling))
+
 0.17.0 (2020-12-16)
 -------------------
 * Bumped OpenTelemetry Collector to v0.17.0 ([#144](https://github.com/open-telemetry/opentelemetry-operator/pull/144), [@jpkrohling](https://github.com/jpkrohling))
