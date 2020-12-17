@@ -6,6 +6,8 @@ on:
   release:
     types: [published]
 
+  workflow_dispatch:
+
 jobs:
   publish-containers:
     name: Publish container images
@@ -24,7 +26,10 @@ jobs:
         uses: crazy-max/ghaction-docker-meta@v1
         with:
           images: quay.io/opentelemetry/opentelemetry-operator
-          tag-sha: true
+          tag-semver: |
+            {{raw}}
+            {{version}}
+            {{major}}.{{minor}}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
