@@ -1,0 +1,22 @@
+name: "End-to-end tests"
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  e2e-tests:
+    name: End-to-end tests
+    runs-on: ubuntu-20.04
+    steps:
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: "install kuttl"
+      run: ./hack/install-kuttl.sh
+
+    - name: "run tests"
+      run: make prepare-e2e e2e
