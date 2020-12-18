@@ -29,3 +29,7 @@ bundle.tar.gz
 
 # local resources, not to be committed
 local
+
+# test resources
+kubeconfig
+tests/_build/
