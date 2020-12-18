@@ -112,7 +112,7 @@ When using OpenShift, OLM is already installed.
 The following commands will generate a bundle under `bundle/` and build an image with its contents. It will then generate and publish an index image with the [Operator Package Manager (OPM)](https://github.com/operator-framework/operator-registry/blob/master/docs/design/opm-tooling.md#opm)
 
 ```
-export VERSION=0.17.1
+export VERSION=x.y.z
 make set-image-controller bundle bundle-build
 podman push quay.io/${USER}/opentelemetry-operator-bundle:${VERSION}
 opm index add --bundles quay.io/${USER}/opentelemetry-operator-bundle:${VERSION} --tag quay.io/${USER}/opentelemetry-operator-index:${VERSION}
@@ -129,25 +129,25 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: opentelemetry-operator-manifests
-  namespace: openshift-operators
+  namespace: operators
 spec:
   sourceType: grpc
   image: quay.io/${USER}/opentelemetry-operator-index:${VERSION}
 EOF
-kubectl wait --for=condition=ready pod -l olm.catalogSource=opentelemetry-operator-manifests -n openshift-operators
+kubectl wait --for=condition=ready pod -l olm.catalogSource=opentelemetry-operator-manifests -n operators
 
 kubectl apply -f - <<EOF
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: opentelemetry-operator-subscription
-  namespace: openshift-operators
+  namespace: operators
 spec:
   channel: "alpha"
   installPlanApproval: Automatic
   name: opentelemetry-operator
   source: opentelemetry-operator-manifests
-  sourceNamespace: openshift-operators
+  sourceNamespace: operators
 EOF
-kubectl wait --for=condition=available deployment opentelemetry-operator-controller-manager -n openshift-operators
+kubectl wait --for=condition=available deployment opentelemetry-operator-controller-manager -n operators
 ```
