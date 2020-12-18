@@ -92,8 +92,20 @@ vet:
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+# end-to-tests
+e2e:
+	$(KUTTL) test
+
+prepare-e2e: kuttl set-test-image-vars set-image-controller container
+	mkdir -p tests/_build/crds tests/_build/manifests
+	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
+	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
+
+set-test-image-vars:
+IMG=local/opentelemetry-operator:e2e
+
 # Build the container image, used only for local dev purposes
-container: test
+container:
 	docker build -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} .
 
 # Push the container image, used only for local dev purposes
@@ -102,9 +114,9 @@ container-push:
 
 cert-manager:
 	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.0.3/cert-manager.yaml
-	kubectl wait --for=condition=available deployment cert-manager -n cert-manager
-	kubectl wait --for=condition=available deployment cert-manager-cainjector -n cert-manager
-	kubectl wait --for=condition=available deployment cert-manager-webhook -n cert-manager
+	kubectl wait --timeout=5m --for=condition=available deployment cert-manager -n cert-manager
+	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-cainjector -n cert-manager
+	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-webhook -n cert-manager
 
 # find or download controller-gen
 # download controller-gen if necessary
@@ -136,6 +148,38 @@ ifeq (, $(shell which kustomize))
 KUSTOMIZE=$(GOBIN)/kustomize
 else
 KUSTOMIZE=$(shell which kustomize)
+endif
+
+kuttl:
+ifeq (, $(shell which kubectl-kuttl))
+	echo ${PATH}
+	ls -l /usr/local/bin
+	which kubectl-kuttl
+
+	@{ \
+	set -e ;\
+	echo "" ;\
+	echo "ERROR: kuttl not found." ;\
+	echo "Please check https://kuttl.dev/docs/cli.html for installation instructions and try again." ;\
+	echo "" ;\
+	exit 1 ;\
+	}
+else
+KUTTL=$(shell which kubectl-kuttl)
+endif
+
+kind:
+ifeq (, $(shell which kind))
+	@{ \
+	set -e ;\
+	echo "" ;\
+	echo "ERROR: kind not found." ;\
+	echo "Please check https://kind.sigs.k8s.io/docs/user/quick-start/#installation for installation instructions and try again." ;\
+	echo "" ;\
+	exit 1 ;\
+	}
+else
+KIND=$(shell which kind)
 endif
 
 operator-sdk:
