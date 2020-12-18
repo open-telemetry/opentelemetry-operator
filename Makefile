@@ -5,8 +5,12 @@ VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/versio
 OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
 LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION}"
 
-# Default bundle image tag
-BUNDLE_IMG ?= controller-bundle:$(VERSION)
+# Image URL to use all building/pushing image targets
+IMG_PREFIX ?= quay.io/${USER}
+IMG_REPO ?= opentelemetry-operator
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
+BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
+
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -15,11 +19,6 @@ ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
-
-# Image URL to use all building/pushing image targets
-IMG_PREFIX ?= quay.io/${USER}
-IMG_REPO ?= opentelemetry-operator
-IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
@@ -154,9 +153,9 @@ OPERATOR_SDK=$(shell which operator-sdk)
 endif
 
 # Generate bundle manifests and metadata, then validate generated files.
-bundle: operator-sdk manifests
+bundle: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) generate kustomize manifests -q
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --manifests --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
 # Build the bundle image, used only for local dev purposes

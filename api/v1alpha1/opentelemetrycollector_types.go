@@ -101,6 +101,7 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
 
 // OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
 type OpenTelemetryCollector struct {
