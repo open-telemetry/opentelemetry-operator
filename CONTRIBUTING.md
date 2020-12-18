@@ -89,51 +89,59 @@ Every bug fix should be accompanied with a unit test, so that we can prevent reg
 
 They are mostly welcome!
 
-## Operator SDK
+## Operator Lifecycle Manager (OLM)
 
-Coming soon, but for the moment:
+For production environments, it is recommended to use the [Operator Lifecycle Manager (OLM)](https://github.com/operator-framework/operator-lifecycle-manager) to provision and update the OpenTelemetry Operator. Our operator is available in the [Operator Hub](https://operatorhub.io/operator/opentelemetry-operator), and when making changes involving those manifests the following steps can be used for testing. Refer to the [OLM documentation](https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle/) for more complete information.
 
-Build the operator
-```
-BUNDLE_VERSION=0.16.0
-make set-image-controller IMG=quay.io/jpkroehling/opentelemetry-operator
-make bundle
-make bundle-build BUNDLE_IMG=quay.io/jpkroehling/opentelemetry-operator-bundle:${BUNDLE_VERSION}
-podman push quay.io/jpkroehling/opentelemetry-operator-bundle:${BUNDLE_VERSION}
-opm index add --bundles quay.io/jpkroehling/opentelemetry-operator-bundle:${BUNDLE_VERSION} --tag quay.io/jpkroehling/opentelemetry-operator-index:${BUNDLE_VERSION}
-podman push quay.io/jpkroehling/opentelemetry-operator-index:${BUNDLE_VERSION}
-```
+### Setup OLM
 
-Setup OLM (not needed on OpenShift):
+When using Kubernetes, install OLM following the [official instructions](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md). At the moment of this writing, it involves the following:
+
 ```
-cd ${OLM_HOME}
-kubectl create -f deploy/upstream/quickstart/crds.yaml
-kubectl create -f deploy/upstream/quickstart/olm.yaml
+kubectl create -f https://raw.githubusercontent.com/operator-framework/operator-lifecycle-manager/master/deploy/upstream/quickstart/crds.yaml
+kubectl create -f https://raw.githubusercontent.com/operator-framework/operator-lifecycle-manager/master/deploy/upstream/quickstart/olm.yaml
 kubectl wait --for=condition=available deployment packageserver -n olm
 kubectl wait --for=condition=available deployment olm-operator -n olm
 kubectl wait --for=condition=available deployment catalog-operator -n olm
 ```
 
-Install the operator
+When using OpenShift, OLM is already installed.
+
+### Create the bundle and related images
+
+The following commands will generate a bundle under `bundle/` and build an image with its contents. It will then generate and publish an index image with the [Operator Package Manager (OPM)](https://github.com/operator-framework/operator-registry/blob/master/docs/design/opm-tooling.md#opm)
+
+```
+export VERSION=0.17.1
+make set-image-controller bundle bundle-build
+podman push quay.io/${USER}/opentelemetry-operator-bundle:${VERSION}
+opm index add --bundles quay.io/${USER}/opentelemetry-operator-bundle:${VERSION} --tag quay.io/${USER}/opentelemetry-operator-index:${VERSION}
+podman push quay.io/${USER}/opentelemetry-operator-index:${VERSION}
+```
+
+### Install the operator
+
+To install our operator, create a `CatalogSource` for our index image, wait for OLM to synchronize and finally create a `Subscription`. Make sure to replace `${USER}` with your username and `${VERSION}` with the version used in the previous step. The namespace for both should be `operators` on Kubernetes, while `openshift-operators` should be used for OpenShift.
+
 ```
 kubectl apply -f - <<EOF
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: opentelemetry-operator-manifests
-  namespace: openshift-operators # or olm for Kubernetes
+  namespace: openshift-operators
 spec:
   sourceType: grpc
-  image: quay.io/jpkroehling/opentelemetry-operator-index:${BUNDLE_VERSION}
+  image: quay.io/${USER}/opentelemetry-operator-index:${VERSION}
 EOF
-kubectl wait --for=condition=ready pod -l olm.catalogSource=opentelemetry-operator-manifests -n olm
+kubectl wait --for=condition=ready pod -l olm.catalogSource=opentelemetry-operator-manifests -n openshift-operators
 
 kubectl apply -f - <<EOF
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: opentelemetry-operator-subscription
-  namespace: openshift-operators # or just operators on Kubernetes
+  namespace: openshift-operators
 spec:
   channel: "alpha"
   installPlanApproval: Automatic
@@ -141,5 +149,5 @@ spec:
   source: opentelemetry-operator-manifests
   sourceNamespace: openshift-operators
 EOF
-
+kubectl wait --for=condition=available deployment opentelemetry-operator-controller-manager -n openshift-operators
 ```
