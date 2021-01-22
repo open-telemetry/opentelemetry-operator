@@ -1,6 +1,11 @@
 Changes by Version
 ==================
 
+0.18.0 (2021-01-22)
+-------------------
+* Bumped OpenTelemetry Collector to v0.18.0 ([#169](https://github.com/open-telemetry/opentelemetry-operator/pull/169), [@jpkrohling](https://github.com/jpkrohling))
+
+
 0.17.1 (2020-12-17)
 -------------------
 * Set env vars correctly in workflow steps ([#152](https://github.com/open-telemetry/opentelemetry-operator/pull/152), [@jpkrohling](https://github.com/jpkrohling))
