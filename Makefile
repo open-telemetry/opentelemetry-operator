@@ -102,7 +102,7 @@ prepare-e2e: kuttl set-test-image-vars set-image-controller container
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
 
 set-test-image-vars:
-	IMG=local/opentelemetry-operator:e2e
+	$(eval IMG=local/opentelemetry-operator:e2e)
 
 # Build the container image, used only for local dev purposes
 container:
