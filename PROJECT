@@ -1,3 +1,4 @@
+projectName: opentelemetry-operator
 domain: opentelemetry.io
 layout: go.kubebuilder.io/v2
 repo: github.com/open-telemetry/opentelemetry-operator

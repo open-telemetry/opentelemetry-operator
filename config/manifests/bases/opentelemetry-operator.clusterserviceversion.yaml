@@ -13,7 +13,7 @@ metadata:
     operators.operatorframework.io/project_layout: go
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.vX.Y.Z
+  name: opentelemetry-operator.v0.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
