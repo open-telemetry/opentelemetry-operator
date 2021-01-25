@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-operator
 
-go 1.13
+go 1.15
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
@@ -12,7 +12,7 @@ require (
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2
 	k8s.io/kubectl v0.20.2
-	sigs.k8s.io/controller-runtime v0.7.0
+	sigs.k8s.io/controller-runtime v0.8.1
 )
 
 replace (
