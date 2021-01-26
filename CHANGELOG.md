@@ -1,6 +1,11 @@
 Changes by Version
 ==================
 
+0.18.1 (2021-01-25)
+-------------------
+* Fixed testing image from being used in non-test artifacts (fixes #170) ([#171](https://github.com/open-telemetry/opentelemetry-operator/pull/171), [@gramidt](https://github.com/gramidt))
+
+
 0.18.0 (2021-01-22)
 -------------------
 * Bumped OpenTelemetry Collector to v0.18.0 ([#169](https://github.com/open-telemetry/opentelemetry-operator/pull/169), [@jpkrohling](https://github.com/jpkrohling))
