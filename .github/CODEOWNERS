@@ -1,6 +1,6 @@
 #####################################################
 #
-# List of approvers for OpenTelemetry Collector Contrib
+# List of approvers for OpenTelemetry Collector Kubernetes Operator
 #
 #####################################################
 #
@@ -11,6 +11,5 @@
 # Learn about CODEOWNERS file format:
 #  https://help.github.com/en/articles/about-code-owners
 #
-
 
 * @open-telemetry/collector-approvers @open-telemetry/operator-approvers
