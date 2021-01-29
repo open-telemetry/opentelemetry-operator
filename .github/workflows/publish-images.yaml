@@ -2,9 +2,9 @@ name: "Publish images"
 
 on:
   push:
-    branches: [master]
+    branches: [ main ]
   release:
-    types: [published]
+    types: [ published ]
 
   workflow_dispatch:
 
