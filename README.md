@@ -68,7 +68,7 @@ Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open
 - [@open-telemetry/collector-maintainers](https://github.com/orgs/open-telemetry/teams/collector-maintainers)
 - [Juraci Paixão Kröhling](https://github.com/jpkrohling), Red Hat
 
-Learn more about roles in the [community repository](https://github.com/open-telemetry/community/blob/master/community-membership.md).
+Learn more about roles in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md).
 
 Thanks to all the people who already contributed!
 
@@ -87,6 +87,6 @@ Thanks to all the people who already contributed!
 [code-climate]: https://codeclimate.com/github/open-telemetry/opentelemetry-operator/maintainability
 [code-climate-img]: https://api.codeclimate.com/v1/badges/7bb215eea77fc9c24484/maintainability
 [codecov]: https://codecov.io/gh/open-telemetry/opentelemetry-operator
-[codecov-img]: https://codecov.io/gh/open-telemetry/opentelemetry-operator/branch/master/graph/badge.svg
+[codecov-img]: https://codecov.io/gh/open-telemetry/opentelemetry-operator/branch/main/graph/badge.svg
 [contributors]: https://github.com/open-telemetry/opentelemetry-operator/graphs/contributors
 [contributors-img]: https://contributors-img.web.app/image?repo=open-telemetry/opentelemetry-operator
