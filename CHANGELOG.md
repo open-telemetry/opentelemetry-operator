@@ -1,6 +1,11 @@
 Changes by Version
 ==================
 
+0.20.0 (2021-02-11)
+-------------------
+* Bumped OpenTelemetry Collector to v0.20.0
+* Add correct boundary to integer parsing ([#187](https://github.com/open-telemetry/opentelemetry-operator/pull/187), [@jpkrohling](https://github.com/jpkrohling))
+
 0.19.0 (2021-01-27)
 -------------------
 * Bumped OpenTelemetry Collector to v0.19.0
