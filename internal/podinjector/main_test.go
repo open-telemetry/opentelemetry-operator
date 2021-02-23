@@ -41,10 +41,10 @@ var logger = logf.Log.WithName("unit-tests")
 
 func TestShouldInjectSidecar(t *testing.T) {
 	for _, tt := range []struct {
-		name    string
-		ns      corev1.Namespace
-		pod     corev1.Pod
-		otelcol v1alpha1.OpenTelemetryCollector
+		name     string
+		ns       corev1.Namespace
+		pod      corev1.Pod
+		otelcols []v1alpha1.OpenTelemetryCollector
 	}{
 		{
 			// this is the simplest positive test: a pod is being created with an annotation
@@ -61,7 +61,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 					Annotations: map[string]string{sidecar.Annotation: "my-instance"},
 				},
 			},
-			otelcol: v1alpha1.OpenTelemetryCollector{
+			otelcols: []v1alpha1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-simplest-positive-case",
@@ -69,7 +69,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Mode: v1alpha1.ModeSidecar,
 				},
-			},
+			}},
 		},
 		{
 			// in this case, the annotation is at the namespace instead of at the pod
@@ -81,7 +81,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcol: v1alpha1.OpenTelemetryCollector{
+			otelcols: []v1alpha1.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-annotated-namespace",
@@ -89,10 +89,10 @@ func TestShouldInjectSidecar(t *testing.T) {
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Mode: v1alpha1.ModeSidecar,
 				},
-			},
+			}},
 		},
 		{
-			// now, we automatically select an existing otelcol
+			// now, we automatically select an existing sidecar otelcol
 			name: "auto-select based on the annotation's value",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -101,13 +101,24 @@ func TestShouldInjectSidecar(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcol: v1alpha1.OpenTelemetryCollector{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-instance",
-					Namespace: "my-namespace-with-autoselect",
+			otelcols: []v1alpha1.OpenTelemetryCollector{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-instance",
+						Namespace: "my-namespace-with-autoselect",
+					},
+					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+						Mode: v1alpha1.ModeSidecar,
+					},
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Mode: v1alpha1.ModeSidecar,
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "a-deployment-instance",
+						Namespace: "my-namespace-with-autoselect",
+					},
+					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+						Mode: v1alpha1.ModeDeployment,
+					},
 				},
 			},
 		},
@@ -116,8 +127,10 @@ func TestShouldInjectSidecar(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &tt.ns)
 			require.NoError(t, err)
 
-			err = k8sClient.Create(context.Background(), &tt.otelcol)
-			require.NoError(t, err)
+			for i := range tt.otelcols {
+				err := k8sClient.Create(context.Background(), &tt.otelcols[i])
+				require.NoError(t, err)
+			}
 
 			encoded, err := json.Marshal(tt.pod)
 			require.NoError(t, err)
@@ -163,7 +176,9 @@ func TestShouldInjectSidecar(t *testing.T) {
 			}
 
 			// cleanup
-			require.NoError(t, k8sClient.Delete(context.Background(), &tt.otelcol))
+			for i := range tt.otelcols {
+				require.NoError(t, k8sClient.Delete(context.Background(), &tt.otelcols[i]))
+			}
 			require.NoError(t, k8sClient.Delete(context.Background(), &tt.ns))
 		})
 	}
