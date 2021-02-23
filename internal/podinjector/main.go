@@ -161,22 +161,28 @@ func (p *podSidecarInjector) getCollectorInstance(ctx context.Context, ns corev1
 }
 
 func (p *podSidecarInjector) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1alpha1.OpenTelemetryCollector, error) {
-	otelcols := v1alpha1.OpenTelemetryCollectorList{}
+	var (
+		otelcols = v1alpha1.OpenTelemetryCollectorList{}
+		sidecars []v1alpha1.OpenTelemetryCollector
+	)
+
 	if err := p.client.List(ctx, &otelcols, client.InNamespace(ns.Name)); err != nil {
 		return v1alpha1.OpenTelemetryCollector{}, err
 	}
 
-	if len(otelcols.Items) == 0 {
+	for i := range otelcols.Items {
+		coll := otelcols.Items[i]
+		if coll.Spec.Mode == v1alpha1.ModeSidecar {
+			sidecars = append(sidecars, coll)
+		}
+	}
+
+	switch {
+	case len(sidecars) == 0:
 		return v1alpha1.OpenTelemetryCollector{}, ErrNoInstancesAvailable
-	}
-	if len(otelcols.Items) > 1 {
+	case len(sidecars) > 1:
 		return v1alpha1.OpenTelemetryCollector{}, ErrMultipleInstancesPossible
+	default:
+		return sidecars[0], nil
 	}
-
-	otelcol := otelcols.Items[0]
-	if otelcol.Spec.Mode != v1alpha1.ModeSidecar {
-		return v1alpha1.OpenTelemetryCollector{}, ErrInstanceNotSidecar
-	}
-
-	return otelcol, nil
 }
