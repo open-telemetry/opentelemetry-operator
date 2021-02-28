@@ -145,10 +145,11 @@ func main() {
 	}
 
 	if err = controllers.NewReconciler(controllers.Params{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
-		Scheme: mgr.GetScheme(),
-		Config: cfg,
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
+		Scheme:   mgr.GetScheme(),
+		Config:   cfg,
+		Recorder: mgr.GetEventRecorderFor("otel-controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
 		os.Exit(1)

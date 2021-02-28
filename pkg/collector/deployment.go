@@ -30,14 +30,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 	labels := Labels(otelcol)
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
-	annotations := otelcol.Annotations
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-
-	annotations["prometheus.io/scrape"] = "true"
-	annotations["prometheus.io/port"] = "8888"
-	annotations["prometheus.io/path"] = "/metrics"
+	annotations := Annotations(otelcol)
 
 	return appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
