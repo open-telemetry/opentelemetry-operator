@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package collector_test
+package collector
 
 import (
 	"testing"
@@ -21,7 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
 func TestAnnotations(t *testing.T) {
