@@ -97,6 +97,14 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
+  - opentelemetrycollectors/finalizers
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - opentelemetry.io
+  resources:
   - opentelemetrycollectors/status
   verbs:
   - get
