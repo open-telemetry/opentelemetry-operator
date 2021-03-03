@@ -29,7 +29,6 @@ spec:
         protocols:
           grpc:
     processors:
-      queued_retry:
 
     exporters:
       logging:
@@ -38,10 +37,11 @@ spec:
       pipelines:
         traces:
           receivers: [jaeger]
-          processors: [queued_retry]
+          processors: []
           exporters: [logging]
 EOF
 ```
+
 **_WARNING:_** Until the OpenTelemetry Collector format is stable, changes may be required in the above example to remain
 compatible with the latest version of the OpenTelemetry Collector image being referenced.
 
@@ -53,7 +53,94 @@ At this point, the Operator does *not* validate the contents of the configuratio
 
 ### Deployment modes
 
-The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet` or as a `Deployment` (default). Look at the `examples/daemonset.yaml` for reference.
+The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at the `examples/daemonset.yaml` for reference.
+
+#### Sidecar injection
+
+A sidecar with the OpenTelemetry Collector can be injected into pod-based workloads by setting the pod annotation `sidecar.opentelemetry.io/inject` to either `"true"`, or to the name of a concrete `OpenTelemetryCollector` from the same namespace, like in the following example:
+
+```console
+$ kubectl apply -f - <<EOF
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: sidecar-for-my-app
+spec:
+  mode: sidecar
+  config: |
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+    processors:
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: []
+          exporters: [logging]
+EOF
+
+$ kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp
+  annotations:
+    sidecar.opentelemetry.io/inject: "true"
+spec:
+  containers:
+  - name: myapp
+    image: jaegertracing/vertx-create-span:operator-e2e-tests
+    ports:
+      - containerPort: 8080
+        protocol: TCP
+EOF
+```
+
+When there are multiple `OpenTelemetryCollector` resources with a mode set to `Sidecar` in the same namespace, a concrete name should be used. When there's only one `Sidecar` instance in the same namespace, this instance is used when the annotation is set to `"true"`.
+
+The annotation value can come either from the namespace, or from the pod. The most specific annotation wins, in this order:
+
+* the pod annotation is used when it's set to a concrete instance name or to `"false"`
+* namespace annotation is used when the pod annotation is either absent or set to `"true"`, and the namespace is set to a concrete instance or to `"false"`
+
+When using a pod-based workload, such as `Deployment` or `Statefulset`, make sure to add the annotation to the `PodTemplate` part. Like:
+
+```console
+$ kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+  annotations:
+    sidecar.opentelemetry.io/inject: "true" # WRONG
+spec:
+  selector:
+    matchLabels:
+      app: my-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-app
+      annotations:
+        sidecar.opentelemetry.io/inject: "true" # CORRECT
+    spec:
+      containers:
+      - name: myapp
+        image: jaegertracing/vertx-create-span:operator-e2e-tests
+        ports:
+          - containerPort: 8080
+            protocol: TCP
+EOF
+```
 
 ## Contributing and Developing
 
