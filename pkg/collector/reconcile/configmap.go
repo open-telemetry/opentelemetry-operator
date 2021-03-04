@@ -17,6 +17,7 @@ package reconcile
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -124,6 +125,9 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
+		if configMapChanged(&desired, existing) {
+			params.Recorder.Event(updated, "Normal", "ConfigUpdate ", fmt.Sprintf("OpenTelemetry Config changed - %s/%s", desired.Namespace, desired.Name))
+		}
 
 		params.Log.V(2).Info("applied", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)
 	}
@@ -162,4 +166,9 @@ func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.Conf
 	}
 
 	return nil
+}
+
+func configMapChanged(desired *corev1.ConfigMap, actual *corev1.ConfigMap) bool {
+	return !reflect.DeepEqual(desired.Data, actual.Data)
+
 }
