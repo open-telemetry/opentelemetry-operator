@@ -149,7 +149,7 @@ func main() {
 		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("otel-controller"),
+		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
 		os.Exit(1)

@@ -25,15 +25,19 @@ import (
 func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
+
+	// set default prometheus annotations
+	annotations["prometheus.io/scrape"] = "true"
+	annotations["prometheus.io/port"] = "8888"
+	annotations["prometheus.io/path"] = "/metrics"
+
+	// allow override of prometheus annotations
 	if nil != instance.Annotations {
 		for k, v := range instance.Annotations {
 			annotations[k] = v
 		}
 	}
-
-	annotations["prometheus.io/scrape"] = "true"
-	annotations["prometheus.io/port"] = "8888"
-	annotations["prometheus.io/path"] = "/metrics"
+	// make sure sha256 for configMap is always calculated
 	annotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
 
 	return annotations
