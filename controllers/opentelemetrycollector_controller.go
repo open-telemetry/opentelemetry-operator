@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -35,10 +36,11 @@ import (
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
 type OpenTelemetryCollectorReconciler struct {
 	client.Client
-	log    logr.Logger
-	scheme *runtime.Scheme
-	config config.Config
-	tasks  []Task
+	log      logr.Logger
+	scheme   *runtime.Scheme
+	config   config.Config
+	tasks    []Task
+	recorder record.EventRecorder
 }
 
 // Task represents a reconciliation task to be executed by the reconciler.
@@ -51,10 +53,11 @@ type Task struct {
 // Params is the set of options to build a new openTelemetryCollectorReconciler.
 type Params struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
-	Config config.Config
-	Tasks  []Task
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Config   config.Config
+	Tasks    []Task
+	Recorder record.EventRecorder
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -95,11 +98,12 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	}
 
 	return &OpenTelemetryCollectorReconciler{
-		Client: p.Client,
-		log:    p.Log,
-		scheme: p.Scheme,
-		config: p.Config,
-		tasks:  p.Tasks,
+		Client:   p.Client,
+		log:      p.Log,
+		scheme:   p.Scheme,
+		config:   p.Config,
+		tasks:    p.Tasks,
+		recorder: p.Recorder,
 	}
 }
 
@@ -107,6 +111,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
 func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -131,6 +136,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl
 		Instance: instance,
 		Log:      log,
 		Scheme:   r.scheme,
+		Recorder: r.recorder,
 	}
 
 	if err := r.RunTasks(ctx, params); err != nil {

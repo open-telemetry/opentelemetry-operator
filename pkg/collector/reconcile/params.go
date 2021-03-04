@@ -17,6 +17,7 @@ package reconcile
 import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
@@ -30,4 +31,5 @@ type Params struct {
 	Instance v1alpha1.OpenTelemetryCollector
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
