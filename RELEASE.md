@@ -15,7 +15,7 @@ Steps to release a new version of the OpenTelemetry Operator:
 
 Run this generator:
 ```console
-$ docker run --rm  -v "${PWD}:/app" pavolloffay/gch:latest --oauth-token ${GH_WRITE_TOKEN} --owner open-telemetry --repo opentelemetry-operator
+$ docker run --rm  -v "${PWD}:/app" pavolloffay/gch:latest --oauth-token ${GH_WRITE_TOKEN} --owner open-telemetry --repo opentelemetry-operator --branch main
 ```
 
 Remove the commits that are not relevant to users, like:
