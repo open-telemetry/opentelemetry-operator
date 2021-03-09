@@ -1,6 +1,6 @@
 
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   creationTimestamp: null
@@ -24,6 +24,8 @@ webhooks:
     - UPDATE
     resources:
     - opentelemetrycollectors
+  admissionReviewVersions: ["v1","v1beta1"]
+  sideEffects: None
 - clientConfig:
     caBundle: Cg==
     service:
@@ -42,9 +44,11 @@ webhooks:
     - UPDATE
     resources:
     - pods
+  admissionReviewVersions: ["v1","v1beta1"]
+  sideEffects: None
 
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   creationTimestamp: null
@@ -69,3 +73,5 @@ webhooks:
     - DELETE
     resources:
     - opentelemetrycollectors
+  admissionReviewVersions: ["v1","v1beta1"]
+  sideEffects: None
