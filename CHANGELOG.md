@@ -1,8 +1,13 @@
 Changes by Version
 ==================
 
+0.22.0 (2021-03-11)
+-------------------
+* Bumped OpenTelemetry Collector to v0.22.0
+
 0.21.0 (2021-03-09)
 -------------------
+* Bumped OpenTelemetry Collector to v0.21.0
 * Restart collector pod when config is updated ([#215](https://github.com/open-telemetry/opentelemetry-operator/pull/215), [@bhiravabhatla](https://github.com/bhiravabhatla))
 * Add permissions for opentelemetry finalizer resource ([#212](https://github.com/open-telemetry/opentelemetry-operator/pull/212), [@rubenvp8510](https://github.com/rubenvp8510))
 * fix: collector selection should not fail if there is a single sidecar ([#210](https://github.com/open-telemetry/opentelemetry-operator/pull/210), [@vbehar](https://github.com/vbehar))
