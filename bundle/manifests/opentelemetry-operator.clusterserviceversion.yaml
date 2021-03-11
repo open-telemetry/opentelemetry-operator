@@ -21,11 +21,11 @@ metadata:
     containerImage: quay.io/opentelemetry/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
-    operators.operatorframework.io/builder: operator-sdk-v1.2.0
+    operators.operatorframework.io/builder: operator-sdk-v1.3.0
     operators.operatorframework.io/project_layout: go
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.17.1
+  name: opentelemetry-operator.v0.21.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -63,6 +63,13 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
         - apiGroups:
           - ""
           resources:
@@ -142,6 +149,14 @@ spec:
         - apiGroups:
           - opentelemetry.io
           resources:
+          - opentelemetrycollectors/finalizers
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - opentelemetry.io
+          resources:
           - opentelemetrycollectors/status
           verbs:
           - get
@@ -179,7 +194,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: quay.io/opentelemetry/opentelemetry-operator:0.17.1
+                image: controller
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -269,9 +284,10 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.17.1
+  version: 0.21.0
   webhookdefinitions:
   - admissionReviewVersions:
+    - v1
     - v1beta1
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
@@ -293,6 +309,7 @@ spec:
     type: ValidatingAdmissionWebhook
     webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
   - admissionReviewVersions:
+    - v1
     - v1beta1
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
@@ -313,6 +330,7 @@ spec:
     type: MutatingAdmissionWebhook
     webhookPath: /mutate-opentelemetry-io-v1alpha1-opentelemetrycollector
   - admissionReviewVersions:
+    - v1
     - v1beta1
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
