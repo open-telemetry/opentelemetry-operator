@@ -113,7 +113,7 @@ container-push:
 	docker push ${IMG}
 
 cert-manager:
-	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.0.3/cert-manager.yaml
+	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.1.1/cert-manager.yaml
 	kubectl wait --timeout=5m --for=condition=available deployment cert-manager -n cert-manager
 	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-cainjector -n cert-manager
 	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-webhook -n cert-manager
