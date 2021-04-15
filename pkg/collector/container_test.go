@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/stretchr/testify/assert"
@@ -132,4 +133,46 @@ func TestContainerEmptyEnvVarsByDefault(t *testing.T) {
 
 	// verify
 	assert.Empty(t, c.Env)
+}
+
+func TestContainerResourceRequirements(t *testing.T) {
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("128M"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("200m"),
+					corev1.ResourceMemory: resource.MustParse("256M"),
+				},
+			},
+		},
+	}
+
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, resource.MustParse("100m"), *c.Resources.Limits.Cpu())
+	assert.Equal(t, resource.MustParse("128M"), *c.Resources.Limits.Memory())
+	assert.Equal(t, resource.MustParse("200m"), *c.Resources.Requests.Cpu())
+	assert.Equal(t, resource.MustParse("256M"), *c.Resources.Requests.Memory())
+}
+
+func TestContainerDefaultResourceRequirements(t *testing.T) {
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Empty(t, c.Resources)
 }
