@@ -16,6 +16,7 @@ package reconcile
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
@@ -34,7 +35,7 @@ var logger = logf.Log.WithName("unit-tests")
 
 func TestDesiredConfigMap(t *testing.T) {
 	t.Run("should return expected config map", func(t *testing.T) {
-		expected := configMap()
+		expected := configMap("test-collector")
 		actual := desiredConfigMap(context.Background(), params())
 		assert.Equal(t, expected, actual)
 	})
@@ -43,19 +44,19 @@ func TestDesiredConfigMap(t *testing.T) {
 
 func TestExpectedConfigMap(t *testing.T) {
 	t.Run("should create config map", func(t *testing.T) {
-		err := expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap()}, true)
+		err := expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap("test-collector")}, true)
 		assert.NoError(t, err)
 
-		actual, err := getCM()
+		actual, err := getCM("test-collector")
 
 		assert.NoError(t, err)
 		assert.NotNil(t, actual)
 	})
 
 	t.Run("should update config map", func(t *testing.T) {
-		createCMIfNotExists(t)
+		createCMIfNotExists(t, "test-collector")
 
-		_ = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap()}, true)
+		_ = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap("test-collector")}, true)
 		//assert.NoError(t, err)
 		//
 		//actual, err := getCM(t)
@@ -63,19 +64,30 @@ func TestExpectedConfigMap(t *testing.T) {
 		//assert.NoError(t, err)
 		//assert.Equal(t, actual.Data, configMap().Data)
 	})
+
+	t.Run("should delete config map", func(t *testing.T) {
+		createCMIfNotExists(t, "test")
+
+		err := deleteConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap("test-collector")})
+		assert.NoError(t, err)
+
+		_, err = getCM("test")
+
+		assert.True(t, errors.IsNotFound(err))
+	})
 }
 
-func configMap() v1.ConfigMap {
+func configMap(name string) v1.ConfigMap {
 	return v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-collector",
+			Name:      name,
 			Namespace: "default",
 			Labels: map[string]string{
 				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-				"app.kubernetes.io/instance":   "default.test",
+				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params().Instance.Namespace, params().Instance.Name),
 				"app.kubernetes.io/part-of":    "opentelemetry",
 				"app.kubernetes.io/component":  "opentelemetry-collector",
-				"app.kubernetes.io/name":       "test-collector",
+				"app.kubernetes.io/name":       name,
 			},
 		},
 		Data: map[string]string{
@@ -125,22 +137,19 @@ func params() Params {
 	}
 }
 
-func createCMIfNotExists(tb testing.TB) {
+func createCMIfNotExists(tb testing.TB, name string) {
 	tb.Helper()
 	actual := v1.ConfigMap{}
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: "test-collector"}, &actual)
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, &actual)
 	if errors.IsNotFound(err) {
+		cm := configMap(name)
 		err := k8sClient.Create(context.Background(),
-			&v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-collector",
-					Namespace: "default",
-				}})
+			&cm)
 		assert.NoError(tb, err)
 	}
 }
 
-func getCM() (cm v1.ConfigMap, err error) {
-	err = k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: "test-collector"}, &cm)
+func getCM(name string) (cm v1.ConfigMap, err error) {
+	err = k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, &cm)
 	return
 }
