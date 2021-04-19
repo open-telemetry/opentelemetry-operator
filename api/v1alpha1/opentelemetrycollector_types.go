@@ -76,6 +76,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Env []v1.EnvVar `json:"env,omitempty"`
+
+	// Resources to set on the OpenTelemetry Collector pods.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
