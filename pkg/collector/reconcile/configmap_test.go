@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package reconcile
 
 import (
@@ -6,8 +20,10 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,31 +46,20 @@ func TestExpectedConfigMap(t *testing.T) {
 		err := expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap()}, true)
 		assert.NoError(t, err)
 
-		actual := v1.ConfigMap{}
-		err = k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: "test-collector"}, &actual)
+		actual, err := getCM()
 
 		assert.NoError(t, err)
 		assert.NotNil(t, actual)
 	})
 
 	t.Run("should update config map", func(t *testing.T) {
-		err := k8sClient.Create(context.Background(),
-			&v1.ConfigMap{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ConfigMap",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-collector",
-					Namespace: "default",
-				}})
-		assert.NoError(t, err)
+		createCMIfNotExists(t)
 
-		//err = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap()}, true)
+		_ = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap()}, true)
 		//assert.NoError(t, err)
 		//
-		//actual := v1.ConfigMap{}
-		//err = k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: "test-collector"}, &actual)
+		//actual, err := getCM(t)
+		//
 		//assert.NoError(t, err)
 		//assert.Equal(t, actual.Data, configMap().Data)
 	})
@@ -62,10 +67,6 @@ func TestExpectedConfigMap(t *testing.T) {
 
 func configMap() v1.ConfigMap {
 	return v1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ConfigMap",
-			APIVersion: "v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-collector",
 			Namespace: "default",
@@ -122,4 +123,24 @@ func params() Params {
 		Log:      logger,
 		Recorder: record.NewFakeRecorder(10),
 	}
+}
+
+func createCMIfNotExists(tb testing.TB) {
+	tb.Helper()
+	actual := v1.ConfigMap{}
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: "test-collector"}, &actual)
+	if errors.IsNotFound(err) {
+		err := k8sClient.Create(context.Background(),
+			&v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-collector",
+					Namespace: "default",
+				}})
+		assert.NoError(tb, err)
+	}
+}
+
+func getCM() (cm v1.ConfigMap, err error) {
+	err = k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: "test-collector"}, &cm)
+	return
 }
