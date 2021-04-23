@@ -3,7 +3,8 @@ Changes by Version
 
 0.24.0 (2021-04-20)
 -------------------
-* Bumped OpenTelemetry Collector to v0.24.0
+* Bumped OpenTelemetry Collector to v0.24.0 ([#251](https://github.com/open-telemetry/opentelemetry-operator/pull/251), [@jnodorp-jaconi](https://github.com/jnodorp-jaconi))
+* Allow resource configuration on collector spec ([#248](https://github.com/open-telemetry/opentelemetry-operator/pull/248), [@jnodorp-jaconi](https://github.com/jnodorp-jaconi))
 
 0.23.0 (2021-04-04)
 -------------------
