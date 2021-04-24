@@ -19,19 +19,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"k8s.io/apimachinery/pkg/types"
 )
-
-var logger = logf.Log.WithName("unit-tests")
 
 func TestDesiredConfigMap(t *testing.T) {
 	t.Run("should return expected config map", func(t *testing.T) {
@@ -43,18 +35,23 @@ func TestDesiredConfigMap(t *testing.T) {
 }
 
 func TestExpectedConfigMap(t *testing.T) {
+
+	cm := configMap("test-collector")
+	deletecm := configMap("test")
+
 	t.Run("should create config map", func(t *testing.T) {
-		err := expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap("test-collector")}, true)
+		err := expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{cm}, true)
 		assert.NoError(t, err)
 
-		actual, err := getCM("test-collector")
+		exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 
 		assert.NoError(t, err)
-		assert.NotNil(t, actual)
+		assert.True(t, exists)
 	})
 
 	t.Run("should update config map", func(t *testing.T) {
-		createCMIfNotExists(t, "test-collector")
+
+		createObjectIfNotExists(t, "test-collector", &cm)
 
 		_ = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap("test-collector")}, true)
 		//assert.NoError(t, err)
@@ -66,14 +63,13 @@ func TestExpectedConfigMap(t *testing.T) {
 	})
 
 	t.Run("should delete config map", func(t *testing.T) {
-		createCMIfNotExists(t, "test")
-
+		createObjectIfNotExists(t, "test", &deletecm)
 		err := deleteConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap("test-collector")})
 		assert.NoError(t, err)
 
-		_, err = getCM("test")
+		exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test"})
 
-		assert.True(t, errors.IsNotFound(err))
+		assert.False(t, exists)
 	})
 }
 
@@ -96,60 +92,3 @@ func configMap(name string) v1.ConfigMap {
 	}
 }
 
-func params() Params {
-	return Params{
-		Config: config.New(),
-		Client: k8sClient,
-		Instance: v1alpha1.OpenTelemetryCollector{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "opentelemetry.io",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-				UID:       "testuid1234",
-			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Config: `
-    receivers:
-      jaeger:
-        protocols:
-          grpc:
-    processors:
-
-    exporters:
-      logging:
-
-    service:
-      pipelines:
-        traces:
-          receivers: [jaeger]
-          processors: []
-          exporters: [logging]
-
-`,
-			},
-		},
-		Scheme:   testScheme,
-		Log:      logger,
-		Recorder: record.NewFakeRecorder(10),
-	}
-}
-
-func createCMIfNotExists(tb testing.TB, name string) {
-	tb.Helper()
-	actual := v1.ConfigMap{}
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, &actual)
-	if errors.IsNotFound(err) {
-		cm := configMap(name)
-		err := k8sClient.Create(context.Background(),
-			&cm)
-		assert.NoError(tb, err)
-	}
-}
-
-func getCM(name string) (cm v1.ConfigMap, err error) {
-	err = k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, &cm)
-	return
-}

@@ -15,23 +15,33 @@
 package reconcile
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+
 	// +kubebuilder:scaffold:imports
 )
 
 var k8sClient client.Client
 var testEnv *envtest.Environment
 var testScheme *runtime.Scheme = scheme.Scheme
+var logger = logf.Log.WithName("unit-tests")
 
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
@@ -65,4 +75,68 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
+}
+
+func params() Params {
+	return Params{
+		Config: config.New(),
+		Client: k8sClient,
+		Instance: v1alpha1.OpenTelemetryCollector{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				UID:       "testuid1234",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Config: `
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+    processors:
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: []
+          exporters: [logging]
+
+`,
+			},
+		},
+		Scheme:   testScheme,
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
+func createObjectIfNotExists(tb testing.TB, name string, object client.Object) {
+	tb.Helper()
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, object)
+	if errors.IsNotFound(err) {
+		err := k8sClient.Create(context.Background(),
+			object)
+		assert.NoError(tb, err)
+	}
+}
+
+func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
+	t.Helper()
+	err := k8sClient.Get(context.Background(), namespacedName, object)
+	if errors.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+
 }
