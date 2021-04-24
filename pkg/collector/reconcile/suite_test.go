@@ -34,8 +34,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-
-	// +kubebuilder:scaffold:imports
 )
 
 var k8sClient client.Client

@@ -67,7 +67,7 @@ func TestExpectedConfigMap(t *testing.T) {
 		err := deleteConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap("test-collector")})
 		assert.NoError(t, err)
 
-		exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test"})
+		exists, _ := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test"})
 
 		assert.False(t, exists)
 	})
@@ -91,4 +91,3 @@ func configMap(name string) v1.ConfigMap {
 		},
 	}
 }
-
