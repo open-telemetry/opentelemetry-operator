@@ -53,13 +53,15 @@ func TestExpectedConfigMap(t *testing.T) {
 
 		createObjectIfNotExists(t, "test-collector", &cm)
 
-		_ = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap("test-collector")}, true)
+		//err := expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{desiredConfigMap(context.Background(), params())}, true)
 		//assert.NoError(t, err)
 		//
-		//actual, err := getCM(t)
+		//actual := v1.ConfigMap{}
+		//exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		//
 		//assert.NoError(t, err)
-		//assert.Equal(t, actual.Data, configMap().Data)
+		//assert.True(t, exists)
+		//assert.Equal(t, actual.Data, cm.Data)
 	})
 
 	t.Run("should delete config map", func(t *testing.T) {

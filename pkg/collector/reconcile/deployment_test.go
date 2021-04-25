@@ -28,44 +28,44 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
-func TestExpectedDaemonsets(t *testing.T) {
+func TestExpectedDeployments(t *testing.T) {
 	param := params()
-	expectedDs := collector.DaemonSet(param.Config, logger, param.Instance)
+	expectedDeploy := collector.Deployment(param.Config, logger, param.Instance)
 
-	t.Run("should create Daemonset", func(t *testing.T) {
-		err := expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+	t.Run("should create deployment", func(t *testing.T) {
+		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
-		exists, err := populateObjectIfExists(t, &v1.DaemonSet{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
 	})
-	t.Run("should update Daemonset", func(t *testing.T) {
-		ds := daemonset("test-collector")
-		createObjectIfNotExists(t, "test-collector", &ds)
-		//err := expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+	t.Run("should update deployment", func(t *testing.T) {
+		deploy := deployment("test-collector")
+		createObjectIfNotExists(t, "test-collector", &deploy)
+		//err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		//assert.NoError(t, err)
 		//
-		//actual := v1.DaemonSet{}
+		//actual := v1.Deployment{}
 		//exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		//
 		//assert.NoError(t, err)
 		//assert.True(t, exists)
-		//assert.Equal(t, expectedDs.Labels, actual.Labels)
+		//assert.Equal(t, expectedDeploy.Labels, actual.Labels)
 
 	})
 
-	t.Run("should cleanup daemonsets", func(t *testing.T) {
+	t.Run("should cleanup deployments", func(t *testing.T) {
 
-		ds := daemonset("dummy")
-		createObjectIfNotExists(t, "dummy", &ds)
+		deploy := deployment("dummy")
+		createObjectIfNotExists(t, "dummy", &deploy)
 
-		err := deleteDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
-		actual := v1.DaemonSet{}
+		actual := v1.Deployment{}
 		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
 
 		assert.False(t, exists)
@@ -73,8 +73,8 @@ func TestExpectedDaemonsets(t *testing.T) {
 	})
 }
 
-func daemonset(name string) v1.DaemonSet {
-	return v1.DaemonSet{
+func deployment(name string) v1.Deployment {
+	return v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "default",
@@ -83,7 +83,7 @@ func daemonset(name string) v1.DaemonSet {
 				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params().Instance.Namespace, params().Instance.Name),
 			},
 		},
-		Spec: v1.DaemonSetSpec{
+		Spec: v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 			},
