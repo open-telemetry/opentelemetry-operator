@@ -42,9 +42,11 @@ var testEnv *envtest.Environment
 var testScheme *runtime.Scheme = scheme.Scheme
 var logger = logf.Log.WithName("unit-tests")
 
+var instanceUID = uuid.NewUUID()
+
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 	}
 
 	cfg, err := testEnv.Start()
@@ -88,7 +90,7 @@ func params() Params {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "default",
-				UID:       uuid.NewUUID(),
+				UID:       instanceUID,
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
 				Config: `

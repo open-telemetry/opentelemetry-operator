@@ -45,15 +45,15 @@ func TestExpectedDeployments(t *testing.T) {
 	t.Run("should update deployment", func(t *testing.T) {
 		deploy := deployment("test-collector")
 		createObjectIfNotExists(t, "test-collector", &deploy)
-		//err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
-		//assert.NoError(t, err)
-		//
-		//actual := v1.Deployment{}
-		//exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
-		//
-		//assert.NoError(t, err)
-		//assert.True(t, exists)
-		//assert.Equal(t, expectedDeploy.Labels, actual.Labels)
+		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		assert.NoError(t, err)
+
+		actual := v1.Deployment{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
 
 	})
 
@@ -74,6 +74,8 @@ func TestExpectedDeployments(t *testing.T) {
 }
 
 func deployment(name string) v1.Deployment {
+	labels := collector.Labels(params().Instance)
+	labels["app.kubernetes.io/name"] = name
 	return v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -85,11 +87,11 @@ func deployment(name string) v1.Deployment {
 		},
 		Spec: v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
+				MatchLabels: labels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app.kubernetes.io/name": name},
+					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
