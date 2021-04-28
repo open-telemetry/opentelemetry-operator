@@ -41,7 +41,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
 
-	// Mode represents how the collector should be deployed (deployment, daemonset or sidecar)
+	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Mode Mode `json:"mode,omitempty"`
@@ -50,6 +50,12 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	ServiceAccount string `json:"serviceAccount,omitempty"`
+
+	// VolumeClaimTemplates will provide stable storage using PersistentVolumes.
+	// +optional
+	// +listType=atomic
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 
 	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
 	// +optional
