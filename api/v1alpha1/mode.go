@@ -16,7 +16,7 @@ package v1alpha1
 
 type (
 	// Mode represents how the collector should be deployed (deployment vs. daemonset)
-	// +kubebuilder:validation:Enum=daemonset;deployment;sidecar
+	// +kubebuilder:validation:Enum=daemonset;deployment;sidecar;statefulset
 	Mode string
 )
 
@@ -29,4 +29,7 @@ const (
 
 	// ModeSidecar specifies that the collector should be deployed as a sidecar to pods.
 	ModeSidecar Mode = "sidecar"
+
+	// ModeStatefulSet specifies that the collector should be deployed as a Kubernetes StatefulSet.
+	ModeStatefulSet Mode = "statefulset"
 )
