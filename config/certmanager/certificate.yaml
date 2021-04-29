@@ -24,3 +24,6 @@ spec:
     kind: Issuer
     name: selfsigned-issuer
   secretName: opentelemetry-operator-controller-manager-service-cert # this secret will not be prefixed, since it's not managed by kustomize
+  subject:
+    organizationalUnits:
+      - "opentelemetry-operator"
