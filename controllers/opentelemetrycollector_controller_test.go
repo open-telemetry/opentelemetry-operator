@@ -114,6 +114,13 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 		// attention! we expect daemonsets to be empty in the default configuration
 		assert.Empty(t, list.Items)
 	}
+	{
+		list := &appsv1.StatefulSetList{}
+		err = k8sClient.List(context.Background(), list, opts...)
+		assert.NoError(t, err)
+		// attention! we expect statefulsets to be empty in the default configuration
+		assert.Empty(t, list.Items)
+	}
 
 	// cleanup
 	require.NoError(t, k8sClient.Delete(context.Background(), created))

@@ -41,7 +41,6 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: naming.Service(otelcol),
-			Replicas:    otelcol.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -56,6 +55,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 					Volumes:            Volumes(cfg, otelcol),
 				},
 			},
+			Replicas:             otelcol.Spec.Replicas,
 			PodManagementPolicy:  "Parallel",
 			VolumeClaimTemplates: VolumeClaimTemplates(cfg, otelcol),
 		},
