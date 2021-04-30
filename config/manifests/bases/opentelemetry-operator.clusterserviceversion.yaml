@@ -31,7 +31,7 @@ spec:
 
     * **Sidecar injection** - annotate your pods and let the operator inject a sidecar.
     * **Managed upgrades** - updating the operator will automatically update your OpenTelemetry collectors.
-    * **Deployment modes** - your collector can be deployed as sidecar, daemon set, stateful set, or regular deployment.
+    * **Deployment modes** - your collector can be deployed as sidecar, daemon set, or regular deployment.
     * **Service port management** - the operator detects which ports need to be exposed based on the provided configuration.
   displayName: Community OpenTelemetry Operator
   icon:
