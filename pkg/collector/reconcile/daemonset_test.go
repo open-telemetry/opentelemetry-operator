@@ -43,8 +43,7 @@ func TestExpectedDaemonsets(t *testing.T) {
 
 	})
 	t.Run("should update Daemonset", func(t *testing.T) {
-		ds := daemonset("test-collector")
-		createObjectIfNotExists(t, "test-collector", &ds)
+		createObjectIfNotExists(t, "test-collector", &expectedDs)
 		err := expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
 		assert.NoError(t, err)
 

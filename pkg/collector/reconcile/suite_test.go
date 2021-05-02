@@ -79,6 +79,7 @@ func TestMain(m *testing.M) {
 }
 
 func params() Params {
+	replicas := int32(2)
 	return Params{
 		Config: config.New(),
 		Client: k8sClient,
@@ -93,6 +94,7 @@ func params() Params {
 				UID:       instanceUID,
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Replicas: &replicas,
 				Config: `
     receivers:
       jaeger:

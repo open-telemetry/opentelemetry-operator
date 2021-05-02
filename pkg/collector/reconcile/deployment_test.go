@@ -54,7 +54,7 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
-
+		assert.Equal(t, int32(2), *actual.Spec.Replicas)
 	})
 
 	t.Run("should cleanup deployments", func(t *testing.T) {
