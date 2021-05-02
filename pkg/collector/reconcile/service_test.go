@@ -95,7 +95,7 @@ func TestFilterPort(t *testing.T) {
 }
 
 func TestDesiredService(t *testing.T) {
-	t.Run("should return nil service for unknown reciever and protocol", func(t *testing.T) {
+	t.Run("should return nil service for unknown receiver and protocol", func(t *testing.T) {
 		params := Params{
 			Config: config.Config{},
 			Client: k8sClient,
