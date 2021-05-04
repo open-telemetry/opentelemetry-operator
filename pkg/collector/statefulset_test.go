@@ -18,7 +18,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
@@ -57,7 +59,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	assert.Equal(t, "my-instance-collector", ss.Spec.ServiceName)
 
 	// assert correct pod management policy
-	assert.Equal(t, v1.PodManagementPolicyType("Parallel"), ss.Spec.PodManagementPolicy)
+	assert.Equal(t, appsv1.ParallelPodManagement, ss.Spec.PodManagementPolicy)
 }
 
 func TestStatefulSetReplicas(t *testing.T) {
@@ -79,4 +81,39 @@ func TestStatefulSetReplicas(t *testing.T) {
 
 	// assert correct number of replicas
 	assert.Equal(t, int32(3), *ss.Spec.Replicas)
+}
+
+func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "added-volume",
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{"ReadOnlyMany"},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{"storage": resource.MustParse("1Gi")},
+					},
+				},
+			}},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	ss := StatefulSet(cfg, logger, otelcol)
+
+	// assert correct pvc name
+	assert.Equal(t, "added-volume", ss.Spec.VolumeClaimTemplates[0].Name)
+
+	// assert correct pvc access mode
+	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadOnlyMany"), ss.Spec.VolumeClaimTemplates[0].Spec.AccessModes[0])
+
+	// assert correct pvc storage
+	assert.Equal(t, resource.MustParse("1Gi"), ss.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests["storage"])
 }

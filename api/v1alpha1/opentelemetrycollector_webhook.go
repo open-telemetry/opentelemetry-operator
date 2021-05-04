@@ -30,7 +30,7 @@ func (r *OpenTelemetryCollector) SetupWebhookWithManager(mgr ctrl.Manager) error
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io
+// +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Defaulter = &OpenTelemetryCollector{}
 
@@ -50,7 +50,7 @@ func (r *OpenTelemetryCollector) Default() {
 	opentelemetrycollectorlog.Info("default", "name", r.Name)
 }
 
-// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollector.kb.io
+// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Validator = &OpenTelemetryCollector{}
 
