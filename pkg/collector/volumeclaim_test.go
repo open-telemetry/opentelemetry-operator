@@ -19,7 +19,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -43,7 +42,7 @@ func TestVolumeClaimNewDefault(t *testing.T) {
 	assert.Equal(t, "initial-volume", volumeClaims[0].Name)
 
 	// check the access mode is correct
-	assert.Equal(t, v1.PersistentVolumeAccessMode("ReadOnlyMany"), volumeClaims[0].Spec.AccessModes[0])
+	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadOnlyMany"), volumeClaims[0].Spec.AccessModes[0])
 
 	//check the storage is correct
 	assert.Equal(t, resource.MustParse("50Mi"), volumeClaims[0].Spec.Resources.Requests["storage"])
@@ -78,7 +77,7 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	assert.Equal(t, "added-volume", volumeClaims[0].Name)
 
 	// check the access mode is correct
-	assert.Equal(t, v1.PersistentVolumeAccessMode("ReadOnlyMany"), volumeClaims[0].Spec.AccessModes[0])
+	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadOnlyMany"), volumeClaims[0].Spec.AccessModes[0])
 
 	//check the storage is correct
 	assert.Equal(t, resource.MustParse("1Gi"), volumeClaims[0].Spec.Resources.Requests["storage"])

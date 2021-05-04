@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/humivo/opentelemetry-operator
-  newTag: 0.24.0
+  newTag: 0.24.0-3-gd82167d
