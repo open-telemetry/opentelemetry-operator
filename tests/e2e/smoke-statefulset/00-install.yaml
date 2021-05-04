@@ -1,0 +1,20 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: stateful
+spec:
+  mode: statefulset
+  config: |
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+    processors:
+    exporters:
+      logging:
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: []
+          exporters: [logging]
