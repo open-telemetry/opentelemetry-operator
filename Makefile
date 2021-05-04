@@ -8,7 +8,7 @@ LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= quay.io/${USER}
 IMG_REPO ?= opentelemetry-operator
-IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:$(addprefix v,${VERSION})
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 
 # Options for 'bundle-build'
