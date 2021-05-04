@@ -120,7 +120,7 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		patch := client.MergeFrom(&params.Instance)
+		patch := client.MergeFrom(existing)
 
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
