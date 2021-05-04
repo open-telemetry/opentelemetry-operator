@@ -16,7 +16,6 @@ package reconcile
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,35 +54,17 @@ func TestExpectedDaemonsets(t *testing.T) {
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
 	})
 
-	t.Run("should cleanup daemonsets", func(t *testing.T) {
+	t.Run("should delete daemonset", func(t *testing.T) {
 
-		ds := daemonset("dummy")
-		createObjectIfNotExists(t, "dummy", &ds)
-
-		err := deleteDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
-		assert.NoError(t, err)
-
-		actual := v1.DaemonSet{}
-		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
-
-		assert.False(t, exists)
-
-	})
-}
-
-func daemonset(name string) v1.DaemonSet {
-	labels := collector.Labels(params().Instance)
-	labels["app.kubernetes.io/name"] = name
-	return v1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: "default",
-			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params().Instance.Namespace, params().Instance.Name),
-			},
-		},
-		Spec: v1.DaemonSetSpec{
+		labels := map[string]string{
+			"app.kubernetes.io/instance":   "default.test",
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		}
+		ds := v1.DaemonSet{}
+		ds.Name = "dummy"
+		ds.Namespace = "default"
+		ds.Labels = labels
+		ds.Spec = v1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -98,6 +79,55 @@ func daemonset(name string) v1.DaemonSet {
 					}},
 				},
 			},
-		},
-	}
+		}
+
+		createObjectIfNotExists(t, "dummy", &ds)
+
+		err := deleteDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		assert.NoError(t, err)
+
+		actual := v1.DaemonSet{}
+		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
+
+		assert.False(t, exists)
+
+	})
+
+	t.Run("should not delete daemonset", func(t *testing.T) {
+
+		labels := map[string]string{
+			"app.kubernetes.io/managed-by": "helm-opentelemetry-operator",
+		}
+		ds := v1.DaemonSet{}
+		ds.Name = "dummy"
+		ds.Namespace = "default"
+		ds.Labels = labels
+		ds.Spec = v1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:  "dummy",
+						Image: "busybox",
+					}},
+				},
+			},
+		}
+
+		createObjectIfNotExists(t, "dummy", &ds)
+
+		err := deleteDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		assert.NoError(t, err)
+
+		actual := v1.DaemonSet{}
+		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
+
+		assert.True(t, exists)
+
+	})
 }

@@ -16,7 +16,6 @@ package reconcile
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,8 +42,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 	})
 	t.Run("should update deployment", func(t *testing.T) {
-		deploy := deployment("test-collector")
-		createObjectIfNotExists(t, "test-collector", &deploy)
+		createObjectIfNotExists(t, "test-collector", &expectedDeploy)
 		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
@@ -57,35 +55,16 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.Equal(t, int32(2), *actual.Spec.Replicas)
 	})
 
-	t.Run("should cleanup deployments", func(t *testing.T) {
-
-		deploy := deployment("dummy")
-		createObjectIfNotExists(t, "dummy", &deploy)
-
-		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
-		assert.NoError(t, err)
-
-		actual := v1.Deployment{}
-		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
-
-		assert.False(t, exists)
-
-	})
-}
-
-func deployment(name string) v1.Deployment {
-	labels := collector.Labels(params().Instance)
-	labels["app.kubernetes.io/name"] = name
-	return v1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: "default",
-			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params().Instance.Namespace, params().Instance.Name),
-			},
-		},
-		Spec: v1.DeploymentSpec{
+	t.Run("should delete deployment", func(t *testing.T) {
+		labels := map[string]string{
+			"app.kubernetes.io/instance":   "default.test",
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		}
+		deploy := v1.Deployment{}
+		deploy.Name = "dummy"
+		deploy.Namespace = "default"
+		deploy.Labels = labels
+		deploy.Spec = v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -100,6 +79,52 @@ func deployment(name string) v1.Deployment {
 					}},
 				},
 			},
-		},
-	}
+		}
+		createObjectIfNotExists(t, "dummy", &deploy)
+
+		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		assert.NoError(t, err)
+
+		actual := v1.Deployment{}
+		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
+
+		assert.False(t, exists)
+
+	})
+
+	t.Run("should not delete deployment", func(t *testing.T) {
+		labels := map[string]string{
+			"app.kubernetes.io/instance":   "default.test",
+			"app.kubernetes.io/managed-by": "helm-opentelemetry-operator",
+		}
+		deploy := v1.Deployment{}
+		deploy.Name = "dummy"
+		deploy.Namespace = "default"
+		deploy.Spec = v1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:  "dummy",
+						Image: "busybox",
+					}},
+				},
+			},
+		}
+		createObjectIfNotExists(t, "dummy", &deploy)
+
+		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		assert.NoError(t, err)
+
+		actual := v1.Deployment{}
+		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
+
+		assert.True(t, exists)
+
+	})
 }
