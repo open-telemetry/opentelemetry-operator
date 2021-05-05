@@ -42,7 +42,7 @@ func TestVolumeClaimNewDefault(t *testing.T) {
 	assert.Equal(t, "initial-volume", volumeClaims[0].Name)
 
 	// check the access mode is correct
-	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadOnlyMany"), volumeClaims[0].Spec.AccessModes[0])
+	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadWriteOnce"), volumeClaims[0].Spec.AccessModes[0])
 
 	//check the storage is correct
 	assert.Equal(t, resource.MustParse("50Mi"), volumeClaims[0].Spec.Resources.Requests["storage"])
@@ -57,7 +57,7 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 					Name: "added-volume",
 				},
 				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{"ReadOnlyMany"},
+					AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{"storage": resource.MustParse("1Gi")},
 					},
@@ -77,7 +77,7 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	assert.Equal(t, "added-volume", volumeClaims[0].Name)
 
 	// check the access mode is correct
-	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadOnlyMany"), volumeClaims[0].Spec.AccessModes[0])
+	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadWriteOnce"), volumeClaims[0].Spec.AccessModes[0])
 
 	//check the storage is correct
 	assert.Equal(t, resource.MustParse("1Gi"), volumeClaims[0].Spec.Resources.Requests["storage"])
