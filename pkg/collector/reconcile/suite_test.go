@@ -22,10 +22,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -94,6 +96,15 @@ func params() Params {
 				UID:       instanceUID,
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
 				Replicas: &replicas,
 				Config: `
     receivers:
