@@ -17,7 +17,6 @@ spec:
            name: testvolume
        volumes:
        - configMap:
-           defaultMode: 420
            items:
            - key: collector.yaml
              path: collector.yaml

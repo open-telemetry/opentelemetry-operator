@@ -41,7 +41,7 @@ func VolumeClaimTemplates(cfg config.Config, otelcol v1alpha1.OpenTelemetryColle
 			Name: "initial-volume",
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{"ReadOnlyMany"},
+			AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{"storage": resource.MustParse("50Mi")},
 			},
