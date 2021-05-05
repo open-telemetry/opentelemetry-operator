@@ -38,7 +38,7 @@ func VolumeClaimTemplates(cfg config.Config, otelcol v1alpha1.OpenTelemetryColle
 
 	volumeClaimTemplates = []corev1.PersistentVolumeClaim{{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "initial-volume",
+			Name: "default-volume",
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},

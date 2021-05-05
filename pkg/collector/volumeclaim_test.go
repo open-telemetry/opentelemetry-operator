@@ -39,10 +39,10 @@ func TestVolumeClaimNewDefault(t *testing.T) {
 	assert.Len(t, volumeClaims, 1)
 
 	// check that it's the initial-volume
-	assert.Equal(t, "initial-volume", volumeClaims[0].Name)
+	assert.Equal(t, "default-volume", volumeClaims[0].Name)
 
 	// check the access mode is correct
-	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadOnlyMany"), volumeClaims[0].Spec.AccessModes[0])
+	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadWriteOnce"), volumeClaims[0].Spec.AccessModes[0])
 
 	//check the storage is correct
 	assert.Equal(t, resource.MustParse("50Mi"), volumeClaims[0].Spec.Resources.Requests["storage"])

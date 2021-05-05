@@ -25,7 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-// StatefulSet builds the deployment for the given instance.
+// StatefulSet builds the statefulset for the given instance.
 func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.StatefulSet {
 	labels := Labels(otelcol)
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
