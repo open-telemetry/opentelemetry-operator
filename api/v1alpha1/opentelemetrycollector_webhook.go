@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -57,12 +59,18 @@ var _ webhook.Validator = &OpenTelemetryCollector{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateCreate() error {
 	opentelemetrycollectorlog.Info("validate create", "name", r.Name)
+	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
+		return errors.New("Can only specify VolumeClaimTemplates for statefulsets")
+	}
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) error {
 	opentelemetrycollectorlog.Info("validate update", "name", r.Name)
+	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
+		return errors.New("Can only specify VolumeClaimTemplates for statefulsets")
+	}
 	return nil
 }
 
