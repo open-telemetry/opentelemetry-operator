@@ -34,6 +34,9 @@ func TestStatefulSetNewDefault(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: "statefulset",
+		},
 	}
 	cfg := config.New()
 
@@ -64,13 +67,13 @@ func TestStatefulSetNewDefault(t *testing.T) {
 
 func TestStatefulSetReplicas(t *testing.T) {
 	// prepare
-	var replicaInt int32
-	replicaInt = 3
+	replicaInt := int32(3)
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode:     "statefulset",
 			Replicas: &replicaInt,
 		},
 	}
@@ -90,6 +93,7 @@ func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: "statefulset",
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "added-volume",

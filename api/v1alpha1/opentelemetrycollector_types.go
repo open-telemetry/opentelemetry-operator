@@ -51,7 +51,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 
-	// VolumeClaimTemplates will provide stable storage using PersistentVolumes.
+	// VolumeClaimTemplates will provide stable storage using PersistentVolumes. Only available when the mode=statefulset.
 	// +optional
 	// +listType=atomic
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true

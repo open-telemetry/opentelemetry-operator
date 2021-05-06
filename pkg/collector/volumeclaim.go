@@ -29,24 +29,28 @@ import (
 func VolumeClaimTemplates(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev1.PersistentVolumeClaim {
 
 	var volumeClaimTemplates []corev1.PersistentVolumeClaim
-	// Add all user specified claims.
-	if len(otelcol.Spec.VolumeClaimTemplates) > 0 {
-		volumeClaimTemplates = append(volumeClaimTemplates,
-			otelcol.Spec.VolumeClaimTemplates...)
+
+	if otelcol.Spec.Mode != "statefulset" {
 		return volumeClaimTemplates
 	}
 
-	volumeClaimTemplates = []corev1.PersistentVolumeClaim{{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "default-volume",
-		},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{"storage": resource.MustParse("50Mi")},
+	// Add all user specified claims or use default.
+	if len(otelcol.Spec.VolumeClaimTemplates) > 0 {
+		volumeClaimTemplates = append(volumeClaimTemplates,
+			otelcol.Spec.VolumeClaimTemplates...)
+	} else {
+		volumeClaimTemplates = []corev1.PersistentVolumeClaim{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default-volume",
 			},
-		},
-	}}
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{"storage": resource.MustParse("50Mi")},
+				},
+			},
+		}}
+	}
 
 	return volumeClaimTemplates
 }
