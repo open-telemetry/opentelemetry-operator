@@ -38,3 +38,4 @@ spec:
       volumeMode: Filesystem
 status:
   replicas: 3
+  readyReplicas: 3
