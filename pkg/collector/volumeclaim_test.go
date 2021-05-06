@@ -29,7 +29,11 @@ import (
 
 func TestVolumeClaimNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: "statefulset",
+		},
+	}
 	cfg := config.New()
 
 	// test
@@ -52,6 +56,7 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: "statefulset",
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "added-volume",
@@ -81,4 +86,31 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 
 	//check the storage is correct
 	assert.Equal(t, resource.MustParse("1Gi"), volumeClaims[0].Spec.Resources.Requests["storage"])
+}
+
+func TestVolumeClaimChecksForStatefulset(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: "daemonset",
+			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "added-volume",
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{"storage": resource.MustParse("1Gi")},
+					},
+				},
+			}},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	volumeClaims := VolumeClaimTemplates(cfg, otelcol)
+
+	// verify that volume claim replaces
+	assert.Len(t, volumeClaims, 0)
 }

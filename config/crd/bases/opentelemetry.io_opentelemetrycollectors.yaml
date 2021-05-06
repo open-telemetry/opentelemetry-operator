@@ -282,7 +282,7 @@ spec:
                 type: string
               volumeClaimTemplates:
                 description: VolumeClaimTemplates will provide stable storage using
-                  PersistentVolumes.
+                  PersistentVolumes. Only available when the mode=statefulset.
                 items:
                   description: PersistentVolumeClaim is a user's request for and claim
                     to a persistent volume
