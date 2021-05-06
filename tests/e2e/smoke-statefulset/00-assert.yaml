@@ -4,3 +4,4 @@ metadata:
   name: stateful-collector
 status:
   replicas: 1
+  readyReplicas: 1
