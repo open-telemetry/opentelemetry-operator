@@ -29,7 +29,7 @@ jobs:
 
       - name: Docker meta
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v2.5.0
+        uses: crazy-max/ghaction-docker-meta@v3
         with:
           images: quay.io/opentelemetry/opentelemetry-operator
           tag-semver: |
