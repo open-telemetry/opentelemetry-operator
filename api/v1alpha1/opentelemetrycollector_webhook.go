@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -30,7 +32,7 @@ func (r *OpenTelemetryCollector) SetupWebhookWithManager(mgr ctrl.Manager) error
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io
+// +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Defaulter = &OpenTelemetryCollector{}
 
@@ -50,19 +52,25 @@ func (r *OpenTelemetryCollector) Default() {
 	opentelemetrycollectorlog.Info("default", "name", r.Name)
 }
 
-// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollector.kb.io
+// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Validator = &OpenTelemetryCollector{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateCreate() error {
 	opentelemetrycollectorlog.Info("validate create", "name", r.Name)
+	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
+		return errors.New("Can only specify VolumeClaimTemplates for statefulsets")
+	}
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) error {
 	opentelemetrycollectorlog.Info("validate update", "name", r.Name)
+	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
+		return errors.New("Can only specify VolumeClaimTemplates for statefulsets")
+	}
 	return nil
 }
 

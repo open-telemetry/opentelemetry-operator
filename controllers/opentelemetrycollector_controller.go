@@ -90,6 +90,11 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 				true,
 			},
 			{
+				"stateful sets",
+				reconcile.StatefulSets,
+				true,
+			},
+			{
 				"opentelemetry",
 				reconcile.Self,
 				true,
@@ -169,5 +174,6 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
+		Owns(&appsv1.StatefulSet{}).
 		Complete(r)
 }
