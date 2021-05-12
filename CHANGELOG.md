@@ -1,6 +1,10 @@
 Changes by Version
 ==================
 
+0.25.0 (2021-05-12)
+-------------------
+* Bumped OpenTelemetry Collector to v0.26.0
+
 0.25.0 (2021-05-06)
 -------------------
 * Bumped OpenTelemetry Collector to v0.25.0
