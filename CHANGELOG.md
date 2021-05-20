@@ -4,7 +4,7 @@ Changes by Version
 0.26.0 (2021-05-12)
 -------------------
 * Bumped OpenTelemetry Collector to v0.26.0
-* Add GoSec workflow to GitHub Actions([TBD](TBD))
+* Add GoSec workflow to GitHub Actions([#289](https://github.com/open-telemetry/opentelemetry-operator/pull/289))
 
 0.25.0 (2021-05-06)
 -------------------
