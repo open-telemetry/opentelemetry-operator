@@ -160,9 +160,7 @@ func TestExpectedServices(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
-		// issue# https://github.com/open-telemetry/opentelemetry-operator/issues/256
-		// Would uncomment once above issue is resolved
-		//assert.Contains(t, actual.Spec.Ports, extraPorts)
+		assert.Contains(t, actual.Spec.Ports, extraPorts)
 
 	})
 }

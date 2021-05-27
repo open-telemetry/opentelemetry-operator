@@ -194,6 +194,7 @@ func expectedServices(ctx context.Context, params Params, expected []corev1.Serv
 		for k, v := range desired.ObjectMeta.Labels {
 			updated.ObjectMeta.Labels[k] = v
 		}
+		updated.Spec.Ports = desired.Spec.Ports
 
 		patch := client.MergeFrom(existing)
 
