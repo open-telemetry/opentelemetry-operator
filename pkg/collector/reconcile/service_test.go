@@ -22,6 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -145,9 +146,10 @@ func TestExpectedServices(t *testing.T) {
 		createObjectIfNotExists(t, "test-collector", &serviceInstance)
 
 		extraPorts := v1.ServicePort{
-			Name:     "port-web",
-			Protocol: "TCP",
-			Port:     8080,
+			Name:       "port-web",
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromInt(8080),
 		}
 
 		ports := append(params().Instance.Spec.Ports, extraPorts)
@@ -160,9 +162,7 @@ func TestExpectedServices(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
-		// issue# https://github.com/open-telemetry/opentelemetry-operator/issues/256
-		// Would uncomment once above issue is resolved
-		//assert.Contains(t, actual.Spec.Ports, extraPorts)
+		assert.Contains(t, actual.Spec.Ports, extraPorts)
 
 	})
 }
