@@ -27,9 +27,8 @@ var _ ReceiverParser = &OTLPReceiverParser{}
 const (
 	parserNameOTLP = "__otlp"
 
-	defaultOTLPGRPCPort       int32 = 4317
-	defaultOTLPGRPCLegacyPort int32 = 55680
-	defaultOTLPHTTPPort       int32 = 55681
+	defaultOTLPGRPCPort int32 = 4317
+	defaultOTLPHTTPPort int32 = 55681
 )
 
 // OTLPReceiverParser parses the configuration for OTLP receivers.
@@ -70,11 +69,6 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 					Name:       portName(fmt.Sprintf("%s-grpc", o.name), defaultOTLPGRPCPort),
 					Port:       defaultOTLPGRPCPort,
 					TargetPort: intstr.FromInt(int(defaultOTLPGRPCPort)),
-				},
-				{
-					Name:       portName(fmt.Sprintf("%s-grpc-legacy", o.name), defaultOTLPGRPCLegacyPort),
-					Port:       defaultOTLPGRPCLegacyPort,
-					TargetPort: intstr.FromInt(int(defaultOTLPGRPCPort)), // we target the official port, not the legacy
 				},
 			},
 		},
