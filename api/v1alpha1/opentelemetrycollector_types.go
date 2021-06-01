@@ -87,6 +87,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Toleration to schedule OpenTelemetry Collector pods.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
