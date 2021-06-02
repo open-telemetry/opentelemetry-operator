@@ -89,6 +89,7 @@ type OpenTelemetryCollectorSpec struct {
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Toleration to schedule OpenTelemetry Collector pods.
+	// This is only relevant to daemonsets, statefulsets and deployments
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`

@@ -36,6 +36,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Mode: "statefulset",
+			Tolerations: testTolerationValues,
 		},
 	}
 	cfg := config.New()
@@ -49,6 +50,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	assert.Equal(t, "true", ss.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", ss.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", ss.Annotations["prometheus.io/path"])
+	assert.Equal(t, testTolerationValues, ss.Spec.Template.Spec.Tolerations)
 
 	assert.Len(t, ss.Spec.Template.Spec.Containers, 1)
 
