@@ -62,6 +62,17 @@ func (r *OpenTelemetryCollector) ValidateCreate() error {
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
 		return errors.New("Can only specify VolumeClaimTemplates for statefulsets")
 	}
+
+	// validate replicas for sidecar and daemonsets mode
+	if (r.Spec.Mode == ModeSidecar || r.Spec.Mode == ModeDaemonSet) && *r.Spec.Replicas > 0 {
+		return errors.New("Can only specify Replicas for deployments and statefulsets")
+	}
+
+	// validate tolerations for sidecar mode
+	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
+		return errors.New("Can only specify Tolerations for daemonsets, deployments and statefulsets")
+	}
+
 	return nil
 }
 
@@ -71,6 +82,17 @@ func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) error {
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
 		return errors.New("Can only specify VolumeClaimTemplates for statefulsets")
 	}
+
+	// validate replicas for sidecar and daemonsets mode
+	if (r.Spec.Mode == ModeSidecar || r.Spec.Mode == ModeDaemonSet) && *r.Spec.Replicas > 0 {
+		return errors.New("Can only specify Replicas for deployments and statefulsets")
+	}
+
+	// validate tolerations for sidecar mode
+	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
+		return errors.New("Can only specify Tolerations for daemonsets, deployments and statefulsets")
+	}
+
 	return nil
 }
 

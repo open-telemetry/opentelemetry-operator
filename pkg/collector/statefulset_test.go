@@ -35,7 +35,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Mode: "statefulset",
+			Mode:        "statefulset",
 			Tolerations: testTolerationValues,
 		},
 	}
