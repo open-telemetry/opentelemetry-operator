@@ -142,6 +142,27 @@ spec:
 EOF
 ```
 
+## Compatibility matrix
+
+### OpenTelemetry Operator vs. OpenTelemetry Collector
+
+The OpenTelemetry Operator follows the same versioning as the operand (OpenTelemetry Collector) up to the minor part of the version. For example, the OpenTelemetry Operator v0.18.1 tracks OpenTelemetry Collector 0.18.0. The patch part of the version indicates the patch level of the operator itself, not that of OpenTelemetry Collector. Whenever a new patch version is released for OpenTelemetry Collector, we'll release a new patch version of the operator.
+
+### OpenTelemetry Operator vs. Kubernetes
+
+We strive to be compatible with the widest range of Kubernetes versions as possible, but some changes to Kubernetes itself require us to break compatibility with older Kubernetes versions, be it because of code imcompatibilities, or in the name of maintainability.
+
+Our promise is that we'll follow what's common practice in the Kubernetes world and support N-2 versions, based on the release date of the OpenTelemetry Operator.
+
+For instance, when we released v0.27.0, the latest Kubernetes version was v1.21.1. As such, the minimum version of Kubernetes we support for OpenTelemetry Operator v0.27.0 is v1.19 and we tested it with up to 1.21.
+
+The OpenTelemetry Operator *might* work on versions outside of the given range, but when opening new issues, please make sure to test your scenario on a supported version.
+
+| OpenTelemetry Operator | Kubernetes           |
+|------------------------|----------------------|
+| v1.23                  | v1.19+               |
+| v1.22                  | v1.18 to v1.20       |
+
 ## Contributing and Developing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
