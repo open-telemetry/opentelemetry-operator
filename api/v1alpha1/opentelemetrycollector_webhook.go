@@ -15,7 +15,7 @@
 package v1alpha1
 
 import (
-	"errors"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -59,45 +59,36 @@ var _ webhook.Validator = &OpenTelemetryCollector{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateCreate() error {
 	opentelemetrycollectorlog.Info("validate create", "name", r.Name)
-	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
-		return errors.New("Can only specify VolumeClaimTemplates for statefulsets")
-	}
-
-	// validate replicas for sidecar and daemonsets mode
-	if (r.Spec.Mode == ModeSidecar || r.Spec.Mode == ModeDaemonSet) && *r.Spec.Replicas > 0 {
-		return errors.New("Can only specify Replicas for deployments and statefulsets")
-	}
-
-	// validate tolerations for sidecar mode
-	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
-		return errors.New("Can only specify Tolerations for daemonsets, deployments and statefulsets")
-	}
-
-	return nil
+	return r.validateCRDSpec()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) error {
 	opentelemetrycollectorlog.Info("validate update", "name", r.Name)
-	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
-		return errors.New("Can only specify VolumeClaimTemplates for statefulsets")
-	}
-
-	// validate replicas for sidecar and daemonsets mode
-	if (r.Spec.Mode == ModeSidecar || r.Spec.Mode == ModeDaemonSet) && *r.Spec.Replicas > 0 {
-		return errors.New("Can only specify Replicas for deployments and statefulsets")
-	}
-
-	// validate tolerations for sidecar mode
-	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
-		return errors.New("Can only specify Tolerations for daemonsets, deployments and statefulsets")
-	}
-
-	return nil
+	return r.validateCRDSpec()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) ValidateDelete() error {
 	opentelemetrycollectorlog.Info("validate delete", "name", r.Name)
+	return nil
+}
+
+func (r *OpenTelemetryCollector) validateCRDSpec() error {
+	// validate volumeClaimTemplates
+	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
+		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
+	}
+
+	// validate replicas
+	if (r.Spec.Mode == ModeSidecar || r.Spec.Mode == ModeDaemonSet) && *r.Spec.Replicas > 0 {
+		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'replicas'", r.Spec.Mode)
+	}
+
+	// validate tolerations
+	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
+		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
+	}
+
 	return nil
 }
