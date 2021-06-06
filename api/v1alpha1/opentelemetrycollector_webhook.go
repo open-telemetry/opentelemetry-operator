@@ -81,7 +81,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	}
 
 	// validate replicas
-	if (r.Spec.Mode == ModeSidecar || r.Spec.Mode == ModeDaemonSet) && *r.Spec.Replicas > 0 {
+	if (r.Spec.Mode == ModeSidecar || r.Spec.Mode == ModeDaemonSet) && r.Spec.Replicas != nil {
 		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'replicas'", r.Spec.Mode)
 	}
 
