@@ -31,6 +31,9 @@ func TestDaemonSetNewDefault(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Tolerations: testTolerationValues,
+		},
 	}
 	cfg := config.New()
 
@@ -43,6 +46,7 @@ func TestDaemonSetNewDefault(t *testing.T) {
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
+	assert.Equal(t, testTolerationValues, d.Spec.Template.Spec.Tolerations)
 
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
 
