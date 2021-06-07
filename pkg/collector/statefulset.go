@@ -53,6 +53,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 					ServiceAccountName: ServiceAccountName(otelcol),
 					Containers:         []corev1.Container{Container(cfg, logger, otelcol)},
 					Volumes:            Volumes(cfg, otelcol),
+					Tolerations:        otelcol.Spec.Tolerations,
 				},
 			},
 			Replicas:             otelcol.Spec.Replicas,
