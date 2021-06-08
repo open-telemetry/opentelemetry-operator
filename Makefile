@@ -40,6 +40,9 @@ else
 GOTEST_OPTS=-race -v
 endif
 
+KUBE_VERSION ?= 1.21
+KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
+
 all: manager
 ci: test
 
@@ -96,7 +99,7 @@ generate: controller-gen
 e2e:
 	$(KUTTL) test
 
-prepare-e2e: kuttl set-test-image-vars set-image-controller container
+prepare-e2e: kuttl set-test-image-vars set-image-controller container start-kind
 	mkdir -p tests/_build/crds tests/_build/manifests
 	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
@@ -111,6 +114,10 @@ container:
 # Push the container image, used only for local dev purposes
 container-push:
 	docker push ${IMG}
+
+start-kind: 
+	kind create cluster --config $(KIND_CONFIG)
+	kind load docker-image local/opentelemetry-operator:e2e
 
 cert-manager:
 	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.yaml
