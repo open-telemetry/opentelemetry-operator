@@ -10,6 +10,13 @@ jobs:
   e2e-tests:
     name: End-to-end tests
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+       kube-version:
+       - "1.19"
+       - "1.20"
+       - "1.21"
+
     steps:
 
     - name: Set up Go
@@ -24,4 +31,6 @@ jobs:
       run: ./hack/install-kuttl.sh
 
     - name: "run tests"
-      run: make prepare-e2e e2e
+      env:
+        KUBE_VERSION: ${{ matrix.kube-version }}
+      run: make prepare-e2e e2e KUBE_VERSION=$KUBE_VERSION
