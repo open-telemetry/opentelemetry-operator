@@ -19,7 +19,8 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
+    - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
+        API.
       displayName: OpenTelemetry Collector
       kind: OpenTelemetryCollector
       name: opentelemetrycollectors.core.opentelemetry.io
