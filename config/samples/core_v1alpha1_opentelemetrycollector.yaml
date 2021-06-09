@@ -9,9 +9,6 @@ spec:
         protocols: 
           grpc:
 
-    processors:
-      queued_retry:
-
     exporters:
       logging:
 
@@ -19,5 +16,4 @@ spec:
       pipelines:
         traces:
           receivers: [jaeger]
-          processors: [queued_retry]
           exporters: [logging]
