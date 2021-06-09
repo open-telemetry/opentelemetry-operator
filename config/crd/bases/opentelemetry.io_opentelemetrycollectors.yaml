@@ -282,6 +282,7 @@ spec:
                 type: string
               tolerations:
                 description: Toleration to schedule OpenTelemetry Collector pods.
+                  This is only relevant to daemonsets, statefulsets and deployments
                 items:
                   description: The pod this Toleration is attached to tolerates any
                     taint that matches the triple <key,value,effect> using the matching
