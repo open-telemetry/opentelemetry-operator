@@ -91,6 +91,10 @@ fmt:
 vet:
 	go vet ./...
 
+# Run go lint against code
+lint:
+	golangci-lint run
+
 # Generate code
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
