@@ -7,6 +7,4 @@ annotations:
   operators.operatorframework.io.metrics.builder: operator-sdk-v1.2.0
   operators.operatorframework.io.metrics.mediatype.v1: metrics+v1
   operators.operatorframework.io.metrics.project_layout: go
-  operators.operatorframework.io.test.config.v1: tests/scorecard/
-  operators.operatorframework.io.test.mediatype.v1: scorecard+v1
   operators.operatorframework.io.bundle.channel.default.v1: alpha
