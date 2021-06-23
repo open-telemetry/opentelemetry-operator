@@ -3,6 +3,7 @@
 Steps to release a new version of the OpenTelemetry Operator:
 
 1. Change the `versions.txt`, so that it lists the target version of the OpenTelemetry Collector (operand), and the desired version for the operator. The `major.minor` should typically match, with the patch portion being possibly different.
+1. Change the compatibility matrix in the readme file, using the OpenTelemetry Operator version to be released and the current latest Kubernetes version as the latest supported version, with N-2 being the lower bound. Make sure that the CI is currently testing the latest Kubernetes version!
 1. Add the changes to the changelog
 1. Check the OpenTelemetry Collector's changelog and ensure migration steps are present in `pkg/collector/upgrade`
 1. Once the changes above are merged and available in `main`, tag it with the desired version, prefixed with `v`: `v0.3.0`
