@@ -12,7 +12,7 @@ require (
 	k8s.io/apimachinery v0.21.2
 	k8s.io/client-go v0.21.2
 	k8s.io/kubectl v0.21.2
-	sigs.k8s.io/controller-runtime v0.9.0-beta.5
+	sigs.k8s.io/controller-runtime v0.9.1
 )
 
 replace (
