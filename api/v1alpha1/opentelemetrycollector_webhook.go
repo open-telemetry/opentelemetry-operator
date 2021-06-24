@@ -52,7 +52,8 @@ func (r *OpenTelemetryCollector) Default() {
 	opentelemetrycollectorlog.Info("default", "name", r.Name)
 }
 
-// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:verbs=delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=ignore,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectordelete.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Validator = &OpenTelemetryCollector{}
 
