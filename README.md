@@ -7,6 +7,10 @@ The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](https
 
 At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) as the only managed component.
 
+## Documentation
+
+* [OpenTelemetryCollector Custom Resource Specification](./docs/otelcol_cr_spec.md)
+
 ## Getting started
 
 To install the operator in an existing cluster, make sure you have [`cert-manager` installed](https://cert-manager.io/docs/installation/) and run:
