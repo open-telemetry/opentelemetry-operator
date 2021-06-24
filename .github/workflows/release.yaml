@@ -29,3 +29,8 @@ jobs:
       env:
         GH_WRITE_TOKEN: ${{ secrets.GH_WRITE_TOKEN }}
       run: ./.ci/create-release-github.sh
+
+    - name: "refresh go proxy module info on release"
+      run: |
+        OPERATOR_VERSION=$(git describe --tags)
+        curl https://proxy.golang.org/github.com/open-telemetry/opentelemetry-operator/@v/${OPERATOR_VERSION}.info
