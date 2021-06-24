@@ -19,3 +19,6 @@ spec:
           receivers: [jaeger]
           processors: []
           exporters: [logging]
+  args:
+    metrics-level: detailed
+    log-level: debug

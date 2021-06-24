@@ -176,3 +176,23 @@ func TestContainerDefaultResourceRequirements(t *testing.T) {
 	// verify
 	assert.Empty(t, c.Resources)
 }
+
+func TestContainerArgs(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Args: map[string]string{
+				"metrics-level": "detailed",
+				"log-level":     "debug",
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Contains(t, c.Args, "--metrics-level=detailed")
+	assert.Contains(t, c.Args, "--log-level=debug")
+}
