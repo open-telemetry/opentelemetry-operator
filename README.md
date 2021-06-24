@@ -160,8 +160,9 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           |
 |------------------------|----------------------|
-| v1.23                  | v1.19+               |
-| v1.22                  | v1.18 to v1.20       |
+| v0.28.0                | v1.19 to v1.21       |
+| v0.27.0                | v1.19 to v1.21       |
+| v0.26.0                | v1.18 to v1.20       |
 
 ## Contributing and Developing
 
