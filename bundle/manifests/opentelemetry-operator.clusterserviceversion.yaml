@@ -21,11 +21,11 @@ metadata:
     containerImage: quay.io/opentelemetry/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
-    operators.operatorframework.io/builder: operator-sdk-v1.8.0
+    operators.operatorframework.io/builder: operator-sdk-v1.9.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.27.0
+  name: opentelemetry-operator.v0.28.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -206,7 +206,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: quay.io/opentelemetry/opentelemetry-operator:v0.27.0
+                image: quay.io/opentelemetry/opentelemetry-operator:v0.28.0
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -297,7 +297,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.27.0
+  version: 0.28.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
@@ -305,7 +305,7 @@ spec:
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
     failurePolicy: Fail
-    generateName: vopentelemetrycollector.kb.io
+    generateName: vopentelemetrycollectorcreateupdate.kb.io
     rules:
     - apiGroups:
       - opentelemetry.io
@@ -314,6 +314,25 @@ spec:
       operations:
       - CREATE
       - UPDATE
+      resources:
+      - opentelemetrycollectors
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: vopentelemetrycollectordelete.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
       - DELETE
       resources:
       - opentelemetrycollectors
