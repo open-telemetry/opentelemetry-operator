@@ -4,10 +4,14 @@ Changes by Version
 0.29.0 (2021-06-25)
 -------------------
 * Bumped OpenTelemetry Collector to v0.29.0
+* Add delete webhook ([#313](https://github.com/open-telemetry/opentelemetry-operator/pull/313), [@VineethReddy02](https://github.com/VineethReddy02))
 
 0.28.0 (2021-06-12)
 -------------------
 * Bumped OpenTelemetry Collector to v0.28.0
+* Tolerations support in OpenTelemetryCollector CRD ([#302](https://github.com/open-telemetry/opentelemetry-operator/pull/302), [@VineethReddy02](https://github.com/VineethReddy02))
+* Copy desired service ports when reconciling ([#299](https://github.com/open-telemetry/opentelemetry-operator/pull/299), [@thib92](https://github.com/thib92))
+* Remove the OTLP receiver legacy gRPC port(55680) references ([#293](https://github.com/open-telemetry/opentelemetry-operator/pull/293), [@mxiamxia](https://github.com/mxiamxia))
 
 0.27.0 (2021-05-20)
 -------------------
