@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/opentelemetry/opentelemetry-operator
-  newTag: v0.27.0
+  newTag: v0.28.0
