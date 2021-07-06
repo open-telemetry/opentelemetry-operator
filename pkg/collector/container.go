@@ -69,11 +69,12 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	return corev1.Container{
-		Name:         naming.Container(),
-		Image:        image,
-		VolumeMounts: volumeMounts,
-		Args:         args,
-		Env:          envVars,
-		Resources:    otelcol.Spec.Resources,
+		Name:            naming.Container(),
+		Image:           image,
+		VolumeMounts:    volumeMounts,
+		Args:            args,
+		Env:             envVars,
+		Resources:       otelcol.Spec.Resources,
+		SecurityContext: otelcol.Spec.SecurityContext,
 	}
 }

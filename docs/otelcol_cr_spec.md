@@ -61,6 +61,9 @@ spec:
   
   // +optional Resources to set on the OpenTelemetry Collector pods.
   resources: {}
+
+  // +optional SecurityContext will be set as the container security context.
+  securityContext: {}
   
   // +optional Toleration to schedule OpenTelemetry Collector pods.
   // This is only relevant to daemonsets, statefulsets and deployments
