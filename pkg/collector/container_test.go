@@ -98,6 +98,33 @@ func TestContainerCustomVolumes(t *testing.T) {
 	assert.Equal(t, "custom-volume-mount", c.VolumeMounts[1].Name)
 }
 
+func TestContainerCustomSecurityContext(t *testing.T) {
+	// default config without security context
+	c1 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{Spec: v1alpha1.OpenTelemetryCollectorSpec{}})
+
+	// verify
+	assert.Nil(t, c1.SecurityContext)
+
+	// prepare
+	isPrivileged := true
+	uid := int64(1234)
+
+	// test
+	c2 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			SecurityContext: &corev1.SecurityContext{
+				Privileged: &isPrivileged,
+				RunAsUser:  &uid,
+			},
+		},
+	})
+
+	// verify
+	assert.NotNil(t, c2.SecurityContext)
+	assert.True(t, *c2.SecurityContext.Privileged)
+	assert.Equal(t, *c2.SecurityContext.RunAsUser, uid)
+}
+
 func TestContainerEnvVarsOverridden(t *testing.T) {
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
