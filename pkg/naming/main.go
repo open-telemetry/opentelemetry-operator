@@ -26,9 +26,19 @@ func ConfigMap(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
 }
 
+// LBConfigMap returns the name for the config map used in the LoadBalancer.
+func LBConfigMap(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return fmt.Sprintf("%s-loadbalancer", otelcol.Name)
+}
+
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
 func ConfigMapVolume() string {
 	return "otc-internal"
+}
+
+// LBConfigMapVolume returns the name to use for the config map's volume in the LoadBalancer pod.
+func LBConfigMapVolume() string {
+	return "lb-internal"
 }
 
 // Container returns the name to use for the container in the pod.
@@ -36,9 +46,19 @@ func Container() string {
 	return "otc-container"
 }
 
+// LBContainer returns the name to use for the container in the LoadBalancer pod.
+func LBContainer() string {
+	return "lb-container"
+}
+
 // Collector builds the collector (deployment/daemonset) name based on the instance.
 func Collector(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
+}
+
+// LoadBalancer returns the LoadBalancer deployment resource name.
+func LoadBalancer(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return fmt.Sprintf("%s-loadbalancer", otelcol.Name)
 }
 
 // HeadlessService builds the name for the headless service based on the instance.
@@ -54,6 +74,11 @@ func MonitoringService(otelcol v1alpha1.OpenTelemetryCollector) string {
 // Service builds the service name based on the instance.
 func Service(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
+}
+
+// LBService returns the name to use for the LoadBalancer service
+func LBService(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return fmt.Sprintf("%s-loadbalancer", otelcol.Name)
 }
 
 // ServiceAccount builds the service account name based on the instance.

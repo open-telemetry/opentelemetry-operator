@@ -172,6 +172,19 @@ spec:
                 description: Image indicates the container image to use for the OpenTelemetry
                   Collector.
                 type: string
+              loadbalancer:
+                description: LoadBalancer indicates a value which determines whether
+                  to spawn a LoadBalancer resource or not.
+                properties:
+                  image:
+                    description: Image indicates the container image to use for the
+                      OpenTelemetry LoadBalancer.
+                    type: string
+                  mode:
+                    description: Use indicates the option to use the loadbalancer
+                      option or not.
+                    type: string
+                type: object
               mode:
                 description: Mode represents how the collector should be deployed
                   (deployment, daemonset, statefulset or sidecar)

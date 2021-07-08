@@ -41,6 +41,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
 
+	// LoadBalancer indicates a value which determines whether to spawn a LoadBalancer resource or not.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	LoadBalancer OpenTelemetryLoadBalancer `json:"loadbalancer,omitempty"`
+
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
@@ -114,6 +119,17 @@ type OpenTelemetryCollectorStatus struct {
 	// +optional
 	// +listType=atomic
 	Messages []string `json:"messages,omitempty"`
+}
+
+// OpenTelemetryLoadBalancer defines the configurations for the LoadBalancer.
+type OpenTelemetryLoadBalancer struct {
+	// Use indicates the option to use the loadbalancer option or not.
+	// +optional
+	Mode string `json:"mode,omitempty"`
+
+	// Image indicates the container image to use for the OpenTelemetry LoadBalancer.
+	// +optional
+	Image string `json:"image,omitempty"`
 }
 
 // +kubebuilder:object:root=true
