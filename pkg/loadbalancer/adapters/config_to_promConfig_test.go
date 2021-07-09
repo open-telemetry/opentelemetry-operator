@@ -20,13 +20,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	lbadapters "github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer/adapters"
 )
-
-var logger = logf.Log.WithName("unit-tests")
 
 func TestExtractPromConfigFromConfig(t *testing.T) {
 	configStr := `receivers:

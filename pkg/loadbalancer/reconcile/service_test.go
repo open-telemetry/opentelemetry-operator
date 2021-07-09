@@ -31,7 +31,7 @@ import (
 func TestDesiredService(t *testing.T) {
 	t.Run("should return service with default port", func(t *testing.T) {
 		expected := service("test-loadbalancer")
-		actual := desiredService(context.Background(), params())
+		actual := desiredService(params())
 
 		assert.Equal(t, expected, actual)
 	})
@@ -60,7 +60,7 @@ func TestDeleteServices(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		err = deleteServices(context.Background(), params(), []corev1.Service{desiredService(context.Background(), params())})
+		err = deleteServices(context.Background(), params(), []corev1.Service{desiredService(params())})
 		assert.NoError(t, err)
 
 		exists, err = populateObjectIfExists(t, &corev1.Service{}, types.NamespacedName{Namespace: "default", Name: "test-delete-loadbalancer"})

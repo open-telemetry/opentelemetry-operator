@@ -75,7 +75,7 @@ func New(opts ...Option) Config {
 	}
 
 	if len(o.loadbalancerImage) == 0 {
-		o.loadbalancerImage = fmt.Sprintf("raul9595/otel-loadbalancer")
+		o.loadbalancerImage = "raul9595/otel-loadbalancer"
 	}
 
 	return Config{

@@ -35,7 +35,7 @@ import (
 // Services reconciles the service(s) required for the instance in the current context.
 func Services(ctx context.Context, params Params) error {
 	desired := []corev1.Service{
-		desiredService(ctx, params),
+		desiredService(params),
 	}
 
 	// first, handle the create/update parts
@@ -51,7 +51,7 @@ func Services(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredService(ctx context.Context, params Params) corev1.Service {
+func desiredService(params Params) corev1.Service {
 	labels := loadbalancer.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = naming.LBService(params.Instance)
 

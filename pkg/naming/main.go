@@ -76,7 +76,7 @@ func Service(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
 }
 
-// LBService returns the name to use for the LoadBalancer service
+// LBService returns the name to use for the LoadBalancer service.
 func LBService(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-loadbalancer", otelcol.Name)
 }
