@@ -25,10 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer"
-	lbadapters "github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer/adapters"
 )
 
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
@@ -36,15 +33,12 @@ import (
 // Deployments reconciles the deployment(s) required for the instance in the current context.
 func Deployments(ctx context.Context, params Params) error {
 	desired := []appsv1.Deployment{}
-	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
+	_, err := checkConfig(params)
 	if err != nil {
-		return fmt.Errorf("failed to parse the config: %v", err)
+		return fmt.Errorf("failed to parse Promtheus config: %v", err)
 	}
 
-	// Notify returns an empty string if there is a valid Prometheus configuration
-	_, notify := lbadapters.ConfigToPromConfig(config)
-
-	if params.Instance.Spec.Mode == v1alpha1.ModeStatefulSet && len(params.Instance.Spec.LoadBalancer.Mode) > 0 && notify == "" {
+	if checkMode(params.Instance.Spec.Mode, params.Instance.Spec.LoadBalancer.Mode) {
 		desired = append(desired, loadbalancer.Deployment(params.Config, params.Log, params.Instance))
 	}
 
@@ -113,7 +107,7 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, "loadbalancer"),
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Name, "loadbalancer"),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}

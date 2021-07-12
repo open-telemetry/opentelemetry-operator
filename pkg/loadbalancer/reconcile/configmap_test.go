@@ -34,7 +34,7 @@ func TestDesiredConfigMap(t *testing.T) {
 	t.Run("should return expected config map", func(t *testing.T) {
 		expectedLables := map[string]string{
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			"app.kubernetes.io/instance":   "default.loadbalancer",
+			"app.kubernetes.io/instance":   "test.loadbalancer",
 			"app.kubernetes.io/part-of":    "opentelemetry",
 			"app.kubernetes.io/component":  "opentelemetry-loadbalancer",
 			"app.kubernetes.io/name":       "test-loadbalancer",
@@ -56,9 +56,8 @@ mode: LeastConnection
 `,
 		}
 
-		actual, notify, err := desiredConfigMap(context.Background(), params())
+		actual, err := desiredConfigMap(context.Background(), params())
 		assert.NoError(t, err)
-		assert.Equal(t, notify, "")
 
 		assert.Equal(t, "test-loadbalancer", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
@@ -71,9 +70,8 @@ mode: LeastConnection
 func TestExpectedConfigMap(t *testing.T) {
 	param := params()
 	t.Run("should create config map", func(t *testing.T) {
-		configMap, notify, err := desiredConfigMap(context.Background(), param)
+		configMap, err := desiredConfigMap(context.Background(), param)
 		assert.NoError(t, err)
-		assert.Equal(t, notify, "")
 		err = expectedConfigMaps(context.Background(), param, []v1.ConfigMap{configMap}, true)
 		assert.NoError(t, err)
 
@@ -109,7 +107,7 @@ func TestExpectedConfigMap(t *testing.T) {
 						NodePort: 0,
 					}},
 					LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-						Mode: "LeastConnection",
+						Mode: v1alpha1.ModeLeastConnection,
 					},
 					Config: "",
 				},
@@ -117,14 +115,12 @@ func TestExpectedConfigMap(t *testing.T) {
 			Scheme: testScheme,
 			Log:    logger,
 		}
-		cm, notify, err := desiredConfigMap(context.Background(), newParam)
-		assert.NoError(t, err)
-		assert.Equal(t, notify, "no receivers available as part of the configuration")
+		cm, err := desiredConfigMap(context.Background(), newParam)
+		assert.EqualError(t, err, "no receivers available as part of the configuration")
 		createObjectIfNotExists(t, "test-loadbalancer", &cm)
 
-		configMap, notify, err := desiredConfigMap(context.Background(), param)
+		configMap, err := desiredConfigMap(context.Background(), param)
 		assert.NoError(t, err)
-		assert.Equal(t, notify, "")
 		err = expectedConfigMaps(context.Background(), param, []v1.ConfigMap{configMap}, true)
 		assert.NoError(t, err)
 
@@ -138,11 +134,11 @@ func TestExpectedConfigMap(t *testing.T) {
 		config, err := adapters.ConfigFromString(param.Instance.Spec.Config)
 		assert.NoError(t, err)
 
-		parmConfig, notify := lbadapters.ConfigToPromConfig(config)
-		assert.Equal(t, notify, "")
+		parmConfig, err := lbadapters.ConfigToPromConfig(config)
+		assert.NoError(t, err)
 
 		lbConfig := make(map[interface{}]interface{})
-		lbConfig["mode"] = "LeastConnection"
+		lbConfig["mode"] = string(v1alpha1.ModeLeastConnection)
 		lbConfig["label_selector"] = map[string]string{
 			"app.kubernetes.io/instance":   "default.test",
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
@@ -160,7 +156,7 @@ func TestExpectedConfigMap(t *testing.T) {
 				Name:      "test-delete-loadbalancer",
 				Namespace: "default",
 				Labels: map[string]string{
-					"app.kubernetes.io/instance":   "default.loadbalancer",
+					"app.kubernetes.io/instance":   "test.loadbalancer",
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
 			},
@@ -170,9 +166,8 @@ func TestExpectedConfigMap(t *testing.T) {
 		exists, _ := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-delete-loadbalancer"})
 		assert.True(t, exists)
 
-		configMap, notify, err := desiredConfigMap(context.Background(), param)
+		configMap, err := desiredConfigMap(context.Background(), param)
 		assert.NoError(t, err)
-		assert.Equal(t, notify, "")
 		err = deleteConfigMaps(context.Background(), param, []v1.ConfigMap{configMap})
 		assert.NoError(t, err)
 

@@ -64,7 +64,7 @@ func TestExpectedDeployments(t *testing.T) {
 					Spec: v1alpha1.OpenTelemetryCollectorSpec{
 						Mode: mode,
 						LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-							Mode: "LeastConnection",
+							Mode: v1alpha1.ModeLeastConnection,
 						},
 						Config: `
 				receivers:
@@ -165,16 +165,11 @@ func TestExpectedDeployments(t *testing.T) {
 			Scheme: testScheme,
 			Log:    logger,
 		}
-		expected := []v1.Deployment{}
 		config, err := adapters.ConfigFromString(newParam.Instance.Spec.Config)
 		assert.NoError(t, err)
 
-		_, notify := lbadapters.ConfigToPromConfig(config)
-		if notify == "" {
-			expected = append(expected, loadbalancer.Deployment(newParam.Config, newParam.Log, newParam.Instance))
-		}
-
-		assert.Len(t, expected, 0)
+		_, err = lbadapters.ConfigToPromConfig(config)
+		assert.EqualError(t, err, "no receivers available as part of the configuration")
 	})
 
 	t.Run("should not update deployment container when the config is updated", func(t *testing.T) {
@@ -220,7 +215,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should delete deployment", func(t *testing.T) {
 		labels := map[string]string{
-			"app.kubernetes.io/instance":   "default.loadbalancer",
+			"app.kubernetes.io/instance":   "test.loadbalancer",
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}
 		deploy := v1.Deployment{}

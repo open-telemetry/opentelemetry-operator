@@ -18,45 +18,45 @@ import (
 	"fmt"
 )
 
-func ErrorNoComponent(component string) string {
-	return fmt.Sprintf("no %s available as part of the configuration", component)
+func errorNoComponent(component string) error {
+	return fmt.Errorf("no %s available as part of the configuration", component)
 }
 
-func ErrorNotAMap(component string) string {
-	return fmt.Sprintf("%s property in the configuration doesn't contain valid %s", component, component)
+func errorNotAMap(component string) error {
+	return fmt.Errorf("%s property in the configuration doesn't contain valid %s", component, component)
 }
 
 // ConfigToPromConfig converts the incoming configuration object into a the Prometheus receiver config.
-func ConfigToPromConfig(config map[interface{}]interface{}) (map[interface{}]interface{}, string) {
+func ConfigToPromConfig(config map[interface{}]interface{}) (map[interface{}]interface{}, error) {
 	receiversProperty, ok := config["receivers"]
 	if !ok {
-		return nil, ErrorNoComponent("receivers")
+		return nil, errorNoComponent("receivers")
 	}
 
 	receivers, ok := receiversProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, ErrorNotAMap("receivers")
+		return nil, errorNotAMap("receivers")
 	}
 
 	prometheusProperty, ok := receivers["prometheus"]
 	if !ok {
-		return nil, ErrorNoComponent("prometheus")
+		return nil, errorNoComponent("prometheus")
 	}
 
 	prometheus, ok := prometheusProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, ErrorNotAMap("prometheus")
+		return nil, errorNotAMap("prometheus")
 	}
 
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
-		return nil, ErrorNoComponent("prometheusConfig")
+		return nil, errorNoComponent("prometheusConfig")
 	}
 
 	prometheusConfig, ok := prometheusConfigProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, ErrorNotAMap("prometheusConfig")
+		return nil, errorNotAMap("prometheusConfig")
 	}
 
-	return prometheusConfig, ""
+	return prometheusConfig, nil
 }

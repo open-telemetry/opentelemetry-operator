@@ -34,8 +34,14 @@ import (
 
 // Services reconciles the service(s) required for the instance in the current context.
 func Services(ctx context.Context, params Params) error {
-	desired := []corev1.Service{
-		desiredService(params),
+	desired := []corev1.Service{}
+	_, err := checkConfig(params)
+	if err != nil {
+		return fmt.Errorf("failed to parse Promtheus config: %v", err)
+	}
+
+	if checkMode(params.Instance.Spec.Mode, params.Instance.Spec.LoadBalancer.Mode) {
+		desired = append(desired, desiredService(params))
 	}
 
 	// first, handle the create/update parts
@@ -124,7 +130,7 @@ func deleteServices(ctx context.Context, params Params, expected []corev1.Servic
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, "loadbalancer"),
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Name, "loadbalancer"),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}

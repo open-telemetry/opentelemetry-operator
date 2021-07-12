@@ -15,6 +15,7 @@
 package adapters_test
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -54,8 +55,8 @@ func TestExtractPromConfigFromConfig(t *testing.T) {
 	require.NotEmpty(t, config)
 
 	// test
-	promConfig, notify := lbadapters.ConfigToPromConfig(config)
-	assert.Equal(t, notify, "")
+	promConfig, err := lbadapters.ConfigToPromConfig(config)
+	assert.NoError(t, err)
 
 	// verify
 	assert.Equal(t, expectedData, promConfig)
@@ -81,8 +82,8 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 	require.NotEmpty(t, config)
 
 	// test
-	promConfig, notify := lbadapters.ConfigToPromConfig(config)
-	assert.Equal(t, notify, lbadapters.ErrorNotAMap("prometheusConfig"))
+	promConfig, err := lbadapters.ConfigToPromConfig(config)
+	assert.Equal(t, err, fmt.Errorf("%s property in the configuration doesn't contain valid %s", "prometheusConfig", "prometheusConfig"))
 
 	// verify
 	assert.True(t, reflect.ValueOf(promConfig).IsNil())

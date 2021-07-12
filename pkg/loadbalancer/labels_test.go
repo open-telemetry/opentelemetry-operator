@@ -36,7 +36,7 @@ func TestLabelsCommonSet(t *testing.T) {
 	// test
 	labels := Labels(otelcol)
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
-	assert.Equal(t, "my-ns.loadbalancer", labels["app.kubernetes.io/instance"])
+	assert.Equal(t, "my-instance.loadbalancer", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-loadbalancer", labels["app.kubernetes.io/component"])
 }

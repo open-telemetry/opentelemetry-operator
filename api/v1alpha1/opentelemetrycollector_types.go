@@ -125,7 +125,7 @@ type OpenTelemetryCollectorStatus struct {
 type OpenTelemetryLoadBalancer struct {
 	// Use indicates the option to use the loadbalancer option or not.
 	// +optional
-	Mode string `json:"mode,omitempty"`
+	Mode LbMode `json:"mode,omitempty"`
 
 	// Image indicates the container image to use for the OpenTelemetry LoadBalancer.
 	// +optional

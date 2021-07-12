@@ -111,7 +111,7 @@ func params() Params {
 					NodePort: 0,
 				}},
 				LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-					Mode: "LeastConnection",
+					Mode: v1alpha1.ModeLeastConnection,
 				},
 				Replicas: &replicas,
 				Config:   string(configYAML),
@@ -160,7 +160,7 @@ func newParams(containerImage ...string) Params {
 					NodePort: 0,
 				}},
 				LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-					Mode:  "LeastConnections",
+					Mode:  v1alpha1.ModeLeastConnection,
 					Image: defaultContainerImage,
 				},
 				Replicas: &replicas,

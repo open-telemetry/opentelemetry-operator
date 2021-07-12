@@ -63,7 +63,7 @@ func TestNewObjectsOnLbReconciliation(t *testing.T) {
 			Mode:   v1alpha1.ModeStatefulSet,
 			Config: string(configYAML),
 			LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-				Mode: "LeastConnection",
+				Mode: v1alpha1.ModeLeastConnection,
 			},
 		},
 	}
@@ -83,7 +83,7 @@ func TestNewObjectsOnLbReconciliation(t *testing.T) {
 	opts := []client.ListOption{
 		client.InNamespace(nsn.Namespace),
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", nsn.Namespace, "loadbalancer"),
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", nsn.Name, "loadbalancer"),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}

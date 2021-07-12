@@ -26,9 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer"
-	lbadapters "github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
@@ -37,11 +35,12 @@ import (
 // ConfigMaps reconciles the config map(s) required for the instance in the current context.
 func ConfigMaps(ctx context.Context, params Params) error {
 	desired := []corev1.ConfigMap{}
-	cm, notify, err := desiredConfigMap(ctx, params)
+	cm, err := desiredConfigMap(ctx, params)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
-	if notify == "" {
+
+	if checkMode(params.Instance.Spec.Mode, params.Instance.Spec.LoadBalancer.Mode) {
 		desired = append(desired, cm)
 	}
 
@@ -58,19 +57,14 @@ func ConfigMaps(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredConfigMap(_ context.Context, params Params) (corev1.ConfigMap, string, error) {
+func desiredConfigMap(_ context.Context, params Params) (corev1.ConfigMap, error) {
 	name := naming.LBConfigMap(params.Instance)
 	labels := loadbalancer.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name
 
-	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
+	promConfig, err := checkConfig(params)
 	if err != nil {
-		return corev1.ConfigMap{}, "", err
-	}
-
-	promConfig, notify := lbadapters.ConfigToPromConfig(config)
-	if notify != "" {
-		return corev1.ConfigMap{}, notify, nil
+		return corev1.ConfigMap{}, err
 	}
 
 	lbConfig := make(map[interface{}]interface{})
@@ -92,7 +86,7 @@ func desiredConfigMap(_ context.Context, params Params) (corev1.ConfigMap, strin
 		Data: map[string]string{
 			"loadbalancer.yaml": string(lbConfigYAML),
 		},
-	}, "", nil
+	}, nil
 }
 
 func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap, retry bool) error {
@@ -162,7 +156,7 @@ func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.Conf
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, "loadbalancer"),
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Name, "loadbalancer"),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
