@@ -181,8 +181,8 @@ spec:
                       OpenTelemetry LoadBalancer.
                     type: string
                   mode:
-                    description: Use indicates the option to use the loadbalancer
-                      option or not.
+                    description: Mode indicates the algorithm to use for target sharding
+                      in the loadbalancer.
                     type: string
                 type: object
               mode:

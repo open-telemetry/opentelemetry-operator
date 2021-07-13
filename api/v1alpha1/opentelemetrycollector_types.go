@@ -123,7 +123,7 @@ type OpenTelemetryCollectorStatus struct {
 
 // OpenTelemetryLoadBalancer defines the configurations for the LoadBalancer.
 type OpenTelemetryLoadBalancer struct {
-	// Use indicates the option to use the loadbalancer option or not.
+	// Mode indicates the algorithm to use for target sharding in the loadbalancer.
 	// +optional
 	Mode LbMode `json:"mode,omitempty"`
 
