@@ -35,12 +35,12 @@ import (
 // ConfigMaps reconciles the config map(s) required for the instance in the current context.
 func ConfigMaps(ctx context.Context, params Params) error {
 	desired := []corev1.ConfigMap{}
-	cm, err := desiredConfigMap(ctx, params)
-	if err != nil {
-		return fmt.Errorf("failed to parse config: %v", err)
-	}
 
-	if checkMode(params.Instance.Spec.Mode, params.Instance.Spec.LoadBalancer.Mode) {
+	if checkMode(params) {
+		cm, err := desiredConfigMap(ctx, params)
+		if err != nil {
+			return fmt.Errorf("failed to parse config: %v", err)
+		}
 		desired = append(desired, cm)
 	}
 

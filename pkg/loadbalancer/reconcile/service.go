@@ -35,12 +35,12 @@ import (
 // Services reconciles the service(s) required for the instance in the current context.
 func Services(ctx context.Context, params Params) error {
 	desired := []corev1.Service{}
-	_, err := checkConfig(params)
-	if err != nil {
-		return fmt.Errorf("failed to parse Promtheus config: %v", err)
-	}
 
-	if checkMode(params.Instance.Spec.Mode, params.Instance.Spec.LoadBalancer.Mode) {
+	if checkMode(params) {
+		_, err := checkConfig(params)
+		if err != nil {
+			return fmt.Errorf("failed to parse Promtheus config: %v", err)
+		}
 		desired = append(desired, desiredService(params))
 	}
 

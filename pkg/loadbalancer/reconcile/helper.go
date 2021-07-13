@@ -20,12 +20,8 @@ import (
 	lbadapters "github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer/adapters"
 )
 
-func checkMode(mode v1alpha1.Mode, lbMode v1alpha1.LbMode) bool {
-	deploy := false
-	if mode == v1alpha1.ModeStatefulSet && len(lbMode) > 0 {
-		deploy = true
-	}
-	return deploy
+func checkMode(params Params) bool {
+	return params.Instance.Spec.Mode == v1alpha1.ModeStatefulSet && len(params.Instance.Spec.LoadBalancer.Mode) > 0
 }
 
 func checkConfig(params Params) (map[interface{}]interface{}, error) {
@@ -34,10 +30,5 @@ func checkConfig(params Params) (map[interface{}]interface{}, error) {
 		return nil, err
 	}
 
-	promConfig, err := lbadapters.ConfigToPromConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return promConfig, nil
+	return lbadapters.ConfigToPromConfig(config)
 }
