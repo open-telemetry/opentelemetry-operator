@@ -1,6 +1,13 @@
 Changes by Version
 ==================
 
+0.30.0 (2021-07-15)
+-------------------
+* Bumped OpenTelemetry Collector to v0.30.0
+* Add CI check for auto-generated files ([#336](https://github.com/open-telemetry/opentelemetry-operator/pull/336), [@VineethReddy02](https://github.com/VineethReddy02))
+* Container Security Context ([#332](https://github.com/open-telemetry/opentelemetry-operator/pull/332), [@owais](https://github.com/owais))
+* Small manual adjusts for docs and bundle for v0.29.0 ([#329](https://github.com/open-telemetry/opentelemetry-operator/pull/329), [@jpkrohling](https://github.com/jpkrohling))
+
 0.29.0 (2021-06-25)
 -------------------
 * Bumped OpenTelemetry Collector to v0.29.0
