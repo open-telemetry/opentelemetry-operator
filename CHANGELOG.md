@@ -1,6 +1,11 @@
 Changes by Version
 ==================
 
+0.30.0 (2021-07-15)
+-------------------
+* Bumped OpenTelemetry Collector to v0.30.0
+* Container Security Context ([#332](https://github.com/open-telemetry/opentelemetry-operator/pull/332), [@owais](https://github.com/owais))
+
 0.29.0 (2021-06-25)
 -------------------
 * Bumped OpenTelemetry Collector to v0.29.0
