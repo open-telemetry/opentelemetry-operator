@@ -29,7 +29,7 @@ jobs:
 
       - name: Docker meta
         id: docker_meta
-        uses: docker/metadata-action@v3.4.0
+        uses: docker/metadata-action@v3.4.1
         with:
           images: quay.io/opentelemetry/opentelemetry-operator
           tag-semver: |
