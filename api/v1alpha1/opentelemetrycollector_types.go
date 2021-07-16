@@ -41,10 +41,10 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
 
-	// LoadBalancer indicates a value which determines whether to spawn a LoadBalancer resource or not.
+	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	LoadBalancer OpenTelemetryLoadBalancer `json:"loadbalancer,omitempty"`
+	TargetAllocator OpenTelemetryTargetAllocator `json:"targetAllocator,omitempty"`
 
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
@@ -121,13 +121,13 @@ type OpenTelemetryCollectorStatus struct {
 	Messages []string `json:"messages,omitempty"`
 }
 
-// OpenTelemetryLoadBalancer defines the configurations for the LoadBalancer.
-type OpenTelemetryLoadBalancer struct {
-	// Mode indicates the algorithm to use for target sharding in the loadbalancer.
+// OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
+type OpenTelemetryTargetAllocator struct {
+	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
 	// +optional
-	Mode LbMode `json:"mode,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 
-	// Image indicates the container image to use for the OpenTelemetry LoadBalancer.
+	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
 	// +optional
 	Image string `json:"image,omitempty"`
 }

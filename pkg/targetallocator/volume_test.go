@@ -12,32 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package collector handles the OpenTelemetry Collector.
-package loadbalancer
+package targetallocator
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-// Volumes builds the volumes for the given instance, including the config map volume.
-func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev1.Volume {
-	volumes := []corev1.Volume{{
-		Name: naming.LBConfigMapVolume(),
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: naming.LBConfigMap(otelcol)},
-				Items: []corev1.KeyToPath{
-					{
-						Key:  cfg.LoadBalancerConfigMapEntry(),
-						Path: cfg.LoadBalancerConfigMapEntry(),
-					}},
-			},
-		},
-	}}
+func TestVolumeNewDefault(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{}
+	cfg := config.New()
 
-	return volumes
+	// test
+	volumes := Volumes(cfg, otelcol)
+
+	// verify
+	assert.Len(t, volumes, 1)
+
+	//check if the number of elements in the volume source items list is 1
+	assert.Len(t, volumes[0].VolumeSource.ConfigMap.Items, 1)
+
+	// check that it's the ta-internal volume, with the config map
+	assert.Equal(t, naming.TAConfigMapVolume(), volumes[0].Name)
 }

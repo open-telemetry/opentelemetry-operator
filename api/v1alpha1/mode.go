@@ -18,8 +18,6 @@ type (
 	// Mode represents how the collector should be deployed (deployment vs. daemonset)
 	// +kubebuilder:validation:Enum=daemonset;deployment;sidecar;statefulset
 	Mode string
-	// LbMode represents the algorithms supported by the default loadbalancer implementation for target sharding.
-	LbMode string
 )
 
 const (
@@ -34,9 +32,4 @@ const (
 
 	// ModeStatefulSet specifies that the collector should be deployed as a Kubernetes StatefulSet.
 	ModeStatefulSet Mode = "statefulset"
-)
-
-const (
-	// ModeLeastConnection specifies that the loadbalancer should use the LeastConnection algorithm for target sharding.
-	ModeLeastConnection LbMode = "LeastConnection"
 )

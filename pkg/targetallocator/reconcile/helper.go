@@ -17,11 +17,11 @@ package reconcile
 import (
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
-	lbadapters "github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer/adapters"
+	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
 func checkMode(params Params) bool {
-	return params.Instance.Spec.Mode == v1alpha1.ModeStatefulSet && len(params.Instance.Spec.LoadBalancer.Mode) > 0
+	return params.Instance.Spec.Mode == v1alpha1.ModeStatefulSet && params.Instance.Spec.TargetAllocator.Enabled
 }
 
 func checkConfig(params Params) (map[interface{}]interface{}, error) {
@@ -30,5 +30,5 @@ func checkConfig(params Params) (map[interface{}]interface{}, error) {
 		return nil, err
 	}
 
-	return lbadapters.ConfigToPromConfig(config)
+	return ta.ConfigToPromConfig(config)
 }

@@ -24,13 +24,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 func TestDesiredService(t *testing.T) {
 	t.Run("should return service with default port", func(t *testing.T) {
-		expected := service("test-loadbalancer")
+		expected := service("test-targetallocator")
 		actual := desiredService(params())
 
 		assert.Equal(t, expected, actual)
@@ -40,10 +40,10 @@ func TestDesiredService(t *testing.T) {
 
 func TestExpectedServices(t *testing.T) {
 	t.Run("should create the service", func(t *testing.T) {
-		err := expectedServices(context.Background(), params(), []corev1.Service{service("loadbalancer")})
+		err := expectedServices(context.Background(), params(), []corev1.Service{service("targetallocator")})
 		assert.NoError(t, err)
 
-		exists, err := populateObjectIfExists(t, &corev1.Service{}, types.NamespacedName{Namespace: "default", Name: "loadbalancer"})
+		exists, err := populateObjectIfExists(t, &corev1.Service{}, types.NamespacedName{Namespace: "default", Name: "targetallocator"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
@@ -53,17 +53,17 @@ func TestExpectedServices(t *testing.T) {
 
 func TestDeleteServices(t *testing.T) {
 	t.Run("should delete excess services", func(t *testing.T) {
-		deleteService := service("test-delete-loadbalancer", 8888)
-		createObjectIfNotExists(t, "test-delete-loadbalancer", &deleteService)
+		deleteService := service("test-delete-targetallocator", 8888)
+		createObjectIfNotExists(t, "test-delete-targetallocator", &deleteService)
 
-		exists, err := populateObjectIfExists(t, &corev1.Service{}, types.NamespacedName{Namespace: "default", Name: "test-delete-loadbalancer"})
+		exists, err := populateObjectIfExists(t, &corev1.Service{}, types.NamespacedName{Namespace: "default", Name: "test-delete-targetallocator"})
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
 		err = deleteServices(context.Background(), params(), []corev1.Service{desiredService(params())})
 		assert.NoError(t, err)
 
-		exists, err = populateObjectIfExists(t, &corev1.Service{}, types.NamespacedName{Namespace: "default", Name: "test-delete-loadbalancer"})
+		exists, err = populateObjectIfExists(t, &corev1.Service{}, types.NamespacedName{Namespace: "default", Name: "test-delete-targetallocator"})
 		assert.NoError(t, err)
 		assert.False(t, exists)
 
@@ -71,16 +71,16 @@ func TestDeleteServices(t *testing.T) {
 }
 
 func service(name string, portOpt ...int32) corev1.Service {
-	port := int32(80)
+	port := int32(443)
 	if len(portOpt) > 0 {
 		port = portOpt[0]
 	}
 	params := params()
-	labels := loadbalancer.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = naming.LBService(params.Instance)
+	labels := targetallocator.Labels(params.Instance)
+	labels["app.kubernetes.io/name"] = naming.TAService(params.Instance)
 
-	selector := loadbalancer.Labels(params.Instance)
-	selector["app.kubernetes.io/name"] = naming.LoadBalancer(params.Instance)
+	selector := targetallocator.Labels(params.Instance)
+	selector["app.kubernetes.io/name"] = naming.TargetAllocator(params.Instance)
 
 	return corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -91,9 +91,9 @@ func service(name string, portOpt ...int32) corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Selector: selector,
 			Ports: []corev1.ServicePort{{
-				Name:       "loadbalancing",
+				Name:       "targetallocation",
 				Port:       port,
-				TargetPort: intstr.FromInt(80),
+				TargetPort: intstr.FromInt(443),
 			}},
 		},
 	}

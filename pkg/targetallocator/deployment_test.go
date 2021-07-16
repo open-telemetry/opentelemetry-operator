@@ -12,47 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package loadbalancer_test
+package targetallocator
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	. "github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-func TestLabelsCommonSet(t *testing.T) {
-	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-instance",
-			Namespace: "my-ns",
-		},
-	}
-
-	// test
-	labels := Labels(otelcol)
-	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
-	assert.Equal(t, "my-instance.loadbalancer", labels["app.kubernetes.io/instance"])
-	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
-	assert.Equal(t, "opentelemetry-loadbalancer", labels["app.kubernetes.io/component"])
+var testTolerationValues = []v1.Toleration{
+	{
+		Key:    "key",
+		Value:  "Val",
+		Effect: "NoSchedule",
+	},
 }
 
-func TestLabelsPropagateDown(t *testing.T) {
+func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{"myapp": "mycomponent"},
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Tolerations: testTolerationValues,
 		},
 	}
+	cfg := config.New()
 
 	// test
-	labels := Labels(otelcol)
+	d := Deployment(cfg, logger, otelcol)
 
 	// verify
-	assert.Len(t, labels, 5)
-	assert.Equal(t, "mycomponent", labels["myapp"])
+	assert.Equal(t, "my-instance-targetallocator", d.Name)
+	assert.Equal(t, "my-instance-targetallocator", d.Labels["app.kubernetes.io/name"])
+
+	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
+
+	// none of the default annotations should propagate down to the pod
+	assert.Empty(t, d.Spec.Template.Annotations)
+
+	// the pod selector should match the pod spec's labels
+	assert.Equal(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
 }

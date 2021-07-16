@@ -29,28 +29,25 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/reconcile"
 )
 
-var lblogger = logf.Log.WithName("unit-tests")
-
-func TestNewObjectsOnLbReconciliation(t *testing.T) {
+func TestNewObjectsOnTargetAllocatorReconciliation(t *testing.T) {
 	// prepare
 	cfg := config.New()
-	configYAML, err := ioutil.ReadFile("../pkg/loadbalancer/reconcile/suite_test.yaml")
+	configYAML, err := ioutil.ReadFile("../pkg/targetallocator/reconcile/suite_test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewLbReconciler(controllers.LbParams{
+	reconciler := controllers.NewTgAlReconciler(controllers.TgAlParams{
 		Client: k8sClient,
-		Log:    lblogger,
+		Log:    logger,
 		Scheme: testScheme,
 		Config: cfg,
 	})
@@ -62,8 +59,8 @@ func TestNewObjectsOnLbReconciliation(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Mode:   v1alpha1.ModeStatefulSet,
 			Config: string(configYAML),
-			LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-				Mode: v1alpha1.ModeLeastConnection,
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
 			},
 		},
 	}
@@ -83,7 +80,7 @@ func TestNewObjectsOnLbReconciliation(t *testing.T) {
 	opts := []client.ListOption{
 		client.InNamespace(nsn.Namespace),
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", nsn.Name, "loadbalancer"),
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", nsn.Name, "targetallocator"),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
@@ -114,12 +111,12 @@ func TestNewObjectsOnLbReconciliation(t *testing.T) {
 
 }
 
-func TestContinueOnRecoverableLbFailure(t *testing.T) {
+func TestContinueOnRecoverableTargetAllocatorFailure(t *testing.T) {
 	// prepare
 	taskCalled := false
-	reconciler := controllers.NewLbReconciler(controllers.LbParams{
-		Log: lblogger,
-		Tasks: []controllers.LbTask{
+	reconciler := controllers.NewTgAlReconciler(controllers.TgAlParams{
+		Log: logger,
+		Tasks: []controllers.TgAlTask{
 			{
 				Name: "should-fail",
 				Do: func(context.Context, reconcile.Params) error {
@@ -145,18 +142,18 @@ func TestContinueOnRecoverableLbFailure(t *testing.T) {
 	assert.True(t, taskCalled)
 }
 
-func TestBreakOnUnrecoverableLbError(t *testing.T) {
+func TestBreakOnUnrecoverableTargetAllocatorError(t *testing.T) {
 	// prepare
 	cfg := config.New()
 	taskCalled := false
 	expectedErr := errors.New("should fail!")
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewLbReconciler(controllers.LbParams{
+	reconciler := controllers.NewTgAlReconciler(controllers.TgAlParams{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: scheme.Scheme,
 		Config: cfg,
-		Tasks: []controllers.LbTask{
+		Tasks: []controllers.TgAlTask{
 			{
 				Name: "should-fail",
 				Do: func(context.Context, reconcile.Params) error {
@@ -197,16 +194,16 @@ func TestBreakOnUnrecoverableLbError(t *testing.T) {
 	assert.NoError(t, k8sClient.Delete(context.Background(), created))
 }
 
-func TestLbSkipWhenInstanceDoesNotExist(t *testing.T) {
+func TestTargetAllocatorSkipWhenInstanceDoesNotExist(t *testing.T) {
 	// prepare
 	cfg := config.New()
 	nsn := types.NamespacedName{Name: "non-existing-my-instance", Namespace: "default"}
-	reconciler := controllers.NewLbReconciler(controllers.LbParams{
+	reconciler := controllers.NewTgAlReconciler(controllers.TgAlParams{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: scheme.Scheme,
 		Config: cfg,
-		Tasks: []controllers.LbTask{
+		Tasks: []controllers.TgAlTask{
 			{
 				Name: "should-not-be-called",
 				Do: func(context.Context, reconcile.Params) error {

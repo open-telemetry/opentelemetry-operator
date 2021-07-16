@@ -27,21 +27,21 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
-	lbadapters "github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer/adapters"
+	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
 	t.Run("should return expected config map", func(t *testing.T) {
 		expectedLables := map[string]string{
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			"app.kubernetes.io/instance":   "test.loadbalancer",
+			"app.kubernetes.io/instance":   "test.targetallocator",
 			"app.kubernetes.io/part-of":    "opentelemetry",
-			"app.kubernetes.io/component":  "opentelemetry-loadbalancer",
-			"app.kubernetes.io/name":       "test-loadbalancer",
+			"app.kubernetes.io/component":  "opentelemetry-targetallocator",
+			"app.kubernetes.io/name":       "test-targetallocator",
 		}
 
 		expectedData := map[string]string{
-			"loadbalancer.yaml": `config:
+			"targetallocator.yaml": `config:
   scrape_configs:
     job_name: otel-collector
     scrape_interval: 10s
@@ -52,14 +52,13 @@ func TestDesiredConfigMap(t *testing.T) {
 label_selector:
   app.kubernetes.io/instance: default.test
   app.kubernetes.io/managed-by: opentelemetry-operator
-mode: LeastConnection
 `,
 		}
 
 		actual, err := desiredConfigMap(context.Background(), params())
 		assert.NoError(t, err)
 
-		assert.Equal(t, "test-loadbalancer", actual.Name)
+		assert.Equal(t, "test-targetallocator", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
@@ -75,7 +74,7 @@ func TestExpectedConfigMap(t *testing.T) {
 		err = expectedConfigMaps(context.Background(), param, []v1.ConfigMap{configMap}, true)
 		assert.NoError(t, err)
 
-		exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-loadbalancer"})
+		exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
@@ -106,8 +105,8 @@ func TestExpectedConfigMap(t *testing.T) {
 						},
 						NodePort: 0,
 					}},
-					LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-						Mode: v1alpha1.ModeLeastConnection,
+					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+						Enabled: true,
 					},
 					Config: "",
 				},
@@ -117,7 +116,7 @@ func TestExpectedConfigMap(t *testing.T) {
 		}
 		cm, err := desiredConfigMap(context.Background(), newParam)
 		assert.EqualError(t, err, "no receivers available as part of the configuration")
-		createObjectIfNotExists(t, "test-loadbalancer", &cm)
+		createObjectIfNotExists(t, "test-targetallocator", &cm)
 
 		configMap, err := desiredConfigMap(context.Background(), param)
 		assert.NoError(t, err)
@@ -125,7 +124,7 @@ func TestExpectedConfigMap(t *testing.T) {
 		assert.NoError(t, err)
 
 		actual := v1.ConfigMap{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-loadbalancer"})
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
@@ -134,36 +133,35 @@ func TestExpectedConfigMap(t *testing.T) {
 		config, err := adapters.ConfigFromString(param.Instance.Spec.Config)
 		assert.NoError(t, err)
 
-		parmConfig, err := lbadapters.ConfigToPromConfig(config)
+		parmConfig, err := ta.ConfigToPromConfig(config)
 		assert.NoError(t, err)
 
-		lbConfig := make(map[interface{}]interface{})
-		lbConfig["mode"] = string(v1alpha1.ModeLeastConnection)
-		lbConfig["label_selector"] = map[string]string{
+		taConfig := make(map[interface{}]interface{})
+		taConfig["label_selector"] = map[string]string{
 			"app.kubernetes.io/instance":   "default.test",
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}
-		lbConfig["config"] = parmConfig
-		lbConfigYAML, _ := yaml.Marshal(lbConfig)
+		taConfig["config"] = parmConfig
+		taConfigYAML, _ := yaml.Marshal(taConfig)
 
-		assert.Equal(t, string(lbConfigYAML), actual.Data["loadbalancer.yaml"])
+		assert.Equal(t, string(taConfigYAML), actual.Data["targetallocator.yaml"])
 	})
 
 	t.Run("should delete config map", func(t *testing.T) {
 
 		deletecm := v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-delete-loadbalancer",
+				Name:      "test-delete-targetallocator",
 				Namespace: "default",
 				Labels: map[string]string{
-					"app.kubernetes.io/instance":   "test.loadbalancer",
+					"app.kubernetes.io/instance":   "test.targetallocator",
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
 			},
 		}
-		createObjectIfNotExists(t, "test-delete-loadbalancer", &deletecm)
+		createObjectIfNotExists(t, "test-delete-targetallocator", &deletecm)
 
-		exists, _ := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-delete-loadbalancer"})
+		exists, _ := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-delete-targetallocator"})
 		assert.True(t, exists)
 
 		configMap, err := desiredConfigMap(context.Background(), param)
@@ -171,7 +169,7 @@ func TestExpectedConfigMap(t *testing.T) {
 		err = deleteConfigMaps(context.Background(), param, []v1.ConfigMap{configMap})
 		assert.NoError(t, err)
 
-		exists, _ = populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-delete-loadbalancer"})
+		exists, _ = populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-delete-targetallocator"})
 		assert.False(t, exists)
 	})
 }

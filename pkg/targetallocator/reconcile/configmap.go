@@ -26,8 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -58,8 +58,8 @@ func ConfigMaps(ctx context.Context, params Params) error {
 }
 
 func desiredConfigMap(_ context.Context, params Params) (corev1.ConfigMap, error) {
-	name := naming.LBConfigMap(params.Instance)
-	labels := loadbalancer.Labels(params.Instance)
+	name := naming.TAConfigMap(params.Instance)
+	labels := targetallocator.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name
 
 	promConfig, err := checkConfig(params)
@@ -67,14 +67,13 @@ func desiredConfigMap(_ context.Context, params Params) (corev1.ConfigMap, error
 		return corev1.ConfigMap{}, err
 	}
 
-	lbConfig := make(map[interface{}]interface{})
-	lbConfig["mode"] = params.Instance.Spec.LoadBalancer.Mode
-	lbConfig["label_selector"] = map[string]string{
+	taConfig := make(map[interface{}]interface{})
+	taConfig["label_selector"] = map[string]string{
 		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 	}
-	lbConfig["config"] = promConfig
-	lbConfigYAML, _ := yaml.Marshal(lbConfig)
+	taConfig["config"] = promConfig
+	taConfigYAML, _ := yaml.Marshal(taConfig)
 
 	return corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -84,7 +83,7 @@ func desiredConfigMap(_ context.Context, params Params) (corev1.ConfigMap, error
 			Annotations: params.Instance.Annotations,
 		},
 		Data: map[string]string{
-			"loadbalancer.yaml": string(lbConfigYAML),
+			"targetallocator.yaml": string(taConfigYAML),
 		},
 	}, nil
 }
@@ -156,7 +155,7 @@ func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.Conf
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Name, "loadbalancer"),
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Name, "targetallocator"),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}

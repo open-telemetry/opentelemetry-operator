@@ -4,10 +4,14 @@ metadata:
   name: stateful
 spec:
   mode: statefulset
-  loadbalancer:
-    mode: LeastConnection
+  targetAllocator:
+    enabled: true
   config: |
     receivers:
+      jaeger:
+          protocols:
+            grpc:
+
       # Collect own metrics
       prometheus:
         config:
@@ -17,12 +21,13 @@ spec:
               static_configs:
                 - targets: [ '0.0.0.0:8888' ]
       
-      processors:
-      exporters:
-        logging:
-      service:
-        pipelines:
-          traces:
-            receivers: [jaeger]
-            processors: []
-            exporters: [logging]
+    processors:
+    
+    exporters:
+      logging:
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: []
+          exporters: [logging]

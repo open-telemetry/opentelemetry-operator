@@ -30,38 +30,38 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/reconcile"
 )
 
-// OpenTelemetryLoadbalancerReconciler reconciles a OpenTelemetryLoadbalancer object.
-type OpenTelemetryLoadbalancerReconciler struct {
+// OpenTelemetryTargetAllocatorReconciler reconciles a OpenTelemetryTargetAllocator object.
+type OpenTelemetryTargetAllocatorReconciler struct {
 	client.Client
 	log    logr.Logger
 	scheme *runtime.Scheme
 	config config.Config
-	tasks  []LbTask
+	tasks  []TgAlTask
 }
 
-// LbTask represents a reconciliation task to be executed by the reconciler.
-type LbTask struct {
+// TgAlTask represents a reconciliation task to be executed by the reconciler.
+type TgAlTask struct {
 	Name        string
 	Do          func(context.Context, reconcile.Params) error
 	BailOnError bool
 }
 
-// LbParams is the set of options to build a new openTelemetryLoadbalancerReconciler.
-type LbParams struct {
+// TgAlParams is the set of options to build a new OpenTelemetryTargetAllocatorReconciler.
+type TgAlParams struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 	Config config.Config
-	Tasks  []LbTask
+	Tasks  []TgAlTask
 }
 
-// NewLbReconciler creates a new reconciler for OpenTelemetryLoadbalancer objects.
-func NewLbReconciler(p LbParams) *OpenTelemetryLoadbalancerReconciler {
+// NewTgAlReconciler creates a new reconciler for OpenTelemetryTargetAllocator objects.
+func NewTgAlReconciler(p TgAlParams) *OpenTelemetryTargetAllocatorReconciler {
 	if len(p.Tasks) == 0 {
-		p.Tasks = []LbTask{
+		p.Tasks = []TgAlTask{
 			{
 				"config maps",
 				reconcile.ConfigMaps,
@@ -80,7 +80,7 @@ func NewLbReconciler(p LbParams) *OpenTelemetryLoadbalancerReconciler {
 		}
 	}
 
-	return &OpenTelemetryLoadbalancerReconciler{
+	return &OpenTelemetryTargetAllocatorReconciler{
 		Client: p.Client,
 		log:    p.Log,
 		scheme: p.Scheme,
@@ -89,15 +89,15 @@ func NewLbReconciler(p LbParams) *OpenTelemetryLoadbalancerReconciler {
 	}
 }
 
-// Reconcile the current state of an OpenTelemetry LB resource with the desired state.
-func (r *OpenTelemetryLoadbalancerReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
+// Reconcile the current state of an OpenTelemetry target allocation resource with the desired state.
+func (r *OpenTelemetryTargetAllocatorReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.log.WithValues("opentelemtryloadbalancer", req.NamespacedName)
+	log := r.log.WithValues("opentelemtrytargetallocator", req.NamespacedName)
 
 	var instance v1alpha1.OpenTelemetryCollector
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
-			log.Error(err, "unable to fetch OpenTelemetryLoadBalancer")
+			log.Error(err, "unable to fetch OpenTelemetryTargetAllocator")
 		}
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -118,7 +118,7 @@ func (r *OpenTelemetryLoadbalancerReconciler) Reconcile(_ context.Context, req c
 }
 
 // RunTasks runs all the tasks associated with this reconciler.
-func (r *OpenTelemetryLoadbalancerReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
+func (r *OpenTelemetryTargetAllocatorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
 			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
@@ -131,7 +131,7 @@ func (r *OpenTelemetryLoadbalancerReconciler) RunTasks(ctx context.Context, para
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
-func (r *OpenTelemetryLoadbalancerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *OpenTelemetryTargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).
 		Owns(&corev1.ConfigMap{}).

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package loadbalancer
+package targetallocator
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 )
 
-// Labels return the common labels to all LoadBalancer objects that are part of a managed OpenTelemetryCollector.
+// Labels return the common labels to all TargetAllocator objects that are part of a managed OpenTelemetryCollector.
 func Labels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
@@ -31,9 +31,9 @@ func Labels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 	}
 
 	base["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
-	base["app.kubernetes.io/instance"] = fmt.Sprintf("%s.%s", instance.Name, "loadbalancer")
+	base["app.kubernetes.io/instance"] = fmt.Sprintf("%s.%s", instance.Name, "targetallocator")
 	base["app.kubernetes.io/part-of"] = "opentelemetry"
-	base["app.kubernetes.io/component"] = "opentelemetry-loadbalancer"
+	base["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
 
 	return base
 }

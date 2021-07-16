@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package loadbalancer
+package targetallocator
 
 import (
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
@@ -23,33 +22,21 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-// Container builds a container for the given LoadBalancer.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
-	image := otelcol.Spec.LoadBalancer.Image
-	if len(image) == 0 {
-		image = cfg.LoadBalancerImage()
-	}
-
-	volumeMounts := []corev1.VolumeMount{{
-		Name:      naming.LBConfigMapVolume(),
-		MountPath: "/conf",
-	}}
-
-	envVars := []corev1.EnvVar{}
-
-	envVars = append(envVars, corev1.EnvVar{
-		Name: "OTEL_NAMESPACE",
-		ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.namespace",
+// Volumes builds the volumes for the given instance, including the config map volume.
+func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev1.Volume {
+	volumes := []corev1.Volume{{
+		Name: naming.TAConfigMapVolume(),
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: naming.TAConfigMap(otelcol)},
+				Items: []corev1.KeyToPath{
+					{
+						Key:  cfg.TargetAllocatorConfigMapEntry(),
+						Path: cfg.TargetAllocatorConfigMapEntry(),
+					}},
 			},
 		},
-	})
+	}}
 
-	return corev1.Container{
-		Name:         naming.LBContainer(),
-		Image:        image,
-		Env:          envVars,
-		VolumeMounts: volumeMounts,
-	}
+	return volumes
 }

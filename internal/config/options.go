@@ -28,16 +28,16 @@ import (
 type Option func(c *options)
 
 type options struct {
-	autoDetect                 autodetect.AutoDetect
-	autoDetectFrequency        time.Duration
-	loadbalancerImage          string
-	collectorImage             string
-	collectorConfigMapEntry    string
-	loadBalancerConfigMapEntry string
-	logger                     logr.Logger
-	onChange                   []func() error
-	platform                   platform.Platform
-	version                    version.Version
+	autoDetect                    autodetect.AutoDetect
+	autoDetectFrequency           time.Duration
+	targetAllocatorImage          string
+	collectorImage                string
+	collectorConfigMapEntry       string
+	targetAllocatorConfigMapEntry string
+	logger                        logr.Logger
+	onChange                      []func() error
+	platform                      platform.Platform
+	version                       version.Version
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -50,9 +50,9 @@ func WithAutoDetectFrequency(t time.Duration) Option {
 		o.autoDetectFrequency = t
 	}
 }
-func WithLoadBalancerImage(s string) Option {
+func WithTargetAllocatorImage(s string) Option {
 	return func(o *options) {
-		o.loadbalancerImage = s
+		o.targetAllocatorImage = s
 	}
 }
 
@@ -66,9 +66,9 @@ func WithCollectorConfigMapEntry(s string) Option {
 		o.collectorConfigMapEntry = s
 	}
 }
-func WithLoadBalancerConfigMapEntry(s string) Option {
+func WithTargetAllocatorConfigMapEntry(s string) Option {
 	return func(o *options) {
-		o.loadBalancerConfigMapEntry = s
+		o.targetAllocatorConfigMapEntry = s
 	}
 }
 func WithLogger(logger logr.Logger) Option {

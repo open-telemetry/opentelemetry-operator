@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package loadbalancer_test
+package targetallocator
 
 import (
 	"testing"
@@ -23,7 +23,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	. "github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
@@ -32,7 +31,7 @@ var logger = logf.Log.WithName("unit-tests")
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{}
-	cfg := config.New(config.WithLoadBalancerImage("default-image"))
+	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
 
 	// test
 	c := Container(cfg, logger, otelcol)
@@ -45,12 +44,13 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-				Image: "overridden-image",
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+				Image:   "overridden-image",
 			},
 		},
 	}
-	cfg := config.New(config.WithLoadBalancerImage("default-image"))
+	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
 
 	// test
 	c := Container(cfg, logger, otelcol)
@@ -63,8 +63,9 @@ func TestContainerVolumes(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-				Image: "default-image",
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+				Image:   "default-image",
 			},
 		},
 	}
@@ -75,5 +76,5 @@ func TestContainerVolumes(t *testing.T) {
 
 	// verify
 	assert.Len(t, c.VolumeMounts, 1)
-	assert.Equal(t, naming.LBConfigMapVolume(), c.VolumeMounts[0].Name)
+	assert.Equal(t, naming.TAConfigMapVolume(), c.VolumeMounts[0].Name)
 }

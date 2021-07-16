@@ -155,13 +155,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = controllers.NewLbReconciler(controllers.LbParams{
+	if err = controllers.NewTgAlReconciler(controllers.TgAlParams{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("LoadBalancer"),
+		Log:    ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
 		Scheme: mgr.GetScheme(),
 		Config: cfg,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "LoadBalancer")
+		setupLog.Error(err, "unable to create controller", "controller", "TargetAllocator")
 		os.Exit(1)
 	}
 

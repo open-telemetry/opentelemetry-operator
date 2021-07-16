@@ -110,8 +110,8 @@ func params() Params {
 					},
 					NodePort: 0,
 				}},
-				LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-					Mode: v1alpha1.ModeLeastConnection,
+				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+					Enabled: true,
 				},
 				Replicas: &replicas,
 				Config:   string(configYAML),
@@ -130,7 +130,7 @@ func newParams(containerImage ...string) Params {
 	}
 
 	cfg := config.New()
-	defaultContainerImage := cfg.LoadBalancerImage()
+	defaultContainerImage := cfg.TargetAllocatorImage()
 	if len(containerImage) > 0 && len(containerImage[0]) > 0 {
 		defaultContainerImage = containerImage[0]
 	}
@@ -159,9 +159,9 @@ func newParams(containerImage ...string) Params {
 					},
 					NodePort: 0,
 				}},
-				LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-					Mode:  v1alpha1.ModeLeastConnection,
-					Image: defaultContainerImage,
+				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+					Enabled: true,
+					Image:   defaultContainerImage,
 				},
 				Replicas: &replicas,
 				Config:   string(configYAML),

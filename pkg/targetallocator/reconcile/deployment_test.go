@@ -25,20 +25,18 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer"
-	lbadapters "github.com/open-telemetry/opentelemetry-operator/pkg/loadbalancer/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 func TestExpectedDeployments(t *testing.T) {
 	param := params()
-	expectedDeploy := loadbalancer.Deployment(param.Config, logger, param.Instance)
+	expectedDeploy := targetallocator.Deployment(param.Config, logger, param.Instance)
 
 	t.Run("should create deployment", func(t *testing.T) {
 		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
-		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-loadbalancer"})
+		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
@@ -63,8 +61,8 @@ func TestExpectedDeployments(t *testing.T) {
 					},
 					Spec: v1alpha1.OpenTelemetryCollectorSpec{
 						Mode: mode,
-						LoadBalancer: v1alpha1.OpenTelemetryLoadBalancer{
-							Mode: v1alpha1.ModeLeastConnection,
+						TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+							Enabled: true,
 						},
 						Config: `
 				receivers:
@@ -91,14 +89,14 @@ func TestExpectedDeployments(t *testing.T) {
 			}
 			expected := []v1.Deployment{}
 			if newParam.Instance.Spec.Mode == v1alpha1.ModeStatefulSet {
-				expected = append(expected, loadbalancer.Deployment(newParam.Config, newParam.Log, newParam.Instance))
+				expected = append(expected, targetallocator.Deployment(newParam.Config, newParam.Log, newParam.Instance))
 			}
 
 			assert.Len(t, expected, 0)
 		}
 	})
 
-	t.Run("should not create deployment when loadbalancer mode is not set", func(t *testing.T) {
+	t.Run("should not create deployment when targetallocator is not enabled", func(t *testing.T) {
 		newParam := Params{
 			Client: k8sClient,
 			Instance: v1alpha1.OpenTelemetryCollector{
@@ -137,53 +135,25 @@ func TestExpectedDeployments(t *testing.T) {
 			Log:    logger,
 		}
 		expected := []v1.Deployment{}
-		if len(newParam.Instance.Spec.LoadBalancer.Mode) > 0 {
-			expected = append(expected, loadbalancer.Deployment(newParam.Config, newParam.Log, newParam.Instance))
+		if newParam.Instance.Spec.TargetAllocator.Enabled {
+			expected = append(expected, targetallocator.Deployment(newParam.Config, newParam.Log, newParam.Instance))
 		}
 
 		assert.Len(t, expected, 0)
 	})
 
-	t.Run("should not create deployment when there is no valid Prometheus config", func(t *testing.T) {
-		newParam := Params{
-			Client: k8sClient,
-			Instance: v1alpha1.OpenTelemetryCollector{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "opentelemetry.io",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-					UID:       instanceUID,
-				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Mode:   v1alpha1.ModeStatefulSet,
-					Config: "",
-				},
-			},
-			Scheme: testScheme,
-			Log:    logger,
-		}
-		config, err := adapters.ConfigFromString(newParam.Instance.Spec.Config)
-		assert.NoError(t, err)
-
-		_, err = lbadapters.ConfigToPromConfig(config)
-		assert.EqualError(t, err, "no receivers available as part of the configuration")
-	})
-
 	t.Run("should not update deployment container when the config is updated", func(t *testing.T) {
 		ctx := context.Background()
-		createObjectIfNotExists(t, "test-loadbalancer", &expectedDeploy)
+		createObjectIfNotExists(t, "test-targetallocator", &expectedDeploy)
 		orgUID := expectedDeploy.OwnerReferences[0].UID
 
-		updatedDeploy := loadbalancer.Deployment(newParams().Config, logger, param.Instance)
+		updatedDeploy := targetallocator.Deployment(newParams().Config, logger, param.Instance)
 
 		err := expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-loadbalancer"})
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
@@ -194,17 +164,17 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should update deployment container when the container image is updated", func(t *testing.T) {
 		ctx := context.Background()
-		createObjectIfNotExists(t, "test-loadbalancer", &expectedDeploy)
+		createObjectIfNotExists(t, "test-targetallocator", &expectedDeploy)
 		orgUID := expectedDeploy.OwnerReferences[0].UID
 
 		updatedParam := newParams("test/test-img")
-		updatedDeploy := loadbalancer.Deployment(updatedParam.Config, logger, updatedParam.Instance)
+		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
 
 		err := expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-loadbalancer"})
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
@@ -215,7 +185,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should delete deployment", func(t *testing.T) {
 		labels := map[string]string{
-			"app.kubernetes.io/instance":   "test.loadbalancer",
+			"app.kubernetes.io/instance":   "test.targetallocator",
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}
 		deploy := v1.Deployment{}

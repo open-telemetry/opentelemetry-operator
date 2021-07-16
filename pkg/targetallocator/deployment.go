@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package loadbalancer
+package targetallocator
 
 import (
 	"github.com/go-logr/logr"
@@ -28,13 +28,13 @@ import (
 // Deployment builds the deployment for the given instance.
 func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.Deployment {
 	labels := Labels(otelcol)
-	labels["app.kubernetes.io/name"] = naming.LoadBalancer(otelcol)
+	labels["app.kubernetes.io/name"] = naming.TargetAllocator(otelcol)
 
 	var replicas int32 = 1
 
 	return appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.LoadBalancer(otelcol),
+			Name:      naming.TargetAllocator(otelcol),
 			Namespace: otelcol.Namespace,
 			Labels:    labels,
 		},

@@ -29,9 +29,9 @@ import (
 )
 
 const (
-	defaultAutoDetectFrequency        = 5 * time.Second
-	defaultCollectorConfigMapEntry    = "collector.yaml"
-	defaultLoadBalancerConfigMapEntry = "loadbalancer.yaml"
+	defaultAutoDetectFrequency           = 5 * time.Second
+	defaultCollectorConfigMapEntry       = "collector.yaml"
+	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
 )
 
 // Config holds the static configuration for this operator.
@@ -45,24 +45,24 @@ type Config struct {
 	onChange            []func() error
 
 	// config state
-	collectorImage             string
-	collectorConfigMapEntry    string
-	loadbalancerImage          string
-	loadBalancerConfigMapEntry string
-	platform                   platform.Platform
-	version                    version.Version
+	collectorImage                string
+	collectorConfigMapEntry       string
+	targetAllocatorImage          string
+	targetAllocatorConfigMapEntry string
+	platform                      platform.Platform
+	version                       version.Version
 }
 
 // New constructs a new configuration based on the given options.
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		autoDetectFrequency:        defaultAutoDetectFrequency,
-		collectorConfigMapEntry:    defaultCollectorConfigMapEntry,
-		loadBalancerConfigMapEntry: defaultLoadBalancerConfigMapEntry,
-		logger:                     logf.Log.WithName("config"),
-		platform:                   platform.Unknown,
-		version:                    version.Get(),
+		autoDetectFrequency:           defaultAutoDetectFrequency,
+		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
+		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
+		logger:                        logf.Log.WithName("config"),
+		platform:                      platform.Unknown,
+		version:                       version.Get(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -74,21 +74,21 @@ func New(opts ...Option) Config {
 		o.collectorImage = fmt.Sprintf("otel/opentelemetry-collector:%s", o.version.OpenTelemetryCollector)
 	}
 
-	if len(o.loadbalancerImage) == 0 {
-		o.loadbalancerImage = "raul9595/otel-loadbalancer"
+	if len(o.targetAllocatorImage) == 0 {
+		o.targetAllocatorImage = "raul9595/otel-loadbalancer"
 	}
 
 	return Config{
-		autoDetect:                 o.autoDetect,
-		autoDetectFrequency:        o.autoDetectFrequency,
-		collectorImage:             o.collectorImage,
-		collectorConfigMapEntry:    o.collectorConfigMapEntry,
-		loadbalancerImage:          o.loadbalancerImage,
-		loadBalancerConfigMapEntry: o.loadBalancerConfigMapEntry,
-		logger:                     o.logger,
-		onChange:                   o.onChange,
-		platform:                   o.platform,
-		version:                    o.version,
+		autoDetect:                    o.autoDetect,
+		autoDetectFrequency:           o.autoDetectFrequency,
+		collectorImage:                o.collectorImage,
+		collectorConfigMapEntry:       o.collectorConfigMapEntry,
+		targetAllocatorImage:          o.targetAllocatorImage,
+		targetAllocatorConfigMapEntry: o.targetAllocatorConfigMapEntry,
+		logger:                        o.logger,
+		onChange:                      o.onChange,
+		platform:                      o.platform,
+		version:                       o.version,
 	}
 }
 
@@ -165,14 +165,14 @@ func (c *Config) CollectorConfigMapEntry() string {
 	return c.collectorConfigMapEntry
 }
 
-// LoadBalancerImage represents the flag to override the OpenTelemetry LoadBalancer container image.
-func (c *Config) LoadBalancerImage() string {
-	return c.loadbalancerImage
+// TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
+func (c *Config) TargetAllocatorImage() string {
+	return c.targetAllocatorImage
 }
 
-// LoadBalancerConfigMapEntry represents the configuration file name for the LoadBalancer. Immutable.
-func (c *Config) LoadBalancerConfigMapEntry() string {
-	return c.loadBalancerConfigMapEntry
+// TargetAllocatorConfigMapEntry represents the configuration file name for the TargetAllocator. Immutable.
+func (c *Config) TargetAllocatorConfigMapEntry() string {
+	return c.targetAllocatorConfigMapEntry
 }
 
 // Platform represents the type of the platform this operator is running.
