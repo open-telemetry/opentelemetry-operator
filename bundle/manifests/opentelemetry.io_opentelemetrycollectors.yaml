@@ -441,7 +441,7 @@ spec:
                     type: boolean
                   image:
                     description: Image indicates the container image to use for the
-                      OpenTelemetry target allocator.
+                      OpenTelemetry TargetAllocator.
                     type: string
                 type: object
               tolerations:
