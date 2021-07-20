@@ -36,7 +36,7 @@ import (
 func ConfigMaps(ctx context.Context, params Params) error {
 	desired := []corev1.ConfigMap{}
 
-	if checkMode(params) {
+	if checkEnabled(params) {
 		cm, err := desiredConfigMap(ctx, params)
 		if err != nil {
 			return fmt.Errorf("failed to parse config: %v", err)

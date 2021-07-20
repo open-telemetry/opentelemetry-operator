@@ -75,7 +75,8 @@ func New(opts ...Option) Config {
 	}
 
 	if len(o.targetAllocatorImage) == 0 {
-		o.targetAllocatorImage = "raul9595/otel-loadbalancer"
+		// will be replcaed with target allocator image once approved and available
+		o.targetAllocatorImage = ""
 	}
 
 	return Config{

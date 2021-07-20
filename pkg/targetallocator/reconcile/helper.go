@@ -20,7 +20,7 @@ import (
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
-func checkMode(params Params) bool {
+func checkEnabled(params Params) bool {
 	return params.Instance.Spec.Mode == v1alpha1.ModeStatefulSet && params.Instance.Spec.TargetAllocator.Enabled
 }
 

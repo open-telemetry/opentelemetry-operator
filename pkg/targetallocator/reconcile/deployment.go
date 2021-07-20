@@ -34,7 +34,7 @@ import (
 func Deployments(ctx context.Context, params Params) error {
 	desired := []appsv1.Deployment{}
 
-	if checkMode(params) {
+	if checkEnabled(params) {
 		_, err := checkConfig(params)
 		if err != nil {
 			return fmt.Errorf("failed to parse Promtheus config: %v", err)
