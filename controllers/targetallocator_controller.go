@@ -91,7 +91,7 @@ func NewTgAlReconciler(p TgAlParams) *OpenTelemetryTargetAllocatorReconciler {
 
 // Reconcile the current state of an OpenTelemetry target allocation resource with the desired state.
 // follows the same design as the opentelemetrycollector controller where an empty context is passed
-// and a new context initialized inside
+// and a new context initialized inside.
 func (r *OpenTelemetryTargetAllocatorReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.log.WithValues("opentelemtrytargetallocator", req.NamespacedName)
