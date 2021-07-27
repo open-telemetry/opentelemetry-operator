@@ -75,6 +75,7 @@ func TestDownstreamParsers(t *testing.T) {
 		{"signalfx", "signalfx", "__signalfx", 9943, parser.NewSignalFxReceiverParser},
 		{"wavefront", "wavefront", "__wavefront", 2003, parser.NewWavefrontReceiverParser},
 		{"zipkin-scribe", "zipkin-scribe", "__zipkinscribe", 9410, parser.NewZipkinScribeReceiverParser},
+		{"memcached", "memcached", "__memcached", 11211, parser.NewMemcachedReceiverParser},
 	} {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
