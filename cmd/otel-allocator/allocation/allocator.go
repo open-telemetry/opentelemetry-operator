@@ -92,6 +92,7 @@ func (allocator *Allocator) ReallocateCollectors() {
 // removeOutdatedTargets removes targets that are no longer available.
 func (allocator *Allocator) removeOutdatedTargets() {
 	allocator.m.Lock()
+	defer allocator.m.Unlock()
 	for k := range allocator.targetItems {
 		if _, ok := allocator.targetsWaiting[k]; !ok {
 			allocator.collectors[allocator.targetItems[k].Collector.Name].NumTargets--
