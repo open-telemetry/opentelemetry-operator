@@ -20,10 +20,6 @@ type Config struct {
 	Config        *promconfig.Config `yaml:"config"`
 }
 
-type ScrapeConfig struct {
-	ScrapeConfigs []map[string]interface{} `yaml:"scrape_configs"`
-}
-
 func Load(file string) (Config, error) {
 	if file == "" {
 		file = defaultConfigFile
