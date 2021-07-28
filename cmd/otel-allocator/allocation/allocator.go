@@ -120,7 +120,6 @@ func (allocator *Allocator) processWaitingTargets() {
 			allocator.targetItems[v.JobName+v.TargetURL] = &targetItem
 		}
 	}
-	allocator.m.Unlock()
 }
 
 func NewAllocator() *Allocator {
