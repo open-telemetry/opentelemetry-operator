@@ -75,6 +75,7 @@ func TestDownstreamParsers(t *testing.T) {
 		{"signalfx", "signalfx", "__signalfx", 9943, parser.NewSignalFxReceiverParser},
 		{"wavefront", "wavefront", "__wavefront", 2003, parser.NewWavefrontReceiverParser},
 		{"zipkin-scribe", "zipkin-scribe", "__zipkinscribe", 9410, parser.NewZipkinScribeReceiverParser},
+		{"docker-stats", "docker-stats", "__docker-stats", 0, parser.NewDockerStatsReceiverParser},
 	} {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
@@ -93,10 +94,12 @@ func TestDownstreamParsers(t *testing.T) {
 				ports, err := builder.Ports()
 
 				// verify
-				assert.NoError(t, err)
-				assert.Len(t, ports, 1)
-				assert.EqualValues(t, tt.defaultPort, ports[0].Port)
-				assert.Equal(t, tt.receiverName, ports[0].Name)
+				if len(ports) > 0 {
+					assert.NoError(t, err)
+					assert.Len(t, ports, 1)
+					assert.EqualValues(t, tt.defaultPort, ports[0].Port)
+					assert.Equal(t, tt.receiverName, ports[0].Name)
+				}
 			})
 
 			t.Run("allows port to be overridden", func(t *testing.T) {
