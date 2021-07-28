@@ -76,8 +76,8 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	allocator.nextCollector = allocator.collectors[collectors[0]]
 }
 
-// Reshard needs to be called to process the new target updates.
-// Until Reshard is called, old targets will be served.
+// Reallocate needs to be called to process the new target updates.
+// Until Reallocate is called, old targets will be served.
 func (allocator *Allocator) Reallocate() {
 	allocator.removeOutdatedTargets()
 	allocator.processWaitingTargets()
