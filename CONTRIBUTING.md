@@ -85,6 +85,8 @@ For a general overview of the directories from this operator and what to expect 
 
 Your contribution is welcome! For it to be accepted, we have a few standards that must be followed.
 
+If you are contributing to sync the receivers from [otel-collector-contrib](https://github.com/open-telemetry/opentelemetry-collector-contrib). Operator only syncs receivers that aren't scrapers. As operator has nothing to do with scrapers. whereas with general receivers, operator exposes the port in kubernetes service object as specified in the receiver's config.
+
 ### New features
 
 Before starting the development of a new feature, please create an issue and discuss it with the project maintainers. Features should come with documentation and enough tests (unit and/or end-to-end).
