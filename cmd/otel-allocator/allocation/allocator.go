@@ -99,7 +99,6 @@ func (allocator *Allocator) removeOutdatedTargets() {
 			delete(allocator.targetItems, k)
 		}
 	}
-	allocator.m.Unlock()
 }
 
 // processWaitingTargets processes the newly set targets.
