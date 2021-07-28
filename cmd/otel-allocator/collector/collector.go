@@ -24,27 +24,30 @@ var (
 )
 
 type Client struct {
-	k8sClient *kubernetes.Clientset
+	k8sClient     kubernetes.Interface
+	collectorChan chan []string
+	close         chan struct{}
 }
 
-func NewClient() (Client, error) {
+func NewClient() (*Client, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return Client{}, err
+		return &Client{}, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return Client{}, err
+		return &Client{}, err
 	}
 
-	return Client{
+	return &Client{
 		k8sClient: clientset,
+		close:     make(chan struct{}),
 	}, nil
 }
 
-func (k Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors []string)) {
-	collectors := []string{}
+func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors []string)) {
+	collectorMap := map[string]bool{}
 
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
@@ -56,10 +59,17 @@ func (k Client) Watch(ctx context.Context, labelMap map[string]string, fn func(c
 	for i := range pods.Items {
 		pod := pods.Items[i]
 		if pod.GetObjectMeta().GetDeletionTimestamp() == nil {
-			collectors = append(collectors, pod.Name)
+			collectorMap[pod.Name] = true
 		}
 	}
-	fn(collectors)
+
+	collectorKeys := make([]string, len(collectorMap))
+	i := 0
+	for k := range collectorMap {
+		collectorKeys[i] = k
+		i++
+	}
+	fn(collectorKeys)
 
 	go func() {
 		for {
@@ -71,6 +81,8 @@ func (k Client) Watch(ctx context.Context, labelMap map[string]string, fn func(c
 		Inner:
 			for {
 				select {
+				case <-k.close:
+					return
 				case <-ctx.Done():
 					return
 				case event, ok := <-c:
@@ -85,20 +97,30 @@ func (k Client) Watch(ctx context.Context, labelMap map[string]string, fn func(c
 
 					switch event.Type {
 					case watch.Added:
-						collectors = append(collectors, pod.Name)
+						collectorMap[pod.Name] = true
 					case watch.Deleted:
-						for i := range collectors {
-							if collectors[i] == pod.Name {
-								collectors = append(collectors[:i], collectors[i+1:]...)
-								break
-							}
-						}
+						delete(collectorMap, pod.Name)
 					}
-					fn(collectors)
+
+					collectorKeys := make([]string, len(collectorMap))
+					i := 0
+					for k := range collectorMap {
+						collectorKeys[i] = k
+						i++
+					}
+					select {
+					case k.collectorChan <- collectorKeys:
+					default:
+						fn(collectorKeys)
+					}
 				case <-time.After(watcherTimeout):
 					break Inner
 				}
 			}
 		}
 	}()
+}
+
+func (k *Client) Close() {
+	close(k.close)
 }

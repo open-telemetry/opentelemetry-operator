@@ -7,9 +7,9 @@ config:
 
     file_sd_configs:
     - files:
-      - ./config/testdata/testing.yaml
+      - ./file_sd_test.json
 
     static_configs:
-    - targets: ["prom.111111", "prom.5644","prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "prom.33333", "prom.44444"]
+    - targets: ["prom.domain:9001", "prom.domain:9002", "prom.domain:9003"]
       labels:
         my: label

@@ -8,6 +8,8 @@ import (
 	gokitlog "github.com/go-kit/log"
 	"github.com/otel-allocator/allocation"
 	"github.com/otel-allocator/config"
+	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,8 +40,17 @@ func TestTargetDiscovery(t *testing.T) {
 	})
 
 	t.Run("should update targets", func(t *testing.T) {
-		cfg.Config.ScrapeConfigs[0]["static_configs"] = []map[string]interface{}{
-			{"targets": []string{"prom.domain:9004", "prom.domain:9005"}},
+		cfg.Config.ScrapeConfigs[0].ServiceDiscoveryConfigs[1] = discovery.StaticConfig{
+			{
+				Targets: []model.LabelSet{
+					{model.AddressLabel: "prom.domain:9004"},
+					{model.AddressLabel: "prom.domain:9005"},
+				},
+				Labels: model.LabelSet{
+					"my": "label",
+				},
+				Source: "0",
+			},
 		}
 
 		err := manager.ApplyConfig(cfg)

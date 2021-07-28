@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	promconfig "github.com/prometheus/prometheus/config"
+	_ "github.com/prometheus/prometheus/discovery/install"
 	"gopkg.in/yaml.v2"
 )
 
@@ -14,8 +16,8 @@ var ErrInvalidYAML = errors.New("couldn't parse the loadbalancer configuration")
 const defaultConfigFile string = "/conf/targetallocator.yaml"
 
 type Config struct {
-	LabelSelector map[string]string `yaml:"label_selector,omitempty"`
-	Config        ScrapeConfig      `yaml:"config"`
+	LabelSelector map[string]string  `yaml:"label_selector,omitempty"`
+	Config        *promconfig.Config `yaml:"config"`
 }
 
 type ScrapeConfig struct {
@@ -28,13 +30,13 @@ func Load(file string) (Config, error) {
 	}
 
 	var cfg Config
-	if err := unmarshall(&cfg, file); err != nil {
+	if err := unmarshal(&cfg, file); err != nil {
 		return Config{}, err
 	}
 	return cfg, nil
 }
 
-func unmarshall(cfg *Config, configFile string) error {
+func unmarshal(cfg *Config, configFile string) error {
 	yamlFile, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		return err

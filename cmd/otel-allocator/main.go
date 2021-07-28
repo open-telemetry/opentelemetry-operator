@@ -86,17 +86,19 @@ func main() {
 type server struct {
 	allocator        *allocation.Allocator
 	discoveryManager *lbdiscovery.Manager
+	k8sClient        *collector.Client
 	server           *http.Server
 }
 
 func newServer(addr string) (*server, error) {
-	allocator, discoveryManager, err := newAllocator(context.Background())
+	allocator, discoveryManager, k8sclient, err := newAllocator(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	s := &server{
 		allocator:        allocator,
 		discoveryManager: discoveryManager,
+		k8sClient:        k8sclient,
 	}
 	router := mux.NewRouter()
 	router.HandleFunc("/jobs", allocator.JobHandler).Methods("GET")
@@ -105,15 +107,15 @@ func newServer(addr string) (*server, error) {
 	return s, nil
 }
 
-func newAllocator(ctx context.Context) (*allocation.Allocator, *lbdiscovery.Manager, error) {
+func newAllocator(ctx context.Context) (*allocation.Allocator, *lbdiscovery.Manager, *collector.Client, error) {
 	cfg, err := config.Load("")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	k8sClient, err := collector.NewClient()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// creates a new discovery manager
@@ -121,7 +123,7 @@ func newAllocator(ctx context.Context) (*allocation.Allocator, *lbdiscovery.Mana
 
 	// returns the list of targets
 	if err := discoveryManager.ApplyConfig(cfg); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	allocator := allocation.NewAllocator()
@@ -133,7 +135,7 @@ func newAllocator(ctx context.Context) (*allocation.Allocator, *lbdiscovery.Mana
 		allocator.SetCollectors(collectors)
 		allocator.ReallocateCollectors()
 	})
-	return allocator, discoveryManager, nil
+	return allocator, discoveryManager, k8sClient, nil
 }
 
 func (s *server) Start() error {
@@ -143,6 +145,7 @@ func (s *server) Start() error {
 
 func (s *server) Shutdown(ctx context.Context) error {
 	log.Println("Shutting down server...")
+	s.k8sClient.Close()
 	s.discoveryManager.Close()
 	return s.server.Shutdown(ctx)
 }
