@@ -105,6 +105,7 @@ func (allocator *Allocator) removeOutdatedTargets() {
 // processWaitingTargets processes the newly set targets.
 func (allocator *Allocator) processWaitingTargets() {
 	allocator.m.Lock()
+	defer allocator.m.Unlock()
 	for k, v := range allocator.targetsWaiting {
 		if _, ok := allocator.targetItems[k]; !ok {
 			allocator.findNextCollector()
