@@ -64,6 +64,10 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 		return
 	}
 	allocator.m.Lock()
+	for k := range allocator.collectors {
+		delete(allocator.collectors, k)
+	}
+
 	for _, i := range collectors {
 		allocator.collectors[i] = &collector{Name: i, NumTargets: 0}
 	}
