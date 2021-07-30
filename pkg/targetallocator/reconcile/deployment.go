@@ -37,7 +37,7 @@ func Deployments(ctx context.Context, params Params) error {
 	if checkEnabled(params) {
 		_, err := checkConfig(params)
 		if err != nil {
-			return fmt.Errorf("failed to parse Promtheus config: %v", err)
+			return fmt.Errorf("failed to parse Prometheus config: %v", err)
 		}
 		desired = append(desired, targetallocator.Deployment(params.Config, params.Log, params.Instance))
 	}

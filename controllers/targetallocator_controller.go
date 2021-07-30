@@ -24,6 +24,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,6 +63,16 @@ type TgAlParams struct {
 func NewTgAlReconciler(p TgAlParams) *OpenTelemetryTargetAllocatorReconciler {
 	if len(p.Tasks) == 0 {
 		p.Tasks = []TgAlTask{
+			{
+				"roles",
+				reconcile.Roles,
+				true,
+			},
+			{
+				"role bindings",
+				reconcile.RoleBindings,
+				true,
+			},
 			{
 				"config maps",
 				reconcile.ConfigMaps,
@@ -136,6 +147,8 @@ func (r *OpenTelemetryTargetAllocatorReconciler) RunTasks(ctx context.Context, p
 func (r *OpenTelemetryTargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).
+		Owns(&rbacv1.Role{}).
+		Owns(&rbacv1.RoleBinding{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).

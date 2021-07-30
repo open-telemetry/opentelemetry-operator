@@ -85,3 +85,13 @@ func TAService(otelcol v1alpha1.OpenTelemetryCollector) string {
 func ServiceAccount(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
 }
+
+// TARole builds the role name based on the instance.
+func TARole(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return fmt.Sprintf("%s-view", otelcol.Name)
+}
+
+// TARoleBinding builds the role binding name based on the instance.
+func TARoleBinding(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
+}

@@ -18,115 +18,90 @@ import (
 	"context"
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	v1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
-// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=get;create;list;watch;delete
 
-// Services reconciles the service(s) required for the instance in the current context.
-func Services(ctx context.Context, params Params) error {
-	desired := []corev1.Service{}
+// RoleBindings reconciles the role binding(s) required for the instance in the current context.
+func RoleBindings(ctx context.Context, params Params) error {
+	desired := []rbacv1.RoleBinding{}
 
 	if checkEnabled(params) {
 		_, err := checkConfig(params)
 		if err != nil {
 			return fmt.Errorf("failed to parse Prometheus config: %v", err)
 		}
-		desired = append(desired, desiredService(params))
+		desired = append(desired, desiredRoleBinding(params))
 	}
 
 	// first, handle the create/update parts
-	if err := expectedServices(ctx, params, desired); err != nil {
+	if err := expectedRoleBindings(ctx, params, desired); err != nil {
 		return fmt.Errorf("failed to reconcile the expected services: %v", err)
 	}
 
 	// then, delete the extra objects
-	if err := deleteServices(ctx, params, desired); err != nil {
+	if err := deleteRoleBindings(ctx, params, desired); err != nil {
 		return fmt.Errorf("failed to reconcile the services to be deleted: %v", err)
 	}
 
 	return nil
 }
 
-func desiredService(params Params) corev1.Service {
+func desiredRoleBinding(params Params) rbacv1.RoleBinding {
 	labels := targetallocator.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = naming.TAService(params.Instance)
+	labels["app.kubernetes.io/name"] = naming.TARoleBinding(params.Instance)
 
-	selector := targetallocator.Labels(params.Instance)
-	selector["app.kubernetes.io/name"] = naming.TargetAllocator(params.Instance)
-
-	return corev1.Service{
+	return rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(params.Instance),
+			Name:      naming.TARoleBinding(params.Instance),
 			Namespace: params.Instance.Namespace,
 			Labels:    labels,
 		},
-		Spec: corev1.ServiceSpec{
-			Selector: selector,
-			Ports: []corev1.ServicePort{{
-				Name:       "targetallocation",
-				Port:       443,
-				TargetPort: intstr.FromInt(443),
-			}},
+		Subjects: []rbacv1.Subject{{
+			Kind:      "ServiceAccount",
+			Name:      "default",
+			Namespace: params.Instance.Namespace,
+		}},
+		RoleRef: v1.RoleRef{
+			Kind: "Role",
+			Name: naming.TARole(params.Instance),
 		},
 	}
 }
 
-func expectedServices(ctx context.Context, params Params, expected []corev1.Service) error {
+func expectedRoleBindings(ctx context.Context, params Params, expected []rbacv1.RoleBinding) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
-			return fmt.Errorf("failed to set controller reference: %w", err)
-		}
-
-		existing := &corev1.Service{}
+		existing := &rbacv1.RoleBinding{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
-			params.Log.V(2).Info("created", "service.name", desired.Name, "service.namespace", desired.Namespace)
+			params.Log.V(2).Info("created", "rolebinding.name", desired.Name, "rolebinding.namespace", desired.Namespace)
 			continue
 		} else if err != nil {
 			return fmt.Errorf("failed to get: %w", err)
 		}
 
-		// it exists already, merge the two if the end result isn't identical to the existing one
-		updated := existing.DeepCopy()
-		if updated.Labels == nil {
-			updated.Labels = map[string]string{}
-		}
-		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
-
-		for k, v := range desired.ObjectMeta.Labels {
-			updated.ObjectMeta.Labels[k] = v
-		}
-		updated.Spec.Ports = desired.Spec.Ports
-
-		patch := client.MergeFrom(existing)
-
-		if err := params.Client.Patch(ctx, updated, patch); err != nil {
-			return fmt.Errorf("failed to apply changes: %w", err)
-		}
-
-		params.Log.V(2).Info("applied", "service.name", desired.Name, "service.namespace", desired.Namespace)
+		params.Log.V(2).Info("applied", "rolebinding.name", desired.Name, "rolebinding.namespace", desired.Namespace)
 	}
 
 	return nil
 }
 
-func deleteServices(ctx context.Context, params Params, expected []corev1.Service) error {
+func deleteRoleBindings(ctx context.Context, params Params, expected []rbacv1.RoleBinding) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -134,7 +109,7 @@ func deleteServices(ctx context.Context, params Params, expected []corev1.Servic
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &corev1.ServiceList{}
+	list := &rbacv1.RoleBindingList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -152,7 +127,7 @@ func deleteServices(ctx context.Context, params Params, expected []corev1.Servic
 			if err := params.Client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %w", err)
 			}
-			params.Log.V(2).Info("deleted", "service.name", existing.Name, "service.namespace", existing.Namespace)
+			params.Log.V(2).Info("deleted", "rolebinding.name", existing.Name, "rolebinding.namespace", existing.Namespace)
 		}
 	}
 
