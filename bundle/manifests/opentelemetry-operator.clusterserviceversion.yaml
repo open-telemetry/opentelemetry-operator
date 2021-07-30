@@ -25,7 +25,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.29.0-21-g8657668
+  name: opentelemetry-operator.v0.30.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -256,7 +256,7 @@ spec:
                 - --upstream=http://127.0.0.1:8080/
                 - --logtostderr=true
                 - --v=10
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
                 name: kube-rbac-proxy
                 ports:
                 - containerPort: 8443
@@ -325,7 +325,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.29.0-21-g8657668
+  version: 0.30.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
