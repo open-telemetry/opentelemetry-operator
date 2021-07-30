@@ -21,11 +21,11 @@ metadata:
     containerImage: quay.io/opentelemetry/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
-    operators.operatorframework.io/builder: operator-sdk-v1.8.0+git
+    operators.operatorframework.io/builder: operator-sdk-v1.8.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.29.0
+  name: opentelemetry-operator.v0.29.0-21-g8657668
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -75,6 +75,14 @@ spec:
           resources:
           - namespaces
           verbs:
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
           - list
           - watch
         - apiGroups:
@@ -174,6 +182,26 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - rolebindings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
         - apiGroups:
           - authentication.k8s.io
           resources:
@@ -297,7 +325,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.29.0
+  version: 0.29.0-21-g8657668
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
