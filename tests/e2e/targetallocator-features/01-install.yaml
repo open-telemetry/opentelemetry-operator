@@ -4,6 +4,19 @@ metadata:
   name: stateful
 spec:
   mode: statefulset
+  volumes:
+  - name: testvolume
+  volumeMounts:
+  - name: testvolume
+    mountPath: /usr/share/testvolume
+  volumeClaimTemplates:
+  - metadata:
+      name: testvolume 
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
   targetAllocator:
     enabled: true
   config: |

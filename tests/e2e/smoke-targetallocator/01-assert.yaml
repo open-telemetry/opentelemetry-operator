@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stateful-collector
+status:
+  replicas: 1
+  readyReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stateful-targetallocator
+status:
+  replicas: 1
+  readyReplicas: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stateful-targetallocator
+    
