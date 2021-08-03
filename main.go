@@ -155,7 +155,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = controllers.NewTgAlReconciler(controllers.TgAlParams{
+	if err = controllers.NewTargetAlllocatorReconciler(controllers.TgAlParams{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
 		Scheme: mgr.GetScheme(),
