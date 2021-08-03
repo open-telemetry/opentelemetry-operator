@@ -34,8 +34,8 @@ import (
 func Deployments(ctx context.Context, params Params) error {
 	desired := []appsv1.Deployment{}
 
-	if checkEnabled(params) {
-		_, err := checkConfig(params)
+	if IsAllocatorEnabled(params) {
+		_, err := GetPromConfig(params)
 		if err != nil {
 			return fmt.Errorf("failed to parse Prometheus config: %v", err)
 		}

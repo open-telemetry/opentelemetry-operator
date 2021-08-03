@@ -19,14 +19,12 @@ import (
 	"context"
 	"fmt"
 
-	ctrl "sigs.k8s.io/controller-runtime"
-
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
@@ -59,20 +57,10 @@ type TgAlParams struct {
 	Tasks  []TgAlTask
 }
 
-// NewTgAlReconciler creates a new reconciler for OpenTelemetryTargetAllocator objects.
-func NewTgAlReconciler(p TgAlParams) *OpenTelemetryTargetAllocatorReconciler {
+// NewTargetAlllocatorReconciler creates a new reconciler for OpenTelemetryTargetAllocator objects.
+func NewTargetAlllocatorReconciler(p TgAlParams) *OpenTelemetryTargetAllocatorReconciler {
 	if len(p.Tasks) == 0 {
 		p.Tasks = []TgAlTask{
-			{
-				"roles",
-				reconcile.Roles,
-				true,
-			},
-			{
-				"role bindings",
-				reconcile.RoleBindings,
-				true,
-			},
 			{
 				"config maps",
 				reconcile.ConfigMaps,
@@ -105,12 +93,12 @@ func NewTgAlReconciler(p TgAlParams) *OpenTelemetryTargetAllocatorReconciler {
 // and a new context initialized inside.
 func (r *OpenTelemetryTargetAllocatorReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.log.WithValues("opentelemtrytargetallocator", req.NamespacedName)
+	log := r.log.WithValues("opentelemetrytargetallocator", req.NamespacedName)
 
 	var instance v1alpha1.OpenTelemetryCollector
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
-			log.Error(err, "unable to fetch OpenTelemetryTargetAllocator")
+			log.Error(err, "unable to fetch OpenTelemetryCollector")
 		}
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -147,8 +135,6 @@ func (r *OpenTelemetryTargetAllocatorReconciler) RunTasks(ctx context.Context, p
 func (r *OpenTelemetryTargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).
-		Owns(&rbacv1.Role{}).
-		Owns(&rbacv1.RoleBinding{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).

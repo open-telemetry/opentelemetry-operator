@@ -25,7 +25,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.30.0
+  name: opentelemetry-operator.v0.30.0-21-g1a921cb
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -75,14 +75,6 @@ spec:
           resources:
           - namespaces
           verbs:
-          - list
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - pods
-          verbs:
-          - get
           - list
           - watch
         - apiGroups:
@@ -182,26 +174,6 @@ spec:
           - get
           - patch
           - update
-        - apiGroups:
-          - rbac.authorization.k8s.io
-          resources:
-          - rolebindings
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - rbac.authorization.k8s.io
-          resources:
-          - roles
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - watch
         - apiGroups:
           - authentication.k8s.io
           resources:
@@ -325,7 +297,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.30.0
+  version: 0.30.0-21-g1a921cb
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

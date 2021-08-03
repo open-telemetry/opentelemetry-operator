@@ -19,29 +19,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-var testTolerationValues = []v1.Toleration{
-	{
-		Key:    "key",
-		Value:  "Val",
-		Effect: "NoSchedule",
-	},
-}
-
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
-		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Tolerations: testTolerationValues,
 		},
 	}
 	cfg := config.New()

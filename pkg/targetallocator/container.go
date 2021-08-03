@@ -38,7 +38,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	envVars := []corev1.EnvVar{}
 
 	envVars = append(envVars, corev1.EnvVar{
-		Name: "OTEL_NAMESPACE",
+		Name: "OTELCOL_NAMESPACE",
 		ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.namespace",

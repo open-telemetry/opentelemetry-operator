@@ -20,11 +20,11 @@ import (
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
-func checkEnabled(params Params) bool {
+func IsAllocatorEnabled(params Params) bool {
 	return params.Instance.Spec.Mode == v1alpha1.ModeStatefulSet && params.Instance.Spec.TargetAllocator.Enabled
 }
 
-func checkConfig(params Params) (map[interface{}]interface{}, error) {
+func GetPromConfig(params Params) (map[interface{}]interface{}, error) {
 	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
 	if err != nil {
 		return nil, err

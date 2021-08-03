@@ -36,7 +36,7 @@ import (
 func ConfigMaps(ctx context.Context, params Params) error {
 	desired := []corev1.ConfigMap{}
 
-	if checkEnabled(params) {
+	if IsAllocatorEnabled(params) {
 		cm, err := desiredConfigMap(ctx, params)
 		if err != nil {
 			return fmt.Errorf("failed to parse config: %v", err)
@@ -62,7 +62,7 @@ func desiredConfigMap(_ context.Context, params Params) (corev1.ConfigMap, error
 	labels := targetallocator.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name
 
-	promConfig, err := checkConfig(params)
+	promConfig, err := GetPromConfig(params)
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}
