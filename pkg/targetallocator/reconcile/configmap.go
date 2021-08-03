@@ -73,7 +73,10 @@ func desiredConfigMap(_ context.Context, params Params) (corev1.ConfigMap, error
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 	}
 	taConfig["config"] = promConfig
-	taConfigYAML, _ := yaml.Marshal(taConfig)
+	taConfigYAML, err := yaml.Marshal(taConfig)
+	if err != nil {
+		return corev1.ConfigMap{}, err
+	}
 
 	return corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

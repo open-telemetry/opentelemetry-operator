@@ -44,7 +44,7 @@ func TestNewObjectsOnTargetAllocatorReconciliation(t *testing.T) {
 	require.NoError(t, err)
 
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewTargetAlllocatorReconciler(controllers.TgAlParams{
+	reconciler := controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: testScheme,
@@ -113,7 +113,7 @@ func TestNewObjectsOnTargetAllocatorReconciliation(t *testing.T) {
 func TestContinueOnRecoverableTargetAllocatorFailure(t *testing.T) {
 	// prepare
 	taskCalled := false
-	reconciler := controllers.NewTargetAlllocatorReconciler(controllers.TgAlParams{
+	reconciler := controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
 		Log: logger,
 		Tasks: []controllers.TgAlTask{
 			{
@@ -147,7 +147,7 @@ func TestBreakOnUnrecoverableTargetAllocatorError(t *testing.T) {
 	taskCalled := false
 	expectedErr := errors.New("should fail!")
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewTargetAlllocatorReconciler(controllers.TgAlParams{
+	reconciler := controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: scheme.Scheme,
@@ -197,7 +197,7 @@ func TestTargetAllocatorSkipWhenInstanceDoesNotExist(t *testing.T) {
 	// prepare
 	cfg := config.New()
 	nsn := types.NamespacedName{Name: "non-existing-my-instance", Namespace: "default"}
-	reconciler := controllers.NewTargetAlllocatorReconciler(controllers.TgAlParams{
+	reconciler := controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: scheme.Scheme,

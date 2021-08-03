@@ -58,7 +58,7 @@ type TgAlParams struct {
 }
 
 // NewTargetAlllocatorReconciler creates a new reconciler for OpenTelemetryTargetAllocator objects.
-func NewTargetAlllocatorReconciler(p TgAlParams) *OpenTelemetryTargetAllocatorReconciler {
+func NewTargetAllocatorReconciler(p TgAlParams) *OpenTelemetryTargetAllocatorReconciler {
 	if len(p.Tasks) == 0 {
 		p.Tasks = []TgAlTask{
 			{
