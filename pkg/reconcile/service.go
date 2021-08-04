@@ -23,6 +23,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -30,16 +31,17 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 
-// Services reconciles the service(s) required for the instance in the current context.
-func Services(ctx context.Context, params Params) error {
+// CollectorServices reconciles the service(s) required for the instance in the current context.
+func CollectorServices(ctx context.Context, params Params) error {
 	desired := []corev1.Service{}
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
 		type builder func(context.Context, Params) *corev1.Service
-		for _, builder := range []builder{desiredService, headless, monitoringService} {
+		for _, builder := range []builder{desiredCollectorService, headless, monitoringService} {
 			svc := builder(ctx, params)
 			// add only the non-nil to the list
 			if svc != nil {
@@ -54,14 +56,53 @@ func Services(ctx context.Context, params Params) error {
 	}
 
 	// then, delete the extra objects
-	if err := deleteServices(ctx, params, desired); err != nil {
+	opts := []client.ListOption{
+		client.InNamespace(params.Instance.Namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		}),
+	}
+	if err := deleteServices(ctx, params, desired, opts); err != nil {
 		return fmt.Errorf("failed to reconcile the services to be deleted: %v", err)
 	}
 
 	return nil
 }
 
-func desiredService(ctx context.Context, params Params) *corev1.Service {
+// TAServices reconciles the service(s) required for the instance in the current context.
+func TAServices(ctx context.Context, params Params) error {
+	desired := []corev1.Service{}
+
+	if params.Instance.Spec.TargetAllocator.Enabled {
+		_, err := GetPromConfig(params)
+		if err != nil {
+			return fmt.Errorf("failed to parse Prometheus config: %v", err)
+		}
+		desired = append(desired, desiredTAService(params))
+	}
+
+	// first, handle the create/update parts
+	if err := expectedServices(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the expected services: %v", err)
+	}
+
+	// then, delete the extra objects
+	opts := []client.ListOption{
+		client.InNamespace(params.Instance.Namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Name, "targetallocator"),
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		}),
+	}
+	if err := deleteServices(ctx, params, desired, opts); err != nil {
+		return fmt.Errorf("failed to reconcile the services to be deleted: %v", err)
+	}
+
+	return nil
+}
+
+func desiredCollectorService(ctx context.Context, params Params) *corev1.Service {
 	labels := collector.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
@@ -121,8 +162,32 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 	}
 }
 
+func desiredTAService(params Params) corev1.Service {
+	labels := targetallocator.Labels(params.Instance)
+	labels["app.kubernetes.io/name"] = naming.TAService(params.Instance)
+
+	selector := targetallocator.Labels(params.Instance)
+	selector["app.kubernetes.io/name"] = naming.TargetAllocator(params.Instance)
+
+	return corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      naming.TAService(params.Instance),
+			Namespace: params.Instance.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: selector,
+			Ports: []corev1.ServicePort{{
+				Name:       "targetallocation",
+				Port:       443,
+				TargetPort: intstr.FromInt(443),
+			}},
+		},
+	}
+}
+
 func headless(ctx context.Context, params Params) *corev1.Service {
-	h := desiredService(ctx, params)
+	h := desiredCollectorService(ctx, params)
 	if h == nil {
 		return nil
 	}
@@ -208,14 +273,7 @@ func expectedServices(ctx context.Context, params Params, expected []corev1.Serv
 	return nil
 }
 
-func deleteServices(ctx context.Context, params Params, expected []corev1.Service) error {
-	opts := []client.ListOption{
-		client.InNamespace(params.Instance.Namespace),
-		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		}),
-	}
+func deleteServices(ctx context.Context, params Params, expected []corev1.Service, opts []client.ListOption) error {
 	list := &corev1.ServiceList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)

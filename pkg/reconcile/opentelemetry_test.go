@@ -26,9 +26,9 @@ import (
 
 func TestSelf(t *testing.T) {
 	t.Run("should add version to the status", func(t *testing.T) {
-		instance := params().Instance
+		instance := paramsCollector().Instance
 		createObjectIfNotExists(t, "test", &instance)
-		err := Self(context.Background(), params())
+		err := Self(context.Background(), paramsCollector())
 		assert.NoError(t, err)
 
 		actual := v1alpha1.OpenTelemetryCollector{}

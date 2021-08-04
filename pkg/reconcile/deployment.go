@@ -25,31 +25,71 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
 
-// Deployments reconciles the deployment(s) required for the instance in the current context.
-func Deployments(ctx context.Context, params Params) error {
+// CollectorDeployments reconciles the deployment(s) required for the instance in the current context.
+func CollectorDeployments(ctx context.Context, params Params) error {
+	opts := []client.ListOption{
+		client.InNamespace(params.Instance.Namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		}),
+	}
 	desired := []appsv1.Deployment{}
 	if params.Instance.Spec.Mode == "deployment" {
 		desired = append(desired, collector.Deployment(params.Config, params.Log, params.Instance))
 	}
 
 	// first, handle the create/update parts
-	if err := expectedDeployments(ctx, params, desired); err != nil {
+	if err := expectedDeployments(ctx, params, desired, false); err != nil {
 		return fmt.Errorf("failed to reconcile the expected deployments: %v", err)
 	}
 
 	// then, delete the extra objects
-	if err := deleteDeployments(ctx, params, desired); err != nil {
+	if err := deleteDeployments(ctx, params, desired, opts); err != nil {
 		return fmt.Errorf("failed to reconcile the deployments to be deleted: %v", err)
 	}
 
 	return nil
 }
 
-func expectedDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
+// TADeployments reconciles the deployment(s) required for the instance in the current context.
+func TADeployments(ctx context.Context, params Params) error {
+	desired := []appsv1.Deployment{}
+
+	if params.Instance.Spec.TargetAllocator.Enabled {
+		_, err := GetPromConfig(params)
+		if err != nil {
+			return fmt.Errorf("failed to parse Prometheus config: %v", err)
+		}
+		desired = append(desired, targetallocator.Deployment(params.Config, params.Log, params.Instance))
+	}
+
+	// first, handle the create/update parts
+	if err := expectedDeployments(ctx, params, desired, true); err != nil {
+		return fmt.Errorf("failed to reconcile the expected deployments: %v", err)
+	}
+
+	// then, delete the extra objects
+	opts := []client.ListOption{
+		client.InNamespace(params.Instance.Namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Name, "targetallocator"),
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		}),
+	}
+	if err := deleteDeployments(ctx, params, desired, opts); err != nil {
+		return fmt.Errorf("failed to reconcile the deployments to be deleted: %v", err)
+	}
+
+	return nil
+}
+
+func expectedDeployments(ctx context.Context, params Params, expected []appsv1.Deployment, isTargetAllocator bool) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -72,19 +112,17 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 
 		// it exists already, merge the two if the end result isn't identical to the existing one
 		updated := existing.DeepCopy()
-		if updated.Annotations == nil {
-			updated.Annotations = map[string]string{}
-		}
 		if updated.Labels == nil {
 			updated.Labels = map[string]string{}
 		}
 
-		updated.Spec = desired.Spec
+		if isTargetAllocator {
+			updated.Spec.Template.Spec.Containers[0].Image = desired.Spec.Template.Spec.Containers[0].Image
+		} else {
+			updated.Spec = desired.Spec
+		}
 		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 
-		for k, v := range desired.ObjectMeta.Annotations {
-			updated.ObjectMeta.Annotations[k] = v
-		}
 		for k, v := range desired.ObjectMeta.Labels {
 			updated.ObjectMeta.Labels[k] = v
 		}
@@ -101,14 +139,7 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 	return nil
 }
 
-func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
-	opts := []client.ListOption{
-		client.InNamespace(params.Instance.Namespace),
-		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		}),
-	}
+func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Deployment, opts []client.ListOption) error {
 	list := &appsv1.DeploymentList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)

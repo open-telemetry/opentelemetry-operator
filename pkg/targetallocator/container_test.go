@@ -17,9 +17,8 @@ package targetallocator
 import (
 	"testing"
 
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	"github.com/stretchr/testify/assert"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
