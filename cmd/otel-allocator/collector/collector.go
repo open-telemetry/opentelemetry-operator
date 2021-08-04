@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	ns = os.Getenv("OTEL_NAMESPACE")
+	ns = os.Getenv("OTELCOL_NAMESPACE")
 )
 
 type Client struct {
