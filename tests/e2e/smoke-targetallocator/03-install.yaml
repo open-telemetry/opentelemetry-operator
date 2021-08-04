@@ -1,0 +1,5 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl -n $NAMESPACE delete rolebinding default-view-$NAMESPACE
+    command: kubectl -n $NAMESPACE delete role pod-view
