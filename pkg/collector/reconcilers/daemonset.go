@@ -16,13 +16,8 @@ package reconcilers
 
 import (
 	"context"
-	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
@@ -37,99 +32,5 @@ func DaemonSets(ctx context.Context, params reconcile.Params) error {
 		desired = append(desired, collector.DaemonSet(params.Config, params.Log, params.Instance))
 	}
 
-	// first, handle the create/update parts
-	if err := expectedDaemonSets(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected daemon sets: %v", err)
-	}
-
-	// then, delete the extra objects
-	if err := deleteDaemonSets(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the daemon sets to be deleted: %v", err)
-	}
-
-	return nil
-}
-
-func expectedDaemonSets(ctx context.Context, params reconcile.Params, expected []appsv1.DaemonSet) error {
-	for _, obj := range expected {
-		desired := obj
-
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
-			return fmt.Errorf("failed to set controller reference: %w", err)
-		}
-
-		existing := &appsv1.DaemonSet{}
-		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
-		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && k8serrors.IsNotFound(err) {
-			if err := params.Client.Create(ctx, &desired); err != nil {
-				return fmt.Errorf("failed to create: %w", err)
-			}
-			params.Log.V(2).Info("created", "daemonset.name", desired.Name, "daemonset.namespace", desired.Namespace)
-			continue
-		} else if err != nil {
-			return fmt.Errorf("failed to get: %w", err)
-		}
-
-		// it exists already, merge the two if the end result isn't identical to the existing one
-		updated := existing.DeepCopy()
-		if updated.Annotations == nil {
-			updated.Annotations = map[string]string{}
-		}
-		if updated.Labels == nil {
-			updated.Labels = map[string]string{}
-		}
-
-		updated.Spec = desired.Spec
-		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
-
-		for k, v := range desired.ObjectMeta.Annotations {
-			updated.ObjectMeta.Annotations[k] = v
-		}
-		for k, v := range desired.ObjectMeta.Labels {
-			updated.ObjectMeta.Labels[k] = v
-		}
-
-		patch := client.MergeFrom(existing)
-		if err := params.Client.Patch(ctx, updated, patch); err != nil {
-			return fmt.Errorf("failed to apply changes: %w", err)
-		}
-
-		params.Log.V(2).Info("applied", "daemonset.name", desired.Name, "daemonset.namespace", desired.Namespace)
-	}
-
-	return nil
-}
-
-func deleteDaemonSets(ctx context.Context, params reconcile.Params, expected []appsv1.DaemonSet) error {
-	opts := []client.ListOption{
-		client.InNamespace(params.Instance.Namespace),
-		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		}),
-	}
-	list := &appsv1.DaemonSetList{}
-	if err := params.Client.List(ctx, list, opts...); err != nil {
-		return fmt.Errorf("failed to list: %w", err)
-	}
-
-	for i := range list.Items {
-		existing := list.Items[i]
-		del := true
-		for _, keep := range expected {
-			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
-				del = false
-			}
-		}
-
-		if del {
-			if err := params.Client.Delete(ctx, &existing); err != nil {
-				return fmt.Errorf("failed to delete: %w", err)
-			}
-			params.Log.V(2).Info("deleted", "daemonset.name", existing.Name, "daemonset.namespace", existing.Namespace)
-		}
-	}
-
-	return nil
+	return reconcile.DaemonSets(ctx, params, desired)
 }

@@ -19,14 +19,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
-
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
@@ -68,75 +60,4 @@ func TestDesiredConfigMap(t *testing.T) {
 
 	})
 
-}
-
-func TestExpectedConfigMap(t *testing.T) {
-	t.Run("should create config map", func(t *testing.T) {
-		err := expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{desiredConfigMap(context.Background(), params())}, true)
-		assert.NoError(t, err)
-
-		exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-	})
-
-	t.Run("should update config map", func(t *testing.T) {
-
-		param := reconcile.Params{
-			Config: config.New(),
-			Client: k8sClient,
-			Instance: v1alpha1.OpenTelemetryCollector{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "opentelemetry.io",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-					UID:       instanceUID,
-				},
-			},
-			Scheme:   testScheme,
-			Log:      logger,
-			Recorder: record.NewFakeRecorder(10),
-		}
-		cm := desiredConfigMap(context.Background(), param)
-		createObjectIfNotExists(t, "test-collector", &cm)
-
-		err := expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{desiredConfigMap(context.Background(), params())}, true)
-		assert.NoError(t, err)
-
-		actual := v1.ConfigMap{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
-		assert.Equal(t, params().Instance.Spec.Config, actual.Data["collector.yaml"])
-	})
-
-	t.Run("should delete config map", func(t *testing.T) {
-
-		deletecm := v1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-delete-collector",
-				Namespace: "default",
-				Labels: map[string]string{
-					"app.kubernetes.io/instance":   "default.test",
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-				},
-			},
-		}
-		createObjectIfNotExists(t, "test-delete-collector", &deletecm)
-
-		exists, _ := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-delete-collector"})
-		assert.True(t, exists)
-
-		err := deleteConfigMaps(context.Background(), params(), []v1.ConfigMap{desiredConfigMap(context.Background(), params())})
-		assert.NoError(t, err)
-
-		exists, _ = populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-delete-collector"})
-		assert.False(t, exists)
-	})
 }
