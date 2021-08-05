@@ -153,7 +153,12 @@ endif
 kustomize:
 ifeq (, $(shell which kustomize))
 	@{ \
-	go install sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+	set -e ;\
+	echo "" ;\
+	echo "ERROR: kustomize not found." ;\
+	echo "Please check https://kubectl.docs.kubernetes.io/installation/kustomize/ for installation instructions and try again." ;\
+	echo "" ;\
+	exit 1 ;\
 	}
 KUSTOMIZE=$(GOBIN)/kustomize
 else
