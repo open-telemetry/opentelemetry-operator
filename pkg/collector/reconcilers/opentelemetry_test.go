@@ -12,24 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package reconcile
+package reconcilers
 
 import (
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-// Params holds the reconciliation-specific parameters.
-type Params struct {
-	Config   config.Config
-	Client   client.Client
-	Instance v1alpha1.OpenTelemetryCollector
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+func TestSelf(t *testing.T) {
+	t.Run("should add version to the status", func(t *testing.T) {
+		instance := params().Instance
+		createObjectIfNotExists(t, "test", &instance)
+		err := Self(context.Background(), params())
+		assert.NoError(t, err)
+
+		actual := v1alpha1.OpenTelemetryCollector{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test"})
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		assert.Equal(t, actual.Status.Version, "0.0.0")
+
+	})
 }

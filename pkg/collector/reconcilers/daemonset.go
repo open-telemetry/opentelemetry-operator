@@ -12,64 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package reconcile
+package reconcilers
 
 import (
 	"context"
 	"fmt"
-	"reflect"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 
-// ConfigMaps reconciles the config map(s) required for the instance in the current context.
-func ConfigMaps(ctx context.Context, params Params) error {
-	desired := []corev1.ConfigMap{
-		desiredConfigMap(ctx, params),
+// DaemonSets reconciles the daemon set(s) required for the instance in the current context.
+func DaemonSets(ctx context.Context, params Params) error {
+	desired := []appsv1.DaemonSet{}
+	if params.Instance.Spec.Mode == "daemonset" {
+		desired = append(desired, collector.DaemonSet(params.Config, params.Log, params.Instance))
 	}
 
 	// first, handle the create/update parts
-	if err := expectedConfigMaps(ctx, params, desired, true); err != nil {
-		return fmt.Errorf("failed to reconcile the expected configmaps: %v", err)
+	if err := expectedDaemonSets(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the expected daemon sets: %v", err)
 	}
 
 	// then, delete the extra objects
-	if err := deleteConfigMaps(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the configmaps to be deleted: %v", err)
+	if err := deleteDaemonSets(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the daemon sets to be deleted: %v", err)
 	}
 
 	return nil
 }
 
-func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
-	name := naming.ConfigMap(params.Instance)
-	labels := collector.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = name
-
-	return corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   params.Instance.Namespace,
-			Labels:      labels,
-			Annotations: params.Instance.Annotations,
-		},
-		Data: map[string]string{
-			"collector.yaml": params.Instance.Spec.Config,
-		},
-	}
-}
-
-func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap, retry bool) error {
+func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.DaemonSet) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -77,24 +57,14 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
-		existing := &corev1.ConfigMap{}
+		existing := &appsv1.DaemonSet{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil && k8serrors.IsNotFound(err) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
-				if errors.IsAlreadyExists(err) && retry {
-					// let's try again? we probably had multiple updates at one, and now it exists already
-					if err := expectedConfigMaps(ctx, params, expected, false); err != nil {
-						// somethin else happened now...
-						return err
-					}
-
-					// we succeeded in the retry, exit this attempt
-					return nil
-				}
 				return fmt.Errorf("failed to create: %w", err)
 			}
-			params.Log.V(2).Info("created", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)
+			params.Log.V(2).Info("created", "daemonset.name", desired.Name, "daemonset.namespace", desired.Namespace)
 			continue
 		} else if err != nil {
 			return fmt.Errorf("failed to get: %w", err)
@@ -109,8 +79,7 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 			updated.Labels = map[string]string{}
 		}
 
-		updated.Data = desired.Data
-		updated.BinaryData = desired.BinaryData
+		updated.Spec = desired.Spec
 		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 
 		for k, v := range desired.ObjectMeta.Annotations {
@@ -121,21 +90,17 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 		}
 
 		patch := client.MergeFrom(existing)
-
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
-		if configMapChanged(&desired, existing) {
-			params.Recorder.Event(updated, "Normal", "ConfigUpdate ", fmt.Sprintf("OpenTelemetry Config changed - %s/%s", desired.Namespace, desired.Name))
-		}
 
-		params.Log.V(2).Info("applied", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)
+		params.Log.V(2).Info("applied", "daemonset.name", desired.Name, "daemonset.namespace", desired.Namespace)
 	}
 
 	return nil
 }
 
-func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap) error {
+func deleteDaemonSets(ctx context.Context, params Params, expected []appsv1.DaemonSet) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -143,7 +108,7 @@ func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.Conf
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &corev1.ConfigMapList{}
+	list := &appsv1.DaemonSetList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -161,14 +126,9 @@ func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.Conf
 			if err := params.Client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %w", err)
 			}
-			params.Log.V(2).Info("deleted", "configmap.name", existing.Name, "configmap.namespace", existing.Namespace)
+			params.Log.V(2).Info("deleted", "daemonset.name", existing.Name, "daemonset.namespace", existing.Namespace)
 		}
 	}
 
 	return nil
-}
-
-func configMapChanged(desired *corev1.ConfigMap, actual *corev1.ConfigMap) bool {
-	return !reflect.DeepEqual(desired.Data, actual.Data)
-
 }

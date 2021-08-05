@@ -12,45 +12,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package reconcile
+package reconcilers
 
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
-// ServiceAccounts reconciles the service account(s) required for the instance in the current context.
-func ServiceAccounts(ctx context.Context, params Params) error {
-	desired := []corev1.ServiceAccount{}
-	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
-		desired = append(desired, collector.ServiceAccount(params.Instance))
+// ConfigMaps reconciles the config map(s) required for the instance in the current context.
+func ConfigMaps(ctx context.Context, params Params) error {
+	desired := []corev1.ConfigMap{
+		desiredConfigMap(ctx, params),
 	}
 
 	// first, handle the create/update parts
-	if err := expectedServiceAccounts(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected service accounts: %v", err)
+	if err := expectedConfigMaps(ctx, params, desired, true); err != nil {
+		return fmt.Errorf("failed to reconcile the expected configmaps: %v", err)
 	}
 
 	// then, delete the extra objects
-	if err := deleteServiceAccounts(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the service accounts to be deleted: %v", err)
+	if err := deleteConfigMaps(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the configmaps to be deleted: %v", err)
 	}
 
 	return nil
 }
 
-func expectedServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
+func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
+	name := naming.ConfigMap(params.Instance)
+	labels := collector.Labels(params.Instance)
+	labels["app.kubernetes.io/name"] = name
+
+	return corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   params.Instance.Namespace,
+			Labels:      labels,
+			Annotations: params.Instance.Annotations,
+		},
+		Data: map[string]string{
+			"collector.yaml": params.Instance.Spec.Config,
+		},
+	}
+}
+
+func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap, retry bool) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -58,14 +77,24 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
-		existing := &corev1.ServiceAccount{}
+		existing := &corev1.ConfigMap{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && k8serrors.IsNotFound(err) {
+		if err != nil && errors.IsNotFound(err) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
+				if errors.IsAlreadyExists(err) && retry {
+					// let's try again? we probably had multiple updates at one, and now it exists already
+					if err := expectedConfigMaps(ctx, params, expected, false); err != nil {
+						// somethin else happened now...
+						return err
+					}
+
+					// we succeeded in the retry, exit this attempt
+					return nil
+				}
 				return fmt.Errorf("failed to create: %w", err)
 			}
-			params.Log.V(2).Info("created", "serviceaccount.name", desired.Name, "serviceaccount.namespace", desired.Namespace)
+			params.Log.V(2).Info("created", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)
 			continue
 		} else if err != nil {
 			return fmt.Errorf("failed to get: %w", err)
@@ -79,6 +108,9 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 		if updated.Labels == nil {
 			updated.Labels = map[string]string{}
 		}
+
+		updated.Data = desired.Data
+		updated.BinaryData = desired.BinaryData
 		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 
 		for k, v := range desired.ObjectMeta.Annotations {
@@ -93,14 +125,17 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
+		if configMapChanged(&desired, existing) {
+			params.Recorder.Event(updated, "Normal", "ConfigUpdate ", fmt.Sprintf("OpenTelemetry Config changed - %s/%s", desired.Namespace, desired.Name))
+		}
 
-		params.Log.V(2).Info("applied", "serviceaccount.name", desired.Name, "serviceaccount.namespace", desired.Namespace)
+		params.Log.V(2).Info("applied", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)
 	}
 
 	return nil
 }
 
-func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
+func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -108,7 +143,7 @@ func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &corev1.ServiceAccountList{}
+	list := &corev1.ConfigMapList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -126,9 +161,14 @@ func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1
 			if err := params.Client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %w", err)
 			}
-			params.Log.V(2).Info("deleted", "serviceaccount.name", existing.Name, "serviceaccount.namespace", existing.Namespace)
+			params.Log.V(2).Info("deleted", "configmap.name", existing.Name, "configmap.namespace", existing.Namespace)
 		}
 	}
 
 	return nil
+}
+
+func configMapChanged(desired *corev1.ConfigMap, actual *corev1.ConfigMap) bool {
+	return !reflect.DeepEqual(desired.Data, actual.Data)
+
 }

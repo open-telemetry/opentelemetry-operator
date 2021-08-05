@@ -12,44 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package reconcile
+package reconcilers
 
 import (
 	"context"
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
-// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
-// Deployments reconciles the deployment(s) required for the instance in the current context.
-func Deployments(ctx context.Context, params Params) error {
-	desired := []appsv1.Deployment{}
-	if params.Instance.Spec.Mode == "deployment" {
-		desired = append(desired, collector.Deployment(params.Config, params.Log, params.Instance))
+// ServiceAccounts reconciles the service account(s) required for the instance in the current context.
+func ServiceAccounts(ctx context.Context, params Params) error {
+	desired := []corev1.ServiceAccount{}
+	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
+		desired = append(desired, collector.ServiceAccount(params.Instance))
 	}
 
 	// first, handle the create/update parts
-	if err := expectedDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected deployments: %v", err)
+	if err := expectedServiceAccounts(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the expected service accounts: %v", err)
 	}
 
 	// then, delete the extra objects
-	if err := deleteDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the deployments to be deleted: %v", err)
+	if err := deleteServiceAccounts(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the service accounts to be deleted: %v", err)
 	}
 
 	return nil
 }
 
-func expectedDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
+func expectedServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -57,14 +58,14 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
-		existing := &appsv1.Deployment{}
+		existing := &corev1.ServiceAccount{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
-			params.Log.V(2).Info("created", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
+			params.Log.V(2).Info("created", "serviceaccount.name", desired.Name, "serviceaccount.namespace", desired.Namespace)
 			continue
 		} else if err != nil {
 			return fmt.Errorf("failed to get: %w", err)
@@ -78,8 +79,6 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 		if updated.Labels == nil {
 			updated.Labels = map[string]string{}
 		}
-
-		updated.Spec = desired.Spec
 		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 
 		for k, v := range desired.ObjectMeta.Annotations {
@@ -95,13 +94,13 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
 
-		params.Log.V(2).Info("applied", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
+		params.Log.V(2).Info("applied", "serviceaccount.name", desired.Name, "serviceaccount.namespace", desired.Namespace)
 	}
 
 	return nil
 }
 
-func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
+func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -109,7 +108,7 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &appsv1.DeploymentList{}
+	list := &corev1.ServiceAccountList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -127,7 +126,7 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 			if err := params.Client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %w", err)
 			}
-			params.Log.V(2).Info("deleted", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)
+			params.Log.V(2).Info("deleted", "serviceaccount.name", existing.Name, "serviceaccount.namespace", existing.Namespace)
 		}
 	}
 

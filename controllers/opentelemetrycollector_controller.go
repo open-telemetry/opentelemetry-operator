@@ -30,7 +30,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcilers"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -46,7 +46,7 @@ type OpenTelemetryCollectorReconciler struct {
 // Task represents a reconciliation task to be executed by the reconciler.
 type Task struct {
 	Name        string
-	Do          func(context.Context, reconcile.Params) error
+	Do          func(context.Context, reconcilers.Params) error
 	BailOnError bool
 }
 
@@ -66,37 +66,37 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 		p.Tasks = []Task{
 			{
 				"config maps",
-				reconcile.ConfigMaps,
+				reconcilers.ConfigMaps,
 				true,
 			},
 			{
 				"service accounts",
-				reconcile.ServiceAccounts,
+				reconcilers.ServiceAccounts,
 				true,
 			},
 			{
 				"services",
-				reconcile.Services,
+				reconcilers.Services,
 				true,
 			},
 			{
 				"deployments",
-				reconcile.Deployments,
+				reconcilers.Deployments,
 				true,
 			},
 			{
 				"daemon sets",
-				reconcile.DaemonSets,
+				reconcilers.DaemonSets,
 				true,
 			},
 			{
 				"stateful sets",
-				reconcile.StatefulSets,
+				reconcilers.StatefulSets,
 				true,
 			},
 			{
 				"opentelemetry",
-				reconcile.Self,
+				reconcilers.Self,
 				true,
 			},
 		}
@@ -135,7 +135,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params := reconcile.Params{
+	params := reconcilers.Params{
 		Config:   r.config,
 		Client:   r.Client,
 		Instance: instance,
@@ -152,7 +152,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl
 }
 
 // RunTasks runs all the tasks associated with this reconciler.
-func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
+func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcilers.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
 			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
