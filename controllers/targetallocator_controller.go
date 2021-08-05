@@ -29,7 +29,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/reconcile"
 )
 
 // OpenTelemetryTargetAllocatorReconciler reconciles a OpenTelemetryTargetAllocator object.
@@ -38,26 +38,42 @@ type OpenTelemetryTargetAllocatorReconciler struct {
 	log    logr.Logger
 	scheme *runtime.Scheme
 	config config.Config
-	tasks  []Task
+	tasks  []TgAlTask
+}
+
+// TgAlTask represents a reconciliation task to be executed by the reconciler.
+type TgAlTask struct {
+	Name        string
+	Do          func(context.Context, reconcile.Params) error
+	BailOnError bool
+}
+
+// TgAlParams is the set of options to build a new OpenTelemetryTargetAllocatorReconciler.
+type TgAlParams struct {
+	client.Client
+	Log    logr.Logger
+	Scheme *runtime.Scheme
+	Config config.Config
+	Tasks  []TgAlTask
 }
 
 // NewTargetAlllocatorReconciler creates a new reconciler for OpenTelemetryTargetAllocator objects.
-func NewTargetAllocatorReconciler(p Params) *OpenTelemetryTargetAllocatorReconciler {
+func NewTargetAllocatorReconciler(p TgAlParams) *OpenTelemetryTargetAllocatorReconciler {
 	if len(p.Tasks) == 0 {
-		p.Tasks = []Task{
+		p.Tasks = []TgAlTask{
 			{
 				"config maps",
-				reconcile.TAConfigMaps,
+				reconcile.ConfigMaps,
 				true,
 			},
 			{
 				"deployments",
-				reconcile.TADeployments,
+				reconcile.Deployments,
 				true,
 			},
 			{
 				"services",
-				reconcile.TAServices,
+				reconcile.Services,
 				true,
 			},
 		}

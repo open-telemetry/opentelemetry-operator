@@ -28,8 +28,8 @@ import (
 
 func TestExpectedServiceAccounts(t *testing.T) {
 	t.Run("should create service account", func(t *testing.T) {
-		desired := collector.ServiceAccount(paramsCollector().Instance)
-		err := expectedServiceAccounts(context.Background(), paramsCollector(), []v1.ServiceAccount{desired})
+		desired := collector.ServiceAccount(params().Instance)
+		err := expectedServiceAccounts(context.Background(), params(), []v1.ServiceAccount{desired})
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &v1.ServiceAccount{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
@@ -50,7 +50,7 @@ func TestExpectedServiceAccounts(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		err = expectedServiceAccounts(context.Background(), paramsCollector(), []v1.ServiceAccount{collector.ServiceAccount(paramsCollector().Instance)})
+		err = expectedServiceAccounts(context.Background(), params(), []v1.ServiceAccount{collector.ServiceAccount(params().Instance)})
 		assert.NoError(t, err)
 
 		actual := v1.ServiceAccount{}
@@ -77,7 +77,7 @@ func TestDeleteServiceAccounts(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		err = deleteServiceAccounts(context.Background(), paramsCollector(), []v1.ServiceAccount{collector.ServiceAccount(paramsCollector().Instance)})
+		err = deleteServiceAccounts(context.Background(), params(), []v1.ServiceAccount{collector.ServiceAccount(params().Instance)})
 		assert.NoError(t, err)
 
 		exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, types.NamespacedName{Namespace: "default", Name: "test-delete-collector"})
@@ -101,7 +101,7 @@ func TestDeleteServiceAccounts(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		err = deleteServiceAccounts(context.Background(), paramsCollector(), []v1.ServiceAccount{collector.ServiceAccount(paramsCollector().Instance)})
+		err = deleteServiceAccounts(context.Background(), params(), []v1.ServiceAccount{collector.ServiceAccount(params().Instance)})
 		assert.NoError(t, err)
 
 		exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, types.NamespacedName{Namespace: "default", Name: "test-delete-collector"})

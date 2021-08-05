@@ -15,9 +15,14 @@
 package reconcile
 
 import (
+	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
+
+func IsAllocatorEnabled(params Params) bool {
+	return params.Instance.Spec.Mode == v1alpha1.ModeStatefulSet && params.Instance.Spec.TargetAllocator.Enabled
+}
 
 func GetPromConfig(params Params) (map[interface{}]interface{}, error) {
 	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)

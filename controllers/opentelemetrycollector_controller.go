@@ -30,7 +30,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -66,7 +66,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 		p.Tasks = []Task{
 			{
 				"config maps",
-				reconcile.CollectorConfigMaps,
+				reconcile.ConfigMaps,
 				true,
 			},
 			{
@@ -76,12 +76,12 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 			},
 			{
 				"services",
-				reconcile.CollectorServices,
+				reconcile.Services,
 				true,
 			},
 			{
 				"deployments",
-				reconcile.CollectorDeployments,
+				reconcile.Deployments,
 				true,
 			},
 			{

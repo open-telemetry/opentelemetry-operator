@@ -27,46 +27,44 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
-func TestExpectedStatefulsets(t *testing.T) {
-	param := paramsCollector()
-	expectedSs := collector.StatefulSet(param.Config, logger, param.Instance)
+func TestExpectedDeployments(t *testing.T) {
+	param := params()
+	expectedDeploy := collector.Deployment(param.Config, logger, param.Instance)
 
-	t.Run("should create StatefulSet", func(t *testing.T) {
-		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+	t.Run("should create deployment", func(t *testing.T) {
+		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
-		actual := v1.StatefulSet{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
-		assert.Equal(t, int32(2), *actual.Spec.Replicas)
 
 	})
-	t.Run("should update statefulset", func(t *testing.T) {
-		createObjectIfNotExists(t, "test-collector", &expectedSs)
-		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+	t.Run("should update deployment", func(t *testing.T) {
+		createObjectIfNotExists(t, "test-collector", &expectedDeploy)
+		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
-		actual := v1.StatefulSet{}
+		actual := v1.Deployment{}
 		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
+		assert.Equal(t, int32(2), *actual.Spec.Replicas)
 	})
 
-	t.Run("should delete statefulset", func(t *testing.T) {
-
+	t.Run("should delete deployment", func(t *testing.T) {
 		labels := map[string]string{
 			"app.kubernetes.io/instance":   "default.test",
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}
-		ds := v1.StatefulSet{}
-		ds.Name = "dummy"
-		ds.Namespace = "default"
-		ds.Labels = labels
-		ds.Spec = v1.StatefulSetSpec{
+		deploy := v1.Deployment{}
+		deploy.Name = "dummy"
+		deploy.Namespace = "default"
+		deploy.Labels = labels
+		deploy.Spec = v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -82,29 +80,27 @@ func TestExpectedStatefulsets(t *testing.T) {
 				},
 			},
 		}
+		createObjectIfNotExists(t, "dummy", &deploy)
 
-		createObjectIfNotExists(t, "dummy", &ds)
-
-		err := deleteStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
-		actual := v1.StatefulSet{}
+		actual := v1.Deployment{}
 		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
 
 		assert.False(t, exists)
 
 	})
 
-	t.Run("should not delete statefulset", func(t *testing.T) {
-
+	t.Run("should not delete deployment", func(t *testing.T) {
 		labels := map[string]string{
+			"app.kubernetes.io/instance":   "default.test",
 			"app.kubernetes.io/managed-by": "helm-opentelemetry-operator",
 		}
-		ds := v1.StatefulSet{}
-		ds.Name = "dummy"
-		ds.Namespace = "default"
-		ds.Labels = labels
-		ds.Spec = v1.StatefulSetSpec{
+		deploy := v1.Deployment{}
+		deploy.Name = "dummy"
+		deploy.Namespace = "default"
+		deploy.Spec = v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -120,13 +116,12 @@ func TestExpectedStatefulsets(t *testing.T) {
 				},
 			},
 		}
+		createObjectIfNotExists(t, "dummy", &deploy)
 
-		createObjectIfNotExists(t, "dummy", &ds)
-
-		err := deleteStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
-		actual := v1.StatefulSet{}
+		actual := v1.Deployment{}
 		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
 
 		assert.True(t, exists)

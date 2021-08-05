@@ -155,12 +155,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = controllers.NewTargetAllocatorReconciler(controllers.Params{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
-		Scheme:   mgr.GetScheme(),
-		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("opentelemetry-targetallocator"),
+	if err = controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
+		Scheme: mgr.GetScheme(),
+		Config: cfg,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "TargetAllocator")
 		os.Exit(1)

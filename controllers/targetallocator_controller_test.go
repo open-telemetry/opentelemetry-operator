@@ -34,17 +34,17 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/reconcile"
 )
 
 func TestNewObjectsOnTargetAllocatorReconciliation(t *testing.T) {
 	// prepare
 	cfg := config.New()
-	configYAML, err := ioutil.ReadFile("../pkg/reconcile/suite_test.yaml")
+	configYAML, err := ioutil.ReadFile("../pkg/targetallocator/reconcile/suite_test.yaml")
 	require.NoError(t, err)
 
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewTargetAllocatorReconciler(controllers.Params{
+	reconciler := controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: testScheme,
@@ -113,9 +113,9 @@ func TestNewObjectsOnTargetAllocatorReconciliation(t *testing.T) {
 func TestContinueOnRecoverableTargetAllocatorFailure(t *testing.T) {
 	// prepare
 	taskCalled := false
-	reconciler := controllers.NewTargetAllocatorReconciler(controllers.Params{
+	reconciler := controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
 		Log: logger,
-		Tasks: []controllers.Task{
+		Tasks: []controllers.TgAlTask{
 			{
 				Name: "should-fail",
 				Do: func(context.Context, reconcile.Params) error {
@@ -147,12 +147,12 @@ func TestBreakOnUnrecoverableTargetAllocatorError(t *testing.T) {
 	taskCalled := false
 	expectedErr := errors.New("should fail!")
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewTargetAllocatorReconciler(controllers.Params{
+	reconciler := controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: scheme.Scheme,
 		Config: cfg,
-		Tasks: []controllers.Task{
+		Tasks: []controllers.TgAlTask{
 			{
 				Name: "should-fail",
 				Do: func(context.Context, reconcile.Params) error {
@@ -197,12 +197,12 @@ func TestTargetAllocatorSkipWhenInstanceDoesNotExist(t *testing.T) {
 	// prepare
 	cfg := config.New()
 	nsn := types.NamespacedName{Name: "non-existing-my-instance", Namespace: "default"}
-	reconciler := controllers.NewTargetAllocatorReconciler(controllers.Params{
+	reconciler := controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
 		Client: k8sClient,
 		Log:    logger,
 		Scheme: scheme.Scheme,
 		Config: cfg,
-		Tasks: []controllers.Task{
+		Tasks: []controllers.TgAlTask{
 			{
 				Name: "should-not-be-called",
 				Do: func(context.Context, reconcile.Params) error {

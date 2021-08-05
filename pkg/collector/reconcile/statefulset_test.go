@@ -27,26 +27,28 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
-func TestExpectedDaemonsets(t *testing.T) {
-	param := paramsCollector()
-	expectedDs := collector.DaemonSet(param.Config, logger, param.Instance)
+func TestExpectedStatefulsets(t *testing.T) {
+	param := params()
+	expectedSs := collector.StatefulSet(param.Config, logger, param.Instance)
 
-	t.Run("should create Daemonset", func(t *testing.T) {
-		err := expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+	t.Run("should create StatefulSet", func(t *testing.T) {
+		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
-		exists, err := populateObjectIfExists(t, &v1.DaemonSet{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+		actual := v1.StatefulSet{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
+		assert.Equal(t, int32(2), *actual.Spec.Replicas)
 
 	})
-	t.Run("should update Daemonset", func(t *testing.T) {
-		createObjectIfNotExists(t, "test-collector", &expectedDs)
-		err := expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+	t.Run("should update statefulset", func(t *testing.T) {
+		createObjectIfNotExists(t, "test-collector", &expectedSs)
+		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
-		actual := v1.DaemonSet{}
+		actual := v1.StatefulSet{}
 		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 
 		assert.NoError(t, err)
@@ -54,17 +56,17 @@ func TestExpectedDaemonsets(t *testing.T) {
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
 	})
 
-	t.Run("should delete daemonset", func(t *testing.T) {
+	t.Run("should delete statefulset", func(t *testing.T) {
 
 		labels := map[string]string{
 			"app.kubernetes.io/instance":   "default.test",
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}
-		ds := v1.DaemonSet{}
+		ds := v1.StatefulSet{}
 		ds.Name = "dummy"
 		ds.Namespace = "default"
 		ds.Labels = labels
-		ds.Spec = v1.DaemonSetSpec{
+		ds.Spec = v1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -83,26 +85,26 @@ func TestExpectedDaemonsets(t *testing.T) {
 
 		createObjectIfNotExists(t, "dummy", &ds)
 
-		err := deleteDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		err := deleteStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
-		actual := v1.DaemonSet{}
+		actual := v1.StatefulSet{}
 		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
 
 		assert.False(t, exists)
 
 	})
 
-	t.Run("should not delete daemonset", func(t *testing.T) {
+	t.Run("should not delete statefulset", func(t *testing.T) {
 
 		labels := map[string]string{
 			"app.kubernetes.io/managed-by": "helm-opentelemetry-operator",
 		}
-		ds := v1.DaemonSet{}
+		ds := v1.StatefulSet{}
 		ds.Name = "dummy"
 		ds.Namespace = "default"
 		ds.Labels = labels
-		ds.Spec = v1.DaemonSetSpec{
+		ds.Spec = v1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -121,10 +123,10 @@ func TestExpectedDaemonsets(t *testing.T) {
 
 		createObjectIfNotExists(t, "dummy", &ds)
 
-		err := deleteDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		err := deleteStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
-		actual := v1.DaemonSet{}
+		actual := v1.StatefulSet{}
 		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "dummy"})
 
 		assert.True(t, exists)
