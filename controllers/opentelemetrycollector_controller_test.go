@@ -218,7 +218,7 @@ func TestContinueOnRecoverableFailure(t *testing.T) {
 	taskCalled := false
 	reconciler := controllers.NewReconciler(controllers.Params{
 		Log: logger,
-		Tasks: []controllers.Task{
+		Tasks: []reconcile.Task{
 			{
 				Name: "should-fail",
 				Do: func(context.Context, reconcile.Params) error {
@@ -255,7 +255,7 @@ func TestBreakOnUnrecoverableError(t *testing.T) {
 		Log:    logger,
 		Scheme: scheme.Scheme,
 		Config: cfg,
-		Tasks: []controllers.Task{
+		Tasks: []reconcile.Task{
 			{
 				Name: "should-fail",
 				Do: func(context.Context, reconcile.Params) error {
@@ -305,7 +305,7 @@ func TestSkipWhenInstanceDoesNotExist(t *testing.T) {
 		Log:    logger,
 		Scheme: scheme.Scheme,
 		Config: cfg,
-		Tasks: []controllers.Task{
+		Tasks: []reconcile.Task{
 			{
 				Name: "should-not-be-called",
 				Do: func(context.Context, reconcile.Params) error {
