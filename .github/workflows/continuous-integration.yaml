@@ -24,7 +24,7 @@ jobs:
 
     - uses: jpkrohling/setup-operator-sdk@v1.1.0
       with:
-        operator-sdk-version: v1.9.0
+        operator-sdk-version: v1.10.0
 
     - name: "basic checks"
       run: make ci
