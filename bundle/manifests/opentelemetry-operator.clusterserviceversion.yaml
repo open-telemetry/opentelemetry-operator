@@ -233,6 +233,7 @@ spec:
                 ports:
                 - containerPort: 8443
                   name: https
+                  protocol: TCP
                 resources: {}
               serviceAccountName: opentelemetry-operator-controller-manager
               terminationGracePeriodSeconds: 10
