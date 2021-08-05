@@ -30,15 +30,16 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
 )
 
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 
 // Services reconciles the service(s) required for the instance in the current context.
-func Services(ctx context.Context, params Params) error {
+func Services(ctx context.Context, params reconcile.Params) error {
 	desired := []corev1.Service{}
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
-		type builder func(context.Context, Params) *corev1.Service
+		type builder func(context.Context, reconcile.Params) *corev1.Service
 		for _, builder := range []builder{desiredService, headless, monitoringService} {
 			svc := builder(ctx, params)
 			// add only the non-nil to the list
@@ -61,7 +62,7 @@ func Services(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredService(ctx context.Context, params Params) *corev1.Service {
+func desiredService(ctx context.Context, params reconcile.Params) *corev1.Service {
 	labels := collector.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
@@ -121,7 +122,7 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 	}
 }
 
-func headless(ctx context.Context, params Params) *corev1.Service {
+func headless(ctx context.Context, params reconcile.Params) *corev1.Service {
 	h := desiredService(ctx, params)
 	if h == nil {
 		return nil
@@ -132,7 +133,7 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 	return h
 }
 
-func monitoringService(ctx context.Context, params Params) *corev1.Service {
+func monitoringService(ctx context.Context, params reconcile.Params) *corev1.Service {
 	labels := collector.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = naming.MonitoringService(params.Instance)
 
@@ -157,7 +158,7 @@ func monitoringService(ctx context.Context, params Params) *corev1.Service {
 	}
 }
 
-func expectedServices(ctx context.Context, params Params, expected []corev1.Service) error {
+func expectedServices(ctx context.Context, params reconcile.Params, expected []corev1.Service) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -208,7 +209,7 @@ func expectedServices(ctx context.Context, params Params, expected []corev1.Serv
 	return nil
 }
 
-func deleteServices(ctx context.Context, params Params, expected []corev1.Service) error {
+func deleteServices(ctx context.Context, params reconcile.Params, expected []corev1.Service) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

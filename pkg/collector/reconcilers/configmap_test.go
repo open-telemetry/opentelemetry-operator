@@ -26,6 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
@@ -82,7 +83,7 @@ func TestExpectedConfigMap(t *testing.T) {
 
 	t.Run("should update config map", func(t *testing.T) {
 
-		param := Params{
+		param := reconcile.Params{
 			Config: config.New(),
 			Client: k8sClient,
 			Instance: v1alpha1.OpenTelemetryCollector{

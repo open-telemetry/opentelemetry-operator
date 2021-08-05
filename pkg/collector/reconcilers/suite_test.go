@@ -37,6 +37,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
 )
 
 var k8sClient client.Client
@@ -80,9 +81,9 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func params() Params {
+func params() reconcile.Params {
 	replicas := int32(2)
-	return Params{
+	return reconcile.Params{
 		Config: config.New(),
 		Client: k8sClient,
 		Instance: v1alpha1.OpenTelemetryCollector{

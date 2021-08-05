@@ -27,6 +27,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
 )
 
 func TestExtractPortNumbersAndNames(t *testing.T) {
@@ -97,7 +98,7 @@ func TestFilterPort(t *testing.T) {
 
 func TestDesiredService(t *testing.T) {
 	t.Run("should return nil service for unknown receiver and protocol", func(t *testing.T) {
-		params := Params{
+		params := reconcile.Params{
 			Config: config.Config{},
 			Client: k8sClient,
 			Log:    logger,

@@ -28,12 +28,13 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
 )
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 // ConfigMaps reconciles the config map(s) required for the instance in the current context.
-func ConfigMaps(ctx context.Context, params Params) error {
+func ConfigMaps(ctx context.Context, params reconcile.Params) error {
 	desired := []corev1.ConfigMap{
 		desiredConfigMap(ctx, params),
 	}
@@ -51,7 +52,7 @@ func ConfigMaps(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
+func desiredConfigMap(_ context.Context, params reconcile.Params) corev1.ConfigMap {
 	name := naming.ConfigMap(params.Instance)
 	labels := collector.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name
@@ -69,7 +70,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	}
 }
 
-func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap, retry bool) error {
+func expectedConfigMaps(ctx context.Context, params reconcile.Params, expected []corev1.ConfigMap, retry bool) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -135,7 +136,7 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 	return nil
 }
 
-func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap) error {
+func deleteConfigMaps(ctx context.Context, params reconcile.Params, expected []corev1.ConfigMap) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

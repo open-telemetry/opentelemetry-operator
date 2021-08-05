@@ -26,12 +26,13 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
 )
 
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 // ServiceAccounts reconciles the service account(s) required for the instance in the current context.
-func ServiceAccounts(ctx context.Context, params Params) error {
+func ServiceAccounts(ctx context.Context, params reconcile.Params) error {
 	desired := []corev1.ServiceAccount{}
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
 		desired = append(desired, collector.ServiceAccount(params.Instance))
@@ -50,7 +51,7 @@ func ServiceAccounts(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
+func expectedServiceAccounts(ctx context.Context, params reconcile.Params, expected []corev1.ServiceAccount) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -100,7 +101,7 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 	return nil
 }
 
-func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
+func deleteServiceAccounts(ctx context.Context, params reconcile.Params, expected []corev1.ServiceAccount) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

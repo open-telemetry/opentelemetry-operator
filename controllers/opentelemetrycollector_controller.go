@@ -31,6 +31,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcilers"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -46,7 +47,7 @@ type OpenTelemetryCollectorReconciler struct {
 // Task represents a reconciliation task to be executed by the reconciler.
 type Task struct {
 	Name        string
-	Do          func(context.Context, reconcilers.Params) error
+	Do          func(context.Context, reconcile.Params) error
 	BailOnError bool
 }
 
@@ -135,7 +136,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params := reconcilers.Params{
+	params := reconcile.Params{
 		Config:   r.config,
 		Client:   r.Client,
 		Instance: instance,
@@ -152,7 +153,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl
 }
 
 // RunTasks runs all the tasks associated with this reconciler.
-func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcilers.Params) error {
+func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
 			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
