@@ -59,39 +59,39 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	if len(p.Tasks) == 0 {
 		p.Tasks = []reconcile.Task{
 			{
-				"config maps",
-				reconcilers.ConfigMaps,
-				true,
+				Name:        "config maps",
+				Do:          reconcilers.ConfigMaps,
+				BailOnError: true,
 			},
 			{
-				"service accounts",
-				reconcilers.ServiceAccounts,
-				true,
+				Name:        "service accounts",
+				Do:          reconcilers.ServiceAccounts,
+				BailOnError: true,
 			},
 			{
-				"services",
-				reconcilers.Services,
-				true,
+				Name:        "services",
+				Do:          reconcilers.Services,
+				BailOnError: true,
 			},
 			{
-				"deployments",
-				reconcilers.Deployments,
-				true,
+				Name:        "deployments",
+				Do:          reconcilers.Deployments,
+				BailOnError: true,
 			},
 			{
-				"daemon sets",
-				reconcilers.DaemonSets,
-				true,
+				Name:        "daemon sets",
+				Do:          reconcilers.DaemonSets,
+				BailOnError: true,
 			},
 			{
-				"stateful sets",
-				reconcilers.StatefulSets,
-				true,
+				Name:        "stateful sets",
+				Do:          reconcilers.StatefulSets,
+				BailOnError: true,
 			},
 			{
-				"opentelemetry",
-				reconcilers.Self,
-				true,
+				Name:        "opentelemetry",
+				Do:          reconcilers.Self,
+				BailOnError: true,
 			},
 		}
 	}
