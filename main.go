@@ -155,16 +155,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = controllers.NewTargetAllocatorReconciler(controllers.TgAlParams{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
-		Scheme: mgr.GetScheme(),
-		Config: cfg,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "TargetAllocator")
-		os.Exit(1)
-	}
-
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&opentelemetryiov1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")

@@ -1,5 +1,8 @@
 processors:
 receivers:
+  jaeger:
+    protocols:
+      grpc:
   prometheus:
     config:
       scrape_configs:
@@ -13,7 +16,7 @@ exporters:
 
 service:
   pipelines:
-    traces:
-      receivers: [jaeger]
+    metrics:
+      receivers: [prometheus]
       processors: []
       exporters: [logging]

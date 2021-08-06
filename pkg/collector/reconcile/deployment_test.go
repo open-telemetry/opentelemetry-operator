@@ -24,14 +24,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 func TestExpectedDeployments(t *testing.T) {
 	param := params()
 	expectedDeploy := collector.Deployment(param.Config, logger, param.Instance)
+	expectedTADeploy := targetallocator.Deployment(param.Config, logger, param.Instance)
 
-	t.Run("should create deployment", func(t *testing.T) {
+	t.Run("should create collector deployment", func(t *testing.T) {
 		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
@@ -41,6 +44,64 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.True(t, exists)
 
 	})
+
+	t.Run("should create target allocator deployment", func(t *testing.T) {
+		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedTADeploy})
+		assert.NoError(t, err)
+
+		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+	})
+
+	t.Run("should not create target allocator deployment when targetallocator is not enabled", func(t *testing.T) {
+		param := Params{
+			Client: k8sClient,
+			Instance: v1alpha1.OpenTelemetryCollector{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "opentelemetry.io",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					UID:       instanceUID,
+				},
+				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Mode: v1alpha1.ModeStatefulSet,
+					Config: `
+				receivers:
+				jaeger:
+					protocols:
+					grpc:
+				processors:
+			
+				exporters:
+				logging:
+			
+				service:
+				pipelines:
+					traces:
+					receivers: [jaeger]
+					processors: []
+					exporters: [logging]
+			
+			`,
+				},
+			},
+			Scheme: testScheme,
+			Log:    logger,
+		}
+		expected := []v1.Deployment{}
+		if param.Instance.Spec.TargetAllocator.Enabled {
+			expected = append(expected, targetallocator.Deployment(param.Config, param.Log, param.Instance))
+		}
+
+		assert.Len(t, expected, 0)
+	})
+
 	t.Run("should update deployment", func(t *testing.T) {
 		createObjectIfNotExists(t, "test-collector", &expectedDeploy)
 		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
@@ -53,6 +114,47 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.True(t, exists)
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
 		assert.Equal(t, int32(2), *actual.Spec.Replicas)
+	})
+
+	t.Run("should not update target allocator deployment when the config is updated", func(t *testing.T) {
+		ctx := context.Background()
+		createObjectIfNotExists(t, "test-targetallocator", &expectedDeploy)
+		orgUID := expectedDeploy.OwnerReferences[0].UID
+
+		updatedDeploy := targetallocator.Deployment(newParams().Config, logger, param.Instance)
+
+		err := expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		assert.NoError(t, err)
+
+		actual := v1.Deployment{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
+		assert.Equal(t, expectedDeploy.Spec.Template.Spec.Containers[0], actual.Spec.Template.Spec.Containers[0])
+		assert.Equal(t, int32(1), *actual.Spec.Replicas)
+	})
+
+	t.Run("should update target allocator deployment when the container image is updated", func(t *testing.T) {
+		ctx := context.Background()
+		createObjectIfNotExists(t, "test-targetallocator", &expectedDeploy)
+		orgUID := expectedDeploy.OwnerReferences[0].UID
+
+		updatedParam := newParams("test/test-img")
+		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
+
+		err := expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		assert.NoError(t, err)
+
+		actual := v1.Deployment{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
+		assert.NotEqual(t, expectedDeploy.Spec.Template.Spec.Containers[0], actual.Spec.Template.Spec.Containers[0])
+		assert.Equal(t, int32(1), *actual.Spec.Replicas)
 	})
 
 	t.Run("should delete deployment", func(t *testing.T) {
