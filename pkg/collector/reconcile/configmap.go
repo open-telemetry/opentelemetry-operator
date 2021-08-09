@@ -93,6 +93,7 @@ func desiredTAConfigMap(_ context.Context, params Params) (corev1.ConfigMap, err
 	taConfig["label_selector"] = map[string]string{
 		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/component":  "opentelemetry-collector",
 	}
 	taConfig["config"] = promConfig
 	taConfigYAML, err := yaml.Marshal(taConfig)

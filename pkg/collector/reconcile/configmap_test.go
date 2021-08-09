@@ -90,6 +90,7 @@ service:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 label_selector:
+  app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.test
   app.kubernetes.io/managed-by: opentelemetry-operator
 `,
@@ -219,6 +220,7 @@ func TestExpectedConfigMap(t *testing.T) {
 		taConfig["label_selector"] = map[string]string{
 			"app.kubernetes.io/instance":   "default.test",
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/component":  "opentelemetry-collector",
 		}
 		taConfig["config"] = parmConfig
 		taConfigYAML, _ := yaml.Marshal(taConfig)
