@@ -121,9 +121,11 @@ func TestExpectedDeployments(t *testing.T) {
 		createObjectIfNotExists(t, "test-targetallocator", &expectedDeploy)
 		orgUID := expectedDeploy.OwnerReferences[0].UID
 
-		updatedDeploy := targetallocator.Deployment(newParams().Config, logger, param.Instance)
+		updatedParam, err := newParams("test/test-img")
+		assert.NoError(t, err)
+		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, param.Instance)
 
-		err := expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -141,10 +143,11 @@ func TestExpectedDeployments(t *testing.T) {
 		createObjectIfNotExists(t, "test-targetallocator", &expectedDeploy)
 		orgUID := expectedDeploy.OwnerReferences[0].UID
 
-		updatedParam := newParams("test/test-img")
+		updatedParam, err := newParams("test/test-img")
+		assert.NoError(t, err)
 		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
 
-		err := expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}

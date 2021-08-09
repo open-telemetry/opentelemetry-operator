@@ -92,7 +92,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	}
 
 	// validate target allocation
-	if r.Spec.TargetAllocator.Enabled && !(r.Spec.Mode == ModeStatefulSet) {
+	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
 		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
 	}
 

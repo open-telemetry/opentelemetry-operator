@@ -120,11 +120,11 @@ func params() Params {
 	}
 }
 
-func newParams(containerImage ...string) Params {
+func newParams(containerImage ...string) (Params, error) {
 	replicas := int32(1)
 	configYAML, err := ioutil.ReadFile("test.yaml")
 	if err != nil {
-		fmt.Printf("Error getting yaml file: %v", err)
+		return Params{}, fmt.Errorf("Error getting yaml file: %v", err)
 	}
 
 	cfg := config.New()
@@ -167,7 +167,7 @@ func newParams(containerImage ...string) Params {
 		},
 		Scheme: testScheme,
 		Log:    logger,
-	}
+	}, nil
 }
 
 func createObjectIfNotExists(tb testing.TB, name string, object client.Object) {
