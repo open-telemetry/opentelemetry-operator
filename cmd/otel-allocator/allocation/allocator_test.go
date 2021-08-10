@@ -9,17 +9,18 @@ import (
 )
 
 // Tests least connection - The expected collector after running findNextCollector should be the collecter with the least amount of workload
-func TestFindNextSharder(t *testing.T) {
+func TestFindNextCollector(t *testing.T) {
 	s := NewAllocator()
 	defaultCol := collector{Name: "default-col", NumTargets: 1}
 	maxCol := collector{Name: "max-col", NumTargets: 2}
 	leastCol := collector{Name: "least-col", NumTargets: 0}
 	s.collectors[maxCol.Name] = &maxCol
 	s.collectors[leastCol.Name] = &leastCol
-	s.nextCollector = &defaultCol
+	s.collectors[defaultCol.Name] = &defaultCol
+	//s.nextCollector = &defaultCol
 
-	s.findNextCollector()
-	assert.Equal(t, "least-col", s.nextCollector.Name)
+	//s.findNextCollector().Name
+	assert.Equal(t, "least-col", s.findNextCollector().Name)
 }
 
 func TestSetCollectors(t *testing.T) {
@@ -46,7 +47,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	}
 
 	// test that targets and collectors are added properly
-	s.SetTargets(targetList)
+	s.SetWaitingTargets(targetList)
 	s.Reallocate()
 
 	// verify
@@ -60,7 +61,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	}
 
 	// test that less targets are found - removed
-	s.SetTargets(tarL)
+	s.SetWaitingTargets(tarL)
 	s.Reallocate()
 
 	// verify
@@ -85,7 +86,7 @@ func TestCollectorBalanceWhenAddingTargets(t *testing.T) {
 
 	// test the allocation
 	s.SetCollectors(cols)
-	s.SetTargets(targetList)
+	s.SetWaitingTargets(targetList)
 	s.Reallocate()
 
 	// verify that each collector has the same amount of targets
@@ -109,7 +110,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	for _, i := range tar {
 		tarL = append(tarL, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
-	s.SetTargets(tarL)
+	s.SetWaitingTargets(tarL)
 	s.Reallocate()
 
 	// removing targets at 'random'
@@ -120,7 +121,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	for _, i := range tar {
 		tarL = append(tarL, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
-	s.SetTargets(tarL)
+	s.SetWaitingTargets(tarL)
 	s.Reallocate()
 
 	// adding targets at 'random'
@@ -131,7 +132,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	for _, i := range tar {
 		tarL = append(tarL, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
-	s.SetTargets(tarL)
+	s.SetWaitingTargets(tarL)
 	s.Reallocate()
 
 	count := len(s.targetItems) / len(s.collectors)
@@ -156,7 +157,7 @@ func TestCollectorBalanceWhenCollectorsChanged(t *testing.T) {
 	for _, i := range tar {
 		tarL = append(tarL, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
-	s.SetTargets(tarL)
+	s.SetWaitingTargets(tarL)
 	s.Reallocate()
 
 	// removing targets at 'random'
@@ -167,7 +168,7 @@ func TestCollectorBalanceWhenCollectorsChanged(t *testing.T) {
 	for _, i := range tar {
 		tarL = append(tarL, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
-	s.SetTargets(tarL)
+	s.SetWaitingTargets(tarL)
 	s.Reallocate()
 
 	// adding targets at 'random'
@@ -178,7 +179,7 @@ func TestCollectorBalanceWhenCollectorsChanged(t *testing.T) {
 	for _, i := range tar {
 		tarL = append(tarL, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
-	s.SetTargets(tarL)
+	s.SetWaitingTargets(tarL)
 	s.Reallocate()
 
 	cols = []string{"col-1", "col-2", "col-3"}

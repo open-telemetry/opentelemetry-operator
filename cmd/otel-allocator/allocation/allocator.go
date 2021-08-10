@@ -30,23 +30,31 @@ type Allocator struct {
 
 	collectors map[string]*collector // all current collectors
 
-	nextCollector *collector
-	targetItems   map[string]*TargetItem
+	targetItems map[string]*TargetItem
 }
 
 // findNextCollector finds the next collector with less number of targets.
-func (allocator *Allocator) findNextCollector() {
+func (allocator *Allocator) findNextCollector() *collector {
+
+	col := &collector{}
 	for _, v := range allocator.collectors {
-		if v.NumTargets < allocator.nextCollector.NumTargets {
-			allocator.nextCollector = v
+		// If the initial collector is empty, set the initial collector to the first element of map
+		if col.Name == "" {
+			col = v
+		} else {
+			if v.NumTargets < col.NumTargets {
+				col = v
+			}
 		}
+
 	}
+	return col
 }
 
 // SetTargets accepts the a list of targets that will be used to make
 // load balancing decisions. This method should be called when where are
 // new targets discovered or existing targets are shutdown.
-func (allocator *Allocator) SetTargets(targets []TargetItem) {
+func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	// Dump old data
 	allocator.m.Lock()
 	allocator.targetsWaiting = make(map[string]TargetItem)
@@ -58,6 +66,7 @@ func (allocator *Allocator) SetTargets(targets []TargetItem) {
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
+// SetCollectors is called when Collectors are added or removed
 func (allocator *Allocator) SetCollectors(collectors []string) {
 	if len(collectors) == 0 {
 		log.Println("no collector instances present")
@@ -73,26 +82,27 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	}
 
 	allocator.m.Unlock()
-	allocator.nextCollector = allocator.collectors[collectors[0]]
 }
 
 // Reallocate needs to be called to process the new target updates.
 // Until Reallocate is called, old targets will be served.
 func (allocator *Allocator) Reallocate() {
+	allocator.m.Lock()
 	allocator.removeOutdatedTargets()
 	allocator.processWaitingTargets()
+	allocator.m.Unlock()
 }
 
 // ReallocateCollectors reallocates the targets among the new collector instances
 func (allocator *Allocator) ReallocateCollectors() {
+	allocator.m.Lock()
 	allocator.targetItems = make(map[string]*TargetItem)
 	allocator.processWaitingTargets()
+	allocator.m.Unlock()
 }
 
 // removeOutdatedTargets removes targets that are no longer available.
 func (allocator *Allocator) removeOutdatedTargets() {
-	allocator.m.Lock()
-	defer allocator.m.Unlock()
 	for k := range allocator.targetItems {
 		if _, ok := allocator.targetsWaiting[k]; !ok {
 			allocator.collectors[allocator.targetItems[k].Collector.Name].NumTargets--
@@ -103,20 +113,18 @@ func (allocator *Allocator) removeOutdatedTargets() {
 
 // processWaitingTargets processes the newly set targets.
 func (allocator *Allocator) processWaitingTargets() {
-	allocator.m.Lock()
-	defer allocator.m.Unlock()
 	for k, v := range allocator.targetsWaiting {
 		if _, ok := allocator.targetItems[k]; !ok {
-			allocator.findNextCollector()
+			col := allocator.findNextCollector()
 			allocator.targetItems[k] = &v
 			targetItem := TargetItem{
 				JobName:   v.JobName,
 				Link:      linkJSON{"/jobs/" + v.JobName + "/targets"},
 				TargetURL: v.TargetURL,
 				Label:     v.Label,
-				Collector: allocator.nextCollector,
+				Collector: col,
 			}
-			allocator.nextCollector.NumTargets++
+			col.NumTargets++
 			allocator.targetItems[v.JobName+v.TargetURL] = &targetItem
 		}
 	}

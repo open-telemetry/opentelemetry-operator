@@ -128,7 +128,7 @@ func newAllocator(ctx context.Context) (*allocation.Allocator, *lbdiscovery.Mana
 
 	allocator := allocation.NewAllocator()
 	discoveryManager.Watch(func(targets []allocation.TargetItem) {
-		allocator.SetTargets(targets)
+		allocator.SetWaitingTargets(targets)
 		allocator.Reallocate()
 	})
 	k8sClient.Watch(ctx, cfg.LabelSelector, func(collectors []string) {
