@@ -106,7 +106,7 @@ func TestPrometheusParser(t *testing.T) {
 		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
 			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 1)
 			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "http")
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "https://test-targetallocator:443/jobs/"+scrapeConfig.JobName+"/targets?collector_id=$POD_NAME")
+			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "http://test-targetallocator:80/jobs/"+scrapeConfig.JobName+"/targets?collector_id=$POD_NAME")
 			expectedMap[scrapeConfig.JobName] = true
 		}
 		for k := range expectedMap {

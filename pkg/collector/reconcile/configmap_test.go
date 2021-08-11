@@ -104,7 +104,7 @@ receivers:
         follow_redirects: true
         http_sd_configs:
         - follow_redirects: false
-          url: https://test-targetallocator:443/jobs/otel-collector/targets?collector_id=$POD_NAME
+          url: http://test-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
 service:
   pipelines:
     metrics:

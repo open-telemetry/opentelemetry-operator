@@ -63,7 +63,7 @@ func ReplaceConfig(otelcol v1alpha1.OpenTelemetryCollector) (string, error) {
 	for i := range cfg.PromConfig.ScrapeConfigs {
 		cfg.PromConfig.ScrapeConfigs[i].ServiceDiscoveryConfigs = discovery.Configs{
 			&http.SDConfig{
-				URL: fmt.Sprintf("https://%s:443/jobs/%s/targets?collector_id=$POD_NAME", naming.TAService(otelcol), cfg.PromConfig.ScrapeConfigs[i].JobName),
+				URL: fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", naming.TAService(otelcol), cfg.PromConfig.ScrapeConfigs[i].JobName),
 			},
 		}
 	}
