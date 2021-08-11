@@ -57,22 +57,23 @@ func (allocator *Allocator) findNextCollector() *collector {
 func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	// Dump old data
 	allocator.m.Lock()
+	defer allocator.m.Unlock()
 	allocator.targetsWaiting = make(map[string]TargetItem)
 	// Set new data
 	for _, i := range targets {
 		allocator.targetsWaiting[i.JobName+i.TargetURL] = i
 	}
-	allocator.m.Unlock()
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
 // SetCollectors is called when Collectors are added or removed
 func (allocator *Allocator) SetCollectors(collectors []string) {
+	allocator.m.Lock()
+	defer allocator.m.Unlock()
 	if len(collectors) == 0 {
 		log.Println("no collector instances present")
 		return
 	}
-	allocator.m.Lock()
 	for k := range allocator.collectors {
 		delete(allocator.collectors, k)
 	}
@@ -80,25 +81,23 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	for _, i := range collectors {
 		allocator.collectors[i] = &collector{Name: i, NumTargets: 0}
 	}
-
-	allocator.m.Unlock()
 }
 
 // Reallocate needs to be called to process the new target updates.
 // Until Reallocate is called, old targets will be served.
 func (allocator *Allocator) Reallocate() {
 	allocator.m.Lock()
+	defer allocator.m.Unlock()
 	allocator.removeOutdatedTargets()
 	allocator.processWaitingTargets()
-	allocator.m.Unlock()
 }
 
 // ReallocateCollectors reallocates the targets among the new collector instances
 func (allocator *Allocator) ReallocateCollectors() {
 	allocator.m.Lock()
+	defer allocator.m.Unlock()
 	allocator.targetItems = make(map[string]*TargetItem)
 	allocator.processWaitingTargets()
-	allocator.m.Unlock()
 }
 
 // removeOutdatedTargets removes targets that are no longer available.
