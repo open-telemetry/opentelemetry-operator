@@ -148,8 +148,8 @@ func desiredTAService(params Params) corev1.Service {
 			Selector: selector,
 			Ports: []corev1.ServicePort{{
 				Name:       "targetallocation",
-				Port:       443,
-				TargetPort: intstr.FromInt(443),
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
 			}},
 		},
 	}
