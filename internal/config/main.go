@@ -75,8 +75,7 @@ func New(opts ...Option) Config {
 	}
 
 	if len(o.targetAllocatorImage) == 0 {
-		// will be replaced with target allocator image once approved and available
-		o.targetAllocatorImage = fmt.Sprintf("raul9595/otel-loadbalancer:%s", o.version.TargetAllocator)
+		o.targetAllocatorImage = fmt.Sprintf("quay.io/opentelemetry/target-allocator:%s", o.version.TargetAllocator)
 	}
 
 	return Config{
