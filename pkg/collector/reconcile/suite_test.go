@@ -120,7 +120,7 @@ func params() Params {
 	}
 }
 
-func newParams(containerImage ...string) (Params, error) {
+func newParams(containerImage string) (Params, error) {
 	replicas := int32(1)
 	configYAML, err := ioutil.ReadFile("test.yaml")
 	if err != nil {
@@ -128,10 +128,6 @@ func newParams(containerImage ...string) (Params, error) {
 	}
 
 	cfg := config.New()
-	defaultContainerImage := cfg.TargetAllocatorImage()
-	if len(containerImage) > 0 && len(containerImage[0]) > 0 {
-		defaultContainerImage = containerImage[0]
-	}
 
 	return Params{
 		Config: cfg,
@@ -159,7 +155,7 @@ func newParams(containerImage ...string) (Params, error) {
 				}},
 				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 					Enabled: true,
-					Image:   defaultContainerImage,
+					Image:   containerImage,
 				},
 				Replicas: &replicas,
 				Config:   string(configYAML),

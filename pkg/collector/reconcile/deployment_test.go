@@ -118,8 +118,8 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should not update target allocator deployment when the config is updated", func(t *testing.T) {
 		ctx := context.Background()
-		createObjectIfNotExists(t, "test-targetallocator", &expectedDeploy)
-		orgUID := expectedDeploy.OwnerReferences[0].UID
+		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
+		orgUID := expectedTADeploy.OwnerReferences[0].UID
 
 		updatedParam, err := newParams("test/test-img")
 		assert.NoError(t, err)
@@ -133,15 +133,17 @@ func TestExpectedDeployments(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
+		t.Log(expectedTADeploy.Spec.Template.Spec.Containers[0].Image)
+		t.Log(actual.Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
-		assert.Equal(t, expectedDeploy.Spec.Template.Spec.Containers[0], actual.Spec.Template.Spec.Containers[0])
+		assert.Equal(t, expectedTADeploy.Spec.Template.Spec.Containers[0].Image, actual.Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, int32(1), *actual.Spec.Replicas)
 	})
 
 	t.Run("should update target allocator deployment when the container image is updated", func(t *testing.T) {
 		ctx := context.Background()
-		createObjectIfNotExists(t, "test-targetallocator", &expectedDeploy)
-		orgUID := expectedDeploy.OwnerReferences[0].UID
+		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
+		orgUID := expectedTADeploy.OwnerReferences[0].UID
 
 		updatedParam, err := newParams("test/test-img")
 		assert.NoError(t, err)
@@ -156,7 +158,9 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
-		assert.NotEqual(t, expectedDeploy.Spec.Template.Spec.Containers[0], actual.Spec.Template.Spec.Containers[0])
+		t.Log(expectedTADeploy.Spec.Template.Spec.Containers[0].Image)
+		t.Log(actual.Spec.Template.Spec.Containers[0].Image)
+		assert.NotEqual(t, expectedTADeploy.Spec.Template.Spec.Containers[0].Image, actual.Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, int32(1), *actual.Spec.Replicas)
 	})
 

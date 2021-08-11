@@ -42,7 +42,7 @@ func ConfigMaps(ctx context.Context, params Params) error {
 	}
 
 	if params.Instance.Spec.TargetAllocator.Enabled {
-		cm, err := desiredTAConfigMap(ctx, params)
+		cm, err := desiredTAConfigMap(params)
 		if err != nil {
 			return fmt.Errorf("failed to parse config: %v", err)
 		}
@@ -84,7 +84,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	}
 }
 
-func desiredTAConfigMap(_ context.Context, params Params) (corev1.ConfigMap, error) {
+func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(params.Instance)
 	labels := targetallocator.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name

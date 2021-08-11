@@ -146,7 +146,7 @@ label_selector:
 `,
 		}
 
-		actual, err := desiredTAConfigMap(context.Background(), params())
+		actual, err := desiredTAConfigMap(params())
 		assert.NoError(t, err)
 
 		assert.Equal(t, "test-targetallocator", actual.Name)
@@ -159,7 +159,7 @@ label_selector:
 
 func TestExpectedConfigMap(t *testing.T) {
 	t.Run("should create collector and target allocator config maps", func(t *testing.T) {
-		configMap, err := desiredTAConfigMap(context.Background(), params())
+		configMap, err := desiredTAConfigMap(params())
 		assert.NoError(t, err)
 		err = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{desiredConfigMap(context.Background(), params()), configMap}, true)
 		assert.NoError(t, err)
@@ -244,11 +244,11 @@ func TestExpectedConfigMap(t *testing.T) {
 			Scheme: testScheme,
 			Log:    logger,
 		}
-		cm, err := desiredTAConfigMap(context.Background(), param)
+		cm, err := desiredTAConfigMap(param)
 		assert.EqualError(t, err, "no receivers available as part of the configuration")
 		createObjectIfNotExists(t, "test-targetallocator", &cm)
 
-		configMap, err := desiredTAConfigMap(context.Background(), params())
+		configMap, err := desiredTAConfigMap(params())
 		assert.NoError(t, err)
 		err = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap}, true)
 		assert.NoError(t, err)
