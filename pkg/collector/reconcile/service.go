@@ -51,10 +51,6 @@ func Services(ctx context.Context, params Params) error {
 	}
 
 	if params.Instance.Spec.TargetAllocator.Enabled {
-		_, err := GetPromConfig(params)
-		if err != nil {
-			return fmt.Errorf("failed to parse Prometheus config: %v", err)
-		}
 		desired = append(desired, desiredTAService(params))
 	}
 

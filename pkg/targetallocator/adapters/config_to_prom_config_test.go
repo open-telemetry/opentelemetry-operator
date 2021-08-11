@@ -20,9 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
@@ -49,13 +47,8 @@ func TestExtractPromConfigFromConfig(t *testing.T) {
 		},
 	}
 
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
 	// test
-	promConfig, err := ta.ConfigToPromConfig(config)
+	promConfig, err := ta.ConfigToPromConfig(configStr)
 	assert.NoError(t, err)
 
 	// verify
@@ -76,13 +69,8 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
         endpoint: 0.0.0.0:15268
 `
 
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
 	// test
-	promConfig, err := ta.ConfigToPromConfig(config)
+	promConfig, err := ta.ConfigToPromConfig(configStr)
 	assert.Equal(t, err, fmt.Errorf("%s property in the configuration doesn't contain valid %s", "prometheusConfig", "prometheusConfig"))
 
 	// verify

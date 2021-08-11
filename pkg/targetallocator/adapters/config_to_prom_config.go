@@ -16,6 +16,8 @@ package adapters
 
 import (
 	"fmt"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 )
 
 func errorNoComponent(component string) error {
@@ -27,7 +29,12 @@ func errorNotAMap(component string) error {
 }
 
 // ConfigToPromConfig converts the incoming configuration object into a the Prometheus receiver config.
-func ConfigToPromConfig(config map[interface{}]interface{}) (map[interface{}]interface{}, error) {
+func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
+	config, err := adapters.ConfigFromString(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	receiversProperty, ok := config["receivers"]
 	if !ok {
 		return nil, errorNoComponent("receivers")

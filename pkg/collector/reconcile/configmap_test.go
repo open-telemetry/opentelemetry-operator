@@ -28,7 +28,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
@@ -210,10 +209,7 @@ func TestExpectedConfigMap(t *testing.T) {
 		assert.True(t, exists)
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
 
-		config, err := adapters.ConfigFromString(params().Instance.Spec.Config)
-		assert.NoError(t, err)
-
-		parmConfig, err := ta.ConfigToPromConfig(config)
+		parmConfig, err := ta.ConfigToPromConfig(params().Instance.Spec.Config)
 		assert.NoError(t, err)
 
 		taConfig := make(map[interface{}]interface{})
