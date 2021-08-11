@@ -20,7 +20,7 @@ import (
 
 const (
 	configDir  = "/conf/"
-	listenAddr = ":443"
+	listenAddr = ":8080"
 )
 
 func main() {
