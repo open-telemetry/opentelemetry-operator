@@ -32,14 +32,6 @@ import (
 	taa "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
-type Params struct {
-	Instance v1alpha1.OpenTelemetryCollector
-}
-
-type PromConfig struct {
-	Instance v1alpha1.OpenTelemetryCollector
-}
-
 const defaultTestFile = "test.yaml"
 
 var instanceUID = uuid.NewUUID()
