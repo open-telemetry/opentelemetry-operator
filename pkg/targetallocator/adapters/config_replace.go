@@ -47,7 +47,7 @@ func ReplaceConfig(otelcol v1alpha1.OpenTelemetryCollector) (string, error) {
 		return "", err
 	}
 
-	// yaml marshalling/unsmarshalling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
+	// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
 	promCfg, err := yaml.Marshal(map[string]interface{}{
 		"config": promCfgMap,
 	})

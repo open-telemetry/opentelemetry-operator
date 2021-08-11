@@ -82,6 +82,7 @@ func TestPrometheusParser(t *testing.T) {
 
 	t.Run("should update config with http_sd_config", func(t *testing.T) {
 		actualConfig, err := taa.ReplaceConfig(param.Instance)
+		assert.NoError(t, err)
 
 		// prepare
 		var cfg taa.Config
@@ -96,7 +97,8 @@ func TestPrometheusParser(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
-		yaml.UnmarshalStrict(promCfg, &cfg)
+		err = yaml.UnmarshalStrict(promCfg, &cfg)
+		assert.NoError(t, err)
 
 		// test
 		expectedMap := map[string]bool{
@@ -132,7 +134,8 @@ func TestPrometheusParser(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
-		yaml.UnmarshalStrict(promCfg, &cfg)
+		err = yaml.UnmarshalStrict(promCfg, &cfg)
+		assert.NoError(t, err)
 
 		// test
 		expectedMap := map[string]bool{
