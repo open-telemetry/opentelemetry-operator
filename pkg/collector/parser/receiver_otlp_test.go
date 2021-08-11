@@ -40,23 +40,9 @@ func TestOTLPPortsOverridden(t *testing.T) {
 			"grpc": map[interface{}]interface{}{
 				"endpoint": "0.0.0.0:1234",
 			},
-		},
-	})
-
-	// test
-	ports, err := builder.Ports()
-
-	// verify
-	assert.NoError(t, err)
-	assert.Len(t, ports, 1)
-	assert.EqualValues(t, 1234, ports[0].Port)
-}
-
-func TestOTLPExposeDefaultPorts(t *testing.T) {
-	// prepare
-	builder := NewOTLPReceiverParser(logger, "otlp", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{},
+			"http": map[interface{}]interface{}{
+				"endpoint": "0.0.0.0:1235",
+			},
 		},
 	})
 
@@ -64,7 +50,8 @@ func TestOTLPExposeDefaultPorts(t *testing.T) {
 		portNumber int32
 		seen       bool
 	}{
-		"otlp-grpc": {portNumber: 4317},
+		"otlp-grpc": {portNumber: 1234},
+		"otlp-http": {portNumber: 1235},
 	}
 
 	// test
@@ -72,7 +59,43 @@ func TestOTLPExposeDefaultPorts(t *testing.T) {
 
 	// verify
 	assert.NoError(t, err)
-	assert.Len(t, ports, 1)
+	assert.Len(t, ports, len(expectedResults))
+
+	for _, port := range ports {
+		r := expectedResults[port.Name]
+		r.seen = true
+		expectedResults[port.Name] = r
+		assert.EqualValues(t, r.portNumber, port.Port)
+	}
+	for k, v := range expectedResults {
+		assert.True(t, v.seen, "the port %s wasn't included in the service ports", k)
+	}
+}
+
+func TestOTLPExposeDefaultPorts(t *testing.T) {
+	// prepare
+	builder := NewOTLPReceiverParser(logger, "otlp", map[interface{}]interface{}{
+		"protocols": map[interface{}]interface{}{
+			"grpc": map[interface{}]interface{}{},
+			"http": map[interface{}]interface{}{},
+		},
+	})
+
+	expectedResults := map[string]struct {
+		portNumber int32
+		seen       bool
+	}{
+		"otlp-grpc":        {portNumber: 4317},
+		"otlp-http":        {portNumber: 4318},
+		"otlp-http-legacy": {portNumber: 55681},
+	}
+
+	// test
+	ports, err := builder.Ports()
+
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, len(expectedResults))
 
 	for _, port := range ports {
 		r := expectedResults[port.Name]
