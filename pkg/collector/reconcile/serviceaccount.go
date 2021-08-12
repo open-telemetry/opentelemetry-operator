@@ -39,12 +39,12 @@ func ServiceAccounts(ctx context.Context, params Params) error {
 
 	// first, handle the create/update parts
 	if err := expectedServiceAccounts(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected service accounts: %v", err)
+		return fmt.Errorf("failed to reconcile the expected service accounts: %w", err)
 	}
 
 	// then, delete the extra objects
 	if err := deleteServiceAccounts(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the service accounts to be deleted: %v", err)
+		return fmt.Errorf("failed to reconcile the service accounts to be deleted: %w", err)
 	}
 
 	return nil

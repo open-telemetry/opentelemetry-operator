@@ -38,12 +38,12 @@ func DaemonSets(ctx context.Context, params Params) error {
 
 	// first, handle the create/update parts
 	if err := expectedDaemonSets(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected daemon sets: %v", err)
+		return fmt.Errorf("failed to reconcile the expected daemon sets: %w", err)
 	}
 
 	// then, delete the extra objects
 	if err := deleteDaemonSets(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the daemon sets to be deleted: %v", err)
+		return fmt.Errorf("failed to reconcile the daemon sets to be deleted: %w", err)
 	}
 
 	return nil

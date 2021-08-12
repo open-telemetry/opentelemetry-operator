@@ -124,7 +124,7 @@ func newParams(containerImage string) (Params, error) {
 	replicas := int32(1)
 	configYAML, err := ioutil.ReadFile("test.yaml")
 	if err != nil {
-		return Params{}, fmt.Errorf("Error getting yaml file: %v", err)
+		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}
 
 	cfg := config.New()
@@ -153,7 +153,7 @@ func newParams(containerImage string) (Params, error) {
 					},
 					NodePort: 0,
 				}},
-				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
 					Enabled: true,
 					Image:   containerImage,
 				},

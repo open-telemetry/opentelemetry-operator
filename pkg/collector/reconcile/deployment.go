@@ -43,12 +43,12 @@ func Deployments(ctx context.Context, params Params) error {
 
 	// first, handle the create/update parts
 	if err := expectedDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected deployments: %v", err)
+		return fmt.Errorf("failed to reconcile the expected deployments: %w", err)
 	}
 
 	// then, delete the extra objects
 	if err := deleteDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the deployments to be deleted: %v", err)
+		return fmt.Errorf("failed to reconcile the deployments to be deleted: %w", err)
 	}
 
 	return nil

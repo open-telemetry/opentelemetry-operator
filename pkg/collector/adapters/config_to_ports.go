@@ -73,7 +73,7 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 			// should we break the process and return an error, or just ignore this faulty parser
 			// and let the other parsers add their ports to the service? right now, the best
 			// option seems to be to log the failures and move on, instead of failing them all
-			logger.Error(err, "parser for '%s' has returned an error: %v", rcvrName, err)
+			logger.Error(err, "parser for '%s' has returned an error: %w", rcvrName, err)
 			continue
 		}
 

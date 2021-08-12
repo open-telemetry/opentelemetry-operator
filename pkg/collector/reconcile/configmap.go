@@ -44,19 +44,19 @@ func ConfigMaps(ctx context.Context, params Params) error {
 	if params.Instance.Spec.TargetAllocator.Enabled {
 		cm, err := desiredTAConfigMap(params)
 		if err != nil {
-			return fmt.Errorf("failed to parse config: %v", err)
+			return fmt.Errorf("failed to parse config: %w", err)
 		}
 		desired = append(desired, cm)
 	}
 
 	// first, handle the create/update parts
 	if err := expectedConfigMaps(ctx, params, desired, true); err != nil {
-		return fmt.Errorf("failed to reconcile the expected configmaps: %v", err)
+		return fmt.Errorf("failed to reconcile the expected configmaps: %w", err)
 	}
 
 	// then, delete the extra objects
 	if err := deleteConfigMaps(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the configmaps to be deleted: %v", err)
+		return fmt.Errorf("failed to reconcile the configmaps to be deleted: %w", err)
 	}
 
 	return nil
