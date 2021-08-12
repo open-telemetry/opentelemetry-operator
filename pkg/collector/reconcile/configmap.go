@@ -30,7 +30,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
-	taa "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
+	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -66,7 +66,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	name := naming.ConfigMap(params.Instance)
 	labels := collector.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name
-	config, err := taa.ReplaceConfig(params.Instance)
+	config, err := ReplaceConfig(params)
 	if err != nil {
 		params.Log.V(2).Info("failed to parse config: ", err)
 	}
@@ -89,7 +89,7 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 	labels := targetallocator.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name
 
-	promConfig, err := GetPromConfig(params)
+	promConfig, err := ta.ConfigToPromConfig(params.Instance.Spec.Config)
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}

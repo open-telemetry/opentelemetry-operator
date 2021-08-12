@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package adapters
+package reconcile
 
 import (
 	"fmt"
@@ -24,25 +24,25 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"gopkg.in/yaml.v2"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
 type Config struct {
 	PromConfig *promconfig.Config `yaml:"config"`
 }
 
-func ReplaceConfig(otelcol v1alpha1.OpenTelemetryCollector) (string, error) {
-	if !otelcol.Spec.TargetAllocator.Enabled {
-		return otelcol.Spec.Config, nil
+func ReplaceConfig(params Params) (string, error) {
+	if !params.Instance.Spec.TargetAllocator.Enabled {
+		return params.Instance.Spec.Config, nil
 	}
-	config, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
 	if err != nil {
 		return "", err
 	}
 
-	promCfgMap, err := ConfigToPromConfig(config)
+	promCfgMap, err := ta.ConfigToPromConfig(params.Instance.Spec.Config)
 	if err != nil {
 		return "", err
 	}
@@ -63,7 +63,7 @@ func ReplaceConfig(otelcol v1alpha1.OpenTelemetryCollector) (string, error) {
 	for i := range cfg.PromConfig.ScrapeConfigs {
 		cfg.PromConfig.ScrapeConfigs[i].ServiceDiscoveryConfigs = discovery.Configs{
 			&http.SDConfig{
-				URL: fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", naming.TAService(otelcol), cfg.PromConfig.ScrapeConfigs[i].JobName),
+				URL: fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", naming.TAService(params.Instance), cfg.PromConfig.ScrapeConfigs[i].JobName),
 			},
 		}
 	}

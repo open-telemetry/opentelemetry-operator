@@ -12,76 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package adapters_test
+package reconcile
 
 import (
-	"io/ioutil"
 	"testing"
 
 	"github.com/prometheus/prometheus/discovery/http"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/uuid"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
-	taa "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
+	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
-const defaultTestFile = "test.yaml"
-
-var instanceUID = uuid.NewUUID()
-
 func TestPrometheusParser(t *testing.T) {
-	replicas := int32(1)
-	configYAML, err := ioutil.ReadFile(defaultTestFile)
+	param, err := newParams("test/test-img", "../testdata/http_sd_config_test.yaml")
 	assert.NoError(t, err)
 
-	param := reconcile.Params{
-		Instance: v1alpha1.OpenTelemetryCollector{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "opentelemetry.io",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-				UID:       instanceUID,
-			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Mode: v1alpha1.ModeStatefulSet,
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-					Enabled: true,
-				},
-				Replicas: &replicas,
-				Config:   string(configYAML),
-			},
-		},
-	}
-
 	t.Run("should update config with http_sd_config", func(t *testing.T) {
-		actualConfig, err := taa.ReplaceConfig(param.Instance)
+		actualConfig, err := ReplaceConfig(param)
 		assert.NoError(t, err)
 
 		// prepare
-		var cfg taa.Config
-		config, err := adapters.ConfigFromString(actualConfig)
-		assert.NoError(t, err)
-
-		promCfgMap, err := taa.ConfigToPromConfig(config)
+		var cfg Config
+		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
 		promCfg, err := yaml.Marshal(map[string]interface{}{
@@ -110,15 +63,12 @@ func TestPrometheusParser(t *testing.T) {
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
 		param.Instance.Spec.TargetAllocator.Enabled = false
-		actualConfig, err := taa.ReplaceConfig(param.Instance)
+		actualConfig, err := ReplaceConfig(param)
 		assert.NoError(t, err)
 
 		// prepare
-		var cfg taa.Config
-		config, err := adapters.ConfigFromString(actualConfig)
-		assert.NoError(t, err)
-
-		promCfgMap, err := taa.ConfigToPromConfig(config)
+		var cfg Config
+		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
 		promCfg, err := yaml.Marshal(map[string]interface{}{

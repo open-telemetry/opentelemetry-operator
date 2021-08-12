@@ -121,7 +121,7 @@ func TestExpectedDeployments(t *testing.T) {
 		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
 		orgUID := expectedTADeploy.OwnerReferences[0].UID
 
-		updatedParam, err := newParams("test/test-img")
+		updatedParam, err := newParams("test/test-img", "")
 		assert.NoError(t, err)
 		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, param.Instance)
 
@@ -145,7 +145,7 @@ func TestExpectedDeployments(t *testing.T) {
 		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
 		orgUID := expectedTADeploy.OwnerReferences[0].UID
 
-		updatedParam, err := newParams("test/test-img")
+		updatedParam, err := newParams("test/test-img", "")
 		assert.NoError(t, err)
 		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
 
