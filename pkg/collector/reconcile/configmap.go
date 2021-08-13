@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +29,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
+	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -38,14 +41,22 @@ func ConfigMaps(ctx context.Context, params Params) error {
 		desiredConfigMap(ctx, params),
 	}
 
+	if params.Instance.Spec.TargetAllocator.Enabled {
+		cm, err := desiredTAConfigMap(params)
+		if err != nil {
+			return fmt.Errorf("failed to parse config: %w", err)
+		}
+		desired = append(desired, cm)
+	}
+
 	// first, handle the create/update parts
 	if err := expectedConfigMaps(ctx, params, desired, true); err != nil {
-		return fmt.Errorf("failed to reconcile the expected configmaps: %v", err)
+		return fmt.Errorf("failed to reconcile the expected configmaps: %w", err)
 	}
 
 	// then, delete the extra objects
 	if err := deleteConfigMaps(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the configmaps to be deleted: %v", err)
+		return fmt.Errorf("failed to reconcile the configmaps to be deleted: %w", err)
 	}
 
 	return nil
@@ -67,6 +78,41 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 			"collector.yaml": params.Instance.Spec.Config,
 		},
 	}
+}
+
+func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
+	name := naming.TAConfigMap(params.Instance)
+	labels := targetallocator.Labels(params.Instance)
+	labels["app.kubernetes.io/name"] = name
+
+	promConfig, err := ta.ConfigToPromConfig(params.Instance.Spec.Config)
+	if err != nil {
+		return corev1.ConfigMap{}, err
+	}
+
+	taConfig := make(map[interface{}]interface{})
+	taConfig["label_selector"] = map[string]string{
+		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+	}
+	taConfig["config"] = promConfig
+	taConfigYAML, err := yaml.Marshal(taConfig)
+	if err != nil {
+		return corev1.ConfigMap{}, err
+	}
+
+	return corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   params.Instance.Namespace,
+			Labels:      labels,
+			Annotations: params.Instance.Annotations,
+		},
+		Data: map[string]string{
+			"targetallocator.yaml": string(taConfigYAML),
+		},
+	}, nil
 }
 
 func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap, retry bool) error {

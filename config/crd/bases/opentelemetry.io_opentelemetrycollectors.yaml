@@ -430,6 +430,19 @@ spec:
                 description: ServiceAccount indicates the name of an existing service
                   account to use with this instance.
                 type: string
+              targetAllocator:
+                description: TargetAllocator indicates a value which determines whether
+                  to spawn a target allocation resource or not.
+                properties:
+                  enabled:
+                    description: Enabled indicates whether to use a target allocation
+                      mechanism for Prometheus targets or not.
+                    type: boolean
+                  image:
+                    description: Image indicates the container image to use for the
+                      OpenTelemetry TargetAllocator.
+                    type: string
+                type: object
               tolerations:
                 description: Toleration to schedule OpenTelemetry Collector pods.
                   This is only relevant to daemonsets, statefulsets and deployments

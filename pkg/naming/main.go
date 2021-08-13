@@ -26,9 +26,19 @@ func ConfigMap(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
 }
 
+// TAConfigMap returns the name for the config map used in the TargetAllocator.
+func TAConfigMap(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
+}
+
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
 func ConfigMapVolume() string {
 	return "otc-internal"
+}
+
+// TAConfigMapVolume returns the name to use for the config map's volume in the TargetAllocator pod.
+func TAConfigMapVolume() string {
+	return "ta-internal"
 }
 
 // Container returns the name to use for the container in the pod.
@@ -36,9 +46,19 @@ func Container() string {
 	return "otc-container"
 }
 
+// TAContainer returns the name to use for the container in the TargetAllocator pod.
+func TAContainer() string {
+	return "ta-container"
+}
+
 // Collector builds the collector (deployment/daemonset) name based on the instance.
 func Collector(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
+}
+
+// TargetAllocator returns the TargetAllocator deployment resource name.
+func TargetAllocator(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
 }
 
 // HeadlessService builds the name for the headless service based on the instance.
@@ -54,6 +74,11 @@ func MonitoringService(otelcol v1alpha1.OpenTelemetryCollector) string {
 // Service builds the service name based on the instance.
 func Service(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
+}
+
+// TAService returns the name to use for the TargetAllocator service.
+func TAService(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
 }
 
 // ServiceAccount builds the service account name based on the instance.

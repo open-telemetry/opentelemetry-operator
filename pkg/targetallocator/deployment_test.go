@@ -12,36 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package collector_test
+package targetallocator
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
-
-var testTolerationValues = []v1.Toleration{
-	{
-		Key:    "hii",
-		Value:  "greeting",
-		Effect: "NoSchedule",
-	},
-}
 
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
-		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Tolerations: testTolerationValues,
 		},
 	}
 	cfg := config.New()
@@ -50,12 +37,8 @@ func TestDeploymentNewDefault(t *testing.T) {
 	d := Deployment(cfg, logger, otelcol)
 
 	// verify
-	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
-	assert.Equal(t, testTolerationValues, d.Spec.Template.Spec.Tolerations)
+	assert.Equal(t, "my-instance-targetallocator", d.Name)
+	assert.Equal(t, "my-instance-targetallocator", d.Labels["app.kubernetes.io/name"])
 
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
 

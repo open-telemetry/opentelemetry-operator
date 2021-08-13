@@ -21,9 +21,10 @@ import (
 )
 
 var (
-	version   string
-	buildDate string
-	otelCol   string
+	version         string
+	buildDate       string
+	otelCol         string
+	targetAllocator string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
@@ -32,6 +33,7 @@ type Version struct {
 	BuildDate              string `json:"build-date"`
 	OpenTelemetryCollector string `json:"opentelemetry-collector-version"`
 	Go                     string `json:"go-version"`
+	TargetAllocator        string `json:"target-allocator-version"`
 }
 
 // Get returns the Version object with the relevant information.
@@ -41,16 +43,18 @@ func Get() Version {
 		BuildDate:              buildDate,
 		OpenTelemetryCollector: OpenTelemetryCollector(),
 		Go:                     runtime.Version(),
+		TargetAllocator:        TargetAllocator(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v')",
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
 		v.Go,
+		v.TargetAllocator,
 	)
 }
 
@@ -59,6 +63,17 @@ func OpenTelemetryCollector() string {
 	if len(otelCol) > 0 {
 		// this should always be set, as it's specified during the build
 		return otelCol
+	}
+
+	// fallback value, useful for tests
+	return "0.0.0"
+}
+
+// TargetAllocator returns the default TargetAllocator to use when no versions are specified via CLI or configuration.
+func TargetAllocator() string {
+	if len(targetAllocator) > 0 {
+		// this should always be set, as it's specified during the build
+		return targetAllocator
 	}
 
 	// fallback value, useful for tests
