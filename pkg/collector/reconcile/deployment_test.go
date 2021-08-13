@@ -134,8 +134,6 @@ func TestExpectedDeployments(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
-		t.Log(expectedTADeploy.Spec.Template.Spec.Containers[0].Image)
-		t.Log(actual.Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
 		assert.Equal(t, expectedTADeploy.Spec.Template.Spec.Containers[0].Image, actual.Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, int32(1), *actual.Spec.Replicas)
