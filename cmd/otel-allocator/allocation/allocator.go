@@ -35,11 +35,10 @@ type Allocator struct {
 
 // findNextCollector finds the next collector with less number of targets.
 func (allocator *Allocator) findNextCollector() *collector {
-
-	col := &collector{}
+	var col *collector
 	for _, v := range allocator.collectors {
 		// If the initial collector is empty, set the initial collector to the first element of map
-		if col.Name == "" {
+		if col == nil {
 			col = v
 		} else {
 			if v.NumTargets < col.NumTargets {
