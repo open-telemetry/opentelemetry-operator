@@ -116,7 +116,7 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.Equal(t, int32(2), *actual.Spec.Replicas)
 	})
 
-	t.Run("should not update target allocator deployment when the config is updated", func(t *testing.T) {
+	t.Run("should not update target allocator deployment when the container image is not updated", func(t *testing.T) {
 		ctx := context.Background()
 		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
 		orgUID := expectedTADeploy.OwnerReferences[0].UID
@@ -124,6 +124,7 @@ func TestExpectedDeployments(t *testing.T) {
 		updatedParam, err := newParams("test/test-img", "")
 		assert.NoError(t, err)
 		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, param.Instance)
+		*updatedDeploy.Spec.Replicas = int32(3)
 
 		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
@@ -158,8 +159,6 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
-		t.Log(expectedTADeploy.Spec.Template.Spec.Containers[0].Image)
-		t.Log(actual.Spec.Template.Spec.Containers[0].Image)
 		assert.NotEqual(t, expectedTADeploy.Spec.Template.Spec.Containers[0].Image, actual.Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, int32(1), *actual.Spec.Replicas)
 	})

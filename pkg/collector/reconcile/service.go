@@ -56,12 +56,12 @@ func Services(ctx context.Context, params Params) error {
 
 	// first, handle the create/update parts
 	if err := expectedServices(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected services: %v", err)
+		return fmt.Errorf("failed to reconcile the expected services: %w", err)
 	}
 
 	// then, delete the extra objects
 	if err := deleteServices(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the services to be deleted: %v", err)
+		return fmt.Errorf("failed to reconcile the services to be deleted: %w", err)
 	}
 
 	return nil

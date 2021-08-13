@@ -43,7 +43,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
 				Enabled: true,
 				Image:   "overridden-image",
 			},
@@ -62,7 +62,7 @@ func TestContainerVolumes(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
 				Enabled: true,
 				Image:   "default-image",
 			},

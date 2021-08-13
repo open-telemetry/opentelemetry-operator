@@ -44,7 +44,7 @@ type OpenTelemetryCollectorSpec struct {
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	TargetAllocator OpenTelemetryTargetAllocator `json:"targetAllocator,omitempty"`
+	TargetAllocator OpenTelemetryTargetAllocatorSpec `json:"targetAllocator,omitempty"`
 
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
@@ -121,8 +121,8 @@ type OpenTelemetryCollectorStatus struct {
 	Messages []string `json:"messages,omitempty"`
 }
 
-// OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
-type OpenTelemetryTargetAllocator struct {
+// OpenTelemetryTargetAllocatorSpec defines the configurations for the Prometheus target allocator.
+type OpenTelemetryTargetAllocatorSpec struct {
 	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
