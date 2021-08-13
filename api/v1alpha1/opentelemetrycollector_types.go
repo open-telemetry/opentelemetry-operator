@@ -41,6 +41,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
 
+	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	TargetAllocator OpenTelemetryTargetAllocatorSpec `json:"targetAllocator,omitempty"`
+
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
@@ -114,6 +119,17 @@ type OpenTelemetryCollectorStatus struct {
 	// +optional
 	// +listType=atomic
 	Messages []string `json:"messages,omitempty"`
+}
+
+// OpenTelemetryTargetAllocatorSpec defines the configurations for the Prometheus target allocator.
+type OpenTelemetryTargetAllocatorSpec struct {
+	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
+	// +optional
+	Image string `json:"image,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -29,8 +29,9 @@ import (
 )
 
 const (
-	defaultAutoDetectFrequency     = 5 * time.Second
-	defaultCollectorConfigMapEntry = "collector.yaml"
+	defaultAutoDetectFrequency           = 5 * time.Second
+	defaultCollectorConfigMapEntry       = "collector.yaml"
+	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
 )
 
 // Config holds the static configuration for this operator.
@@ -44,21 +45,24 @@ type Config struct {
 	onChange            []func() error
 
 	// config state
-	collectorImage          string
-	collectorConfigMapEntry string
-	platform                platform.Platform
-	version                 version.Version
+	collectorImage                string
+	collectorConfigMapEntry       string
+	targetAllocatorImage          string
+	targetAllocatorConfigMapEntry string
+	platform                      platform.Platform
+	version                       version.Version
 }
 
 // New constructs a new configuration based on the given options.
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		autoDetectFrequency:     defaultAutoDetectFrequency,
-		collectorConfigMapEntry: defaultCollectorConfigMapEntry,
-		logger:                  logf.Log.WithName("config"),
-		platform:                platform.Unknown,
-		version:                 version.Get(),
+		autoDetectFrequency:           defaultAutoDetectFrequency,
+		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
+		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
+		logger:                        logf.Log.WithName("config"),
+		platform:                      platform.Unknown,
+		version:                       version.Get(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -70,15 +74,21 @@ func New(opts ...Option) Config {
 		o.collectorImage = fmt.Sprintf("otel/opentelemetry-collector:%s", o.version.OpenTelemetryCollector)
 	}
 
+	if len(o.targetAllocatorImage) == 0 {
+		o.targetAllocatorImage = fmt.Sprintf("quay.io/opentelemetry/target-allocator:%s", o.version.TargetAllocator)
+	}
+
 	return Config{
-		autoDetect:              o.autoDetect,
-		autoDetectFrequency:     o.autoDetectFrequency,
-		collectorImage:          o.collectorImage,
-		collectorConfigMapEntry: o.collectorConfigMapEntry,
-		logger:                  o.logger,
-		onChange:                o.onChange,
-		platform:                o.platform,
-		version:                 o.version,
+		autoDetect:                    o.autoDetect,
+		autoDetectFrequency:           o.autoDetectFrequency,
+		collectorImage:                o.collectorImage,
+		collectorConfigMapEntry:       o.collectorConfigMapEntry,
+		targetAllocatorImage:          o.targetAllocatorImage,
+		targetAllocatorConfigMapEntry: o.targetAllocatorConfigMapEntry,
+		logger:                        o.logger,
+		onChange:                      o.onChange,
+		platform:                      o.platform,
+		version:                       o.version,
 	}
 }
 
@@ -153,6 +163,16 @@ func (c *Config) CollectorImage() string {
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
 func (c *Config) CollectorConfigMapEntry() string {
 	return c.collectorConfigMapEntry
+}
+
+// TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
+func (c *Config) TargetAllocatorImage() string {
+	return c.targetAllocatorImage
+}
+
+// TargetAllocatorConfigMapEntry represents the configuration file name for the TargetAllocator. Immutable.
+func (c *Config) TargetAllocatorConfigMapEntry() string {
+	return c.targetAllocatorConfigMapEntry
 }
 
 // Platform represents the type of the platform this operator is running.
