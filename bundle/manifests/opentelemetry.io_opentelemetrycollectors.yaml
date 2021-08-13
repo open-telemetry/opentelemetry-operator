@@ -182,6 +182,10 @@ spec:
                   - name
                   type: object
                 type: array
+              hostNetwork:
+                description: HostNetwork indicates if the pod should run in the host
+                  networking namespace.
+                type: boolean
               image:
                 description: Image indicates the container image to use for the OpenTelemetry
                   Collector.

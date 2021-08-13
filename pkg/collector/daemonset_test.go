@@ -56,3 +56,19 @@ func TestDaemonSetNewDefault(t *testing.T) {
 	// the pod selector should match the pod spec's labels
 	assert.Equal(t, d.Spec.Selector.MatchLabels, d.Spec.Template.Labels)
 }
+
+func TestDaemonsetHostNetwork(t *testing.T) {
+	// test
+	d1 := DaemonSet(config.New(), logger, v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	})
+	assert.False(t, d1.Spec.Template.Spec.HostNetwork)
+
+	// verify custom
+	d2 := DaemonSet(config.New(), logger, v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			HostNetwork: true,
+		},
+	})
+	assert.True(t, d2.Spec.Template.Spec.HostNetwork)
+}
