@@ -39,12 +39,12 @@ func StatefulSets(ctx context.Context, params Params) error {
 
 	// first, handle the create/update parts
 	if err := expectedStatefulSets(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected stateful sets: %v", err)
+		return fmt.Errorf("failed to reconcile the expected stateful sets: %w", err)
 	}
 
 	// then, delete the extra objects
 	if err := deleteStatefulSets(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the stateful sets to be deleted: %v", err)
+		return fmt.Errorf("failed to reconcile the stateful sets to be deleted: %w", err)
 	}
 
 	return nil

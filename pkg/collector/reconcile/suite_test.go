@@ -17,6 +17,7 @@ package reconcile
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -82,6 +83,10 @@ func TestMain(m *testing.M) {
 
 func params() Params {
 	replicas := int32(2)
+	configYAML, err := ioutil.ReadFile("test.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
 	return Params{
 		Config: config.New(),
 		Client: k8sClient,
@@ -106,30 +111,59 @@ func params() Params {
 					NodePort: 0,
 				}},
 				Replicas: &replicas,
-				Config: `
-    receivers:
-      jaeger:
-        protocols:
-          grpc:
-    processors:
-
-    exporters:
-      logging:
-
-    service:
-      pipelines:
-        traces:
-          receivers: [jaeger]
-          processors: []
-          exporters: [logging]
-
-`,
+				Config:   string(configYAML),
 			},
 		},
 		Scheme:   testScheme,
 		Log:      logger,
 		Recorder: record.NewFakeRecorder(10),
 	}
+}
+
+func newParams(containerImage string) (Params, error) {
+	replicas := int32(1)
+	configYAML, err := ioutil.ReadFile("test.yaml")
+	if err != nil {
+		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
+	}
+
+	cfg := config.New()
+
+	return Params{
+		Config: cfg,
+		Client: k8sClient,
+		Instance: v1alpha1.OpenTelemetryCollector{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Mode: v1alpha1.ModeStatefulSet,
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
+				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
+					Enabled: true,
+					Image:   containerImage,
+				},
+				Replicas: &replicas,
+				Config:   string(configYAML),
+			},
+		},
+		Scheme: testScheme,
+		Log:    logger,
+	}, nil
 }
 
 func createObjectIfNotExists(tb testing.TB, name string, object client.Object) {

@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
@@ -36,14 +37,18 @@ func Deployments(ctx context.Context, params Params) error {
 		desired = append(desired, collector.Deployment(params.Config, params.Log, params.Instance))
 	}
 
+	if params.Instance.Spec.TargetAllocator.Enabled {
+		desired = append(desired, targetallocator.Deployment(params.Config, params.Log, params.Instance))
+	}
+
 	// first, handle the create/update parts
 	if err := expectedDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected deployments: %v", err)
+		return fmt.Errorf("failed to reconcile the expected deployments: %w", err)
 	}
 
 	// then, delete the extra objects
 	if err := deleteDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the deployments to be deleted: %v", err)
+		return fmt.Errorf("failed to reconcile the deployments to be deleted: %w", err)
 	}
 
 	return nil
@@ -79,7 +84,11 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.Labels = map[string]string{}
 		}
 
-		updated.Spec = desired.Spec
+		if desired.Labels["app.kubernetes.io/component"] == "opentelemetry-targetallocator" {
+			updated.Spec.Template.Spec.Containers[0].Image = desired.Spec.Template.Spec.Containers[0].Image
+		} else {
+			updated.Spec = desired.Spec
+		}
 		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 
 		for k, v := range desired.ObjectMeta.Annotations {

@@ -21,6 +21,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
 // log is for logging in this package.
@@ -89,6 +91,19 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	// validate tolerations
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
 		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
+	}
+
+	// validate target allocation
+	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
+		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
+	}
+
+	// validate Prometheus config for target allocation
+	if r.Spec.TargetAllocator.Enabled {
+		_, err := ta.ConfigToPromConfig(r.Spec.Config)
+		if err != nil {
+			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %s", err)
+		}
 	}
 
 	return nil

@@ -6,3 +6,6 @@ opentelemetry-collector=0.31.0
 
 # Represents the current release of the OpenTelemetry Operator.
 operator=0.31.0
+
+# Represents the current release of the Target Allocator.
+targetallocator=0.1.0
