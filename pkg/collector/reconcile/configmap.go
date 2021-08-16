@@ -68,7 +68,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	labels["app.kubernetes.io/name"] = name
 	config, err := ReplaceConfig(params)
 	if err != nil {
-		params.Log.V(2).Info("failed to parse config: ", err)
+		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", err)
 	}
 
 	return corev1.ConfigMap{

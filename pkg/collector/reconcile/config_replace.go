@@ -73,7 +73,7 @@ func ReplaceConfig(params Params) (string, error) {
 		return "", err
 	}
 
-	// type corecion checks are handled in the ConfigToPromConfig method above
+	// type coercion checks are handled in the ConfigToPromConfig method above
 	config["receivers"].(map[interface{}]interface{})["prometheus"].(map[interface{}]interface{})["config"] = updPromCfgMap["PromConfig"]
 
 	out, err := yaml.Marshal(config)
