@@ -2,9 +2,10 @@ package collector
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"sort"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -13,14 +14,12 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func Test(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	collectors := []string{}
+var client Client
+var collectors = []string{}
 
-	client := Client{
-		k8sClient:     fake.NewSimpleClientset(),
-		collectorChan: make(chan []string),
+func TestMain(m *testing.M) {
+	client = Client{
+		k8sClient: fake.NewSimpleClientset(),
 	}
 
 	labelMap := map[string]string{
@@ -32,53 +31,54 @@ func Test(t *testing.T) {
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
 	}
 
-	client.Watch(ctx, labelMap, func(collectorList []string) {})
-	// adding sleep to alow the collector watch function to start
-	time.Sleep(1 * time.Second)
+	watcher, err := client.k8sClient.CoreV1().Pods("test-ns").Watch(context.Background(), opts)
+	if err != nil {
+		fmt.Printf("failed to setup a Collector Pod watcher: %v", err)
+		os.Exit(1)
+	}
 
-	t.Run("should create pods", func(t *testing.T) {
-		expected := pod("test-pod1")
-		_, err := client.k8sClient.CoreV1().Pods("test-ns").Create(ctx, expected, metav1.CreateOptions{})
+	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]bool{}, func(collectorList []string) { getCollectors(collectorList) })
+
+	code := m.Run()
+
+	os.Exit(code)
+}
+
+func TestWatchPodAddition(t *testing.T) {
+	expected := []string{"test-pod1", "test-pod2", "test-pod3"}
+
+	client.wg.Add(3)
+	for _, k := range []string{"test-pod1", "test-pod2", "test-pod3"} {
+		expected := pod(k)
+		_, err := client.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), expected, metav1.CreateOptions{})
 		assert.NoError(t, err)
+	}
+	client.wg.Wait()
 
-		collectors = <-client.collectorChan
-		pods, err := client.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
+	assert.Len(t, collectors, 3)
+
+	sort.Strings(collectors)
+	assert.Equal(t, collectors, expected)
+}
+
+func TestWatchPodDeletion(t *testing.T) {
+	expected := []string{"test-pod1"}
+
+	client.wg.Add(2)
+	for _, k := range []string{"test-pod2", "test-pod3"} {
+		err := client.k8sClient.CoreV1().Pods("test-ns").Delete(context.Background(), k, metav1.DeleteOptions{})
 		assert.NoError(t, err)
-		assert.Len(t, pods.Items, 1)
-		assert.Equal(t, pods.Items[0].Name, "test-pod1")
+	}
+	client.wg.Wait()
 
-	})
+	assert.Len(t, collectors, 1)
 
-	t.Run("should update collector list on pod addition", func(t *testing.T) {
-		expected := []string{"test-pod1", "test-pod2", "test-pod3", "test-pod4"}
+	sort.Strings(collectors)
+	assert.Equal(t, collectors, expected)
+}
 
-		for _, k := range []string{"test-pod2", "test-pod3", "test-pod4"} {
-			expected := pod(k)
-			_, err := client.k8sClient.CoreV1().Pods("test-ns").Create(ctx, expected, metav1.CreateOptions{})
-			assert.NoError(t, err)
-			collectors = <-client.collectorChan
-		}
-
-		assert.Len(t, collectors, 4)
-
-		sort.Strings(collectors)
-		assert.Equal(t, collectors, expected)
-	})
-
-	t.Run("should update collector list on pod deletion", func(t *testing.T) {
-		expected := []string{"test-pod1"}
-
-		for _, k := range []string{"test-pod2", "test-pod3", "test-pod4"} {
-			err := client.k8sClient.CoreV1().Pods("test-ns").Delete(ctx, k, metav1.DeleteOptions{})
-			assert.NoError(t, err)
-			collectors = <-client.collectorChan
-		}
-
-		assert.Len(t, collectors, 1)
-
-		sort.Strings(collectors)
-		assert.Equal(t, collectors, expected)
-	})
+func getCollectors(c []string) {
+	collectors = c
 }
 
 func pod(name string) *v1.Pod {

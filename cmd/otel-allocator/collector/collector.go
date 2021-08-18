@@ -2,9 +2,9 @@ package collector
 
 import (
 	"context"
-
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -24,9 +24,9 @@ var (
 )
 
 type Client struct {
-	k8sClient     kubernetes.Interface
-	collectorChan chan []string
-	close         chan struct{}
+	k8sClient kubernetes.Interface
+	wg        sync.WaitGroup
+	close     chan struct{}
 }
 
 func NewClient() (*Client, error) {
@@ -65,8 +65,8 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 
 	collectorKeys := make([]string, len(collectorMap))
 	i := 0
-	for k := range collectorMap {
-		collectorKeys[i] = k
+	for keys := range collectorMap {
+		collectorKeys[i] = keys
 		i++
 	}
 	fn(collectorKeys)
@@ -75,50 +75,53 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 		for {
 			watcher, err := k.k8sClient.CoreV1().Pods(ns).Watch(ctx, opts)
 			if err != nil {
-				log.Fatal(err)
+				log.Printf("unable to create collector pod watcher")
 			}
-			c := watcher.ResultChan()
-		Inner:
-			for {
-				select {
-				case <-k.close:
-					return
-				case <-ctx.Done():
-					return
-				case event, ok := <-c:
-					if !ok {
-						log.Fatal(err)
-					}
-
-					pod, ok := event.Object.(*v1.Pod)
-					if !ok {
-						log.Fatal(err)
-					}
-
-					switch event.Type {
-					case watch.Added:
-						collectorMap[pod.Name] = true
-					case watch.Deleted:
-						delete(collectorMap, pod.Name)
-					}
-
-					collectorKeys := make([]string, len(collectorMap))
-					i := 0
-					for k := range collectorMap {
-						collectorKeys[i] = k
-						i++
-					}
-					select {
-					case k.collectorChan <- collectorKeys:
-					default:
-						fn(collectorKeys)
-					}
-				case <-time.After(watcherTimeout):
-					break Inner
-				}
+			if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" {
+				log.Printf("Collector pod watch event stopped: %v", msg)
+				return
 			}
 		}
 	}()
+}
+
+func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]bool, fn func(collectors []string)) string {
+	for {
+		select {
+		case <-k.close:
+			return "kubernetes client closed"
+		case <-ctx.Done():
+			return "context done"
+		case event, ok := <-c:
+			if !ok {
+				log.Fatal(ok)
+			}
+
+			pod, ok := event.Object.(*v1.Pod)
+			if !ok {
+				log.Fatal(ok)
+			}
+
+			switch event.Type {
+			case watch.Added:
+				collectorMap[pod.Name] = true
+			case watch.Deleted:
+				delete(collectorMap, pod.Name)
+			}
+
+			collectorKeys := make([]string, len(collectorMap))
+			i := 0
+			for keys := range collectorMap {
+				collectorKeys[i] = keys
+				i++
+			}
+			fn(collectorKeys)
+			k.wg.Done()
+		case <-time.After(watcherTimeout):
+			log.Printf("Restarting watch routine")
+			return ""
+		}
+	}
 }
 
 func (k *Client) Close() {
