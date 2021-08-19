@@ -32,6 +32,9 @@ type GenericReceiver struct {
 	parserName  string
 }
 
+// NOTE: Operator will sync with only receivers that aren't scrapers. Operator sync up receivers
+// so that it can expose the required port based on the receiver's config. Receiver scrapers are ignored.
+
 // NewGenericReceiverParser builds a new parser for generic receivers.
 func NewGenericReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
 	return &GenericReceiver{
