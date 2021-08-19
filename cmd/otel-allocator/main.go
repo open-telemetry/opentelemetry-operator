@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/otel-allocator/allocation"
-	h "github.com/otel-allocator/allocation"
 
 	"github.com/otel-allocator/collector"
 	"github.com/otel-allocator/config"
@@ -104,10 +103,10 @@ func newServer(addr string) (*server, error) {
 	}
 	router := mux.NewRouter()
 	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
-		h.JobHandler(w, r, allocator)
+		allocation.JobHandler(w, r, allocator)
 	}).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", func(w http.ResponseWriter, r *http.Request) {
-		h.TargetsHandler(w, r, allocator)
+		allocation.TargetsHandler(w, r, allocator)
 	}).Methods("GET")
 	s.server = &http.Server{Addr: addr, Handler: router}
 	return s, nil
