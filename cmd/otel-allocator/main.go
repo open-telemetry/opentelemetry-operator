@@ -13,6 +13,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/otel-allocator/allocation"
+	h "github.com/otel-allocator/allocation"
+
 	"github.com/otel-allocator/collector"
 	"github.com/otel-allocator/config"
 	lbdiscovery "github.com/otel-allocator/discovery"
@@ -101,8 +103,12 @@ func newServer(addr string) (*server, error) {
 		k8sClient:        k8sclient,
 	}
 	router := mux.NewRouter()
-	router.HandleFunc("/jobs", allocator.JobHandler).Methods("GET")
-	router.HandleFunc("/jobs/{job_id}/targets", allocator.TargetsHandler).Methods("GET")
+	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
+		h.JobHandler(w, r, allocator)
+	}).Methods("GET")
+	router.HandleFunc("/jobs/{job_id}/targets", func(w http.ResponseWriter, r *http.Request) {
+		h.TargetsHandler(w, r, allocator)
+	}).Methods("GET")
 	s.server = &http.Server{Addr: addr, Handler: router}
 	return s, nil
 }
@@ -129,7 +135,7 @@ func newAllocator(ctx context.Context) (*allocation.Allocator, *lbdiscovery.Mana
 	allocator := allocation.NewAllocator()
 	discoveryManager.Watch(func(targets []allocation.TargetItem) {
 		allocator.SetWaitingTargets(targets)
-		allocator.Reallocate()
+		allocator.AllocateTargets()
 	})
 	k8sClient.Watch(ctx, cfg.LabelSelector, func(collectors []string) {
 		allocator.SetCollectors(collectors)

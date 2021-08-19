@@ -1,8 +1,11 @@
 package allocation
 
 import (
+	"fmt"
 	"log"
 	"sync"
+
+	"github.com/prometheus/common/model"
 )
 
 /*
@@ -10,6 +13,14 @@ import (
 	Load balancer will need information about the collectors in order to set the URLs
 	Keep a Map of what each collector currently holds and update it based on new scrape target updates
 */
+
+type TargetItem struct {
+	JobName   string
+	Link      linkJSON
+	TargetURL string
+	Label     model.LabelSet
+	Collector *collector
+}
 
 // Create a struct that holds collector - and jobs for that collector
 // This struct will be parsed into endpoint with collector and jobs info
@@ -57,7 +68,7 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	// Dump old data
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
-	allocator.targetsWaiting = make(map[string]TargetItem)
+	allocator.targetsWaiting = make(map[string]TargetItem, len(targets))
 	// Set new data
 	for _, i := range targets {
 		allocator.targetsWaiting[i.JobName+i.TargetURL] = i
@@ -84,7 +95,7 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 
 // Reallocate needs to be called to process the new target updates.
 // Until Reallocate is called, old targets will be served.
-func (allocator *Allocator) Reallocate() {
+func (allocator *Allocator) AllocateTargets() {
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 	allocator.removeOutdatedTargets()
@@ -117,7 +128,7 @@ func (allocator *Allocator) processWaitingTargets() {
 			allocator.targetItems[k] = &v
 			targetItem := TargetItem{
 				JobName:   v.JobName,
-				Link:      linkJSON{"/jobs/" + v.JobName + "/targets"},
+				Link:      linkJSON{fmt.Sprintf("/jobs/%s/targets", v.JobName)},
 				TargetURL: v.TargetURL,
 				Label:     v.Label,
 				Collector: col,
