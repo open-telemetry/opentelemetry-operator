@@ -61,6 +61,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
 
+	// HostNetwork indicates if the pod should run in the host networking namespace.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	HostNetwork bool `json:"hostNetwork,omitempty"`
+
 	// VolumeClaimTemplates will provide stable storage using PersistentVolumes. Only available when the mode=statefulset.
 	// +optional
 	// +listType=atomic

@@ -64,6 +64,9 @@ spec:
 
   // +optional SecurityContext will be set as the container security context.
   securityContext: {}
+
+  // +optional HostNetwork indicates if the pod should run in the host networking namespace.
+  hostNetwork: false
   
   // +optional Toleration to schedule OpenTelemetry Collector pods.
   // This is only relevant to daemonsets, statefulsets and deployments
