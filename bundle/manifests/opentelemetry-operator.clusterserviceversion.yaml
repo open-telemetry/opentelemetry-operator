@@ -25,7 +25,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.31.0
+  name: opentelemetry-operator.v0.33.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -206,7 +206,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: quay.io/opentelemetry/opentelemetry-operator:v0.31.0
+                image: quay.io/opentelemetry/opentelemetry-operator:v0.33.0
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -298,7 +298,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.31.0
+  version: 0.33.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

@@ -1,6 +1,21 @@
 Changes by Version
 ==================
 
+0.33.0 (2021-08-20)
+-------------------
+* Bumped OpenTelemetry Collector to v0.33.0
+* Add statsd receiver ([#364](https://github.com/open-telemetry/opentelemetry-operator/pull/364), [@VineethReddy02](https://github.com/VineethReddy02))
+* Allow running daemonset in hostNetwork mode ([#393](https://github.com/open-telemetry/opentelemetry-operator/pull/393), [@owais](https://github.com/owais))
+* Target Allocator implementation (Part 1 - OTEL Operator Enhancements) ([#351](https://github.com/open-telemetry/opentelemetry-operator/pull/351), [@]())
+* Change the default port for OTLP HTTP ([#373](https://github.com/open-telemetry/opentelemetry-operator/pull/373), [@joaopgrassi](https://github.com/joaopgrassi))
+* Add Kubernetes 1.22 to the test matrix ([#382](https://github.com/open-telemetry/opentelemetry-operator/pull/382), [@jpkrohling](https://github.com/jpkrohling))
+* Add `protocol: TCP` value under `ports` key to avoid the known limitation for Kubernetes 1.19 ([#372](https://github.com/open-telemetry/opentelemetry-operator/pull/372), [@Saber-W](https://github.com/Saber-W))
+* Add fluentforward receiver ([#367](https://github.com/open-telemetry/opentelemetry-operator/pull/367), [@VineethReddy02](https://github.com/VineethReddy02))
+
+0.32.0
+-------------------
+* We skipped this release.
+
 0.31.0 (2021-07-29)
 -------------------
 * Bumped OpenTelemetry Collector to v0.31.0
