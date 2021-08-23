@@ -20,6 +20,7 @@ var collectors = []string{}
 func TestMain(m *testing.M) {
 	client = Client{
 		k8sClient: fake.NewSimpleClientset(),
+		close:     make(chan struct{}),
 	}
 
 	labelMap := map[string]string{
@@ -40,6 +41,8 @@ func TestMain(m *testing.M) {
 	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]bool{}, func(collectorList []string) { getCollectors(collectorList) })
 
 	code := m.Run()
+
+	close(client.close)
 
 	os.Exit(code)
 }

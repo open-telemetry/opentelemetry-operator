@@ -1,5 +1,5 @@
 # Build the target allocator binary
-FROM golang:latest as builder
+FROM golang:1.17 as builder
 
 WORKDIR /app
 

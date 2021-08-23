@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"context"
+	l "log"
 
 	"github.com/go-kit/log"
 	"github.com/otel-allocator/allocation"
@@ -13,8 +14,7 @@ import (
 type Manager struct {
 	manager *discovery.Manager
 	logger  log.Logger
-
-	close chan struct{}
+	close   chan struct{}
 }
 
 func NewManager(ctx context.Context, logger log.Logger, options ...func(*discovery.Manager)) *Manager {
@@ -45,6 +45,7 @@ func (m *Manager) Watch(fn func(targets []allocation.TargetItem)) {
 		for {
 			select {
 			case <-m.close:
+				l.Printf("Service Discovery watch event stopped: discovery manager closed")
 				return
 			case tsets := <-m.manager.SyncCh():
 				targets := []allocation.TargetItem{}

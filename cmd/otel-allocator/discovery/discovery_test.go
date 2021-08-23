@@ -2,6 +2,8 @@ package discovery
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"sort"
 	"testing"
 
@@ -13,12 +15,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTargetDiscovery(t *testing.T) {
-	cfg, err := config.Load("./testdata/test.yaml")
-	assert.NoError(t, err)
-	manager := NewManager(context.Background(), gokitlog.NewNopLogger())
+var cfg config.Config
+var manager *Manager
+var results chan []string
 
-	results := make(chan []string)
+func TestMain(m *testing.M) {
+	var err error
+	cfg, err = config.Load("./testdata/test.yaml")
+	if err != nil {
+		fmt.Printf("failed to load config file: %v", err)
+		os.Exit(1)
+	}
+	manager = NewManager(context.Background(), gokitlog.NewNopLogger())
+
+	results = make(chan []string)
 	manager.Watch(func(targets []allocation.TargetItem) {
 		var result []string
 		for _, t := range targets {
@@ -27,40 +37,46 @@ func TestTargetDiscovery(t *testing.T) {
 		results <- result
 	})
 
-	t.Run("should discover targets", func(t *testing.T) {
-		err := manager.ApplyConfig(cfg)
-		assert.NoError(t, err)
+	code := m.Run()
 
-		gotTargets := <-results
-		wantTargets := []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "promfile.domain:1001", "promfile.domain:3000"}
+	close(manager.close)
 
-		sort.Strings(gotTargets)
-		sort.Strings(wantTargets)
-		assert.Equal(t, gotTargets, wantTargets)
-	})
+	os.Exit(code)
+}
 
-	t.Run("should update targets", func(t *testing.T) {
-		cfg.Config.ScrapeConfigs[0].ServiceDiscoveryConfigs[1] = discovery.StaticConfig{
-			{
-				Targets: []model.LabelSet{
-					{model.AddressLabel: "prom.domain:9004"},
-					{model.AddressLabel: "prom.domain:9005"},
-				},
-				Labels: model.LabelSet{
-					"my": "label",
-				},
-				Source: "0",
+func TestTargetDiscovery(t *testing.T) {
+	err := manager.ApplyConfig(cfg)
+	assert.NoError(t, err)
+
+	gotTargets := <-results
+	wantTargets := []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "promfile.domain:1001", "promfile.domain:3000"}
+
+	sort.Strings(gotTargets)
+	sort.Strings(wantTargets)
+	assert.Equal(t, gotTargets, wantTargets)
+}
+
+func TestTargetUpdate(t *testing.T) {
+	cfg.Config.ScrapeConfigs[0].ServiceDiscoveryConfigs[1] = discovery.StaticConfig{
+		{
+			Targets: []model.LabelSet{
+				{model.AddressLabel: "prom.domain:9004"},
+				{model.AddressLabel: "prom.domain:9005"},
 			},
-		}
+			Labels: model.LabelSet{
+				"my": "label",
+			},
+			Source: "0",
+		},
+	}
 
-		err := manager.ApplyConfig(cfg)
-		assert.NoError(t, err)
+	err := manager.ApplyConfig(cfg)
+	assert.NoError(t, err)
 
-		gotTargets := <-results
-		wantTargets := []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"}
+	gotTargets := <-results
+	wantTargets := []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"}
 
-		sort.Strings(gotTargets)
-		sort.Strings(wantTargets)
-		assert.Equal(t, gotTargets, wantTargets)
-	})
+	sort.Strings(gotTargets)
+	sort.Strings(wantTargets)
+	assert.Equal(t, gotTargets, wantTargets)
 }

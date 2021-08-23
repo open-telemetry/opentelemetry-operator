@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/otel-allocator/allocation"
-
 	"github.com/otel-allocator/collector"
 	"github.com/otel-allocator/config"
 	lbdiscovery "github.com/otel-allocator/discovery"
