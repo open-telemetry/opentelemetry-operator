@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]bool{}, func(collectorList []string) { getCollectors(collectorList) })
+	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]bool{}, func(collectorList []string) { getCollectors(collectorList) }, true)
 
 	code := m.Run()
 

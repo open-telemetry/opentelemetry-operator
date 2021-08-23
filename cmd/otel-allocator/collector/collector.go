@@ -77,7 +77,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 			if err != nil {
 				log.Printf("unable to create collector pod watcher")
 			}
-			if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" {
+			if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn, false); msg != "" {
 				log.Printf("Collector pod watch event stopped: %v", msg)
 				return
 			}
@@ -85,7 +85,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	}()
 }
 
-func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]bool, fn func(collectors []string)) string {
+func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]bool, fn func(collectors []string), test bool) string {
 	for {
 		select {
 		case <-k.close:
@@ -116,7 +116,9 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 				i++
 			}
 			fn(collectorKeys)
-			k.wg.Done()
+			if test {
+				k.wg.Done()
+			}
 		case <-time.After(watcherTimeout):
 			log.Printf("Restarting watch routine")
 			return ""
