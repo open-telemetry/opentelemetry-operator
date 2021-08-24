@@ -16,7 +16,7 @@ import (
 
 type TargetItem struct {
 	JobName   string
-	Link      linkJSON
+	Link      LinkJSON
 	TargetURL string
 	Label     model.LabelSet
 	Collector *collector
@@ -41,7 +41,7 @@ type Allocator struct {
 
 	collectors map[string]*collector // all current collectors
 
-	targetItems map[string]*TargetItem
+	TargetItems map[string]*TargetItem
 }
 
 // findNextCollector finds the next collector with less number of targets.
@@ -106,16 +106,16 @@ func (allocator *Allocator) AllocateTargets() {
 func (allocator *Allocator) ReallocateCollectors() {
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
-	allocator.targetItems = make(map[string]*TargetItem)
+	allocator.TargetItems = make(map[string]*TargetItem)
 	allocator.processWaitingTargets()
 }
 
 // removeOutdatedTargets removes targets that are no longer available.
 func (allocator *Allocator) removeOutdatedTargets() {
-	for k := range allocator.targetItems {
+	for k := range allocator.TargetItems {
 		if _, ok := allocator.targetsWaiting[k]; !ok {
-			allocator.collectors[allocator.targetItems[k].Collector.Name].NumTargets--
-			delete(allocator.targetItems, k)
+			allocator.collectors[allocator.TargetItems[k].Collector.Name].NumTargets--
+			delete(allocator.TargetItems, k)
 		}
 	}
 }
@@ -123,18 +123,18 @@ func (allocator *Allocator) removeOutdatedTargets() {
 // processWaitingTargets processes the newly set targets.
 func (allocator *Allocator) processWaitingTargets() {
 	for k, v := range allocator.targetsWaiting {
-		if _, ok := allocator.targetItems[k]; !ok {
+		if _, ok := allocator.TargetItems[k]; !ok {
 			col := allocator.findNextCollector()
-			allocator.targetItems[k] = &v
+			allocator.TargetItems[k] = &v
 			targetItem := TargetItem{
 				JobName:   v.JobName,
-				Link:      linkJSON{fmt.Sprintf("/jobs/%s/targets", v.JobName)},
+				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", v.JobName)},
 				TargetURL: v.TargetURL,
 				Label:     v.Label,
 				Collector: col,
 			}
 			col.NumTargets++
-			allocator.targetItems[v.JobName+v.TargetURL] = &targetItem
+			allocator.TargetItems[v.JobName+v.TargetURL] = &targetItem
 		}
 	}
 }
@@ -143,6 +143,6 @@ func NewAllocator() *Allocator {
 	return &Allocator{
 		targetsWaiting: make(map[string]TargetItem),
 		collectors:     make(map[string]*collector),
-		targetItems:    make(map[string]*TargetItem),
+		TargetItems:    make(map[string]*TargetItem),
 	}
 }

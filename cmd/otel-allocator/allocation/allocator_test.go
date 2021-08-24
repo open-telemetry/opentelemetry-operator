@@ -56,7 +56,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 
 	// verify
 	expectedTargetLen := len(initTargets)
-	assert.Len(t, s.targetItems, expectedTargetLen)
+	assert.Len(t, s.TargetItems, expectedTargetLen)
 
 	// prepare second round of targets
 	tar := []string{"prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004"}
@@ -71,11 +71,11 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 
 	// verify
 	expectedNewTargetLen := len(tar)
-	assert.Len(t, s.targetItems, expectedNewTargetLen)
+	assert.Len(t, s.TargetItems, expectedNewTargetLen)
 
 	// verify results map
 	for _, i := range tar {
-		_, ok := s.targetItems["sample-name"+i]
+		_, ok := s.TargetItems["sample-name"+i]
 		assert.True(t, ok)
 	}
 }
@@ -102,8 +102,8 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	// Divisor needed to get 15%
 	divisor := 6.7
 
-	count := len(s.targetItems) / len(s.collectors)
-	percent := float64(len(s.targetItems)) / divisor
+	count := len(s.TargetItems) / len(s.collectors)
+	percent := float64(len(s.TargetItems)) / divisor
 
 	// test
 	for _, i := range s.collectors {
@@ -121,8 +121,8 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	s.SetWaitingTargets(newTargetList)
 	s.AllocateTargets()
 
-	count = len(s.targetItems) / len(s.collectors)
-	percent = float64(len(s.targetItems)) / divisor
+	count = len(s.TargetItems) / len(s.collectors)
+	percent = float64(len(s.TargetItems)) / divisor
 
 	// test
 	for _, i := range s.collectors {
@@ -139,44 +139,11 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	s.SetWaitingTargets(newTargetList)
 	s.AllocateTargets()
 
-	count = len(s.targetItems) / len(s.collectors)
-	percent = float64(len(s.targetItems)) / divisor
+	count = len(s.TargetItems) / len(s.collectors)
+	percent = float64(len(s.TargetItems)) / divisor
 
 	// test
 	for _, i := range s.collectors {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
-	}
-}
-
-func TestCollectorBalanceWhenCollectorsChanged(t *testing.T) {
-	s := NewAllocator()
-
-	cols := []string{"col-1", "col-2"}
-	s.SetCollectors(cols)
-
-	targets := []string{"prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005", "prometheus:1006",
-		"prometheus:1011", "prometheus:1012", "prometheus:1013", "prometheus:1014", "prometheus:1015", "prometheus:1016",
-		"prometheus:1021", "prometheus:1022", "prometheus:1023", "prometheus:1024", "prometheus:1025", "prometheus:1026"}
-	var targetList []TargetItem
-	for _, i := range targets {
-		targetList = append(targetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
-	}
-	s.SetWaitingTargets(targetList)
-	s.AllocateTargets()
-
-	// 18 / 2
-	expected := 9
-	for _, i := range s.collectors {
-		assert.Equal(t, expected, i.NumTargets)
-	}
-
-	cols = []string{"col-1", "col-2", "col-3"}
-	s.SetCollectors(cols)
-	s.ReallocateCollectors()
-
-	// 15 / 3
-	expected = 6
-	for _, i := range s.collectors {
-		assert.Equal(t, expected, i.NumTargets)
 	}
 }

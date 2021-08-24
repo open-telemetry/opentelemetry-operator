@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	gokitlog "github.com/go-kit/log"
 	"github.com/gorilla/mux"
-
 	"github.com/otel-allocator/allocation"
 	"github.com/otel-allocator/collector"
 	"github.com/otel-allocator/config"
@@ -101,12 +101,8 @@ func newServer(addr string) (*server, error) {
 		k8sClient:        k8sclient,
 	}
 	router := mux.NewRouter()
-	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
-		allocation.JobHandler(w, r, allocator)
-	}).Methods("GET")
-	router.HandleFunc("/jobs/{job_id}/targets", func(w http.ResponseWriter, r *http.Request) {
-		allocation.TargetsHandler(w, r, allocator)
-	}).Methods("GET")
+	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
+	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
 	s.server = &http.Server{Addr: addr, Handler: router}
 	return s, nil
 }
@@ -152,4 +148,41 @@ func (s *server) Shutdown(ctx context.Context) error {
 	s.k8sClient.Close()
 	s.discoveryManager.Close()
 	return s.server.Shutdown(ctx)
+}
+
+func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
+	displayData := make(map[string]allocation.LinkJSON)
+	for _, v := range s.allocator.TargetItems {
+		displayData[v.JobName] = allocation.LinkJSON{v.Link.Link}
+	}
+	jsonHandler(w, r, displayData)
+}
+
+func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()["collector_id"]
+
+	var compareMap = make(map[string][]allocation.TargetItem) // CollectorName+jobName -> TargetItem
+	for _, v := range s.allocator.TargetItems {
+		compareMap[v.Collector.Name+v.JobName] = append(compareMap[v.Collector.Name+v.JobName], *v)
+	}
+	params := mux.Vars(r)
+
+	if len(q) == 0 {
+		displayData := allocation.GetAllTargetsByJob(params["job_id"], compareMap, s.allocator)
+		jsonHandler(w, r, displayData)
+
+	} else {
+		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], params["job_id"], compareMap, s.allocator)
+		// Displays empty list if nothing matches
+		if len(tgs) == 0 {
+			jsonHandler(w, r, []interface{}{})
+			return
+		}
+		jsonHandler(w, r, tgs)
+	}
+}
+
+func jsonHandler(w http.ResponseWriter, r *http.Request, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
 }

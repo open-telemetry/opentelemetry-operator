@@ -1,15 +1,12 @@
 package allocation
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/prometheus/common/model"
 )
 
-type linkJSON struct {
+type LinkJSON struct {
 	Link string `json:"_link"`
 }
 
@@ -23,17 +20,9 @@ type targetGroupJSON struct {
 	Labels  model.LabelSet `json:"labels"`
 }
 
-func JobHandler(w http.ResponseWriter, r *http.Request, allocator *Allocator) {
-	displayData := make(map[string]linkJSON)
-	for _, v := range allocator.targetItems {
-		displayData[v.JobName] = linkJSON{v.Link.Link}
-	}
-	allocator.jsonHandler(w, r, displayData)
-}
-
-func (allocator *Allocator) getAllTargetsByJob(job string, cMap map[string][]TargetItem) map[string]collectorJSON {
+func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator *Allocator) map[string]collectorJSON {
 	displayData := make(map[string]collectorJSON)
-	for _, j := range allocator.targetItems {
+	for _, j := range allocator.TargetItems {
 		if j.JobName == job {
 			var targetList []TargetItem
 			targetList = append(targetList, cMap[j.Collector.Name+j.JobName]...)
@@ -61,7 +50,7 @@ func (allocator *Allocator) getAllTargetsByJob(job string, cMap map[string][]Tar
 	return displayData
 }
 
-func (allocator *Allocator) getAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]TargetItem) []targetGroupJSON {
+func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]TargetItem, allocator *Allocator) []targetGroupJSON {
 	var tgs []targetGroupJSON
 	group := make(map[string][]string)
 	labelSet := make(map[string]model.LabelSet)
@@ -83,33 +72,4 @@ func (allocator *Allocator) getAllTargetsByCollectorAndJob(collector string, job
 	}
 
 	return tgs
-}
-
-func TargetsHandler(w http.ResponseWriter, r *http.Request, allocator *Allocator) {
-	q := r.URL.Query()["collector_id"]
-
-	var compareMap = make(map[string][]TargetItem) // CollectorName+jobName -> TargetItem
-	for _, v := range allocator.targetItems {
-		compareMap[v.Collector.Name+v.JobName] = append(compareMap[v.Collector.Name+v.JobName], *v)
-	}
-	params := mux.Vars(r)
-
-	if len(q) == 0 {
-		displayData := allocator.getAllTargetsByJob(params["job_id"], compareMap)
-		allocator.jsonHandler(w, r, displayData)
-
-	} else {
-		tgs := allocator.getAllTargetsByCollectorAndJob(q[0], params["job_id"], compareMap)
-		// Displays empty list if nothing matches
-		if len(tgs) == 0 {
-			allocator.jsonHandler(w, r, []interface{}{})
-			return
-		}
-		allocator.jsonHandler(w, r, tgs)
-	}
-}
-
-func (s *Allocator) jsonHandler(w http.ResponseWriter, r *http.Request, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
 }
