@@ -19,8 +19,9 @@ var collectors = []string{}
 
 func TestMain(m *testing.M) {
 	client = Client{
-		k8sClient: fake.NewSimpleClientset(),
-		close:     make(chan struct{}),
+		k8sClient:     fake.NewSimpleClientset(),
+		collectorChan: make(chan []string, 3),
+		close:         make(chan struct{}),
 	}
 
 	labelMap := map[string]string{
@@ -38,7 +39,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]bool{}, func(collectorList []string) { getCollectors(collectorList) }, true)
+	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]bool{}, func(collectorList []string) { getCollectors(collectorList) })
 
 	code := m.Run()
 
@@ -50,13 +51,12 @@ func TestMain(m *testing.M) {
 func TestWatchPodAddition(t *testing.T) {
 	expected := []string{"test-pod1", "test-pod2", "test-pod3"}
 
-	client.wg.Add(3)
 	for _, k := range []string{"test-pod1", "test-pod2", "test-pod3"} {
 		expected := pod(k)
 		_, err := client.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), expected, metav1.CreateOptions{})
 		assert.NoError(t, err)
+		collectors = <-client.collectorChan
 	}
-	client.wg.Wait()
 
 	assert.Len(t, collectors, 3)
 
@@ -67,12 +67,11 @@ func TestWatchPodAddition(t *testing.T) {
 func TestWatchPodDeletion(t *testing.T) {
 	expected := []string{"test-pod1"}
 
-	client.wg.Add(2)
 	for _, k := range []string{"test-pod2", "test-pod3"} {
 		err := client.k8sClient.CoreV1().Pods("test-ns").Delete(context.Background(), k, metav1.DeleteOptions{})
 		assert.NoError(t, err)
+		collectors = <-client.collectorChan
 	}
-	client.wg.Wait()
 
 	assert.Len(t, collectors, 1)
 
