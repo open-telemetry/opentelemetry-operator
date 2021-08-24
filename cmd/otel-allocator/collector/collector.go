@@ -2,11 +2,12 @@ package collector
 
 import (
 	"context"
-	"log"
+	"errors"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -20,7 +21,8 @@ const (
 )
 
 var (
-	ns = os.Getenv("OTELCOL_NAMESPACE")
+	ns  = os.Getenv("OTELCOL_NAMESPACE")
+	log logr.Logger
 )
 
 type Client struct {
@@ -54,7 +56,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	}
 	pods, err := k.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err, "Pod failure")
 	}
 	for i := range pods.Items {
 		pod := pods.Items[i]
@@ -75,31 +77,31 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 		for {
 			watcher, err := k.k8sClient.CoreV1().Pods(ns).Watch(ctx, opts)
 			if err != nil {
-				log.Printf("unable to create collector pod watcher")
+				log.Error(err, "unable to create collector pod watcher")
 			}
-			if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn, false); msg != "" {
-				log.Printf("Collector pod watch event stopped: %v", msg)
+			if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn, false); msg != nil {
+				log.Error(msg, "Collector pod watch event stopped")
 				return
 			}
 		}
 	}()
 }
 
-func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]bool, fn func(collectors []string), test bool) string {
+func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]bool, fn func(collectors []string), test bool) error {
 	for {
 		select {
 		case <-k.close:
-			return "kubernetes client closed"
+			return errors.New("kubernetes client closed")
 		case <-ctx.Done():
-			return "context done"
+			return errors.New("context done")
 		case event, ok := <-c:
 			if !ok {
-				log.Fatal(ok)
+				log.Info("Event not found")
 			}
 
 			pod, ok := event.Object.(*v1.Pod)
 			if !ok {
-				log.Fatal(ok)
+				log.Info("Event not found")
 			}
 
 			switch event.Type {
@@ -120,8 +122,8 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 				k.wg.Done()
 			}
 		case <-time.After(watcherTimeout):
-			log.Printf("Restarting watch routine")
-			return ""
+			log.Info("Restarting watch routine")
+			return errors.New("")
 		}
 	}
 }

@@ -11,7 +11,9 @@ import (
 )
 
 // ErrInvalidYAML represents an error in the format of the original YAML configuration file.
-var ErrInvalidYAML = errors.New("couldn't parse the loadbalancer configuration")
+var (
+	ErrInvalidYAML = errors.New("couldn't parse the loadbalancer configuration")
+)
 
 const defaultConfigFile string = "/conf/targetallocator.yaml"
 

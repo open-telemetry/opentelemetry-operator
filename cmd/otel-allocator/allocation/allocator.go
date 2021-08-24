@@ -2,10 +2,14 @@ package allocation
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
+	"github.com/go-logr/logr"
 	"github.com/prometheus/common/model"
+)
+
+var (
+	log logr.Logger
 )
 
 /*
@@ -81,7 +85,7 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 	if len(collectors) == 0 {
-		log.Println("no collector instances present")
+		log.Info("No collector instances present")
 		return
 	}
 	for k := range allocator.collectors {

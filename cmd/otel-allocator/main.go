@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	gokitlog "github.com/go-kit/log"
+	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/otel-allocator/allocation"
 	"github.com/otel-allocator/collector"
@@ -23,23 +23,28 @@ const (
 	listenAddr = ":8080"
 )
 
+var (
+	log logr.Logger
+)
+
 func main() {
+	log.WithValues("opentelemetryallocator")
 	ctx := context.Background()
 
 	// watcher to monitor file changes in ConfigMap
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatalf("Can't start the watcher: %v", err)
+		log.Error(err, "Can't start the watcher")
 	}
 	defer watcher.Close()
 
 	if err := watcher.Add(configDir); err != nil {
-		log.Fatalf("Can't add directory to watcher: %v", err)
+		log.Error(err, "Can't add directory to watcher")
 	}
 
 	srv, err := newServer(listenAddr)
 	if err != nil {
-		log.Fatalf("Can't start the server: %v", err)
+		log.Error(err, "Can't start the server")
 	}
 
 	interrupts := make(chan os.Signal, 1)
@@ -47,7 +52,7 @@ func main() {
 
 	go func() {
 		if err := srv.Start(); err != http.ErrServerClosed {
-			log.Fatalf("Can't start the server: %v", err)
+			log.Error(err, "Can't start the server")
 		}
 	}()
 
@@ -55,30 +60,30 @@ func main() {
 		select {
 		case <-interrupts:
 			if err := srv.Shutdown(ctx); err != nil {
-				log.Println(err)
+				log.Error(err, "Error on server shutdown")
 				os.Exit(1)
 			}
 			os.Exit(0)
 		case event := <-watcher.Events:
 			switch event.Op {
 			case fsnotify.Create:
-				log.Println("ConfigMap updated!")
+				log.Info("ConfigMap updated!")
 				// Restart the server to pickup the new config.
 				if err := srv.Shutdown(ctx); err != nil {
-					log.Fatalf("Cannot shutdown the server: %v", err)
+					log.Error(err, "Cannot shutdown the server")
 				}
 				srv, err = newServer(listenAddr)
 				if err != nil {
-					log.Fatalf("Error restarting the server with new config: %v", err)
+					log.Error(err, "Error restarting the server with new config")
 				}
 				go func() {
 					if err := srv.Start(); err != http.ErrServerClosed {
-						log.Fatalf("Can't restart the server: %v", err)
+						log.Error(err, "Can't restart the server")
 					}
 				}()
 			}
 		case err := <-watcher.Errors:
-			log.Printf("Watcher error: %v", err)
+			log.Error(err, "Watcher error")
 		}
 	}
 }
@@ -139,12 +144,12 @@ func newAllocator(ctx context.Context) (*allocation.Allocator, *lbdiscovery.Mana
 }
 
 func (s *server) Start() error {
-	log.Println("Starting server...")
+	log.Info("Starting server...")
 	return s.server.ListenAndServe()
 }
 
 func (s *server) Shutdown(ctx context.Context) error {
-	log.Println("Shutting down server...")
+	log.Info("Shutting down server...")
 	s.k8sClient.Close()
 	s.discoveryManager.Close()
 	return s.server.Shutdown(ctx)
