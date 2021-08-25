@@ -222,3 +222,19 @@ func TestContainerArgs(t *testing.T) {
 	assert.Contains(t, c.Args, "--metrics-level=detailed")
 	assert.Contains(t, c.Args, "--log-level=debug")
 }
+
+func TestContainerImagePullPolicy(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, c.ImagePullPolicy, corev1.PullPolicy("IfNotPresent"))
+}
