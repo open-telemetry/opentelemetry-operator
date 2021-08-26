@@ -178,6 +178,10 @@ spec:
                 description: Image indicates the container image to use for the OpenTelemetry
                   Collector.
                 type: string
+              imagePullPolicy:
+                description: ImagePullPolicy indicates the pull policy to be used
+                  for retrieving the container image (Always, Never, IfNotPresent)
+                type: string
               mode:
                 description: Mode represents how the collector should be deployed
                   (deployment, daemonset, statefulset or sidecar)

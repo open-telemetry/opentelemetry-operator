@@ -37,6 +37,9 @@ spec:
   
   // +optional Image indicates the container image to use for the OpenTelemetry Collector.
   image: ""
+
+  // +optional ImagePullPolicy indicates what image pull policy to be used to retrieve the container image to use for the OpenTelemetry Collector.
+  imagePullPolicy: ""
   
   // +optional ServiceAccount indicates the name of an existing service account to use with this instance.
   serviceAccount: ""
