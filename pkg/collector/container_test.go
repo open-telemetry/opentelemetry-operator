@@ -227,7 +227,7 @@ func TestContainerImagePullPolicy(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
+			ImagePullPolicy: corev1.PullIfNotPresent,
 		},
 	}
 	cfg := config.New()
@@ -236,5 +236,5 @@ func TestContainerImagePullPolicy(t *testing.T) {
 	c := Container(cfg, logger, otelcol)
 
 	// verify
-	assert.Equal(t, c.ImagePullPolicy, corev1.PullPolicy("IfNotPresent"))
+	assert.Equal(t, c.ImagePullPolicy, corev1.PullIfNotPresent)
 }
