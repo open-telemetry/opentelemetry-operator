@@ -4,13 +4,15 @@ import (
 	"math"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 )
 
 // Tests least connection - The expected collector after running findNextCollector should be the collector with the least amount of workload
 func TestFindNextCollector(t *testing.T) {
-	s := NewAllocator()
+	var log logr.Logger
+	s := NewAllocator(log)
 
 	defaultCol := collector{Name: "default-col", NumTargets: 1}
 	maxCol := collector{Name: "max-col", NumTargets: 2}
@@ -24,7 +26,8 @@ func TestFindNextCollector(t *testing.T) {
 
 func TestSetCollectors(t *testing.T) {
 
-	s := NewAllocator()
+	var log logr.Logger
+	s := NewAllocator(log)
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
@@ -39,7 +42,8 @@ func TestSetCollectors(t *testing.T) {
 
 func TestAddingAndRemovingTargets(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s := NewAllocator()
+	var log logr.Logger
+	s := NewAllocator(log)
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
@@ -84,7 +88,8 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 
 	// prepare allocator with 3 collectors and 'random' amount of targets
-	s := NewAllocator()
+	var log logr.Logger
+	s := NewAllocator(log)
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
