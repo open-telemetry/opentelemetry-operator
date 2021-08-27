@@ -8,10 +8,6 @@ import (
 	"github.com/prometheus/common/model"
 )
 
-var (
-	log logr.Logger
-)
-
 /*
 	Load balancer will serve on an HTTP server exposing /jobs/<job_id>/targets <- these are configured using least connection
 	Load balancer will need information about the collectors in order to set the URLs
@@ -46,6 +42,8 @@ type Allocator struct {
 	collectors map[string]*collector // all current collectors
 
 	TargetItems map[string]*TargetItem
+
+	log logr.Logger
 }
 
 // findNextCollector finds the next collector with less number of targets.
@@ -82,6 +80,8 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
 // SetCollectors is called when Collectors are added or removed
 func (allocator *Allocator) SetCollectors(collectors []string) {
+	log := allocator.log.WithValues("opentelemetry-targetallocator")
+
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 	if len(collectors) == 0 {
@@ -143,8 +143,9 @@ func (allocator *Allocator) processWaitingTargets() {
 	}
 }
 
-func NewAllocator() *Allocator {
+func NewAllocator(log logr.Logger) *Allocator {
 	return &Allocator{
+		log:            log,
 		targetsWaiting: make(map[string]TargetItem),
 		collectors:     make(map[string]*collector),
 		TargetItems:    make(map[string]*TargetItem),

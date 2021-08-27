@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,35 +17,48 @@ import (
 	"github.com/otel-allocator/collector"
 	"github.com/otel-allocator/config"
 	lbdiscovery "github.com/otel-allocator/discovery"
-)
-
-const (
-	configDir  = "/conf/"
-	listenAddr = ":8080"
+	"github.com/spf13/pflag"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var (
-	log logr.Logger
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 func main() {
-	log.WithValues("opentelemetryallocator")
+	// Trying zap logger
+	opts := zap.Options{}
+	opts.BindFlags(flag.CommandLine)
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	var listenAddr string
+	var configDir string
+	pflag.StringVar(&listenAddr, "listen-addr", ":8080", "The address where this service serves.")
+	pflag.StringVar(&configDir, "config-dir", "/conf/", "The directory for the config file.")
+	logger := zap.New(zap.UseFlagOptions(&opts))
+	ctrl.SetLogger(logger)
+
+	logger.Info("Starting the Target Allocator")
+
+	//
+
 	ctx := context.Background()
 
 	// watcher to monitor file changes in ConfigMap
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Error(err, "Can't start the watcher")
+		setupLog.Error(err, "Can't start the watcher")
+		os.Exit(1)
 	}
 	defer watcher.Close()
 
 	if err := watcher.Add(configDir); err != nil {
-		log.Error(err, "Can't add directory to watcher")
+		setupLog.Error(err, "Can't add directory to watcher")
 	}
-
-	srv, err := newServer(listenAddr)
+	log := ctrl.Log.WithName("allocator")
+	srv, err := newServer(log, listenAddr)
 	if err != nil {
-		log.Error(err, "Can't start the server")
+		setupLog.Error(err, "Can't start the server")
 	}
 
 	interrupts := make(chan os.Signal, 1)
@@ -52,7 +66,7 @@ func main() {
 
 	go func() {
 		if err := srv.Start(); err != http.ErrServerClosed {
-			log.Error(err, "Can't start the server")
+			setupLog.Error(err, "Can't start the server")
 		}
 	}()
 
@@ -60,47 +74,49 @@ func main() {
 		select {
 		case <-interrupts:
 			if err := srv.Shutdown(ctx); err != nil {
-				log.Error(err, "Error on server shutdown")
+				setupLog.Error(err, "Error on server shutdown")
 				os.Exit(1)
 			}
 			os.Exit(0)
 		case event := <-watcher.Events:
 			switch event.Op {
 			case fsnotify.Create:
-				log.Info("ConfigMap updated!")
+				setupLog.Info("ConfigMap updated!")
 				// Restart the server to pickup the new config.
 				if err := srv.Shutdown(ctx); err != nil {
-					log.Error(err, "Cannot shutdown the server")
+					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv, err = newServer(listenAddr)
+				srv, err = newServer(log, listenAddr)
 				if err != nil {
-					log.Error(err, "Error restarting the server with new config")
+					setupLog.Error(err, "Error restarting the server with new config")
 				}
 				go func() {
 					if err := srv.Start(); err != http.ErrServerClosed {
-						log.Error(err, "Can't restart the server")
+						setupLog.Error(err, "Can't restart the server")
 					}
 				}()
 			}
 		case err := <-watcher.Errors:
-			log.Error(err, "Watcher error")
+			setupLog.Error(err, "Watcher error")
 		}
 	}
 }
 
 type server struct {
+	logger           logr.Logger
 	allocator        *allocation.Allocator
 	discoveryManager *lbdiscovery.Manager
 	k8sClient        *collector.Client
 	server           *http.Server
 }
 
-func newServer(addr string) (*server, error) {
-	allocator, discoveryManager, k8sclient, err := newAllocator(context.Background())
+func newServer(log logr.Logger, addr string) (*server, error) {
+	allocator, discoveryManager, k8sclient, err := newAllocator(log, context.Background())
 	if err != nil {
 		return nil, err
 	}
 	s := &server{
+		logger:           log,
 		allocator:        allocator,
 		discoveryManager: discoveryManager,
 		k8sClient:        k8sclient,
@@ -112,26 +128,26 @@ func newServer(addr string) (*server, error) {
 	return s, nil
 }
 
-func newAllocator(ctx context.Context) (*allocation.Allocator, *lbdiscovery.Manager, *collector.Client, error) {
+func newAllocator(log logr.Logger, ctx context.Context) (*allocation.Allocator, *lbdiscovery.Manager, *collector.Client, error) {
 	cfg, err := config.Load("")
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	k8sClient, err := collector.NewClient()
+	k8sClient, err := collector.NewClient(log)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	// creates a new discovery manager
-	discoveryManager := lbdiscovery.NewManager(ctx, gokitlog.NewNopLogger())
+	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger())
 
 	// returns the list of targets
 	if err := discoveryManager.ApplyConfig(cfg); err != nil {
 		return nil, nil, nil, err
 	}
 
-	allocator := allocation.NewAllocator()
+	allocator := allocation.NewAllocator(log)
 	discoveryManager.Watch(func(targets []allocation.TargetItem) {
 		allocator.SetWaitingTargets(targets)
 		allocator.AllocateTargets()
@@ -144,12 +160,12 @@ func newAllocator(ctx context.Context) (*allocation.Allocator, *lbdiscovery.Mana
 }
 
 func (s *server) Start() error {
-	log.Info("Starting server...")
+	setupLog.Info("Starting server...")
 	return s.server.ListenAndServe()
 }
 
 func (s *server) Shutdown(ctx context.Context) error {
-	log.Info("Shutting down server...")
+	s.logger.Info("Shutting down server...")
 	s.k8sClient.Close()
 	s.discoveryManager.Close()
 	return s.server.Shutdown(ctx)

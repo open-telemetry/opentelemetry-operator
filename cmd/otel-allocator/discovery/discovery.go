@@ -11,24 +11,23 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 )
 
-var (
-	logger logr.Logger
-)
-
 type Manager struct {
+	log     logr.Logger
 	manager *discovery.Manager
 	logger  log.Logger
 	close   chan struct{}
 }
 
-func NewManager(ctx context.Context, logger log.Logger, options ...func(*discovery.Manager)) *Manager {
+func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, options ...func(*discovery.Manager)) *Manager {
 	manager := discovery.NewManager(ctx, logger, options...)
+
 	go func() {
 		if err := manager.Run(); err != nil {
 			logger.Log("Discovery manager failed", err)
 		}
 	}()
 	return &Manager{
+		log:     log,
 		manager: manager,
 		logger:  logger,
 		close:   make(chan struct{}),
@@ -45,11 +44,13 @@ func (m *Manager) ApplyConfig(cfg config.Config) error {
 }
 
 func (m *Manager) Watch(fn func(targets []allocation.TargetItem)) {
+	log := m.log.WithValues("opentelemetry-targetallocator")
+
 	go func() {
 		for {
 			select {
 			case <-m.close:
-				logger.Info("Service Discovery watch event stopped: discovery manager closed")
+				log.Info("Service Discovery watch event stopped: discovery manager closed")
 				return
 			case tsets := <-m.manager.SyncCh():
 				targets := []allocation.TargetItem{}
