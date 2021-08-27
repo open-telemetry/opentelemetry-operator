@@ -36,6 +36,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Replicas *int32 `json:"replicas,omitempty"`
 
+	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
