@@ -26,13 +26,13 @@ func TestFallbackVersion(t *testing.T) {
 
 func TestVersionFromBuild(t *testing.T) {
 	// prepare
-	otelCol = "0.0.2" // set during the build
+	splunkOtelCol = "0.0.2" // set during the build
 	defer func() {
-		otelCol = ""
+		splunkOtelCol = ""
 	}()
 
-	assert.Equal(t, otelCol, OpenTelemetryCollector())
-	assert.Contains(t, Get().String(), otelCol)
+	assert.Equal(t, splunkOtelCol, OpenTelemetryCollector())
+	assert.Contains(t, Get().String(), splunkOtelCol)
 }
 
 func TestTargetAllocatorFallbackVersion(t *testing.T) {

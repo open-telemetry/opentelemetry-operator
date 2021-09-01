@@ -75,7 +75,7 @@ func main() {
 
 	logger.Info("Starting the OpenTelemetry Operator",
 		"opentelemetry-operator", v.Operator,
-		"opentelemetry-collector", v.OpenTelemetryCollector,
+		"splunk-otel-collector", v.SplunkCollector,
 		"opentelemetry-targetallocator", v.TargetAllocator,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,

@@ -23,7 +23,7 @@ jobs:
 
       - name: Set env vars for the job
         run: |
-          grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print "OTELCOL_VERSION="$2}' >> $GITHUB_ENV
+          grep -v '\#' versions.txt | grep splunk-otel-collector | awk -F= '{print "SPLUNK_COL_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print "TARGETALLOCATOR_VERSION="$2}' >> $GITHUB_ENV
           echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
           echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
@@ -72,7 +72,7 @@ jobs:
             VERSION_PKG=github.com/open-telemetry/opentelemetry-operator/internal/version
             VERSION=${{ env.VERSION }}
             VERSION_DATE=${{ env.VERSION_DATE }}
-            OTELCOL_VERSION=${{ env.OTELCOL_VERSION }}
+            SPLUNK_COL_VERSION=${{ env.SPLUNK_COL_VERSION }}
             TARGETALLOCATOR_VERSION=${{ env.TARGETALLOCATOR_VERSION }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
