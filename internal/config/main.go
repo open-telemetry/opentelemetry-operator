@@ -98,7 +98,7 @@ func (c *Config) FlagSet() *pflag.FlagSet {
 	pflag.StringVar(&c.collectorImage,
 		"otelcol-image",
 		c.collectorImage,
-		"The default image to use for OpenTelemetry Collector when not specified in the individual custom resource (CR)",
+		"The default image to use for Splunk OpenTelemetry Collector when not specified in the individual custom resource (CR)",
 	)
 
 	return fs

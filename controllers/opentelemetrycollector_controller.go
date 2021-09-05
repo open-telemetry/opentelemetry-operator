@@ -64,6 +64,13 @@ type Params struct {
 func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	if len(p.Tasks) == 0 {
 		p.Tasks = []Task{
+			/*
+				{
+					"namespaces",
+					reconcile.Namespaces,
+					true,
+				},
+			*/
 			{
 				"config maps",
 				reconcile.ConfigMaps,

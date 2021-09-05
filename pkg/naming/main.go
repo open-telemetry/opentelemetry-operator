@@ -85,3 +85,8 @@ func TAService(otelcol v1alpha1.OpenTelemetryCollector) string {
 func ServiceAccount(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
 }
+
+// Namespace builds the namespace name based on the instance.
+func Namespace(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return "splunk-otel-operator-system"
+}
