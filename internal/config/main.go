@@ -71,7 +71,7 @@ func New(opts ...Option) Config {
 	// this is derived from another option, so, we need to first parse the options, then set a default
 	// if there's no explicit value being set
 	if len(o.collectorImage) == 0 {
-		o.collectorImage = fmt.Sprintf("otel/opentelemetry-collector:%s", o.version.OpenTelemetryCollector)
+		o.collectorImage = fmt.Sprintf("otel/splunk-otel-collector:%s", o.version.OpenTelemetryCollector)
 	}
 
 	if len(o.targetAllocatorImage) == 0 {
@@ -94,7 +94,7 @@ func New(opts ...Option) Config {
 
 // FlagSet binds the flags to the user-modifiable values of the operator's configuration.
 func (c *Config) FlagSet() *pflag.FlagSet {
-	fs := pflag.NewFlagSet("opentelemetry-operator", pflag.ExitOnError)
+	fs := pflag.NewFlagSet("splunk-otel-operator", pflag.ExitOnError)
 	pflag.StringVar(&c.collectorImage,
 		"otelcol-image",
 		c.collectorImage,

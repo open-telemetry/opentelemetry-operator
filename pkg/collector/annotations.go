@@ -38,7 +38,7 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 		}
 	}
 	// make sure sha256 for configMap is always calculated
-	annotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	annotations["splunk-otel-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
 
 	return annotations
 }

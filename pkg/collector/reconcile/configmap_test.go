@@ -33,13 +33,13 @@ import (
 
 func TestDesiredConfigMap(t *testing.T) {
 	expectedLables := map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/managed-by": "splunk-otel-operator",
 		"app.kubernetes.io/instance":   "default.test",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 	}
 
 	t.Run("should return expected collector config map", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
+		expectedLables["app.kubernetes.io/component"] = "splunk-otel-collector"
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
 
 		expectedData := map[string]string{
@@ -89,9 +89,9 @@ service:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
+  app.kubernetes.io/component: splunk-otel-collector
   app.kubernetes.io/instance: default.test
-  app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/managed-by: splunk-otel-operator
 `,
 		}
 
@@ -215,8 +215,8 @@ func TestExpectedConfigMap(t *testing.T) {
 		taConfig := make(map[interface{}]interface{})
 		taConfig["label_selector"] = map[string]string{
 			"app.kubernetes.io/instance":   "default.test",
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			"app.kubernetes.io/component":  "opentelemetry-collector",
+			"app.kubernetes.io/managed-by": "splunk-otel-operator",
+			"app.kubernetes.io/component":  "splunk-otel-collector",
 		}
 		taConfig["config"] = parmConfig
 		taConfigYAML, _ := yaml.Marshal(taConfig)
@@ -232,7 +232,7 @@ func TestExpectedConfigMap(t *testing.T) {
 				Namespace: "default",
 				Labels: map[string]string{
 					"app.kubernetes.io/instance":   "default.test",
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/managed-by": "splunk-otel-operator",
 				},
 			},
 		}

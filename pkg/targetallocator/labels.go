@@ -30,7 +30,7 @@ func Labels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 		}
 	}
 
-	base["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
+	base["app.kubernetes.io/managed-by"] = "splunk-otel-operator"
 	base["app.kubernetes.io/instance"] = fmt.Sprintf("%s.%s", instance.Namespace, instance.Name)
 	base["app.kubernetes.io/part-of"] = "opentelemetry"
 	base["app.kubernetes.io/component"] = "opentelemetry-targetallocator"

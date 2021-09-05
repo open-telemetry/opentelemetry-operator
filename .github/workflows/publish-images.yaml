@@ -23,7 +23,7 @@ jobs:
 
       - name: Set env vars for the job
         run: |
-          grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print "OTELCOL_VERSION="$2}' >> $GITHUB_ENV
+          grep -v '\#' versions.txt | grep splunk-otel-collector | awk -F= '{print "OTELCOL_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print "TARGETALLOCATOR_VERSION="$2}' >> $GITHUB_ENV
           echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
           echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
@@ -32,7 +32,7 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v3.5.0
         with:
-          images: quay.io/opentelemetry/opentelemetry-operator
+          images: quay.io/opentelemetry/splunk-otel-operator
           tag-semver: |
             {{raw}}
             {{version}}
@@ -69,7 +69,7 @@ jobs:
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           build-args: |
-            VERSION_PKG=github.com/open-telemetry/opentelemetry-operator/internal/version
+            VERSION_PKG=github.com/open-telemetry/splunk-otel-operator/internal/version
             VERSION=${{ env.VERSION }}
             VERSION_DATE=${{ env.VERSION_DATE }}
             OTELCOL_VERSION=${{ env.OTELCOL_VERSION }}

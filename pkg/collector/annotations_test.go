@@ -42,7 +42,7 @@ func TestDefaultAnnotations(t *testing.T) {
 	assert.Equal(t, "true", annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", annotations["prometheus.io/path"])
-	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations["opentelemetry-operator-config/sha256"])
+	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations["splunk-otel-operator-config/sha256"])
 }
 
 func TestUserAnnotations(t *testing.T) {
@@ -52,9 +52,9 @@ func TestUserAnnotations(t *testing.T) {
 			Name:      "my-instance",
 			Namespace: "my-ns",
 			Annotations: map[string]string{"prometheus.io/scrape": "false",
-				"prometheus.io/port":                   "1234",
-				"prometheus.io/path":                   "/test",
-				"opentelemetry-operator-config/sha256": "shouldBeOverwritten",
+				"prometheus.io/port":                 "1234",
+				"prometheus.io/path":                 "/test",
+				"splunk-otel-operator-config/sha256": "shouldBeOverwritten",
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
@@ -69,7 +69,7 @@ func TestUserAnnotations(t *testing.T) {
 	assert.Equal(t, "false", annotations["prometheus.io/scrape"])
 	assert.Equal(t, "1234", annotations["prometheus.io/port"])
 	assert.Equal(t, "/test", annotations["prometheus.io/path"])
-	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations["opentelemetry-operator-config/sha256"])
+	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations["splunk-otel-operator-config/sha256"])
 }
 
 func TestAnnotationsPropagateDown(t *testing.T) {

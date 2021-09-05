@@ -42,8 +42,8 @@ func upgrade0_31_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 	}
 
 	for k, v := range receivers {
-		// from the changelog https://github.com/open-telemetry/opentelemetry-collector/blob/main/CHANGELOG.md#v0310-beta
-		// Here is the upstream PR https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/4277
+		// from the changelog https://github.com/signalfx/splunk-otel-collector/blob/main/CHANGELOG.md#v0310-beta
+		// Here is the upstream PR https://github.com/signalfx/splunk-otel-collector-contrib/pull/4277
 
 		// Remove deprecated field metrics_schema from influxdb receiver
 		if strings.HasPrefix(k.(string), "influxdb") {

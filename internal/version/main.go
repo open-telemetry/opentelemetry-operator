@@ -29,9 +29,9 @@ var (
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
 type Version struct {
-	Operator               string `json:"opentelemetry-operator"`
+	Operator               string `json:"splunk-otel-operator"`
 	BuildDate              string `json:"build-date"`
-	OpenTelemetryCollector string `json:"opentelemetry-collector-version"`
+	OpenTelemetryCollector string `json:"splunk-otel-collector-version"`
 	Go                     string `json:"go-version"`
 	TargetAllocator        string `json:"target-allocator-version"`
 }

@@ -60,7 +60,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 
 		labels := map[string]string{
 			"app.kubernetes.io/instance":   "default.test",
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/managed-by": "splunk-otel-operator",
 		}
 		ds := v1.StatefulSet{}
 		ds.Name = "dummy"
@@ -98,7 +98,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 	t.Run("should not delete statefulset", func(t *testing.T) {
 
 		labels := map[string]string{
-			"app.kubernetes.io/managed-by": "helm-opentelemetry-operator",
+			"app.kubernetes.io/managed-by": "helm-splunk-otel-operator",
 		}
 		ds := v1.StatefulSet{}
 		ds.Name = "dummy"

@@ -34,7 +34,7 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Versi
 
 	opts := []client.ListOption{
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/managed-by": "splunk-otel-operator",
 		}),
 	}
 	list := &v1alpha1.OpenTelemetryCollectorList{}

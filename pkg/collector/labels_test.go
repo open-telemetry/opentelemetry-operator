@@ -35,10 +35,10 @@ func TestLabelsCommonSet(t *testing.T) {
 
 	// test
 	labels := Labels(otelcol)
-	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, "splunk-otel-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
-	assert.Equal(t, "opentelemetry-collector", labels["app.kubernetes.io/component"])
+	assert.Equal(t, "splunk-otel-collector", labels["app.kubernetes.io/component"])
 }
 
 func TestLabelsPropagateDown(t *testing.T) {

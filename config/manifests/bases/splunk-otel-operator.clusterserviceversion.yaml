@@ -1,0 +1,48 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: splunk-otel-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: {}
+  description: Operator to help deploy and manage Splunk OpenTelemetry Collector
+  displayName: Splunk OpenTelemetry Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - splunk
+  - APM
+  - logging
+  - tracing
+  - metrics
+  - observability
+  - opentelemetry
+  links:
+  - name: Splunk Otel Operator
+    url: https://github.com/signalf/splunk-otel-operator
+  maintainers:
+  - email: olone@splunk.com
+    name: Owais Lone
+  maturity: alpha
+  provider:
+    name: Splunk Inc
+    url: https://github.com/signalf/splunk-otel-operator
+  version: 0.0.0

@@ -20,4 +20,4 @@ spec:
       - name: cert
         secret:
           defaultMode: 420
-          secretName: opentelemetry-operator-controller-manager-service-cert
+          secretName: splunk-otel-operator-controller-manager-service-cert

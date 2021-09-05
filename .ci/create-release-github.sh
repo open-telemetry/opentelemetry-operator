@@ -7,4 +7,4 @@ gh config set prompt disabled
 gh release create \
     -t "Release ${OPERATOR_VERSION}" \
     "${OPERATOR_VERSION}" \
-    'dist/opentelemetry-operator.yaml#Installation manifest for Kubernetes'
+    'dist/splunk-otel-operator.yaml#Installation manifest for Kubernetes'

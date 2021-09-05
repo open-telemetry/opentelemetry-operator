@@ -42,7 +42,7 @@ func upgrade0_19_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 	}
 
 	for k, v := range processors {
-		// from the changelog https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.19.0
+		// from the changelog https://github.com/signalfx/splunk-otel-collector/releases/tag/v0.19.0
 
 		// Remove deprecated queued_retry processor
 		if strings.HasPrefix(k.(string), "queued_retry") {

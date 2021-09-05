@@ -161,16 +161,9 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    categories: Logging & Tracing
-    certified: "false"
-    containerImage: quay.io/opentelemetry/opentelemetry-operator
-    createdAt: "2020-12-16T13:37:00+00:00"
-    description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.10.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-    repository: github.com/open-telemetry/opentelemetry-operator
-    support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.33.12
+  name: splunk-otel-operator.v0.33.12
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -179,19 +172,11 @@ spec:
     - kind: OpenTelemetryCollector
       name: opentelemetrycollectors.opentelemetry.io
       version: v1alpha1
-  description: |-
-    OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
-
-    ### Operator features
-
-    * **Sidecar injection** - annotate your pods and let the operator inject a sidecar.
-    * **Managed upgrades** - updating the operator will automatically update your OpenTelemetry collectors.
-    * **Deployment modes** - your collector can be deployed as sidecar, daemon set, or regular deployment.
-    * **Service port management** - the operator detects which ports need to be exposed based on the provided configuration.
-  displayName: Community OpenTelemetry Operator
+  description: Operator to help deploy and manage Splunk OpenTelemetry Collector
+  displayName: Splunk OpenTelemetry Operator
   icon:
-  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iLTEyLjcwIC0xMi43MCAxMDI0LjQwIDEwMjQuNDAiPjxzdHlsZT5zdmcge2VuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMTAwMCAxMDAwfTwvc3R5bGU+PHBhdGggZmlsbD0iI2Y1YTgwMCIgZD0iTTUyOC43IDU0NS45Yy00MiA0Mi00MiAxMTAuMSAwIDE1Mi4xczExMC4xIDQyIDE1Mi4xIDAgNDItMTEwLjEgMC0xNTIuMS0xMTAuMS00Mi0xNTIuMSAwem0xMTMuNyAxMTMuOGMtMjAuOCAyMC44LTU0LjUgMjAuOC03NS4zIDAtMjAuOC0yMC44LTIwLjgtNTQuNSAwLTc1LjMgMjAuOC0yMC44IDU0LjUtMjAuOCA3NS4zIDAgMjAuOCAyMC43IDIwLjggNTQuNSAwIDc1LjN6bTM2LjYtNjQzbC02NS45IDY1LjljLTEyLjkgMTIuOS0xMi45IDM0LjEgMCA0N2wyNTcuMyAyNTcuM2MxMi45IDEyLjkgMzQuMSAxMi45IDQ3IDBsNjUuOS02NS45YzEyLjktMTIuOSAxMi45LTM0LjEgMC00N0w3MjUuOSAxNi43Yy0xMi45LTEyLjktMzQtMTIuOS00Ni45IDB6TTIxNy4zIDg1OC44YzExLjctMTEuNyAxMS43LTMwLjggMC00Mi41bC0zMy41LTMzLjVjLTExLjctMTEuNy0zMC44LTExLjctNDIuNSAwTDcyLjEgODUybC0uMS4xLTE5LTE5Yy0xMC41LTEwLjUtMjcuNi0xMC41LTM4IDAtMTAuNSAxMC41LTEwLjUgMjcuNiAwIDM4bDExNCAxMTRjMTAuNSAxMC41IDI3LjYgMTAuNSAzOCAwczEwLjUtMjcuNiAwLTM4bC0xOS0xOSAuMS0uMSA2OS4yLTY5LjJ6Ii8+PHBhdGggZmlsbD0iIzQyNWNjNyIgZD0iTTU2NS45IDIwNS45TDQxOS41IDM1Mi4zYy0xMyAxMy0xMyAzNC40IDAgNDcuNGw5MC40IDkwLjRjNjMuOS00NiAxNTMuNS00MC4zIDIxMSAxNy4ybDczLjItNzMuMmMxMy0xMyAxMy0zNC40IDAtNDcuNEw2MTMuMyAyMDUuOWMtMTMtMTMuMS0zNC40LTEzLjEtNDcuNCAwem0tOTQgMzIyLjNsLTUzLjQtNTMuNGMtMTIuNS0xMi41LTMzLTEyLjUtNDUuNSAwTDE4NC43IDY2My4yYy0xMi41IDEyLjUtMTIuNSAzMyAwIDQ1LjVsMTA2LjcgMTA2LjdjMTIuNSAxMi41IDMzIDEyLjUgNDUuNSAwTDQ1OCA2OTQuMWMtMjUuNi01Mi45LTIxLTExNi44IDEzLjktMTY1Ljl6Ii8+PC9zdmc+
-    mediatype: image/svg+xml
+  - base64data: ""
+    mediatype: ""
   install:
     spec:
       clusterPermissions:
@@ -353,7 +338,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: quay.io/owais/opentelemetry-operator:v0.33.0
+                image: quay.io/owais/splunk-otel-operator:v0.33.12
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -388,7 +373,7 @@ spec:
               - name: cert
                 secret:
                   defaultMode: 420
-                  secretName: opentelemetry-operator-controller-manager-service-cert
+                  secretName: splunk-otel-operator-controller-manager-service-cert
       permissions:
       - rules:
         - apiGroups:
@@ -421,30 +406,32 @@ spec:
         serviceAccountName: splunk-otel-operator-controller-manager
     strategy: deployment
   installModes:
-  - supported: true
+  - supported: false
     type: OwnNamespace
-  - supported: true
+  - supported: false
     type: SingleNamespace
   - supported: false
     type: MultiNamespace
   - supported: true
     type: AllNamespaces
   keywords:
-  - opentelemetry
-  - tracing
+  - splunk
+  - APM
   - logging
+  - tracing
   - metrics
-  - monitoring
-  - troubleshooting
+  - observability
+  - opentelemetry
   links:
-  - name: OpenTelemetry Operator
-    url: https://github.com/open-telemetry/opentelemetry-operator
+  - name: Splunk Otel Operator
+    url: https://github.com/signalf/splunk-otel-operator
   maintainers:
-  - email: jpkroehling@redhat.com
-    name: Juraci Paixão Kröhling
+  - email: olone@splunk.com
+    name: Owais Lone
   maturity: alpha
   provider:
-    name: OpenTelemetry Community
+    name: Splunk Inc
+    url: https://github.com/signalf/splunk-otel-operator
   version: 0.33.12
   webhookdefinitions:
   - admissionReviewVersions:

@@ -106,7 +106,7 @@ func deleteStatefulSets(ctx context.Context, params Params, expected []appsv1.St
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
 			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/managed-by": "splunk-otel-operator",
 		}),
 	}
 	list := &appsv1.StatefulSetList{}

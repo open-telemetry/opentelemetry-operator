@@ -36,7 +36,7 @@ func TestRemoveConnectionDelay(t *testing.T) {
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,
 			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				"app.kubernetes.io/managed-by": "splunk-otel-operator",
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{

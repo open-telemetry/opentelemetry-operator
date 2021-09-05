@@ -23,7 +23,7 @@ import (
 
 var (
 	// ErrInvalidYAML represents an error in the format of the configuration file.
-	ErrInvalidYAML = errors.New("couldn't parse the opentelemetry-collector configuration")
+	ErrInvalidYAML = errors.New("couldn't parse the splunk-otel-collector configuration")
 )
 
 // ConfigFromString extracts a configuration map from the given string.
