@@ -18,7 +18,7 @@ package naming
 import (
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
 )
 
 // ConfigMap builds the name for the config map used in the OpenTelemetryCollector containers.

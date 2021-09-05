@@ -1,7 +1,7 @@
-projectName: opentelemetry-operator
+projectName: splunk-otel-operator
 domain: opentelemetry.io
 layout: go.kubebuilder.io/v2
-repo: github.com/open-telemetry/opentelemetry-operator
+repo: github.com/signalfx/splunk-otel-operator
 resources:
 -
   controller: true

@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/parser"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector/parser"
 )
 
 var logger = logf.Log.WithName("unit-tests")

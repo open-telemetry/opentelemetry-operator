@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector/adapters"
 )
 
 func TestInvalidYAML(t *testing.T) {

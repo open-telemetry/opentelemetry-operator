@@ -1,7 +1,7 @@
 # Current Operator version
 VERSION ?= "$(shell git describe --tags | sed 's/^v//')"
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
-VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/version"
+VERSION_PKG ?= "github.com/signalfx/splunk-otel-operator/internal/version"
 OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
 OPERATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator | awk -F= '{print $$2}')"
 TARGETALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')"
@@ -9,7 +9,7 @@ LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= quay.io/${USER}
-IMG_REPO ?= opentelemetry-operator
+IMG_REPO ?= splunk-otel-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:$(addprefix v,${VERSION})
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 
@@ -87,7 +87,7 @@ deploy: set-image-controller
 # Generates the released manifests
 release-artifacts: set-image-controller
 	mkdir -p dist
-	$(KUSTOMIZE) build config/default -o dist/opentelemetry-operator.yaml
+	$(KUSTOMIZE) build config/default -o dist/splunk-otel-operator.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -115,11 +115,11 @@ e2e:
 
 prepare-e2e: kuttl set-test-image-vars set-image-controller container start-kind
 	mkdir -p tests/_build/crds tests/_build/manifests
-	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
+	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-splunk-otel-operator.yaml
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
 
 set-test-image-vars:
-	$(eval IMG=local/opentelemetry-operator:e2e)
+	$(eval IMG=local/splunk-otel-operator:e2e)
 
 # Build the container image, used only for local dev purposes
 container:
@@ -131,7 +131,7 @@ container-push:
 
 start-kind: 
 	kind create cluster --config $(KIND_CONFIG)
-	kind load docker-image local/opentelemetry-operator:e2e
+	kind load docker-image local/splunk-otel-operator:e2e
 
 cert-manager:
 	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.5.2/cert-manager.yaml

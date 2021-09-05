@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
+	"github.com/signalfx/splunk-otel-operator/pkg/platform"
 )
 
 var _ AutoDetect = (*autoDetect)(nil)

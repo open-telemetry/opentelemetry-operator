@@ -22,9 +22,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/internal/config"
+	. "github.com/signalfx/splunk-otel-operator/pkg/collector"
 )
 
 var logger = logf.Log.WithName("unit-tests")

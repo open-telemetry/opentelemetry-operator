@@ -32,13 +32,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	opentelemetryiov1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/controllers"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/podinjector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
+	opentelemetryiov1alpha1 "github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/controllers"
+	"github.com/signalfx/splunk-otel-operator/internal/config"
+	"github.com/signalfx/splunk-otel-operator/internal/podinjector"
+	"github.com/signalfx/splunk-otel-operator/internal/version"
+	"github.com/signalfx/splunk-otel-operator/pkg/autodetect"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector/upgrade"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -74,8 +74,8 @@ func main() {
 	ctrl.SetLogger(logger)
 
 	logger.Info("Starting the OpenTelemetry Operator",
-		"opentelemetry-operator", v.Operator,
-		"opentelemetry-collector", v.OpenTelemetryCollector,
+		"splunk-otel-operator", v.Operator,
+		"splunk-otel-collector", v.OpenTelemetryCollector,
 		"opentelemetry-targetallocator", v.TargetAllocator,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
@@ -150,7 +150,7 @@ func main() {
 		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+		Recorder: mgr.GetEventRecorderFor("splunk-otel-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
 		os.Exit(1)

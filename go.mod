@@ -1,4 +1,4 @@
-module github.com/open-telemetry/opentelemetry-operator
+module github.com/signalfx/splunk-otel-operator
 
 go 1.17
 

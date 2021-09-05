@@ -27,10 +27,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
-	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector"
+	"github.com/signalfx/splunk-otel-operator/pkg/naming"
+	"github.com/signalfx/splunk-otel-operator/pkg/targetallocator"
+	ta "github.com/signalfx/splunk-otel-operator/pkg/targetallocator/adapters"
 )
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete

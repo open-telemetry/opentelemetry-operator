@@ -25,8 +25,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/parser"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector/adapters"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector/parser"
 )
 
 var logger = logf.Log.WithName("unit-tests")

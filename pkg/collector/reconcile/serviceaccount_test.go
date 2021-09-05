@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector"
 )
 
 func TestExpectedServiceAccounts(t *testing.T) {

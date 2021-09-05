@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
+	"github.com/signalfx/splunk-otel-operator/pkg/sidecar"
 )
 
 func TestEffectiveAnnotationValue(t *testing.T) {

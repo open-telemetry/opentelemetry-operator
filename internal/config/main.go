@@ -23,9 +23,9 @@ import (
 	"github.com/spf13/pflag"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
+	"github.com/signalfx/splunk-otel-operator/internal/version"
+	"github.com/signalfx/splunk-otel-operator/pkg/autodetect"
+	"github.com/signalfx/splunk-otel-operator/pkg/platform"
 )
 
 const (

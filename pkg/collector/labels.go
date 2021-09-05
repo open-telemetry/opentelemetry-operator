@@ -17,7 +17,7 @@ package collector
 import (
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
 )
 
 // Labels return the common labels to all objects that are part of a managed OpenTelemetryCollector.

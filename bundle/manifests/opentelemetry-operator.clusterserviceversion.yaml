@@ -8,10 +8,155 @@ metadata:
           "apiVersion": "opentelemetry.io/v1alpha1",
           "kind": "OpenTelemetryCollector",
           "metadata": {
-            "name": "opentelemetrycollector-sample"
+            "name": "splunk-otel-agent",
+            "namespace": "splunk-otel-operator-system"
           },
           "spec": {
-            "config": "receivers:\n  jaeger:\n    protocols: \n      grpc:\n\nexporters:\n  logging:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [jaeger]\n      exporters: [logging]\n"
+            "config": "extensions:\n  health_check:\n    endpoint: 0.0.0.0:13133\n  zpages:\n    endpoint: 0.0.0.0:55679\n  k8s_observer:\n    auth_type: serviceAccount\n    node: ${MY_NODE_NAME}\n  zpages: null\n\n# replace smartagent/ receivers with otel counter parts\n# where applicable e.g, smartagent/docker-container-stats\n# should be replaced with docker_stats from otel.\nreceivers:\n  # tracing\n  jaeger:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:14250\n      thrift_http:\n        endpoint: 0.0.0.0:14268\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:55681\n  zipkin:\n    endpoint: 0.0.0.0:9411\n  smartagent/signalfx-forwarder:\n    listenAddress: 0.0.0.0:9080\n    type: signalfx-forwarder\n  # metrics\n  signalfx:\n    endpoint: 0.0.0.0:9943\n  hostmetrics:\n    collection_interval: 10s\n    scrapers:\n      cpu:\n      disk:\n      filesystem:\n      load:\n      memory:\n      network:\n      paging:\n      processes:\n  kubeletstats:\n    auth_type: serviceAccount\n    collection_interval: 10s\n    endpoint: ${MY_NODE_IP}:10250\n    extra_metadata_labels:\n    - container.id\n    metric_groups:\n    - container\n    - pod\n    - node\n  receiver_creator:\n    receivers:\n    watch_observers:\n    - k8s_observer\n  prometheus/self:\n    config:\n      scrape_configs:\n      - job_name: otel-agent\n        scrape_interval: 10s\n        static_configs:\n        - targets:\n          - ${MY_POD_IP}:8888\n\nexporters:\n  sapm:\n    access_token: ${SPLUNK_ACCESS_TOKEN}\n    endpoint: https://ingest.${SPLUNK_REALM}.signalfx.com/v2/trace\n  signalfx:\n    access_token: ${SPLUNK_ACCESS_TOKEN}\n    api_url: https://api.${SPLUNK_REALM}.signalfx.com\n    ingest_url: https://ingest.${SPLUNK_REALM}.signalfx.com\n    sync_host_metadata: true\n  splunk_hec:\n    token: ${SPLUNK_ACCESS_TOKEN}\n    endpoint: https://ingest.${SPLUNK_REALM}.signalfx.com/v1/log\n  logging:\n  logging/debug:\n    loglevel: debug\n\nprocessors:\n  k8s_tagger:\n    extract:\n      metadata:\n        - k8s.namespace.name\n        - k8s.node.name\n        - k8s.pod.name\n        - k8s.pod.uid\n    filter:\n      node: ${MY_NODE_NAME}\n\n  batch:\n  memory_limiter:\n    ballast_size_mib: ${SPLUNK_BALLAST_SIZE_MIB}\n    check_interval: 2s\n    limit_mib: ${SPLUNK_MEMORY_LIMIT_MIB}\n\n  resource:\n    attributes:\n    - action: insert\n      key: k8s.node.name\n      value: ${MY_NODE_NAME}\n    - action: insert\n      key: k8s.cluster.name\n      value: ${MY_CLUSTER_NAME} \n    - action: insert\n      key: deployment.environment\n      value: ${MY_CLUSTER_NAME}\n\n  resource/self:\n    attributes:\n    - action: insert\n      key: k8s.pod.name\n      value: ${MY_POD_NAME}\n    - action: insert\n      key: k8s.pod.uid\n      value: ${MY_POD_UID}\n    - action: insert\n      key: k8s.namespace.name\n      value: ${MY_NAMESPACE}\n\n  resourcedetection:\n    override: false\n    timeout: 10s\n    detectors:\n    - system\n    - env\n    # enable the relevant detectors\n    #- gce\n    #- ecs\n    #- ec2\n    #- azure\n\nservice:\n  extensions: \n    - health_check\n    - k8s_observer\n    - zpages\n  pipelines:\n    traces:\n      receivers:\n        - smartagent/signalfx-forwarder\n        - otlp\n        - jaeger\n        - zipkin\n      processors:\n        #- memory_limiter\n        - k8s_tagger\n        - batch\n        - resource\n        - resourcedetection\n      exporters:\n        - sapm\n        - signalfx\n    metrics:\n      receivers:\n        - hostmetrics\n        - kubeletstats\n        - receiver_creator\n        - signalfx\n      processors:\n        #- memory_limiter\n        - batch\n        - resource\n        - resourcedetection\n      exporters:\n        - signalfx\n    metrics/self:\n      receivers:\n        - prometheus/self\n      processors:\n        #- memory_limiter\n        - batch\n        - resource\n        - resource/self\n        - resourcedetection\n      exporters:\n        - signalfx\n",
+            "env": [
+              {
+                "name": "SPLUNK_REALM",
+                "value": "replace-with-signalfx-realm"
+              },
+              {
+                "name": "SPLUNK_ACCESS_TOKEN",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "access-token",
+                    "name": "splunk-access-token"
+                  }
+                }
+              },
+              {
+                "name": "MY_CLUSTER_NAME",
+                "value": "replace-with-cluster-name"
+              },
+              {
+                "name": "MY_NODE_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "spec.nodeName"
+                  }
+                }
+              },
+              {
+                "name": "MY_NODE_IP",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "status.hostIP"
+                  }
+                }
+              },
+              {
+                "name": "MY_POD_IP",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "status.podIP"
+                  }
+                }
+              },
+              {
+                "name": "MY_POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.name"
+                  }
+                }
+              },
+              {
+                "name": "MY_POD_UID",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.uid"
+                  }
+                }
+              },
+              {
+                "name": "MY_NAMESPACE",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              },
+              {
+                "name": "DISABLED_SPLUNK_BALLAST_SIZE_MIB",
+                "value": "128"
+              },
+              {
+                "name": "DISABLED_SPLUNK_BALLAST_SIZE_MIB",
+                "value": "200"
+              },
+              {
+                "name": "HOST_PROC",
+                "value": "/hostfs/proc"
+              },
+              {
+                "name": "HOST_SYS",
+                "value": "/hostfs/sys"
+              },
+              {
+                "name": "HOST_ETC",
+                "value": "/hostfs/etc"
+              },
+              {
+                "name": "HOST_VAR",
+                "value": "/hostfs/var"
+              },
+              {
+                "name": "HOST_RUN",
+                "value": "/hostfs/run"
+              },
+              {
+                "name": "HOST_DEV",
+                "value": "/hostfs/dev"
+              }
+            ],
+            "hostNetwork": true,
+            "image": "quay.io/signalfx/splunk-otel-collector:0.33.0",
+            "mode": "daemonset",
+            "serviceAccount": "splunk-otel-agent-collector",
+            "tolerations": [
+              {
+                "effect": "NoSchedule",
+                "key": "node.alpha.kubernetes.io/role",
+                "operator": "Exists"
+              },
+              {
+                "effect": "NoSchedule",
+                "key": "node-role.kubernetes.io/master",
+                "operator": "Exists"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "mountPath": "/hostfs",
+                "mountPropagation": "HostToContainer",
+                "name": "hostfs",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/passwd",
+                "name": "etc-passwd",
+                "readOnly": true
+              }
+            ],
+            "volumes": [
+              {
+                "hostPath": {
+                  "path": "/"
+                },
+                "name": "hostfs"
+              },
+              {
+                "hostPath": {
+                  "path": "/etc/passwd"
+                },
+                "name": "etc-passwd"
+              }
+            ]
           }
         }
       ]
@@ -25,7 +170,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.33.0
+  name: opentelemetry-operator.v0.33.12
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -186,18 +331,20 @@ spec:
           - subjectaccessreviews
           verbs:
           - create
-        serviceAccountName: opentelemetry-operator-controller-manager
+        serviceAccountName: splunk-otel-operator-controller-manager
       deployments:
-      - name: opentelemetry-operator-controller-manager
+      - name: splunk-otel-operator-controller-manager
         spec:
           replicas: 1
           selector:
             matchLabels:
+              app: splunk-otel
               control-plane: controller-manager
           strategy: {}
           template:
             metadata:
               labels:
+                app: splunk-otel
                 control-plane: controller-manager
             spec:
               containers:
@@ -206,7 +353,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: quay.io/opentelemetry/opentelemetry-operator:v0.33.0
+                image: quay.io/owais/opentelemetry-operator:v0.33.0
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -235,7 +382,7 @@ spec:
                   name: https
                   protocol: TCP
                 resources: {}
-              serviceAccountName: opentelemetry-operator-controller-manager
+              serviceAccountName: splunk-otel-operator-controller-manager
               terminationGracePeriodSeconds: 10
               volumes:
               - name: cert
@@ -271,7 +418,7 @@ spec:
           verbs:
           - create
           - patch
-        serviceAccountName: opentelemetry-operator-controller-manager
+        serviceAccountName: splunk-otel-operator-controller-manager
     strategy: deployment
   installModes:
   - supported: true
@@ -298,13 +445,13 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.33.0
+  version: 0.33.12
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
     - v1beta1
     containerPort: 443
-    deploymentName: opentelemetry-operator-controller-manager
+    deploymentName: splunk-otel-operator-controller-manager
     failurePolicy: Fail
     generateName: vopentelemetrycollectorcreateupdate.kb.io
     rules:
@@ -325,7 +472,7 @@ spec:
     - v1
     - v1beta1
     containerPort: 443
-    deploymentName: opentelemetry-operator-controller-manager
+    deploymentName: splunk-otel-operator-controller-manager
     failurePolicy: Ignore
     generateName: vopentelemetrycollectordelete.kb.io
     rules:
@@ -345,7 +492,7 @@ spec:
     - v1
     - v1beta1
     containerPort: 443
-    deploymentName: opentelemetry-operator-controller-manager
+    deploymentName: splunk-otel-operator-controller-manager
     failurePolicy: Fail
     generateName: mopentelemetrycollector.kb.io
     rules:
@@ -366,7 +513,7 @@ spec:
     - v1
     - v1beta1
     containerPort: 443
-    deploymentName: opentelemetry-operator-controller-manager
+    deploymentName: splunk-otel-operator-controller-manager
     failurePolicy: Ignore
     generateName: mpod.kb.io
     rules:

@@ -11,3 +11,5 @@ resources:
 - auth_proxy_role.yaml
 - auth_proxy_role_binding.yaml
 - auth_proxy_client_clusterrole.yaml
+- splunk_agent_role.yaml
+- splunk_agent_role_binding.yaml

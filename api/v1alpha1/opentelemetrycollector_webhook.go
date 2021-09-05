@@ -22,7 +22,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
+	ta "github.com/signalfx/splunk-otel-operator/pkg/targetallocator/adapters"
 )
 
 // log is for logging in this package.
@@ -48,7 +48,7 @@ func (r *OpenTelemetryCollector) Default() {
 		r.Labels = map[string]string{}
 	}
 	if r.Labels["app.kubernetes.io/managed-by"] == "" {
-		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
+		r.Labels["app.kubernetes.io/managed-by"] = "splunk-otel-operator"
 	}
 
 	opentelemetrycollectorlog.Info("default", "name", r.Name)

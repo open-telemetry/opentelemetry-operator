@@ -3,8 +3,9 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
+    app: splunk-otel
     control-plane: controller-manager
-  name: opentelemetry-operator-controller-manager-metrics-service
+  name: splunk-otel-operator-controller-manager-metrics-service
 spec:
   ports:
   - name: https
@@ -12,6 +13,7 @@ spec:
     protocol: TCP
     targetPort: https
   selector:
+    app: splunk-otel
     control-plane: controller-manager
 status:
   loadBalancer: {}
