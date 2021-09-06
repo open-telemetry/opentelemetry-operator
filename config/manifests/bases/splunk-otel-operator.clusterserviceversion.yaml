@@ -13,7 +13,7 @@ metadata:
     operators.operatorframework.io/project_layout: go
     repository: github.com/signalfx/splunk-otel-operator
     support: Splunk Inc
-  name: splunk-otel-operator.v0.0.0
+  name: splunk-otel-operator.v0.34.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -68,4 +68,4 @@ spec:
   maturity: alpha
   provider:
     name: Splunk Inc
-  version: 0.0.0
+  version: 0.34.1
