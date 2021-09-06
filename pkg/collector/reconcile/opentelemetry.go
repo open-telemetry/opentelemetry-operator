@@ -34,7 +34,7 @@ func Self(ctx context.Context, params Params) error {
 	}
 
 	changed := params.Instance
-	changed.Status.Version = version.SplunkOtelAgent()
+	changed.Status.Version = version.SplunkOtelCollector()
 
 	// this is only a change for new instances: existing instances are reconciled when the operator is first started
 	statusPatch := client.MergeFrom(&params.Instance)

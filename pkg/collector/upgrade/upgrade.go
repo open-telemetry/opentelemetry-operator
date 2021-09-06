@@ -111,7 +111,7 @@ func ManagedInstance(ctx context.Context, logger logr.Logger, currentV version.V
 	}
 
 	// at the end of the process, we are up to date with the latest known version, which is what we have from versions.txt
-	otelcol.Status.Version = currentV.SplunkOtelAgent
+	otelcol.Status.Version = currentV.SplunkOtelCollector
 
 	logger.V(1).Info("final version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
 	return otelcol, nil
