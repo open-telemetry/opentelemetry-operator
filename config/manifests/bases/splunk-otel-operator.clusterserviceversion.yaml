@@ -6,7 +6,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     certified: "false"
-    containerImage: quay.io/signalfx/splunk-otel-operator:v0.34.1
+    containerImage: quay.io/signalfx/splunk-otel-operator:v0.33.0
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the Splunk OpenTelemetry Connector
     operators.operatorframework.io/builder: operator-sdk-v1.2.0
@@ -68,4 +68,4 @@ spec:
   maturity: alpha
   provider:
     name: Splunk Inc
-  version: 0.34.1
+  version: 0.0.0

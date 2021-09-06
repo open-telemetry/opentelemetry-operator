@@ -16,7 +16,10 @@ build() {
 	make container 
 	make bundle VERSION=${OPERATOR_VERSION}
 	make bundle-build VERSION=${OPERATOR_VERSION}
+}
 
+build_bundle() {
+	make bundle VERSION=${OPERATOR_VERSION}
 }
 
 publish() {
