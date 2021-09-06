@@ -36,8 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalf/splunk-otel-operator/internal/config"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/internal/config"
 )
 
 var k8sClient client.Client

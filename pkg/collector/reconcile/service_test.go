@@ -24,9 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalf/splunk-otel-operator/internal/config"
-	"github.com/signalf/splunk-otel-operator/pkg/collector"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/internal/config"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector"
 )
 
 func TestExtractPortNumbersAndNames(t *testing.T) {

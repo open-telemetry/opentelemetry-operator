@@ -28,9 +28,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalf/splunk-otel-operator/internal/config"
-	"github.com/signalf/splunk-otel-operator/pkg/collector/reconcile"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/internal/config"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector/reconcile"
 )
 
 // SplunkOtelAgentReconciler reconciles a SplunkOtelAgent object.

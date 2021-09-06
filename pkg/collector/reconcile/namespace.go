@@ -25,8 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/signalf/splunk-otel-operator/pkg/collector"
-	"github.com/signalf/splunk-otel-operator/pkg/naming"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector"
+	"github.com/signalfx/splunk-otel-operator/pkg/naming"
 )
 
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete

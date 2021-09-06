@@ -18,8 +18,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalf/splunk-otel-operator/pkg/naming"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/pkg/naming"
 )
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.

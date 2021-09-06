@@ -22,10 +22,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/signalf/splunk-otel-operator/internal/config"
-	"github.com/signalf/splunk-otel-operator/internal/version"
-	"github.com/signalf/splunk-otel-operator/pkg/autodetect"
-	"github.com/signalf/splunk-otel-operator/pkg/platform"
+	"github.com/signalfx/splunk-otel-operator/internal/config"
+	"github.com/signalfx/splunk-otel-operator/internal/version"
+	"github.com/signalfx/splunk-otel-operator/pkg/autodetect"
+	"github.com/signalfx/splunk-otel-operator/pkg/platform"
 )
 
 func TestNewConfig(t *testing.T) {

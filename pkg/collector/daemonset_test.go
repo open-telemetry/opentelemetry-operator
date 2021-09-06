@@ -20,9 +20,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalf/splunk-otel-operator/internal/config"
-	. "github.com/signalf/splunk-otel-operator/pkg/collector"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/internal/config"
+	. "github.com/signalfx/splunk-otel-operator/pkg/collector"
 )
 
 func TestDaemonSetNewDefault(t *testing.T) {

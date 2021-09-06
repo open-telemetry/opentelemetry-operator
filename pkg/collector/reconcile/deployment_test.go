@@ -24,9 +24,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalf/splunk-otel-operator/pkg/collector"
-	"github.com/signalf/splunk-otel-operator/pkg/targetallocator"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector"
+	"github.com/signalfx/splunk-otel-operator/pkg/targetallocator"
 )
 
 func TestExpectedDeployments(t *testing.T) {

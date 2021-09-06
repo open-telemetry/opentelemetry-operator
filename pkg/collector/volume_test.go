@@ -20,10 +20,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalf/splunk-otel-operator/internal/config"
-	. "github.com/signalf/splunk-otel-operator/pkg/collector"
-	"github.com/signalf/splunk-otel-operator/pkg/naming"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/internal/config"
+	. "github.com/signalfx/splunk-otel-operator/pkg/collector"
+	"github.com/signalfx/splunk-otel-operator/pkg/naming"
 )
 
 func TestVolumeNewDefault(t *testing.T) {

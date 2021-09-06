@@ -17,7 +17,7 @@ package upgrade
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
 )
 
 //nolint unused

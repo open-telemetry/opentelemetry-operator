@@ -18,7 +18,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
 )
 
 type upgradeFunc func(cl client.Client, otelcol *v1alpha1.SplunkOtelAgent) (*v1alpha1.SplunkOtelAgent, error)

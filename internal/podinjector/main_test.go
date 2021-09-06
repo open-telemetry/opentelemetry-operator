@@ -30,11 +30,11 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalf/splunk-otel-operator/internal/config"
-	. "github.com/signalf/splunk-otel-operator/internal/podinjector"
-	"github.com/signalf/splunk-otel-operator/pkg/naming"
-	"github.com/signalf/splunk-otel-operator/pkg/sidecar"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/internal/config"
+	. "github.com/signalfx/splunk-otel-operator/internal/podinjector"
+	"github.com/signalfx/splunk-otel-operator/pkg/naming"
+	"github.com/signalfx/splunk-otel-operator/pkg/sidecar"
 )
 
 var logger = logf.Log.WithName("unit-tests")

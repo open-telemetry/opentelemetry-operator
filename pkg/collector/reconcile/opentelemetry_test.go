@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
 )
 
 func TestSelf(t *testing.T) {

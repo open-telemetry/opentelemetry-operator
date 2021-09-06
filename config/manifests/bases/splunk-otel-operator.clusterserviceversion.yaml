@@ -19,8 +19,7 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: SplunkOtelAgent is the Schema for the splunkotelagent
-        API.
+    - description: SplunkOtelAgent is the Schema for the splunkotelagent API.
       displayName: Splunk OpenTelemetry Agent
       kind: SplunkOtelAgent
       name: splunkotelagents.core.splunk.com

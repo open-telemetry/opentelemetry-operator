@@ -20,7 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/signalf/splunk-otel-operator/pkg/collector/parser"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector/parser"
 )
 
 var (

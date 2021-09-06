@@ -21,7 +21,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/signalf/splunk-otel-operator/internal/version"
+	"github.com/signalfx/splunk-otel-operator/internal/version"
 )
 
 // Self updates this instance's self data. This should be the last item in the reconciliation, as it causes changes

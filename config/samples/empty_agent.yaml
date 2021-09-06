@@ -4,3 +4,4 @@ metadata:
   name: splunk-otel-agent
   namespace: splunk-otel-operator-system
 spec:
+  image: quay.io/signalfx/splunk-otel-collector:latest

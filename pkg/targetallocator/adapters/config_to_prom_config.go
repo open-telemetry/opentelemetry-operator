@@ -17,7 +17,7 @@ package adapters
 import (
 	"fmt"
 
-	"github.com/signalf/splunk-otel-operator/pkg/collector/adapters"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector/adapters"
 )
 
 func errorNoComponent(component string) error {

@@ -1,4 +1,4 @@
-module github.com/signalf/splunk-otel-operator
+module github.com/signalfx/splunk-otel-operator
 
 go 1.17
 

@@ -1,7 +1,7 @@
 projectName: splunk-otel-operator
 domain: splunk.com
 layout: go.kubebuilder.io/v2
-repo: github.com/signalf/splunk-otel-operator
+repo: github.com/signalfx/splunk-otel-operator
 resources:
 -
   controller: true

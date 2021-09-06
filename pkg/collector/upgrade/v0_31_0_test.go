@@ -22,9 +22,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalf/splunk-otel-operator/internal/version"
-	"github.com/signalf/splunk-otel-operator/pkg/collector/upgrade"
+	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalfx/splunk-otel-operator/internal/version"
+	"github.com/signalfx/splunk-otel-operator/pkg/collector/upgrade"
 )
 
 func TestInfluxdbReceiverPropertyDrop(t *testing.T) {
