@@ -77,5 +77,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		Env:             envVars,
 		Resources:       otelcol.Spec.Resources,
 		SecurityContext: otelcol.Spec.SecurityContext,
+		EnvFrom:         otelcol.Spec.EnvFrom,
 	}
 }
