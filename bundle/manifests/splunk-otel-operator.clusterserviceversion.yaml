@@ -5,18 +5,18 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "opentelemetry.io/v1alpha1",
-          "kind": "OpenTelemetryCollector",
+          "apiVersion": "splunk.com/v1alpha1",
+          "kind": "SplunkOtelAgent",
           "metadata": {
             "name": "splunk-otel-agent",
             "namespace": "splunk-otel-operator-system"
           },
           "spec": {
-            "config": "extensions:\n  health_check:\n    endpoint: 0.0.0.0:13133\n  zpages:\n    endpoint: 0.0.0.0:55679\n  k8s_observer:\n    auth_type: serviceAccount\n    node: ${MY_NODE_NAME}\n  zpages: null\n\n# replace smartagent/ receivers with otel counter parts\n# where applicable e.g, smartagent/docker-container-stats\n# should be replaced with docker_stats from otel.\nreceivers:\n  # tracing\n  jaeger:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:14250\n      thrift_http:\n        endpoint: 0.0.0.0:14268\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:55681\n  zipkin:\n    endpoint: 0.0.0.0:9411\n  smartagent/signalfx-forwarder:\n    listenAddress: 0.0.0.0:9080\n    type: signalfx-forwarder\n  # metrics\n  signalfx:\n    endpoint: 0.0.0.0:9943\n  hostmetrics:\n    collection_interval: 10s\n    scrapers:\n      cpu:\n      disk:\n      filesystem:\n      load:\n      memory:\n      network:\n      paging:\n      processes:\n  kubeletstats:\n    auth_type: serviceAccount\n    collection_interval: 10s\n    endpoint: ${MY_NODE_IP}:10250\n    extra_metadata_labels:\n    - container.id\n    metric_groups:\n    - container\n    - pod\n    - node\n  receiver_creator:\n    receivers:\n    watch_observers:\n    - k8s_observer\n  prometheus/self:\n    config:\n      scrape_configs:\n      - job_name: otel-agent\n        scrape_interval: 10s\n        static_configs:\n        - targets:\n          - ${MY_POD_IP}:8888\n\nexporters:\n  sapm:\n    access_token: ${SPLUNK_ACCESS_TOKEN}\n    endpoint: https://ingest.${SPLUNK_REALM}.signalfx.com/v2/trace\n  signalfx:\n    access_token: ${SPLUNK_ACCESS_TOKEN}\n    api_url: https://api.${SPLUNK_REALM}.signalfx.com\n    ingest_url: https://ingest.${SPLUNK_REALM}.signalfx.com\n    sync_host_metadata: true\n  splunk_hec:\n    token: ${SPLUNK_ACCESS_TOKEN}\n    endpoint: https://ingest.${SPLUNK_REALM}.signalfx.com/v1/log\n  logging:\n  logging/debug:\n    loglevel: debug\n\nprocessors:\n  k8s_tagger:\n    extract:\n      metadata:\n        - k8s.namespace.name\n        - k8s.node.name\n        - k8s.pod.name\n        - k8s.pod.uid\n    filter:\n      node: ${MY_NODE_NAME}\n\n  batch:\n  memory_limiter:\n    ballast_size_mib: ${SPLUNK_BALLAST_SIZE_MIB}\n    check_interval: 2s\n    limit_mib: ${SPLUNK_MEMORY_LIMIT_MIB}\n\n  resource:\n    attributes:\n    - action: insert\n      key: k8s.node.name\n      value: ${MY_NODE_NAME}\n    - action: insert\n      key: k8s.cluster.name\n      value: ${MY_CLUSTER_NAME} \n    - action: insert\n      key: deployment.environment\n      value: ${MY_CLUSTER_NAME}\n\n  resource/self:\n    attributes:\n    - action: insert\n      key: k8s.pod.name\n      value: ${MY_POD_NAME}\n    - action: insert\n      key: k8s.pod.uid\n      value: ${MY_POD_UID}\n    - action: insert\n      key: k8s.namespace.name\n      value: ${MY_NAMESPACE}\n\n  resourcedetection:\n    override: false\n    timeout: 10s\n    detectors:\n    - system\n    - env\n    # enable the relevant detectors\n    #- gce\n    #- ecs\n    #- ec2\n    #- azure\n\nservice:\n  extensions: \n    - health_check\n    - k8s_observer\n    - zpages\n  pipelines:\n    traces:\n      receivers:\n        - smartagent/signalfx-forwarder\n        - otlp\n        - jaeger\n        - zipkin\n      processors:\n        #- memory_limiter\n        - k8s_tagger\n        - batch\n        - resource\n        - resourcedetection\n      exporters:\n        - sapm\n        - signalfx\n    metrics:\n      receivers:\n        - hostmetrics\n        - kubeletstats\n        - receiver_creator\n        - signalfx\n      processors:\n        #- memory_limiter\n        - batch\n        - resource\n        - resourcedetection\n      exporters:\n        - signalfx\n    metrics/self:\n      receivers:\n        - prometheus/self\n      processors:\n        #- memory_limiter\n        - batch\n        - resource\n        - resource/self\n        - resourcedetection\n      exporters:\n        - signalfx\n",
+            "config": "extensions:\n  health_check:\n    endpoint: 0.0.0.0:13133\n  zpages:\n    endpoint: 0.0.0.0:55679\n  k8s_observer:\n    auth_type: serviceAccount\n    node: ${MY_NODE_NAME}\n  zpages: null\n\n# replace smartagent/ receivers with otel counter parts\n# where applicable e.g, smartagent/docker-container-stats\n# should be replaced with docker_stats from otel.\nreceivers:\n  # tracing\n  jaeger:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:14250\n      thrift_http:\n        endpoint: 0.0.0.0:14268\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:55681\n  zipkin:\n    endpoint: 0.0.0.0:9411\n  smartagent/signalf-forwarder:\n    listenAddress: 0.0.0.0:9080\n    type: signalf-forwarder\n  # metrics\n  signalf:\n    endpoint: 0.0.0.0:9943\n  hostmetrics:\n    collection_interval: 10s\n    scrapers:\n      cpu:\n      disk:\n      filesystem:\n      load:\n      memory:\n      network:\n      paging:\n      processes:\n  kubeletstats:\n    auth_type: serviceAccount\n    collection_interval: 10s\n    endpoint: ${MY_NODE_IP}:10250\n    extra_metadata_labels:\n    - container.id\n    metric_groups:\n    - container\n    - pod\n    - node\n  receiver_creator:\n    receivers:\n    watch_observers:\n    - k8s_observer\n  prometheus/self:\n    config:\n      scrape_configs:\n      - job_name: otel-agent\n        scrape_interval: 10s\n        static_configs:\n        - targets:\n          - ${MY_POD_IP}:8888\n\nexporters:\n  sapm:\n    access_token: ${SPLUNK_ACCESS_TOKEN}\n    endpoint: https://ingest.${SPLUNK_REALM}.signalf.com/v2/trace\n  signalf:\n    access_token: ${SPLUNK_ACCESS_TOKEN}\n    api_url: https://api.${SPLUNK_REALM}.signalf.com\n    ingest_url: https://ingest.${SPLUNK_REALM}.signalf.com\n    sync_host_metadata: true\n  splunk_hec:\n    token: ${SPLUNK_ACCESS_TOKEN}\n    endpoint: https://ingest.${SPLUNK_REALM}.signalf.com/v1/log\n  logging:\n  logging/debug:\n    loglevel: debug\n\nprocessors:\n  k8s_tagger:\n    extract:\n      metadata:\n        - k8s.namespace.name\n        - k8s.node.name\n        - k8s.pod.name\n        - k8s.pod.uid\n    filter:\n      node: ${MY_NODE_NAME}\n\n  batch:\n  memory_limiter:\n    ballast_size_mib: ${SPLUNK_BALLAST_SIZE_MIB}\n    check_interval: 2s\n    limit_mib: ${SPLUNK_MEMORY_LIMIT_MIB}\n\n  resource:\n    attributes:\n    - action: insert\n      key: k8s.node.name\n      value: ${MY_NODE_NAME}\n    - action: insert\n      key: k8s.cluster.name\n      value: ${MY_CLUSTER_NAME} \n    - action: insert\n      key: deployment.environment\n      value: ${MY_CLUSTER_NAME}\n\n  resource/self:\n    attributes:\n    - action: insert\n      key: k8s.pod.name\n      value: ${MY_POD_NAME}\n    - action: insert\n      key: k8s.pod.uid\n      value: ${MY_POD_UID}\n    - action: insert\n      key: k8s.namespace.name\n      value: ${MY_NAMESPACE}\n\n  resourcedetection:\n    override: false\n    timeout: 10s\n    detectors:\n    - system\n    - env\n    # enable the relevant detectors\n    #- gce\n    #- ecs\n    #- ec2\n    #- azure\n\nservice:\n  extensions: \n    - health_check\n    - k8s_observer\n    - zpages\n  pipelines:\n    traces:\n      receivers:\n        - smartagent/signalf-forwarder\n        - otlp\n        - jaeger\n        - zipkin\n      processors:\n        #- memory_limiter\n        - k8s_tagger\n        - batch\n        - resource\n        - resourcedetection\n      exporters:\n        - sapm\n        - signalf\n    metrics:\n      receivers:\n        - hostmetrics\n        - kubeletstats\n        - receiver_creator\n        - signalf\n      processors:\n        #- memory_limiter\n        - batch\n        - resource\n        - resourcedetection\n      exporters:\n        - signalf\n    metrics/self:\n      receivers:\n        - prometheus/self\n      processors:\n        #- memory_limiter\n        - batch\n        - resource\n        - resource/self\n        - resourcedetection\n      exporters:\n        - signalf\n",
             "env": [
               {
                 "name": "SPLUNK_REALM",
-                "value": "replace-with-signalfx-realm"
+                "value": "replace-with-signalf-realm"
               },
               {
                 "name": "SPLUNK_ACCESS_TOKEN",
@@ -115,9 +115,8 @@ metadata:
               }
             ],
             "hostNetwork": true,
-            "image": "quay.io/signalfx/splunk-otel-collector:0.33.0",
+            "image": "quay.io/signalf/splunk-otel-collector:0.33.0",
             "mode": "daemonset",
-            "serviceAccount": "splunk-otel-agent-collector",
             "tolerations": [
               {
                 "effect": "NoSchedule",
@@ -163,14 +162,14 @@ metadata:
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.10.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-  name: splunk-otel-operator.v0.33.12
+  name: splunk-otel-operator.v0.33.1630893297
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - kind: OpenTelemetryCollector
-      name: opentelemetrycollectors.opentelemetry.io
+    - kind: SplunkOtelAgent
+      name: splunkotelagents.splunk.com
       version: v1alpha1
   description: Operator to help deploy and manage Splunk OpenTelemetry Collector
   displayName: Splunk OpenTelemetry Operator
@@ -282,9 +281,9 @@ spec:
           - list
           - update
         - apiGroups:
-          - opentelemetry.io
+          - splunk.com
           resources:
-          - opentelemetrycollectors
+          - splunkotelagents
           verbs:
           - create
           - delete
@@ -294,17 +293,17 @@ spec:
           - update
           - watch
         - apiGroups:
-          - opentelemetry.io
+          - splunk.com
           resources:
-          - opentelemetrycollectors/finalizers
+          - splunkotelagents/finalizers
           verbs:
           - get
           - patch
           - update
         - apiGroups:
-          - opentelemetry.io
+          - splunk.com
           resources:
-          - opentelemetrycollectors/status
+          - splunkotelagents/status
           verbs:
           - get
           - patch
@@ -343,7 +342,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: quay.io/owais/splunk-otel-operator:v0.33.12
+                image: quay.io/owais/opentelemetry-operator:v0.33.1630893297
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -437,7 +436,7 @@ spec:
   provider:
     name: Splunk Inc
     url: https://github.com/signalf/splunk-otel-operator
-  version: 0.33.12
+  version: 0.33.1630893297
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
@@ -445,62 +444,62 @@ spec:
     containerPort: 443
     deploymentName: splunk-otel-operator-controller-manager
     failurePolicy: Fail
-    generateName: vopentelemetrycollectorcreateupdate.kb.io
+    generateName: vsplunkotelagentcreateupdate.kb.io
     rules:
     - apiGroups:
-      - opentelemetry.io
+      - splunk.com
       apiVersions:
       - v1alpha1
       operations:
       - CREATE
       - UPDATE
       resources:
-      - opentelemetrycollectors
+      - splunkotelagents
     sideEffects: None
     targetPort: 9443
     type: ValidatingAdmissionWebhook
-    webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+    webhookPath: /validate-splunk-com-v1alpha1-splunkotelagent
   - admissionReviewVersions:
     - v1
     - v1beta1
     containerPort: 443
     deploymentName: splunk-otel-operator-controller-manager
     failurePolicy: Ignore
-    generateName: vopentelemetrycollectordelete.kb.io
+    generateName: vsplunkotelagentdelete.kb.io
     rules:
     - apiGroups:
-      - opentelemetry.io
+      - splunk.com
       apiVersions:
       - v1alpha1
       operations:
       - DELETE
       resources:
-      - opentelemetrycollectors
+      - splunkotelagents
     sideEffects: None
     targetPort: 9443
     type: ValidatingAdmissionWebhook
-    webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+    webhookPath: /validate-splunk-com-v1alpha1-splunkotelagent
   - admissionReviewVersions:
     - v1
     - v1beta1
     containerPort: 443
     deploymentName: splunk-otel-operator-controller-manager
     failurePolicy: Fail
-    generateName: mopentelemetrycollector.kb.io
+    generateName: msplunkotelagent.kb.io
     rules:
     - apiGroups:
-      - opentelemetry.io
+      - splunk.com
       apiVersions:
       - v1alpha1
       operations:
       - CREATE
       - UPDATE
       resources:
-      - opentelemetrycollectors
+      - splunkotelagents
     sideEffects: None
     targetPort: 9443
     type: MutatingAdmissionWebhook
-    webhookPath: /mutate-opentelemetry-io-v1alpha1-opentelemetrycollector
+    webhookPath: /mutate-splunk-com-v1alpha1-splunkotelagent
   - admissionReviewVersions:
     - v1
     - v1beta1

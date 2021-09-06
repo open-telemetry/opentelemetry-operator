@@ -41,7 +41,7 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Volumes: []corev1.Volume{{}},
 		},
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample",
 			Namespace: "some-app",
@@ -56,7 +56,7 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, changed.Spec.Containers, 2)
 	assert.Len(t, changed.Spec.Volumes, 2)
-	assert.Equal(t, "some-app.otelcol-sample", changed.Labels["sidecar.opentelemetry.io/injected"])
+	assert.Equal(t, "some-app.otelcol-sample", changed.Labels["sidecar.splunk.com/injected"])
 }
 
 // this situation should never happen in the current code path, but it should not fail
@@ -71,7 +71,7 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.SplunkOtelAgent{}
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test

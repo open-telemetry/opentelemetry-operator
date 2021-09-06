@@ -30,11 +30,11 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	. "github.com/signalfx/splunk-otel-operator/internal/podinjector"
-	"github.com/signalfx/splunk-otel-operator/pkg/naming"
-	"github.com/signalfx/splunk-otel-operator/pkg/sidecar"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	. "github.com/signalf/splunk-otel-operator/internal/podinjector"
+	"github.com/signalf/splunk-otel-operator/pkg/naming"
+	"github.com/signalf/splunk-otel-operator/pkg/sidecar"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -44,7 +44,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 		name     string
 		ns       corev1.Namespace
 		pod      corev1.Pod
-		otelcols []v1alpha1.OpenTelemetryCollector
+		otelcols []v1alpha1.SplunkOtelAgent
 	}{
 		{
 			// this is the simplest positive test: a pod is being created with an annotation
@@ -61,12 +61,12 @@ func TestShouldInjectSidecar(t *testing.T) {
 					Annotations: map[string]string{sidecar.Annotation: "my-instance"},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha1.SplunkOtelAgent{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-simplest-positive-case",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha1.SplunkOtelAgentSpec{
 					Mode: v1alpha1.ModeSidecar,
 				},
 			}},
@@ -81,12 +81,12 @@ func TestShouldInjectSidecar(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha1.SplunkOtelAgent{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-annotated-namespace",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha1.SplunkOtelAgentSpec{
 					Mode: v1alpha1.ModeSidecar,
 				},
 			}},
@@ -101,13 +101,13 @@ func TestShouldInjectSidecar(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{
+			otelcols: []v1alpha1.SplunkOtelAgent{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-instance",
 						Namespace: "my-namespace-with-autoselect",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Spec: v1alpha1.SplunkOtelAgentSpec{
 						Mode: v1alpha1.ModeSidecar,
 					},
 				},
@@ -116,7 +116,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 						Name:      "a-deployment-instance",
 						Namespace: "my-namespace-with-autoselect",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Spec: v1alpha1.SplunkOtelAgentSpec{
 						Mode: v1alpha1.ModeDeployment,
 					},
 				},
@@ -195,7 +195,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 		name     string
 		ns       corev1.Namespace
 		pod      corev1.Pod
-		otelcols []v1alpha1.OpenTelemetryCollector
+		otelcols []v1alpha1.SplunkOtelAgent
 	}{
 		{
 			name: "namespace has no annotations",
@@ -205,12 +205,12 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha1.SplunkOtelAgent{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-no-annotations",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha1.SplunkOtelAgentSpec{
 					Mode: v1alpha1.ModeSidecar,
 				},
 			}},
@@ -224,13 +224,13 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{
+			otelcols: []v1alpha1.SplunkOtelAgent{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-instance-1",
 						Namespace: "my-namespace-multiple-otelcols",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Spec: v1alpha1.SplunkOtelAgentSpec{
 						Mode: v1alpha1.ModeSidecar,
 					},
 				},
@@ -239,7 +239,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 						Name:      "my-instance-2",
 						Namespace: "my-namespace-multiple-otelcols",
 					},
-					Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Spec: v1alpha1.SplunkOtelAgentSpec{
 						Mode: v1alpha1.ModeSidecar,
 					},
 				},
@@ -254,7 +254,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod:      corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{},
+			otelcols: []v1alpha1.SplunkOtelAgent{},
 		},
 		{
 			name: "otelcol is not a sidecar",
@@ -265,12 +265,12 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha1.SplunkOtelAgent{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-no-sidecar-otelcol",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha1.SplunkOtelAgentSpec{
 					Mode: v1alpha1.ModeDaemonSet,
 				},
 			}},
@@ -284,12 +284,12 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha1.SplunkOtelAgent{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-no-automatic-sidecar-otelcol",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha1.SplunkOtelAgentSpec{
 					Mode: v1alpha1.ModeDaemonSet,
 				},
 			}},
@@ -311,12 +311,12 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 					}},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha1.SplunkOtelAgent{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-pod-has-sidecar",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha1.SplunkOtelAgentSpec{
 					Mode: v1alpha1.ModeSidecar,
 				},
 			}},
@@ -333,12 +333,12 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 					Annotations: map[string]string{sidecar.Annotation: "false"},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha1.SplunkOtelAgent{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-sidecar-not-desired",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha1.SplunkOtelAgentSpec{
 					Mode: v1alpha1.ModeSidecar,
 				},
 			}},

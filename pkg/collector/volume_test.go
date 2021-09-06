@@ -20,15 +20,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	. "github.com/signalfx/splunk-otel-operator/pkg/collector"
-	"github.com/signalfx/splunk-otel-operator/pkg/naming"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	. "github.com/signalf/splunk-otel-operator/pkg/collector"
+	"github.com/signalf/splunk-otel-operator/pkg/naming"
 )
 
 func TestVolumeNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.SplunkOtelAgent{}
 	cfg := config.New()
 
 	// test
@@ -43,8 +43,8 @@ func TestVolumeNewDefault(t *testing.T) {
 
 func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Volumes: []corev1.Volume{{
 				Name: "my-volume",
 			}},

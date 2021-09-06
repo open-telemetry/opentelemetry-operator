@@ -31,6 +31,51 @@ import (
 	ta "github.com/signalfx/splunk-otel-operator/pkg/targetallocator/adapters"
 )
 
+func TestDefaultConfigMap(t *testing.T) {
+	expectedLables := map[string]string{
+		"app.kubernetes.io/managed-by": "splunk-otel-operator",
+		"app.kubernetes.io/instance":   "default.test",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+	}
+
+	t.Run("should return expected collector config map", func(t *testing.T) {
+		expectedLables["app.kubernetes.io/component"] = "splunk-otel-collector"
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
+
+		expectedData := map[string]string{
+			"collector.yaml": `processors:
+receivers:
+  jaeger:
+    protocols:
+      grpc:
+  prometheus:
+    config:
+      scrape_configs:
+        job_name: otel-collector
+        scrape_interval: 10s
+        static_configs:
+          - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
+
+exporters:
+  logging:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: []
+      exporters: [logging]`,
+		}
+
+		actual := desiredConfigMap(context.Background(), params())
+
+		assert.Equal(t, "test-collector", actual.Name)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+
+	})
+}
+
 func TestDesiredConfigMap(t *testing.T) {
 	expectedLables := map[string]string{
 		"app.kubernetes.io/managed-by": "splunk-otel-operator",
@@ -129,9 +174,9 @@ func TestExpectedConfigMap(t *testing.T) {
 		param := Params{
 			Config: config.New(),
 			Client: k8sClient,
-			Instance: v1alpha1.OpenTelemetryCollector{
+			Instance: v1alpha1.SplunkOtelAgent{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       "opentelemetry.io",
+					Kind:       "splunk.com",
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
@@ -163,9 +208,9 @@ func TestExpectedConfigMap(t *testing.T) {
 
 		param := Params{
 			Client: k8sClient,
-			Instance: v1alpha1.OpenTelemetryCollector{
+			Instance: v1alpha1.SplunkOtelAgent{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       "opentelemetry.io",
+					Kind:       "splunk.com",
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
@@ -173,7 +218,7 @@ func TestExpectedConfigMap(t *testing.T) {
 					Namespace: "default",
 					UID:       instanceUID,
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha1.SplunkOtelAgentSpec{
 					Mode: v1alpha1.ModeStatefulSet,
 					Ports: []v1.ServicePort{{
 						Name: "web",

@@ -13,19 +13,19 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-opentelemetry-io-v1alpha1-opentelemetrycollector
+      path: /mutate-splunk-com-v1alpha1-splunkotelagent
   failurePolicy: Fail
-  name: mopentelemetrycollector.kb.io
+  name: msplunkotelagent.kb.io
   rules:
   - apiGroups:
-    - opentelemetry.io
+    - splunk.com
     apiVersions:
     - v1alpha1
     operations:
     - CREATE
     - UPDATE
     resources:
-    - opentelemetrycollectors
+    - splunkotelagents
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -63,19 +63,19 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+      path: /validate-splunk-com-v1alpha1-splunkotelagent
   failurePolicy: Fail
-  name: vopentelemetrycollectorcreateupdate.kb.io
+  name: vsplunkotelagentcreateupdate.kb.io
   rules:
   - apiGroups:
-    - opentelemetry.io
+    - splunk.com
     apiVersions:
     - v1alpha1
     operations:
     - CREATE
     - UPDATE
     resources:
-    - opentelemetrycollectors
+    - splunkotelagents
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -84,16 +84,16 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+      path: /validate-splunk-com-v1alpha1-splunkotelagent
   failurePolicy: Ignore
-  name: vopentelemetrycollectordelete.kb.io
+  name: vsplunkotelagentdelete.kb.io
   rules:
   - apiGroups:
-    - opentelemetry.io
+    - splunk.com
     apiVersions:
     - v1alpha1
     operations:
     - DELETE
     resources:
-    - opentelemetrycollectors
+    - splunkotelagents
   sideEffects: None

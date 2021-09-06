@@ -10,10 +10,10 @@ metadata:
   annotations:
     "service.beta.openshift.io/inject-cabundle": "true"
 ---
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
+apiVersion: splunk.com/v1alpha1
+kind: SplunkOtelAgent
 metadata:
-  name: opentelemetrycollector-sample
+  name: splunkotelagent-sample
 spec:
   volumeMounts:
   - name: cabundle-volume

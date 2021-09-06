@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/signalfx/splunk-otel-operator/pkg/collector/parser"
+	"github.com/signalf/splunk-otel-operator/pkg/collector/parser"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -72,7 +72,7 @@ func TestDownstreamParsers(t *testing.T) {
 		{"carbon", "carbon", "__carbon", 2003, parser.NewCarbonReceiverParser},
 		{"collectd", "collectd", "__collectd", 8081, parser.NewCollectdReceiverParser},
 		{"sapm", "sapm", "__sapm", 7276, parser.NewSAPMReceiverParser},
-		{"signalfx", "signalfx", "__signalfx", 9943, parser.NewSignalFxReceiverParser},
+		{"signalf", "signalf", "__signalf", 9943, parser.NewSignalFxReceiverParser},
 		{"wavefront", "wavefront", "__wavefront", 2003, parser.NewWavefrontReceiverParser},
 		{"zipkin-scribe", "zipkin-scribe", "__zipkinscribe", 9410, parser.NewZipkinScribeReceiverParser},
 		{"fluentforward", "fluentforward", "__fluentforward", 8006, parser.NewFluentForwardReceiverParser},

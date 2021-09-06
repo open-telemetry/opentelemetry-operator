@@ -4,5 +4,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: quay.io/owais/splunk-otel-operator
-  newTag: v0.33.12
+  newName: quay.io/owais/opentelemetry-operator
+  newTag: v0.33.1630893297

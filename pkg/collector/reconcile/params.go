@@ -20,16 +20,20 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
 )
 
 // Params holds the reconciliation-specific parameters.
 type Params struct {
 	Config   config.Config
 	Client   client.Client
-	Instance v1alpha1.OpenTelemetryCollector
+	Instance v1alpha1.SplunkOtelAgent
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+}
+
+func (p Params) WithDefaults() Params {
+	return p
 }

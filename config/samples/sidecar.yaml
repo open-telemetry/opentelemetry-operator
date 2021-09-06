@@ -1,7 +1,7 @@
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
+apiVersion: splunk.com/v1alpha1
+kind: SplunkOtelAgent
 metadata:
-  name: opentelemetrycollector-as-sidecar
+  name: splunkotelagent-as-sidecar
 spec:
   mode: sidecar
   config: |

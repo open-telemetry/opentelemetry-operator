@@ -107,9 +107,9 @@ rules:
   - list
   - update
 - apiGroups:
-  - opentelemetry.io
+  - splunk.com
   resources:
-  - opentelemetrycollectors
+  - splunkotelagents
   verbs:
   - create
   - delete
@@ -119,17 +119,17 @@ rules:
   - update
   - watch
 - apiGroups:
-  - opentelemetry.io
+  - splunk.com
   resources:
-  - opentelemetrycollectors/finalizers
+  - splunkotelagents/finalizers
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - opentelemetry.io
+  - splunk.com
   resources:
-  - opentelemetrycollectors/status
+  - splunkotelagents/status
   verbs:
   - get
   - patch

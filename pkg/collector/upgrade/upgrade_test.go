@@ -34,7 +34,7 @@ var logger = logf.Log.WithName("unit-tests")
 func TestShouldUpgradeAllToLatest(t *testing.T) {
 	// prepare
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := v1alpha1.OpenTelemetryCollector{
+	existing := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,
@@ -51,10 +51,10 @@ func TestShouldUpgradeAllToLatest(t *testing.T) {
 	require.NoError(t, err)
 
 	currentV := version.Get()
-	currentV.OpenTelemetryCollector = upgrade.Latest.String()
+	currentV.SplunkOtelAgent = upgrade.Latest.String()
 
 	// sanity check
-	persisted := &v1alpha1.OpenTelemetryCollector{}
+	persisted := &v1alpha1.SplunkOtelAgent{}
 	err = k8sClient.Get(context.Background(), nsn, persisted)
 	require.NoError(t, err)
 	require.Equal(t, "0.0.1", persisted.Status.Version)
@@ -75,7 +75,7 @@ func TestShouldUpgradeAllToLatest(t *testing.T) {
 func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 	// prepare
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := v1alpha1.OpenTelemetryCollector{
+	existing := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,
@@ -87,7 +87,7 @@ func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 	existing.Status.Version = "0.8.0"
 
 	currentV := version.Get()
-	currentV.OpenTelemetryCollector = "0.10.0" // we don't have a 0.10.0 upgrade, but we have a 0.9.0
+	currentV.SplunkOtelAgent = "0.10.0" // we don't have a 0.10.0 upgrade, but we have a 0.9.0
 
 	// test
 	res, err := upgrade.ManagedInstance(context.Background(), logger, currentV, k8sClient, existing)
@@ -111,7 +111,7 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			// prepare
 			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-			existing := v1alpha1.OpenTelemetryCollector{
+			existing := v1alpha1.SplunkOtelAgent{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      nsn.Name,
 					Namespace: nsn.Namespace,
@@ -123,7 +123,7 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 			existing.Status.Version = tt.v
 
 			currentV := version.Get()
-			currentV.OpenTelemetryCollector = upgrade.Latest.String()
+			currentV.SplunkOtelAgent = upgrade.Latest.String()
 
 			// test
 			res, err := upgrade.ManagedInstance(context.Background(), logger, currentV, k8sClient, existing)

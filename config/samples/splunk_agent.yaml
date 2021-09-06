@@ -1,5 +1,5 @@
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
+apiVersion: splunk.com/v1alpha1
+kind: SplunkOtelAgent
 metadata:
   name: splunk-otel-agent
   namespace: splunk-otel-operator-system
@@ -34,11 +34,11 @@ spec:
             endpoint: 0.0.0.0:55681
       zipkin:
         endpoint: 0.0.0.0:9411
-      smartagent/signalfx-forwarder:
+      smartagent/signalf-forwarder:
         listenAddress: 0.0.0.0:9080
-        type: signalfx-forwarder
+        type: signalf-forwarder
       # metrics
-      signalfx:
+      signalf:
         endpoint: 0.0.0.0:9943
       hostmetrics:
         collection_interval: 10s
@@ -77,15 +77,15 @@ spec:
     exporters:
       sapm:
         access_token: ${SPLUNK_ACCESS_TOKEN}
-        endpoint: https://ingest.${SPLUNK_REALM}.signalfx.com/v2/trace
-      signalfx:
+        endpoint: https://ingest.${SPLUNK_REALM}.signalf.com/v2/trace
+      signalf:
         access_token: ${SPLUNK_ACCESS_TOKEN}
-        api_url: https://api.${SPLUNK_REALM}.signalfx.com
-        ingest_url: https://ingest.${SPLUNK_REALM}.signalfx.com
+        api_url: https://api.${SPLUNK_REALM}.signalf.com
+        ingest_url: https://ingest.${SPLUNK_REALM}.signalf.com
         sync_host_metadata: true
       splunk_hec:
         token: ${SPLUNK_ACCESS_TOKEN}
-        endpoint: https://ingest.${SPLUNK_REALM}.signalfx.com/v1/log
+        endpoint: https://ingest.${SPLUNK_REALM}.signalf.com/v1/log
       logging:
       logging/debug:
         loglevel: debug
@@ -151,7 +151,7 @@ spec:
       pipelines:
         traces:
           receivers:
-            - smartagent/signalfx-forwarder
+            - smartagent/signalf-forwarder
             - otlp
             - jaeger
             - zipkin
@@ -163,20 +163,20 @@ spec:
             - resourcedetection
           exporters:
             - sapm
-            - signalfx
+            - signalf
         metrics:
           receivers:
             - hostmetrics
             - kubeletstats
             - receiver_creator
-            - signalfx
+            - signalf
           processors:
             #- memory_limiter
             - batch
             - resource
             - resourcedetection
           exporters:
-            - signalfx
+            - signalf
         metrics/self:
           receivers:
             - prometheus/self
@@ -187,12 +187,12 @@ spec:
             - resource/self
             - resourcedetection
           exporters:
-            - signalfx
+            - signalf
 
   mode: daemonset
   env:
     - name: SPLUNK_REALM
-      value: replace-with-signalfx-realm
+      value: replace-with-signalf-realm
     - name: SPLUNK_ACCESS_TOKEN
       valueFrom:
         secretKeyRef:
@@ -247,7 +247,7 @@ spec:
     - name: HOST_DEV
       value: /hostfs/dev
 
-  serviceAccount: splunk-otel-agent-collector
+  # serviceAccount: splunk-otel-agent-collector
   hostNetwork: true
   volumeMounts:
     - mountPath: /hostfs
@@ -271,4 +271,4 @@ spec:
     - effect: NoSchedule
       key: node-role.kubernetes.io/master
       operator: Exists
-  image: "quay.io/signalfx/splunk-otel-collector:0.33.0"
+  image: "quay.io/signalf/splunk-otel-collector:0.33.0"

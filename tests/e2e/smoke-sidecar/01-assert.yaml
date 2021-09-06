@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    sidecar.opentelemetry.io/inject: "true"
+    sidecar.splunk.com/inject: "true"
   labels:
     app: my-pod-with-sidecar
 spec:

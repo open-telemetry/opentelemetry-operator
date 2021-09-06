@@ -24,9 +24,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/pkg/collector"
-	"github.com/signalfx/splunk-otel-operator/pkg/targetallocator"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/pkg/collector"
+	"github.com/signalf/splunk-otel-operator/pkg/targetallocator"
 )
 
 func TestExpectedDeployments(t *testing.T) {
@@ -59,9 +59,9 @@ func TestExpectedDeployments(t *testing.T) {
 	t.Run("should not create target allocator deployment when targetallocator is not enabled", func(t *testing.T) {
 		param := Params{
 			Client: k8sClient,
-			Instance: v1alpha1.OpenTelemetryCollector{
+			Instance: v1alpha1.SplunkOtelAgent{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       "opentelemetry.io",
+					Kind:       "splunk.com",
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
@@ -69,7 +69,7 @@ func TestExpectedDeployments(t *testing.T) {
 					Namespace: "default",
 					UID:       instanceUID,
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha1.SplunkOtelAgentSpec{
 					Mode: v1alpha1.ModeStatefulSet,
 					Config: `
 				receivers:

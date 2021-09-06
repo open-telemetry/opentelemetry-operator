@@ -1,10 +1,10 @@
-# OpenTelemetryCollector Custom Resource Specification
+# SplunkOtelAgent Custom Resource Specification
 
-The below `OpenTelemetryCollector` custom resource contains all the specification that can be configured. 
+The below `SplunkOtelAgent` custom resource contains all the specification that can be configured. 
 
 ```
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
+apiVersion: splunk.com/v1alpha1
+kind: SplunkOtelAgent
 metadata:
   name: example_collector
 spec:

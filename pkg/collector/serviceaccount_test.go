@@ -26,7 +26,7 @@ import (
 
 func TestServiceAccountNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -41,11 +41,11 @@ func TestServiceAccountNewDefault(t *testing.T) {
 
 func TestServiceAccountOverride(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			ServiceAccount: "my-special-sa",
 		},
 	}

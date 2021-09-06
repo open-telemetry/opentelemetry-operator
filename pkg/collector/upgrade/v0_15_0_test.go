@@ -23,15 +23,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/version"
-	"github.com/signalfx/splunk-otel-operator/pkg/collector/upgrade"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/version"
+	"github.com/signalf/splunk-otel-operator/pkg/collector/upgrade"
 )
 
 func TestRemoveMetricsTypeFlags(t *testing.T) {
 	// prepare
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := v1alpha1.OpenTelemetryCollector{
+	existing := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,
@@ -39,7 +39,7 @@ func TestRemoveMetricsTypeFlags(t *testing.T) {
 				"app.kubernetes.io/managed-by": "splunk-otel-operator",
 			},
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Args: map[string]string{
 				// this would not happen in the real world, as it's either one or another, but we aren't going that far
 				"--new-metrics":    "true",

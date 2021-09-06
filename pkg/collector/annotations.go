@@ -21,8 +21,8 @@ import (
 	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
 )
 
-// Annotations return the annotations for OpenTelemetryCollector pod.
-func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+// Annotations return the annotations for SplunkOtelAgent pod.
+func Annotations(instance v1alpha1.SplunkOtelAgent) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 

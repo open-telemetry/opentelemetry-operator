@@ -26,20 +26,20 @@ import (
 )
 
 // log is for logging in this package.
-var opentelemetrycollectorlog = logf.Log.WithName("opentelemetrycollector-resource")
+var agentlog = logf.Log.WithName("splunkotelagent-resource")
 
-func (r *OpenTelemetryCollector) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *SplunkOtelAgent) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:path=/mutate-splunk-com-v1alpha1-splunkotelagent,mutating=true,failurePolicy=fail,groups=splunk.com,resources=splunkotelagents,verbs=create;update,versions=v1alpha1,name=msplunkotelagent.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
 
-var _ webhook.Defaulter = &OpenTelemetryCollector{}
+var _ webhook.Defaulter = &SplunkOtelAgent{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) Default() {
+func (r *SplunkOtelAgent) Default() {
 	if len(r.Spec.Mode) == 0 {
 		r.Spec.Mode = ModeDeployment
 	}
@@ -51,33 +51,33 @@ func (r *OpenTelemetryCollector) Default() {
 		r.Labels["app.kubernetes.io/managed-by"] = "splunk-otel-operator"
 	}
 
-	opentelemetrycollectorlog.Info("default", "name", r.Name)
+	agentlog.Info("default", "name", r.Name)
 }
 
-// +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
-// +kubebuilder:webhook:verbs=delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=ignore,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectordelete.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-splunk-com-v1alpha1-splunkotelagent,mutating=false,failurePolicy=fail,groups=splunk.com,resources=splunkotelagents,versions=v1alpha1,name=vsplunkotelagentcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:verbs=delete,path=/validate-splunk-com-v1alpha1-splunkotelagent,mutating=false,failurePolicy=ignore,groups=splunk.com,resources=splunkotelagents,versions=v1alpha1,name=vsplunkotelagentdelete.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
 
-var _ webhook.Validator = &OpenTelemetryCollector{}
+var _ webhook.Validator = &SplunkOtelAgent{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateCreate() error {
-	opentelemetrycollectorlog.Info("validate create", "name", r.Name)
+func (r *SplunkOtelAgent) ValidateCreate() error {
+	agentlog.Info("validate create", "name", r.Name)
 	return r.validateCRDSpec()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) error {
-	opentelemetrycollectorlog.Info("validate update", "name", r.Name)
+func (r *SplunkOtelAgent) ValidateUpdate(old runtime.Object) error {
+	agentlog.Info("validate update", "name", r.Name)
 	return r.validateCRDSpec()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateDelete() error {
-	opentelemetrycollectorlog.Info("validate delete", "name", r.Name)
+func (r *SplunkOtelAgent) ValidateDelete() error {
+	agentlog.Info("validate delete", "name", r.Name)
 	return nil
 }
 
-func (r *OpenTelemetryCollector) validateCRDSpec() error {
+func (r *SplunkOtelAgent) validateCRDSpec() error {
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
 		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)

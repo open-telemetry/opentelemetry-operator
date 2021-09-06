@@ -20,13 +20,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	"github.com/signalfx/splunk-otel-operator/pkg/naming"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	"github.com/signalf/splunk-otel-operator/pkg/naming"
 )
 
 // StatefulSet builds the statefulset for the given instance.
-func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.StatefulSet {
+func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.SplunkOtelAgent) appsv1.StatefulSet {
 	labels := Labels(otelcol)
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 

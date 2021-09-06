@@ -24,8 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/signalfx/splunk-otel-operator/pkg/collector"
-	"github.com/signalfx/splunk-otel-operator/pkg/targetallocator"
+	"github.com/signalf/splunk-otel-operator/pkg/collector"
+	"github.com/signalf/splunk-otel-operator/pkg/targetallocator"
 )
 
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete

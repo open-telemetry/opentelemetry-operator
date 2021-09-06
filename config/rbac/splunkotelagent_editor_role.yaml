@@ -1,13 +1,13 @@
-# permissions for end users to edit opentelemetrycollectors.
+# permissions for end users to edit splunkotelagent.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: opentelemetrycollector-editor-role
+  name: splunkotelagent-editor-role
 rules:
 - apiGroups:
-  - opentelemetry.io
+  - splunk.com
   resources:
-  - opentelemetrycollectors
+  - splunkotelagents
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - opentelemetry.io
+  - splunk.com
   resources:
-  - opentelemetrycollectors/status
+  - splunkotelagents/status
   verbs:
   - get

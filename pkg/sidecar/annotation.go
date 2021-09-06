@@ -22,7 +22,7 @@ import (
 
 const (
 	// Annotation contains the annotation name that pods contain, indicating whether a sidecar is desired.
-	Annotation = "sidecar.opentelemetry.io/inject"
+	Annotation = "sidecar.splunk.com/inject"
 )
 
 // AnnotationValue returns the effective annotation value, based on the annotations from the pod and namespace.

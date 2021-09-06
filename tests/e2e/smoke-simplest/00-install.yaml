@@ -1,5 +1,5 @@
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
+apiVersion: splunk.com/v1alpha1
+kind: SplunkOtelAgent
 metadata:
   name: simplest
 spec:

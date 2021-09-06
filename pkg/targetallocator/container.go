@@ -18,13 +18,13 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	"github.com/signalfx/splunk-otel-operator/pkg/naming"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	"github.com/signalf/splunk-otel-operator/pkg/naming"
 )
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.SplunkOtelAgent) corev1.Container {
 	image := otelcol.Spec.TargetAllocator.Image
 	if len(image) == 0 {
 		image = cfg.TargetAllocatorImage()

@@ -26,7 +26,7 @@ import (
 )
 
 // Container builds a container for the given collector.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.SplunkOtelAgent) corev1.Container {
 	image := otelcol.Spec.Image
 	if len(image) == 0 {
 		image = cfg.CollectorImage()

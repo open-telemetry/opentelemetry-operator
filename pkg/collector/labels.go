@@ -17,11 +17,11 @@ package collector
 import (
 	"fmt"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
 )
 
-// Labels return the common labels to all objects that are part of a managed OpenTelemetryCollector.
-func Labels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+// Labels return the common labels to all objects that are part of a managed .
+func Labels(instance v1alpha1.SplunkOtelAgent) map[string]string {
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
 	if nil != instance.Labels {

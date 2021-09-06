@@ -21,13 +21,13 @@ import (
 	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
 )
 
-// ConfigMap builds the name for the config map used in the OpenTelemetryCollector containers.
-func ConfigMap(otelcol v1alpha1.OpenTelemetryCollector) string {
+// ConfigMap builds the name for the config map used in the SplunkOtelAgent containers.
+func ConfigMap(otelcol v1alpha1.SplunkOtelAgent) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
 }
 
 // TAConfigMap returns the name for the config map used in the TargetAllocator.
-func TAConfigMap(otelcol v1alpha1.OpenTelemetryCollector) string {
+func TAConfigMap(otelcol v1alpha1.SplunkOtelAgent) string {
 	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
 }
 
@@ -52,41 +52,41 @@ func TAContainer() string {
 }
 
 // Collector builds the collector (deployment/daemonset) name based on the instance.
-func Collector(otelcol v1alpha1.OpenTelemetryCollector) string {
+func Collector(otelcol v1alpha1.SplunkOtelAgent) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
 }
 
 // TargetAllocator returns the TargetAllocator deployment resource name.
-func TargetAllocator(otelcol v1alpha1.OpenTelemetryCollector) string {
+func TargetAllocator(otelcol v1alpha1.SplunkOtelAgent) string {
 	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
 }
 
 // HeadlessService builds the name for the headless service based on the instance.
-func HeadlessService(otelcol v1alpha1.OpenTelemetryCollector) string {
+func HeadlessService(otelcol v1alpha1.SplunkOtelAgent) string {
 	return fmt.Sprintf("%s-headless", Service(otelcol))
 }
 
 // MonitoringService builds the name for the monitoring service based on the instance.
-func MonitoringService(otelcol v1alpha1.OpenTelemetryCollector) string {
+func MonitoringService(otelcol v1alpha1.SplunkOtelAgent) string {
 	return fmt.Sprintf("%s-monitoring", Service(otelcol))
 }
 
 // Service builds the service name based on the instance.
-func Service(otelcol v1alpha1.OpenTelemetryCollector) string {
+func Service(otelcol v1alpha1.SplunkOtelAgent) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
 }
 
 // TAService returns the name to use for the TargetAllocator service.
-func TAService(otelcol v1alpha1.OpenTelemetryCollector) string {
+func TAService(otelcol v1alpha1.SplunkOtelAgent) string {
 	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
 }
 
 // ServiceAccount builds the service account name based on the instance.
-func ServiceAccount(otelcol v1alpha1.OpenTelemetryCollector) string {
+func ServiceAccount(otelcol v1alpha1.SplunkOtelAgent) string {
 	return fmt.Sprintf("%s-collector", otelcol.Name)
 }
 
 // Namespace builds the namespace name based on the instance.
-func Namespace(otelcol v1alpha1.OpenTelemetryCollector) string {
+func Namespace(otelcol v1alpha1.SplunkOtelAgent) string {
 	return "splunk-otel-operator-system"
 }

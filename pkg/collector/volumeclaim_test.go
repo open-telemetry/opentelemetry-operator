@@ -29,8 +29,8 @@ import (
 
 func TestVolumeClaimNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Mode: "statefulset",
 		},
 	}
@@ -54,8 +54,8 @@ func TestVolumeClaimNewDefault(t *testing.T) {
 
 func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Mode: "statefulset",
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 				ObjectMeta: metav1.ObjectMeta{
@@ -90,8 +90,8 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 
 func TestVolumeClaimChecksForStatefulset(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Mode: "daemonset",
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 				ObjectMeta: metav1.ObjectMeta{

@@ -20,18 +20,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	. "github.com/signalfx/splunk-otel-operator/pkg/collector"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	. "github.com/signalf/splunk-otel-operator/pkg/collector"
 )
 
 func TestDaemonSetNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Tolerations: testTolerationValues,
 		},
 	}
@@ -59,14 +59,14 @@ func TestDaemonSetNewDefault(t *testing.T) {
 
 func TestDaemonsetHostNetwork(t *testing.T) {
 	// test
-	d1 := DaemonSet(config.New(), logger, v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	d1 := DaemonSet(config.New(), logger, v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{},
 	})
 	assert.False(t, d1.Spec.Template.Spec.HostNetwork)
 
 	// verify custom
-	d2 := DaemonSet(config.New(), logger, v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	d2 := DaemonSet(config.New(), logger, v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			HostNetwork: true,
 		},
 	})

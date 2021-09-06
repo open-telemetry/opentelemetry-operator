@@ -20,13 +20,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	. "github.com/signalfx/splunk-otel-operator/pkg/collector"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	. "github.com/signalf/splunk-otel-operator/pkg/collector"
 )
 
 func TestLabelsCommonSet(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-ns",
@@ -43,7 +43,7 @@ func TestLabelsCommonSet(t *testing.T) {
 
 func TestLabelsPropagateDown(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{"myapp": "mycomponent"},
 		},

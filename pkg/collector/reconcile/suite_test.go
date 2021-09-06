@@ -36,8 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
 )
 
 var k8sClient client.Client
@@ -90,9 +90,9 @@ func params() Params {
 	return Params{
 		Config: config.New(),
 		Client: k8sClient,
-		Instance: v1alpha1.OpenTelemetryCollector{
+		Instance: v1alpha1.SplunkOtelAgent{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "opentelemetry.io",
+				Kind:       "splunk.com",
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -100,7 +100,7 @@ func params() Params {
 				Namespace: "default",
 				UID:       instanceUID,
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Spec: v1alpha1.SplunkOtelAgentSpec{
 				Ports: []v1.ServicePort{{
 					Name: "web",
 					Port: 80,
@@ -132,9 +132,9 @@ func newParams(containerImage string) (Params, error) {
 	return Params{
 		Config: cfg,
 		Client: k8sClient,
-		Instance: v1alpha1.OpenTelemetryCollector{
+		Instance: v1alpha1.SplunkOtelAgent{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "opentelemetry.io",
+				Kind:       "splunk.com",
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -142,7 +142,7 @@ func newParams(containerImage string) (Params, error) {
 				Namespace: "default",
 				UID:       instanceUID,
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Spec: v1alpha1.SplunkOtelAgentSpec{
 				Mode: v1alpha1.ModeStatefulSet,
 				Ports: []v1.ServicePort{{
 					Name: "web",

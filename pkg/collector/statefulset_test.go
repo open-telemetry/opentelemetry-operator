@@ -30,11 +30,11 @@ import (
 
 func TestStatefulSetNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Mode:        "statefulset",
 			Tolerations: testTolerationValues,
 		},
@@ -70,11 +70,11 @@ func TestStatefulSetNewDefault(t *testing.T) {
 func TestStatefulSetReplicas(t *testing.T) {
 	// prepare
 	replicaInt := int32(3)
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Mode:     "statefulset",
 			Replicas: &replicaInt,
 		},
@@ -90,11 +90,11 @@ func TestStatefulSetReplicas(t *testing.T) {
 
 func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Mode: "statefulset",
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 				ObjectMeta: metav1.ObjectMeta{

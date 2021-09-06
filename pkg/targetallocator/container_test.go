@@ -20,16 +20,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	"github.com/signalfx/splunk-otel-operator/pkg/naming"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	"github.com/signalf/splunk-otel-operator/pkg/naming"
 )
 
 var logger = logf.Log.WithName("unit-tests")
 
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.SplunkOtelAgent{}
 	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
 
 	// test
@@ -41,8 +41,8 @@ func TestContainerNewDefault(t *testing.T) {
 
 func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
 				Enabled: true,
 				Image:   "overridden-image",
@@ -60,8 +60,8 @@ func TestContainerWithImageOverridden(t *testing.T) {
 
 func TestContainerVolumes(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
 				Enabled: true,
 				Image:   "default-image",

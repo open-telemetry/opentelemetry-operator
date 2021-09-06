@@ -9,7 +9,7 @@ At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetr
 
 ## Documentation
 
-* [OpenTelemetryCollector Custom Resource Specification](./docs/otelcol_cr_spec.md)
+* [SplunkOtelAgent Custom Resource Specification](./docs/otelcol_cr_spec.md)
 
 ## Getting started
 
@@ -22,8 +22,8 @@ Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry C
 
 ```console
 $ kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
+apiVersion: splunk.com/v1alpha1
+kind: SplunkOtelAgent
 metadata:
   name: simplest
 spec:
@@ -57,16 +57,16 @@ At this point, the Operator does *not* validate the contents of the configuratio
 
 ### Deployment modes
 
-The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at the `examples/daemonset.yaml` for reference.
+The `CustomResource` for the `SplunkOtelAgent` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at the `examples/daemonset.yaml` for reference.
 
 #### Sidecar injection
 
-A sidecar with the OpenTelemetry Collector can be injected into pod-based workloads by setting the pod annotation `sidecar.opentelemetry.io/inject` to either `"true"`, or to the name of a concrete `OpenTelemetryCollector` from the same namespace, like in the following example:
+A sidecar with the OpenTelemetry Collector can be injected into pod-based workloads by setting the pod annotation `sidecar.splunk.com/inject` to either `"true"`, or to the name of a concrete `SplunkOtelAgent` from the same namespace, like in the following example:
 
 ```console
 $ kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
+apiVersion: splunk.com/v1alpha1
+kind: SplunkOtelAgent
 metadata:
   name: sidecar-for-my-app
 spec:
@@ -95,7 +95,7 @@ kind: Pod
 metadata:
   name: myapp
   annotations:
-    sidecar.opentelemetry.io/inject: "true"
+    sidecar.splunk.com/inject: "true"
 spec:
   containers:
   - name: myapp
@@ -106,7 +106,7 @@ spec:
 EOF
 ```
 
-When there are multiple `OpenTelemetryCollector` resources with a mode set to `Sidecar` in the same namespace, a concrete name should be used. When there's only one `Sidecar` instance in the same namespace, this instance is used when the annotation is set to `"true"`.
+When there are multiple `SplunkOtelAgent` resources with a mode set to `Sidecar` in the same namespace, a concrete name should be used. When there's only one `Sidecar` instance in the same namespace, this instance is used when the annotation is set to `"true"`.
 
 The annotation value can come either from the namespace, or from the pod. The most specific annotation wins, in this order:
 
@@ -124,7 +124,7 @@ metadata:
   labels:
     app: my-app
   annotations:
-    sidecar.opentelemetry.io/inject: "true" # WRONG
+    sidecar.splunk.com/inject: "true" # WRONG
 spec:
   selector:
     matchLabels:
@@ -135,7 +135,7 @@ spec:
       labels:
         app: my-app
       annotations:
-        sidecar.opentelemetry.io/inject: "true" # CORRECT
+        sidecar.splunk.com/inject: "true" # CORRECT
     spec:
       containers:
       - name: myapp
@@ -201,7 +201,7 @@ Thanks to all the people who already contributed!
 [goreport-img]: https://goreportcard.com/badge/github.com/open-telemetry/opentelemetry-operator
 [goreport]: https://goreportcard.com/report/github.com/open-telemetry/opentelemetry-operator
 [godoc-img]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator?status.svg
-[godoc]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1#OpenTelemetryCollector
+[godoc]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1#SplunkOtelAgent
 [code-climate]: https://codeclimate.com/github/open-telemetry/opentelemetry-operator/maintainability
 [code-climate-img]: https://api.codeclimate.com/v1/badges/7bb215eea77fc9c24484/maintainability
 [codecov]: https://codecov.io/gh/open-telemetry/opentelemetry-operator

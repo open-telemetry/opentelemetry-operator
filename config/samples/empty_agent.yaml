@@ -1,0 +1,6 @@
+apiVersion: splunk.com/v1alpha1
+kind: SplunkOtelAgent
+metadata:
+  name: splunk-otel-agent
+  namespace: splunk-otel-operator-system
+spec:

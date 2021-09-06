@@ -28,11 +28,11 @@ import (
 )
 
 const (
-	label = "sidecar.opentelemetry.io/injected"
+	label = "sidecar.splunk.com/injected"
 )
 
-// Add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
-func Add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod) (corev1.Pod, error) {
+// Add a new sidecar container to the given pod, based on the given SplunkOtelAgent.
+func Add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.SplunkOtelAgent, pod corev1.Pod) (corev1.Pod, error) {
 	// add the container
 	volumes := collector.Volumes(cfg, otelcol)
 	container := collector.Container(cfg, logger, otelcol)

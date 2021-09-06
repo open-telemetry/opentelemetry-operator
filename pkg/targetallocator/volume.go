@@ -17,13 +17,13 @@ package targetallocator
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	"github.com/signalfx/splunk-otel-operator/pkg/naming"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	"github.com/signalf/splunk-otel-operator/pkg/naming"
 )
 
 // Volumes builds the volumes for the given instance, including the config map volume.
-func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev1.Volume {
+func Volumes(cfg config.Config, otelcol v1alpha1.SplunkOtelAgent) []corev1.Volume {
 	volumes := []corev1.Volume{{
 		Name: naming.TAConfigMapVolume(),
 		VolumeSource: corev1.VolumeSource{

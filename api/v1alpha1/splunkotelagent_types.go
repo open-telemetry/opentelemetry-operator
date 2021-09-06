@@ -19,8 +19,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
-type OpenTelemetryCollectorSpec struct {
+// SplunkOtelAgentSpec defines the desired state of SplunkOtelAgent.
+type SplunkOtelAgentSpec struct {
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// +required
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
@@ -41,6 +41,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
+	// TODO(splunk): use correct version number instead of latest
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
@@ -115,8 +116,8 @@ type OpenTelemetryCollectorSpec struct {
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
-// OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
-type OpenTelemetryCollectorStatus struct {
+// SplunkOtelAgentStatus defines the observed state of SplunkOtelAgent.
+type SplunkOtelAgentStatus struct {
 	// Replicas is currently not being set and might be removed in the next version.
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
@@ -151,24 +152,24 @@ type OpenTelemetryTargetAllocatorSpec struct {
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
 
-// OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
-type OpenTelemetryCollector struct {
+// SplunkOtelAgent is the Schema for the SplunkOtelAgents API.
+type SplunkOtelAgent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OpenTelemetryCollectorSpec   `json:"spec,omitempty"`
-	Status OpenTelemetryCollectorStatus `json:"status,omitempty"`
+	Spec   SplunkOtelAgentSpec   `json:"spec,omitempty"`
+	Status SplunkOtelAgentStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// OpenTelemetryCollectorList contains a list of OpenTelemetryCollector.
-type OpenTelemetryCollectorList struct {
+// SplunkOtelAgentList contains a list of SplunkOtelAgent.
+type SplunkOtelAgentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []OpenTelemetryCollector `json:"items"`
+	Items           []SplunkOtelAgent `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
+	SchemeBuilder.Register(&SplunkOtelAgent{}, &SplunkOtelAgentList{})
 }

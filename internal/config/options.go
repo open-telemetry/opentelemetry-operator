@@ -19,9 +19,9 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/signalfx/splunk-otel-operator/internal/version"
-	"github.com/signalfx/splunk-otel-operator/pkg/autodetect"
-	"github.com/signalfx/splunk-otel-operator/pkg/platform"
+	"github.com/signalf/splunk-otel-operator/internal/version"
+	"github.com/signalf/splunk-otel-operator/pkg/autodetect"
+	"github.com/signalf/splunk-otel-operator/pkg/platform"
 )
 
 // Option represents one specific configuration option.

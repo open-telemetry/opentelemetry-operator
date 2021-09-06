@@ -28,9 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	"github.com/signalfx/splunk-otel-operator/pkg/sidecar"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	"github.com/signalf/splunk-otel-operator/pkg/sidecar"
 )
 
 var (
@@ -41,7 +41,7 @@ var (
 
 // +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=ignore,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.kb.io,sideEffects=none,admissionReviewVersions=v1;v1beta1
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch
+// +kubebuilder:rbac:groups=splunk.com,resources=splunkotelagents,verbs=get;list;watch
 
 var _ PodSidecarInjector = (*podSidecarInjector)(nil)
 
@@ -142,32 +142,32 @@ func (p *podSidecarInjector) mutate(ctx context.Context, ns corev1.Namespace, po
 	return sidecar.Add(p.config, p.logger, otelcol, pod)
 }
 
-func (p *podSidecarInjector) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.OpenTelemetryCollector, error) {
+func (p *podSidecarInjector) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.SplunkOtelAgent, error) {
 	if strings.EqualFold(ann, "true") {
 		return p.selectCollectorInstance(ctx, ns)
 	}
 
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.SplunkOtelAgent{}
 	err := p.client.Get(ctx, types.NamespacedName{Name: ann, Namespace: ns.Name}, &otelcol)
 	if err != nil {
 		return otelcol, err
 	}
 
 	if otelcol.Spec.Mode != v1alpha1.ModeSidecar {
-		return v1alpha1.OpenTelemetryCollector{}, ErrInstanceNotSidecar
+		return v1alpha1.SplunkOtelAgent{}, ErrInstanceNotSidecar
 	}
 
 	return otelcol, nil
 }
 
-func (p *podSidecarInjector) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1alpha1.OpenTelemetryCollector, error) {
+func (p *podSidecarInjector) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1alpha1.SplunkOtelAgent, error) {
 	var (
-		otelcols = v1alpha1.OpenTelemetryCollectorList{}
-		sidecars []v1alpha1.OpenTelemetryCollector
+		otelcols = v1alpha1.SplunkOtelAgentList{}
+		sidecars []v1alpha1.SplunkOtelAgent
 	)
 
 	if err := p.client.List(ctx, &otelcols, client.InNamespace(ns.Name)); err != nil {
-		return v1alpha1.OpenTelemetryCollector{}, err
+		return v1alpha1.SplunkOtelAgent{}, err
 	}
 
 	for i := range otelcols.Items {
@@ -179,9 +179,9 @@ func (p *podSidecarInjector) selectCollectorInstance(ctx context.Context, ns cor
 
 	switch {
 	case len(sidecars) == 0:
-		return v1alpha1.OpenTelemetryCollector{}, ErrNoInstancesAvailable
+		return v1alpha1.SplunkOtelAgent{}, ErrNoInstancesAvailable
 	case len(sidecars) > 1:
-		return v1alpha1.OpenTelemetryCollector{}, ErrMultipleInstancesPossible
+		return v1alpha1.SplunkOtelAgent{}, ErrMultipleInstancesPossible
 	default:
 		return sidecars[0], nil
 	}

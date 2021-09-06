@@ -75,7 +75,7 @@ func main() {
 
 	logger.Info("Starting the OpenTelemetry Operator",
 		"splunk-otel-operator", v.Operator,
-		"splunk-otel-collector", v.OpenTelemetryCollector,
+		"splunk-otel-collector", v.SplunkOtelAgent,
 		"opentelemetry-targetallocator", v.TargetAllocator,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
@@ -147,18 +147,19 @@ func main() {
 
 	if err = controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
+		Log:      ctrl.Log.WithName("controllers").WithName("SplunkOtelAgent"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
 		Recorder: mgr.GetEventRecorderFor("splunk-otel-operator"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
+		setupLog.Error(err, "unable to create controller", "controller", "SplunkOtelAgent")
 		os.Exit(1)
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&opentelemetryiov1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+		// TODO(splunk): rename opentelemetryiov1alpha1
+		if err = (&opentelemetryiov1alpha1.SplunkOtelAgent{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "SplunkOtelAgent")
 			os.Exit(1)
 		}
 

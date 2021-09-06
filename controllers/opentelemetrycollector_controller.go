@@ -28,13 +28,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	"github.com/signalfx/splunk-otel-operator/pkg/collector/reconcile"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	"github.com/signalf/splunk-otel-operator/pkg/collector/reconcile"
 )
 
-// OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
-type OpenTelemetryCollectorReconciler struct {
+// SplunkOtelAgentReconciler reconciles a SplunkOtelAgent object.
+type SplunkOtelAgentReconciler struct {
 	client.Client
 	log      logr.Logger
 	scheme   *runtime.Scheme
@@ -60,8 +60,8 @@ type Params struct {
 	Recorder record.EventRecorder
 }
 
-// NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
-func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
+// NewReconciler creates a new reconciler for SplunkOtelAgent objects.
+func NewReconciler(p Params) *SplunkOtelAgentReconciler {
 	if len(p.Tasks) == 0 {
 		p.Tasks = []Task{
 			/*
@@ -109,7 +109,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 		}
 	}
 
-	return &OpenTelemetryCollectorReconciler{
+	return &SplunkOtelAgentReconciler{
 		Client:   p.Client,
 		log:      p.Log,
 		scheme:   p.Scheme,
@@ -119,21 +119,21 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	}
 }
 
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
+// +kubebuilder:rbac:groups=splunk.com,resources=splunkotelagents,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=splunk.com,resources=splunkotelagents/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=splunk.com,resources=splunkotelagents/finalizers,verbs=get;update;patch
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
-func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *SplunkOtelAgentReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.log.WithValues("opentelemetrycollector", req.NamespacedName)
+	log := r.log.WithValues("splunkotelagent", req.NamespacedName)
 
-	var instance v1alpha1.OpenTelemetryCollector
+	var instance v1alpha1.SplunkOtelAgent
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
-			log.Error(err, "unable to fetch OpenTelemetryCollector")
+			log.Error(err, "unable to fetch SplunkOtelAgent")
 		}
 
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
@@ -141,6 +141,8 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	setAgentDefaults(&instance)
 
 	params := reconcile.Params{
 		Config:   r.config,
@@ -159,7 +161,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl
 }
 
 // RunTasks runs all the tasks associated with this reconciler.
-func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
+func (r *SplunkOtelAgentReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
 			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
@@ -173,9 +175,9 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
-func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *SplunkOtelAgentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.OpenTelemetryCollector{}).
+		For(&v1alpha1.SplunkOtelAgent{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).

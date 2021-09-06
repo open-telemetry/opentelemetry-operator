@@ -29,37 +29,37 @@ var (
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
 type Version struct {
-	Operator               string `json:"splunk-otel-operator"`
-	BuildDate              string `json:"build-date"`
-	OpenTelemetryCollector string `json:"splunk-otel-collector-version"`
-	Go                     string `json:"go-version"`
-	TargetAllocator        string `json:"target-allocator-version"`
+	Operator        string `json:"splunk-otel-operator"`
+	BuildDate       string `json:"build-date"`
+	SplunkOtelAgent string `json:"splunk-otel-collector-version"`
+	Go              string `json:"go-version"`
+	TargetAllocator string `json:"target-allocator-version"`
 }
 
 // Get returns the Version object with the relevant information.
 func Get() Version {
 	return Version{
-		Operator:               version,
-		BuildDate:              buildDate,
-		OpenTelemetryCollector: OpenTelemetryCollector(),
-		Go:                     runtime.Version(),
-		TargetAllocator:        TargetAllocator(),
+		Operator:        version,
+		BuildDate:       buildDate,
+		SplunkOtelAgent: SplunkOtelAgent(),
+		Go:              runtime.Version(),
+		TargetAllocator: TargetAllocator(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v')",
+		"Version(Operator='%v', BuildDate='%v', SplunkOtelAgent='%v', Go='%v', TargetAllocator='%v')",
 		v.Operator,
 		v.BuildDate,
-		v.OpenTelemetryCollector,
+		v.SplunkOtelAgent,
 		v.Go,
 		v.TargetAllocator,
 	)
 }
 
-// OpenTelemetryCollector returns the default OpenTelemetryCollector to use when no versions are specified via CLI or configuration.
-func OpenTelemetryCollector() string {
+// SplunkOtelAgent returns the default SplunkOtelAgent to use when no versions are specified via CLI or configuration.
+func SplunkOtelAgent() string {
 	if len(otelCol) > 0 {
 		// this should always be set, as it's specified during the build
 		return otelCol

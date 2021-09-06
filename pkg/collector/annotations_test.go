@@ -20,17 +20,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
 )
 
 func TestDefaultAnnotations(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-ns",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Config: "test",
 		},
 	}
@@ -47,7 +47,7 @@ func TestDefaultAnnotations(t *testing.T) {
 
 func TestUserAnnotations(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-ns",
@@ -57,7 +57,7 @@ func TestUserAnnotations(t *testing.T) {
 				"splunk-otel-operator-config/sha256": "shouldBeOverwritten",
 			},
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Config: "test",
 		},
 	}
@@ -74,7 +74,7 @@ func TestUserAnnotations(t *testing.T) {
 
 func TestAnnotationsPropagateDown(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha1.SplunkOtelAgent{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{"myapp": "mycomponent"},
 		},

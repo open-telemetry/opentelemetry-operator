@@ -21,7 +21,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/signalfx/splunk-otel-operator/internal/version"
+	"github.com/signalf/splunk-otel-operator/internal/version"
 )
 
 // Self updates this instance's self data. This should be the last item in the reconciliation, as it causes changes
@@ -34,7 +34,7 @@ func Self(ctx context.Context, params Params) error {
 	}
 
 	changed := params.Instance
-	changed.Status.Version = version.OpenTelemetryCollector()
+	changed.Status.Version = version.SplunkOtelAgent()
 
 	// this is only a change for new instances: existing instances are reconciled when the operator is first started
 	statusPatch := client.MergeFrom(&params.Instance)

@@ -12,7 +12,7 @@ spec:
       labels:
         app: my-pod-with-sidecar
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
+        sidecar.splunk.com/inject: "true"
     spec:
       containers:
       - name: myapp

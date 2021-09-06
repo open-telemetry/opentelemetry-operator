@@ -24,9 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	"github.com/signalfx/splunk-otel-operator/pkg/collector"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	"github.com/signalf/splunk-otel-operator/pkg/collector"
 )
 
 func TestExtractPortNumbersAndNames(t *testing.T) {
@@ -101,8 +101,8 @@ func TestDesiredService(t *testing.T) {
 			Config: config.Config{},
 			Client: k8sClient,
 			Log:    logger,
-			Instance: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{Config: `receivers:
+			Instance: v1alpha1.SplunkOtelAgent{
+				Spec: v1alpha1.SplunkOtelAgentSpec{Config: `receivers:
       test:
         protocols:
           unknown:`},

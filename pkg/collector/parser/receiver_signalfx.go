@@ -16,7 +16,7 @@ package parser
 
 import "github.com/go-logr/logr"
 
-const parserNameSignalFx = "__signalfx"
+const parserNameSignalFx = "__signalf"
 
 // NewSignalFxReceiverParser builds a new parser for SignalFx receivers, from the contrib repository.
 func NewSignalFxReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
@@ -30,5 +30,5 @@ func NewSignalFxReceiverParser(logger logr.Logger, name string, config map[inter
 }
 
 func init() {
-	Register("signalfx", NewSignalFxReceiverParser)
+	Register("signalf", NewSignalFxReceiverParser)
 }

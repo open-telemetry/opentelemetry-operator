@@ -21,11 +21,11 @@ import (
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/pkg/collector/adapters"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/pkg/collector/adapters"
 )
 
-func upgrade0_19_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_19_0(cl client.Client, otelcol *v1alpha1.SplunkOtelAgent) (*v1alpha1.SplunkOtelAgent, error) {
 	if len(otelcol.Spec.Config) == 0 {
 		return otelcol, nil
 	}
@@ -42,7 +42,7 @@ func upgrade0_19_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 	}
 
 	for k, v := range processors {
-		// from the changelog https://github.com/signalfx/splunk-otel-collector/releases/tag/v0.19.0
+		// from the changelog https://github.com/signalf/splunk-otel-collector/releases/tag/v0.19.0
 
 		// Remove deprecated queued_retry processor
 		if strings.HasPrefix(k.(string), "queued_retry") {

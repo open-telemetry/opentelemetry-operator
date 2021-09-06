@@ -22,16 +22,16 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/signalfx/splunk-otel-operator/api/v1alpha1"
-	"github.com/signalfx/splunk-otel-operator/internal/config"
-	. "github.com/signalfx/splunk-otel-operator/pkg/collector"
+	"github.com/signalf/splunk-otel-operator/api/v1alpha1"
+	"github.com/signalf/splunk-otel-operator/internal/config"
+	. "github.com/signalf/splunk-otel-operator/pkg/collector"
 )
 
 var logger = logf.Log.WithName("unit-tests")
 
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha1.SplunkOtelAgent{}
 	cfg := config.New(config.WithCollectorImage("default-image"))
 
 	// test
@@ -43,8 +43,8 @@ func TestContainerNewDefault(t *testing.T) {
 
 func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Image: "overridden-image",
 		},
 	}
@@ -59,8 +59,8 @@ func TestContainerWithImageOverridden(t *testing.T) {
 
 func TestContainerConfigFlagIsIgnored(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Args: map[string]string{
 				"key":    "value",
 				"config": "/some-custom-file.yaml",
@@ -80,8 +80,8 @@ func TestContainerConfigFlagIsIgnored(t *testing.T) {
 
 func TestContainerCustomVolumes(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			VolumeMounts: []corev1.VolumeMount{{
 				Name: "custom-volume-mount",
 			}},
@@ -99,7 +99,7 @@ func TestContainerCustomVolumes(t *testing.T) {
 
 func TestContainerCustomSecurityContext(t *testing.T) {
 	// default config without security context
-	c1 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{Spec: v1alpha1.OpenTelemetryCollectorSpec{}})
+	c1 := Container(config.New(), logger, v1alpha1.SplunkOtelAgent{Spec: v1alpha1.SplunkOtelAgentSpec{}})
 
 	// verify
 	assert.Nil(t, c1.SecurityContext)
@@ -109,8 +109,8 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 	uid := int64(1234)
 
 	// test
-	c2 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	c2 := Container(config.New(), logger, v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			SecurityContext: &corev1.SecurityContext{
 				Privileged: &isPrivileged,
 				RunAsUser:  &uid,
@@ -125,8 +125,8 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 }
 
 func TestContainerEnvVarsOverridden(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Env: []corev1.EnvVar{
 				{
 					Name:  "foo",
@@ -148,8 +148,8 @@ func TestContainerEnvVarsOverridden(t *testing.T) {
 }
 
 func TestContainerEmptyEnvVarsByDefault(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{},
 	}
 
 	cfg := config.New()
@@ -162,8 +162,8 @@ func TestContainerEmptyEnvVarsByDefault(t *testing.T) {
 }
 
 func TestContainerResourceRequirements(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
 					corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -190,8 +190,8 @@ func TestContainerResourceRequirements(t *testing.T) {
 }
 
 func TestContainerDefaultResourceRequirements(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{},
 	}
 
 	cfg := config.New()
@@ -205,8 +205,8 @@ func TestContainerDefaultResourceRequirements(t *testing.T) {
 
 func TestContainerArgs(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			Args: map[string]string{
 				"metrics-level": "detailed",
 				"log-level":     "debug",
@@ -225,8 +225,8 @@ func TestContainerArgs(t *testing.T) {
 
 func TestContainerImagePullPolicy(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+	otelcol := v1alpha1.SplunkOtelAgent{
+		Spec: v1alpha1.SplunkOtelAgentSpec{
 			ImagePullPolicy: corev1.PullIfNotPresent,
 		},
 	}
