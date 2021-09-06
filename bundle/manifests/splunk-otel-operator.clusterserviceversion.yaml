@@ -1,0 +1,538 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "splunk.com/v1alpha1",
+          "kind": "SplunkOtelAgent",
+          "metadata": {
+            "name": "splunk-otel-agent",
+            "namespace": "splunk-otel-operator-system"
+          },
+          "spec": {
+            "config": "extensions:\n  health_check:\n    endpoint: 0.0.0.0:13133\n  zpages:\n    endpoint: 0.0.0.0:55679\n  k8s_observer:\n    auth_type: serviceAccount\n    node: ${MY_NODE_NAME}\n  zpages: null\n\n# replace smartagent/ receivers with otel counter parts\n# where applicable e.g, smartagent/docker-container-stats\n# should be replaced with docker_stats from otel.\nreceivers:\n  # tracing\n  jaeger:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:14250\n      thrift_http:\n        endpoint: 0.0.0.0:14268\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:55681\n  zipkin:\n    endpoint: 0.0.0.0:9411\n  smartagent/signalf-forwarder:\n    listenAddress: 0.0.0.0:9080\n    type: signalf-forwarder\n  # metrics\n  signalf:\n    endpoint: 0.0.0.0:9943\n  hostmetrics:\n    collection_interval: 10s\n    scrapers:\n      cpu:\n      disk:\n      filesystem:\n      load:\n      memory:\n      network:\n      paging:\n      processes:\n  kubeletstats:\n    auth_type: serviceAccount\n    collection_interval: 10s\n    endpoint: ${MY_NODE_IP}:10250\n    extra_metadata_labels:\n    - container.id\n    metric_groups:\n    - container\n    - pod\n    - node\n  receiver_creator:\n    receivers:\n    watch_observers:\n    - k8s_observer\n  prometheus/self:\n    config:\n      scrape_configs:\n      - job_name: otel-agent\n        scrape_interval: 10s\n        static_configs:\n        - targets:\n          - ${MY_POD_IP}:8888\n\nexporters:\n  sapm:\n    access_token: ${SPLUNK_ACCESS_TOKEN}\n    endpoint: https://ingest.${SPLUNK_REALM}.signalf.com/v2/trace\n  signalf:\n    access_token: ${SPLUNK_ACCESS_TOKEN}\n    api_url: https://api.${SPLUNK_REALM}.signalf.com\n    ingest_url: https://ingest.${SPLUNK_REALM}.signalf.com\n    sync_host_metadata: true\n  splunk_hec:\n    token: ${SPLUNK_ACCESS_TOKEN}\n    endpoint: https://ingest.${SPLUNK_REALM}.signalf.com/v1/log\n  logging:\n  logging/debug:\n    loglevel: debug\n\nprocessors:\n  k8s_tagger:\n    extract:\n      metadata:\n        - k8s.namespace.name\n        - k8s.node.name\n        - k8s.pod.name\n        - k8s.pod.uid\n    filter:\n      node: ${MY_NODE_NAME}\n\n  batch:\n  memory_limiter:\n    ballast_size_mib: ${SPLUNK_BALLAST_SIZE_MIB}\n    check_interval: 2s\n    limit_mib: ${SPLUNK_MEMORY_LIMIT_MIB}\n\n  resource:\n    attributes:\n    - action: insert\n      key: k8s.node.name\n      value: ${MY_NODE_NAME}\n    - action: insert\n      key: k8s.cluster.name\n      value: ${MY_CLUSTER_NAME} \n    - action: insert\n      key: deployment.environment\n      value: ${MY_CLUSTER_NAME}\n\n  resource/self:\n    attributes:\n    - action: insert\n      key: k8s.pod.name\n      value: ${MY_POD_NAME}\n    - action: insert\n      key: k8s.pod.uid\n      value: ${MY_POD_UID}\n    - action: insert\n      key: k8s.namespace.name\n      value: ${MY_NAMESPACE}\n\n  resourcedetection:\n    override: false\n    timeout: 10s\n    detectors:\n    - system\n    - env\n    # enable the relevant detectors\n    #- gce\n    #- ecs\n    #- ec2\n    #- azure\n\nservice:\n  extensions: \n    - health_check\n    - k8s_observer\n    - zpages\n  pipelines:\n    traces:\n      receivers:\n        - smartagent/signalf-forwarder\n        - otlp\n        - jaeger\n        - zipkin\n      processors:\n        #- memory_limiter\n        - k8s_tagger\n        - batch\n        - resource\n        - resourcedetection\n      exporters:\n        - sapm\n        - signalf\n    metrics:\n      receivers:\n        - hostmetrics\n        - kubeletstats\n        - receiver_creator\n        - signalf\n      processors:\n        #- memory_limiter\n        - batch\n        - resource\n        - resourcedetection\n      exporters:\n        - signalf\n    metrics/self:\n      receivers:\n        - prometheus/self\n      processors:\n        #- memory_limiter\n        - batch\n        - resource\n        - resource/self\n        - resourcedetection\n      exporters:\n        - signalf\n",
+            "env": [
+              {
+                "name": "SPLUNK_REALM",
+                "value": "replace-with-signalf-realm"
+              },
+              {
+                "name": "SPLUNK_ACCESS_TOKEN",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "access-token",
+                    "name": "splunk-access-token"
+                  }
+                }
+              },
+              {
+                "name": "MY_CLUSTER_NAME",
+                "value": "replace-with-cluster-name"
+              },
+              {
+                "name": "MY_NODE_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "spec.nodeName"
+                  }
+                }
+              },
+              {
+                "name": "MY_NODE_IP",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "status.hostIP"
+                  }
+                }
+              },
+              {
+                "name": "MY_POD_IP",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "status.podIP"
+                  }
+                }
+              },
+              {
+                "name": "MY_POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.name"
+                  }
+                }
+              },
+              {
+                "name": "MY_POD_UID",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.uid"
+                  }
+                }
+              },
+              {
+                "name": "MY_NAMESPACE",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              },
+              {
+                "name": "DISABLED_SPLUNK_BALLAST_SIZE_MIB",
+                "value": "128"
+              },
+              {
+                "name": "DISABLED_SPLUNK_BALLAST_SIZE_MIB",
+                "value": "200"
+              },
+              {
+                "name": "HOST_PROC",
+                "value": "/hostfs/proc"
+              },
+              {
+                "name": "HOST_SYS",
+                "value": "/hostfs/sys"
+              },
+              {
+                "name": "HOST_ETC",
+                "value": "/hostfs/etc"
+              },
+              {
+                "name": "HOST_VAR",
+                "value": "/hostfs/var"
+              },
+              {
+                "name": "HOST_RUN",
+                "value": "/hostfs/run"
+              },
+              {
+                "name": "HOST_DEV",
+                "value": "/hostfs/dev"
+              }
+            ],
+            "hostNetwork": true,
+            "image": "quay.io/signalf/splunk-otel-collector:0.33.0",
+            "mode": "daemonset",
+            "tolerations": [
+              {
+                "effect": "NoSchedule",
+                "key": "node.alpha.kubernetes.io/role",
+                "operator": "Exists"
+              },
+              {
+                "effect": "NoSchedule",
+                "key": "node-role.kubernetes.io/master",
+                "operator": "Exists"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "mountPath": "/hostfs",
+                "mountPropagation": "HostToContainer",
+                "name": "hostfs",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/etc/passwd",
+                "name": "etc-passwd",
+                "readOnly": true
+              }
+            ],
+            "volumes": [
+              {
+                "hostPath": {
+                  "path": "/"
+                },
+                "name": "hostfs"
+              },
+              {
+                "hostPath": {
+                  "path": "/etc/passwd"
+                },
+                "name": "etc-passwd"
+              }
+            ]
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: Logging & Tracing
+    certified: "false"
+    containerImage: quay.io/signalfx/splunk-otel-operator
+    createdAt: "2020-12-16T13:37:00+00:00"
+    description: Provides the Splunk OpenTelemetry Connector
+    operators.operatorframework.io/builder: operator-sdk-v1.10.0+git
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: github.com/signalfx/splunk-otel-operator
+    support: Splunk Inc
+  name: splunk-otel-operator.v0.33.1630896656
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: SplunkOtelAgent
+      name: splunkotelagents.splunk.com
+      version: v1alpha1
+  description: |-
+    OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
+
+    ### Operator features
+
+    * **Sidecar injection** - annotate your pods and let the operator inject a sidecar.
+    * **Managed upgrades** - updating the operator will automatically update your OpenTelemetry collectors.
+    * **Deployment modes** - your collector can be deployed as sidecar, daemon set, or regular deployment.
+    * **Service port management** - the operator detects which ports need to be exposed based on the provided configuration.
+  displayName: Community OpenTelemetry Operator
+  icon:
+  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iLTEyLjcwIC0xMi43MCAxMDI0LjQwIDEwMjQuNDAiPjxzdHlsZT5zdmcge2VuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMTAwMCAxMDAwfTwvc3R5bGU+PHBhdGggZmlsbD0iI2Y1YTgwMCIgZD0iTTUyOC43IDU0NS45Yy00MiA0Mi00MiAxMTAuMSAwIDE1Mi4xczExMC4xIDQyIDE1Mi4xIDAgNDItMTEwLjEgMC0xNTIuMS0xMTAuMS00Mi0xNTIuMSAwem0xMTMuNyAxMTMuOGMtMjAuOCAyMC44LTU0LjUgMjAuOC03NS4zIDAtMjAuOC0yMC44LTIwLjgtNTQuNSAwLTc1LjMgMjAuOC0yMC44IDU0LjUtMjAuOCA3NS4zIDAgMjAuOCAyMC43IDIwLjggNTQuNSAwIDc1LjN6bTM2LjYtNjQzbC02NS45IDY1LjljLTEyLjkgMTIuOS0xMi45IDM0LjEgMCA0N2wyNTcuMyAyNTcuM2MxMi45IDEyLjkgMzQuMSAxMi45IDQ3IDBsNjUuOS02NS45YzEyLjktMTIuOSAxMi45LTM0LjEgMC00N0w3MjUuOSAxNi43Yy0xMi45LTEyLjktMzQtMTIuOS00Ni45IDB6TTIxNy4zIDg1OC44YzExLjctMTEuNyAxMS43LTMwLjggMC00Mi41bC0zMy41LTMzLjVjLTExLjctMTEuNy0zMC44LTExLjctNDIuNSAwTDcyLjEgODUybC0uMS4xLTE5LTE5Yy0xMC41LTEwLjUtMjcuNi0xMC41LTM4IDAtMTAuNSAxMC41LTEwLjUgMjcuNiAwIDM4bDExNCAxMTRjMTAuNSAxMC41IDI3LjYgMTAuNSAzOCAwczEwLjUtMjcuNiAwLTM4bC0xOS0xOSAuMS0uMSA2OS4yLTY5LjJ6Ii8+PHBhdGggZmlsbD0iIzQyNWNjNyIgZD0iTTU2NS45IDIwNS45TDQxOS41IDM1Mi4zYy0xMyAxMy0xMyAzNC40IDAgNDcuNGw5MC40IDkwLjRjNjMuOS00NiAxNTMuNS00MC4zIDIxMSAxNy4ybDczLjItNzMuMmMxMy0xMyAxMy0zNC40IDAtNDcuNEw2MTMuMyAyMDUuOWMtMTMtMTMuMS0zNC40LTEzLjEtNDcuNCAwem0tOTQgMzIyLjNsLTUzLjQtNTMuNGMtMTIuNS0xMi41LTMzLTEyLjUtNDUuNSAwTDE4NC43IDY2My4yYy0xMi41IDEyLjUtMTIuNSAzMyAwIDQ1LjVsMTA2LjcgMTA2LjdjMTIuNSAxMi41IDMzIDEyLjUgNDUuNSAwTDQ1OCA2OTQuMWMtMjUuNi01Mi45LTIxLTExNi44IDEzLjktMTY1Ljl6Ii8+PC9zdmc+
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - create
+          - get
+          - list
+          - update
+        - apiGroups:
+          - splunk.com
+          resources:
+          - splunkotelagents
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - splunk.com
+          resources:
+          - splunkotelagents/finalizers
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - splunk.com
+          resources:
+          - splunkotelagents/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: splunk-otel-operator-controller-manager
+      deployments:
+      - name: splunk-otel-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: splunk-otel
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: splunk-otel
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                command:
+                - /manager
+                image: quay.io/owais/opentelemetry-operator:v0.33.1630896656
+                name: manager
+                ports:
+                - containerPort: 9443
+                  name: webhook-server
+                  protocol: TCP
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                  requests:
+                    cpu: 100m
+                    memory: 64Mi
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
+                resources: {}
+              serviceAccountName: splunk-otel-operator-controller-manager
+              terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: splunk-otel-operator-controller-manager-service-cert
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: splunk-otel-operator-controller-manager
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - slunk
+  - signalfx
+  - opentelemetry
+  - tracing
+  - logging
+  - metrics
+  - monitoring
+  - troubleshooting
+  links:
+  - name: Splunk OpenTelemetry Operator
+    url: https://github.com/signalfx/splunk-otel-operator
+  maintainers:
+  - email: olone@splunk.com
+    name: Owais Lone
+  maturity: alpha
+  provider:
+    name: Splunk Inc
+  version: 0.33.1630896656
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: splunk-otel-operator-controller-manager
+    failurePolicy: Fail
+    generateName: vsplunkotelagentcreateupdate.kb.io
+    rules:
+    - apiGroups:
+      - splunk.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - splunkotelagents
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-splunk-com-v1alpha1-splunkotelagent
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: splunk-otel-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: vsplunkotelagentdelete.kb.io
+    rules:
+    - apiGroups:
+      - splunk.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - DELETE
+      resources:
+      - splunkotelagents
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-splunk-com-v1alpha1-splunkotelagent
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: splunk-otel-operator-controller-manager
+    failurePolicy: Fail
+    generateName: msplunkotelagent.kb.io
+    rules:
+    - apiGroups:
+      - splunk.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - splunkotelagents
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-splunk-com-v1alpha1-splunkotelagent
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: splunk-otel-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: mpod.kb.io
+    rules:
+    - apiGroups:
+      - ""
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - pods
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-v1-pod
