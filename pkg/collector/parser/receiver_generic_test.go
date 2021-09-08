@@ -77,6 +77,7 @@ func TestDownstreamParsers(t *testing.T) {
 		{"zipkin-scribe", "zipkin-scribe", "__zipkinscribe", 9410, parser.NewZipkinScribeReceiverParser},
 		{"fluentforward", "fluentforward", "__fluentforward", 8006, parser.NewFluentForwardReceiverParser},
 		{"statsd", "statsd", "__statsd", 8125, parser.NewStatsdReceiverParser},
+		{"influxdb", "influxdb", "__influxdb", 8086, parser.NewInfluxdbReceiverParser},
 	} {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
