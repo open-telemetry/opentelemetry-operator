@@ -79,6 +79,7 @@ func TestDownstreamParsers(t *testing.T) {
 		{"statsd", "statsd", "__statsd", 8125, parser.NewStatsdReceiverParser},
 		{"influxdb", "influxdb", "__influxdb", 8086, parser.NewInfluxdbReceiverParser},
 		{"splunk-hec", "splunk-hec", "__splunk_hec", 8088, parser.NewSplunkHecReceiverParser},
+		{"awsxray", "awsxray", "__awsxray", 2000, parser.NewAWSXrayReceiverParser},
 	} {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
