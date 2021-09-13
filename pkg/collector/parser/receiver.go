@@ -73,18 +73,42 @@ func IsRegistered(name string) bool {
 	return ok
 }
 
+var (
+	endpointKey      = "endpoint"
+	listenAddressKey = "listen_address"
+)
+
 func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *v1.ServicePort {
-	endpoint, ok := config["endpoint"]
-	if !ok {
-		logger.V(2).Info("receiver doesn't have an endpoint")
-		return nil
+	var endpoint interface{}
+	switch {
+	// syslog receiver contains the endpoint
+	// that needs to be exposed one level down inside config
+	// i.e. either in tcp or udp section with field key
+	// as `listen_address`
+	case name == "syslog":
+		var c map[interface{}]interface{}
+		if udp, isUDP := config["udp"]; isUDP && udp != nil {
+			c = udp.(map[interface{}]interface{})
+			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
+		} else if tcp, isTCP := config["tcp"]; isTCP && tcp != nil {
+			c = tcp.(map[interface{}]interface{})
+			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
+		}
+
+	// tcplog and udplog receivers hold the endpoint
+	// value in `listen_address` field
+	case name == "tcplog" || name == "udplog":
+		endpoint = getAddressFromConfig(logger, name, listenAddressKey, config)
+
+	default:
+		endpoint = getAddressFromConfig(logger, name, endpointKey, config)
 	}
 
 	switch endpoint := endpoint.(type) {
 	case string:
 		port, err := portFromEndpoint(endpoint)
 		if err != nil {
-			logger.WithValues("endpoint", endpoint).Info("couldn't parse the endpoint's port")
+			logger.WithValues(endpointKey, endpoint).Info("couldn't parse the endpoint's port")
 			return nil
 		}
 
@@ -97,6 +121,15 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	}
 
 	return nil
+}
+
+func getAddressFromConfig(logger logr.Logger, name, key string, config map[interface{}]interface{}) interface{} {
+	endpoint, ok := config[key]
+	if !ok {
+		logger.V(2).Info("%s receiver doesn't have an %s", name, key)
+		return nil
+	}
+	return endpoint
 }
 
 func portName(receiverName string, port int32) string {
