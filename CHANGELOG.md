@@ -4,11 +4,11 @@ Changes by Version
 0.34.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.34.0
-* Add AWS xray receiver ([#421](https://github.com/open-telemetry/opentelemetry-operator/pull/421))
-* Add syslog, tcplog and udplog receivers ([#425](https://github.com/open-telemetry/opentelemetry-operator/pull/425))
-* Add splunk hec receiver ([#422](https://github.com/open-telemetry/opentelemetry-operator/pull/422))
-* Add influxdb receiver ([#423](https://github.com/open-telemetry/opentelemetry-operator/pull/423))
-* Added imagePullPolicy option to CRD ([#413](https://github.com/open-telemetry/opentelemetry-operator/pull/413))
+* Add AWS xray receiver ([#421](https://github.com/open-telemetry/opentelemetry-operator/pull/421), [@VineethReddy02](https://github.com/VineethReddy02))
+* Add syslog, tcplog and udplog receivers ([#425](https://github.com/open-telemetry/opentelemetry-operator/pull/425), [@VineethReddy02](https://github.com/VineethReddy02))
+* Add splunk hec receiver ([#422](https://github.com/open-telemetry/opentelemetry-operator/pull/422), [@VineethReddy02](https://github.com/VineethReddy02))
+* Add influxdb receiver ([#423](https://github.com/open-telemetry/opentelemetry-operator/pull/423), [@VineethReddy02](https://github.com/VineethReddy02))
+* Added imagePullPolicy option to CRD ([#413](https://github.com/open-telemetry/opentelemetry-operator/pull/413), [@mmatache](https://github.com/mmatache))
 
 0.33.0 (2021-08-20)
 -------------------
