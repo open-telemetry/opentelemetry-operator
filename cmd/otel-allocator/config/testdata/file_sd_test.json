@@ -1,0 +1,18 @@
+[
+  {
+    "labels": {
+      "job": "node"
+    },
+    "targets": [
+      "promfile.domain:1001"
+    ]
+  },
+  {
+    "labels": {
+      "foo1": "bar1"
+    },
+    "targets": [
+      "promfile.domain:3000"
+    ]
+  }
+]
