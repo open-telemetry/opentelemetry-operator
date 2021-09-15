@@ -142,12 +142,12 @@ func TestContainerEnvVarsOverridden(t *testing.T) {
 	c := Container(cfg, logger, otelcol)
 
 	// verify
-	assert.Len(t, c.Env, 1)
+	assert.Len(t, c.Env, 2)
 	assert.Equal(t, "foo", c.Env[0].Name)
 	assert.Equal(t, "bar", c.Env[0].Value)
 }
 
-func TestContainerEmptyEnvVarsByDefault(t *testing.T) {
+func TestContainerDefaultEnvVars(t *testing.T) {
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
 	}
@@ -158,7 +158,8 @@ func TestContainerEmptyEnvVarsByDefault(t *testing.T) {
 	c := Container(cfg, logger, otelcol)
 
 	// verify
-	assert.Empty(t, c.Env)
+	assert.Len(t, c.Env, 1)
+	assert.Equal(t, c.Env[0].Name, "POD_NAME")
 }
 
 func TestContainerResourceRequirements(t *testing.T) {
