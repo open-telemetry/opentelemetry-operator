@@ -66,6 +66,10 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	name := naming.ConfigMap(params.Instance)
 	labels := collector.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name
+	config, err := ReplaceConfig(params)
+	if err != nil {
+		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", err)
+	}
 
 	return corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -75,7 +79,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 			Annotations: params.Instance.Annotations,
 		},
 		Data: map[string]string{
-			"collector.yaml": params.Instance.Spec.Config,
+			"collector.yaml": config,
 		},
 	}
 }

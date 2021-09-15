@@ -83,7 +83,7 @@ func TestMain(m *testing.M) {
 
 func params() Params {
 	replicas := int32(2)
-	configYAML, err := ioutil.ReadFile("test.yaml")
+	configYAML, err := ioutil.ReadFile("../testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
@@ -120,9 +120,16 @@ func params() Params {
 	}
 }
 
-func newParams(containerImage string) (Params, error) {
+func newParams(containerImage string, file string) (Params, error) {
 	replicas := int32(1)
-	configYAML, err := ioutil.ReadFile("test.yaml")
+	var configYAML []byte
+	var err error
+
+	if file == "" {
+		configYAML, err = ioutil.ReadFile("../testdata/test.yaml")
+	} else {
+		configYAML, err = ioutil.ReadFile(file)
+	}
 	if err != nil {
 		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}

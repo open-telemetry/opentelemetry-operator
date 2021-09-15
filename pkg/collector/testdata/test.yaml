@@ -1,0 +1,22 @@
+processors:
+receivers:
+  jaeger:
+    protocols:
+      grpc:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: otel-collector
+        scrape_interval: 10s
+        static_configs:
+          - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
+
+exporters:
+  logging:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: []
+      exporters: [logging]
