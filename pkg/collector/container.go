@@ -68,6 +68,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		envVars = []corev1.EnvVar{}
 	}
 
+	envVars = append(envVars, corev1.EnvVar{
+		Name: "POD_NAME",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.name",
+			},
+		},
+	})
+
 	return corev1.Container{
 		Name:            naming.Container(),
 		Image:           image,
