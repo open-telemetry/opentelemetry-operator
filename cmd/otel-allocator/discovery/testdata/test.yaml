@@ -1,0 +1,15 @@
+label_selector:
+  app.kubernetes.io/instance: default.test
+  app.kubernetes.io/managed-by: opentelemetry-operator
+config:
+  scrape_configs:
+  - job_name: prometheus
+
+    static_configs:
+    - targets: ["prom.domain:9001", "prom.domain:9002", "prom.domain:9003"]
+      labels:
+        my: label
+
+    file_sd_configs:
+    - files:
+      - ../config/testdata/file_sd_test.json
