@@ -1,6 +1,12 @@
 Changes by Version
 ==================
 
+0.35.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.35.0
+* Target Allocator implementation (Part 3 - OTEL Operator Enhancements) ([#389](https://github.com/open-telemetry/opentelemetry-operator/pull/389), [@Raul9595](https://github.com/Raul9595))
+* Target Allocator implementation (Part 2 - OTEL Operator Enhancements) ([#354](https://github.com/open-telemetry/opentelemetry-operator/pull/354), [@alexperez52](https://github.com/alexperez52))
+
 0.34.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.34.0
