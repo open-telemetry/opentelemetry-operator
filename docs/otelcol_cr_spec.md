@@ -62,6 +62,10 @@ spec:
   // consumed in the config file for the Collector.
   env: []
   
+  // +optional List of sources to populate environment variables on the OpenTelemetry Collector's Pods.
+	// These can then in certain cases be consumed in the config file for the Collector.
+  envFrom: []
+
   // +optional Resources to set on the OpenTelemetry Collector pods.
   resources: {}
 

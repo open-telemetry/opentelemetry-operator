@@ -238,3 +238,37 @@ func TestContainerImagePullPolicy(t *testing.T) {
 	// verify
 	assert.Equal(t, c.ImagePullPolicy, corev1.PullIfNotPresent)
 }
+
+func TestContainerEnvFrom(t *testing.T) {
+	//prepare
+	envFrom1 := corev1.EnvFromSource{
+		SecretRef: &corev1.SecretEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: "env-as-secret",
+			},
+		},
+	}
+	envFrom2 := corev1.EnvFromSource{
+		ConfigMapRef: &corev1.ConfigMapEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: "env-as-configmap",
+			},
+		},
+	}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			EnvFrom: []corev1.EnvFromSource{
+				envFrom1,
+				envFrom2,
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Contains(t, c.EnvFrom, envFrom1)
+	assert.Contains(t, c.EnvFrom, envFrom2)
+}
