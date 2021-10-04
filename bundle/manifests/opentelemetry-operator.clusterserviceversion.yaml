@@ -204,8 +204,6 @@ spec:
               - args:
                 - --metrics-addr=127.0.0.1:8080
                 - --enable-leader-election
-                command:
-                - /manager
                 image: quay.io/opentelemetry/opentelemetry-operator:v0.35.0
                 name: manager
                 ports:
