@@ -103,6 +103,12 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Env []v1.EnvVar `json:"env,omitempty"`
 
+	// List of sources to populate environment variables on the OpenTelemetry Collector's Pods.
+	// These can then in certain cases be consumed in the config file for the Collector.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
+
 	// Resources to set on the OpenTelemetry Collector pods.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
