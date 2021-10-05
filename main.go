@@ -63,10 +63,14 @@ func main() {
 	// Add flags related to this operator
 	var metricsAddr string
 	var enableLeaderElection bool
+	var collectorImage string
+	var targetAllocatorImage string
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	pflag.StringVar(&collectorImage, "collector-image", "", "The default OpenTelemetry collector image. This image is used when no image is specified on in the CustomResource.")
+	pflag.StringVar(&targetAllocatorImage, "target-allocator-image", "", "The default OpenTelemetry target allocator image image. This image is used when no image is specified on in the CustomResource.")
 
 	// Add flags related to this operator
 	v := version.Get()
@@ -95,6 +99,8 @@ func main() {
 	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),
 		config.WithVersion(v),
+		config.WithCollectorImage(collectorImage),
+		config.WithTargetAllocatorImage(targetAllocatorImage),
 		config.WithAutoDetect(ad),
 	)
 
