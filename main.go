@@ -69,8 +69,8 @@ func main() {
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	pflag.StringVar(&collectorImage, "collector-image", "", "The default OpenTelemetry collector image. This image is used when no image is specified on in the CustomResource.")
-	pflag.StringVar(&targetAllocatorImage, "target-allocator-image", "", "The default OpenTelemetry target allocator image image. This image is used when no image is specified on in the CustomResource.")
+	pflag.StringVar(&collectorImage, "collector-image", "", "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&targetAllocatorImage, "target-allocator-image", "", "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
 
 	// Add flags related to this operator
 	v := version.Get()
