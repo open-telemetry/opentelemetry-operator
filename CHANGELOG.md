@@ -1,8 +1,10 @@
 Changes by Version
 ==================
 
-Unreleased
+0.36.0
 -------------------
+* Bumped OpenTelemetry Collector to v0.36.0
+* Add `envFrom` to collector spec ([#419](https://github.com/open-telemetry/opentelemetry-operator/pull/419), [@ctison](https://github.com/ctison))
 * Allow changing Pod annotations using `podAnnotations` ([#451](https://github.com/open-telemetry/opentelemetry-operator/pull/451), [@indrekj](https://github.com/indrekj))
 
 0.35.0
