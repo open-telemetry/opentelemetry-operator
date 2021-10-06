@@ -48,3 +48,24 @@ func TestDeploymentNewDefault(t *testing.T) {
 	// the pod selector should match the pod spec's labels
 	assert.Equal(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
 }
+
+func TestDeploymentPodAnnotations(t *testing.T) {
+	// prepare
+	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			PodAnnotations: testPodAnnotationValues,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	ds := Deployment(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, "my-instance-targetallocator", ds.Name)
+	assert.Equal(t, testPodAnnotationValues, ds.Spec.Template.Annotations)
+}
