@@ -226,6 +226,12 @@ spec:
                 - sidecar
                 - statefulset
                 type: string
+              podAnnotations:
+                additionalProperties:
+                  type: string
+                description: PodAnnotations is the set of annotations that will be
+                  attached to Collector and Target Allocator pods.
+                type: object
               ports:
                 description: Ports allows a set of ports to be exposed by the underlying
                   v1.Service. By default, the operator will attempt to infer the required

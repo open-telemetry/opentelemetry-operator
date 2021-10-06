@@ -47,7 +47,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: otelcol.Annotations,
+					Annotations: otelcol.Spec.PodAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: ServiceAccountName(otelcol),

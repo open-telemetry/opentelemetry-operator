@@ -123,3 +123,24 @@ func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
 	// assert correct pvc storage
 	assert.Equal(t, resource.MustParse("1Gi"), ss.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests["storage"])
 }
+
+func TestStatefulSetPodAnnotations(t *testing.T) {
+	// prepare
+	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			PodAnnotations: testPodAnnotationValues,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	ss := StatefulSet(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, "my-instance-collector", ss.Name)
+	assert.Equal(t, testPodAnnotationValues, ss.Spec.Template.Annotations)
+}

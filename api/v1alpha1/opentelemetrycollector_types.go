@@ -119,6 +119,12 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+
+	// PodAnnotations is the set of annotations that will be attached to
+	// Collector and Target Allocator pods.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.

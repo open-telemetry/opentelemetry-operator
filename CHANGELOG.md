@@ -1,6 +1,10 @@
 Changes by Version
 ==================
 
+Unreleased
+-------------------
+* Allow changing Pod annotations using `podAnnotations` ([#451](https://github.com/open-telemetry/opentelemetry-operator/pull/451), [@indrekj](https://github.com/indrekj))
+
 0.35.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.35.0
