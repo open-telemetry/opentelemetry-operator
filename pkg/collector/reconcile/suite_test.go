@@ -47,6 +47,11 @@ var logger = logf.Log.WithName("unit-tests")
 
 var instanceUID = uuid.NewUUID()
 
+const (
+	defaultCollectorImage    = "default-collector"
+	defaultTaAllocationImage = "default-ta-allocator"
+)
+
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
@@ -88,7 +93,7 @@ func params() Params {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 	return Params{
-		Config: config.New(),
+		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
 		Client: k8sClient,
 		Instance: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
@@ -120,7 +125,7 @@ func params() Params {
 	}
 }
 
-func newParams(containerImage string, file string) (Params, error) {
+func newParams(taContainerImage string, file string) (Params, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -134,7 +139,7 @@ func newParams(containerImage string, file string) (Params, error) {
 		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}
 
-	cfg := config.New()
+	cfg := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
 
 	return Params{
 		Config: cfg,
@@ -162,7 +167,7 @@ func newParams(containerImage string, file string) (Params, error) {
 				}},
 				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
 					Enabled: true,
-					Image:   containerImage,
+					Image:   taContainerImage,
 				},
 				Replicas: &replicas,
 				Config:   string(configYAML),

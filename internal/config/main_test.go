@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
@@ -40,17 +39,6 @@ func TestNewConfig(t *testing.T) {
 	assert.Equal(t, "some-image", cfg.CollectorImage())
 	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry())
 	assert.Equal(t, platform.Kubernetes, cfg.Platform())
-}
-
-func TestOverrideVersion(t *testing.T) {
-	// prepare
-	v := version.Version{
-		OpenTelemetryCollector: "the-version",
-	}
-	cfg := config.New(config.WithVersion(v))
-
-	// test
-	assert.Contains(t, cfg.CollectorImage(), "the-version")
 }
 
 func TestCallbackOnChanges(t *testing.T) {
