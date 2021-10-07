@@ -16,7 +16,6 @@
 package config
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -50,7 +49,6 @@ type Config struct {
 	targetAllocatorImage          string
 	targetAllocatorConfigMapEntry string
 	platform                      platform.Platform
-	version                       version.Version
 }
 
 // New constructs a new configuration based on the given options.
@@ -68,16 +66,6 @@ func New(opts ...Option) Config {
 		opt(&o)
 	}
 
-	// this is derived from another option, so, we need to first parse the options, then set a default
-	// if there's no explicit value being set
-	if len(o.collectorImage) == 0 {
-		o.collectorImage = fmt.Sprintf("otel/opentelemetry-collector:%s", o.version.OpenTelemetryCollector)
-	}
-
-	if len(o.targetAllocatorImage) == 0 {
-		o.targetAllocatorImage = fmt.Sprintf("quay.io/opentelemetry/target-allocator:%s", o.version.TargetAllocator)
-	}
-
 	return Config{
 		autoDetect:                    o.autoDetect,
 		autoDetectFrequency:           o.autoDetectFrequency,
@@ -88,7 +76,6 @@ func New(opts ...Option) Config {
 		logger:                        o.logger,
 		onChange:                      o.onChange,
 		platform:                      o.platform,
-		version:                       o.version,
 	}
 }
 
@@ -178,9 +165,4 @@ func (c *Config) TargetAllocatorConfigMapEntry() string {
 // Platform represents the type of the platform this operator is running.
 func (c *Config) Platform() platform.Platform {
 	return c.platform
-}
-
-// Version holds the versions used by this operator.
-func (c *Config) Version() version.Version {
-	return c.version
 }
