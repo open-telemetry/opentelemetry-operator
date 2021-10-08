@@ -182,12 +182,12 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
 - [@open-telemetry/collector-approvers](https://github.com/orgs/open-telemetry/teams/collector-approvers)
-- [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
 
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [@open-telemetry/collector-maintainers](https://github.com/orgs/open-telemetry/teams/collector-maintainers)
 - [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
+- [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
 
 Learn more about roles in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md).
 
