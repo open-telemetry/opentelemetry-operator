@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sidecar
+package instrumentation
 
 import (
 	"testing"
@@ -35,14 +35,14 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "true",
+						annotationInjectJava: "true",
 					},
 				},
 			},
 			corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "false",
+						annotationInjectJava: "false",
 					},
 				},
 			},
@@ -54,14 +54,14 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "true",
+						annotationInjectJava: "true",
 					},
 				},
 			},
 			corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "some-instance",
+						annotationInjectJava: "some-instance",
 					},
 				},
 			},
@@ -73,14 +73,14 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "some-instance-from-pod",
+						annotationInjectJava: "some-instance-from-pod",
 					},
 				},
 			},
 			corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "some-instance",
+						annotationInjectJava: "some-instance",
 					},
 				},
 			},
@@ -92,14 +92,14 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "false",
+						annotationInjectJava: "false",
 					},
 				},
 			},
 			corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "some-instance",
+						annotationInjectJava: "some-instance",
 					},
 				},
 			},
@@ -112,7 +112,7 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 			corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "some-instance",
+						annotationInjectJava: "some-instance",
 					},
 				},
 			},
@@ -124,7 +124,7 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						Annotation: "true",
+						annotationInjectJava: "true",
 					},
 				},
 			},
@@ -133,7 +133,7 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// test
-			annValue := annotationValue(tt.ns, tt.pod)
+			annValue := annotationValue(tt.ns.ObjectMeta, tt.pod.ObjectMeta)
 
 			// verify
 			assert.Equal(t, tt.expected, annValue)

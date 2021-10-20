@@ -12,32 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sidecar
+package instrumentation
 
 import (
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	// Annotation contains the annotation name that pods contain, indicating whether a sidecar is desired.
-	Annotation = "sidecar.opentelemetry.io/inject"
+	// annotationInjectJava indicates whether java auto-instrumentation should be injected or not.
+	// Possible values are "true", "false" or "<Instrumentation>" name.
+	annotationInjectJava = "instrumentation.opentelemetry.io/inject-java"
 )
 
-// annotationValue returns the effective annotation value, based on the annotations from the pod and namespace.
-func annotationValue(ns corev1.Namespace, pod corev1.Pod) string {
+// annotationValue returns the effective annotationInjectJava value, based on the annotations from the pod and namespace.
+func annotationValue(ns metav1.ObjectMeta, pod metav1.ObjectMeta) string {
 	// is the pod annotated with instructions to inject sidecars? is the namespace annotated?
 	// if any of those is true, a sidecar might be desired.
-	podAnnValue := pod.Annotations[Annotation]
-	nsAnnValue := ns.Annotations[Annotation]
+	podAnnValue := pod.Annotations[annotationInjectJava]
+	nsAnnValue := ns.Annotations[annotationInjectJava]
 
 	// if the namespace value is empty, the pod annotation should be used, whatever it is
 	if len(nsAnnValue) == 0 {
 		return podAnnValue
 	}
 
-	// if the pod value is empty, the annotation annotation should be used (true, false, instance)
+	// if the pod value is empty, the annotation should be used (true, false, instance)
 	if len(podAnnValue) == 0 {
 		return nsAnnValue
 	}

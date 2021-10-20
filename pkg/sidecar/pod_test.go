@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sidecar_test
+package sidecar
 
 import (
 	"testing"
@@ -25,7 +25,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -50,7 +49,7 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
-	changed, err := sidecar.Add(cfg, logger, otelcol, pod)
+	changed, err := add(cfg, logger, otelcol, pod)
 
 	// verify
 	assert.NoError(t, err)
@@ -60,7 +59,7 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 }
 
 // this situation should never happen in the current code path, but it should not fail
-// if it's asked to add a new sidecar. The caller is expected to have called ExistsIn before.
+// if it's asked to add a new sidecar. The caller is expected to have called existsIn before.
 func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 	// prepare
 	pod := corev1.Pod{
@@ -75,7 +74,7 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
-	changed, err := sidecar.Add(cfg, logger, otelcol, pod)
+	changed, err := add(cfg, logger, otelcol, pod)
 
 	// verify
 	assert.NoError(t, err)
@@ -95,7 +94,7 @@ func TestRemoveSidecar(t *testing.T) {
 	}
 
 	// test
-	changed, err := sidecar.Remove(pod)
+	changed, err := remove(pod)
 
 	// verify
 	assert.NoError(t, err)
@@ -113,7 +112,7 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 	}
 
 	// test
-	changed, err := sidecar.Remove(pod)
+	changed, err := remove(pod)
 
 	// verify
 	assert.NoError(t, err)
@@ -142,7 +141,7 @@ func TestExistsIn(t *testing.T) {
 		}},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
-			assert.Equal(t, tt.expected, sidecar.ExistsIn(tt.pod))
+			assert.Equal(t, tt.expected, existsIn(tt.pod))
 		})
 	}
 }
