@@ -22,7 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/otelcol/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
