@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	opentelemetryiov1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	opentelemetryiov1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/otelcol/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/podinjector"
