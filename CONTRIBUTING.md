@@ -133,7 +133,7 @@ podman push quay.io/${USER}/opentelemetry-operator-index:${VERSION}
 
 To install our operator, create a `CatalogSource` for our index image, wait for OLM to synchronize and finally create a `Subscription`. Make sure to replace `${USER}` with your username and `${VERSION}` with the version used in the previous step. The namespace for both should be `operators` on Kubernetes, while `openshift-operators` should be used for OpenShift.
 
-``yaml
+```yaml
 kubectl apply -f - <<EOF
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
