@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/otelcol/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/podinjector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
