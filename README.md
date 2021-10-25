@@ -20,8 +20,8 @@ kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releas
 
 Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry Collector (otelcol) instance, like:
 
-```console
-$ kubectl apply -f - <<EOF
+```yaml
+kubectl apply -f - <<EOF
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
@@ -63,8 +63,8 @@ The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `
 
 A sidecar with the OpenTelemetry Collector can be injected into pod-based workloads by setting the pod annotation `sidecar.opentelemetry.io/inject` to either `"true"`, or to the name of a concrete `OpenTelemetryCollector` from the same namespace, like in the following example:
 
-```console
-$ kubectl apply -f - <<EOF
+```yaml
+kubectl apply -f - <<EOF
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
@@ -89,7 +89,7 @@ spec:
           exporters: [logging]
 EOF
 
-$ kubectl apply -f - <<EOF
+kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
@@ -115,8 +115,8 @@ The annotation value can come either from the namespace, or from the pod. The mo
 
 When using a pod-based workload, such as `Deployment` or `Statefulset`, make sure to add the annotation to the `PodTemplate` part. Like:
 
-```console
-$ kubectl apply -f - <<EOF
+```yaml
+kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:

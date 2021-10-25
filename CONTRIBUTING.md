@@ -12,12 +12,12 @@ We gratefully welcome improvements to documentation as well as to code.
 
 It is recommended to follow the ["GitHub Workflow"](https://guides.github.com/introduction/flow/). When using [GitHub's CLI](https://github.com/cli/cli), here's how it typically looks like:
 
-```
-$ gh repo fork github.com/open-telemetry/opentelemetry-operator
-$ git checkout -b your-feature-branch
+```bash
+gh repo fork github.com/open-telemetry/opentelemetry-operator
+git checkout -b your-feature-branch
 # do your changes
-$ git commit -sam "Add feature X"
-$ gh pr create
+git commit -sam "Add feature X"
+gh pr create
 ```
 
 ### Pre-requisites
@@ -27,8 +27,8 @@ $ gh pr create
 ### Local run
 
 Build the manifests, install the CRD and run the operator as a local process:
-```
-$ make bundle install run
+```bash
+make bundle install run
 ```
 
 ### Deployment with webhooks
@@ -40,13 +40,13 @@ When running `make run`, the webhooks aren't effective as it starts the manager 
 
 In general, it's just easier to deploy the manager in a Kubernetes cluster instead. For that, you'll need the `cert-manager` installed. You can install it by running:
 
-```console
+```bash
 make cert-manager
 ```
 
 Once it's ready, the following can be used to build and deploy a manager, along with the required webhook configuration:
 
-```
+```bash
 make bundle container container-push deploy
 ```
 
@@ -63,7 +63,7 @@ Your operator will be available in the `opentelemetry-operator-system` namespace
 ## Testing
 
 With an existing cluster (such as `minikube`), run:
-```
+```bash
 USE_EXISTING_CLUSTER=true make test
 ```
 
@@ -107,7 +107,7 @@ For production environments, it is recommended to use the [Operator Lifecycle Ma
 
 When using Kubernetes, install OLM following the [official instructions](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md). At the moment of this writing, it involves the following:
 
-```
+```bash
 kubectl create -f https://raw.githubusercontent.com/operator-framework/operator-lifecycle-manager/master/deploy/upstream/quickstart/crds.yaml
 kubectl create -f https://raw.githubusercontent.com/operator-framework/operator-lifecycle-manager/master/deploy/upstream/quickstart/olm.yaml
 kubectl wait --for=condition=available deployment packageserver -n olm
@@ -121,7 +121,7 @@ When using OpenShift, OLM is already installed.
 
 The following commands will generate a bundle under `bundle/` and build an image with its contents. It will then generate and publish an index image with the [Operator Package Manager (OPM)](https://github.com/operator-framework/operator-registry/blob/master/docs/design/opm-tooling.md#opm)
 
-```
+```bash
 export VERSION=x.y.z
 make set-image-controller bundle bundle-build
 podman push quay.io/${USER}/opentelemetry-operator-bundle:${VERSION}
@@ -133,7 +133,7 @@ podman push quay.io/${USER}/opentelemetry-operator-index:${VERSION}
 
 To install our operator, create a `CatalogSource` for our index image, wait for OLM to synchronize and finally create a `Subscription`. Make sure to replace `${USER}` with your username and `${VERSION}` with the version used in the previous step. The namespace for both should be `operators` on Kubernetes, while `openshift-operators` should be used for OpenShift.
 
-```
+``yaml
 kubectl apply -f - <<EOF
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
