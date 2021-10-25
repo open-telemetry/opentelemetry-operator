@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/otelcol/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
@@ -58,14 +58,14 @@ receivers:
           key_file: server.key
 exporters:
   otlp:
-    endpoint: "http:hello:4555/hii"
-    insecure: true
+    endpoint: "example.com"
     ca_file: /var/lib/mycert.pem
-    cert_file: certfile
+    insecure: true
     key_file: keyfile
     min_version: "1.0.0"
     max_version: "2.0.2"
     insecure_skip_verify: true
+    server_name_override: hii
 
 service:
   pipelines:
@@ -84,15 +84,15 @@ service:
 	// verify
 	assert.Equal(t, `exporters:
   otlp:
-    endpoint: http:hello:4555/hii
+    endpoint: example.com
     tls:
       ca_file: /var/lib/mycert.pem
-      cert_file: certfile
       insecure: true
       insecure_skip_verify: true
       key_file: keyfile
       max_version: 2.0.2
       min_version: 1.0.0
+      server_name_override: hii
 receivers:
   otlp/mtls:
     protocols:
