@@ -23,7 +23,7 @@ jobs:
 
     - uses: jpkrohling/setup-operator-sdk@v1.1.0
       with:
-        operator-sdk-version: v1.13.0
+        operator-sdk-version: v1.13.1
 
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="quay.io/opentelemetry"
