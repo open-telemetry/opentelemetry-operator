@@ -50,7 +50,7 @@ spec:
                     type: string
                 type: object
               java:
-                description: JavaSpec defines Java SKD and instrumentation configuration.
+                description: JavaSpec defines Java SDK and instrumentation configuration.
                 properties:
                   image:
                     type: string
