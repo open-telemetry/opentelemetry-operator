@@ -18,16 +18,20 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
 type InstrumentationSpec struct {
-	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	Java JavaSpec `json:"java,omitempty"`
+	// Exporter defines exporter configuration.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Exporter `json:"exporter,omitempty"`
+
+	// Java defines configuration for java auto-instrumentation.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Java JavaSpec `json:"java,omitempty"`
 }
 
 // JavaSpec defines Java SDK and instrumentation configuration.
 type JavaSpec struct {
+	// Image is a container image with javaagent JAR.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
@@ -35,6 +39,7 @@ type JavaSpec struct {
 
 // Exporter defines OTLP exporter configuration.
 type Exporter struct {
+	// Endpoint is address of the collector with OTLP endpoint.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Endpoint string `json:"endpoint,omitempty"`

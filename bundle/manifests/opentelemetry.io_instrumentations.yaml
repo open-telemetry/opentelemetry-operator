@@ -44,15 +44,17 @@ spec:
               SDK and instrumentation.
             properties:
               exporter:
-                description: Exporter defines OTLP exporter configuration.
+                description: Exporter defines exporter configuration.
                 properties:
                   endpoint:
+                    description: Endpoint is address of the collector with OTLP endpoint.
                     type: string
                 type: object
               java:
-                description: JavaSpec defines Java SDK and instrumentation configuration.
+                description: Java defines configuration for java auto-instrumentation.
                 properties:
                   image:
+                    description: Image is a container image with javaagent JAR.
                     type: string
                 type: object
             type: object
