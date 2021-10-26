@@ -26,7 +26,7 @@ type InstrumentationSpec struct {
 	Exporter `json:"exporter,omitempty"`
 }
 
-// JavaSpec defines Java SKD and instrumentation configuration.
+// JavaSpec defines Java SDK and instrumentation configuration.
 type JavaSpec struct {
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true

@@ -36,7 +36,7 @@ func TestSDKInjection(t *testing.T) {
 			inst: v1alpha1.Instrumentation{
 				Spec: v1alpha1.InstrumentationSpec{
 					Exporter: v1alpha1.Exporter{
-						Endpoint: "https://doesnotexists.io",
+						Endpoint: "https://collector:4318",
 					},
 				},
 			},
@@ -61,7 +61,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "https://doesnotexists.io",
+									Value: "https://collector:4318",
 								},
 							},
 						},
@@ -74,7 +74,7 @@ func TestSDKInjection(t *testing.T) {
 			inst: v1alpha1.Instrumentation{
 				Spec: v1alpha1.InstrumentationSpec{
 					Exporter: v1alpha1.Exporter{
-						Endpoint: "https://doesnotexists.io",
+						Endpoint: "https://collector:4318",
 					},
 				},
 			},
@@ -132,7 +132,7 @@ func TestInjection(t *testing.T) {
 				Image: "img:1",
 			},
 			Exporter: v1alpha1.Exporter{
-				Endpoint: "https://doesnotexists:1234",
+				Endpoint: "https://collector:4318",
 			},
 		},
 	}
@@ -182,7 +182,7 @@ func TestInjection(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-							Value: "https://doesnotexists:1234",
+							Value: "https://collector:4318",
 						},
 						{
 							Name:  "JAVA_TOOL_OPTIONS",

@@ -53,13 +53,13 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	// if no annotations are found at all, just return the same pod
 	annValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta)
 	if len(annValue) == 0 {
-		logger.V(1).Info("annotation not present in deployment, skipping sidecar injection")
+		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}
 
-	// is the annotation value 'false'? if so, we need a pod without the sidecar
+	// is the annotation value 'false'? if so, we need a pod without the instrumentation
 	if strings.EqualFold(annValue, "false") {
-		logger.V(1).Info("pod explicitly refuses sidecar injection, attempting to remove sidecar if it exists")
+		logger.V(1).Info("pod explicitly refuses instrumentation injection, attempting to remove instrumentation if it exists")
 		return pod, nil
 	}
 
@@ -68,7 +68,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	if err != nil {
 		if err == errNoInstancesAvailable || err == errMultipleInstancesPossible {
 			// we still allow the pod to be created, but we log a message to the operator's logs
-			logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod's sidecar")
+			logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 			return pod, nil
 		}
 
@@ -76,9 +76,9 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 
-	// once it's been determined that a sidecar is desired, none exists yet, and we know which instance it should talk to,
-	// we should inject the sidecar.
-	logger.V(1).Info("injecting sidecar into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
+	// we should inject the instrumentation.
+	logger.V(1).Info("injecting instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 	return inject(pm.Logger, otelinst, pod), nil
 }
 
