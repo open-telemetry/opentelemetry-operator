@@ -22,7 +22,9 @@ gh pr create
 
 ### Pre-requisites
 * Install [Go](https://golang.org/doc/install).
+* Install [Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/).
 * Have a Kubernetes cluster ready for development. We recommend `minikube` or `kind`.
+
 
 ### Local run
 
@@ -44,12 +46,6 @@ In general, it's just easier to deploy the manager in a Kubernetes cluster inste
 make cert-manager
 ```
 
-Once it's ready, the following can be used to build and deploy a manager, along with the required webhook configuration:
-
-```bash
-make bundle container container-push deploy
-```
-
 By default, it will generate an image following the format `quay.io/${USER}/opentelemetry-operator:${VERSION}`. You can set the following env vars in front of the `make` command to override parts or the entirety of the image:
 
 * `IMG_PREFIX`, to override the registry, namespace and image name (`quay.io`)
@@ -57,6 +53,18 @@ By default, it will generate an image following the format `quay.io/${USER}/open
 * `IMG_REPO`, to override the repository (`opentelemetry-operator`)
 * `VERSION`, to override only the version part
 * `IMG`, to override the entire image specification
+
+Ensure the secret [regcred](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) has been created to enable opentelemetry-operator-controller-manager deployment to pull images from your private `quay.io` registry.
+
+```bash
+kubectl create secret docker-registry regcred --docker-server=quay.io --docker-username=${USER} --docker-password=${PASSWORD}  -n opentelemetry-operator-system
+```
+
+Once it's ready, the following can be used to build and deploy a manager, along with the required webhook configuration:
+
+```bash
+make bundle container container-push deploy
+```
 
 Your operator will be available in the `opentelemetry-operator-system` namespace.
 
