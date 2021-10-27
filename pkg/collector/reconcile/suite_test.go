@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -46,6 +46,11 @@ var testScheme *runtime.Scheme = scheme.Scheme
 var logger = logf.Log.WithName("unit-tests")
 
 var instanceUID = uuid.NewUUID()
+
+const (
+	defaultCollectorImage    = "default-collector"
+	defaultTaAllocationImage = "default-ta-allocator"
+)
 
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
@@ -83,12 +88,12 @@ func TestMain(m *testing.M) {
 
 func params() Params {
 	replicas := int32(2)
-	configYAML, err := ioutil.ReadFile("test.yaml")
+	configYAML, err := ioutil.ReadFile("../testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 	return Params{
-		Config: config.New(),
+		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
 		Client: k8sClient,
 		Instance: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
@@ -120,14 +125,21 @@ func params() Params {
 	}
 }
 
-func newParams(containerImage string) (Params, error) {
+func newParams(taContainerImage string, file string) (Params, error) {
 	replicas := int32(1)
-	configYAML, err := ioutil.ReadFile("test.yaml")
+	var configYAML []byte
+	var err error
+
+	if file == "" {
+		configYAML, err = ioutil.ReadFile("../testdata/test.yaml")
+	} else {
+		configYAML, err = ioutil.ReadFile(file)
+	}
 	if err != nil {
 		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}
 
-	cfg := config.New()
+	cfg := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
 
 	return Params{
 		Config: cfg,
@@ -155,7 +167,7 @@ func newParams(containerImage string) (Params, error) {
 				}},
 				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
 					Enabled: true,
-					Image:   containerImage,
+					Image:   taContainerImage,
 				},
 				Replicas: &replicas,
 				Config:   string(configYAML),

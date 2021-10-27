@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
@@ -142,12 +142,12 @@ func TestContainerEnvVarsOverridden(t *testing.T) {
 	c := Container(cfg, logger, otelcol)
 
 	// verify
-	assert.Len(t, c.Env, 1)
+	assert.Len(t, c.Env, 2)
 	assert.Equal(t, "foo", c.Env[0].Name)
 	assert.Equal(t, "bar", c.Env[0].Value)
 }
 
-func TestContainerEmptyEnvVarsByDefault(t *testing.T) {
+func TestContainerDefaultEnvVars(t *testing.T) {
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
 	}
@@ -158,7 +158,8 @@ func TestContainerEmptyEnvVarsByDefault(t *testing.T) {
 	c := Container(cfg, logger, otelcol)
 
 	// verify
-	assert.Empty(t, c.Env)
+	assert.Len(t, c.Env, 1)
+	assert.Equal(t, c.Env[0].Name, "POD_NAME")
 }
 
 func TestContainerResourceRequirements(t *testing.T) {
@@ -237,4 +238,38 @@ func TestContainerImagePullPolicy(t *testing.T) {
 
 	// verify
 	assert.Equal(t, c.ImagePullPolicy, corev1.PullIfNotPresent)
+}
+
+func TestContainerEnvFrom(t *testing.T) {
+	//prepare
+	envFrom1 := corev1.EnvFromSource{
+		SecretRef: &corev1.SecretEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: "env-as-secret",
+			},
+		},
+	}
+	envFrom2 := corev1.EnvFromSource{
+		ConfigMapRef: &corev1.ConfigMapEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: "env-as-configmap",
+			},
+		},
+	}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			EnvFrom: []corev1.EnvFromSource{
+				envFrom1,
+				envFrom2,
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Contains(t, c.EnvFrom, envFrom1)
+	assert.Contains(t, c.EnvFrom, envFrom2)
 }

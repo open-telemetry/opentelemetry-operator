@@ -20,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
@@ -47,7 +47,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: otelcol.Annotations,
+					Annotations: otelcol.Spec.PodAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: ServiceAccountName(otelcol),

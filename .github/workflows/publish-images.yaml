@@ -13,7 +13,7 @@ jobs:
     name: Publish container images
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2.3.5
 
       - name: Unshallow 
         run: git fetch --prune --unshallow
@@ -30,7 +30,7 @@ jobs:
 
       - name: Docker meta
         id: docker_meta
-        uses: docker/metadata-action@v3.5.0
+        uses: docker/metadata-action@v3.6.0
         with:
           images: quay.io/opentelemetry/opentelemetry-operator
           tag-semver: |

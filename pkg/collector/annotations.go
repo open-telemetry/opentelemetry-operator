@@ -18,7 +18,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.

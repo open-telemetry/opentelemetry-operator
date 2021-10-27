@@ -1,6 +1,31 @@
 Changes by Version
 ==================
 
+0.37.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.37.0
+
+0.36.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.36.0
+* Add `envFrom` to collector spec ([#419](https://github.com/open-telemetry/opentelemetry-operator/pull/419), [@ctison](https://github.com/ctison))
+* Allow changing Pod annotations using `podAnnotations` ([#451](https://github.com/open-telemetry/opentelemetry-operator/pull/451), [@indrekj](https://github.com/indrekj))
+
+0.35.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.35.0
+* Target Allocator implementation (Part 3 - OTEL Operator Enhancements) ([#389](https://github.com/open-telemetry/opentelemetry-operator/pull/389), [@Raul9595](https://github.com/Raul9595))
+* Target Allocator implementation (Part 2 - OTEL Operator Enhancements) ([#354](https://github.com/open-telemetry/opentelemetry-operator/pull/354), [@alexperez52](https://github.com/alexperez52))
+
+0.34.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.34.0
+* Add AWS xray receiver ([#421](https://github.com/open-telemetry/opentelemetry-operator/pull/421), [@VineethReddy02](https://github.com/VineethReddy02))
+* Add syslog, tcplog and udplog receivers ([#425](https://github.com/open-telemetry/opentelemetry-operator/pull/425), [@VineethReddy02](https://github.com/VineethReddy02))
+* Add splunk hec receiver ([#422](https://github.com/open-telemetry/opentelemetry-operator/pull/422), [@VineethReddy02](https://github.com/VineethReddy02))
+* Add influxdb receiver ([#423](https://github.com/open-telemetry/opentelemetry-operator/pull/423), [@VineethReddy02](https://github.com/VineethReddy02))
+* Added imagePullPolicy option to CRD ([#413](https://github.com/open-telemetry/opentelemetry-operator/pull/413), [@mmatache](https://github.com/mmatache))
+
 0.33.0 (2021-08-20)
 -------------------
 * Bumped OpenTelemetry Collector to v0.33.0

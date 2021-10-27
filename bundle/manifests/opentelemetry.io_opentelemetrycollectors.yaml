@@ -182,6 +182,41 @@ spec:
                   - name
                   type: object
                 type: array
+              envFrom:
+                description: List of sources to populate environment variables on
+                  the OpenTelemetry Collector's Pods. These can then in certain cases
+                  be consumed in the config file for the Collector.
+                items:
+                  description: EnvFromSource represents the source of a set of ConfigMaps
+                  properties:
+                    configMapRef:
+                      description: The ConfigMap to select from
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                        optional:
+                          description: Specify whether the ConfigMap must be defined
+                          type: boolean
+                      type: object
+                    prefix:
+                      description: An optional identifier to prepend to each key in
+                        the ConfigMap. Must be a C_IDENTIFIER.
+                      type: string
+                    secretRef:
+                      description: The Secret to select from
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                        optional:
+                          description: Specify whether the Secret must be defined
+                          type: boolean
+                      type: object
+                  type: object
+                type: array
               hostNetwork:
                 description: HostNetwork indicates if the pod should run in the host
                   networking namespace.
@@ -203,6 +238,12 @@ spec:
                 - sidecar
                 - statefulset
                 type: string
+              podAnnotations:
+                additionalProperties:
+                  type: string
+                description: PodAnnotations is the set of annotations that will be
+                  attached to Collector and Target Allocator pods.
+                type: object
               ports:
                 description: Ports allows a set of ports to be exposed by the underlying
                   v1.Service. By default, the operator will attempt to infer the required

@@ -21,7 +21,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
@@ -64,4 +64,25 @@ func TestDeploymentNewDefault(t *testing.T) {
 
 	// the pod selector should match the pod spec's labels
 	assert.Equal(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
+}
+
+func TestDeploymentPodAnnotations(t *testing.T) {
+	// prepare
+	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			PodAnnotations: testPodAnnotationValues,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	d := Deployment(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, testPodAnnotationValues, d.Spec.Template.Annotations)
 }

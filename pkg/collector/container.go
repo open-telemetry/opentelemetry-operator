@@ -20,7 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
@@ -68,6 +68,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		envVars = []corev1.EnvVar{}
 	}
 
+	envVars = append(envVars, corev1.EnvVar{
+		Name: "POD_NAME",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.name",
+			},
+		},
+	})
+
 	return corev1.Container{
 		Name:            naming.Container(),
 		Image:           image,
@@ -75,6 +84,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		VolumeMounts:    volumeMounts,
 		Args:            args,
 		Env:             envVars,
+		EnvFrom:         otelcol.Spec.EnvFrom,
 		Resources:       otelcol.Spec.Resources,
 		SecurityContext: otelcol.Spec.SecurityContext,
 	}

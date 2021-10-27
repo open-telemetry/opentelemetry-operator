@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
@@ -51,7 +51,7 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        job_name: otel-collector
+      - job_name: otel-collector
         scrape_interval: 10s
         static_configs:
           - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
@@ -75,6 +75,56 @@ service:
 
 	})
 
+	t.Run("should return expected collector config map with http_sd_config", func(t *testing.T) {
+		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
+
+		expectedData := map[string]string{
+			"collector.yaml": `exporters:
+  logging: null
+processors: null
+receivers:
+  jaeger:
+    protocols:
+      grpc: null
+  prometheus:
+    config:
+      global:
+        scrape_interval: 1m
+        scrape_timeout: 10s
+        evaluation_interval: 1m
+      scrape_configs:
+      - job_name: otel-collector
+        honor_timestamps: true
+        scrape_interval: 10s
+        scrape_timeout: 10s
+        metrics_path: /metrics
+        scheme: http
+        follow_redirects: true
+        http_sd_configs:
+        - follow_redirects: false
+          url: http://test-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
+service:
+  pipelines:
+    metrics:
+      exporters:
+      - logging
+      processors: []
+      receivers:
+      - prometheus
+`,
+		}
+
+		param := params()
+		param.Instance.Spec.TargetAllocator.Enabled = true
+		actual := desiredConfigMap(context.Background(), param)
+
+		assert.Equal(t, "test-collector", actual.Name)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+
+	})
+
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
 		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
@@ -82,7 +132,7 @@ service:
 		expectedData := map[string]string{
 			"targetallocator.yaml": `config:
   scrape_configs:
-    job_name: otel-collector
+  - job_name: otel-collector
     scrape_interval: 10s
     static_configs:
     - targets:

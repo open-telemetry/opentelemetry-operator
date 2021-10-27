@@ -20,8 +20,8 @@ kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releas
 
 Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry Collector (otelcol) instance, like:
 
-```console
-$ kubectl apply -f - <<EOF
+```yaml
+kubectl apply -f - <<EOF
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
@@ -63,8 +63,8 @@ The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `
 
 A sidecar with the OpenTelemetry Collector can be injected into pod-based workloads by setting the pod annotation `sidecar.opentelemetry.io/inject` to either `"true"`, or to the name of a concrete `OpenTelemetryCollector` from the same namespace, like in the following example:
 
-```console
-$ kubectl apply -f - <<EOF
+```yaml
+kubectl apply -f - <<EOF
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
@@ -89,7 +89,7 @@ spec:
           exporters: [logging]
 EOF
 
-$ kubectl apply -f - <<EOF
+kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
@@ -115,8 +115,8 @@ The annotation value can come either from the namespace, or from the pod. The mo
 
 When using a pod-based workload, such as `Deployment` or `Statefulset`, make sure to add the annotation to the `PodTemplate` part. Like:
 
-```console
-$ kubectl apply -f - <<EOF
+```yaml
+kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -164,6 +164,10 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           |
 |------------------------|----------------------|
+| v0.37.0                | v1.20 to v1.22       |
+| v0.36.0                | v1.20 to v1.22       |
+| v0.35.0                | v1.20 to v1.22       |
+| v0.34.0                | v1.20 to v1.22       |
 | v0.33.0                | v1.20 to v1.22       |
 | v0.32.0 (skipped)      | n/a                  |
 | v0.31.0                | v1.19 to v1.21       |
@@ -184,7 +188,8 @@ Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-tel
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [@open-telemetry/collector-maintainers](https://github.com/orgs/open-telemetry/teams/collector-maintainers)
-- [Juraci Paixão Kröhling](https://github.com/jpkrohling), Red Hat
+- [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
+- [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
 
 Learn more about roles in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md).
 

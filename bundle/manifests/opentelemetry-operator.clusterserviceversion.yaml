@@ -21,11 +21,11 @@ metadata:
     containerImage: quay.io/opentelemetry/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
-    operators.operatorframework.io/builder: operator-sdk-v1.10.0+git
+    operators.operatorframework.io/builder: operator-sdk-v1.13.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.33.0
+  name: opentelemetry-operator.v0.37.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -204,9 +204,7 @@ spec:
               - args:
                 - --metrics-addr=127.0.0.1:8080
                 - --enable-leader-election
-                command:
-                - /manager
-                image: quay.io/opentelemetry/opentelemetry-operator:v0.33.0
+                image: quay.io/opentelemetry/opentelemetry-operator:v0.37.0
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -214,8 +212,8 @@ spec:
                   protocol: TCP
                 resources:
                   limits:
-                    cpu: 100m
-                    memory: 128Mi
+                    cpu: 200m
+                    memory: 256Mi
                   requests:
                     cpu: 100m
                     memory: 64Mi
@@ -298,49 +296,8 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.33.0
+  version: 0.37.0
   webhookdefinitions:
-  - admissionReviewVersions:
-    - v1
-    - v1beta1
-    containerPort: 443
-    deploymentName: opentelemetry-operator-controller-manager
-    failurePolicy: Fail
-    generateName: vopentelemetrycollectorcreateupdate.kb.io
-    rules:
-    - apiGroups:
-      - opentelemetry.io
-      apiVersions:
-      - v1alpha1
-      operations:
-      - CREATE
-      - UPDATE
-      resources:
-      - opentelemetrycollectors
-    sideEffects: None
-    targetPort: 9443
-    type: ValidatingAdmissionWebhook
-    webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
-  - admissionReviewVersions:
-    - v1
-    - v1beta1
-    containerPort: 443
-    deploymentName: opentelemetry-operator-controller-manager
-    failurePolicy: Ignore
-    generateName: vopentelemetrycollectordelete.kb.io
-    rules:
-    - apiGroups:
-      - opentelemetry.io
-      apiVersions:
-      - v1alpha1
-      operations:
-      - DELETE
-      resources:
-      - opentelemetrycollectors
-    sideEffects: None
-    targetPort: 9443
-    type: ValidatingAdmissionWebhook
-    webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
   - admissionReviewVersions:
     - v1
     - v1beta1
@@ -383,3 +340,44 @@ spec:
     targetPort: 9443
     type: MutatingAdmissionWebhook
     webhookPath: /mutate-v1-pod
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: vopentelemetrycollectorcreateupdate.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - opentelemetrycollectors
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: vopentelemetrycollectordelete.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - DELETE
+      resources:
+      - opentelemetrycollectors
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector

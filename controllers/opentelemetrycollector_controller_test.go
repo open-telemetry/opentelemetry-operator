@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
@@ -43,7 +43,7 @@ var logger = logf.Log.WithName("unit-tests")
 
 func TestNewObjectsOnReconciliation(t *testing.T) {
 	// prepare
-	cfg := config.New()
+	cfg := config.New(config.WithCollectorImage("default-collector"), config.WithTargetAllocatorImage("default-ta-allocator"))
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{
 		Client: k8sClient,
