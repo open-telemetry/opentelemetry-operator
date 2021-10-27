@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'autoinstrumentation/java/**'
-      - '.github/workflows/publish-java-autoinstrumentation.yaml'
+      - '.github/workflows/publish-autoinstrumentation-java.yaml'
     branches:
       - main
   workflow_dispatch:
