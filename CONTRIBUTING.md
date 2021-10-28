@@ -60,6 +60,8 @@ Ensure the secret [regcred](https://kubernetes.io/docs/tasks/configure-pod-conta
 kubectl create secret docker-registry regcred --docker-server=quay.io --docker-username=${USER} --docker-password=${PASSWORD}  -n opentelemetry-operator-system
 ```
 
+Alternatively, you could create your repository with [Public Visibility](https://docs.projectquay.io/use_quay.html#creating-an-image-repository-via-the-ui).
+
 Once it's ready, the following can be used to build and deploy a manager, along with the required webhook configuration:
 
 ```bash
