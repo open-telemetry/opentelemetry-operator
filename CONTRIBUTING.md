@@ -77,6 +77,12 @@ Once they are installed, the tests can be executed with `make prepare-e2e`, whic
 
 The tests are located under `tests/e2e` and are written to be used with `kuttl`. Refer to their documentation to understand how tests are written.
 
+### Cleaning up bundle installation
+
+```bash
+make undeploy
+```
+
 ## Project Structure
 
 For a general overview of the directories from this operator and what to expect in each one of them, please check out the [official GoDoc](https://godoc.org/github.com/open-telemetry/opentelemetry-operator) or the [locally-hosted GoDoc](http://localhost:6060/pkg/github.com/open-telemetry/opentelemetry-operator/)

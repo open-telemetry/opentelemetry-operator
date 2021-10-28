@@ -80,9 +80,13 @@ uninstall: manifests kustomize
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+# Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+# Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
+undeploy: set-image-controller
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 # Generates the released manifests
 release-artifacts: set-image-controller
