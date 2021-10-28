@@ -77,7 +77,7 @@ Once they are installed, the tests can be executed with `make prepare-e2e`, whic
 
 The tests are located under `tests/e2e` and are written to be used with `kuttl`. Refer to their documentation to understand how tests are written.
 
-### Cleaning up bundle installation
+### Undeploying the operator from the local cluster
 
 ```bash
 make undeploy
