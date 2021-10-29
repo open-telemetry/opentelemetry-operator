@@ -86,3 +86,30 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, testPodAnnotationValues, d.Spec.Template.Annotations)
 }
+
+func TestDeploymenttPodSecurityContext(t *testing.T) {
+	runAsNonRoot := true
+	runAsUser := int64(1337)
+	runasGroup := int64(1338)
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			PodSecurityContext: &v1.PodSecurityContext{
+				RunAsNonRoot: &runAsNonRoot,
+				RunAsUser:    &runAsUser,
+				RunAsGroup:   &runasGroup,
+			},
+		},
+	}
+
+	cfg := config.New()
+
+	d := Deployment(cfg, logger, otelcol)
+
+	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
+	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
+	assert.Equal(t, &runasGroup, d.Spec.Template.Spec.SecurityContext.RunAsGroup)
+}

@@ -54,6 +54,7 @@ func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 					Volumes:            Volumes(cfg, otelcol),
 					Tolerations:        otelcol.Spec.Tolerations,
 					HostNetwork:        otelcol.Spec.HostNetwork,
+					SecurityContext:    otelcol.Spec.PodSecurityContext,
 				},
 			},
 		},

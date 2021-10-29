@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -143,4 +144,31 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 	// verify
 	assert.Equal(t, "my-instance-collector", ss.Name)
 	assert.Equal(t, testPodAnnotationValues, ss.Spec.Template.Annotations)
+}
+
+func TestStatefulSetPodSecurityContext(t *testing.T) {
+	runAsNonRoot := true
+	runAsUser := int64(1337)
+	runasGroup := int64(1338)
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			PodSecurityContext: &v1.PodSecurityContext{
+				RunAsNonRoot: &runAsNonRoot,
+				RunAsUser:    &runAsUser,
+				RunAsGroup:   &runasGroup,
+			},
+		},
+	}
+
+	cfg := config.New()
+
+	d := StatefulSet(cfg, logger, otelcol)
+
+	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
+	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
+	assert.Equal(t, &runasGroup, d.Spec.Template.Spec.SecurityContext.RunAsGroup)
 }
