@@ -2,11 +2,11 @@
 
 The below `OpenTelemetryCollector` custom resource contains all the specification that can be configured. 
 
-```
+```yaml
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: example_collector
+  name: example-collector
 spec:
   // +optional Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
   mode: ""
@@ -14,16 +14,17 @@ spec:
   // +required Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
   config: |
     receivers:
-      jaeger:
+      otlp:
         protocols:
           grpc:
+          http:
     processors:
     exporters:
       logging:
     service:
       pipelines:
         traces:
-          receivers: [jaeger]
+          receivers: [otlp]
           processors: []
           exporters: [logging]
   
@@ -63,7 +64,7 @@ spec:
   env: []
   
   // +optional List of sources to populate environment variables on the OpenTelemetry Collector's Pods.
-	// These can then in certain cases be consumed in the config file for the Collector.
+  // These can then in certain cases be consumed in the config file for the Collector.
   envFrom: []
 
   // +optional Resources to set on the OpenTelemetry Collector pods.
