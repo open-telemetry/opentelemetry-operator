@@ -14,7 +14,7 @@ At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetr
 ## Getting started
 
 To install the operator in an existing cluster, make sure you have [`cert-manager` installed](https://cert-manager.io/docs/installation/) and run:
-```
+```bash
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
 
@@ -29,9 +29,10 @@ metadata:
 spec:
   config: |
     receivers:
-      jaeger:
+      otlp:
         protocols:
           grpc:
+          http:
     processors:
 
     exporters:
@@ -40,7 +41,7 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [jaeger]
+          receivers: [otlp]
           processors: []
           exporters: [logging]
 EOF
@@ -76,6 +77,10 @@ spec:
       jaeger:
         protocols:
           grpc:
+      otlp:
+        protocols:
+          grpc:
+          http:
     processors:
 
     exporters:
@@ -84,7 +89,7 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [jaeger]
+          receivers: [otlp, jaeger]
           processors: []
           exporters: [logging]
 EOF
