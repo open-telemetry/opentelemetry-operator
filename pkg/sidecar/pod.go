@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package sidecar contains operations related to sidecar manipulation (add, update, remove).
+// Package sidecar contains operations related to sidecar manipulation (Add, update, remove).
 package sidecar
 
 import (
@@ -33,7 +33,7 @@ const (
 
 // Add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 func Add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod) (corev1.Pod, error) {
-	// add the container
+	// Add the container
 	volumes := collector.Volumes(cfg, otelcol)
 	container := collector.Container(cfg, logger, otelcol)
 	pod.Spec.Containers = append(pod.Spec.Containers, container)

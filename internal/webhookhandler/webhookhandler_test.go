@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package podinjector_test
+package webhookhandler_test
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	. "github.com/open-telemetry/opentelemetry-operator/internal/podinjector"
+	. "github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 )
@@ -150,7 +150,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 			decoder, err := admission.NewDecoder(scheme.Scheme)
 			require.NoError(t, err)
 
-			injector := NewPodSidecarInjector(cfg, logger, k8sClient)
+			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 			err = injector.InjectDecoder(decoder)
 			require.NoError(t, err)
 
@@ -371,7 +371,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 			decoder, err := admission.NewDecoder(scheme.Scheme)
 			require.NoError(t, err)
 
-			injector := NewPodSidecarInjector(cfg, logger, k8sClient)
+			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 			err = injector.InjectDecoder(decoder)
 			require.NoError(t, err)
 
@@ -430,7 +430,7 @@ func TestFailOnInvalidRequest(t *testing.T) {
 			decoder, err := admission.NewDecoder(scheme.Scheme)
 			require.NoError(t, err)
 
-			injector := NewPodSidecarInjector(cfg, logger, k8sClient)
+			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 			err = injector.InjectDecoder(decoder)
 			require.NoError(t, err)
 

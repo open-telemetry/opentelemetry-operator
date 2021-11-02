@@ -5,11 +5,14 @@
 
 The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](https://coreos.com/operators/).
 
-At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) as the only managed component.
+The operator manages:
+* [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector)
+* auto-instrumentation of the workloads using OpenTelemetry instrumentation libraries
 
 ## Documentation
 
 * [OpenTelemetryCollector Custom Resource Specification](./docs/otelcol_cr_spec.md)
+* [Instrumentation Custom Resource Specification](./docs/otelinst_cr_spec.md)
 
 ## Getting started
 
@@ -150,6 +153,46 @@ spec:
             protocol: TCP
 EOF
 ```
+
+### OpenTelemetry auto-instrumentation injection
+
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. At this moment, the operator can inject only
+OpenTelemetry [Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation).
+
+The injection of the Java agent can be enabled by adding an annotation to the namespace, so that all pods within that
+namespace will get the instrumentation, or by adding the annotation to individual PodSpec objects, available as part
+of Deployment, Statefulset, and other resources.
+
+```console
+instrumentation.opentelemetry.io/inject-java: "true"
+```
+
+The value can be 
+* `false` - do not inject
+* `true` - inject
+* `java-instrumentation` - name of `Instrumentation` CR instance.
+
+In the addition to the annotation the following `CR` has to be created. The `Instrumentation`
+provides configuration for OpenTelemetry SDK and auto-instrumentation.
+
+```yaml
+kubectl apply -f - <<EOF
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java-instrumentation
+spec:
+  exporter:
+    endpoint: http://otel-collector:4318
+  java:
+    image: ghcr.io/pavolloffay/otel-javaagent:1.5.3 # <1>
+EOF
+```
+
+1. Container image with [OpenTelemetry Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation). 
+   The image has to contain Java agent JAR `/javaagent.jar` and the JAR is copied to a shared volume mounted to the application container.
+
+The above CR can be queried by `kubectl get otelinst`.
 
 ## Compatibility matrix
 

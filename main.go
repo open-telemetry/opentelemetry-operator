@@ -33,13 +33,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	opentelemetryiov1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
+	otelcolv1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
+	otelinstv1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/instrumentation/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/podinjector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -51,7 +54,8 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(opentelemetryiov1alpha1.AddToScheme(scheme))
+	utilruntime.Must(otelcolv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(otelinstv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -63,7 +67,7 @@ func main() {
 
 	v := version.Get()
 
-	// Add flags related to this operator
+	// add flags related to this operator
 	var metricsAddr string
 	var enableLeaderElection bool
 	var collectorImage string
@@ -164,13 +168,17 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&opentelemetryiov1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&otelcolv1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
 
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
-			Handler: podinjector.NewPodSidecarInjector(cfg, ctrl.Log.WithName("sidecar"), mgr.GetClient()),
+			Handler: webhookhandler.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), mgr.GetClient(),
+				[]webhookhandler.PodMutator{
+					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
+					instrumentation.NewMutator(logger, mgr.GetClient()),
+				}),
 		})
 	}
 	// +kubebuilder:scaffold:builder
