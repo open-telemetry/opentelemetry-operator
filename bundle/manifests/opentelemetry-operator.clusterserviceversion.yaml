@@ -31,6 +31,9 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - kind: Instrumentation
+      name: instrumentations.opentelemetry.io
+      version: v1alpha1
     - kind: OpenTelemetryCollector
       name: opentelemetrycollectors.opentelemetry.io
       version: v1alpha1
@@ -146,6 +149,14 @@ spec:
           - get
           - list
           - update
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - instrumentations
+          verbs:
+          - get
+          - list
+          - watch
         - apiGroups:
           - opentelemetry.io
           resources:

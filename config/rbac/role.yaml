@@ -104,6 +104,14 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
+  - instrumentations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - opentelemetry.io
+  resources:
   - opentelemetrycollectors
   verbs:
   - create
