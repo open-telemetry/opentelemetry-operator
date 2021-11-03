@@ -168,11 +168,11 @@ instrumentation.opentelemetry.io/inject-java: "true"
 ```
 
 The value can be 
-* `false` - do not inject
-* `true` - inject
-* `java-instrumentation` - name of `Instrumentation` CR instance.
+* `"false"` - do not inject
+* `"true"` - inject and `Instrumentation` resource from the namespace.
+* `"java-instrumentation"` - name of `Instrumentation` CR instance.
 
-In the addition to the annotation the following `CR` has to be created. The `Instrumentation`
+In addition to the annotation, the following `CR` has to be created. The `Instrumentation` resource
 provides configuration for OpenTelemetry SDK and auto-instrumentation.
 
 ```yaml
@@ -190,7 +190,7 @@ EOF
 ```
 
 1. Container image with [OpenTelemetry Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation). 
-   The image has to contain Java agent JAR `/javaagent.jar` and the JAR is copied to a shared volume mounted to the application container.
+   The image must contain the Java agent JAR `/javaagent.jar`, and the operator will copy it to a shared volume mounted to the application container.
 
 The above CR can be queried by `kubectl get otelinst`.
 
