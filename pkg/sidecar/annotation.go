@@ -25,8 +25,8 @@ const (
 	Annotation = "sidecar.opentelemetry.io/inject"
 )
 
-// AnnotationValue returns the effective annotation value, based on the annotations from the pod and namespace.
-func AnnotationValue(ns corev1.Namespace, pod corev1.Pod) string {
+// annotationValue returns the effective annotation value, based on the annotations from the pod and namespace.
+func annotationValue(ns corev1.Namespace, pod corev1.Pod) string {
 	// is the pod annotated with instructions to inject sidecars? is the namespace annotated?
 	// if any of those is true, a sidecar might be desired.
 	podAnnValue := pod.Annotations[Annotation]
