@@ -11,7 +11,7 @@ metadata:
             "name": "opentelemetrycollector-sample"
           },
           "spec": {
-            "config": "receivers:\n  jaeger:\n    protocols: \n      grpc:\n\nexporters:\n  logging:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [jaeger]\n      exporters: [logging]\n"
+            "config": "receivers:\n  otlp:\n    protocols: \n      grpc:\n      http:\n\nexporters:\n  logging:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [logging]\n"
           }
         }
       ]
