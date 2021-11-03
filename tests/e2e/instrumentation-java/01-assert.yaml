@@ -17,6 +17,7 @@ spec:
     - name: JAVA_TOOL_OPTIONS
       value: " -javaagent:/otel-auto-instrumentation/javaagent.jar"
     volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
     - mountPath: /otel-auto-instrumentation
       name: opentelemetry-auto-instrumentation
   - name: otc-container
