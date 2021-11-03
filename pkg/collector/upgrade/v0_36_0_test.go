@@ -116,7 +116,7 @@ service:
       receivers:
       - otlp/mtls
 `, res.Spec.Config)
-	assert.Equal(t, fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", "grpc", "otlp/mtls"), res.Status.Messages[0])
-	assert.Equal(t, fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", "http", "otlp/mtls"), res.Status.Messages[1])
-	assert.Equal(t, fmt.Sprintf("upgrade to v0.36.0 move tls config i.e. ca_file, key_file, cert_file, min_version, max_version to tls.* in %s exporter", "otlp"), res.Status.Messages[2])
+	assert.Contains(t, res.Status.Messages, fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", "grpc", "otlp/mtls"))
+	assert.Contains(t, res.Status.Messages, fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", "http", "otlp/mtls"))
+	assert.Contains(t, res.Status.Messages, fmt.Sprintf("upgrade to v0.36.0 move tls config i.e. ca_file, key_file, cert_file, min_version, max_version to tls.* in %s exporter", "otlp"))
 }
