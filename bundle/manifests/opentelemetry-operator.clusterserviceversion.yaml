@@ -25,12 +25,15 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.37.0
+  name: opentelemetry-operator.v0.37.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - kind: Instrumentation
+      name: instrumentations.opentelemetry.io
+      version: v1alpha1
     - kind: OpenTelemetryCollector
       name: opentelemetrycollectors.opentelemetry.io
       version: v1alpha1
@@ -149,6 +152,14 @@ spec:
         - apiGroups:
           - opentelemetry.io
           resources:
+          - instrumentations
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - opentelemetry.io
+          resources:
           - opentelemetrycollectors
           verbs:
           - create
@@ -204,7 +215,7 @@ spec:
               - args:
                 - --metrics-addr=127.0.0.1:8080
                 - --enable-leader-election
-                image: quay.io/opentelemetry/opentelemetry-operator:v0.37.0
+                image: quay.io/opentelemetry/opentelemetry-operator:v0.37.1
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -296,7 +307,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.37.0
+  version: 0.37.1
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

@@ -80,9 +80,13 @@ uninstall: manifests kustomize
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+# Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+# Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
+undeploy: set-image-controller
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 # Generates the released manifests
 release-artifacts: set-image-controller
@@ -134,7 +138,7 @@ start-kind:
 	kind load docker-image local/opentelemetry-operator:e2e
 
 cert-manager:
-	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.5.2/cert-manager.yaml
+	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml
 	kubectl wait --timeout=5m --for=condition=available deployment cert-manager -n cert-manager
 	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-cainjector -n cert-manager
 	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-webhook -n cert-manager

@@ -5,16 +5,19 @@
 
 The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](https://coreos.com/operators/).
 
-At this point, it has [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) as the only managed component.
+The operator manages:
+* [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector)
+* auto-instrumentation of the workloads using OpenTelemetry instrumentation libraries
 
 ## Documentation
 
 * [OpenTelemetryCollector Custom Resource Specification](./docs/otelcol_cr_spec.md)
+* [Instrumentation Custom Resource Specification](./docs/otelinst_cr_spec.md)
 
 ## Getting started
 
 To install the operator in an existing cluster, make sure you have [`cert-manager` installed](https://cert-manager.io/docs/installation/) and run:
-```
+```bash
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
 
@@ -29,9 +32,10 @@ metadata:
 spec:
   config: |
     receivers:
-      jaeger:
+      otlp:
         protocols:
           grpc:
+          http:
     processors:
 
     exporters:
@@ -40,7 +44,7 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [jaeger]
+          receivers: [otlp]
           processors: []
           exporters: [logging]
 EOF
@@ -57,7 +61,7 @@ At this point, the Operator does *not* validate the contents of the configuratio
 
 ### Deployment modes
 
-The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at the `examples/daemonset.yaml` for reference.
+The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at [this sample](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/daemonset-features/00-install.yaml) for reference.
 
 #### Sidecar injection
 
@@ -76,6 +80,10 @@ spec:
       jaeger:
         protocols:
           grpc:
+      otlp:
+        protocols:
+          grpc:
+          http:
     processors:
 
     exporters:
@@ -84,7 +92,7 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [jaeger]
+          receivers: [otlp, jaeger]
           processors: []
           exporters: [logging]
 EOF
@@ -146,6 +154,46 @@ spec:
 EOF
 ```
 
+### OpenTelemetry auto-instrumentation injection
+
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. At this moment, the operator can inject only
+OpenTelemetry [Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation).
+
+The injection of the Java agent can be enabled by adding an annotation to the namespace, so that all pods within that
+namespace will get the instrumentation, or by adding the annotation to individual PodSpec objects, available as part
+of Deployment, Statefulset, and other resources.
+
+```console
+instrumentation.opentelemetry.io/inject-java: "true"
+```
+
+The value can be 
+* `false` - do not inject
+* `true` - inject
+* `java-instrumentation` - name of `Instrumentation` CR instance.
+
+In the addition to the annotation the following `CR` has to be created. The `Instrumentation`
+provides configuration for OpenTelemetry SDK and auto-instrumentation.
+
+```yaml
+kubectl apply -f - <<EOF
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java-instrumentation
+spec:
+  exporter:
+    endpoint: http://otel-collector:4318
+  java:
+    image: ghcr.io/pavolloffay/otel-javaagent:1.5.3 # <1>
+EOF
+```
+
+1. Container image with [OpenTelemetry Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation). 
+   The image has to contain Java agent JAR `/javaagent.jar` and the JAR is copied to a shared volume mounted to the application container.
+
+The above CR can be queried by `kubectl get otelinst`.
+
 ## Compatibility matrix
 
 ### OpenTelemetry Operator vs. OpenTelemetry Collector
@@ -164,6 +212,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           |
 |------------------------|----------------------|
+| v0.37.1                | v1.20 to v1.22       |
 | v0.37.0                | v1.20 to v1.22       |
 | v0.36.0                | v1.20 to v1.22       |
 | v0.35.0                | v1.20 to v1.22       |

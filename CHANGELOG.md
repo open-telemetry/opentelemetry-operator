@@ -1,6 +1,10 @@
 Changes by Version
 ==================
 
+0.37.1
+-------------------
+* Bumped OpenTelemetry Collector to v0.37.1
+
 0.37.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.37.0
