@@ -55,7 +55,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	logger := p.logger.WithValues("namespace", pod.Namespace, "name", pod.Name)
 
 	// if no annotations are found at all, just return the same pod
-	annValue := AnnotationValue(ns, pod)
+	annValue := annotationValue(ns, pod)
 	if len(annValue) == 0 {
 		logger.V(1).Info("annotation not present in deployment, skipping sidecar injection")
 		return pod, nil
@@ -64,13 +64,13 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// is the annotation value 'false'? if so, we need a pod without the sidecar (ie, remove if exists)
 	if strings.EqualFold(annValue, "false") {
 		logger.V(1).Info("pod explicitly refuses sidecar injection, attempting to remove sidecar if it exists")
-		return Remove(pod)
+		return remove(pod)
 	}
 
 	// from this point and on, a sidecar is wanted
 
 	// check whether there's a sidecar already -- return the same pod if that's the case.
-	if ExistsIn(pod) {
+	if existsIn(pod) {
 		logger.V(1).Info("pod already has sidecar in it, skipping injection")
 		return pod, nil
 	}
@@ -91,7 +91,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// once it's been determined that a sidecar is desired, none exists yet, and we know which instance it should talk to,
 	// we should add the sidecar.
 	logger.V(1).Info("injecting sidecar into pod", "otelcol-namespace", otelcol.Namespace, "otelcol-name", otelcol.Name)
-	return Add(p.config, p.logger, otelcol, pod)
+	return add(p.config, p.logger, otelcol, pod)
 }
 
 func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.OpenTelemetryCollector, error) {

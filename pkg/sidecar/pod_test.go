@@ -49,7 +49,7 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
-	changed, err := Add(cfg, logger, otelcol, pod)
+	changed, err := add(cfg, logger, otelcol, pod)
 
 	// verify
 	assert.NoError(t, err)
@@ -74,7 +74,7 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
-	changed, err := Add(cfg, logger, otelcol, pod)
+	changed, err := add(cfg, logger, otelcol, pod)
 
 	// verify
 	assert.NoError(t, err)
@@ -94,7 +94,7 @@ func TestRemoveSidecar(t *testing.T) {
 	}
 
 	// test
-	changed, err := Remove(pod)
+	changed, err := remove(pod)
 
 	// verify
 	assert.NoError(t, err)
@@ -112,7 +112,7 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 	}
 
 	// test
-	changed, err := Remove(pod)
+	changed, err := remove(pod)
 
 	// verify
 	assert.NoError(t, err)
@@ -141,7 +141,7 @@ func TestExistsIn(t *testing.T) {
 		}},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
-			assert.Equal(t, tt.expected, ExistsIn(tt.pod))
+			assert.Equal(t, tt.expected, existsIn(tt.pod))
 		})
 	}
 }
