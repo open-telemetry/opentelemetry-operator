@@ -20,5 +20,7 @@ spec:
     - mountPath: /otel-auto-instrumentation
       name: opentelemetry-auto-instrumentation
   - name: otc-container
+  initContainers:
+  - name: opentelemetry-auto-instrumentation
 status:
   phase: Running
