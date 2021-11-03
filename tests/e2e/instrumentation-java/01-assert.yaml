@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    sidecar.opentelemetry.io/inject: "true"
+  labels:
+    app: my-pod-with-sidecar
+spec:
+  containers:
+  - name: myapp
+    env:
+    - name: OTEL_SERVICE_NAME
+      value: myapp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4318
+    - name: JAVA_TOOL_OPTIONS
+      value: " -javaagent:/otel-auto-instrumentation/javaagent.jar"
+    volumeMounts:
+    - mountPath: /otel-auto-instrumentation
+      name: opentelemetry-auto-instrumentation
+  - name: otc-container
+status:
+  phase: Running

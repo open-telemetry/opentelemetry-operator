@@ -1,0 +1,9 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java
+spec:
+  exporter:
+    endpoint: http://localhost:4318
+  java:
+    image: ghcr.io/pavolloffay/otel-javaagent:1.5.3
