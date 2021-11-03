@@ -9,7 +9,7 @@ spec:
     log-level: debug
   config: |
     receivers:
-      otel:
+      otlp:
         protocols:
           grpc:
           http:
