@@ -12,7 +12,7 @@ spec:
       otel:
         protocols:
           grpc:
-          http
+          http:
     processors:
 
     exporters:
