@@ -5,9 +5,10 @@ metadata:
 spec:
   config: |
     receivers:
-      jaeger:
+      otlp:
         protocols: 
           grpc:
+          http:
 
     exporters:
       logging:
@@ -15,5 +16,5 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [jaeger]
+          receivers: [otlp]
           exporters: [logging]
