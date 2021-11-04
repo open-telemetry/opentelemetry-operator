@@ -23,16 +23,16 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3.6.0
         with:
-          images: quay.io/opentelemetry/opentelemetry-operator-autoinstrumentation-java
+          images: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java
           tags: |
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 
-      - name: Login to Quay
+      - name: Login to GitHub Package Registry
         uses: docker/login-action@v1.10.0
         with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v2.7.0
