@@ -156,12 +156,9 @@ EOF
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. At this moment, the operator can inject only
-OpenTelemetry [Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation).
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. At this moment, the operator can inject only OpenTelemetry [Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation).
 
-The injection of the Java agent can be enabled by adding an annotation to the namespace, so that all pods within that
-namespace will get the instrumentation, or by adding the annotation to individual PodSpec objects, available as part
-of Deployment, Statefulset, and other resources.
+The injection of the Java agent can be enabled by adding an annotation to the namespace, so that all pods within that namespace will get the instrumentation, or by adding the annotation to individual PodSpec objects, available as part of Deployment, Statefulset, and other resources.
 
 ```console
 instrumentation.opentelemetry.io/inject-java: "true"
@@ -172,8 +169,7 @@ The value can be
 * `"true"` - inject and `Instrumentation` resource from the namespace.
 * `"java-instrumentation"` - name of `Instrumentation` CR instance.
 
-In addition to the annotation, the following `CR` has to be created. The `Instrumentation` resource
-provides configuration for OpenTelemetry SDK and auto-instrumentation.
+In addition to the annotation, the following `CR` has to be created. The `Instrumentation` resource provides configuration for OpenTelemetry SDK and auto-instrumentation.
 
 ```yaml
 kubectl apply -f - <<EOF
@@ -189,8 +185,7 @@ spec:
 EOF
 ```
 
-1. Container image with [OpenTelemetry Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation). 
-   The image must contain the Java agent JAR `/javaagent.jar`, and the operator will copy it to a shared volume mounted to the application container.
+1. Container image with [OpenTelemetry Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation). The image must contain the Java agent JAR `/javaagent.jar`, and the operator will copy it to a shared volume mounted to the application container.
 
 The above CR can be queried by `kubectl get otelinst`.
 
