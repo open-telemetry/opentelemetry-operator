@@ -74,7 +74,7 @@ jobs:
           go-version: 1.17
       - name: Run api-docs
         run: |
-          make api-docs
+          make ensure-generate-is-noo api-docs
       - name: Check if working tree is dirty
         run: |
           if [[ $(git status --porcelain) ]]; then

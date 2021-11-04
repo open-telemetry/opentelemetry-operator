@@ -110,7 +110,7 @@ lint:
 	golangci-lint run
 
 # Generate code
-generate: controller-gen
+generate: controller-gen api-docs
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # end-to-tests
@@ -133,7 +133,7 @@ container:
 container-push:
 	docker push ${IMG}
 
-start-kind: 
+start-kind:
 	kind create cluster --config $(KIND_CONFIG)
 	kind load docker-image local/opentelemetry-operator:e2e
 
