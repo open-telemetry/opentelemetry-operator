@@ -37,6 +37,18 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 			annotations[k] = v
 		}
 	}
+	return annotations
+}
+
+func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+	// new map every time, so that we don't touch the instance's annotations
+	annotations := map[string]string{}
+
+	if nil != instance.Spec.PodAnnotations {
+		for k, v := range instance.Spec.PodAnnotations {
+			annotations[k] = v
+		}
+	}
 	// make sure sha256 for configMap is always calculated
 	annotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
 
@@ -44,6 +56,9 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 }
 
 func getConfigMapSHA(config string) string {
-	h := sha256.Sum256([]byte(config))
-	return fmt.Sprintf("%x", h)
+	if config != "" {
+		h := sha256.Sum256([]byte(config))
+		return fmt.Sprintf("%x", h)
+	}
+	return ""
 }

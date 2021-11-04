@@ -10,5 +10,6 @@ spec:
       annotations:
         pod-annotation1: value1
         pod-annotation2: value2
+        opentelemetry-operator-config/sha256: 56607aa3ab98db3ab60233d83ad62337167b63d83699dc6408b4f0381428e2ae
 status:
   readyReplicas: 1
