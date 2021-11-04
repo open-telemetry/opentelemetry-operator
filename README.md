@@ -200,7 +200,7 @@ The above CR can be queried by `kubectl get otelinst`.
 
 The OpenTelemetry Operator follows the same versioning as the operand (OpenTelemetry Collector) up to the minor part of the version. For example, the OpenTelemetry Operator v0.18.1 tracks OpenTelemetry Collector 0.18.0. The patch part of the version indicates the patch level of the operator itself, not that of OpenTelemetry Collector. Whenever a new patch version is released for OpenTelemetry Collector, we'll release a new patch version of the operator.
 
-### OpenTelemetry Operator vs. Kubernetes
+### OpenTelemetry Operator vs. Kubernetes vs. Cert Manager
 
 We strive to be compatible with the widest range of Kubernetes versions as possible, but some changes to Kubernetes itself require us to break compatibility with older Kubernetes versions, be it because of code incompatibilities, or in the name of maintainability.
 
@@ -208,46 +208,24 @@ Our promise is that we'll follow what's common practice in the Kubernetes world 
 
 For instance, when we released v0.27.0, the latest Kubernetes version was v1.21.1. As such, the minimum version of Kubernetes we support for OpenTelemetry Operator v0.27.0 is v1.19 and we tested it with up to 1.21.
 
+We use `cert-manager` for some features of this operator and the third column shows the versions of the `cert-manager` that are known to work with this operator's versions.
+
 The OpenTelemetry Operator *might* work on versions outside of the given range, but when opening new issues, please make sure to test your scenario on a supported version.
 
-| OpenTelemetry Operator | Kubernetes           |
-|------------------------|----------------------|
-| v0.37.1                | v1.20 to v1.22       |
-| v0.37.0                | v1.20 to v1.22       |
-| v0.36.0                | v1.20 to v1.22       |
-| v0.35.0                | v1.20 to v1.22       |
-| v0.34.0                | v1.20 to v1.22       |
-| v0.33.0                | v1.20 to v1.22       |
-| v0.32.0 (skipped)      | n/a                  |
-| v0.31.0                | v1.19 to v1.21       |
-| v0.30.0                | v1.19 to v1.21       |
-| v0.29.0                | v1.19 to v1.21       |
-| v0.28.0                | v1.19 to v1.21       |
-| v0.27.0                | v1.19 to v1.21       |
-
-
-### OpenTelemetry Operator vs. Cert Manager
-Since Cert-Manager deprecated *cert-manager.io/v1alpha2, cert-manager.io/v1alpha3, cert-manager.io/v1beta1, acme.cert-manager.io/v1alpha2, acme.cert-manager.io/v1alpha3, acme.cert-manager.io/v1beta1* APIs on version 1.4.0, we decided to create a compability Matrix between OpenTelemetry Operator and Cert-manager.
-
-| OpenTelemetry Operator | Cert-Manager         |
-|------------------------|----------------------|
-| v0.37.1                | v1.4.0 to v1.6.1     |
-| v0.37.0                | v1.4.0 to v1.5.4     |
-| v0.36.0                | v1.4.0 to v1.5.4     |
-| v0.35.0                | v1.4.0 to v1.5.4     |
-| v0.34.0                | v1.4.0 to v1.5.4     |
-| v0.33.0                | v1.4.0 to v1.5.4     |
-| v0.32.0 (skipped)      | n/a                  |
-| v0.31.0                | v1.4.0 to v1.5.4     |
-| v0.30.0                | v1.4.0 to v1.5.4     |
-| v0.29.0                | v1.4.0 to v1.5.4     |
-| v0.28.0                | v1.4.0 to v1.5.4     |
-| v0.27.0                | v1.4.0 to v1.5.4     |
-
-In pursuit of continuous improvement, a variable named `CERTMANAGER_VERSION` which can be run:
-```bash
-CERTMANAGER_VERSION=1.60 make cert-manager
-```
+| OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
+|------------------------|----------------------|----------------------|
+| v0.37.1                | v1.20 to v1.22       | v1.4.0 to v1.6.1     |
+| v0.37.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.36.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.35.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.34.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.33.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.32.0 (skipped)      | n/a                  | n/a                  |
+| v0.31.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
+| v0.30.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
+| v0.29.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
+| v0.28.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
+| v0.27.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
 
 ## Contributing and Developing
 
