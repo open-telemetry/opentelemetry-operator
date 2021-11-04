@@ -227,3 +227,28 @@ bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 tools: ginkgo kustomize controller-gen operator-sdk
+
+
+api-docs: gen-crd-api-reference-docs kustomize
+	@{ \
+	set -e ;\
+	TMP_DIR=$$(mktemp -d) ; \
+	$(KUSTOMIZE) build config/crd -o $$TMP_DIR/crd-output.yaml ;\
+	$(API_REF_GEN) crdoc --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
+	}
+
+# Find or download gen-crd-api-reference-docs
+gen-crd-api-reference-docs:
+ifeq (, $(shell which crdoc))
+	@{ \
+	set -e ;\
+	API_REF_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$API_REF_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get fybrik.io/crdoc@latest ;\
+	rm -rf $$API_REF_GEN_TMP_DIR ;\
+	}
+API_REF_GEN=$(GOBIN)/crdoc
+else
+API_REF_GEN=$(shell which crdoc)
+endif
