@@ -185,7 +185,7 @@ spec:
   exporter:
     endpoint: http://otel-collector:4318
   java:
-    image: ghcr.io/pavolloffay/otel-javaagent:1.5.3 # <1>
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest # <1>
 EOF
 ```
 
