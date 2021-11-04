@@ -35,3 +35,8 @@ local
 # test resources
 kubeconfig
 tests/_build/
+
+# autoinstrumentation artifacts
+build
+node_modules
+package-lock.json
