@@ -6,4 +6,4 @@ spec:
   exporter:
     endpoint: http://localhost:4318
   java:
-    image: ghcr.io/pavolloffay/otel-javaagent:1.5.3
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
