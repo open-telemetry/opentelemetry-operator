@@ -17,4 +17,4 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: ghcr.io/pavolloffay/spring-petclinic:latest
+        image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
