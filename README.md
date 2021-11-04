@@ -231,8 +231,19 @@ We could check below the compatibility Matrix between Open Telemetry and Cert Ma
 
 | OpenTelemetry Operator | Cert-Manager         |
 |------------------------|----------------------|
-| v0.37.1                | v1.4.0 to v1.6.1     |
+| v0.37.1                | v1.4.0 to v1.6.0     |
 | v0.37.0                | v1.4.0 to v1.5.4     |
+| v0.36.0                | v1.4.0 to v1.5.4     |
+| v0.35.0                | v1.4.0 to v1.5.4     |
+| v0.34.0                | v1.4.0 to v1.5.4     |
+| v0.33.0                | v1.4.0 to v1.5.4     |
+| v0.32.0 (skipped)      | n/a                  |
+| v0.31.0                | v1.4.0 to v1.5.4     |
+| v0.30.0                | v1.4.0 to v1.5.4     |
+| v0.29.0                | v1.4.0 to v1.5.4     |
+| v0.28.0                | v1.4.0 to v1.5.4     |
+| v0.27.0                | v1.19 to v1.21       |
+
 
 ## Contributing and Developing
 
