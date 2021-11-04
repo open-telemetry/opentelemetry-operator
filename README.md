@@ -227,11 +227,11 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 
 ### OpenTelemetry Operator vs. Cert Manager
-We could check below the compatibility Matrix between Open Telemetry and Cert Manager.
+Since Cert-Manager deprecated *cert-manager.io/v1alpha2, cert-manager.io/v1alpha3, cert-manager.io/v1beta1, acme.cert-manager.io/v1alpha2, acme.cert-manager.io/v1alpha3, acme.cert-manager.io/v1beta1* APIs on version 1.4.0, we decided to create a compability Matrix between OpenTelemetry Operator and Cert-manager.
 
 | OpenTelemetry Operator | Cert-Manager         |
 |------------------------|----------------------|
-| v0.37.1                | v1.4.0 to v1.6.0     |
+| v0.37.1                | v1.4.0 to v1.6.1     |
 | v0.37.0                | v1.4.0 to v1.5.4     |
 | v0.36.0                | v1.4.0 to v1.5.4     |
 | v0.35.0                | v1.4.0 to v1.5.4     |
@@ -242,8 +242,12 @@ We could check below the compatibility Matrix between Open Telemetry and Cert Ma
 | v0.30.0                | v1.4.0 to v1.5.4     |
 | v0.29.0                | v1.4.0 to v1.5.4     |
 | v0.28.0                | v1.4.0 to v1.5.4     |
-| v0.27.0                | v1.19 to v1.21       |
+| v0.27.0                | v1.4.0 to v1.5.4     |
 
+In pursuit of continuous improvement, a variable named `CERTMANAGER_VERSION` which can be run:
+```bash
+CERTMANAGER_VERSION=1.60 make cert-manager
+```
 
 ## Contributing and Developing
 
