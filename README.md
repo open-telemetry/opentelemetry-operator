@@ -224,7 +224,15 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.29.0                | v1.19 to v1.21       |
 | v0.28.0                | v1.19 to v1.21       |
 | v0.27.0                | v1.19 to v1.21       |
-| v0.26.0                | v1.18 to v1.20       |
+
+
+### OpenTelemetry Operator vs. Cert Manager
+We could check below the compatibility Matrix between Open Telemetry and Cert Manager.
+
+| OpenTelemetry Operator | Cert-Manager         |
+|------------------------|----------------------|
+| v0.37.1                | v1.4.0 to v1.6.1     |
+| v0.37.0                | v1.4.0 to v1.5.4     |
 
 ## Contributing and Developing
 
