@@ -8,8 +8,16 @@ projectName: opentelemetry-operator
 repo: github.com/open-telemetry/opentelemetry-operator
 resources:
 - controller: true
-  group: core
+  group: collector
   kind: OpenTelemetryCollector
-  path: k8s.io/api/core/v1alpha1
+  path: github.com/open-telemetry/opentelemetry-operator/apis/collector/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1beta1
+    namespaced: true
+  domain: opentelemetry.io
+  group: instrumentation
+  kind: Instrumentation
+  path: github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1
   version: v1alpha1
 version: "3"
