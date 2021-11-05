@@ -14,6 +14,7 @@ spec:
       value: myapp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4318
+    - name: OTEL_RESOURCE_ATTRIBUTES
     - name: JAVA_TOOL_OPTIONS
       value: " -javaagent:/otel-auto-instrumentation/javaagent.jar"
     volumeMounts:
