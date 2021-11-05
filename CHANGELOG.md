@@ -1,6 +1,11 @@
 Changes by Version
 ==================
 
+0.38.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.38.0
+* Initial support for auto-instrumentation at the moment supported only for Java ([#464](https://github.com/open-telemetry/opentelemetry-operator/pull/464), [@pavolloffay](https://github.com/pavolloffay))
+
 0.37.1
 -------------------
 * Bumped OpenTelemetry Collector to v0.37.1
