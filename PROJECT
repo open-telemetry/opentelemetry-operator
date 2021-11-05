@@ -1,14 +1,15 @@
-projectName: opentelemetry-operator
 domain: opentelemetry.io
-layout: go.kubebuilder.io/v2
+layout:
+- go.kubebuilder.io/v2
+multigroup: true
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+projectName: opentelemetry-operator
 repo: github.com/open-telemetry/opentelemetry-operator
 resources:
--
-  controller: true
+- controller: true
   group: core
   kind: OpenTelemetryCollector
   path: k8s.io/api/core/v1alpha1
   version: v1alpha1
 version: "3"
-plugins:
-  manifests.sdk.operatorframework.io/v2: {}
