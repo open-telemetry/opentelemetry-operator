@@ -30,7 +30,7 @@ const (
 )
 
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
-func inject(logger logr.Logger, otelinst v1alpha1.Instrumentation, pod corev1.Pod) corev1.Pod {
+func inject(logger logr.Logger, otelinst v1alpha1.Instrumentation, pod corev1.Pod, language string) corev1.Pod {
 	if len(pod.Spec.Containers) < 1 {
 		return pod
 	}
@@ -38,7 +38,12 @@ func inject(logger logr.Logger, otelinst v1alpha1.Instrumentation, pod corev1.Po
 	// inject only to the first container for now
 	// in the future we can define an annotation to configure this
 	pod = injectCommonSDKConfig(otelinst, pod)
-	pod = injectJavaagent(logger, otelinst.Spec.Java, pod)
+	if language == "java" {
+		pod = injectJavaagent(logger, otelinst.Spec.Java, pod)
+	}
+	if language == "nodejs" {
+		pod = injectNodeJSSDK(logger, otelinst.Spec.NodeJS, pod)
+	}
 	return pod
 }
 

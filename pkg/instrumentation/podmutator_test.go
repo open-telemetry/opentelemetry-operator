@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -36,7 +35,7 @@ import (
 
 var k8sClient client.Client
 var testEnv *envtest.Environment
-var testScheme *runtime.Scheme = scheme.Scheme
+var testScheme = scheme.Scheme
 
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
@@ -107,7 +106,8 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectJava: "true",
+						annotationInject:   "true",
+						annotationLanguage: "java",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -121,7 +121,8 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectJava: "true",
+						annotationInject:   "true",
+						annotationLanguage: "java",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -167,6 +168,142 @@ func TestMutatePod(t *testing.T) {
 									MountPath: "/otel-auto-instrumentation",
 								},
 							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "nodejs injection, true",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "nodejs",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "nodejs",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Java: v1alpha1.JavaSpec{
+						Image: "otel/nodejs:1",
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInject:   "true",
+						annotationLanguage: "nodejs",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInject:   "true",
+						annotationLanguage: "nodejs",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    initContainerName,
+							Image:   "otel/java:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      volumeName,
+								MountPath: "/otel-auto-instrumentation",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://collector:12345",
+								},
+								{
+									Name:  "NODE_OPTIONS",
+									Value: nodeRequireArgument,
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation",
+									MountPath: "/otel-auto-instrumentation",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "missing language",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "missing-language",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "missing-language",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Java: v1alpha1.JavaSpec{
+						Image: "otel/java:1",
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInject: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
 						},
 					},
 				},
@@ -236,7 +373,7 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectJava: "false",
+						annotationInject: "false",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -250,7 +387,7 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectJava: "false",
+						annotationInject: "false",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -286,7 +423,7 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectJava: "doesnotexists",
+						annotationInject: "doesnotexists",
 					},
 				},
 				Spec: corev1.PodSpec{

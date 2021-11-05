@@ -125,7 +125,7 @@ func TestSDKInjection(t *testing.T) {
 	}
 }
 
-func TestInjection(t *testing.T) {
+func TestInjectJava(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
 		Spec: v1alpha1.InstrumentationSpec{
 			Java: v1alpha1.JavaSpec{
@@ -144,7 +144,7 @@ func TestInjection(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, "java")
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
@@ -187,6 +187,76 @@ func TestInjection(t *testing.T) {
 						{
 							Name:  "JAVA_TOOL_OPTIONS",
 							Value: javaJVMArgument,
+						},
+					},
+				},
+			},
+		},
+	}, pod)
+}
+
+func TestInjectNodeJS(t *testing.T) {
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			NodeJS: v1alpha1.NodeJSSpec{
+				Image: "img:1",
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+	pod := inject(logr.Discard(), inst, corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name: "app",
+				},
+			},
+		},
+	}, "nodejs")
+	assert.Equal(t, corev1.Pod{
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:    initContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      volumeName,
+						MountPath: "/otel-auto-instrumentation",
+					}},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name: "app",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      volumeName,
+							MountPath: "/otel-auto-instrumentation",
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "app",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name:  "NODE_OPTIONS",
+							Value: nodeRequireArgument,
 						},
 					},
 				},

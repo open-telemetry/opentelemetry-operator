@@ -27,11 +27,24 @@ type InstrumentationSpec struct {
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Java JavaSpec `json:"java,omitempty"`
+
+	// NodeJS defines configuration for nodejs auto-instrumentation.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	NodeJS NodeJSSpec `json:"nodejs,omitempty"`
 }
 
 // JavaSpec defines Java SDK and instrumentation configuration.
 type JavaSpec struct {
 	// Image is a container image with javaagent JAR.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Image string `json:"image,omitempty"`
+}
+
+// NodeJSSpec defines NodeJS SDK and instrumentation configuration.
+type NodeJSSpec struct {
+	// Image is a container image with NodeJS SDK and autoinstrumentation.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`

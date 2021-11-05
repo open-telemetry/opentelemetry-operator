@@ -59,6 +59,13 @@ spec:
                     description: Image is a container image with javaagent JAR.
                     type: string
                 type: object
+              nodejs:
+                description: NodeJS defines configuration for nodejs auto-instrumentation.
+                properties:
+                  image:
+                    description: Image is a container image with NodeJS SDK and autoinstrumentation.
+                    type: string
+                type: object
             type: object
           status:
             description: InstrumentationStatus defines status of the instrumentation.
