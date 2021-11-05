@@ -186,7 +186,7 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "nodejs",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.JavaSpec{
+					NodeJS: v1alpha1.NodeJSSpec{
 						Image: "otel/nodejs:1",
 					},
 					Exporter: v1alpha1.Exporter{
@@ -228,7 +228,7 @@ func TestMutatePod(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name:    initContainerName,
-							Image:   "otel/java:1",
+							Image:   "otel/nodejs:1",
 							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      volumeName,
