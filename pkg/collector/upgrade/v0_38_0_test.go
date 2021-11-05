@@ -42,20 +42,111 @@ func Test0_38_0Upgrade(t *testing.T) {
 			Args: map[string]string{
 				"--hii":         "hello",
 				"--log-profile": "",
-				"--log-format":  "",
-				"--log-level":   "",
+				"--log-format":  "hii",
+				"--log-level":   "debug",
 				"--arg1":        "",
 			},
+			Config: `
+receivers:
+  otlp/mtls:
+    protocols:
+      http:
+        endpoint: mysite.local:55690
+
+exporters:
+  otlp:
+    endpoint: "example.com"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp/mtls]
+      exporters: [otlp]
+`,
 		},
 	}
 	existing.Status.Version = "0.37.0"
 
-	// test
+	// TESTCASE 1: verify logging args exist and no config logging parameters
+	// EXPECTED: drop logging args and configure logging parameters into config from args
 	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
 	assert.NoError(t, err)
 
 	// verify
-	assert.Equal(t, map[string]string{"--hii": "hello", "--arg1": ""}, res.Spec.Args)
+	assert.Equal(t, map[string]string{
+		"--hii":  "hello",
+		"--arg1": "",
+	}, res.Spec.Args)
 
-	assert.Equal(t, "upgrade to v0.38.0 dropped the deprecated logging arguments i.e. [--log-profile --log-format --log-level] from otelcol custom resource.", res.Status.Messages[0])
+	// verify
+	assert.Equal(t, `exporters:
+  otlp:
+    endpoint: example.com
+receivers:
+  otlp/mtls:
+    protocols:
+      http:
+        endpoint: mysite.local:55690
+service:
+  pipelines:
+    traces:
+      exporters:
+      - otlp
+      receivers:
+      - otlp/mtls
+  telemetry:
+    logs:
+      development: true
+      encoding: hii
+      level: debug
+`, res.Spec.Config)
+
+	assert.Equal(t, "upgrade to v0.38.0 dropped the deprecated logging arguments "+
+		"i.e. [--log-profile --log-format --log-level] from otelcol custom resource otelcol.spec.args and "+
+		"adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", res.Status.Messages[0])
+
+	// TESTCASE 2: verify logging args exist and also config logging parameters exist
+	// EXPECTED: drop logging args and persist logging parameters as configured in config
+	configWithLogging := `exporters:
+  otlp:
+    endpoint: example.com
+receivers:
+  otlp/mtls:
+    protocols:
+      http:
+        endpoint: mysite.local:55690
+service:
+  pipelines:
+    traces:
+      exporters:
+      - otlp
+      receivers:
+      - otlp/mtls
+  telemetry:
+    logs:
+      development: true
+      encoding: hii
+      level: debug
+`
+	existing.Spec.Config = configWithLogging
+	existing.Spec.Args = map[string]string{
+		"--hii":         "hello",
+		"--log-profile": "",
+		"--log-format":  "hii",
+		"--log-level":   "debug",
+		"--arg1":        "",
+	}
+	res, err = upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	assert.NoError(t, err)
+
+	// verify
+	assert.Equal(t, configWithLogging, res.Spec.Config)
+	assert.Equal(t, map[string]string{
+		"--hii":  "hello",
+		"--arg1": "",
+	}, res.Spec.Args)
+
+	assert.Equal(t, "upgrade to v0.38.0 dropped the deprecated logging arguments "+
+		"i.e. [--log-profile --log-format --log-level] from otelcol custom resource otelcol.spec.args and "+
+		"adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", res.Status.Messages[0])
 }
