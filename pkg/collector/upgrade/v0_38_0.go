@@ -95,7 +95,7 @@ func upgrade0_38_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 			return strings.Compare(keys[i].String(), keys[j].String()) <= 0
 		})
 		otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.38.0 dropped the deprecated logging arguments "+
-			"i.e. %s from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", keys))
+			"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", keys))
 	}
 	return otelcol, nil
 }
