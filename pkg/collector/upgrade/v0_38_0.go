@@ -17,6 +17,8 @@ package upgrade
 import (
 	"fmt"
 	"reflect"
+	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -87,8 +89,13 @@ func upgrade0_38_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 			return otelcol, fmt.Errorf("couldn't upgrade to v0.38.0, failed to marshall back configuration: %w", err)
 		}
 		otelcol.Spec.Config = string(res)
+		keys := reflect.ValueOf(foundLoggingArgs).MapKeys()
+		// sort keys to get always the same message
+		sort.Slice(keys, func(i, j int) bool {
+			return strings.Compare(keys[i].String(), keys[j].String()) <= 0
+		})
 		otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.38.0 dropped the deprecated logging arguments "+
-			"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", reflect.ValueOf(foundLoggingArgs).MapKeys()))
+			"i.e. %s from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", keys))
 	}
 	return otelcol, nil
 }
