@@ -160,7 +160,7 @@ The operator can inject and configure OpenTelemetry auto-instrumentation librari
 
 The injection of the Java agent can be enabled by adding an annotation to the namespace, so that all pods within that namespace will get the instrumentation, or by adding the annotation to individual PodSpec objects, available as part of Deployment, Statefulset, and other resources.
 
-```console
+```bash
 instrumentation.opentelemetry.io/inject-java: "true"
 ```
 
