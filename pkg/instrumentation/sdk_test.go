@@ -39,6 +39,7 @@ func TestSDKInjection(t *testing.T) {
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "https://collector:4317",
 					},
+					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
 				},
 			},
 			pod: corev1.Pod{
@@ -76,6 +77,10 @@ func TestSDKInjection(t *testing.T) {
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=application-name,k8s.namespace.name=project1,k8s.pod.name=app",
 								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3,jaeger",
+								},
 							},
 						},
 					},
@@ -92,6 +97,7 @@ func TestSDKInjection(t *testing.T) {
 					ResourceAttributes: map[string]string{
 						"fromcr": "val",
 					},
+					Propagators: []v1alpha1.Propagator{"jaeger"},
 				},
 			},
 			pod: corev1.Pod{
@@ -114,6 +120,10 @@ func TestSDKInjection(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "foo=bar,k8s.container.name=other,",
+								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3",
 								},
 							},
 						},
@@ -140,6 +150,10 @@ func TestSDKInjection(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "foo=bar,k8s.container.name=other,fromcr=val,k8s.namespace.name=project1,k8s.pod.name=app",
+								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3",
 								},
 							},
 						},
