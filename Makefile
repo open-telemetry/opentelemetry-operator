@@ -45,7 +45,7 @@ endif
 KUBE_VERSION ?= 1.21
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
-CERTMANAGER_VERSION ?= 1.6.0
+CERTMANAGER_VERSION ?= 1.6.1
 
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-generate-is-noop: USER=opentelemetry
