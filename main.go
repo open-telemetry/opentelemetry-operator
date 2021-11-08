@@ -33,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	otelcolv1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
-	otelinstv1alpha1 "github.com/open-telemetry/opentelemetry-operator/api/instrumentation/v1alpha1"
+	otelcolv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/collector/v1alpha1"
+	otelinstv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
