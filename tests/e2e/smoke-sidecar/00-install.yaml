@@ -6,7 +6,6 @@ spec:
   mode: sidecar
   args:
     metrics-level: detailed
-    log-level: debug
   config: |
     receivers:
       jaeger:
