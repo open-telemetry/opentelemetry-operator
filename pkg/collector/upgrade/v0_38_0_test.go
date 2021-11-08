@@ -102,7 +102,7 @@ service:
 `, res.Spec.Config)
 
 	assert.Equal(t, "upgrade to v0.38.0 dropped the deprecated logging arguments "+
-		"i.e. [--log-profile --log-format --log-level] from otelcol custom resource otelcol.spec.args and "+
+		"i.e. [--log-format --log-level --log-profile] from otelcol custom resource otelcol.spec.args and "+
 		"adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", res.Status.Messages[0])
 
 	// TESTCASE 2: verify logging args exist and also config logging parameters exist
@@ -147,6 +147,6 @@ service:
 	}, res.Spec.Args)
 
 	assert.Equal(t, "upgrade to v0.38.0 dropped the deprecated logging arguments "+
-		"i.e. [--log-profile --log-format --log-level] from otelcol custom resource otelcol.spec.args and "+
+		"i.e. [--log-format --log-level --log-profile] from otelcol custom resource otelcol.spec.args and "+
 		"adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", res.Status.Messages[0])
 }
