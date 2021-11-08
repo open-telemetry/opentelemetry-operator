@@ -18,7 +18,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/collector/v1alpha1"
 )
 
 type upgradeFunc func(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error)
