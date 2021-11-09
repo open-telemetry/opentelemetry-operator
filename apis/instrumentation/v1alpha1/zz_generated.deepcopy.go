@@ -43,7 +43,7 @@ func (in *Instrumentation) DeepCopyInto(out *Instrumentation) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	out.Spec = in.Spec
+	in.Spec.DeepCopyInto(&out.Spec)
 	out.Status = in.Status
 }
 
@@ -101,6 +101,13 @@ func (in *InstrumentationList) DeepCopyObject() runtime.Object {
 func (in *InstrumentationSpec) DeepCopyInto(out *InstrumentationSpec) {
 	*out = *in
 	out.Exporter = in.Exporter
+	if in.ResourceAttributes != nil {
+		in, out := &in.ResourceAttributes, &out.ResourceAttributes
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	out.Java = in.Java
 	out.NodeJS = in.NodeJS
 }

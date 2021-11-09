@@ -64,6 +64,12 @@ spec:
                     description: Image is a container image with NodeJS SDK and autoinstrumentation.
                     type: string
                 type: object
+              resourceAttributes:
+                additionalProperties:
+                  type: string
+                description: ResourceAttributes defines attributes that are added
+                  to resource.
+                type: object
             type: object
           status:
             description: InstrumentationStatus defines status of the instrumentation.
