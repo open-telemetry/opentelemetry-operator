@@ -184,6 +184,9 @@ spec:
     - tracecontext
     - baggage
     - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.25"
   java:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest # <1>
 EOF

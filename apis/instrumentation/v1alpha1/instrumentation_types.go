@@ -33,6 +33,11 @@ type InstrumentationSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Propagators []Propagator `json:"propagators,omitempty"`
 
+	// Sampler defines sampling configuration.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Sampler `json:"sampler,omitempty"`
+
 	// Java defines configuration for java auto-instrumentation.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
@@ -53,6 +58,22 @@ type Exporter struct {
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Endpoint string `json:"endpoint,omitempty"`
+}
+
+// Sampler defines sampling configuration.
+type Sampler struct {
+	// Type defines sampler type.
+	// The value can be for instance parentbased_always_on, parentbased_always_off, parentbased_traceidratio...
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Type SamplerType `json:"type,omitempty"`
+
+	// Argument defines sampler argument.
+	// The value depends on the sampler type.
+	// For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Argument string `json:"argument,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.

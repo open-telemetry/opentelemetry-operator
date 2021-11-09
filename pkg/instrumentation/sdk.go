@@ -34,6 +34,8 @@ const (
 	envOTELExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	envOTELResourceAttrs        = "OTEL_RESOURCE_ATTRIBUTES"
 	envOTELPropagators          = "OTEL_PROPAGATORS"
+	envOTELTracesSampler        = "OTEL_TRACES_SAMPLER"
+	envOTELTracesSamplerArg     = "OTEL_TRACES_SAMPLER_ARG"
 )
 
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
@@ -88,6 +90,24 @@ func injectCommonSDKConfig(otelinst v1alpha1.Instrumentation, ns corev1.Namespac
 			Name:  envOTELPropagators,
 			Value: strings.Join(propagators, ","),
 		})
+	}
+
+	idx = getIndexOfEnv(container.Env, envOTELTracesSampler)
+	// configure sampler only if it is configured in the CR
+	if idx == -1 && otelinst.Spec.Sampler.Type != "" {
+		idxSamplerArg := getIndexOfEnv(container.Env, envOTELTracesSamplerArg)
+		if idxSamplerArg == -1 {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name:  envOTELTracesSampler,
+				Value: string(otelinst.Spec.Sampler.Type),
+			})
+			if otelinst.Spec.Sampler.Argument != "" {
+				container.Env = append(container.Env, corev1.EnvVar{
+					Name:  envOTELTracesSamplerArg,
+					Value: otelinst.Spec.Sampler.Argument,
+				})
+			}
+		}
 	}
 
 	return pod
