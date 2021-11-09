@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -36,7 +35,7 @@ import (
 
 var k8sClient client.Client
 var testEnv *envtest.Environment
-var testScheme *runtime.Scheme = scheme.Scheme
+var testScheme = scheme.Scheme
 
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
@@ -155,6 +154,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
 									Value: "http://collector:12345",
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.namespace.name=javaagent",
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",

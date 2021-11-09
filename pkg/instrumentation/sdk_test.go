@@ -20,6 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
 )
@@ -41,6 +42,10 @@ func TestSDKInjection(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -50,6 +55,10 @@ func TestSDKInjection(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -62,6 +71,10 @@ func TestSDKInjection(t *testing.T) {
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
 									Value: "https://collector:4318",
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=application-name,k8s.namespace.name=project1,k8s.pod.name=app",
 								},
 							},
 						},
@@ -76,9 +89,16 @@ func TestSDKInjection(t *testing.T) {
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "https://collector:4318",
 					},
+					ResourceAttributes: map[string]string{
+						"fromcr": "val",
+					},
 				},
 			},
 			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -90,6 +110,10 @@ func TestSDKInjection(t *testing.T) {
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
 									Value: "explicitly_set",
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "foo=bar,k8s.container.name=other,",
 								},
 							},
 						},
@@ -97,6 +121,10 @@ func TestSDKInjection(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -108,6 +136,10 @@ func TestSDKInjection(t *testing.T) {
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
 									Value: "explicitly_set",
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "foo=bar,k8s.container.name=other,fromcr=val,k8s.namespace.name=project1,k8s.pod.name=app",
 								},
 							},
 						},
@@ -119,7 +151,7 @@ func TestSDKInjection(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectCommonSDKConfig(test.inst, test.pod)
+			pod := injectCommonSDKConfig(test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -136,15 +168,17 @@ func TestInjection(t *testing.T) {
 			},
 		},
 	}
-	pod := inject(logr.Discard(), inst, corev1.Pod{
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name: "app",
+	pod := inject(logr.Discard(), inst,
+		corev1.Namespace{},
+		corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name: "app",
+					},
 				},
 			},
-		},
-	})
+		})
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
@@ -183,6 +217,10 @@ func TestInjection(t *testing.T) {
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
 							Value: "https://collector:4318",
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=app,k8s.namespace.name=",
 						},
 						{
 							Name:  "JAVA_TOOL_OPTIONS",
