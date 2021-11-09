@@ -37,7 +37,7 @@ func TestSDKInjection(t *testing.T) {
 			inst: v1alpha1.Instrumentation{
 				Spec: v1alpha1.InstrumentationSpec{
 					Exporter: v1alpha1.Exporter{
-						Endpoint: "https://collector:4318",
+						Endpoint: "https://collector:4317",
 					},
 				},
 			},
@@ -70,7 +70,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "https://collector:4318",
+									Value: "https://collector:4317",
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
@@ -87,7 +87,7 @@ func TestSDKInjection(t *testing.T) {
 			inst: v1alpha1.Instrumentation{
 				Spec: v1alpha1.InstrumentationSpec{
 					Exporter: v1alpha1.Exporter{
-						Endpoint: "https://collector:4318",
+						Endpoint: "https://collector:4317",
 					},
 					ResourceAttributes: map[string]string{
 						"fromcr": "val",
@@ -164,7 +164,7 @@ func TestInjection(t *testing.T) {
 				Image: "img:1",
 			},
 			Exporter: v1alpha1.Exporter{
-				Endpoint: "https://collector:4318",
+				Endpoint: "https://collector:4317",
 			},
 		},
 	}
@@ -216,7 +216,7 @@ func TestInjection(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-							Value: "https://collector:4318",
+							Value: "https://collector:4317",
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
