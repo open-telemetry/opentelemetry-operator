@@ -108,6 +108,11 @@ func (in *InstrumentationSpec) DeepCopyInto(out *InstrumentationSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.Propagators != nil {
+		in, out := &in.Propagators, &out.Propagators
+		*out = make([]Propagator, len(*in))
+		copy(*out, *in)
+	}
 	out.Java = in.Java
 }
 
