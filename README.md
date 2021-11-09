@@ -180,6 +180,10 @@ metadata:
 spec:
   exporter:
     endpoint: http://otel-collector:4317
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
   java:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest # <1>
 EOF

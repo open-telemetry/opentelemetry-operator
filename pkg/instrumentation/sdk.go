@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unsafe"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +33,7 @@ const (
 	envOTELServiceName          = "OTEL_SERVICE_NAME"
 	envOTELExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	envOTELResourceAttrs        = "OTEL_RESOURCE_ATTRIBUTES"
+	envOTELPropagators          = "OTEL_PROPAGATORS"
 )
 
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
@@ -78,6 +80,14 @@ func injectCommonSDKConfig(otelinst v1alpha1.Instrumentation, ns corev1.Namespac
 			resStr = "," + resStr
 		}
 		container.Env[idx].Value += resStr
+	}
+	idx = getIndexOfEnv(container.Env, envOTELPropagators)
+	if idx == -1 && len(otelinst.Spec.Propagators) > 0 {
+		propagators := *(*[]string)((unsafe.Pointer(&otelinst.Spec.Propagators)))
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envOTELPropagators,
+			Value: strings.Join(propagators, ","),
+		})
 	}
 
 	return pod
