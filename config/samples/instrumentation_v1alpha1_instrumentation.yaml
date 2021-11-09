@@ -1,0 +1,7 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: instrumentation
+spec:
+  exporter:
+    endpoint: http://otel-collector-headless:4317
