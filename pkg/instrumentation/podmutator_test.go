@@ -261,51 +261,6 @@ func TestMutatePod(t *testing.T) {
 			},
 		},
 		{
-			name: "missing language",
-			ns: corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "missing-language",
-				},
-			},
-			inst: v1alpha1.Instrumentation{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "example-inst",
-					Namespace: "missing-language",
-				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.JavaSpec{
-						Image: "otel/java:1",
-					},
-					Exporter: v1alpha1.Exporter{
-						Endpoint: "http://collector:12345",
-					},
-				},
-			},
-			pod: corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationInjectJava: "true",
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name: "app",
-						},
-					},
-				},
-			},
-			expected: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name: "app",
-						},
-					},
-				},
-			},
-		},
-		{
 			name: "missing annotation",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
