@@ -31,7 +31,6 @@ spec:
   // +optional Args is the set of arguments to pass to the OpenTelemetry Collector binary
   args:
     metrics-level: detailed
-    log-level: debug
   
   // +optional Replicas is the number of pod instances for the underlying OpenTelemetry Collector
   replicas: 1

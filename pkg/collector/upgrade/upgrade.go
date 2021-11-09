@@ -24,7 +24,7 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/collector/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/collector/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 

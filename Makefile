@@ -45,6 +45,8 @@ endif
 KUBE_VERSION ?= 1.21
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
+CERTMANAGER_VERSION ?= 1.6.1
+
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-generate-is-noop: USER=opentelemetry
 ensure-generate-is-noop: set-image-controller generate bundle
@@ -138,7 +140,7 @@ start-kind:
 	kind load docker-image local/opentelemetry-operator:e2e
 
 cert-manager:
-	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml
+	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v${CERTMANAGER_VERSION}/cert-manager.yaml
 	kubectl wait --timeout=5m --for=condition=available deployment cert-manager -n cert-manager
 	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-cainjector -n cert-manager
 	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-webhook -n cert-manager

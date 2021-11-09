@@ -46,6 +46,11 @@ In general, it's just easier to deploy the manager in a Kubernetes cluster inste
 make cert-manager
 ```
 
+In pursuit of continuous improvement, a variable named `CERTMANAGER_VERSION` which can be run:
+```bash
+CERTMANAGER_VERSION=1.60 make cert-manager
+```
+
 By default, it will generate an image following the format `quay.io/${USER}/opentelemetry-operator:${VERSION}`. You can set the following env vars in front of the `make` command to override parts or the entirety of the image:
 
 * `IMG_PREFIX`, to override the registry, namespace and image name (`quay.io`)
