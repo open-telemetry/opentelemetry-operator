@@ -4,6 +4,6 @@ metadata:
   name: java
 spec:
   exporter:
-    endpoint: http://localhost:4318
+    endpoint: http://localhost:4317
   java:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
