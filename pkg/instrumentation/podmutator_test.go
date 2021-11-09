@@ -249,6 +249,10 @@ func TestMutatePod(t *testing.T) {
 									Value: "http://collector:12345",
 								},
 								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.namespace.name=nodejs",
+								},
+								{
 									Name:  "NODE_OPTIONS",
 									Value: nodeRequireArgument,
 								},

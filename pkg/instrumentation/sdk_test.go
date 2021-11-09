@@ -301,6 +301,10 @@ func TestInjectNodeJS(t *testing.T) {
 							Value: "https://collector:4318",
 						},
 						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=app,k8s.namespace.name=",
+						},
+						{
 							Name:  "NODE_OPTIONS",
 							Value: nodeRequireArgument,
 						},
