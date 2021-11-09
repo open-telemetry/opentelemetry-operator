@@ -33,11 +33,11 @@ metadata:
     containerImage: quay.io/opentelemetry/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
-    operators.operatorframework.io/builder: operator-sdk-v1.14.0
+    operators.operatorframework.io/builder: operator-sdk-v1.13.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.33.0-65-g9b7a81e
+  name: opentelemetry-operator.v0.38.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -227,7 +227,7 @@ spec:
               - args:
                 - --metrics-addr=127.0.0.1:8080
                 - --enable-leader-election
-                image: quay.io/aanuraag/opentelemetry-operator:v0.33.0-65-g9b7a81e
+                image: quay.io/opentelemetry/opentelemetry-operator:v0.38.0
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -319,7 +319,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.33.0-65-g9b7a81e
+  version: 0.38.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
