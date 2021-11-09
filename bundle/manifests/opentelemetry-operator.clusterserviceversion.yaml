@@ -6,9 +6,21 @@ metadata:
       [
         {
           "apiVersion": "opentelemetry.io/v1alpha1",
+          "kind": "Instrumentation",
+          "metadata": {
+            "name": "instrumentation"
+          },
+          "spec": {
+            "exporter": {
+              "endpoint": "http://otel-collector-headless:4317"
+            }
+          }
+        },
+        {
+          "apiVersion": "opentelemetry.io/v1alpha1",
           "kind": "OpenTelemetryCollector",
           "metadata": {
-            "name": "opentelemetrycollector-sample"
+            "name": "otel"
           },
           "spec": {
             "config": "receivers:\n  otlp:\n    protocols: \n      grpc:\n      http:\n\nexporters:\n  logging:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [logging]\n"
