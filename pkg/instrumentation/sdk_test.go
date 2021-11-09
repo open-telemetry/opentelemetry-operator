@@ -136,7 +136,10 @@ func TestInjectJava(t *testing.T) {
 			},
 		},
 	}
-	pod := inject(logr.Discard(), inst, corev1.Pod{
+	insts := languageInstrumentations{
+		Java: &inst,
+	}
+	pod := inject(logr.Discard(), insts, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -144,7 +147,7 @@ func TestInjectJava(t *testing.T) {
 				},
 			},
 		},
-	}, "java")
+	})
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
@@ -206,7 +209,10 @@ func TestInjectNodeJS(t *testing.T) {
 			},
 		},
 	}
-	pod := inject(logr.Discard(), inst, corev1.Pod{
+	insts := languageInstrumentations{
+		NodeJS: &inst,
+	}
+	pod := inject(logr.Discard(), insts, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -214,7 +220,7 @@ func TestInjectNodeJS(t *testing.T) {
 				},
 			},
 		},
-	}, "nodejs")
+	})
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{

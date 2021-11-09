@@ -17,7 +17,6 @@ package instrumentation
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -32,13 +31,16 @@ import (
 var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
 	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available")
-	errNoLanguageSpecified       = fmt.Errorf("%s must be set to the desired SDK language", annotationLanguage)
-	errUnsupportedLanguage       = errors.New("SDK language not supported, supported languages are (java, nodejs)")
 )
 
 type instPodMutator struct {
 	Logger logr.Logger
 	Client client.Client
+}
+
+type languageInstrumentations struct {
+	Java   *v1alpha1.Instrumentation
+	NodeJS *v1alpha1.Instrumentation
 }
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
@@ -53,74 +55,69 @@ func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
 func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
 	logger := pm.Logger.WithValues("namespace", pod.Namespace, "name", pod.Name)
 
-	// if no annotations are found at all, just return the same pod
-	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInject)
-	if len(instValue) == 0 {
+	var inst *v1alpha1.Instrumentation
+	var err error
+
+	insts := languageInstrumentations{}
+
+	// We bail out if any annotation fails to process.
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectJava); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, nil
+	}
+	insts.Java = inst
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNodeJS); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, nil
+	}
+	insts.NodeJS = inst
+
+	if insts.Java == nil && insts.NodeJS == nil {
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}
 
-	// is the annotation value 'false'? if so, we need a pod without the instrumentation
-	if strings.EqualFold(instValue, "false") {
-		logger.V(1).Info("pod explicitly refuses instrumentation injection, attempting to remove instrumentation if it exists")
-		return pod, nil
-	}
-
-	langValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationLanguage)
-
-	// which instance should it talk to?
-	otelinst, err := pm.getInstrumentationInstance(ctx, ns, instValue, langValue)
-	if err != nil {
-		if err == errNoInstancesAvailable || err == errMultipleInstancesPossible {
-			// we still allow the pod to be created, but we log a message to the operator's logs
-			logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
-			return pod, nil
-		}
-
-		// something else happened, better fail here
-		return pod, err
-	}
-
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
-	logger.V(1).Info("injecting instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-	return inject(pm.Logger, otelinst, pod, langValue), nil
+	return inject(pm.Logger, insts, pod), nil
 }
 
-func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, instValue string, langValue string) (v1alpha1.Instrumentation, error) {
-	otelInst := v1alpha1.Instrumentation{}
+func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
+	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, instAnnotation)
 
-	if len(langValue) == 0 {
-		return otelInst, errNoLanguageSpecified
-	}
-	if langValue != "java" && langValue != "nodejs" {
-		return otelInst, errUnsupportedLanguage
+	if strings.EqualFold(instValue, "false") {
+		return nil, nil
 	}
 
 	if strings.EqualFold(instValue, "true") {
 		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
 	}
 
-	err := pm.Client.Get(ctx, types.NamespacedName{Name: instValue, Namespace: ns.Name}, &otelInst)
+	otelInst := &v1alpha1.Instrumentation{}
+	err := pm.Client.Get(ctx, types.NamespacedName{Name: instValue, Namespace: ns.Name}, otelInst)
 	if err != nil {
-		return otelInst, err
+		return nil, err
 	}
 
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
 	var otelInsts v1alpha1.InstrumentationList
 	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
-		return v1alpha1.Instrumentation{}, err
+		return nil, err
 	}
 
 	switch s := len(otelInsts.Items); {
 	case s == 0:
-		return v1alpha1.Instrumentation{}, errNoInstancesAvailable
+		return nil, errNoInstancesAvailable
 	case s > 1:
-		return v1alpha1.Instrumentation{}, errMultipleInstancesPossible
+		return nil, errMultipleInstancesPossible
 	default:
-		return otelInsts.Items[0], nil
+		return &otelInsts.Items[0], nil
 	}
 }

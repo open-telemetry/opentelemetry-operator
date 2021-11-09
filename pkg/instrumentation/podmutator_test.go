@@ -106,8 +106,7 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInject:   "true",
-						annotationLanguage: "java",
+						annotationInjectJava: "true",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -121,8 +120,7 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInject:   "true",
-						annotationLanguage: "java",
+						annotationInjectJava: "true",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -197,8 +195,7 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInject:   "true",
-						annotationLanguage: "nodejs",
+						annotationInjectNodeJS: "true",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -212,8 +209,7 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInject:   "true",
-						annotationLanguage: "nodejs",
+						annotationInjectNodeJS: "true",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -288,7 +284,7 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInject: "true",
+						annotationInjectJava: "true",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -373,7 +369,7 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInject: "false",
+						annotationInjectJava: "false",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -387,7 +383,7 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInject: "false",
+						annotationInjectJava: "false",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -423,7 +419,7 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInject: "doesnotexists",
+						annotationInjectJava: "doesnotexists",
 					},
 				},
 				Spec: corev1.PodSpec{
