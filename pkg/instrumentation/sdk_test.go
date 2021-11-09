@@ -253,14 +253,14 @@ func TestInjectNodeJS(t *testing.T) {
 	pod := inject(logr.Discard(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name: "app",
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name: "app",
+					},
 				},
 			},
-		},
-	})
+		})
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
