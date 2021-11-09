@@ -57,6 +57,22 @@ spec:
                     description: Image is a container image with javaagent JAR.
                     type: string
                 type: object
+              propagators:
+                description: Propagators defines inter-process context propagation
+                  configuration.
+                items:
+                  description: Propagator represents the propagation type.
+                  enum:
+                  - tracecontext
+                  - baggage
+                  - b3
+                  - b3multi
+                  - jaeger
+                  - xray
+                  - ottrace
+                  - "no"
+                  type: string
+                type: array
               resourceAttributes:
                 additionalProperties:
                   type: string
