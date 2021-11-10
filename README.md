@@ -161,7 +161,7 @@ To use auto-instrumentation, configure an `Instrumentation` resource with the co
 
 ```yaml
 kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: instrumentation.opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
   name: my-instrumentation

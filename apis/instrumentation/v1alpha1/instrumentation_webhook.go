@@ -15,8 +15,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -37,8 +35,5 @@ var _ webhook.Defaulter = &Instrumentation{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *Instrumentation) Default() {
-	fmt.Printf("---> Defaut:%s\n", r.Name)
-	fmt.Printf("---> Defaut:%s\n", r.Spec.Java.Image)
 	instrumentationlog.Info("default", "name", r.Name)
-	// TODO(user): fill in your defaulting logic.
 }
