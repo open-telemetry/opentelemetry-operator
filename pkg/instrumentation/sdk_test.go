@@ -40,6 +40,10 @@ func TestSDKInjection(t *testing.T) {
 						Endpoint: "https://collector:4317",
 					},
 					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
+					Sampler: v1alpha1.Sampler{
+						Type:     "parentbased_traceidratio",
+						Argument: "0.25",
+					},
 				},
 			},
 			pod: corev1.Pod{
@@ -81,6 +85,14 @@ func TestSDKInjection(t *testing.T) {
 									Name:  "OTEL_PROPAGATORS",
 									Value: "b3,jaeger",
 								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.25",
+								},
 							},
 						},
 					},
@@ -98,6 +110,10 @@ func TestSDKInjection(t *testing.T) {
 						"fromcr": "val",
 					},
 					Propagators: []v1alpha1.Propagator{"jaeger"},
+					Sampler: v1alpha1.Sampler{
+						Type:     "parentbased_traceidratio",
+						Argument: "0.25",
+					},
 				},
 			},
 			pod: corev1.Pod{
@@ -124,6 +140,10 @@ func TestSDKInjection(t *testing.T) {
 								{
 									Name:  "OTEL_PROPAGATORS",
 									Value: "b3",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "always_on",
 								},
 							},
 						},
@@ -154,6 +174,10 @@ func TestSDKInjection(t *testing.T) {
 								{
 									Name:  "OTEL_PROPAGATORS",
 									Value: "b3",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "always_on",
 								},
 							},
 						},
