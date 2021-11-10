@@ -17,6 +17,10 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.25"
     - name: JAVA_TOOL_OPTIONS
       value: " -javaagent:/otel-auto-instrumentation/javaagent.jar"
     volumeMounts:
