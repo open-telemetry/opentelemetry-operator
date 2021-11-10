@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"fmt"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -30,17 +31,14 @@ func (r *Instrumentation) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
 //+kubebuilder:webhook:path=/mutate-instrumentation-opentelemetry-io-v1alpha1-instrumentation,mutating=true,failurePolicy=fail,sideEffects=None,groups=instrumentation.opentelemetry.io,resources=instrumentations,verbs=create;update,versions=v1alpha1,name=minstrumentation.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &Instrumentation{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *Instrumentation) Default() {
 	fmt.Printf("---> Defaut:%s\n", r.Name)
 	fmt.Printf("---> Defaut:%s\n", r.Spec.Java.Image)
 	instrumentationlog.Info("default", "name", r.Name)
 	// TODO(user): fill in your defaulting logic.
 }
-

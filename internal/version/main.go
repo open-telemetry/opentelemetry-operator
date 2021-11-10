@@ -24,7 +24,7 @@ var (
 	version         string
 	buildDate       string
 	otelCol         string
-	targetAllocator         string
+	targetAllocator string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
