@@ -7,19 +7,6 @@ metadata:
   creationTimestamp: null
   name: opentelemetrycollectors.opentelemetry.io
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        caBundle: Cg==
-        service:
-          name: webhook-service
-          namespace: opentelemetry-operator-system
-          path: /convert
-          port: 443
-      conversionReviewVersions:
-      - v1
-      - v1beta1
   group: opentelemetry.io
   names:
     kind: OpenTelemetryCollector
