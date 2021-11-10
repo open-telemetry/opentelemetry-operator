@@ -1,5 +1,4 @@
-[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc] [![Maintainability][code-climate-img]][code-climate] [![codecov][codecov-img]][codecov]
-[![Repository on Quay](https://quay.io/repository/opentelemetry/opentelemetry-operator/status "Repository on Quay")](https://quay.io/repository/opentelemetry/opentelemetry-operator)
+[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc]
 
 # OpenTelemetry Operator for Kubernetes
 
@@ -257,9 +256,5 @@ Thanks to all the people who already contributed!
 [goreport]: https://goreportcard.com/report/github.com/open-telemetry/opentelemetry-operator
 [godoc-img]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator?status.svg
 [godoc]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1#OpenTelemetryCollector
-[code-climate]: https://codeclimate.com/github/open-telemetry/opentelemetry-operator/maintainability
-[code-climate-img]: https://api.codeclimate.com/v1/badges/7bb215eea77fc9c24484/maintainability
-[codecov]: https://codecov.io/gh/open-telemetry/opentelemetry-operator
-[codecov-img]: https://codecov.io/gh/open-telemetry/opentelemetry-operator/branch/main/graph/badge.svg
 [contributors]: https://github.com/open-telemetry/opentelemetry-operator/graphs/contributors
 [contributors-img]: https://contributors-img.web.app/image?repo=open-telemetry/opentelemetry-operator
