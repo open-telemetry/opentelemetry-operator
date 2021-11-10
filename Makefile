@@ -120,6 +120,9 @@ lint:
 e2e:
 	$(KUTTL) test
 
+test-scorecard:
+	$(OPERATOR_SDK) scorecard bundle
+
 prepare-e2e: kuttl set-test-image-vars set-image-controller container start-kind
 	mkdir -p tests/_build/crds tests/_build/manifests
 	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml

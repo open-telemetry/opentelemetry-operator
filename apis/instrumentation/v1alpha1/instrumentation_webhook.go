@@ -36,4 +36,11 @@ var _ webhook.Defaulter = &Instrumentation{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *Instrumentation) Default() {
 	instrumentationlog.Info("default", "name", r.Name)
+
+	if r.Labels == nil {
+		r.Labels = map[string]string{}
+	}
+	if r.Labels["app.kubernetes.io/managed-by"] == "" {
+		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
+	}
 }
