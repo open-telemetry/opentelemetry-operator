@@ -99,6 +99,34 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
           Java defines configuration for java auto-instrumentation.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejs">nodejs</a></b></td>
+        <td>object</td>
+        <td>
+          NodeJS defines configuration for nodejs auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>propagators</b></td>
+        <td>[]enum</td>
+        <td>
+          Propagators defines inter-process context propagation configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>resourceAttributes</b></td>
+        <td>map[string]string</td>
+        <td>
+          ResourceAttributes defines attributes that are added to resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecsampler">sampler</a></b></td>
+        <td>object</td>
+        <td>
+          Sampler defines sampling configuration.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -151,6 +179,69 @@ Java defines configuration for java auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with javaagent JAR.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+NodeJS defines configuration for nodejs auto-instrumentation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image is a container image with NodeJS SDK and autoinstrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.sampler
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+Sampler defines sampling configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>argument</b></td>
+        <td>string</td>
+        <td>
+          Argument defines sampler argument. The value depends on the sampler type. For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>enum</td>
+        <td>
+          Type defines sampler type. The value can be for instance parentbased_always_on, parentbased_always_off, parentbased_traceidratio...<br/>
+          <br/>
+            <i>Enum</i>: always_on, always_off, traceidratio, parentbased_always_on, parentbased_always_off, parentbased_traceidratio, jaeger_remote, xray<br/>
         </td>
         <td>false</td>
       </tr></tbody>

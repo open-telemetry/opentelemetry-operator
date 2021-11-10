@@ -235,7 +235,7 @@ bundle-push:
 tools: ginkgo kustomize controller-gen operator-sdk
 
 
-api-docs: gen-crd-api-reference-docs kustomize
+api-docs: crdoc kustomize
 	@{ \
 	set -e ;\
 	TMP_DIR=$$(mktemp -d) ; \
@@ -244,7 +244,7 @@ api-docs: gen-crd-api-reference-docs kustomize
 	}
 
 # Find or download crdoc
-gen-crd-api-reference-docs:
+crdoc:
 ifeq (, $(shell which crdoc))
 	@{ \
 	set -e ;\
