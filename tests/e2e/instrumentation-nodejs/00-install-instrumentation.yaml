@@ -1,0 +1,12 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: nodejs
+spec:
+  exporter:
+    endpoint: http://localhost:4317
+  propagators:
+    - jaeger
+    - b3
+  nodejs:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
