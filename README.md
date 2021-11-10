@@ -155,7 +155,36 @@ EOF
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. 
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java and NodeJS are supported.
+
+To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
+
+```yaml
+kubectl apply -f - <<EOF
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+spec:
+  exporter:
+    endpoint: http://otel-collector:4317
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.25"
+  java:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest # <1>
+  nodejs:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
+  EOF
+```
+
+The above CR can be queried by `kubectl get otelinst`.
+
+1. Container image with [OpenTelemetry Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation). The image must contain the Java agent JAR `/javaagent.jar`, and the operator will copy it to a shared volume mounted to the application container.
 
 #### Java
 
@@ -169,34 +198,7 @@ instrumentation.opentelemetry.io/inject-java: "true"
 The value can be 
 * `"false"` - do not inject
 * `"true"` - inject and `Instrumentation` resource from the namespace.
-* `"java-instrumentation"` - name of `Instrumentation` CR instance.
-
-In addition to the annotation, the following `CR` has to be created. The `Instrumentation` resource provides configuration for OpenTelemetry SDK and auto-instrumentation.
-
-```yaml
-kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
-kind: Instrumentation
-metadata:
-  name: java-instrumentation
-spec:
-  exporter:
-    endpoint: http://otel-collector:4317
-  propagators:
-    - tracecontext
-    - baggage
-    - b3
-  sampler:
-    type: parentbased_traceidratio
-    argument: "0.25"
-  java:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest # <1>
-EOF
-```
-
-1. Container image with [OpenTelemetry Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation). The image must contain the Java agent JAR `/javaagent.jar`, and the operator will copy it to a shared volume mounted to the application container.
-
-The above CR can be queried by `kubectl get otelinst`.
+* `"my-instrumentation"` - name of `Instrumentation` CR instance.
 
 #### NodeJS
 
@@ -210,29 +212,7 @@ instrumentation.opentelemetry.io/inject-nodejs: "true"
 The value can be
 * `"false"` - do not inject
 * `"true"` - inject and `Instrumentation` resource from the namespace.
-* `"nodejs-instrumentation"` - name of `Instrumentation` CR instance.
-
-In addition to the annotation, the following `CR` has to be created. The `Instrumentation` resource provides configuration for OpenTelemetry SDK and auto-instrumentation.
-
-```yaml
-kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
-kind: Instrumentation
-metadata:
-  name: nodejs-instrumentation
-spec:
-  exporter:
-    endpoint: http://otel-collector:4317
-  propagators:
-    - tracecontext
-    - baggage
-    - b3
-  nodejs:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
-EOF
-```
-
-The above CR can be queried by `kubectl get otelinst`.
+* `"my-instrumentation"` - name of `Instrumentation` CR instance.
 
 ## Compatibility matrix
 
