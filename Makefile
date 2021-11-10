@@ -238,7 +238,7 @@ api-docs: gen-crd-api-reference-docs kustomize
 	$(API_REF_GEN) crdoc --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
 	}
 
-# Find or download gen-crd-api-reference-docs
+# Find or download crdoc
 gen-crd-api-reference-docs:
 ifeq (, $(shell which crdoc))
 	@{ \
@@ -246,7 +246,7 @@ ifeq (, $(shell which crdoc))
 	API_REF_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$API_REF_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get fybrik.io/crdoc@latest ;\
+	go get fybrik.io/crdoc@v0.5.2 ;\
 	rm -rf $$API_REF_GEN_TMP_DIR ;\
 	}
 API_REF_GEN=$(GOBIN)/crdoc
