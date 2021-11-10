@@ -176,43 +176,32 @@ spec:
     type: parentbased_traceidratio
     argument: "0.25"
   java:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest # <1>
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
   nodejs:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
-  EOF
+EOF
 ```
 
 The above CR can be queried by `kubectl get otelinst`.
 
-1. Container image with [OpenTelemetry Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation). The image must contain the Java agent JAR `/javaagent.jar`, and the operator will copy it to a shared volume mounted to the application container.
+Then add an annotation to a pod to enable injection. The annotation can be added to a namespace, so that all pods within
+that namespace wil get instrumentation, or by adding the annotation to individual PodSpec objects, available as part of
+Deployment, Statefulset, and other resources.
 
-#### Java
-
-The operator can inject OpenTelemetry [Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation).
-The injection of the Java agent can be enabled by adding an annotation to the namespace, so that all pods within that namespace will get the instrumentation, or by adding the annotation to individual PodSpec objects, available as part of Deployment, Statefulset, and other resources.
-
+Java:
 ```bash
 instrumentation.opentelemetry.io/inject-java: "true"
 ```
 
-The value can be 
-* `"false"` - do not inject
-* `"true"` - inject and `Instrumentation` resource from the namespace.
-* `"my-instrumentation"` - name of `Instrumentation` CR instance.
-
-#### NodeJS
-
-The operator can inject OpenTelemetry [NodeJS auto-instrumentation](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-node).
-The injection of the NodeJS instrumentation can be enabled by adding an annotation to the namespace, so that all pods within that namespace will get the instrumentation, or by adding the annotation to individual PodSpec objects, available as part of Deployment, Statefulset, and other resources.
-
+NodeJS:
 ```bash
 instrumentation.opentelemetry.io/inject-nodejs: "true"
 ```
 
-The value can be
-* `"false"` - do not inject
+The possible values for the annotation can be
 * `"true"` - inject and `Instrumentation` resource from the namespace.
 * `"my-instrumentation"` - name of `Instrumentation` CR instance.
+* `"false"` - do not inject
 
 ## Compatibility matrix
 
