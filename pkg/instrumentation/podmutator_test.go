@@ -26,17 +26,16 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/instrumentation/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
 )
 
 var k8sClient client.Client
 var testEnv *envtest.Environment
-var testScheme *runtime.Scheme = scheme.Scheme
+var testScheme = scheme.Scheme
 
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
@@ -157,8 +156,105 @@ func TestMutatePod(t *testing.T) {
 									Value: "http://collector:12345",
 								},
 								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.namespace.name=javaagent",
+								},
+								{
 									Name:  "JAVA_TOOL_OPTIONS",
 									Value: javaJVMArgument,
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation",
+									MountPath: "/otel-auto-instrumentation",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "nodejs injection, true",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "nodejs",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "nodejs",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					NodeJS: v1alpha1.NodeJSSpec{
+						Image: "otel/nodejs:1",
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectNodeJS: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectNodeJS: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    initContainerName,
+							Image:   "otel/nodejs:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      volumeName,
+								MountPath: "/otel-auto-instrumentation",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://collector:12345",
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.namespace.name=nodejs",
+								},
+								{
+									Name:  "NODE_OPTIONS",
+									Value: nodeRequireArgument,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{

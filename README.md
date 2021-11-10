@@ -1,5 +1,4 @@
-[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc] [![Maintainability][code-climate-img]][code-climate] [![codecov][codecov-img]][codecov]
-[![Repository on Quay](https://quay.io/repository/opentelemetry/opentelemetry-operator/status "Repository on Quay")](https://quay.io/repository/opentelemetry/opentelemetry-operator)
+[![Continuous Integration][github-workflow-img]][github-workflow] [![Go Report Card][goreport-img]][goreport] [![GoDoc][godoc-img]][godoc]
 
 # OpenTelemetry Operator for Kubernetes
 
@@ -155,38 +154,53 @@ EOF
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. At this moment, the operator can inject only OpenTelemetry [Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation).
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java and NodeJS are supported.
 
-The injection of the Java agent can be enabled by adding an annotation to the namespace, so that all pods within that namespace will get the instrumentation, or by adding the annotation to individual PodSpec objects, available as part of Deployment, Statefulset, and other resources.
-
-```console
-instrumentation.opentelemetry.io/inject-java: "true"
-```
-
-The value can be 
-* `"false"` - do not inject
-* `"true"` - inject and `Instrumentation` resource from the namespace.
-* `"java-instrumentation"` - name of `Instrumentation` CR instance.
-
-In addition to the annotation, the following `CR` has to be created. The `Instrumentation` resource provides configuration for OpenTelemetry SDK and auto-instrumentation.
+To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
 ```yaml
 kubectl apply -f - <<EOF
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
-  name: java-instrumentation
+  name: my-instrumentation
 spec:
   exporter:
-    endpoint: http://otel-collector:4318
+    endpoint: http://otel-collector:4317
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.25"
   java:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest # <1>
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
+  nodejs:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
 EOF
 ```
 
-1. Container image with [OpenTelemetry Java auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation). The image must contain the Java agent JAR `/javaagent.jar`, and the operator will copy it to a shared volume mounted to the application container.
-
 The above CR can be queried by `kubectl get otelinst`.
+
+Then add an annotation to a pod to enable injection. The annotation can be added to a namespace, so that all pods within
+that namespace wil get instrumentation, or by adding the annotation to individual PodSpec objects, available as part of
+Deployment, Statefulset, and other resources.
+
+Java:
+```bash
+instrumentation.opentelemetry.io/inject-java: "true"
+```
+
+NodeJS:
+```bash
+instrumentation.opentelemetry.io/inject-nodejs: "true"
+```
+
+The possible values for the annotation can be
+* `"true"` - inject and `Instrumentation` resource from the namespace.
+* `"my-instrumentation"` - name of `Instrumentation` CR instance.
+* `"false"` - do not inject
 
 ## Compatibility matrix
 
@@ -194,7 +208,7 @@ The above CR can be queried by `kubectl get otelinst`.
 
 The OpenTelemetry Operator follows the same versioning as the operand (OpenTelemetry Collector) up to the minor part of the version. For example, the OpenTelemetry Operator v0.18.1 tracks OpenTelemetry Collector 0.18.0. The patch part of the version indicates the patch level of the operator itself, not that of OpenTelemetry Collector. Whenever a new patch version is released for OpenTelemetry Collector, we'll release a new patch version of the operator.
 
-### OpenTelemetry Operator vs. Kubernetes
+### OpenTelemetry Operator vs. Kubernetes vs. Cert Manager
 
 We strive to be compatible with the widest range of Kubernetes versions as possible, but some changes to Kubernetes itself require us to break compatibility with older Kubernetes versions, be it because of code incompatibilities, or in the name of maintainability.
 
@@ -202,23 +216,25 @@ Our promise is that we'll follow what's common practice in the Kubernetes world 
 
 For instance, when we released v0.27.0, the latest Kubernetes version was v1.21.1. As such, the minimum version of Kubernetes we support for OpenTelemetry Operator v0.27.0 is v1.19 and we tested it with up to 1.21.
 
+We use `cert-manager` for some features of this operator and the third column shows the versions of the `cert-manager` that are known to work with this operator's versions.
+
 The OpenTelemetry Operator *might* work on versions outside of the given range, but when opening new issues, please make sure to test your scenario on a supported version.
 
-| OpenTelemetry Operator | Kubernetes           |
-|------------------------|----------------------|
-| v0.37.1                | v1.20 to v1.22       |
-| v0.37.0                | v1.20 to v1.22       |
-| v0.36.0                | v1.20 to v1.22       |
-| v0.35.0                | v1.20 to v1.22       |
-| v0.34.0                | v1.20 to v1.22       |
-| v0.33.0                | v1.20 to v1.22       |
-| v0.32.0 (skipped)      | n/a                  |
-| v0.31.0                | v1.19 to v1.21       |
-| v0.30.0                | v1.19 to v1.21       |
-| v0.29.0                | v1.19 to v1.21       |
-| v0.28.0                | v1.19 to v1.21       |
-| v0.27.0                | v1.19 to v1.21       |
-| v0.26.0                | v1.18 to v1.20       |
+| OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
+|------------------------|----------------------|----------------------|
+| v0.38.0                | v1.20 to v1.22       | 1.6.1                |
+| v0.37.1                | v1.20 to v1.22       | v1.4.0 to v1.6.1     |
+| v0.37.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.36.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.35.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.34.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.33.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
+| v0.32.0 (skipped)      | n/a                  | n/a                  |
+| v0.31.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
+| v0.30.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
+| v0.29.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
+| v0.28.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
+| v0.27.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
 
 ## Contributing and Developing
 
@@ -250,9 +266,5 @@ Thanks to all the people who already contributed!
 [goreport]: https://goreportcard.com/report/github.com/open-telemetry/opentelemetry-operator
 [godoc-img]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator?status.svg
 [godoc]: https://godoc.org/github.com/open-telemetry/opentelemetry-operator/pkg/apis/opentelemetry/v1alpha1#OpenTelemetryCollector
-[code-climate]: https://codeclimate.com/github/open-telemetry/opentelemetry-operator/maintainability
-[code-climate-img]: https://api.codeclimate.com/v1/badges/7bb215eea77fc9c24484/maintainability
-[codecov]: https://codecov.io/gh/open-telemetry/opentelemetry-operator
-[codecov-img]: https://codecov.io/gh/open-telemetry/opentelemetry-operator/branch/main/graph/badge.svg
 [contributors]: https://github.com/open-telemetry/opentelemetry-operator/graphs/contributors
 [contributors-img]: https://contributors-img.web.app/image?repo=open-telemetry/opentelemetry-operator

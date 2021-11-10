@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/instrumentation/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
 )
 
@@ -36,6 +36,11 @@ var (
 type instPodMutator struct {
 	Logger logr.Logger
 	Client client.Client
+}
+
+type languageInstrumentations struct {
+	Java   *v1alpha1.Instrumentation
+	NodeJS *v1alpha1.Instrumentation
 }
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
@@ -50,64 +55,69 @@ func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
 func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
 	logger := pm.Logger.WithValues("namespace", pod.Namespace, "name", pod.Name)
 
-	// if no annotations are found at all, just return the same pod
-	annValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta)
-	if len(annValue) == 0 {
+	var inst *v1alpha1.Instrumentation
+	var err error
+
+	insts := languageInstrumentations{}
+
+	// We bail out if any annotation fails to process.
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectJava); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	insts.Java = inst
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNodeJS); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	insts.NodeJS = inst
+
+	if insts.Java == nil && insts.NodeJS == nil {
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}
 
-	// is the annotation value 'false'? if so, we need a pod without the instrumentation
-	if strings.EqualFold(annValue, "false") {
-		logger.V(1).Info("pod explicitly refuses instrumentation injection, attempting to remove instrumentation if it exists")
-		return pod, nil
-	}
-
-	// which instance should it talk to?
-	otelinst, err := pm.getInstrumentationInstance(ctx, ns, annValue)
-	if err != nil {
-		if err == errNoInstancesAvailable || err == errMultipleInstancesPossible {
-			// we still allow the pod to be created, but we log a message to the operator's logs
-			logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
-			return pod, nil
-		}
-
-		// something else happened, better fail here
-		return pod, err
-	}
-
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
-	logger.V(1).Info("injecting instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-	return inject(pm.Logger, otelinst, pod), nil
+	return inject(pm.Logger, insts, ns, pod), nil
 }
 
-func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.Instrumentation, error) {
-	if strings.EqualFold(ann, "true") {
+func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
+	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, instAnnotation)
+
+	if len(instValue) == 0 || strings.EqualFold(instValue, "false") {
+		return nil, nil
+	}
+
+	if strings.EqualFold(instValue, "true") {
 		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
 	}
 
-	otelInst := v1alpha1.Instrumentation{}
-	err := pm.Client.Get(ctx, types.NamespacedName{Name: ann, Namespace: ns.Name}, &otelInst)
+	otelInst := &v1alpha1.Instrumentation{}
+	err := pm.Client.Get(ctx, types.NamespacedName{Name: instValue, Namespace: ns.Name}, otelInst)
 	if err != nil {
-		return otelInst, err
+		return nil, err
 	}
 
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
 	var otelInsts v1alpha1.InstrumentationList
 	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
-		return v1alpha1.Instrumentation{}, err
+		return nil, err
 	}
 
 	switch s := len(otelInsts.Items); {
 	case s == 0:
-		return v1alpha1.Instrumentation{}, errNoInstancesAvailable
+		return nil, errNoInstancesAvailable
 	case s > 1:
-		return v1alpha1.Instrumentation{}, errMultipleInstancesPossible
+		return nil, errMultipleInstancesPossible
 	default:
-		return otelInsts.Items[0], nil
+		return &otelInsts.Items[0], nil
 	}
 }

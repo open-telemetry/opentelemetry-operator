@@ -26,4 +26,3 @@ spec:
           exporters: [logging]
   args:
     metrics-level: detailed
-    log-level: debug

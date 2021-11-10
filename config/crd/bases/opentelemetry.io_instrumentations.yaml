@@ -59,6 +59,57 @@ spec:
                     description: Image is a container image with javaagent JAR.
                     type: string
                 type: object
+              nodejs:
+                description: NodeJS defines configuration for nodejs auto-instrumentation.
+                properties:
+                  image:
+                    description: Image is a container image with NodeJS SDK and autoinstrumentation.
+                    type: string
+                type: object
+              propagators:
+                description: Propagators defines inter-process context propagation
+                  configuration.
+                items:
+                  description: Propagator represents the propagation type.
+                  enum:
+                  - tracecontext
+                  - baggage
+                  - b3
+                  - b3multi
+                  - jaeger
+                  - xray
+                  - ottrace
+                  - "no"
+                  type: string
+                type: array
+              resourceAttributes:
+                additionalProperties:
+                  type: string
+                description: ResourceAttributes defines attributes that are added
+                  to resource.
+                type: object
+              sampler:
+                description: Sampler defines sampling configuration.
+                properties:
+                  argument:
+                    description: Argument defines sampler argument. The value depends
+                      on the sampler type. For instance for parentbased_traceidratio
+                      sampler type it is a number in range [0..1] e.g. 0.25.
+                    type: string
+                  type:
+                    description: Type defines sampler type. The value can be for instance
+                      parentbased_always_on, parentbased_always_off, parentbased_traceidratio...
+                    enum:
+                    - always_on
+                    - always_off
+                    - traceidratio
+                    - parentbased_always_on
+                    - parentbased_always_off
+                    - parentbased_traceidratio
+                    - jaeger_remote
+                    - xray
+                    type: string
+                type: object
             type: object
           status:
             description: InstrumentationStatus defines status of the instrumentation.

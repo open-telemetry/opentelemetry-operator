@@ -46,6 +46,11 @@ In general, it's just easier to deploy the manager in a Kubernetes cluster inste
 make cert-manager
 ```
 
+In pursuit of continuous improvement, a variable named `CERTMANAGER_VERSION` which can be run:
+```bash
+CERTMANAGER_VERSION=1.60 make cert-manager
+```
+
 By default, it will generate an image following the format `quay.io/${USER}/opentelemetry-operator:${VERSION}`. You can set the following env vars in front of the `make` command to override parts or the entirety of the image:
 
 * `IMG_PREFIX`, to override the registry, namespace and image name (`quay.io`)
@@ -121,59 +126,33 @@ For production environments, it is recommended to use the [Operator Lifecycle Ma
 
 ### Setup OLM
 
-When using Kubernetes, install OLM following the [official instructions](https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md). At the moment of this writing, it involves the following:
+When using Kubernetes, install OLM following the [official instructions](https://sdk.operatorframework.io/docs/olm-integration/). At the moment of this writing, it involves the following:
 
 ```bash
-kubectl create -f https://raw.githubusercontent.com/operator-framework/operator-lifecycle-manager/master/deploy/upstream/quickstart/crds.yaml
-kubectl create -f https://raw.githubusercontent.com/operator-framework/operator-lifecycle-manager/master/deploy/upstream/quickstart/olm.yaml
-kubectl wait --for=condition=available deployment packageserver -n olm
-kubectl wait --for=condition=available deployment olm-operator -n olm
-kubectl wait --for=condition=available deployment catalog-operator -n olm
+operator-sdk olm install
 ```
 
-When using OpenShift, OLM is already installed.
+When using OpenShift, the OLM is already installed.
 
 ### Create the bundle and related images
 
-The following commands will generate a bundle under `bundle/` and build an image with its contents. It will then generate and publish an index image with the [Operator Package Manager (OPM)](https://github.com/operator-framework/operator-registry/blob/master/docs/design/opm-tooling.md#opm)
+The following commands will generate a bundle under `bundle/`, build an image with its contents, build and publish the operator image.
 
 ```bash
-export VERSION=x.y.z
-make set-image-controller bundle bundle-build
-podman push quay.io/${USER}/opentelemetry-operator-bundle:${VERSION}
-opm index add --bundles quay.io/${USER}/opentelemetry-operator-bundle:${VERSION} --tag quay.io/${USER}/opentelemetry-operator-index:${VERSION}
-podman push quay.io/${USER}/opentelemetry-operator-index:${VERSION}
+BUNDLE_IMG=docker.io/${USER}/opentelemetry-operator-bundle:latest IMG=docker.io/${USER}/opentelemetry-operator:latest make bundle container container-push bundle-build bundle-push
 ```
 
 ### Install the operator
 
-To install our operator, create a `CatalogSource` for our index image, wait for OLM to synchronize and finally create a `Subscription`. Make sure to replace `${USER}` with your username and `${VERSION}` with the version used in the previous step. The namespace for both should be `operators` on Kubernetes, while `openshift-operators` should be used for OpenShift.
+```bash
+operator-sdk run bundle docker.io/${USER}/opentelemetry-operator-bundle:latest
+```
 
-```yaml
-kubectl apply -f - <<EOF
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-  name: opentelemetry-operator-manifests
-  namespace: operators
-spec:
-  sourceType: grpc
-  image: quay.io/${USER}/opentelemetry-operator-index:${VERSION}
-EOF
-kubectl wait --for=condition=ready pod -l olm.catalogSource=opentelemetry-operator-manifests -n operators
+### Uninstall the operator
 
-kubectl apply -f - <<EOF
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-  name: opentelemetry-operator-subscription
-  namespace: operators
-spec:
-  channel: "alpha"
-  installPlanApproval: Automatic
-  name: opentelemetry-operator
-  source: opentelemetry-operator-manifests
-  sourceNamespace: operators
-EOF
-kubectl wait --for=condition=available deployment opentelemetry-operator-controller-manager -n operators
+The operator can be uninstalled by deleting `subscriptions.operators.coreos.com` and `clusterserviceversion.operators.coreos.com` objects from the current namespace.
+
+```bash
+kubectl delete clusterserviceversion.operators.coreos.com --all
+kubectl delete subscriptions.operators.coreos.com --all
 ```

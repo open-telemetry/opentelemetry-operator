@@ -18,7 +18,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/instrumentation/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
 )
 
 const (
@@ -35,7 +35,7 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.JavaSpec, pod corev1.
 			Name:  envJavaToolsOptions,
 			Value: javaJVMArgument,
 		})
-	} else if idx > -1 {
+	} else {
 		if container.Env[idx].ValueFrom != nil {
 			// TODO add to status object or submit it as an event
 			logger.Info("Skipping javaagent injection, the container defines JAVA_TOOL_OPTIONS env var value via ValueFrom", "container", container.Name)

@@ -15,10 +15,15 @@
 package instrumentation
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+	"unsafe"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/api/instrumentation/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
 )
 
 const (
@@ -27,22 +32,36 @@ const (
 
 	envOTELServiceName          = "OTEL_SERVICE_NAME"
 	envOTELExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	envOTELResourceAttrs        = "OTEL_RESOURCE_ATTRIBUTES"
+	envOTELPropagators          = "OTEL_PROPAGATORS"
+	envOTELTracesSampler        = "OTEL_TRACES_SAMPLER"
+	envOTELTracesSamplerArg     = "OTEL_TRACES_SAMPLER_ARG"
 )
 
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
-func inject(logger logr.Logger, otelinst v1alpha1.Instrumentation, pod corev1.Pod) corev1.Pod {
+func inject(logger logr.Logger, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
 	if len(pod.Spec.Containers) < 1 {
 		return pod
 	}
 
 	// inject only to the first container for now
 	// in the future we can define an annotation to configure this
-	pod = injectCommonSDKConfig(otelinst, pod)
-	pod = injectJavaagent(logger, otelinst.Spec.Java, pod)
+	if insts.Java != nil {
+		otelinst := *insts.Java
+		logger.V(1).Info("injecting instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod = injectCommonSDKConfig(otelinst, ns, pod)
+		pod = injectJavaagent(logger, otelinst.Spec.Java, pod)
+	}
+	if insts.NodeJS != nil {
+		otelinst := *insts.NodeJS
+		logger.V(1).Info("injecting instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod = injectCommonSDKConfig(otelinst, ns, pod)
+		pod = injectNodeJSSDK(logger, otelinst.Spec.NodeJS, pod)
+	}
 	return pod
 }
 
-func injectCommonSDKConfig(otelinst v1alpha1.Instrumentation, pod corev1.Pod) corev1.Pod {
+func injectCommonSDKConfig(otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
 	container := &pod.Spec.Containers[0]
 	idx := getIndexOfEnv(container.Env, envOTELServiceName)
 	if idx == -1 {
@@ -60,8 +79,105 @@ func injectCommonSDKConfig(otelinst v1alpha1.Instrumentation, pod corev1.Pod) co
 			Value: otelinst.Spec.Endpoint,
 		})
 	}
+	idx = getIndexOfEnv(container.Env, envOTELResourceAttrs)
+	resourceMap := createResourceMap(otelinst, ns, pod)
+	resStr := resourceMapToStr(resourceMap)
+	if idx == -1 {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envOTELResourceAttrs,
+			Value: resStr,
+		})
+	} else {
+		if !strings.HasSuffix(container.Env[idx].Value, ",") {
+			resStr = "," + resStr
+		}
+		container.Env[idx].Value += resStr
+	}
+	idx = getIndexOfEnv(container.Env, envOTELPropagators)
+	if idx == -1 && len(otelinst.Spec.Propagators) > 0 {
+		propagators := *(*[]string)((unsafe.Pointer(&otelinst.Spec.Propagators)))
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envOTELPropagators,
+			Value: strings.Join(propagators, ","),
+		})
+	}
+
+	idx = getIndexOfEnv(container.Env, envOTELTracesSampler)
+	// configure sampler only if it is configured in the CR
+	if idx == -1 && otelinst.Spec.Sampler.Type != "" {
+		idxSamplerArg := getIndexOfEnv(container.Env, envOTELTracesSamplerArg)
+		if idxSamplerArg == -1 {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name:  envOTELTracesSampler,
+				Value: string(otelinst.Spec.Sampler.Type),
+			})
+			if otelinst.Spec.Sampler.Argument != "" {
+				container.Env = append(container.Env, corev1.EnvVar{
+					Name:  envOTELTracesSamplerArg,
+					Value: otelinst.Spec.Sampler.Argument,
+				})
+			}
+		}
+	}
 
 	return pod
+}
+
+// createResourceMap creates resource attribute map.
+// User defined attributes (in explicitly set env var) have higher precedence.
+func createResourceMap(otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) map[string]string {
+	// get existing resources env var and parse it into a map
+	existingRes := map[string]bool{}
+	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[0].Env, envOTELResourceAttrs)
+	if existingResourceEnvIdx > -1 {
+		existingResArr := strings.Split(pod.Spec.Containers[0].Env[existingResourceEnvIdx].Value, ",")
+		for _, kv := range existingResArr {
+			keyValueArr := strings.Split(strings.TrimSpace(kv), "=")
+			if len(keyValueArr) != 2 {
+				continue
+			}
+			existingRes[keyValueArr[0]] = true
+		}
+	}
+
+	res := map[string]string{}
+	for k, v := range otelinst.Spec.ResourceAttributes {
+		if !existingRes[k] {
+			res[k] = v
+		}
+	}
+	if !existingRes["k8s.namespace.name"] {
+		res["k8s.namespace.name"] = ns.Name
+	}
+	if pod.Name != "" {
+		// The pod name might be empty if the pod is created form deployment template
+		if !existingRes["k8s.pod.name"] {
+			res["k8s.pod.name"] = pod.Name
+		}
+	}
+	if !existingRes["k8s.container.name"] {
+		res["k8s.container.name"] = pod.Spec.Containers[0].Name
+	}
+	// TODO add more attributes once the parent object (deployment) is accessible here
+	return res
+}
+
+func resourceMapToStr(res map[string]string) string {
+	keys := make([]string, 0, len(res))
+	for k := range res {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var str = ""
+	for _, k := range keys {
+		if str != "" {
+			str += ","
+		}
+		str += fmt.Sprintf("%s=%s", k, res[k])
+	}
+
+	return str
 }
 
 func getIndexOfEnv(envs []corev1.EnvVar, name string) int {

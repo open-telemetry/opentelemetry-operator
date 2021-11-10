@@ -1,14 +1,23 @@
-projectName: opentelemetry-operator
 domain: opentelemetry.io
-layout: go.kubebuilder.io/v2
-repo: github.com/open-telemetry/opentelemetry-operator
-resources:
--
-  controller: true
-  group: core
-  kind: OpenTelemetryCollector
-  path: k8s.io/api/core/v1alpha1
-  version: v1alpha1
-version: "3"
+layout:
+- go.kubebuilder.io/v2
+multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
+projectName: opentelemetry-operator
+repo: github.com/open-telemetry/opentelemetry-operator
+resources:
+- controller: true
+  group: collector
+  kind: OpenTelemetryCollector
+  path: github.com/open-telemetry/opentelemetry-operator/apis/collector/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1beta1
+    namespaced: true
+  domain: opentelemetry.io
+  group: instrumentation
+  kind: Instrumentation
+  path: github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1
+  version: v1alpha1
+version: "3"

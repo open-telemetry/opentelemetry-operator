@@ -1,3 +1,4 @@
 ## This file is auto-generated, do not modify ##
 resources:
 - core_v1alpha1_opentelemetrycollector.yaml
+- instrumentation_v1alpha1_instrumentation.yaml

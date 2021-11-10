@@ -6,9 +6,21 @@ metadata:
       [
         {
           "apiVersion": "opentelemetry.io/v1alpha1",
+          "kind": "Instrumentation",
+          "metadata": {
+            "name": "instrumentation"
+          },
+          "spec": {
+            "exporter": {
+              "endpoint": "http://otel-collector-headless:4317"
+            }
+          }
+        },
+        {
+          "apiVersion": "opentelemetry.io/v1alpha1",
           "kind": "OpenTelemetryCollector",
           "metadata": {
-            "name": "opentelemetrycollector-sample"
+            "name": "otel"
           },
           "spec": {
             "config": "receivers:\n  otlp:\n    protocols: \n      grpc:\n      http:\n\nexporters:\n  logging:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [logging]\n"
@@ -25,7 +37,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.37.1
+  name: opentelemetry-operator.v0.38.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -215,7 +227,7 @@ spec:
               - args:
                 - --metrics-addr=127.0.0.1:8080
                 - --enable-leader-election
-                image: quay.io/opentelemetry/opentelemetry-operator:v0.37.1
+                image: quay.io/opentelemetry/opentelemetry-operator:v0.38.0
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -307,7 +319,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.37.1
+  version: 0.38.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
