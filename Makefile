@@ -228,4 +228,7 @@ bundle: kustomize operator-sdk manifests set-image-controller
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
+bundle-push:
+	docker push $(BUNDLE_IMG)
+
 tools: ginkgo kustomize controller-gen operator-sdk
