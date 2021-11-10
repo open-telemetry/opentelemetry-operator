@@ -393,7 +393,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			err: `instrumentations.opentelemetry.io "doesnotexists" not found`,
+			err: `instrumentations.instrumentation.opentelemetry.io "doesnotexists" not found`,
 		},
 	}
 
