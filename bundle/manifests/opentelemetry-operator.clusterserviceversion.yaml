@@ -165,7 +165,7 @@ spec:
           - list
           - update
         - apiGroups:
-          - opentelemetry.io
+          - instrumentation.opentelemetry.io
           resources:
           - instrumentations
           verbs:
