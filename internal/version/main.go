@@ -24,7 +24,8 @@ var (
 	version         string
 	buildDate       string
 	otelCol         string
-	targetAllocator string
+	targetAllocator         string
+	autoInstrumentationJava string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
@@ -34,6 +35,7 @@ type Version struct {
 	OpenTelemetryCollector string `json:"opentelemetry-collector-version"`
 	Go                     string `json:"go-version"`
 	TargetAllocator        string `json:"target-allocator-version"`
+	JavaAutoInstrumentation string `json:"auto-instrumentation-java"`
 }
 
 // Get returns the Version object with the relevant information.
@@ -44,6 +46,7 @@ func Get() Version {
 		OpenTelemetryCollector: OpenTelemetryCollector(),
 		Go:                     runtime.Version(),
 		TargetAllocator:        TargetAllocator(),
+		JavaAutoInstrumentation: JavaAutoInstrumentation(),
 	}
 }
 
@@ -77,5 +80,12 @@ func TargetAllocator() string {
 	}
 
 	// fallback value, useful for tests
+	return "0.0.0"
+}
+
+func JavaAutoInstrumentation() string {
+	if len(autoInstrumentationJava) > 0 {
+		return autoInstrumentationJava
+	}
 	return "0.0.0"
 }

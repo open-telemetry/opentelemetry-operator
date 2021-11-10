@@ -172,6 +172,10 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
+		if err = (&otelinstv1alpha1.Instrumentation{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
+			os.Exit(1)
+		}
 
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
 			Handler: webhookhandler.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), mgr.GetClient(),

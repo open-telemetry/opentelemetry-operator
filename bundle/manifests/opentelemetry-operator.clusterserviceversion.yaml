@@ -34,7 +34,7 @@ metadata:
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.13.0+git
-    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
   name: opentelemetry-operator.v0.38.0
@@ -43,8 +43,11 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - kind: Instrumentation
-      name: instrumentations.opentelemetry.io
+    - description: 'Instrumentation is the spec for OpenTelemetry instrumentation.
+        nolint: maligned'
+      displayName: OpenTelemetry Instrumentation
+      kind: Instrumentation
+      name: instrumentations.instrumentation.opentelemetry.io
       version: v1alpha1
     - kind: OpenTelemetryCollector
       name: opentelemetrycollectors.opentelemetry.io
@@ -342,6 +345,27 @@ spec:
     targetPort: 9443
     type: MutatingAdmissionWebhook
     webhookPath: /mutate-opentelemetry-io-v1alpha1-opentelemetrycollector
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: minstrumentation.kb.io
+    rules:
+    - apiGroups:
+      - instrumentation.opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - instrumentations
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-instrumentation-opentelemetry-io-v1alpha1-instrumentation
   - admissionReviewVersions:
     - v1
     - v1beta1

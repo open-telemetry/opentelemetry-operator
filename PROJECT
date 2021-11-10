@@ -1,6 +1,6 @@
 domain: opentelemetry.io
 layout:
-- go.kubebuilder.io/v2
+- go.kubebuilder.io/v3
 multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
@@ -20,4 +20,7 @@ resources:
   kind: Instrumentation
   path: github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1
   version: v1alpha1
+  webhooks:
+    defaulting: true
+    webhookVersion: v1
 version: "3"

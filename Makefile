@@ -99,6 +99,10 @@ release-artifacts: set-image-controller
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
+# Generate code
+generate: controller-gen
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
 # Run go fmt against code
 fmt:
 	go fmt ./...
@@ -111,9 +115,6 @@ vet:
 lint:
 	golangci-lint run
 
-# Generate code
-generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # end-to-tests
 e2e:
@@ -220,8 +221,8 @@ endif
 
 # Generate bundle manifests and metadata, then validate generated files.
 bundle: kustomize operator-sdk manifests set-image-controller
-	$(OPERATOR_SDK) generate kustomize manifests -q
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --manifests --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(OPERATOR_SDK) generate kustomize manifests  --interactive=false -q
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
 # Build the bundle image, used only for local dev purposes
