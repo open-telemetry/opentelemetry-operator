@@ -28,6 +28,11 @@ type InstrumentationSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	ResourceAttributes map[string]string `json:"resourceAttributes,omitempty"`
 
+	// Propagators defines inter-process context propagation configuration.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Propagators []Propagator `json:"propagators,omitempty"`
+
 	// Java defines configuration for java auto-instrumentation.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true

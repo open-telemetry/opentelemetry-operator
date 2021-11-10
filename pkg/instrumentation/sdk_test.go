@@ -37,8 +37,9 @@ func TestSDKInjection(t *testing.T) {
 			inst: v1alpha1.Instrumentation{
 				Spec: v1alpha1.InstrumentationSpec{
 					Exporter: v1alpha1.Exporter{
-						Endpoint: "https://collector:4318",
+						Endpoint: "https://collector:4317",
 					},
+					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
 				},
 			},
 			pod: corev1.Pod{
@@ -70,11 +71,15 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "https://collector:4318",
+									Value: "https://collector:4317",
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=application-name,k8s.namespace.name=project1,k8s.pod.name=app",
+								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3,jaeger",
 								},
 							},
 						},
@@ -87,11 +92,12 @@ func TestSDKInjection(t *testing.T) {
 			inst: v1alpha1.Instrumentation{
 				Spec: v1alpha1.InstrumentationSpec{
 					Exporter: v1alpha1.Exporter{
-						Endpoint: "https://collector:4318",
+						Endpoint: "https://collector:4317",
 					},
 					ResourceAttributes: map[string]string{
 						"fromcr": "val",
 					},
+					Propagators: []v1alpha1.Propagator{"jaeger"},
 				},
 			},
 			pod: corev1.Pod{
@@ -114,6 +120,10 @@ func TestSDKInjection(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "foo=bar,k8s.container.name=other,",
+								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3",
 								},
 							},
 						},
@@ -141,6 +151,10 @@ func TestSDKInjection(t *testing.T) {
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "foo=bar,k8s.container.name=other,fromcr=val,k8s.namespace.name=project1,k8s.pod.name=app",
 								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3",
+								},
 							},
 						},
 					},
@@ -164,7 +178,7 @@ func TestInjectJava(t *testing.T) {
 				Image: "img:1",
 			},
 			Exporter: v1alpha1.Exporter{
-				Endpoint: "https://collector:4318",
+				Endpoint: "https://collector:4317",
 			},
 		},
 	}
@@ -219,7 +233,7 @@ func TestInjectJava(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-							Value: "https://collector:4318",
+							Value: "https://collector:4317",
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",

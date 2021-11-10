@@ -13,8 +13,10 @@ spec:
     - name: OTEL_SERVICE_NAME
       value: myapp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4318
+      value: http://localhost:4317
     - name: OTEL_RESOURCE_ATTRIBUTES
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
     - name: JAVA_TOOL_OPTIONS
       value: " -javaagent:/otel-auto-instrumentation/javaagent.jar"
     volumeMounts:
