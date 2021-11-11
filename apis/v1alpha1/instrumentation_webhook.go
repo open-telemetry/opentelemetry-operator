@@ -15,11 +15,13 @@
 package v1alpha1
 
 import (
-	"fmt"
-
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+)
+
+const (
+	AnnotationDefaultAutoInstrumentationJava = "opentelemetry.io/default-auto-instrumentation-java"
 )
 
 // log is for logging in this package.
@@ -31,7 +33,6 @@ func (r *Instrumentation) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-
 //+kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-instrumentation,mutating=true,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=instrumentations,verbs=create;update,versions=v1alpha1,name=minstrumentation.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &Instrumentation{}
@@ -39,6 +40,16 @@ var _ webhook.Defaulter = &Instrumentation{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Instrumentation) Default() {
 	instrumentationlog.Info("default", "name", r.Name)
+	if r.Labels == nil {
+		r.Labels = map[string]string{}
+	}
+	if r.Labels["app.kubernetes.io/managed-by"] == "" {
+		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
+	}
 
-	fmt.Println("--->AAAA")
+	if r.Spec.Java.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationJava]; ok {
+			r.Spec.Java.Image = val
+		}
+	}
 }
