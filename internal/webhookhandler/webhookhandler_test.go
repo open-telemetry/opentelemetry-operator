@@ -126,6 +126,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &tt.ns)
 			require.NoError(t, err)
+			defer k8sClient.Delete(context.Background(), &tt.ns)
 
 			for i := range tt.otelcols {
 				err := k8sClient.Create(context.Background(), &tt.otelcols[i])
@@ -347,6 +348,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &tt.ns)
 			require.NoError(t, err)
+			defer k8sClient.Delete(context.Background(), &tt.ns)
 
 			for i := range tt.otelcols {
 				err := k8sClient.Create(context.Background(), &tt.otelcols[i])
