@@ -15,6 +15,7 @@
 package instrumentation
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -345,6 +346,89 @@ func TestInjectNodeJS(t *testing.T) {
 						{
 							Name:  "NODE_OPTIONS",
 							Value: nodeRequireArgument,
+						},
+					},
+				},
+			},
+		},
+	}, pod)
+}
+
+func TestInjectPython(t *testing.T) {
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Python: v1alpha1.PythonSpec{
+				Image: "img:1",
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		Python: &inst,
+	}
+	pod := inject(logr.Discard(), insts,
+		corev1.Namespace{},
+		corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name: "app",
+					},
+				},
+			},
+		})
+	assert.Equal(t, corev1.Pod{
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:    initContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      volumeName,
+						MountPath: "/otel-auto-instrumentation",
+					}},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name: "app",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      volumeName,
+							MountPath: "/otel-auto-instrumentation",
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "app",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=app,k8s.namespace.name=",
+						},
+						{
+							Name:  "PYTHONPATH",
+							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+						},
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp_proto_http",
 						},
 					},
 				},

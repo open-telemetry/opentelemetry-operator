@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    sidecar.opentelemetry.io/inject: "true"
+    instrumentation.opentelemetry.io/inject-python: "true"
+  labels:
+    app: my-pod-with-sidecar
+spec:
+  containers:
+  - name: myapp
+    env:
+    - name: OTEL_SERVICE_NAME
+      value: myapp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4318/v1/traces
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
+    - name: PYTHONPATH
+      value: "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation"
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp_proto_http
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+    - mountPath: /otel-auto-instrumentation
+      name: opentelemetry-auto-instrumentation
+  - name: otc-container
+  initContainers:
+  - name: opentelemetry-auto-instrumentation
+status:
+  phase: Running

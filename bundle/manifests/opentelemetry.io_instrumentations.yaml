@@ -80,6 +80,13 @@ spec:
                   - "no"
                   type: string
                 type: array
+              python:
+                description: Python defines configuration for python auto-instrumentation.
+                properties:
+                  image:
+                    description: Image is a container image with Python SDK and autoinstrumentation.
+                    type: string
+                type: object
               resourceAttributes:
                 additionalProperties:
                   type: string

@@ -58,6 +58,12 @@ func inject(logger logr.Logger, insts languageInstrumentations, ns corev1.Namesp
 		pod = injectCommonSDKConfig(otelinst, ns, pod)
 		pod = injectNodeJSSDK(logger, otelinst.Spec.NodeJS, pod)
 	}
+	if insts.Python != nil {
+		otelinst := *insts.Python
+		logger.V(1).Info("injecting instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod = injectCommonSDKConfig(otelinst, ns, pod)
+		pod = injectPythonSDK(logger, otelinst.Spec.Python, pod)
+	}
 	return pod
 }
 
