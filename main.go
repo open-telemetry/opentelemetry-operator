@@ -187,7 +187,7 @@ func main() {
 			Handler: webhookhandler.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), mgr.GetClient(),
 				[]webhookhandler.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), autoInstrumentationJava),
+					instrumentation.NewMutator(logger, mgr.GetClient()),
 				}),
 		})
 	}
