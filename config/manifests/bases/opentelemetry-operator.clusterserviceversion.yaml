@@ -25,6 +25,18 @@ spec:
       kind: OpenTelemetryCollector
       name: opentelemetrycollectors.core.opentelemetry.io
       version: v1alpha1
+    - description: 'Instrumentation is the spec for OpenTelemetry instrumentation.
+        nolint: maligned'
+      displayName: OpenTelemetry Instrumentation
+      kind: Instrumentation
+      name: instrumentations.opentelemetry.io
+      version: v1alpha1
+    - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
+        API.
+      displayName: OpenTelemetry Collector
+      kind: OpenTelemetryCollector
+      name: opentelemetrycollectors.opentelemetry.io
+      version: v1alpha1
   description: |-
     OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
 

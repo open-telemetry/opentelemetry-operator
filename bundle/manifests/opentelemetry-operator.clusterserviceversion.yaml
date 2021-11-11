@@ -34,19 +34,25 @@ metadata:
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.13.0+git
-    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.38.0
+  name: opentelemetry-operator.v0.38.0-14-gf0818d7
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - kind: Instrumentation
+    - description: 'Instrumentation is the spec for OpenTelemetry instrumentation.
+        nolint: maligned'
+      displayName: OpenTelemetry Instrumentation
+      kind: Instrumentation
       name: instrumentations.opentelemetry.io
       version: v1alpha1
-    - kind: OpenTelemetryCollector
+    - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
+        API.
+      displayName: OpenTelemetry Collector
+      kind: OpenTelemetryCollector
       name: opentelemetrycollectors.opentelemetry.io
       version: v1alpha1
   description: |-
@@ -227,7 +233,7 @@ spec:
               - args:
                 - --metrics-addr=127.0.0.1:8080
                 - --enable-leader-election
-                image: quay.io/opentelemetry/opentelemetry-operator:v0.38.0
+                image: docker.io/pavolloffay/opentelemetry-operator:23
                 name: manager
                 ports:
                 - containerPort: 9443
@@ -319,7 +325,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.38.0
+  version: 0.38.0-14-gf0818d7
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
