@@ -25,8 +25,7 @@ spec:
       kind: OpenTelemetryCollector
       name: opentelemetrycollectors.core.opentelemetry.io
       version: v1alpha1
-    - description: 'Instrumentation is the spec for OpenTelemetry instrumentation.
-        nolint: maligned'
+    - description: Instrumentation is the spec for OpenTelemetry instrumentation.
       displayName: OpenTelemetry Instrumentation
       kind: Instrumentation
       name: instrumentations.opentelemetry.io
