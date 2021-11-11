@@ -18,7 +18,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 const (

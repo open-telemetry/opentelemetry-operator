@@ -23,7 +23,7 @@ Resource Types:
 
 
 
-Instrumentation is the spec for OpenTelemetry instrumentation. nolint: maligned
+Instrumentation is the spec for OpenTelemetry instrumentation.
 
 <table>
     <thead>

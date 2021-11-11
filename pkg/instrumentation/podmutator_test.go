@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 var k8sClient client.Client
