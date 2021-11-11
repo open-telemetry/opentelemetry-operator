@@ -4,6 +4,7 @@ layout:
 multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
 projectName: opentelemetry-operator
 repo: github.com/open-telemetry/opentelemetry-operator
 resources:
