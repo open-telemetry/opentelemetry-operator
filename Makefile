@@ -9,7 +9,7 @@ AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep a
 LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION}"
 
 # Image URL to use all building/pushing image targets
-IMG_PREFIX ?= quay.io/${USER}
+IMG_PREFIX ?= ghcr.io/${USER}
 IMG_REPO ?= opentelemetry-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:$(addprefix v,${VERSION})
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
@@ -49,7 +49,7 @@ KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 CERTMANAGER_VERSION ?= 1.6.1
 
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
-ensure-generate-is-noop: USER=opentelemetry
+ensure-generate-is-noop: USER=open-telemetry/opentelemetry-operator
 ensure-generate-is-noop: set-image-controller generate bundle
 	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
 	@git restore config/manager/kustomization.yaml
