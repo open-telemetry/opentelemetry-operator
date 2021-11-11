@@ -55,6 +55,7 @@ ensure-generate-is-noop: set-image-controller generate bundle
 	@git restore config/manager/kustomization.yaml
 	@git diff -s --exit-code api/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
 all: manager
 ci: test
@@ -113,7 +114,7 @@ lint:
 	golangci-lint run
 
 # Generate code
-generate: controller-gen
+generate: controller-gen api-docs
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # end-to-tests
@@ -136,7 +137,7 @@ container:
 container-push:
 	docker push ${IMG}
 
-start-kind: 
+start-kind:
 	kind create cluster --config $(KIND_CONFIG)
 	kind load docker-image local/opentelemetry-operator:e2e
 
@@ -233,3 +234,28 @@ bundle-push:
 	docker push $(BUNDLE_IMG)
 
 tools: ginkgo kustomize controller-gen operator-sdk
+
+
+api-docs: crdoc kustomize
+	@{ \
+	set -e ;\
+	TMP_DIR=$$(mktemp -d) ; \
+	$(KUSTOMIZE) build config/crd -o $$TMP_DIR/crd-output.yaml ;\
+	$(API_REF_GEN) crdoc --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
+	}
+
+# Find or download crdoc
+crdoc:
+ifeq (, $(shell which crdoc))
+	@{ \
+	set -e ;\
+	API_REF_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$API_REF_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get fybrik.io/crdoc@v0.5.2 ;\
+	rm -rf $$API_REF_GEN_TMP_DIR ;\
+	}
+API_REF_GEN=$(GOBIN)/crdoc
+else
+API_REF_GEN=$(shell which crdoc)
+endif
