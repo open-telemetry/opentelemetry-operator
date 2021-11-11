@@ -13,6 +13,27 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-opentelemetry-io-v1alpha1-instrumentation
+  failurePolicy: Fail
+  name: minstrumentation.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - instrumentations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-opentelemetry-io-v1alpha1-opentelemetrycollector
   failurePolicy: Fail
   name: mopentelemetrycollector.kb.io
