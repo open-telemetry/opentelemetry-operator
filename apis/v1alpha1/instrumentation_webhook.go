@@ -15,9 +15,9 @@
 package v1alpha1
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
@@ -37,7 +37,7 @@ func (r *Instrumentation) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Defaulter = &Instrumentation{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *Instrumentation) Default() {
 	instrumentationlog.Info("default", "name", r.Name)
 	if r.Labels == nil {
