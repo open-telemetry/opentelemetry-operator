@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	AnnotationDefaultAutoInstrumentationJava = "opentelemetry.io/default-auto-instrumentation-java"
+	AnnotationDefaultAutoInstrumentationJava = "opentelemetry.io/default-auto-instrumentation-java-image"
 )
 
 // log is for logging in this package.
