@@ -10,19 +10,20 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: opentelemetry.io
-  version: v1alpha1
   kind: OpenTelemetryCollector
   path: github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1
-  controller: true
+  version: v1alpha1
   webhooks:
     defaulting: true
+    validation: true
     webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
   domain: opentelemetry.io
-  version: v1alpha1
   kind: Instrumentation
-  path: github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1
+  path: github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1
+  version: v1alpha1
 version: "3"
