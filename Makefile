@@ -126,8 +126,8 @@ prepare-e2e: kuttl set-test-image-vars set-image-controller container start-kind
 	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
 
-test-scorecard:
-	$(OPERATOR_SDK) scorecard bundle
+scorecard-tests:
+	$(OPERATOR_SDK) scorecard bundle || echo "scorecard test failed"
 
 set-test-image-vars:
 	$(eval IMG=local/opentelemetry-operator:e2e)
