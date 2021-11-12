@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  e2e-tests:
+  scorecard-tests:
     name: Scorecard tests
     runs-on: ubuntu-20.04
     strategy:
