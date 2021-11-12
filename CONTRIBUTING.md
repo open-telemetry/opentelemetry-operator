@@ -52,12 +52,12 @@ In general, it's just easier to deploy the operator in a Kubernetes cluster inst
 make cert-manager
 ```
 
-Variable `CERTMANAGER_VERSION` can be used to override the cert manager version:
+The environment variable `CERTMANAGER_VERSION` can be used to override the cert-manager version:
 ```bash
 CERTMANAGER_VERSION=1.60 make cert-manager
 ```
 
-Now let's deploy OpenTelemetry operator into the cluster. By default `make deploy` uses image with the following format `ghcr.io/${USER}/opentelemetry-operator` which can be overridden by:
+When deploying the operator into the cluster using `make deploy`, an image in the format `ghcr.io/${USER}/opentelemetry-operator` is generated. If this format isn't suitable, it can be overridden by:
 
 * `IMG_PREFIX`, to override the registry, namespace and image name
 * `USER`, to override the namespace
@@ -71,7 +71,7 @@ IMG=docker.io/${USER}/opentelemetry-operator:latest make generate bundle contain
 
 Your operator will be available in the `opentelemetry-operator-system` namespace.
 
-#### Using private docker registry
+#### Using a private container registry
 
 Ensure the secret [regcred](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) has been created to enable opentelemetry-operator-controller-manager deployment to pull images from your private registry.
 
