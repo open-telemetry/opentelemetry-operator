@@ -8,7 +8,7 @@ LABEL operators.operatorframework.io.bundle.package.v1=opentelemetry-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=alpha
 LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.13.0+git
 LABEL operators.operatorframework.io.metrics.mediatype.v1=metrics+v1
-LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v2
+LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v3
 
 # Labels for testing.
 LABEL operators.operatorframework.io.test.mediatype.v1=scorecard+v1
