@@ -36,6 +36,9 @@ jobs:
           KUBE_VERSION: ${{ matrix.kube-version }}
         run: kind create cluster --config kind-$KUBE_VERSION.yaml
 
+      - name: "wait until cluster is ready"
+        run:  kubectl wait --timeout=5m --for=condition=available deployment/coredns -n kube-system
+
       - uses: jpkrohling/setup-operator-sdk@v1.1.0
         with:
           operator-sdk-version: v1.13.1
