@@ -1,0 +1,43 @@
+opentelemetry-distro==0.25b2
+# We don't use the distro[otlp] option which automatically includes exporters since gRPC is not appropriate for
+# injected auto-instrumentation, where it has a strict dependency on the OS / Python version the artifact is built for.
+opentelemetry-exporter-otlp-proto-http==1.6.2
+
+opentelemetry-instrumentation==0.25b2
+
+# Copied in from https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation
+# except for aws-lambda
+opentelemetry-instrumentation-aiohttp-client==0.25b2
+opentelemetry-instrumentation-aiopg==0.25b2
+opentelemetry-instrumentation-asgi==0.25b2
+opentelemetry-instrumentation-asyncpg==0.25b2
+opentelemetry-instrumentation-boto==0.25b2
+opentelemetry-instrumentation-botocore==0.25b2
+opentelemetry-instrumentation-celery==0.25b2
+opentelemetry-instrumentation-dbapi==0.25b2
+opentelemetry-instrumentation-django==0.25b2
+opentelemetry-instrumentation-elasticsearch==0.25b2
+opentelemetry-instrumentation-falcon==0.25b2
+opentelemetry-instrumentation-fastapi==0.25b2
+opentelemetry-instrumentation-flask==0.25b2
+opentelemetry-instrumentation-grpc==0.25b2
+opentelemetry-instrumentation-httpx==0.25b2
+opentelemetry-instrumentation-jinja2==0.25b2
+opentelemetry-instrumentation-logging==0.25b2
+opentelemetry-instrumentation-mysql==0.25b2
+opentelemetry-instrumentation-pika==0.25b2
+opentelemetry-instrumentation-psycopg2==0.25b2
+opentelemetry-instrumentation-pymemcache==0.25b2
+opentelemetry-instrumentation-pymongo==0.25b2
+opentelemetry-instrumentation-pymysql==0.25b2
+opentelemetry-instrumentation-pyramid==0.25b2
+opentelemetry-instrumentation-redis==0.25b2
+opentelemetry-instrumentation-requests==0.25b2
+opentelemetry-instrumentation-sklearn==0.25b2
+opentelemetry-instrumentation-sqlalchemy==0.25b2
+opentelemetry-instrumentation-sqlite3==0.25b2
+opentelemetry-instrumentation-starlette==0.25b2
+opentelemetry-instrumentation-tornado==0.25b2
+opentelemetry-instrumentation-urllib==0.25b2
+opentelemetry-instrumentation-urllib3==0.25b2
+opentelemetry-instrumentation-wsgi==0.25b2
