@@ -34,13 +34,11 @@ jobs:
       - name: "start kind"
         env:
           KUBE_VERSION: ${{ matrix.kube-version }}
-        run: kind create cluster --config kind-$(KUBE_VERSION).yaml
+        run: kind create cluster --config kind-$KUBE_VERSION.yaml
 
       - uses: jpkrohling/setup-operator-sdk@v1.1.0
         with:
           operator-sdk-version: v1.13.1
 
       - name: "run scorecard test"
-        env:
-          KUBE_VERSION: ${{ matrix.kube-version }}
         run: make scorecard-tests
