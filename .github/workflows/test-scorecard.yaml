@@ -37,8 +37,8 @@ jobs:
         run: make start-kind KUBE_VERSION=$KUBE_VERSION
 
       - uses: jpkrohling/setup-operator-sdk@v1.1.0
-          with:
-            operator-sdk-version: v1.13.1
+        with:
+          operator-sdk-version: v1.13.1
 
       - name: "run scorecard test"
         env:
