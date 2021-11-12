@@ -23,8 +23,14 @@ gh pr create
 ### Pre-requisites
 * Install [Go](https://golang.org/doc/install).
 * Install [Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/).
+* Install [Operator SDK](https://sdk.operatorframework.io/docs/installation/).
 * Have a Kubernetes cluster ready for development. We recommend `minikube` or `kind`.
 
+### Adding new components - webhook, API
+
+The repository structure MUST be compliant with `operator-sdk` scaffolding, which uses `kubebuilder` behind the scenes. This is to ensure a valid bundle generation and it makes it easy to maintain the project and add new components.
+
+Refer to the [Operator SDK documentation](https://sdk.operatorframework.io/docs/building-operators/golang/) how to generate new APIs, Webhook and other parts of the project.
 
 ### Local run
 
@@ -40,40 +46,38 @@ When running `make run`, the webhooks aren't effective as it starts the manager 
 1. configure a proxy between the Kubernetes API server and your host, so that it can contact the webhook in your local machine
 1. create the TLS certificates and place them, by default, on `/tmp/k8s-webhook-server/serving-certs/tls.crt`. The Kubernetes API server has also to be configured to trust the CA used to generate those certs.
 
-In general, it's just easier to deploy the manager in a Kubernetes cluster instead. For that, you'll need the `cert-manager` installed. You can install it by running:
+In general, it's just easier to deploy the operator in a Kubernetes cluster instead. For that, you'll need the `cert-manager` installed. You can install it by running:
 
 ```bash
 make cert-manager
 ```
 
-In pursuit of continuous improvement, a variable named `CERTMANAGER_VERSION` which can be run:
+Variable `CERTMANAGER_VERSION` can be used to override the cert manager version:
 ```bash
 CERTMANAGER_VERSION=1.60 make cert-manager
 ```
 
-By default, it will generate an image following the format `quay.io/${USER}/opentelemetry-operator:${VERSION}`. You can set the following env vars in front of the `make` command to override parts or the entirety of the image:
+Now let's deploy OpenTelemetry operator into the cluster. By default `make deploy` uses image with the following format `ghcr.io/${USER}/opentelemetry-operator` which can be overridden by:
 
-* `IMG_PREFIX`, to override the registry, namespace and image name (`quay.io`)
+* `IMG_PREFIX`, to override the registry, namespace and image name
 * `USER`, to override the namespace
 * `IMG_REPO`, to override the repository (`opentelemetry-operator`)
 * `VERSION`, to override only the version part
 * `IMG`, to override the entire image specification
 
-Ensure the secret [regcred](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) has been created to enable opentelemetry-operator-controller-manager deployment to pull images from your private `quay.io` registry.
-
 ```bash
-kubectl create secret docker-registry regcred --docker-server=quay.io --docker-username=${USER} --docker-password=${PASSWORD}  -n opentelemetry-operator-system
-```
-
-Alternatively, you could create your repository with [Public Visibility](https://docs.projectquay.io/use_quay.html#creating-an-image-repository-via-the-ui).
-
-Once it's ready, the following can be used to build and deploy a manager, along with the required webhook configuration:
-
-```bash
-make bundle container container-push deploy
+IMG=docker.io/${USER}/opentelemetry-operator:latest make generate bundle container container-push deploy
 ```
 
 Your operator will be available in the `opentelemetry-operator-system` namespace.
+
+#### Using private docker registry
+
+Ensure the secret [regcred](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) has been created to enable opentelemetry-operator-controller-manager deployment to pull images from your private registry.
+
+```bash
+kubectl create secret docker-registry regcred --docker-server=<registry> --docker-username=${USER} --docker-password=${PASSWORD}  -n opentelemetry-operator-system
+```
 
 ## Testing
 
