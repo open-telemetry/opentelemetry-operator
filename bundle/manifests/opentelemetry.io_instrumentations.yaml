@@ -76,7 +76,7 @@ spec:
                   - jaeger
                   - xray
                   - ottrace
-                  - "no"
+                  - none
                   type: string
                 type: array
               resourceAttributes:
