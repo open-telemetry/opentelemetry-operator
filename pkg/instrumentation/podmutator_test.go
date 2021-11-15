@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestMutatePod(t *testing.T) {
-	mutator := NewMutator(logr.Discard(), k8sClient, "defaultimage:latest")
+	mutator := NewMutator(logr.Discard(), k8sClient)
 	require.NotNil(t, mutator)
 
 	tests := []struct {
@@ -133,7 +133,6 @@ func TestMutatePod(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name:    initContainerName,
-							Image:   "defaultimage:latest",
 							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      volumeName,
