@@ -34,9 +34,8 @@ var (
 )
 
 type instPodMutator struct {
-	Logger                  logr.Logger
-	Client                  client.Client
-	autoInstrumentationJava string
+	Logger logr.Logger
+	Client client.Client
 }
 
 type languageInstrumentations struct {
@@ -46,11 +45,10 @@ type languageInstrumentations struct {
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client, autoInstrumentationJava string) *instPodMutator {
+func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
 	return &instPodMutator{
-		Logger:                  logger,
-		Client:                  client,
-		autoInstrumentationJava: autoInstrumentationJava,
+		Logger: logger,
+		Client: client,
 	}
 }
 
@@ -69,7 +67,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.Java = pm.applyDefaults(inst)
+	insts.Java = inst
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNodeJS); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
@@ -122,15 +120,4 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	default:
 		return &otelInsts.Items[0], nil
 	}
-}
-
-func (pm *instPodMutator) applyDefaults(otelinst *v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
-	if otelinst == nil {
-		return nil
-	}
-
-	if otelinst.Spec.Java.Image == "" {
-		otelinst.Spec.Java.Image = pm.autoInstrumentationJava
-	}
-	return otelinst
 }
