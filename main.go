@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -173,12 +174,20 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
+		if err = (&otelv1alpha1.Instrumentation{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{otelv1alpha1.AnnotationDefaultAutoInstrumentationJava: autoInstrumentationJava},
+			},
+		}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
+			os.Exit(1)
+		}
 
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
 			Handler: webhookhandler.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), mgr.GetClient(),
 				[]webhookhandler.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), autoInstrumentationJava),
+					instrumentation.NewMutator(logger, mgr.GetClient()),
 				}),
 		})
 	}

@@ -332,6 +332,27 @@ spec:
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
     failurePolicy: Fail
+    generateName: minstrumentation.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - instrumentations
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-opentelemetry-io-v1alpha1-instrumentation
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
     generateName: mopentelemetrycollector.kb.io
     rules:
     - apiGroups:
