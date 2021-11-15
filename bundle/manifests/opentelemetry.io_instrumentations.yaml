@@ -86,11 +86,19 @@ spec:
                     description: Image is a container image with Python SDK and autoinstrumentation.
                     type: string
                 type: object
-              resourceAttributes:
-                additionalProperties:
-                  type: string
-                description: ResourceAttributes defines attributes that are added
-                  to resource.
+              resource:
+                description: Resource defines resource configuration
+                properties:
+                  k8sUIDAttributes:
+                    description: K8sUIDAttributes defines whether K8s UID attributes
+                      should be collected (e.g. k8s.deployment.uid).
+                    type: boolean
+                  resourceAttributes:
+                    additionalProperties:
+                      type: string
+                    description: Attributes defines attributes that are added to the
+                      resource.
+                    type: object
                 type: object
               sampler:
                 description: Sampler defines sampling configuration.

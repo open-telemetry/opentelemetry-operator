@@ -15,11 +15,14 @@
 package instrumentation
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -27,6 +30,66 @@ import (
 )
 
 func TestSDKInjection(t *testing.T) {
+	ns := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "project1",
+		},
+	}
+	err := k8sClient.Create(context.Background(), &ns)
+	require.NoError(t, err)
+	dep := appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "project1",
+			Name:      "my-deployment",
+			UID:       "depuid",
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "my"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "my"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
+				},
+			},
+		},
+	}
+	err = k8sClient.Create(context.Background(), &dep)
+	require.NoError(t, err)
+	rs := appsv1.ReplicaSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-replicaset",
+			Namespace: "project1",
+			UID:       "rsuid",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Kind:       "Deployment",
+					APIVersion: "apps/v1",
+					Name:       "my-deployment",
+					UID:        "depuid",
+				},
+			},
+		},
+		Spec: appsv1.ReplicaSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "my"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "my"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
+				},
+			},
+		},
+	}
+	err = k8sClient.Create(context.Background(), &rs)
+	require.NoError(t, err)
+
 	tests := []struct {
 		name     string
 		inst     v1alpha1.Instrumentation
@@ -40,6 +103,9 @@ func TestSDKInjection(t *testing.T) {
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "https://collector:4317",
 					},
+					Resource: v1alpha1.Resource{
+						K8sUIDAttributes: true,
+					},
 					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
 					Sampler: v1alpha1.Sampler{
 						Type:     "parentbased_traceidratio",
@@ -51,6 +117,15 @@ func TestSDKInjection(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "project1",
 					Name:      "app",
+					UID:       "pod-uid",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -64,6 +139,15 @@ func TestSDKInjection(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "project1",
 					Name:      "app",
+					UID:       "pod-uid",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -72,7 +156,7 @@ func TestSDKInjection(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: "application-name",
+									Value: "my-deployment",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -80,7 +164,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.namespace.name=project1,k8s.pod.name=app",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid",
 								},
 								{
 									Name:  "OTEL_PROPAGATORS",
@@ -107,8 +191,10 @@ func TestSDKInjection(t *testing.T) {
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "https://collector:4317",
 					},
-					ResourceAttributes: map[string]string{
-						"fromcr": "val",
+					Resource: v1alpha1.Resource{
+						Attributes: map[string]string{
+							"fromcr": "val",
+						},
 					},
 					Propagators: []v1alpha1.Propagator{"jaeger"},
 					Sampler: v1alpha1.Sampler{
@@ -190,7 +276,10 @@ func TestSDKInjection(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectCommonSDKConfig(test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod)
+			inj := sdkInjector{
+				client: k8sClient,
+			}
+			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -210,7 +299,10 @@ func TestInjectJava(t *testing.T) {
 	insts := languageInstrumentations{
 		Java: &inst,
 	}
-	pod := inject(logr.Discard(), insts,
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
 			Spec: corev1.PodSpec{
@@ -262,7 +354,7 @@ func TestInjectJava(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.namespace.name=",
+							Value: "k8s.container.name=app",
 						},
 						{
 							Name:  "JAVA_TOOL_OPTIONS",
@@ -289,7 +381,10 @@ func TestInjectNodeJS(t *testing.T) {
 	insts := languageInstrumentations{
 		NodeJS: &inst,
 	}
-	pod := inject(logr.Discard(), insts,
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
 			Spec: corev1.PodSpec{
@@ -341,7 +436,7 @@ func TestInjectNodeJS(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.namespace.name=",
+							Value: "k8s.container.name=app",
 						},
 						{
 							Name:  "NODE_OPTIONS",
@@ -368,7 +463,11 @@ func TestInjectPython(t *testing.T) {
 	insts := languageInstrumentations{
 		Python: &inst,
 	}
-	pod := inject(logr.Discard(), insts,
+
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
 			Spec: corev1.PodSpec{
@@ -420,7 +519,7 @@ func TestInjectPython(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.namespace.name=",
+							Value: "k8s.container.name=app",
 						},
 						{
 							Name:  "PYTHONPATH",

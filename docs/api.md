@@ -121,10 +121,10 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>resourceAttributes</b></td>
-        <td>map[string]string</td>
+        <td><b><a href="#instrumentationspecresource">resource</a></b></td>
+        <td>object</td>
         <td>
-          ResourceAttributes defines attributes that are added to resource.<br/>
+          Resource defines resource configuration<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -240,6 +240,40 @@ Python defines configuration for python auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with Python SDK and autoinstrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.resource
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+Resource defines resource configuration
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>k8sUIDAttributes</b></td>
+        <td>boolean</td>
+        <td>
+          K8sUIDAttributes defines whether K8s UID attributes should be collected (e.g. k8s.deployment.uid).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>resourceAttributes</b></td>
+        <td>map[string]string</td>
+        <td>
+          Attributes defines attributes that are added to the resource.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

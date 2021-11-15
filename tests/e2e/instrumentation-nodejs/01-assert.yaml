@@ -11,7 +11,7 @@ spec:
   - name: myapp
     env:
     - name: OTEL_SERVICE_NAME
-      value: myapp
+      value: my-deployment-with-sidecar
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_RESOURCE_ATTRIBUTES

@@ -15,13 +15,18 @@
 package instrumentation
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"unsafe"
 
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
@@ -29,6 +34,26 @@ import (
 const (
 	volumeName        = "opentelemetry-auto-instrumentation"
 	initContainerName = "opentelemetry-auto-instrumentation"
+
+	// Kubernetes resource attributes are defined in
+	// https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/resource/semantic_conventions/k8s.md
+	resourceK8sNsName          = "k8s.namespace.name"
+	resourceK8sNodeName        = "k8s.node.name"
+	resourceK8sPodName         = "k8s.pod.name"
+	resourceK8sPodUID          = "k8s.pod.uid"
+	resourceK8sContainerName   = "k8s.container.name"
+	resourceK8sReplicaSetName  = "k8s.replicaset.name"
+	resourceK8sReplicaSetUID   = "k8s.replicaset.uid"
+	resourceK8sDeploymentName  = "k8s.deployment.name"
+	resourceK8sDeploymentUID   = "k8s.deployment.uid"
+	resourceK8sStatefulSetName = "k8s.statefulset.name"
+	resourceK8sStatefulSetUID  = "k8s.statefulset.uid"
+	resourceK8DaemonSetName    = "k8s.daemonset.name"
+	resourceK8sDaemonSetUID    = "k8s.daemonset.uid"
+	resourceK8sJobName         = "k8s.job.name"
+	resourceK8sJobUID          = "k8s.job.uid"
+	resourceK8sCronJobName     = "k8s.cronjob.name"
+	resourceK8sCronJobUID      = "k8s.cronjob.uid"
 
 	envOTELServiceName          = "OTEL_SERVICE_NAME"
 	envOTELExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
@@ -39,7 +64,13 @@ const (
 )
 
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
-func inject(logger logr.Logger, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
+
+type sdkInjector struct {
+	logger logr.Logger
+	client client.Client
+}
+
+func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
 	if len(pod.Spec.Containers) < 1 {
 		return pod
 	}
@@ -48,36 +79,35 @@ func inject(logger logr.Logger, insts languageInstrumentations, ns corev1.Namesp
 	// in the future we can define an annotation to configure this
 	if insts.Java != nil {
 		otelinst := *insts.Java
-		logger.V(1).Info("injecting java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectCommonSDKConfig(otelinst, ns, pod)
-		pod = injectJavaagent(logger, otelinst.Spec.Java, pod)
+		i.logger.V(1).Info("injecting java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
+		pod = injectJavaagent(i.logger, otelinst.Spec.Java, pod)
 	}
 	if insts.NodeJS != nil {
 		otelinst := *insts.NodeJS
-		logger.V(1).Info("injecting nodejs instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectCommonSDKConfig(otelinst, ns, pod)
-		pod = injectNodeJSSDK(logger, otelinst.Spec.NodeJS, pod)
+		i.logger.V(1).Info("injecting nodejs instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
+		pod = injectNodeJSSDK(i.logger, otelinst.Spec.NodeJS, pod)
 	}
 	if insts.Python != nil {
 		otelinst := *insts.Python
-		logger.V(1).Info("injecting python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectCommonSDKConfig(otelinst, ns, pod)
-		pod = injectPythonSDK(logger, otelinst.Spec.Python, pod)
+		i.logger.V(1).Info("injecting python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
+		pod = injectPythonSDK(i.logger, otelinst.Spec.Python, pod)
 	}
 	return pod
 }
 
-func injectCommonSDKConfig(otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
+func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
 	container := &pod.Spec.Containers[0]
+	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod)
 	idx := getIndexOfEnv(container.Env, envOTELServiceName)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
-			Name: envOTELServiceName,
-			// TODO use more meaningful service name - e.g. deployment name
-			Value: container.Name,
+			Name:  envOTELServiceName,
+			Value: chooseServiceName(pod, resourceMap),
 		})
 	}
-
 	idx = getIndexOfEnv(container.Env, envOTELExporterOTLPEndpoint)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
@@ -86,7 +116,6 @@ func injectCommonSDKConfig(otelinst v1alpha1.Instrumentation, ns corev1.Namespac
 		})
 	}
 	idx = getIndexOfEnv(container.Env, envOTELResourceAttrs)
-	resourceMap := createResourceMap(otelinst, ns, pod)
 	resStr := resourceMapToStr(resourceMap)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
@@ -129,9 +158,28 @@ func injectCommonSDKConfig(otelinst v1alpha1.Instrumentation, ns corev1.Namespac
 	return pod
 }
 
+func chooseServiceName(pod corev1.Pod, resources map[string]string) string {
+	if name := resources[resourceK8sDeploymentName]; name != "" {
+		return name
+	}
+	if name := resources[resourceK8sStatefulSetName]; name != "" {
+		return name
+	}
+	if name := resources[resourceK8sJobName]; name != "" {
+		return name
+	}
+	if name := resources[resourceK8sCronJobName]; name != "" {
+		return name
+	}
+	if name := resources[resourceK8sPodName]; name != "" {
+		return name
+	}
+	return pod.Spec.Containers[0].Name
+}
+
 // createResourceMap creates resource attribute map.
 // User defined attributes (in explicitly set env var) have higher precedence.
-func createResourceMap(otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) map[string]string {
+func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) map[string]string {
 	// get existing resources env var and parse it into a map
 	existingRes := map[string]bool{}
 	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[0].Env, envOTELResourceAttrs)
@@ -147,25 +195,73 @@ func createResourceMap(otelinst v1alpha1.Instrumentation, ns corev1.Namespace, p
 	}
 
 	res := map[string]string{}
-	for k, v := range otelinst.Spec.ResourceAttributes {
+	for k, v := range otelinst.Spec.Resource.Attributes {
 		if !existingRes[k] {
 			res[k] = v
 		}
 	}
-	if !existingRes["k8s.namespace.name"] {
-		res["k8s.namespace.name"] = ns.Name
-	}
-	if pod.Name != "" {
-		// The pod name might be empty if the pod is created form deployment template
-		if !existingRes["k8s.pod.name"] {
-			res["k8s.pod.name"] = pod.Name
+
+	resources := map[string]string{}
+	resources[resourceK8sNsName] = ns.Name
+	resources[resourceK8sContainerName] = pod.Spec.Containers[0].Name
+	// Some fields might be empty - node name, pod name
+	// The pod name might be empty if the pod is created form deployment template
+	resources[resourceK8sPodName] = pod.Name
+	resources[resourceK8sPodUID] = string(pod.UID)
+	resources[resourceK8sNodeName] = pod.Spec.NodeName
+	i.getParentResourceLabels(ctx, otelinst.Spec.Resource.K8sUIDAttributes, ns, pod.ObjectMeta, resources)
+	for k, v := range resources {
+		if !existingRes[k] && v != "" {
+			res[k] = v
 		}
 	}
-	if !existingRes["k8s.container.name"] {
-		res["k8s.container.name"] = pod.Spec.Containers[0].Name
-	}
-	// TODO add more attributes once the parent object (deployment) is accessible here
 	return res
+}
+
+func (i *sdkInjector) getParentResourceLabels(ctx context.Context, uid bool, ns corev1.Namespace, objectMeta metav1.ObjectMeta, resources map[string]string) {
+	for _, owner := range objectMeta.OwnerReferences {
+		switch strings.ToLower(owner.Kind) {
+		case "replicaset":
+			resources[resourceK8sReplicaSetName] = owner.Name
+			if uid {
+				resources[resourceK8sReplicaSetUID] = string(owner.UID)
+			}
+			// parent of ReplicaSet is e.g. Deployment which we are interested to know
+			rs := appsv1.ReplicaSet{}
+			// ignore the error. The object might not exist, the error is not important, getting labels is just the best effort
+			//nolint:errcheck
+			i.client.Get(ctx, types.NamespacedName{
+				Namespace: ns.Name,
+				Name:      owner.Name,
+			}, &rs)
+			i.getParentResourceLabels(ctx, uid, ns, rs.ObjectMeta, resources)
+		case "deployment":
+			resources[resourceK8sDeploymentName] = owner.Name
+			if uid {
+				resources[resourceK8sDeploymentUID] = string(owner.UID)
+			}
+		case "statefulset":
+			resources[resourceK8sStatefulSetName] = owner.Name
+			if uid {
+				resources[resourceK8sStatefulSetUID] = string(owner.UID)
+			}
+		case "daemonset":
+			resources[resourceK8DaemonSetName] = owner.Name
+			if uid {
+				resources[resourceK8sDaemonSetUID] = string(owner.UID)
+			}
+		case "job":
+			resources[resourceK8sJobName] = owner.Name
+			if uid {
+				resources[resourceK8sJobUID] = string(owner.UID)
+			}
+		case "cronjob":
+			resources[resourceK8sCronJobName] = owner.Name
+			if uid {
+				resources[resourceK8sCronJobUID] = string(owner.UID)
+			}
+		}
+	}
 }
 
 func resourceMapToStr(res map[string]string) string {

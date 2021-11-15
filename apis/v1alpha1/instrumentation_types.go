@@ -24,9 +24,9 @@ type InstrumentationSpec struct {
 	// +optional
 	Exporter `json:"exporter,omitempty"`
 
-	// ResourceAttributes defines attributes that are added to resource.
+	// Resource defines configuration for resource object.
 	// +optional
-	ResourceAttributes map[string]string `json:"resourceAttributes,omitempty"`
+	Resource Resource `json:"resource,omitempty"`
 
 	// Propagators defines inter-process context propagation configuration.
 	// +optional
@@ -68,6 +68,18 @@ type PythonSpec struct {
 	// Image is a container image with Python SDK and autoinstrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+}
+
+// Resource defines configuration for resource object.
+type Resource struct {
+	// Attributes defines attributes that are added to the resource.
+	// For example environment: dev
+	// +optional
+	Attributes map[string]string `json:"resourceAttributes,omitempty"`
+
+	// K8sUIDAttributes defines whether K8s UID attributes should be collected (e.g. k8s.deployment.uid).
+	// +optional
+	K8sUIDAttributes bool `json:"k8sUIDAttributes,omitempty"`
 }
 
 // Exporter defines OTLP exporter configuration.
