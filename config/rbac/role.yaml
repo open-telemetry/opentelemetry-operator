@@ -106,8 +106,12 @@ rules:
   resources:
   - instrumentations
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - opentelemetry.io

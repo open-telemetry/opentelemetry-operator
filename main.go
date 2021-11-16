@@ -40,8 +40,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
+	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
+	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 	// +kubebuilder:scaffold:imports
 )
@@ -152,7 +153,19 @@ func main() {
 
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		return upgrade.ManagedInstances(c, ctrl.Log.WithName("upgrade"), v, mgr.GetClient())
+		return collectorupgrade.ManagedInstances(c, ctrl.Log.WithName("collector-upgrade"), v, mgr.GetClient())
+	}))
+	if err != nil {
+		setupLog.Error(err, "failed to upgrade managed instances")
+	}
+	// adds the upgrade mechanism to be executed once the manager is ready
+	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
+		u := &instrumentationupgrade.InstrumentationUpgrade{
+			Logger:               ctrl.Log.WithName("instrumentation-upgrade"),
+			DefaultAutoInstrJava: autoInstrumentationJava,
+			Client:               mgr.GetClient(),
+		}
+		return u.ManagedInstances(c)
 	}))
 	if err != nil {
 		setupLog.Error(err, "failed to upgrade managed instances")
