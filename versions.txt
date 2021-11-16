@@ -12,7 +12,7 @@ targetallocator=0.1.0
 
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
-autoinstrumentation-java=1.7.0
+autoinstrumentation-java=1.7.2
 
 # Represents the current release of NodeJS instrumentation.
 # Should match value in autoinstrumentation/nodejs/package.json
