@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestInstrumentationWebhook(t *testing.T) {
+func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	inst := &Instrumentation{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{AnnotationDefaultAutoInstrumentationJava: "img:1"},
@@ -29,4 +29,71 @@ func TestInstrumentationWebhook(t *testing.T) {
 	}
 	inst.Default()
 	assert.Equal(t, "img:1", inst.Spec.Java.Image)
+}
+
+func TestInstrumentationValidatingWebhook(t *testing.T) {
+	tests := []struct {
+		name string
+		inst Instrumentation
+		err  string
+	}{
+		{
+			name: "argument is not a number",
+			err:  "spec.sampler.argument is not a number",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "abc",
+					},
+				},
+			},
+		},
+		{
+			name: "argument is a wrong number",
+			err:  "spec.sampler.argument should be in rage [0..1]",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "1.99",
+					},
+				},
+			},
+		},
+		{
+			name: "argument is a number",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+				},
+			},
+		},
+		{
+			name: "argument is missing",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type: ParentBasedTraceIDRatio,
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.err == "" {
+				assert.Nil(t, test.inst.ValidateCreate())
+				assert.Nil(t, test.inst.ValidateUpdate(nil))
+			} else {
+				err := test.inst.ValidateCreate()
+				assert.Contains(t, err.Error(), test.err)
+				err = test.inst.ValidateUpdate(nil)
+				assert.Contains(t, err.Error(), test.err)
+			}
+		})
+	}
 }
