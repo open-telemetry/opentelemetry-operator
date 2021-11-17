@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -92,4 +93,31 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	// verify
 	assert.Equal(t, "my-instance-collector", ds.Name)
 	assert.Equal(t, testPodAnnotationValues, ds.Spec.Template.Annotations)
+}
+
+func TestDaemonstPodSecurityContext(t *testing.T) {
+	runAsNonRoot := true
+	runAsUser := int64(1337)
+	runasGroup := int64(1338)
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			PodSecurityContext: &v1.PodSecurityContext{
+				RunAsNonRoot: &runAsNonRoot,
+				RunAsUser:    &runAsUser,
+				RunAsGroup:   &runasGroup,
+			},
+		},
+	}
+
+	cfg := config.New()
+
+	d := DaemonSet(cfg, logger, otelcol)
+
+	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
+	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
+	assert.Equal(t, &runasGroup, d.Spec.Template.Spec.SecurityContext.RunAsGroup)
 }
