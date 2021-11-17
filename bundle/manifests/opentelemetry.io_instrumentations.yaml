@@ -24,8 +24,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: 'Instrumentation is the spec for OpenTelemetry instrumentation.
-          nolint: maligned'
+        description: Instrumentation is the spec for OpenTelemetry instrumentation.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -77,7 +76,7 @@ spec:
                   - jaeger
                   - xray
                   - ottrace
-                  - "no"
+                  - none
                   type: string
                 type: array
               python:

@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -33,8 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	otelcolv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/collector/v1alpha1"
-	otelinstv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
+	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -54,8 +54,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(otelcolv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(otelinstv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -72,12 +71,14 @@ func main() {
 	var enableLeaderElection bool
 	var collectorImage string
 	var targetAllocatorImage string
+	var autoInstrumentationJava string
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	pflag.StringVar(&collectorImage, "collector-image", fmt.Sprintf("otel/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&targetAllocatorImage, "target-allocator-image", fmt.Sprintf("quay.io/opentelemetry/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationJava, "auto-instrumentation-java-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.JavaAutoInstrumentation), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
@@ -86,6 +87,7 @@ func main() {
 		"opentelemetry-operator", v.Operator,
 		"opentelemetry-collector", collectorImage,
 		"opentelemetry-targetallocator", targetAllocatorImage,
+		"auto-instrumentation-java", autoInstrumentationJava,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
@@ -168,8 +170,16 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&otelcolv1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&otelv1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+			os.Exit(1)
+		}
+		if err = (&otelv1alpha1.Instrumentation{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{otelv1alpha1.AnnotationDefaultAutoInstrumentationJava: autoInstrumentationJava},
+			},
+		}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
 

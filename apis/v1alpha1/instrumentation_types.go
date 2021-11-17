@@ -14,7 +14,9 @@
 
 package v1alpha1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
 type InstrumentationSpec struct {
@@ -113,13 +115,11 @@ type InstrumentationStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Instrumentation"
 
 // Instrumentation is the spec for OpenTelemetry instrumentation.
-// nolint: maligned
 type Instrumentation struct {
-	metav1.TypeMeta   `json:",inline"`
+	Status            InstrumentationStatus `json:"status,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   InstrumentationSpec   `json:"spec,omitempty"`
-	Status InstrumentationStatus `json:"status,omitempty"`
+	Spec              InstrumentationSpec `json:"spec,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
 }
 
 // +kubebuilder:object:root=true

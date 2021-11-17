@@ -49,3 +49,7 @@ func TestTargetAllocatorVersionFromBuild(t *testing.T) {
 	assert.Equal(t, targetAllocator, TargetAllocator())
 	assert.Contains(t, Get().String(), targetAllocator)
 }
+
+func TestAutoInstrumentationJavaFallbackVersion(t *testing.T) {
+	assert.Equal(t, "0.0.0", javaAutoInstrumentation())
+}

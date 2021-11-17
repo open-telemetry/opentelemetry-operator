@@ -17,7 +17,7 @@ package upgrade
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/collector/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 // this is our first version under otel/opentelemetry-collector.

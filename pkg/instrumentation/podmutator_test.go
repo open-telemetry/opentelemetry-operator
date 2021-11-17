@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/instrumentation/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 var k8sClient client.Client
@@ -95,9 +95,7 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "javaagent",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.JavaSpec{
-						Image: "otel/java:1",
-					},
+					Java: v1alpha1.JavaSpec{},
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "http://collector:12345",
 					},
@@ -135,7 +133,6 @@ func TestMutatePod(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name:    initContainerName,
-							Image:   "otel/java:1",
 							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      volumeName,

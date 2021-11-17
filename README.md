@@ -10,8 +10,7 @@ The operator manages:
 
 ## Documentation
 
-* [OpenTelemetryCollector Custom Resource Specification](./docs/otelcol_cr_spec.md)
-* [Instrumentation Custom Resource Specification](./docs/otelinst_cr_spec.md)
+* [API docs](./docs/api.md)
 
 ## Getting started
 

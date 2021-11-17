@@ -16,7 +16,7 @@ package v1alpha1
 
 type (
 	// Propagator represents the propagation type.
-	// +kubebuilder:validation:Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;no
+	// +kubebuilder:validation:Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none
 	Propagator string
 )
 
@@ -35,6 +35,6 @@ const (
 	XRay Propagator = "xray"
 	// OTTrace represents OT Trace.
 	OTTrace Propagator = "ottrace"
-	// No represents automatically configured propagator.
-	None Propagator = "no"
+	// None represents automatically configured propagator.
+	None Propagator = "none"
 )
