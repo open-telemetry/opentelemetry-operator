@@ -66,6 +66,8 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
 
+	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
+
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
