@@ -22,37 +22,30 @@ import (
 type InstrumentationSpec struct {
 	// Exporter defines exporter configuration.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Exporter `json:"exporter,omitempty"`
 
 	// ResourceAttributes defines attributes that are added to resource.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	ResourceAttributes map[string]string `json:"resourceAttributes,omitempty"`
 
 	// Propagators defines inter-process context propagation configuration.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Propagators []Propagator `json:"propagators,omitempty"`
 
 	// Sampler defines sampling configuration.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Sampler `json:"sampler,omitempty"`
 
 	// Java defines configuration for java auto-instrumentation.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Java JavaSpec `json:"java,omitempty"`
 
 	// NodeJS defines configuration for nodejs auto-instrumentation.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	NodeJS NodeJSSpec `json:"nodejs,omitempty"`
 
 	// Python defines configuration for python auto-instrumentation.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Python PythonSpec `json:"python,omitempty"`
 }
 
@@ -60,7 +53,6 @@ type InstrumentationSpec struct {
 type JavaSpec struct {
 	// Image is a container image with javaagent JAR.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
 }
 
@@ -68,7 +60,6 @@ type JavaSpec struct {
 type NodeJSSpec struct {
 	// Image is a container image with NodeJS SDK and autoinstrumentation.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
 }
 
@@ -76,7 +67,6 @@ type NodeJSSpec struct {
 type PythonSpec struct {
 	// Image is a container image with Python SDK and autoinstrumentation.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
 }
 
@@ -84,7 +74,6 @@ type PythonSpec struct {
 type Exporter struct {
 	// Endpoint is address of the collector with OTLP endpoint.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Endpoint string `json:"endpoint,omitempty"`
 }
 
@@ -93,14 +82,12 @@ type Sampler struct {
 	// Type defines sampler type.
 	// The value can be for instance parentbased_always_on, parentbased_always_off, parentbased_traceidratio...
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Type SamplerType `json:"type,omitempty"`
 
 	// Argument defines sampler argument.
 	// The value depends on the sampler type.
 	// For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25.
 	// +optional
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Argument string `json:"argument,omitempty"`
 }
 
