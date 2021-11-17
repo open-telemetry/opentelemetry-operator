@@ -87,7 +87,7 @@ spec:
                     type: string
                 type: object
               resource:
-                description: Resource defines resource configuration
+                description: Resource defines configuration for resource object.
                 properties:
                   k8sUIDAttributes:
                     description: K8sUIDAttributes defines whether K8s UID attributes
@@ -96,8 +96,8 @@ spec:
                   resourceAttributes:
                     additionalProperties:
                       type: string
-                    description: Attributes defines attributes that are added to the
-                      resource.
+                    description: 'Attributes defines attributes that are added to
+                      the resource. For example environment: dev'
                     type: object
                 type: object
               sampler:
