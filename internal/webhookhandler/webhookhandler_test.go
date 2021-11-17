@@ -126,6 +126,9 @@ func TestShouldInjectSidecar(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &tt.ns)
 			require.NoError(t, err)
+			defer func() {
+				_ = k8sClient.Delete(context.Background(), &tt.ns)
+			}()
 
 			for i := range tt.otelcols {
 				err := k8sClient.Create(context.Background(), &tt.otelcols[i])
@@ -185,7 +188,6 @@ func TestShouldInjectSidecar(t *testing.T) {
 			for i := range tt.otelcols {
 				require.NoError(t, k8sClient.Delete(context.Background(), &tt.otelcols[i]))
 			}
-			require.NoError(t, k8sClient.Delete(context.Background(), &tt.ns))
 		})
 	}
 }
@@ -347,6 +349,9 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &tt.ns)
 			require.NoError(t, err)
+			defer func() {
+				_ = k8sClient.Delete(context.Background(), &tt.ns)
+			}()
 
 			for i := range tt.otelcols {
 				err := k8sClient.Create(context.Background(), &tt.otelcols[i])
@@ -387,7 +392,6 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 			for i := range tt.otelcols {
 				require.NoError(t, k8sClient.Delete(context.Background(), &tt.otelcols[i]))
 			}
-			require.NoError(t, k8sClient.Delete(context.Background(), &tt.ns))
 		})
 	}
 }
