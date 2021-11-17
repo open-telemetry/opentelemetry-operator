@@ -26,7 +26,7 @@ const (
 	javaJVMArgument     = " -javaagent:/otel-auto-instrumentation/javaagent.jar"
 )
 
-func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.JavaSpec, pod corev1.Pod) corev1.Pod {
+func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod) corev1.Pod {
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[0]
 	idx := getIndexOfEnv(container.Env, envJavaToolsOptions)

@@ -26,7 +26,7 @@ const (
 	nodeRequireArgument = " --require /otel-auto-instrumentation/autoinstrumentation.js"
 )
 
-func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJSSpec, pod corev1.Pod) corev1.Pod {
+func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod) corev1.Pod {
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[0]
 	idx := getIndexOfEnv(container.Env, envNodeOptions)

@@ -199,7 +199,7 @@ func TestSDKInjection(t *testing.T) {
 func TestInjectJava(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
 		Spec: v1alpha1.InstrumentationSpec{
-			Java: v1alpha1.JavaSpec{
+			Java: v1alpha1.Java{
 				Image: "img:1",
 			},
 			Exporter: v1alpha1.Exporter{
@@ -278,7 +278,7 @@ func TestInjectJava(t *testing.T) {
 func TestInjectNodeJS(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
 		Spec: v1alpha1.InstrumentationSpec{
-			NodeJS: v1alpha1.NodeJSSpec{
+			NodeJS: v1alpha1.NodeJS{
 				Image: "img:1",
 			},
 			Exporter: v1alpha1.Exporter{
@@ -357,7 +357,7 @@ func TestInjectNodeJS(t *testing.T) {
 func TestInjectPython(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
 		Spec: v1alpha1.InstrumentationSpec{
-			Python: v1alpha1.PythonSpec{
+			Python: v1alpha1.Python{
 				Image: "img:1",
 			},
 			Exporter: v1alpha1.Exporter{
