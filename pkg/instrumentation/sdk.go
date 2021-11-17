@@ -48,19 +48,19 @@ func inject(logger logr.Logger, insts languageInstrumentations, ns corev1.Namesp
 	// in the future we can define an annotation to configure this
 	if insts.Java != nil {
 		otelinst := *insts.Java
-		logger.V(1).Info("injecting instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		logger.V(1).Info("injecting java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 		pod = injectCommonSDKConfig(otelinst, ns, pod)
 		pod = injectJavaagent(logger, otelinst.Spec.Java, pod)
 	}
 	if insts.NodeJS != nil {
 		otelinst := *insts.NodeJS
-		logger.V(1).Info("injecting instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		logger.V(1).Info("injecting nodejs instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 		pod = injectCommonSDKConfig(otelinst, ns, pod)
 		pod = injectNodeJSSDK(logger, otelinst.Spec.NodeJS, pod)
 	}
 	if insts.Python != nil {
 		otelinst := *insts.Python
-		logger.V(1).Info("injecting instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		logger.V(1).Info("injecting python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 		pod = injectCommonSDKConfig(otelinst, ns, pod)
 		pod = injectPythonSDK(logger, otelinst.Spec.Python, pod)
 	}
