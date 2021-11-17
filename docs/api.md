@@ -114,6 +114,13 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecpython">python</a></b></td>
+        <td>object</td>
+        <td>
+          Python defines configuration for python auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>resourceAttributes</b></td>
         <td>map[string]string</td>
         <td>
@@ -206,6 +213,33 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with NodeJS SDK and autoinstrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+Python defines configuration for python auto-instrumentation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image is a container image with Python SDK and autoinstrumentation.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
