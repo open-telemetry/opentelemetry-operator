@@ -100,6 +100,11 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	case name == "tcplog" || name == "udplog":
 		endpoint = getAddressFromConfig(logger, name, listenAddressKey, config)
 
+	// in case of kubeletstats reciever, the endpoint is ignored
+	case name == "kubeletstats":
+		endpoint = nil
+		return nil
+
 	default:
 		endpoint = getAddressFromConfig(logger, name, endpointKey, config)
 	}
