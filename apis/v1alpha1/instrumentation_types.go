@@ -113,6 +113,7 @@ type InstrumentationStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Instrumentation"
+// +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1}}
 
 // Instrumentation is the spec for OpenTelemetry instrumentation.
 type Instrumentation struct {
