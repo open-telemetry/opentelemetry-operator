@@ -266,6 +266,103 @@ func TestMutatePod(t *testing.T) {
 			},
 		},
 		{
+			name: "python injection, true",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "python",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "python",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Python: v1alpha1.PythonSpec{
+						Image: "otel/python:1",
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectPython: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectPython: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    initContainerName,
+							Image:   "otel/python:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      volumeName,
+								MountPath: "/otel-auto-instrumentation",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://collector:12345",
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.namespace.name=python",
+								},
+								{
+									Name:  "PYTHONPATH",
+									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp_proto_http",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation",
+									MountPath: "/otel-auto-instrumentation",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "missing annotation",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{

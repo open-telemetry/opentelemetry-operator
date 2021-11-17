@@ -1,0 +1,12 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: python
+spec:
+  exporter:
+    endpoint: http://localhost:4318/v1/traces
+  propagators:
+    - jaeger
+    - b3
+  python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest

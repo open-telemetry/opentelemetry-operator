@@ -154,7 +154,7 @@ EOF
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java and NodeJS are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -178,6 +178,8 @@ spec:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
   nodejs:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
+  python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
 EOF
 ```
 
@@ -195,6 +197,11 @@ instrumentation.opentelemetry.io/inject-java: "true"
 NodeJS:
 ```bash
 instrumentation.opentelemetry.io/inject-nodejs: "true"
+```
+
+Python:
+```bash
+instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
 The possible values for the annotation can be

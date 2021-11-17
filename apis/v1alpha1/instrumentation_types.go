@@ -49,6 +49,11 @@ type InstrumentationSpec struct {
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	NodeJS NodeJSSpec `json:"nodejs,omitempty"`
+
+	// Python defines configuration for python auto-instrumentation.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Python PythonSpec `json:"python,omitempty"`
 }
 
 // JavaSpec defines Java SDK and instrumentation configuration.
@@ -62,6 +67,14 @@ type JavaSpec struct {
 // NodeJSSpec defines NodeJS SDK and instrumentation configuration.
 type NodeJSSpec struct {
 	// Image is a container image with NodeJS SDK and autoinstrumentation.
+	// +optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	Image string `json:"image,omitempty"`
+}
+
+// PythonSpec defines Python SDK and instrumentation configuration.
+type PythonSpec struct {
+	// Image is a container image with Python SDK and autoinstrumentation.
 	// +optional
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	Image string `json:"image,omitempty"`
