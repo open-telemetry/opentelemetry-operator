@@ -41,6 +41,7 @@ type instPodMutator struct {
 type languageInstrumentations struct {
 	Java   *v1alpha1.Instrumentation
 	NodeJS *v1alpha1.Instrumentation
+	Python *v1alpha1.Instrumentation
 }
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
@@ -76,7 +77,14 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.NodeJS = inst
 
-	if insts.Java == nil && insts.NodeJS == nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPython); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	insts.Python = inst
+
+	if insts.Java == nil && insts.NodeJS == nil && insts.Python == nil {
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}
