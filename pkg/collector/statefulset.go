@@ -54,6 +54,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 					Containers:         []corev1.Container{Container(cfg, logger, otelcol)},
 					Volumes:            Volumes(cfg, otelcol),
 					Tolerations:        otelcol.Spec.Tolerations,
+					SecurityContext:    otelcol.Spec.PodSecurityContext,
 				},
 			},
 			Replicas:             otelcol.Spec.Replicas,
