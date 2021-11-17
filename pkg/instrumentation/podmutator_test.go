@@ -398,6 +398,9 @@ func TestMutatePod(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &test.ns)
 			require.NoError(t, err)
+			defer func() {
+				_ = k8sClient.Delete(context.Background(), &test.ns)
+			}()
 			err = k8sClient.Create(context.Background(), &test.inst)
 			require.NoError(t, err)
 
