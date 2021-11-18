@@ -106,8 +106,6 @@ rules:
   resources:
   - instrumentations
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch

@@ -31,7 +31,7 @@ type InstrumentationUpgrade struct {
 	Client               client.Client
 }
 
-//+kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
 
 // ManagedInstances upgrades managed instances by the opentelemetry-operator.
 func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
