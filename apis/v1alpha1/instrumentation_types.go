@@ -24,8 +24,7 @@ type InstrumentationSpec struct {
 	// +optional
 	Exporter `json:"exporter,omitempty"`
 
-	// Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry SDK.
-	// See also: https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/overview.md#resources
+	// Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
 	// +optional
 	Resource Resource `json:"resource,omitempty"`
 
@@ -71,7 +70,7 @@ type PythonSpec struct {
 	Image string `json:"image,omitempty"`
 }
 
-// Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry SDK.
+// Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
 // See also: https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/overview.md#resources
 type Resource struct {
 	// Attributes defines attributes that are added to the resource.
