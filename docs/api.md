@@ -124,7 +124,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b><a href="#instrumentationspecresource">resource</a></b></td>
         <td>object</td>
         <td>
-          Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry SDK. See also: https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/overview.md#resources<br/>
+          Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -251,7 +251,7 @@ Python defines configuration for python auto-instrumentation.
 
 
 
-Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry SDK. See also: https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/overview.md#resources
+Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
 
 <table>
     <thead>
