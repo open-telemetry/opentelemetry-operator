@@ -87,8 +87,8 @@ spec:
                     type: string
                 type: object
               resource:
-                description: 'Resource defines the configuration for the resource
-                  attributes, as defined by the OpenTelemetry SDK. See also: https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/overview.md#resources'
+                description: Resource defines the configuration for the resource attributes,
+                  as defined by the OpenTelemetry specification.
                 properties:
                   k8sUIDAttributes:
                     description: K8sUIDAttributes defines whether K8s UID attributes
