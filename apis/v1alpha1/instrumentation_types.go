@@ -78,9 +78,9 @@ type Resource struct {
 	// +optional
 	Attributes map[string]string `json:"resourceAttributes,omitempty"`
 
-	// K8sUIDAttributes defines whether K8s UID attributes should be collected (e.g. k8s.deployment.uid).
+	// AddK8sUIDAttributes defines whether K8s UID attributes should be collected (e.g. k8s.deployment.uid).
 	// +optional
-	K8sUIDAttributes bool `json:"k8sUIDAttributes,omitempty"`
+	AddK8sUIDAttributes bool `json:"AddK8sUIDAttributes,omitempty"`
 }
 
 // Exporter defines OTLP exporter configuration.

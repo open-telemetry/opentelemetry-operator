@@ -90,8 +90,8 @@ spec:
                 description: Resource defines the configuration for the resource attributes,
                   as defined by the OpenTelemetry specification.
                 properties:
-                  k8sUIDAttributes:
-                    description: K8sUIDAttributes defines whether K8s UID attributes
+                  AddK8sUIDAttributes:
+                    description: AddK8sUIDAttributes defines whether K8s UID attributes
                       should be collected (e.g. k8s.deployment.uid).
                     type: boolean
                   resourceAttributes:

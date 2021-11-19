@@ -104,7 +104,7 @@ func TestSDKInjection(t *testing.T) {
 						Endpoint: "https://collector:4317",
 					},
 					Resource: v1alpha1.Resource{
-						K8sUIDAttributes: true,
+						AddK8sUIDAttributes: true,
 					},
 					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
 					Sampler: v1alpha1.Sampler{

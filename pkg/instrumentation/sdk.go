@@ -209,7 +209,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	resources[resourceK8sPodName] = pod.Name
 	resources[resourceK8sPodUID] = string(pod.UID)
 	resources[resourceK8sNodeName] = pod.Spec.NodeName
-	i.getParentResourceLabels(ctx, otelinst.Spec.Resource.K8sUIDAttributes, ns, pod.ObjectMeta, resources)
+	i.getParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, resources)
 	for k, v := range resources {
 		if !existingRes[k] && v != "" {
 			res[k] = v
