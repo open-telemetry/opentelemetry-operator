@@ -165,7 +165,7 @@ func newParams(taContainerImage string, file string) (Params, error) {
 					},
 					NodePort: 0,
 				}},
-				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
+				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 					Enabled: true,
 					Image:   taContainerImage,
 				},
