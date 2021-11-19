@@ -95,7 +95,7 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "javaagent",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.JavaSpec{},
+					Java: v1alpha1.Java{},
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "http://collector:12345",
 					},
@@ -185,7 +185,7 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "nodejs",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					NodeJS: v1alpha1.NodeJSSpec{
+					NodeJS: v1alpha1.NodeJS{
 						Image: "otel/nodejs:1",
 					},
 					Exporter: v1alpha1.Exporter{
@@ -278,7 +278,7 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "python",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Python: v1alpha1.PythonSpec{
+					Python: v1alpha1.Python{
 						Image: "otel/python:1",
 					},
 					Exporter: v1alpha1.Exporter{
@@ -375,7 +375,7 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "missing-annotation",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.JavaSpec{
+					Java: v1alpha1.Java{
 						Image: "otel/java:1",
 					},
 					Exporter: v1alpha1.Exporter{
@@ -415,7 +415,7 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "annotation-false",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.JavaSpec{
+					Java: v1alpha1.Java{
 						Image: "otel/java:1",
 					},
 					Exporter: v1alpha1.Exporter{
@@ -465,7 +465,7 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "non-existing-instance",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.JavaSpec{
+					Java: v1alpha1.Java{
 						Image: "otel/java:1",
 					},
 					Exporter: v1alpha1.Exporter{

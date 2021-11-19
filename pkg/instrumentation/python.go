@@ -30,7 +30,7 @@ const (
 	pythonPathSuffix      = "/otel-auto-instrumentation"
 )
 
-func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.PythonSpec, pod corev1.Pod) corev1.Pod {
+func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod) corev1.Pod {
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[0]
 	idx := getIndexOfEnv(container.Env, envPythonPath)

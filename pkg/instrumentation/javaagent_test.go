@@ -27,13 +27,13 @@ import (
 func TestInjectJavaagent(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.JavaSpec
+		v1alpha1.Java
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
-			name:     "JAVA_TOOL_OPTIONS not defined",
-			JavaSpec: v1alpha1.JavaSpec{Image: "foo/bar:1"},
+			name: "JAVA_TOOL_OPTIONS not defined",
+			Java: v1alpha1.Java{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -82,8 +82,8 @@ func TestInjectJavaagent(t *testing.T) {
 			},
 		},
 		{
-			name:     "JAVA_TOOL_OPTIONS defined",
-			JavaSpec: v1alpha1.JavaSpec{Image: "foo/bar:1"},
+			name: "JAVA_TOOL_OPTIONS defined",
+			Java: v1alpha1.Java{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -139,8 +139,8 @@ func TestInjectJavaagent(t *testing.T) {
 			},
 		},
 		{
-			name:     "JAVA_TOOL_OPTIONS defined as ValueFrom",
-			JavaSpec: v1alpha1.JavaSpec{Image: "foo/bar:1"},
+			name: "JAVA_TOOL_OPTIONS defined as ValueFrom",
+			Java: v1alpha1.Java{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -174,7 +174,7 @@ func TestInjectJavaagent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectJavaagent(logr.Discard(), test.JavaSpec, test.pod)
+			pod := injectJavaagent(logr.Discard(), test.Java, test.pod)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
