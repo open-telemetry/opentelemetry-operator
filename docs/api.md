@@ -263,7 +263,7 @@ Resource defines the configuration for the resource attributes, as defined by th
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>AddK8sUIDAttributes</b></td>
+        <td><b>addK8sUIDAttributes</b></td>
         <td>boolean</td>
         <td>
           AddK8sUIDAttributes defines whether K8s UID attributes should be collected (e.g. k8s.deployment.uid).<br/>
