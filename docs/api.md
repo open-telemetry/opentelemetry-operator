@@ -185,7 +185,7 @@ Java defines configuration for java auto-instrumentation.
         <td><b>image</b></td>
         <td>string</td>
         <td>
-          Image is a container image with javaagent JAR.<br/>
+          Image is a container image with javaagent auto-instrumentation JAR.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -212,7 +212,7 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         <td><b>image</b></td>
         <td>string</td>
         <td>
-          Image is a container image with NodeJS SDK and autoinstrumentation.<br/>
+          Image is a container image with NodeJS SDK and auto-instrumentation.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -239,7 +239,7 @@ Python defines configuration for python auto-instrumentation.
         <td><b>image</b></td>
         <td>string</td>
         <td>
-          Image is a container image with Python SDK and autoinstrumentation.<br/>
+          Image is a container image with Python SDK and auto-instrumentation.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

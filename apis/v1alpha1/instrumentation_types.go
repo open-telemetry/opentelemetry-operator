@@ -38,36 +38,15 @@ type InstrumentationSpec struct {
 
 	// Java defines configuration for java auto-instrumentation.
 	// +optional
-	Java JavaSpec `json:"java,omitempty"`
+	Java Java `json:"java,omitempty"`
 
 	// NodeJS defines configuration for nodejs auto-instrumentation.
 	// +optional
-	NodeJS NodeJSSpec `json:"nodejs,omitempty"`
+	NodeJS NodeJS `json:"nodejs,omitempty"`
 
 	// Python defines configuration for python auto-instrumentation.
 	// +optional
-	Python PythonSpec `json:"python,omitempty"`
-}
-
-// JavaSpec defines Java SDK and instrumentation configuration.
-type JavaSpec struct {
-	// Image is a container image with javaagent JAR.
-	// +optional
-	Image string `json:"image,omitempty"`
-}
-
-// NodeJSSpec defines NodeJS SDK and instrumentation configuration.
-type NodeJSSpec struct {
-	// Image is a container image with NodeJS SDK and autoinstrumentation.
-	// +optional
-	Image string `json:"image,omitempty"`
-}
-
-// PythonSpec defines Python SDK and instrumentation configuration.
-type PythonSpec struct {
-	// Image is a container image with Python SDK and autoinstrumentation.
-	// +optional
-	Image string `json:"image,omitempty"`
+	Python Python `json:"python,omitempty"`
 }
 
 // Exporter defines OTLP exporter configuration.
@@ -89,6 +68,27 @@ type Sampler struct {
 	// For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25.
 	// +optional
 	Argument string `json:"argument,omitempty"`
+}
+
+// Java defines Java SDK and instrumentation configuration.
+type Java struct {
+	// Image is a container image with javaagent auto-instrumentation JAR.
+	// +optional
+	Image string `json:"image,omitempty"`
+}
+
+// NodeJS defines NodeJS SDK and instrumentation configuration.
+type NodeJS struct {
+	// Image is a container image with NodeJS SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+}
+
+// Python defines Python SDK and instrumentation configuration.
+type Python struct {
+	// Image is a container image with Python SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.
