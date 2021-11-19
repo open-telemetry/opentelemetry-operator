@@ -22,6 +22,8 @@ import (
 	"unsafe"
 
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,26 +36,6 @@ import (
 const (
 	volumeName        = "opentelemetry-auto-instrumentation"
 	initContainerName = "opentelemetry-auto-instrumentation"
-
-	// Kubernetes resource attributes are defined in
-	// https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/resource/semantic_conventions/k8s.md
-	resourceK8sNsName          = "k8s.namespace.name"
-	resourceK8sNodeName        = "k8s.node.name"
-	resourceK8sPodName         = "k8s.pod.name"
-	resourceK8sPodUID          = "k8s.pod.uid"
-	resourceK8sContainerName   = "k8s.container.name"
-	resourceK8sReplicaSetName  = "k8s.replicaset.name"
-	resourceK8sReplicaSetUID   = "k8s.replicaset.uid"
-	resourceK8sDeploymentName  = "k8s.deployment.name"
-	resourceK8sDeploymentUID   = "k8s.deployment.uid"
-	resourceK8sStatefulSetName = "k8s.statefulset.name"
-	resourceK8sStatefulSetUID  = "k8s.statefulset.uid"
-	resourceK8DaemonSetName    = "k8s.daemonset.name"
-	resourceK8sDaemonSetUID    = "k8s.daemonset.uid"
-	resourceK8sJobName         = "k8s.job.name"
-	resourceK8sJobUID          = "k8s.job.uid"
-	resourceK8sCronJobName     = "k8s.cronjob.name"
-	resourceK8sCronJobUID      = "k8s.cronjob.uid"
 
 	envOTELServiceName          = "OTEL_SERVICE_NAME"
 	envOTELExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
@@ -159,19 +141,19 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 }
 
 func chooseServiceName(pod corev1.Pod, resources map[string]string) string {
-	if name := resources[resourceK8sDeploymentName]; name != "" {
+	if name := resources[string(semconv.K8SDeploymentNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[resourceK8sStatefulSetName]; name != "" {
+	if name := resources[string(semconv.K8SStatefulSetNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[resourceK8sJobName]; name != "" {
+	if name := resources[string(semconv.K8SJobNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[resourceK8sCronJobName]; name != "" {
+	if name := resources[string(semconv.K8SCronJobNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[resourceK8sPodName]; name != "" {
+	if name := resources[string(semconv.K8SPodNameKey)]; name != "" {
 		return name
 	}
 	return pod.Spec.Containers[0].Name
@@ -201,30 +183,30 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 		}
 	}
 
-	resources := map[string]string{}
-	resources[resourceK8sNsName] = ns.Name
-	resources[resourceK8sContainerName] = pod.Spec.Containers[0].Name
+	k8sResources := map[attribute.Key]string{}
+	k8sResources[semconv.K8SNamespaceNameKey] = ns.Name
+	k8sResources[semconv.K8SContainerNameKey] = pod.Spec.Containers[0].Name
 	// Some fields might be empty - node name, pod name
 	// The pod name might be empty if the pod is created form deployment template
-	resources[resourceK8sPodName] = pod.Name
-	resources[resourceK8sPodUID] = string(pod.UID)
-	resources[resourceK8sNodeName] = pod.Spec.NodeName
-	i.getParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, resources)
-	for k, v := range resources {
-		if !existingRes[k] && v != "" {
-			res[k] = v
+	k8sResources[semconv.K8SPodNameKey] = pod.Name
+	k8sResources[semconv.K8SPodUIDKey] = string(pod.UID)
+	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
+	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
+	for k, v := range k8sResources {
+		if !existingRes[string(k)] && v != "" {
+			res[string(k)] = v
 		}
 	}
 	return res
 }
 
-func (i *sdkInjector) getParentResourceLabels(ctx context.Context, uid bool, ns corev1.Namespace, objectMeta metav1.ObjectMeta, resources map[string]string) {
+func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns corev1.Namespace, objectMeta metav1.ObjectMeta, resources map[attribute.Key]string) {
 	for _, owner := range objectMeta.OwnerReferences {
 		switch strings.ToLower(owner.Kind) {
 		case "replicaset":
-			resources[resourceK8sReplicaSetName] = owner.Name
+			resources[semconv.K8SReplicaSetNameKey] = owner.Name
 			if uid {
-				resources[resourceK8sReplicaSetUID] = string(owner.UID)
+				resources[semconv.K8SReplicaSetUIDKey] = string(owner.UID)
 			}
 			// parent of ReplicaSet is e.g. Deployment which we are interested to know
 			rs := appsv1.ReplicaSet{}
@@ -234,31 +216,31 @@ func (i *sdkInjector) getParentResourceLabels(ctx context.Context, uid bool, ns 
 				Namespace: ns.Name,
 				Name:      owner.Name,
 			}, &rs)
-			i.getParentResourceLabels(ctx, uid, ns, rs.ObjectMeta, resources)
+			i.addParentResourceLabels(ctx, uid, ns, rs.ObjectMeta, resources)
 		case "deployment":
-			resources[resourceK8sDeploymentName] = owner.Name
+			resources[semconv.K8SDeploymentNameKey] = owner.Name
 			if uid {
-				resources[resourceK8sDeploymentUID] = string(owner.UID)
+				resources[semconv.K8SDeploymentUIDKey] = string(owner.UID)
 			}
 		case "statefulset":
-			resources[resourceK8sStatefulSetName] = owner.Name
+			resources[semconv.K8SStatefulSetNameKey] = owner.Name
 			if uid {
-				resources[resourceK8sStatefulSetUID] = string(owner.UID)
+				resources[semconv.K8SStatefulSetUIDKey] = string(owner.UID)
 			}
 		case "daemonset":
-			resources[resourceK8DaemonSetName] = owner.Name
+			resources[semconv.K8SDaemonSetNameKey] = owner.Name
 			if uid {
-				resources[resourceK8sDaemonSetUID] = string(owner.UID)
+				resources[semconv.K8SDaemonSetUIDKey] = string(owner.UID)
 			}
 		case "job":
-			resources[resourceK8sJobName] = owner.Name
+			resources[semconv.K8SJobNameKey] = owner.Name
 			if uid {
-				resources[resourceK8sJobUID] = string(owner.UID)
+				resources[semconv.K8SJobUIDKey] = string(owner.UID)
 			}
 		case "cronjob":
-			resources[resourceK8sCronJobName] = owner.Name
+			resources[semconv.K8SCronJobNameKey] = owner.Name
 			if uid {
-				resources[resourceK8sCronJobUID] = string(owner.UID)
+				resources[semconv.K8SCronJobUIDKey] = string(owner.UID)
 			}
 		}
 	}
