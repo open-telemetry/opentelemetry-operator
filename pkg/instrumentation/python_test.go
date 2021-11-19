@@ -28,13 +28,13 @@ import (
 func TestInjectPythonSDK(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.PythonSpec
+		v1alpha1.Python
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
-			name:       "PYTHONPATH not defined",
-			PythonSpec: v1alpha1.PythonSpec{Image: "foo/bar:1"},
+			name:   "PYTHONPATH not defined",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -87,8 +87,8 @@ func TestInjectPythonSDK(t *testing.T) {
 			},
 		},
 		{
-			name:       "PYTHONPATH defined",
-			PythonSpec: v1alpha1.PythonSpec{Image: "foo/bar:1"},
+			name:   "PYTHONPATH defined",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -148,8 +148,8 @@ func TestInjectPythonSDK(t *testing.T) {
 			},
 		},
 		{
-			name:       "OTEL_TRACES_EXPORTER defined",
-			PythonSpec: v1alpha1.PythonSpec{Image: "foo/bar:1"},
+			name:   "OTEL_TRACES_EXPORTER defined",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -209,8 +209,8 @@ func TestInjectPythonSDK(t *testing.T) {
 			},
 		},
 		{
-			name:       "PYTHONPATH defined as ValueFrom",
-			PythonSpec: v1alpha1.PythonSpec{Image: "foo/bar:1"},
+			name:   "PYTHONPATH defined as ValueFrom",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -244,7 +244,7 @@ func TestInjectPythonSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectPythonSDK(logr.Discard(), test.PythonSpec, test.pod)
+			pod := injectPythonSDK(logr.Discard(), test.Python, test.pod)
 			assert.Equal(t, test.expected, pod)
 		})
 	}

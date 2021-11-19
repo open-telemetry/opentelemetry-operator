@@ -55,14 +55,15 @@ spec:
                 description: Java defines configuration for java auto-instrumentation.
                 properties:
                   image:
-                    description: Image is a container image with javaagent JAR.
+                    description: Image is a container image with javaagent auto-instrumentation
+                      JAR.
                     type: string
                 type: object
               nodejs:
                 description: NodeJS defines configuration for nodejs auto-instrumentation.
                 properties:
                   image:
-                    description: Image is a container image with NodeJS SDK and autoinstrumentation.
+                    description: Image is a container image with NodeJS SDK and auto-instrumentation.
                     type: string
                 type: object
               propagators:
@@ -85,7 +86,7 @@ spec:
                 description: Python defines configuration for python auto-instrumentation.
                 properties:
                   image:
-                    description: Image is a container image with Python SDK and autoinstrumentation.
+                    description: Image is a container image with Python SDK and auto-instrumentation.
                     type: string
                 type: object
               resourceAttributes:

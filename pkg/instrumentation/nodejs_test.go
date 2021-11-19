@@ -27,13 +27,13 @@ import (
 func TestInjectNodeJSSDK(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.NodeJSSpec
+		v1alpha1.NodeJS
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
-			name:       "NODE_OPTIONS not defined",
-			NodeJSSpec: v1alpha1.NodeJSSpec{Image: "foo/bar:1"},
+			name:   "NODE_OPTIONS not defined",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -82,8 +82,8 @@ func TestInjectNodeJSSDK(t *testing.T) {
 			},
 		},
 		{
-			name:       "NODE_OPTIONS defined",
-			NodeJSSpec: v1alpha1.NodeJSSpec{Image: "foo/bar:1"},
+			name:   "NODE_OPTIONS defined",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -139,8 +139,8 @@ func TestInjectNodeJSSDK(t *testing.T) {
 			},
 		},
 		{
-			name:       "NODE_OPTIONS defined as ValueFrom",
-			NodeJSSpec: v1alpha1.NodeJSSpec{Image: "foo/bar:1"},
+			name:   "NODE_OPTIONS defined as ValueFrom",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -174,7 +174,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectNodeJSSDK(logr.Discard(), test.NodeJSSpec, test.pod)
+			pod := injectNodeJSSDK(logr.Discard(), test.NodeJS, test.pod)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
