@@ -342,8 +342,8 @@ spec:
   - name: OpenTelemetry Operator
     url: https://github.com/open-telemetry/opentelemetry-operator
   maintainers:
-  - email: jpkroehling@redhat.com
-    name: Juraci Paixão Kröhling
+  - email: cncf-opentelemetry-contributors@lists.cncf.io
+    name: OpenTelemetry Operator maintainers
   maturity: alpha
   provider:
     name: OpenTelemetry Community
