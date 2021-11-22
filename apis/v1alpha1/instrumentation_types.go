@@ -24,9 +24,9 @@ type InstrumentationSpec struct {
 	// +optional
 	Exporter `json:"exporter,omitempty"`
 
-	// ResourceAttributes defines attributes that are added to resource.
+	// Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
 	// +optional
-	ResourceAttributes map[string]string `json:"resourceAttributes,omitempty"`
+	Resource Resource `json:"resource,omitempty"`
 
 	// Propagators defines inter-process context propagation configuration.
 	// +optional
@@ -47,6 +47,19 @@ type InstrumentationSpec struct {
 	// Python defines configuration for python auto-instrumentation.
 	// +optional
 	Python Python `json:"python,omitempty"`
+}
+
+// Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
+// See also: https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/overview.md#resources
+type Resource struct {
+	// Attributes defines attributes that are added to the resource.
+	// For example environment: dev
+	// +optional
+	Attributes map[string]string `json:"resourceAttributes,omitempty"`
+
+	// AddK8sUIDAttributes defines whether K8s UID attributes should be collected (e.g. k8s.deployment.uid).
+	// +optional
+	AddK8sUIDAttributes bool `json:"addK8sUIDAttributes,omitempty"`
 }
 
 // Exporter defines OTLP exporter configuration.
