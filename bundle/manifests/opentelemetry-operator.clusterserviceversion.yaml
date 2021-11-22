@@ -196,6 +196,8 @@ spec:
           verbs:
           - get
           - list
+          - patch
+          - update
           - watch
         - apiGroups:
           - opentelemetry.io
