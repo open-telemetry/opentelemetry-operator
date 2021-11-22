@@ -49,6 +49,7 @@ type Config struct {
 	targetAllocatorImage          string
 	targetAllocatorConfigMapEntry string
 	platform                      platform.Platform
+	autoInstrumentationJavaImage  string
 }
 
 // New constructs a new configuration based on the given options.
@@ -76,6 +77,7 @@ func New(opts ...Option) Config {
 		logger:                        o.logger,
 		onChange:                      o.onChange,
 		platform:                      o.platform,
+		autoInstrumentationJavaImage:  o.autoInstrumentationjavaImage,
 	}
 }
 
@@ -165,4 +167,9 @@ func (c *Config) TargetAllocatorConfigMapEntry() string {
 // Platform represents the type of the platform this operator is running.
 func (c *Config) Platform() platform.Platform {
 	return c.platform
+}
+
+// AutoInstrumentationJavaImage returns OpenTelemetry auto-instrumentation container image.
+func (c *Config) AutoInstrumentationJavaImage() string {
+	return c.autoInstrumentationJavaImage
 }

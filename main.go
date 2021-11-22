@@ -109,6 +109,7 @@ func main() {
 		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
+		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 		config.WithAutoDetect(ad),
 	)
 
@@ -143,32 +144,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	// run the auto-detect mechanism for the configuration
-	err = mgr.Add(manager.RunnableFunc(func(_ context.Context) error {
-		return cfg.StartAutoDetect()
-	}))
+	ctx := ctrl.SetupSignalHandler()
+	err = addDependencies(ctx, mgr, cfg, v)
 	if err != nil {
-		setupLog.Error(err, "failed to start the auto-detect mechanism")
-	}
-
-	// adds the upgrade mechanism to be executed once the manager is ready
-	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		return collectorupgrade.ManagedInstances(c, ctrl.Log.WithName("collector-upgrade"), v, mgr.GetClient())
-	}))
-	if err != nil {
-		setupLog.Error(err, "failed to upgrade managed instances")
-	}
-	// adds the upgrade mechanism to be executed once the manager is ready
-	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		u := &instrumentationupgrade.InstrumentationUpgrade{
-			Logger:               ctrl.Log.WithName("instrumentation-upgrade"),
-			DefaultAutoInstrJava: autoInstrumentationJava,
-			Client:               mgr.GetClient(),
-		}
-		return u.ManagedInstances(c)
-	}))
-	if err != nil {
-		setupLog.Error(err, "failed to upgrade managed instances")
+		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
+		os.Exit(1)
 	}
 
 	if err = controllers.NewReconciler(controllers.Params{
@@ -207,8 +187,40 @@ func main() {
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v version.Version) error {
+	// run the auto-detect mechanism for the configuration
+	err := mgr.Add(manager.RunnableFunc(func(_ context.Context) error {
+		return cfg.StartAutoDetect()
+	}))
+	if err != nil {
+		return fmt.Errorf("failed to start the auto-detect mechanism: %w", err)
+	}
+
+	// adds the upgrade mechanism to be executed once the manager is ready
+	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
+		return collectorupgrade.ManagedInstances(c, ctrl.Log.WithName("collector-upgrade"), v, mgr.GetClient())
+	}))
+	if err != nil {
+		return fmt.Errorf("failed to upgrade OpenTelemetryCollector instances: %w", err)
+	}
+
+	// adds the upgrade mechanism to be executed once the manager is ready
+	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
+		u := &instrumentationupgrade.InstrumentationUpgrade{
+			Logger:               ctrl.Log.WithName("instrumentation-upgrade"),
+			DefaultAutoInstrJava: cfg.AutoInstrumentationJavaImage(),
+			Client:               mgr.GetClient(),
+		}
+		return u.ManagedInstances(c)
+	}))
+	if err != nil {
+		return fmt.Errorf("failed to upgrade Instrumentation instances: %w", err)
+	}
+	return nil
 }

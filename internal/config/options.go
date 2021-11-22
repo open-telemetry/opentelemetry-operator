@@ -32,6 +32,7 @@ type options struct {
 	autoDetectFrequency           time.Duration
 	targetAllocatorImage          string
 	collectorImage                string
+	autoInstrumentationjavaImage  string
 	collectorConfigMapEntry       string
 	targetAllocatorConfigMapEntry string
 	logger                        logr.Logger
@@ -92,5 +93,11 @@ func WithPlatform(plt platform.Platform) Option {
 func WithVersion(v version.Version) Option {
 	return func(o *options) {
 		o.version = v
+	}
+}
+
+func WithAutoInstrumentationJavaImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationjavaImage = s
 	}
 }
