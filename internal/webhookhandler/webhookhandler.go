@@ -33,6 +33,7 @@ import (
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch
+// +kubebuilder:rbac:groups="apps",resources=replicasets,verbs=get;list;watch
 
 var _ WebhookHandler = (*podSidecarInjector)(nil)
 

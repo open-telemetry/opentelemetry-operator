@@ -34,8 +34,9 @@ var (
 )
 
 type instPodMutator struct {
-	Logger logr.Logger
-	Client client.Client
+	Logger      logr.Logger
+	Client      client.Client
+	sdkInjector *sdkInjector
 }
 
 type languageInstrumentations struct {
@@ -50,6 +51,10 @@ func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
 	return &instPodMutator{
 		Logger: logger,
 		Client: client,
+		sdkInjector: &sdkInjector{
+			logger: logger,
+			client: client,
+		},
 	}
 }
 
@@ -91,7 +96,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
-	return inject(pm.Logger, insts, ns, pod), nil
+	return pm.sdkInjector.inject(ctx, insts, ns, pod), nil
 }
 
 func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
