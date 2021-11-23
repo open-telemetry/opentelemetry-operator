@@ -14,11 +14,11 @@ spec:
       value: my-deployment-with-sidecar
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
-    - name: OTEL_PROPAGATORS
-      value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
     - name: OTEL_TRACES_SAMPLER
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
