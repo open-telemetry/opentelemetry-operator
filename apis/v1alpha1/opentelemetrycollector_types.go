@@ -43,7 +43,7 @@ type OpenTelemetryCollectorSpec struct {
 
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
-	TargetAllocator OpenTelemetryTargetAllocatorSpec `json:"targetAllocator,omitempty"`
+	TargetAllocator OpenTelemetryTargetAllocator `json:"targetAllocator,omitempty"`
 
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
@@ -110,6 +110,17 @@ type OpenTelemetryCollectorSpec struct {
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 }
 
+// OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
+type OpenTelemetryTargetAllocator struct {
+	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
+	// +optional
+	Image string `json:"image,omitempty"`
+}
+
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
 type OpenTelemetryCollectorStatus struct {
 	// Replicas is currently not being set and might be removed in the next version.
@@ -124,17 +135,6 @@ type OpenTelemetryCollectorStatus struct {
 	// +optional
 	// +listType=atomic
 	Messages []string `json:"messages,omitempty"`
-}
-
-// OpenTelemetryTargetAllocatorSpec defines the configurations for the Prometheus target allocator.
-type OpenTelemetryTargetAllocatorSpec struct {
-	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
-	// +optional
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
-	// +optional
-	Image string `json:"image,omitempty"`
 }
 
 // +kubebuilder:object:root=true
