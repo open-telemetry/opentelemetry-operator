@@ -16,6 +16,7 @@ package instrumentation
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -163,8 +164,16 @@ func TestSDKInjection(t *testing.T) {
 									Value: "https://collector:4317",
 								},
 								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid",
 								},
 								{
 									Name:  "OTEL_PROPAGATORS",
@@ -256,7 +265,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "foo=bar,k8s.container.name=other,fromcr=val,k8s.namespace.name=project1,k8s.pod.name=app",
+									Value: "foo=bar,k8s.container.name=other,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app",
 								},
 								{
 									Name:  "OTEL_PROPAGATORS",
@@ -265,6 +274,14 @@ func TestSDKInjection(t *testing.T) {
 								{
 									Name:  "OTEL_TRACES_SAMPLER",
 									Value: "always_on",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
 								},
 							},
 						},
@@ -280,6 +297,8 @@ func TestSDKInjection(t *testing.T) {
 				client: k8sClient,
 			}
 			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod)
+			b, _ := json.MarshalIndent(pod, "", "  ")
+			fmt.Println(string(b))
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -353,8 +372,24 @@ func TestInjectJava(t *testing.T) {
 							Value: "https://collector:4317",
 						},
 						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
 						},
 						{
 							Name:  "JAVA_TOOL_OPTIONS",
@@ -435,8 +470,24 @@ func TestInjectNodeJS(t *testing.T) {
 							Value: "https://collector:4318",
 						},
 						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
 						},
 						{
 							Name:  "NODE_OPTIONS",
@@ -518,8 +569,24 @@ func TestInjectPython(t *testing.T) {
 							Value: "https://collector:4318",
 						},
 						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
 						},
 						{
 							Name:  "PYTHONPATH",
