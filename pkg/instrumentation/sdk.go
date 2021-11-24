@@ -43,6 +43,10 @@ const (
 	envOTELPropagators          = "OTEL_PROPAGATORS"
 	envOTELTracesSampler        = "OTEL_TRACES_SAMPLER"
 	envOTELTracesSamplerArg     = "OTEL_TRACES_SAMPLER_ARG"
+
+	envPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
+	envPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
+	envNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
 )
 
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
@@ -97,6 +101,44 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 			Value: otelinst.Spec.Endpoint,
 		})
 	}
+
+	// Some attributes might be empty, we should get them via k8s downward API
+	if resourceMap[string(semconv.K8SPodNameKey)] == "" {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name: envPodName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		})
+		resourceMap[string(semconv.K8SPodNameKey)] = fmt.Sprintf("$(%s)", envPodName)
+	}
+	if otelinst.Spec.Resource.AddK8sUIDAttributes {
+		if resourceMap[string(semconv.K8SPodUIDKey)] == "" {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name: envPodUID,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "metadata.uid",
+					},
+				},
+			})
+			resourceMap[string(semconv.K8SPodUIDKey)] = fmt.Sprintf("$(%s)", envPodUID)
+		}
+	}
+	if resourceMap[string(semconv.K8SNodeNameKey)] == "" {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name: envNodeName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "spec.nodeName",
+				},
+			},
+		})
+		resourceMap[string(semconv.K8SNodeNameKey)] = fmt.Sprintf("$(%s)", envNodeName)
+	}
+
 	idx = getIndexOfEnv(container.Env, envOTELResourceAttrs)
 	resStr := resourceMapToStr(resourceMap)
 	if idx == -1 {
@@ -110,6 +152,7 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 		}
 		container.Env[idx].Value += resStr
 	}
+
 	idx = getIndexOfEnv(container.Env, envOTELPropagators)
 	if idx == -1 && len(otelinst.Spec.Propagators) > 0 {
 		propagators := *(*[]string)((unsafe.Pointer(&otelinst.Spec.Propagators)))
