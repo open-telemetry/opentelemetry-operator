@@ -234,7 +234,7 @@ func TestExpectedConfigMap(t *testing.T) {
 						},
 						NodePort: 0,
 					}},
-					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocatorSpec{
+					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 						Enabled: true,
 					},
 					Config: "",
