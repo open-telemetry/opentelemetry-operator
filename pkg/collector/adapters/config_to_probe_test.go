@@ -42,6 +42,15 @@ service:
 service:
   extensions: [health_check]`,
 		}, {
+			desc:         "CustomEndpointWithJustPortAndDefaultPath",
+			expectedPort: int32(1234),
+			expectedPath: "/",
+			config: `extensions:
+  health_check:
+    endpoint: :1234
+service:
+  extensions: [health_check]`,
+		}, {
 			desc:         "DefaultEndpointAndCustomPath",
 			expectedPort: int32(13133),
 			expectedPath: "/checkit",
