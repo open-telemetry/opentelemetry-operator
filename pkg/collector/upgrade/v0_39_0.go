@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v2"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -113,7 +112,9 @@ func updateConfig(otelcol *v1alpha1.OpenTelemetryCollector, cfg map[interface{}]
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.39.0, failed to marshall back configuration: %w", err)
 	}
-	otelcol.Spec.Config = string(res)
+
+	// Note: This is a hack to drop null occurrences from our config parsing above in upgrade routine
+	otelcol.Spec.Config = strings.ReplaceAll(string(res), " null", "")
 
 	return otelcol, nil
 }
