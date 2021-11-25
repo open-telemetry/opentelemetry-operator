@@ -1,6 +1,16 @@
 Changes by Version
 ==================
 
+0.39.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.39.0
+* Upgrade path for Instrumentation kind ([#548](https://github.com/open-telemetry/opentelemetry-operator/pull/548))
+* Auto-instrumentation support for python ([#532](https://github.com/open-telemetry/opentelemetry-operator/pull/532))
+* Support for `PodSecurityContext` in OpenTelemetry collector ([#469](https://github.com/open-telemetry/opentelemetry-operator/pull/469))
+* Java auto-instrumentation support is bumped to `1.7.2` ([#549](https://github.com/open-telemetry/opentelemetry-operator/pull/549))
+* Auto-instrumentation support for nodejs ([#507](https://github.com/open-telemetry/opentelemetry-operator/pull/507))
+* Sampler configuration support in instrumentation kind ([#514](https://github.com/open-telemetry/opentelemetry-operator/pull/514))
+
 0.38.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.38.0
