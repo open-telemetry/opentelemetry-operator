@@ -1,7 +1,6 @@
-package adapters_test
+package adapters
 
 import (
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -91,12 +90,12 @@ service:
 
 	for _, test := range tests {
 		// prepare
-		config, err := adapters.ConfigFromString(test.config)
+		config, err := ConfigFromString(test.config)
 		require.NoError(t, err, test.desc)
 		require.NotEmpty(t, config, test.desc)
 
 		// test
-		actualProbe, err := adapters.ConfigToContainerProbe(config)
+		actualProbe, err := ConfigToContainerProbe(config)
 		assert.NoError(t, err)
 		assert.Equal(t, test.expectedPath, actualProbe.HTTPGet.Path, test.desc)
 		assert.Equal(t, test.expectedPort, actualProbe.HTTPGet.Port.IntVal, test.desc)
@@ -116,58 +115,58 @@ func TestConfigToProbeShouldErrorIf(t *testing.T) {
   pprof:
 service:
   extensions: [health_check]`,
-			expectedErr: adapters.ErrNoExtensionHealthCheck,
+			expectedErr: errNoExtensionHealthCheck,
 		}, {
 			desc: "BadlyFormattedExtensions",
 			config: `extensions: [hi]
 service:
   extensions: [health_check]`,
-			expectedErr: adapters.ErrExtensionsNotAMap,
+			expectedErr: errExtensionsNotAMap,
 		}, {
 			desc: "NoExtensions",
 			config: `service:
   extensions: [health_check]`,
-			expectedErr: adapters.ErrNoExtensions,
+			expectedErr: errNoExtensions,
 		}, {
 			desc: "NoHealthCheckInServiceExtensions",
 			config: `service:
   extensions: [pprof]`,
-			expectedErr: adapters.ErrNoServiceExtensionHealthCheck,
+			expectedErr: errNoServiceExtensionHealthCheck,
 		}, {
 			desc: "BadlyFormattedServiceExtensions",
 			config: `service:
   extensions:
     this: should-not-be-a-map`,
-			expectedErr: adapters.ErrServiceExtensionsNotSlice,
+			expectedErr: errServiceExtensionsNotSlice,
 		}, {
 			desc: "NoServiceExtensions",
 			config: `service:
   pipelines:
     traces:
       receivers: [otlp]`,
-			expectedErr: adapters.ErrNoServiceExtensions,
+			expectedErr: errNoServiceExtensions,
 		}, {
 			desc: "BadlyFormattedService",
 			config: `extensions:
   health_check:
 service: [hi]`,
-			expectedErr: adapters.ErrServiceNotAMap,
+			expectedErr: errServiceNotAMap,
 		}, {
 			desc: "NoService",
 			config: `extensions:
   health_check:`,
-			expectedErr: adapters.ErrNoService,
+			expectedErr: errNoService,
 		},
 	}
 
 	for _, test := range tests {
 		// prepare
-		config, err := adapters.ConfigFromString(test.config)
+		config, err := ConfigFromString(test.config)
 		require.NoError(t, err, test.desc)
 		require.NotEmpty(t, config, test.desc)
 
 		// test
-		_, err = adapters.ConfigToContainerProbe(config)
+		_, err = ConfigToContainerProbe(config)
 		assert.Equal(t, test.expectedErr, err, test.desc)
 	}
 }
