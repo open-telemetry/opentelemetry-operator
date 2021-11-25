@@ -2,38 +2,38 @@ package adapters
 
 import (
 	"errors"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"strings"
 )
 
 var (
-	// ErrNoService indicates that there is no service in the configuration.
-	ErrNoService = errors.New("no service available as part of the configuration")
-	// ErrNoExtensions indicates that there are no extensions in the configuration
+	ErrNoService    = errors.New("no service available as part of the configuration")
 	ErrNoExtensions = errors.New("no extensions available as part of the configuration")
 
-	// ErrServiceNotAMap indicates that the service property isn't a map of values.
-	ErrServiceNotAMap = errors.New("service property in the configuration doesn't contain valid services")
-	// ErrExtensionsNotAMap indicates that the extensions property isn't a map of values.
+	ErrServiceNotAMap    = errors.New("service property in the configuration doesn't contain valid services")
 	ErrExtensionsNotAMap = errors.New("extensions property in the configuration doesn't contain valid extensions")
 
-	// ErrNoExtensionHealthCheck indicates no health_check extension was found for the
 	ErrNoExtensionHealthCheck = errors.New("extensions property in the configuration does not contain the expected health_check extension")
 
-	// ErrNoServiceExtensions indicates the service configuration does not contain any extensions
 	ErrNoServiceExtensions = errors.New("service property in the configuration doesn't contain extensions")
 
-	// ErrServiceExtensionsNotSlice indicates the service extensions property isn't a slice as expected
-	ErrServiceExtensionsNotSlice = errors.New("service extensions property in the configuration does not contain valid extensions")
-
-	// ErrNoServiceExtensionHealthCheck indicates no health_check
+	ErrServiceExtensionsNotSlice     = errors.New("service extensions property in the configuration does not contain valid extensions")
 	ErrNoServiceExtensionHealthCheck = errors.New("no healthcheck extension available in service extension configuration")
 )
 
+type probeConfiguration struct {
+	path string
+	port intstr.IntOrString
+}
+
+const (
+	defaultHealthCheckPath = "/"
+	defaultHealthCheckPort = 13133
+)
+
 // ConfigToContainerProbe converts the incoming configuration object into a container probe or returns an error
-func ConfigToContainerProbe(logger logr.Logger, config map[interface{}]interface{}) (*corev1.Probe, error) {
+func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, error) {
 	serviceProperty, ok := config["service"]
 	if !ok {
 		return nil, ErrNoService
@@ -48,22 +48,19 @@ func ConfigToContainerProbe(logger logr.Logger, config map[interface{}]interface
 		return nil, ErrNoServiceExtensions
 	}
 
-	healthcheckForProbe := ""
-
 	serviceExtensions, ok := serviceExtensionsProperty.([]interface{})
 	if !ok {
 		return nil, ErrServiceExtensionsNotSlice
 	}
-	// in the event of multiple health_check extensions defined, we arbitrarily take the first one found
+	healthCheckServiceExtensions := make([]string, 0)
 	for _, ext := range serviceExtensions {
 		parsedExt, ok := ext.(string)
 		if ok && strings.HasPrefix(parsedExt, "health_check") {
-			healthcheckForProbe = parsedExt
-			break
+			healthCheckServiceExtensions = append(healthCheckServiceExtensions, parsedExt)
 		}
 	}
 
-	if healthcheckForProbe == "" {
+	if len(healthCheckServiceExtensions) == 0 {
 		return nil, ErrNoServiceExtensionHealthCheck
 	}
 
@@ -75,12 +72,15 @@ func ConfigToContainerProbe(logger logr.Logger, config map[interface{}]interface
 	if !ok {
 		return nil, ErrExtensionsNotAMap
 	}
-	healthcheckExtension, ok := extensions[healthcheckForProbe]
-	if !ok {
-		return nil, ErrNoExtensionHealthCheck
+	// in the event of multiple health_check service extensions defined, we arbitrarily take the first one found
+	for _, healthCheckForProbe := range healthCheckServiceExtensions {
+		healthCheckExtension, ok := extensions[healthCheckForProbe]
+		if ok {
+			return createProbeFromExtension(healthCheckExtension)
+		}
 	}
 
-	return createProbeFromExtension(healthcheckExtension)
+	return nil, ErrNoExtensionHealthCheck
 }
 
 func createProbeFromExtension(extension interface{}) (*corev1.Probe, error) {
@@ -90,34 +90,19 @@ func createProbeFromExtension(extension interface{}) (*corev1.Probe, error) {
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: probeCfg.path,
 				Port: probeCfg.port,
-				Host: probeCfg.host,
 			},
 		},
 	}, nil
 }
-
-type probeConfiguration struct {
-	path string
-	port intstr.IntOrString
-	host string
-}
-
-const (
-	defaultHealthCheckPath = "/"
-	defaultHealthCheckPort = 13133
-	defaultHealthCheckHost = "0.0.0.0"
-)
 
 func extractProbeConfigurationFromExtension(ext interface{}) probeConfiguration {
 	extensionCfg, ok := ext.(map[interface{}]interface{})
 	if !ok {
 		return defaultProbeConfiguration()
 	}
-	endpoint := extractEndpointFromExtensionConfig(extensionCfg)
 	return probeConfiguration{
 		path: extractPathFromExtensionConfig(extensionCfg),
-		port: endpoint.port,
-		host: endpoint.host,
+		port: extractPortFromExtensionConfig(extensionCfg),
 	}
 }
 
@@ -125,24 +110,19 @@ func defaultProbeConfiguration() probeConfiguration {
 	return probeConfiguration{
 		path: defaultHealthCheckPath,
 		port: intstr.FromInt(defaultHealthCheckPort),
-		host: defaultHealthCheckHost,
 	}
 }
 
-type healthCheckEndpoint struct {
-	port intstr.IntOrString
-	host string
-}
-
-func defaultHealthCheckEndpoint() healthCheckEndpoint {
-	defaultProbe := defaultProbeConfiguration()
-	return healthCheckEndpoint{
-		port: defaultProbe.port,
-		host: defaultProbe.host,
+func extractPathFromExtensionConfig(cfg map[interface{}]interface{}) string {
+	if path, ok := cfg["path"]; ok {
+		if parsedPath, ok := path.(string); ok {
+			return parsedPath
+		}
 	}
+	return defaultHealthCheckPath
 }
 
-func extractEndpointFromExtensionConfig(cfg map[interface{}]interface{}) healthCheckEndpoint {
+func extractPortFromExtensionConfig(cfg map[interface{}]interface{}) intstr.IntOrString {
 	endpoint, ok := cfg["endpoint"]
 	if !ok {
 		return defaultHealthCheckEndpoint()
@@ -155,17 +135,9 @@ func extractEndpointFromExtensionConfig(cfg map[interface{}]interface{}) healthC
 	if len(endpointComponents) != 2 {
 		return defaultHealthCheckEndpoint()
 	}
-	return healthCheckEndpoint{
-		port: intstr.Parse(endpointComponents[1]),
-		host: endpointComponents[0],
-	}
+	return intstr.Parse(endpointComponents[1])
 }
 
-func extractPathFromExtensionConfig(cfg map[interface{}]interface{}) string {
-	if path, ok := cfg["path"]; ok {
-		if parsedPath, ok := path.(string); ok {
-			return parsedPath
-		}
-	}
-	return defaultHealthCheckPath
+func defaultHealthCheckEndpoint() intstr.IntOrString {
+	return intstr.FromInt(defaultHealthCheckPort)
 }

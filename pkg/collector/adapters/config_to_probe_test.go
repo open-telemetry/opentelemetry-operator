@@ -7,237 +7,158 @@ import (
 	"testing"
 )
 
-func TestSimpleCase(t *testing.T) {
-	configStr := `extensions:
+func TestConfigToProbeShouldCreateProbeFor(t *testing.T) {
+	tests := []struct {
+		desc         string
+		config       string
+		expectedPort int32
+		expectedPath string
+	}{
+		{
+			desc:         "SimpleHappyPath",
+			expectedPort: int32(13133),
+			expectedPath: "/",
+			config: `extensions:
   health_check:
 service:
-  extensions: [health_check]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	actualProbe, err := adapters.ConfigToContainerProbe(logger, config)
-	assert.NoError(t, err)
-	assert.Equal(t, "/", actualProbe.HTTPGet.Path)
-	assert.Equal(t, int32(13133), actualProbe.HTTPGet.Port.IntVal)
-	assert.Equal(t, "0.0.0.0", actualProbe.HTTPGet.Host)
-}
-
-func TestShouldUseCustomEndpointAndPath(t *testing.T) {
-	configStr := `extensions:
+  extensions: [health_check]`,
+		}, {
+			desc:         "CustomEndpointAndPath",
+			expectedPort: int32(1234),
+			expectedPath: "/checkit",
+			config: `extensions:
   health_check:
     endpoint: localhost:1234
     path: /checkit
 service:
-  extensions: [health_check]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	actualProbe, err := adapters.ConfigToContainerProbe(logger, config)
-	assert.NoError(t, err)
-	assert.Equal(t, "/checkit", actualProbe.HTTPGet.Path)
-	assert.Equal(t, int32(1234), actualProbe.HTTPGet.Port.IntVal)
-	assert.Equal(t, "localhost", actualProbe.HTTPGet.Host)
-}
-
-func TestShouldUseCustomEndpointAndDefaultPath(t *testing.T) {
-	configStr := `extensions:
+  extensions: [health_check]`,
+		}, {
+			desc:         "CustomEndpointAndDefaultPath",
+			expectedPort: int32(1234),
+			expectedPath: "/",
+			config: `extensions:
   health_check:
     endpoint: localhost:1234
 service:
-  extensions: [health_check]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	actualProbe, err := adapters.ConfigToContainerProbe(logger, config)
-	assert.NoError(t, err)
-	assert.Equal(t, "/", actualProbe.HTTPGet.Path)
-	assert.Equal(t, int32(1234), actualProbe.HTTPGet.Port.IntVal)
-	assert.Equal(t, "localhost", actualProbe.HTTPGet.Host)
-}
-
-func TestShouldUseDefaultEndpointAndCustomPath(t *testing.T) {
-	configStr := `extensions:
+  extensions: [health_check]`,
+		}, {
+			desc:         "DefaultEndpointAndCustomPath",
+			expectedPort: int32(13133),
+			expectedPath: "/checkit",
+			config: `extensions:
   health_check:
     path: /checkit
 service:
-  extensions: [health_check]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	actualProbe, err := adapters.ConfigToContainerProbe(logger, config)
-	assert.NoError(t, err)
-	assert.Equal(t, "/checkit", actualProbe.HTTPGet.Path)
-	assert.Equal(t, int32(13133), actualProbe.HTTPGet.Port.IntVal)
-	assert.Equal(t, "0.0.0.0", actualProbe.HTTPGet.Host)
-}
-
-func TestShouldUseDefaultEndpointForUnexpectedEndpoint(t *testing.T) {
-	configStr := `extensions:
+  extensions: [health_check]`,
+		}, {
+			desc:         "DefaultEndpointForUnexpectedEndpoint",
+			expectedPort: int32(13133),
+			expectedPath: "/",
+			config: `extensions:
   health_check:
     endpoint: 0:0:0"
 service:
-  extensions: [health_check]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	actualProbe, err := adapters.ConfigToContainerProbe(logger, config)
-	assert.NoError(t, err)
-	assert.Equal(t, "/", actualProbe.HTTPGet.Path)
-	assert.Equal(t, int32(13133), actualProbe.HTTPGet.Port.IntVal)
-	assert.Equal(t, "0.0.0.0", actualProbe.HTTPGet.Host)
-}
-
-func TestShouldErrorIfNoService(t *testing.T) {
-	configStr := `extensions:
-  health_check:`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	_, err = adapters.ConfigToContainerProbe(logger, config)
-	assert.Equal(t, adapters.ErrNoService, err)
-}
-
-func TestShouldErrorIfBadlyFormattedService(t *testing.T) {
-	configStr := `extensions:
+  extensions: [health_check]`,
+		}, {
+			desc:         "DefaultEndpointForUnparseablendpoint",
+			expectedPort: int32(13133),
+			expectedPath: "/",
+			config: `extensions:
   health_check:
-service: [hi]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	_, err = adapters.ConfigToContainerProbe(logger, config)
-	assert.Equal(t, adapters.ErrServiceNotAMap, err)
-}
-
-func TestShouldErrorIfNoServiceExtensions(t *testing.T) {
-	configStr := `service:
-  pipelines:
-    traces:
-      receivers: [otlp]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	_, err = adapters.ConfigToContainerProbe(logger, config)
-	assert.Equal(t, adapters.ErrNoServiceExtensions, err)
-}
-
-func TestShouldErrorIfBadlyFormattedServiceExtensions(t *testing.T) {
-	configStr := `service:
-  extensions:
-    this: should-not-be-a-map`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	_, err = adapters.ConfigToContainerProbe(logger, config)
-	assert.Equal(t, adapters.ErrServiceExtensionsNotSlice, err)
-}
-
-func TestShouldErrorIfNoHealthCheckInServiceExtensions(t *testing.T) {
-	configStr := `service:
-  extensions: [pprof]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	_, err = adapters.ConfigToContainerProbe(logger, config)
-	assert.Equal(t, adapters.ErrNoServiceExtensionHealthCheck, err)
-}
-
-func TestShouldErrorIfNoExtensions(t *testing.T) {
-	configStr := `service:
-  extensions: [health_check]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	_, err = adapters.ConfigToContainerProbe(logger, config)
-	assert.Equal(t, adapters.ErrNoExtensions, err)
-}
-
-func TestShouldErrorIfBadlyFormattedExtensions(t *testing.T) {
-	configStr := `extensions: [hi]
+    endpoint:
+      this: should-not-be-a-map"
 service:
-  extensions: [health_check]`
+  extensions: [health_check]`,
+		}, {
+			desc: "WillUseSecondServiceExtension",
+			config: `extensions:
+  health_check:
+service:
+  extensions: [health_check/1, health_check]`,
+			expectedPort: int32(13133),
+			expectedPath: "/",
+		},
+	}
 
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
+	for _, test := range tests {
+		// prepare
+		config, err := adapters.ConfigFromString(test.config)
+		require.NoError(t, err, test.desc)
+		require.NotEmpty(t, config, test.desc)
 
-	// test
-	_, err = adapters.ConfigToContainerProbe(logger, config)
-	assert.Equal(t, adapters.ErrExtensionsNotAMap, err)
+		// test
+		actualProbe, err := adapters.ConfigToContainerProbe(config)
+		assert.NoError(t, err)
+		assert.Equal(t, test.expectedPath, actualProbe.HTTPGet.Path, test.desc)
+		assert.Equal(t, test.expectedPort, actualProbe.HTTPGet.Port.IntVal, test.desc)
+		assert.Equal(t, "", actualProbe.HTTPGet.Host, test.desc)
+	}
 }
 
-func TestShouldErrorIfNoHealthCheckExtension(t *testing.T) {
-	configStr := `extensions:
+func TestConfigToProbeShouldErrorIf(t *testing.T) {
+	tests := []struct {
+		desc        string
+		config      string
+		expectedErr error
+	}{
+		{
+			desc: "NoHealthCheckExtension",
+			config: `extensions:
   pprof:
 service:
-  extensions: [health_check]`
-
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	_, err = adapters.ConfigToContainerProbe(logger, config)
-	assert.Equal(t, adapters.ErrNoExtensionHealthCheck, err)
-}
-
-func TestShouldErrorIfNoHealthCheckExtension_mustMatchFirstHealthCheck(t *testing.T) {
-	configStr := `extensions:
-  health_check:
+  extensions: [health_check]`,
+			expectedErr: adapters.ErrNoExtensionHealthCheck,
+		}, {
+			desc: "BadlyFormattedExtensions",
+			config: `extensions: [hi]
 service:
-  extensions: [health_check/1, health_check]`
+  extensions: [health_check]`,
+			expectedErr: adapters.ErrExtensionsNotAMap,
+		}, {
+			desc: "NoExtensions",
+			config: `service:
+  extensions: [health_check]`,
+			expectedErr: adapters.ErrNoExtensions,
+		}, {
+			desc: "NoHealthCheckInServiceExtensions",
+			config: `service:
+  extensions: [pprof]`,
+			expectedErr: adapters.ErrNoServiceExtensionHealthCheck,
+		}, {
+			desc: "BadlyFormattedServiceExtensions",
+			config: `service:
+  extensions:
+    this: should-not-be-a-map`,
+			expectedErr: adapters.ErrServiceExtensionsNotSlice,
+		}, {
+			desc: "NoServiceExtensions",
+			config: `service:
+  pipelines:
+    traces:
+      receivers: [otlp]`,
+			expectedErr: adapters.ErrNoServiceExtensions,
+		}, {
+			desc: "BadlyFormattedService",
+			config: `extensions:
+  health_check:
+service: [hi]`,
+			expectedErr: adapters.ErrServiceNotAMap,
+		}, {
+			desc: "NoService",
+			config: `extensions:
+  health_check:`,
+			expectedErr: adapters.ErrNoService,
+		},
+	}
 
-	// prepare
-	config, err := adapters.ConfigFromString(configStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
+	for _, test := range tests {
+		// prepare
+		config, err := adapters.ConfigFromString(test.config)
+		require.NoError(t, err, test.desc)
+		require.NotEmpty(t, config, test.desc)
 
-	// test
-	_, err = adapters.ConfigToContainerProbe(logger, config)
-	assert.Equal(t, adapters.ErrNoExtensionHealthCheck, err)
+		// test
+		_, err = adapters.ConfigToContainerProbe(config)
+		assert.Equal(t, test.expectedErr, err, test.desc)
+	}
 }

@@ -79,7 +79,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 
 	var livenessProbe *corev1.Probe
 	if config, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
-		if probe, err := adapters.ConfigToContainerProbe(logger, config); err == nil {
+		if probe, err := adapters.ConfigToContainerProbe(config); err == nil {
 			livenessProbe = probe
 		}
 	}

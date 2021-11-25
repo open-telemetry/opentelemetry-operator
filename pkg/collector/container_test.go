@@ -290,7 +290,7 @@ service:
 	c := Container(cfg, logger, otelcol)
 
 	// verify
-	assert.Equal(t, "0.0.0.0", c.LivenessProbe.HTTPGet.Host)
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
+	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
 }
