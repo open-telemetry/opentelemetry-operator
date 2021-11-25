@@ -57,7 +57,7 @@ func TestHealthCheckEndpointMigration(t *testing.T) {
 
 	// verify
 	assert.Equal(t, `extensions:
-  health_check: null
+  health_check:
   health_check/1: ""
   health_check/2:
     endpoint: localhost:13133
