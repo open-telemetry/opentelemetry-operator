@@ -22,6 +22,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
@@ -77,6 +78,13 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		},
 	})
 
+	var livenessProbe *corev1.Probe
+	if config, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
+		if probe, err := adapters.ConfigToContainerProbe(config); err == nil {
+			livenessProbe = probe
+		}
+	}
+
 	return corev1.Container{
 		Name:            naming.Container(),
 		Image:           image,
@@ -87,5 +95,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		EnvFrom:         otelcol.Spec.EnvFrom,
 		Resources:       otelcol.Spec.Resources,
 		SecurityContext: otelcol.Spec.SecurityContext,
+		LivenessProbe:   livenessProbe,
 	}
 }
