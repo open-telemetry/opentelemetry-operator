@@ -145,7 +145,7 @@ start-kind:
 	kind load docker-image local/opentelemetry-operator:e2e
 
 cert-manager: cmctl
-	# Consider using cmctl to install the cert-manager once install comment is not experimental
+	# Consider using cmctl to install the cert-manager once install command is not experimental
 	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v${CERTMANAGER_VERSION}/cert-manager.yaml
 	cmctl check api --wait=5m
 
