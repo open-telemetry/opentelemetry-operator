@@ -273,3 +273,24 @@ func TestContainerEnvFrom(t *testing.T) {
 	assert.Contains(t, c.EnvFrom, envFrom1)
 	assert.Contains(t, c.EnvFrom, envFrom2)
 }
+
+func TestContainerProbe(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Config: `extensions:
+  health_check:
+service:
+  extensions: [health_check]`,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
+	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
+	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
+}
