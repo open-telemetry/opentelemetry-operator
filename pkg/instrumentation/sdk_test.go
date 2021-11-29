@@ -289,6 +289,74 @@ func TestSDKInjection(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Empty instrumentation spec",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+					UID:       "pod-uid",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "application-name",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+					UID:       "pod-uid",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "application-name",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "my-deployment",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
