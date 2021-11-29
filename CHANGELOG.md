@@ -4,7 +4,7 @@ Changes by Version
 0.40.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.40.0
-* Support K8s liveness probe to otel collector, if health_check extension is defined in otel collector config.
+* Support K8s liveness probe to otel collector, if health_check extension is defined in otel collector config ([#571](https://github.com/open-telemetry/opentelemetry-operator/pull/574))
 
 0.39.0
 -------------------
