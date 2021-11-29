@@ -270,7 +270,7 @@ Resource defines the configuration for the resource attributes, as defined by th
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>resourceAttributes</b></td>
+        <td><b>attributes</b></td>
         <td>map[string]string</td>
         <td>
           Attributes defines attributes that are added to the resource. For example environment: dev<br/>

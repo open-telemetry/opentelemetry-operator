@@ -55,7 +55,7 @@ type Resource struct {
 	// Attributes defines attributes that are added to the resource.
 	// For example environment: dev
 	// +optional
-	Attributes map[string]string `json:"resourceAttributes,omitempty"`
+	Attributes map[string]string `json:"attributes,omitempty"`
 
 	// AddK8sUIDAttributes defines whether K8s UID attributes should be collected (e.g. k8s.deployment.uid).
 	// +optional
