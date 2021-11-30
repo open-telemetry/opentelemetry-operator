@@ -98,6 +98,19 @@ func TestReceiverFailsWhenPortIsntString(t *testing.T) {
 	assert.Nil(t, p)
 }
 
+func TestReceiverFailsWhenNameIsKubeletStats(t *testing.T) {
+	// prepare
+	config := map[interface{}]interface{}{
+		"name": "kubeletstats",
+	}
+
+	// test
+	p := singlePortFromConfigEndpoint(logger, "myreceiver", config)
+
+	// verify
+	assert.Nil(t, p)
+}
+
 func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
 	// test
 	p := For(logger, "myreceiver", map[interface{}]interface{}{})
