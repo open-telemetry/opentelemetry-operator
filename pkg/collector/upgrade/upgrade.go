@@ -26,11 +26,21 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"k8s.io/client-go/tools/record"
 )
 
+type Params struct {
+	Log logr.Logger
+	Version version.Version 
+	Client client.Client
+	Recorder record.EventRecorder
+}
+
+
 // ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary.
-func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Version, cl client.Client) error {
-	logger.Info("looking for managed instances to upgrade")
+func ManagedInstances(ctx context.Context,params Params) error {
+	
+	params.Log.Info("looking for managed instances to upgrade")
 
 	opts := []client.ListOption{
 		client.MatchingLabels(map[string]string{
@@ -38,13 +48,13 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Versi
 		}),
 	}
 	list := &v1alpha1.OpenTelemetryCollectorList{}
-	if err := cl.List(ctx, list, opts...); err != nil {
+	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
 
 	for i := range list.Items {
 		original := list.Items[i]
-		upgraded, err := ManagedInstance(ctx, logger, ver, cl, original)
+		upgraded, err := ManagedInstance(ctx, params.Log, params.Version, params.Client, original)
 		if err != nil {
 			// nothing to do at this level, just go to the next instance
 			continue
@@ -54,24 +64,24 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Versi
 			// the resource update overrides the status, so, keep it so that we can reset it later
 			st := upgraded.Status
 			patch := client.MergeFrom(&original)
-			if err := cl.Patch(ctx, &upgraded, patch); err != nil {
-				logger.Error(err, "failed to apply changes to instance", "name", upgraded.Name, "namespace", upgraded.Namespace)
+			if err := params.Client.Patch(ctx, &upgraded, patch); err != nil {
+				params.Log.Error(err, "failed to apply changes to instance", "name", upgraded.Name, "namespace", upgraded.Namespace)
 				continue
 			}
 
 			// the status object requires its own update
 			upgraded.Status = st
-			if err := cl.Status().Patch(ctx, &upgraded, patch); err != nil {
-				logger.Error(err, "failed to apply changes to instance's status object", "name", upgraded.Name, "namespace", upgraded.Namespace)
+			if err := params.Client.Status().Patch(ctx, &upgraded, patch); err != nil {
+				params.Log.Error(err, "failed to apply changes to instance's status object", "name", upgraded.Name, "namespace", upgraded.Namespace)
 				continue
 			}
 
-			logger.Info("instance upgraded", "name", upgraded.Name, "namespace", upgraded.Namespace, "version", upgraded.Status.Version)
+			params.Log.Info("instance upgraded", "name", upgraded.Name, "namespace", upgraded.Namespace, "version", upgraded.Status.Version)
 		}
 	}
 
 	if len(list.Items) == 0 {
-		logger.Info("no instances to upgrade")
+		params.Log.Info("no instances to upgrade")
 	}
 
 	return nil
