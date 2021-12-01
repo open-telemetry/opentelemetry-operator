@@ -54,7 +54,11 @@ func TestRemoveMetricsTypeFlags(t *testing.T) {
 	require.Contains(t, existing.Spec.Args, "--legacy-metrics")
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+		Log: logger,
+		Version: version.Get(),
+		Client: nil,
+	}, existing)
 	assert.NoError(t, err)
 
 	// verify

@@ -25,12 +25,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 )
 
+
 func upgrade0_39_0(cl client.Client, params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.39.0, failed to parse configuration: %w", err)
 	}
-
+	existingconfig := otelcol.Spec.Config
 	// Remove processors.memory_limiter.ballast_size_mib
 	// as it is deprecated in reference to https://github.com/open-telemetry/opentelemetry-collector/pull/4365
 	processors, _ := cfg["processors"].(map[interface{}]interface{})
@@ -43,6 +44,7 @@ func upgrade0_39_0(cl client.Client, params Params, otelcol *v1alpha1.OpenTeleme
 				if k2 == "ballast_size_mib" {
 					delete(memoryLimiter, k2)
 					//otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", k1))
+					updated := existingconfig.DeepCopy()
 					params.Recorder.Event(updated, "Normal", "ConfigUpdate ", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", k1))
 
 				}
