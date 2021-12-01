@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/fsnotify/fsnotify"
@@ -27,21 +28,18 @@ var (
 )
 
 func main() {
-	// Trying zap logger
 	opts := zap.Options{}
 	opts.BindFlags(flag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	var listenAddr string
-	var configDir string
+	var configFilePath string
 	pflag.StringVar(&listenAddr, "listen-addr", ":8080", "The address where this service serves.")
-	pflag.StringVar(&configDir, "config-dir", "/conf/", "The directory for the config file.")
+	pflag.StringVar(&configFilePath, "config-file", config.DefaultConfigFilePath, "The path to the config file.")
 	pflag.Parse()
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
 
 	logger.Info("Starting the Target Allocator")
-
-	//
 
 	ctx := context.Background()
 
@@ -53,11 +51,11 @@ func main() {
 	}
 	defer watcher.Close()
 
-	if err := watcher.Add(configDir); err != nil {
+	if err := watcher.Add(filepath.Dir(configFilePath)); err != nil {
 		setupLog.Error(err, "Can't add directory to watcher")
 	}
 	log := ctrl.Log.WithName("allocator")
-	srv, err := newServer(log, listenAddr)
+	srv, err := newServer(log, listenAddr, configFilePath)
 	if err != nil {
 		setupLog.Error(err, "Can't start the server")
 	}
@@ -87,7 +85,7 @@ func main() {
 				if err := srv.Shutdown(ctx); err != nil {
 					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv, err = newServer(log, listenAddr)
+				srv, err = newServer(log, listenAddr, "")
 				if err != nil {
 					setupLog.Error(err, "Error restarting the server with new config")
 				}
@@ -111,8 +109,8 @@ type server struct {
 	server           *http.Server
 }
 
-func newServer(log logr.Logger, addr string) (*server, error) {
-	allocator, discoveryManager, k8sclient, err := newAllocator(log, context.Background())
+func newServer(log logr.Logger, addr string, configFilePath string) (*server, error) {
+	allocator, discoveryManager, k8sclient, err := newAllocator(log, context.Background(), configFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +127,8 @@ func newServer(log logr.Logger, addr string) (*server, error) {
 	return s, nil
 }
 
-func newAllocator(log logr.Logger, ctx context.Context) (*allocation.Allocator, *lbdiscovery.Manager, *collector.Client, error) {
-	cfg, err := config.Load("")
+func newAllocator(log logr.Logger, ctx context.Context, configFilePath string) (*allocation.Allocator, *lbdiscovery.Manager, *collector.Client, error) {
+	cfg, err := config.Load(configFilePath)
 	if err != nil {
 		return nil, nil, nil, err
 	}
