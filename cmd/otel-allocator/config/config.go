@@ -15,7 +15,7 @@ var (
 	ErrInvalidYAML = errors.New("couldn't parse the loadbalancer configuration")
 )
 
-const defaultConfigFile string = "/conf/targetallocator.yaml"
+const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 
 type Config struct {
 	LabelSelector map[string]string  `yaml:"label_selector,omitempty"`
@@ -23,10 +23,6 @@ type Config struct {
 }
 
 func Load(file string) (Config, error) {
-	if file == "" {
-		file = defaultConfigFile
-	}
-
 	var cfg Config
 	if err := unmarshal(&cfg, file); err != nil {
 		return Config{}, err
