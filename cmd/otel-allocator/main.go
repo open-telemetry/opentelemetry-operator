@@ -35,6 +35,7 @@ func main() {
 	var configDir string
 	pflag.StringVar(&listenAddr, "listen-addr", ":8080", "The address where this service serves.")
 	pflag.StringVar(&configDir, "config-dir", "/conf/", "The directory for the config file.")
+	pflag.Parse()
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
 
