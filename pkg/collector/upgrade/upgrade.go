@@ -121,7 +121,7 @@ func ManagedInstance(ctx context.Context, params Params, otelcol v1alpha1.OpenTe
 	}
 
 	// at the end of the process, we are up to date with the latest known version, which is what we have from versions.txt
-	otelcol.Status.Version = currentV.OpenTelemetryCollector
+	otelcol.Status.Version = params.Version.OpenTelemetryCollector
 
 	params.Log.V(1).Info("final version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
 	return otelcol, nil

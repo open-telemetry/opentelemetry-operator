@@ -60,7 +60,11 @@ func TestShouldUpgradeAllToLatest(t *testing.T) {
 	require.Equal(t, "0.0.1", persisted.Status.Version)
 
 	// test
-	err = upgrade.ManagedInstances(context.Background(), logger, currentV, k8sClient)
+	err = upgrade.ManagedInstances(context.Background(), upgrade.Params{
+		Log: logger, 
+		Version: currentV,
+		Client: k8sClient,
+	})
 	assert.NoError(t, err)
 
 	// verify
@@ -90,7 +94,11 @@ func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 	currentV.OpenTelemetryCollector = "0.10.0" // we don't have a 0.10.0 upgrade, but we have a 0.9.0
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, currentV, k8sClient, existing)
+	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+		Log: logger, 
+		Version: currentV,
+		Client: k8sClient,
+	}, existing)
 
 	// verify
 	assert.NoError(t, err)
@@ -126,7 +134,11 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 			currentV.OpenTelemetryCollector = upgrade.Latest.String()
 
 			// test
-			res, err := upgrade.ManagedInstance(context.Background(), logger, currentV, k8sClient, existing)
+			res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+				Log: logger, 
+				Version: currentV,
+				Client: k8sClient,
+			}, existing)
 			if tt.failureExpected {
 				assert.Error(t, err)
 			} else {
