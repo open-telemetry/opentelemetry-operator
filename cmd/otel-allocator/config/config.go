@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"time"
 
 	"github.com/go-logr/logr"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -27,6 +28,7 @@ var (
 	}
 )
 
+const DefaultResyncTime = 5 + time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 
 type Config struct {

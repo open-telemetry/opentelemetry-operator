@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
+	allocatorWatcher "github.com/otel-allocator/watcher"
 	"net/http"
 	"os"
 	"os/signal"
@@ -31,10 +33,9 @@ func main() {
 
 	ctx := context.Background()
 
-	// watcher to monitor file changes in ConfigMap
-	watcher, err := fsnotify.NewWatcher()
+	watcher, err := allocatorWatcher.NewWatcher(setupLog, *cliConf.ConfigFilePath)
 	if err != nil {
-		setupLog.Error(err, "Can't start the watcher")
+		setupLog.Error(err, "Can't start the watchers")
 		os.Exit(1)
 	}
 	defer watcher.Close()
