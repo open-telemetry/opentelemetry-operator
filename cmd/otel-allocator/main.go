@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,9 +17,7 @@ import (
 	"github.com/otel-allocator/collector"
 	"github.com/otel-allocator/config"
 	lbdiscovery "github.com/otel-allocator/discovery"
-	"github.com/spf13/pflag"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var (
@@ -28,18 +25,9 @@ var (
 )
 
 func main() {
-	opts := zap.Options{}
-	opts.BindFlags(flag.CommandLine)
-	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	var listenAddr string
-	var configFilePath string
-	pflag.StringVar(&listenAddr, "listen-addr", ":8080", "The address where this service serves.")
-	pflag.StringVar(&configFilePath, "config-file", config.DefaultConfigFilePath, "The path to the config file.")
-	pflag.Parse()
-	logger := zap.New(zap.UseFlagOptions(&opts))
-	ctrl.SetLogger(logger)
+	cliConf := config.ParseCLI()
 
-	logger.Info("Starting the Target Allocator")
+	cliConf.RootLogger.Info("Starting the Target Allocator")
 
 	ctx := context.Background()
 
@@ -51,11 +39,11 @@ func main() {
 	}
 	defer watcher.Close()
 
-	if err := watcher.Add(filepath.Dir(configFilePath)); err != nil {
+	if err := watcher.Add(filepath.Dir(*cliConf.ConfigFilePath)); err != nil {
 		setupLog.Error(err, "Can't add directory to watcher")
 	}
 	log := ctrl.Log.WithName("allocator")
-	srv, err := newServer(log, listenAddr, configFilePath)
+	srv, err := newServer(log, cliConf)
 	if err != nil {
 		setupLog.Error(err, "Can't start the server")
 	}
@@ -85,7 +73,7 @@ func main() {
 				if err := srv.Shutdown(ctx); err != nil {
 					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv, err = newServer(log, listenAddr, "")
+				srv, err = newServer(log, cliConf)
 				if err != nil {
 					setupLog.Error(err, "Error restarting the server with new config")
 				}
@@ -109,8 +97,8 @@ type server struct {
 	server           *http.Server
 }
 
-func newServer(log logr.Logger, addr string, configFilePath string) (*server, error) {
-	allocator, discoveryManager, k8sclient, err := newAllocator(log, context.Background(), configFilePath)
+func newServer(log logr.Logger, cliConf config.CLIConfig) (*server, error) {
+	allocator, discoveryManager, k8sclient, err := newAllocator(log, context.Background(), *cliConf.ConfigFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +111,7 @@ func newServer(log logr.Logger, addr string, configFilePath string) (*server, er
 	router := mux.NewRouter()
 	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
-	s.server = &http.Server{Addr: addr, Handler: router}
+	s.server = &http.Server{Addr: *cliConf.ListenAddr, Handler: router}
 	return s, nil
 }
 
