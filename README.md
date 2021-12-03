@@ -51,7 +51,7 @@ EOF
 **_WARNING:_** Until the OpenTelemetry Collector format is stable, changes may be required in the above example to remain
 compatible with the latest version of the OpenTelemetry Collector image being referenced.
 
-This will create an OpenTelemetry Collector instance named `otel`, exposing two services `otel-collector` and `otel-collector-headless`. The received spans will be exported via `logging` exporter and written to the console (`stdout`). The headless service is preferred if gRPC protocol is used to export data to the collector.
+This will create an OpenTelemetry Collector instance named `otel`, exposing two services `otel-collector` and `otel-collector-headless`. The received spans will be exported via `logging` exporter and written to the console (`stdout`). If a gRPC protocol is used to export data to the collector use the headless service that ensures load balancing will properly work.
 
 The `config` node holds the `YAML` that should be passed down as-is to the underlying OpenTelemetry Collector instances. Refer to the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) documentation for a reference of the possible entries.
 
