@@ -30,7 +30,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     certified: "false"
-    containerImage: quay.io/opentelemetry/opentelemetry-operator
+    containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.13.0+git
