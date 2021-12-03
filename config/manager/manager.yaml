@@ -27,6 +27,18 @@ spec:
         - --enable-leader-election
         image: controller
         name: manager
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http-8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http-8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
         resources:
           limits:
             cpu: 200m
