@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/otel-allocator/config"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -30,13 +31,13 @@ type Client struct {
 	close         chan struct{}
 }
 
-func NewClient(logger logr.Logger) (*Client, error) {
-	config, err := rest.InClusterConfig()
+func NewClient(logger logr.Logger, cliConfig config.CLIConfig) (*Client, error) {
+	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *cliConfig.KubeconfigPath)
 	if err != nil {
 		return &Client{}, err
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := kubernetes.NewForConfig(clusterConfig)
 	if err != nil {
 		return &Client{}, err
 	}

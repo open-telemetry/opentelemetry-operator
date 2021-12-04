@@ -98,7 +98,7 @@ type server struct {
 }
 
 func newServer(log logr.Logger, cliConf config.CLIConfig) (*server, error) {
-	allocator, discoveryManager, k8sclient, err := newAllocator(log, context.Background(), *cliConf.ConfigFilePath)
+	allocator, discoveryManager, k8sclient, err := newAllocator(log, context.Background(), cliConf)
 	if err != nil {
 		return nil, err
 	}
@@ -115,13 +115,13 @@ func newServer(log logr.Logger, cliConf config.CLIConfig) (*server, error) {
 	return s, nil
 }
 
-func newAllocator(log logr.Logger, ctx context.Context, configFilePath string) (*allocation.Allocator, *lbdiscovery.Manager, *collector.Client, error) {
-	cfg, err := config.Load(configFilePath)
+func newAllocator(log logr.Logger, ctx context.Context, cliConfig config.CLIConfig) (*allocation.Allocator, *lbdiscovery.Manager, *collector.Client, error) {
+	cfg, err := config.Load(*cliConfig.ConfigFilePath)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	k8sClient, err := collector.NewClient(log)
+	k8sClient, err := collector.NewClient(log, cliConfig)
 	if err != nil {
 		return nil, nil, nil, err
 	}
