@@ -94,12 +94,14 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 			Value: chooseServiceName(pod, resourceMap),
 		})
 	}
-	idx = getIndexOfEnv(container.Env, envOTELExporterOTLPEndpoint)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envOTELExporterOTLPEndpoint,
-			Value: otelinst.Spec.Endpoint,
-		})
+	if otelinst.Spec.Exporter.Endpoint != "" {
+		idx = getIndexOfEnv(container.Env, envOTELExporterOTLPEndpoint)
+		if idx == -1 {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name:  envOTELExporterOTLPEndpoint,
+				Value: otelinst.Spec.Endpoint,
+			})
+		}
 	}
 
 	// Some attributes might be empty, we should get them via k8s downward API
