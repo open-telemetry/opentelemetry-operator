@@ -30,6 +30,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -68,12 +69,16 @@ func main() {
 	v := version.Get()
 
 	// add flags related to this operator
-	var metricsAddr string
-	var enableLeaderElection bool
-	var collectorImage string
-	var targetAllocatorImage string
-	var autoInstrumentationJava string
+	var (
+		metricsAddr             string
+		probeAddr               string
+		enableLeaderElection    bool
+		collectorImage          string
+		targetAllocatorImage    string
+		autoInstrumentationJava string
+	)
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&probeAddr, "health-probe-addr", ":8081", "The address the probe endpoint binds to.")
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -124,12 +129,13 @@ func main() {
 	}
 
 	mgrOptions := ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               9443,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "9f7554c3.opentelemetry.io",
-		Namespace:          watchNamespace,
+		Scheme:                 scheme,
+		MetricsBindAddress:     metricsAddr,
+		Port:                   9443,
+		HealthProbeBindAddress: probeAddr,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "9f7554c3.opentelemetry.io",
+		Namespace:              watchNamespace,
 	}
 
 	if strings.Contains(watchNamespace, ",") {
@@ -205,6 +211,15 @@ func main() {
 		})
 	}
 	// +kubebuilder:scaffold:builder
+
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up health check")
+		os.Exit(1)
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
