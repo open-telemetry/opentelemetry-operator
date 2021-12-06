@@ -58,12 +58,15 @@ func Get() Version {
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v')",
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
 		v.Go,
 		v.TargetAllocator,
+		v.AutoInstrumentationJava,
+		v.AutoInstrumentationNodeJS,
+		v.AutoInstrumentationPython,
 	)
 }
 
