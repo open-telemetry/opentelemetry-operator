@@ -70,12 +70,14 @@ func main() {
 
 	// add flags related to this operator
 	var (
-		metricsAddr             string
-		probeAddr               string
-		enableLeaderElection    bool
-		collectorImage          string
-		targetAllocatorImage    string
-		autoInstrumentationJava string
+		metricsAddr               string
+		probeAddr                 string
+		enableLeaderElection      bool
+		collectorImage            string
+		targetAllocatorImage      string
+		autoInstrumentationJava   string
+		autoInstrumentationNodeJS string
+		autoInstrumentationPython string
 	)
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-addr", ":8081", "The address the probe endpoint binds to.")
@@ -84,7 +86,9 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	pflag.StringVar(&collectorImage, "collector-image", fmt.Sprintf("otel/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&targetAllocatorImage, "target-allocator-image", fmt.Sprintf("quay.io/opentelemetry/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
-	pflag.StringVar(&autoInstrumentationJava, "auto-instrumentation-java-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.JavaAutoInstrumentation), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationJava, "auto-instrumentation-java-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationPython, "auto-instrumentation-python-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
@@ -94,6 +98,8 @@ func main() {
 		"opentelemetry-collector", collectorImage,
 		"opentelemetry-targetallocator", targetAllocatorImage,
 		"auto-instrumentation-java", autoInstrumentationJava,
+		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
+		"auto-instrumentation-python", autoInstrumentationPython,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
@@ -115,6 +121,8 @@ func main() {
 		config.WithCollectorImage(collectorImage),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
+		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
+		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
 		config.WithAutoDetect(ad),
 	)
 
@@ -175,7 +183,11 @@ func main() {
 		}
 		if err = (&otelv1alpha1.Instrumentation{
 			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{otelv1alpha1.AnnotationDefaultAutoInstrumentationJava: autoInstrumentationJava},
+				Annotations: map[string]string{
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationJava:   autoInstrumentationJava,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationNodeJS: autoInstrumentationNodeJS,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationPython: autoInstrumentationPython,
+				},
 			},
 		}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
@@ -228,9 +240,10 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
 		u := &instrumentationupgrade.InstrumentationUpgrade{
-			Logger:               ctrl.Log.WithName("instrumentation-upgrade"),
-			DefaultAutoInstrJava: cfg.AutoInstrumentationJavaImage(),
-			Client:               mgr.GetClient(),
+			Logger:                 ctrl.Log.WithName("instrumentation-upgrade"),
+			DefaultAutoInstrJava:   cfg.AutoInstrumentationJavaImage(),
+			DefaultAutoInstrNodeJS: cfg.AutoInstrumentationJavaImage(),
+			Client:                 mgr.GetClient(),
 		}
 		return u.ManagedInstances(c)
 	}))

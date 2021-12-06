@@ -26,9 +26,11 @@ import (
 )
 
 type InstrumentationUpgrade struct {
-	Logger               logr.Logger
-	DefaultAutoInstrJava string
-	Client               client.Client
+	Logger                 logr.Logger
+	DefaultAutoInstrJava   string
+	DefaultAutoInstrNodeJS string
+	DefaultAutoInstrPython string
+	Client                 client.Client
 }
 
 //+kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
@@ -72,6 +74,22 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		if inst.Spec.Java.Image == autoInstJava {
 			inst.Spec.Java.Image = u.DefaultAutoInstrJava
 			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava] = u.DefaultAutoInstrJava
+		}
+	}
+	autoInstNodeJS := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS]
+	if autoInstNodeJS != "" {
+		// upgrade the image only if the image matches the annotation
+		if inst.Spec.NodeJS.Image == autoInstNodeJS {
+			inst.Spec.NodeJS.Image = u.DefaultAutoInstrNodeJS
+			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS] = u.DefaultAutoInstrNodeJS
+		}
+	}
+	autoInstNodePython := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython]
+	if autoInstNodePython != "" {
+		// upgrade the image only if the image matches the annotation
+		if inst.Spec.Python.Image == autoInstNodePython {
+			inst.Spec.Python.Image = u.DefaultAutoInstrPython
+			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython] = u.DefaultAutoInstrPython
 		}
 	}
 	return inst

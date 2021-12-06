@@ -25,7 +25,9 @@ import (
 )
 
 const (
-	AnnotationDefaultAutoInstrumentationJava = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
+	AnnotationDefaultAutoInstrumentationJava   = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
+	AnnotationDefaultAutoInstrumentationNodeJS = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
+	AnnotationDefaultAutoInstrumentationPython = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
 )
 
 // log is for logging in this package.
@@ -54,6 +56,16 @@ func (r *Instrumentation) Default() {
 	if r.Spec.Java.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationJava]; ok {
 			r.Spec.Java.Image = val
+		}
+	}
+	if r.Spec.NodeJS.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationNodeJS]; ok {
+			r.Spec.NodeJS.Image = val
+		}
+	}
+	if r.Spec.Python.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationPython]; ok {
+			r.Spec.Python.Image = val
 		}
 	}
 }
