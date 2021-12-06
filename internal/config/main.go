@@ -70,16 +70,18 @@ func New(opts ...Option) Config {
 	}
 
 	return Config{
-		autoDetect:                    o.autoDetect,
-		autoDetectFrequency:           o.autoDetectFrequency,
-		collectorImage:                o.collectorImage,
-		collectorConfigMapEntry:       o.collectorConfigMapEntry,
-		targetAllocatorImage:          o.targetAllocatorImage,
-		targetAllocatorConfigMapEntry: o.targetAllocatorConfigMapEntry,
-		logger:                        o.logger,
-		onChange:                      o.onChange,
-		platform:                      o.platform,
-		autoInstrumentationJavaImage:  o.autoInstrumentationJavaImage,
+		autoDetect:                     o.autoDetect,
+		autoDetectFrequency:            o.autoDetectFrequency,
+		collectorImage:                 o.collectorImage,
+		collectorConfigMapEntry:        o.collectorConfigMapEntry,
+		targetAllocatorImage:           o.targetAllocatorImage,
+		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
+		logger:                         o.logger,
+		onChange:                       o.onChange,
+		platform:                       o.platform,
+		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
+		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
+		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
 	}
 }
 
