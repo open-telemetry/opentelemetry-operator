@@ -21,13 +21,12 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v2"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 )
 
-func upgrade0_38_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_38_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	// return if args exist
 	if len(otelcol.Spec.Args) == 0 {
 		return otelcol, nil

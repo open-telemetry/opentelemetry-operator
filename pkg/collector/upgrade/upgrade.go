@@ -107,7 +107,7 @@ func ManagedInstance(ctx context.Context, params Params, otelcol v1alpha1.OpenTe
 
 	for _, available := range versions {
 		if available.GreaterThan(instanceV) {
-			upgraded, err := available.upgrade(params.Client, &otelcol)
+			upgraded, err := available.upgrade(params, &otelcol)
 
 			if err != nil {
 				params.Log.Error(err, "failed to upgrade managed otelcol instances", "name", otelcol.Name, "namespace", otelcol.Namespace)

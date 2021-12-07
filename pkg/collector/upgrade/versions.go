@@ -16,12 +16,11 @@ package upgrade
 
 import (
 	"github.com/Masterminds/semver/v3"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-type upgradeFunc func(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error)
+type upgradeFunc func(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error)
 
 type otelcolVersion struct {
 	semver.Version
