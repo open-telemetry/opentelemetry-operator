@@ -41,7 +41,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
@@ -220,7 +219,11 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		return collectorupgrade.ManagedInstances(c, ctrl.Log.WithName("collector-upgrade"), v, mgr.GetClient())
+		return collectorupgrade.ManagedInstances(c, collectorupgrade.Params{
+			Client:  mgr.GetClient(),
+			Version: v,
+			Log:     ctrl.Log.WithName("collector-upgrade"),
+		})
 	}))
 	if err != nil {
 		return fmt.Errorf("failed to upgrade OpenTelemetryCollector instances: %w", err)
