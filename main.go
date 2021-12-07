@@ -30,6 +30,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -69,12 +70,16 @@ func main() {
 	v := version.Get()
 
 	// add flags related to this operator
-	var metricsAddr string
-	var enableLeaderElection bool
-	var collectorImage string
-	var targetAllocatorImage string
-	var autoInstrumentationJava string
+	var (
+		metricsAddr             string
+		probeAddr               string
+		enableLeaderElection    bool
+		collectorImage          string
+		targetAllocatorImage    string
+		autoInstrumentationJava string
+	)
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&probeAddr, "health-probe-addr", ":8081", "The address the probe endpoint binds to.")
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -110,6 +115,7 @@ func main() {
 		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
+		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 		config.WithAutoDetect(ad),
 	)
 
@@ -125,12 +131,13 @@ func main() {
 	}
 
 	mgrOptions := ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               9443,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "9f7554c3.opentelemetry.io",
-		Namespace:          watchNamespace,
+		Scheme:                 scheme,
+		MetricsBindAddress:     metricsAddr,
+		Port:                   9443,
+		HealthProbeBindAddress: probeAddr,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "9f7554c3.opentelemetry.io",
+		Namespace:              watchNamespace,
 	}
 
 	if strings.Contains(watchNamespace, ",") {
@@ -144,38 +151,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	// run the auto-detect mechanism for the configuration
-	err = mgr.Add(manager.RunnableFunc(func(_ context.Context) error {
-		return cfg.StartAutoDetect()
-	}))
+	ctx := ctrl.SetupSignalHandler()
+	err = addDependencies(ctx, mgr, cfg, v)
 	if err != nil {
-		setupLog.Error(err, "failed to start the auto-detect mechanism")
-	}
-
-	// adds the upgrade mechanism to be executed once the manager is ready
-	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		return collectorupgrade.ManagedInstances(c, upgrade.Params{
-			Log: ctrl.Log.WithName("collector-upgrade"), 
-			Version: v, 
-			Client: mgr.GetClient(),
-			Recorder: mgr.GetEventRecorderFor("collector-upgrade"),
-			},
-			)
-	}))
-	if err != nil {
-		setupLog.Error(err, "failed to upgrade managed instances")
-	}
-	// adds the upgrade mechanism to be executed once the manager is ready
-	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		u := &instrumentationupgrade.InstrumentationUpgrade{
-			Logger:               ctrl.Log.WithName("instrumentation-upgrade"),
-			DefaultAutoInstrJava: autoInstrumentationJava,
-			Client:               mgr.GetClient(),
-		}
-		return u.ManagedInstances(c)
-	}))
-	if err != nil {
-		setupLog.Error(err, "failed to upgrade managed instances")
+		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
+		os.Exit(1)
 	}
 
 	if err = controllers.NewReconciler(controllers.Params{
@@ -213,9 +193,50 @@ func main() {
 	}
 	// +kubebuilder:scaffold:builder
 
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up health check")
+		os.Exit(1)
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
+
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v version.Version) error {
+	// run the auto-detect mechanism for the configuration
+	err := mgr.Add(manager.RunnableFunc(func(_ context.Context) error {
+		return cfg.StartAutoDetect()
+	}))
+	if err != nil {
+		return fmt.Errorf("failed to start the auto-detect mechanism: %w", err)
+	}
+
+	// adds the upgrade mechanism to be executed once the manager is ready
+	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
+		return collectorupgrade.ManagedInstances(c, ctrl.Log.WithName("collector-upgrade"), v, mgr.GetClient())
+	}))
+	if err != nil {
+		return fmt.Errorf("failed to upgrade OpenTelemetryCollector instances: %w", err)
+	}
+
+	// adds the upgrade mechanism to be executed once the manager is ready
+	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
+		u := &instrumentationupgrade.InstrumentationUpgrade{
+			Logger:               ctrl.Log.WithName("instrumentation-upgrade"),
+			DefaultAutoInstrJava: cfg.AutoInstrumentationJavaImage(),
+			Client:               mgr.GetClient(),
+		}
+		return u.ManagedInstances(c)
+	}))
+	if err != nil {
+		return fmt.Errorf("failed to upgrade Instrumentation instances: %w", err)
+	}
+	return nil
 }

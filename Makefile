@@ -144,11 +144,23 @@ start-kind:
 	kind create cluster --config $(KIND_CONFIG)
 	kind load docker-image local/opentelemetry-operator:e2e
 
-cert-manager:
+cert-manager: cmctl
+	# Consider using cmctl to install the cert-manager once install command is not experimental
 	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v${CERTMANAGER_VERSION}/cert-manager.yaml
-	kubectl wait --timeout=5m --for=condition=available deployment cert-manager -n cert-manager
-	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-cainjector -n cert-manager
-	kubectl wait --timeout=5m --for=condition=available deployment cert-manager-webhook -n cert-manager
+	cmctl check api --wait=5m
+
+cmctl:
+ifeq (, $(shell which cmctl))
+	@{ \
+	curl -L -o /tmp/cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/download/v$(CERTMANAGER_VERSION)/cmctl-`go env GOOS`-`go env GOARCH`.tar.gz ;\
+	cd /tmp ;\
+	tar xzf cmctl.tar.gz ;\
+	mv cmctl $(GOBIN) ;\
+	}
+CTL=$(GOBIN)/cmctl
+else
+CTL=$(shell which cmctl)
+endif
 
 # find or download controller-gen
 # download controller-gen if necessary
