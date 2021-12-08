@@ -16,19 +16,17 @@
 package naming
 
 import (
-	"fmt"
-
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 // ConfigMap builds the name for the config map used in the OpenTelemetryCollector containers.
 func ConfigMap(otelcol v1alpha1.OpenTelemetryCollector) string {
-	return fmt.Sprintf("%s-collector", otelcol.Name)
+	return DNSName(Truncate("%s-collector", 63, otelcol.Name))
 }
 
 // TAConfigMap returns the name for the config map used in the TargetAllocator.
 func TAConfigMap(otelcol v1alpha1.OpenTelemetryCollector) string {
-	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
+	return DNSName(Truncate("%s-targetallocator", 63, otelcol.Name))
 }
 
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
@@ -53,35 +51,35 @@ func TAContainer() string {
 
 // Collector builds the collector (deployment/daemonset) name based on the instance.
 func Collector(otelcol v1alpha1.OpenTelemetryCollector) string {
-	return fmt.Sprintf("%s-collector", otelcol.Name)
+	return DNSName(Truncate("%s-collector", 63, otelcol.Name))
 }
 
 // TargetAllocator returns the TargetAllocator deployment resource name.
 func TargetAllocator(otelcol v1alpha1.OpenTelemetryCollector) string {
-	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
+	return DNSName(Truncate("%s-targetallocator", 63, otelcol.Name))
 }
 
 // HeadlessService builds the name for the headless service based on the instance.
 func HeadlessService(otelcol v1alpha1.OpenTelemetryCollector) string {
-	return fmt.Sprintf("%s-headless", Service(otelcol))
+	return DNSName(Truncate("%s-headless", 63, Service(otelcol)))
 }
 
 // MonitoringService builds the name for the monitoring service based on the instance.
 func MonitoringService(otelcol v1alpha1.OpenTelemetryCollector) string {
-	return fmt.Sprintf("%s-monitoring", Service(otelcol))
+	return DNSName(Truncate("%s-monitoring", 63, Service(otelcol)))
 }
 
 // Service builds the service name based on the instance.
 func Service(otelcol v1alpha1.OpenTelemetryCollector) string {
-	return fmt.Sprintf("%s-collector", otelcol.Name)
+	return DNSName(Truncate("%s-collector", 63, otelcol.Name))
 }
 
 // TAService returns the name to use for the TargetAllocator service.
 func TAService(otelcol v1alpha1.OpenTelemetryCollector) string {
-	return fmt.Sprintf("%s-targetallocator", otelcol.Name)
+	return DNSName(Truncate("%s-targetallocator", 63, otelcol.Name))
 }
 
 // ServiceAccount builds the service account name based on the instance.
 func ServiceAccount(otelcol v1alpha1.OpenTelemetryCollector) string {
-	return fmt.Sprintf("%s-collector", otelcol.Name)
+	return DNSName(Truncate("%s-collector", 63, otelcol.Name))
 }

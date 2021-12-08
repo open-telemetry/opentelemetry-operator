@@ -15,9 +15,8 @@
 package targetallocator
 
 import (
-	"fmt"
-
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 // Labels return the common labels to all TargetAllocator objects that are part of a managed OpenTelemetryCollector.
@@ -31,7 +30,7 @@ func Labels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 	}
 
 	base["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
-	base["app.kubernetes.io/instance"] = fmt.Sprintf("%s.%s", instance.Namespace, instance.Name)
+	base["app.kubernetes.io/instance"] = naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name)
 	base["app.kubernetes.io/part-of"] = "opentelemetry"
 	base["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
 
