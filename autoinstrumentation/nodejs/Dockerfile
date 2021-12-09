@@ -8,3 +8,5 @@ RUN npm install
 FROM busybox
 
 COPY --from=build /operator-build/build/workspace /autoinstrumentation
+
+RUN chmod -R o+r /autoinstrumentation
