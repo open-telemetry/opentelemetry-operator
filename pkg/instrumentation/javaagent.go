@@ -57,7 +57,7 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod)
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 		Name:    initContainerName,
 		Image:   javaSpec.Image,
-		Command: []string{"cp", "/autoinstrumentation/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+		Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      volumeName,
 			MountPath: "/otel-auto-instrumentation",
