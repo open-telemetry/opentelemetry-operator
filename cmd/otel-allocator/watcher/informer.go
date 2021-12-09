@@ -17,8 +17,12 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func newCRDMonitorWatcher() {
+type PrometheusCRWatcher struct {
+}
 
+func newCRDMonitorWatcher() (*PrometheusCRWatcher, error) {
+	// TODO
+	return &PrometheusCRWatcher{}, nil
 }
 func test(kubecfg *rest.Config, client kubernetes.Interface, config2 allocatorconfig.Config, ctx context.Context, logger log.Logger) error {
 	client, err := kubernetes.NewForConfig(kubecfg)

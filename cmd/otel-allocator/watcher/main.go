@@ -5,39 +5,55 @@ import (
 	"github.com/go-logr/logr"
 )
 
-type Watcher struct {
+type Manager struct {
 	configMapWatcher *fsnotify.Watcher
+	promCrWatcher    *PrometheusCRWatcher
 	Events           chan Event
 	Errors           chan error
 }
 
 type Event struct {
-	fsnotify.Event
+	Source EventSource
 }
 
-func NewWatcher(logger logr.Logger, configDir string) (*Watcher, error) {
+type EventSource int
+
+const (
+	EventSourceConfigMap EventSource = iota
+	EventSourcePrometheusCR
+)
+
+func NewWatcher(logger logr.Logger, configDir string) (*Manager, error) {
 	fileWatcher, err := newConfigMapWatcher(logger, configDir)
 	if err != nil {
 		return nil, err
 	}
 
-	watcher := Watcher{
+	promWatcher, err := newCRDMonitorWatcher()
+	if err != nil {
+		return nil, err
+	}
+
+	watcher := Manager{
 		configMapWatcher: fileWatcher,
+		promCrWatcher:    promWatcher,
 	}
 	watcher.start()
 	return &watcher, nil
 }
 
-func (watcher Watcher) Close() error {
+func (watcher Manager) Close() error {
 	return watcher.configMapWatcher.Close()
 }
 
-func (watcher Watcher) start() {
+func (watcher Manager) start() {
 	go func() {
 		for {
 			select {
 			case fileEvent := <-watcher.configMapWatcher.Events:
-				watcher.Events <- Event{fileEvent}
+				if fileEvent.Op == fsnotify.Create {
+					watcher.Events <- Event{Source: EventSourceConfigMap}
+				}
 			case errorEvent := <-watcher.configMapWatcher.Errors:
 				watcher.Errors <- errorEvent
 			}

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	allocatorWatcher "github.com/otel-allocator/watcher"
 	"net/http"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/fsnotify/fsnotify"
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
@@ -33,16 +31,13 @@ func main() {
 
 	ctx := context.Background()
 
-	watcher, err := allocatorWatcher.NewWatcher(setupLog, *cliConf.ConfigFilePath)
+	watcher, err := allocatorWatcher.NewWatcher(setupLog, filepath.Dir(*cliConf.ConfigFilePath))
 	if err != nil {
 		setupLog.Error(err, "Can't start the watchers")
 		os.Exit(1)
 	}
 	defer watcher.Close()
 
-	if err := watcher.Add(filepath.Dir(*cliConf.ConfigFilePath)); err != nil {
-		setupLog.Error(err, "Can't add directory to watcher")
-	}
 	log := ctrl.Log.WithName("allocator")
 	srv, err := newServer(log, cliConf)
 	if err != nil {
@@ -67,8 +62,7 @@ func main() {
 			}
 			os.Exit(0)
 		case event := <-watcher.Events:
-			switch event.Op {
-			case fsnotify.Create:
+			if event.Source == allocatorWatcher.EventSourceConfigMap {
 				setupLog.Info("ConfigMap updated!")
 				// Restart the server to pickup the new config.
 				if err := srv.Shutdown(ctx); err != nil {
