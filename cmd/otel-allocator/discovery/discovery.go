@@ -44,7 +44,7 @@ func (m *Manager) ApplyConfig(cfg config.Config) error {
 }
 
 func (m *Manager) Watch(fn func(targets []allocation.TargetItem)) {
-	log := m.log.WithValues("opentelemetry-targetallocator")
+	log := m.log.WithValues("component", "opentelemetry-targetallocator")
 
 	go func() {
 		for {

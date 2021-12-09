@@ -80,7 +80,7 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
 // SetCollectors is called when Collectors are added or removed
 func (allocator *Allocator) SetCollectors(collectors []string) {
-	log := allocator.log.WithValues("opentelemetry-targetallocator")
+	log := allocator.log.WithValues("component", "opentelemetry-targetallocator")
 
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
