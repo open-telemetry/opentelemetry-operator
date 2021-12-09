@@ -9,3 +9,5 @@ RUN mkdir workspace && pip install --target workspace -r requirements.txt
 FROM busybox
 
 COPY --from=build /operator-build/workspace /autoinstrumentation
+
+RUN chmod -R o+r /autoinstrumentation
