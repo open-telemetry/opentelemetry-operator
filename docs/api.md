@@ -509,6 +509,15 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>upgradeStrategy</b></td>
+        <td>enum</td>
+        <td>
+          UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed<br/>
+          <br/>
+            <i>Enum</i>: automatic, none<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecvolumeclaimtemplatesindex">volumeClaimTemplates</a></b></td>
         <td>[]object</td>
         <td>

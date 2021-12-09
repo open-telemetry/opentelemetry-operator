@@ -43,6 +43,9 @@ func (r *OpenTelemetryCollector) Default() {
 	if len(r.Spec.Mode) == 0 {
 		r.Spec.Mode = ModeDeployment
 	}
+	if len(r.Spec.UpgradeStrategy) == 0 {
+		r.Spec.UpgradeStrategy = UpgradeStrategyAutomatic
+	}
 
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
