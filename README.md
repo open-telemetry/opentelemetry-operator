@@ -175,7 +175,7 @@ spec:
     type: parentbased_traceidratio
     argument: "0.25"
   java:
-    image: ghcr.io/pavolloffay/autoinstrumentation-java:or4
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
   nodejs:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
   python:
