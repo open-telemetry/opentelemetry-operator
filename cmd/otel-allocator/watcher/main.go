@@ -38,7 +38,6 @@ func NewWatcher(logger logr.Logger, configDir string) (*Manager, error) {
 		configMapWatcher: fileWatcher,
 		promCrWatcher:    promWatcher,
 	}
-	watcher.start()
 	return &watcher, nil
 }
 
@@ -46,7 +45,7 @@ func (watcher Manager) Close() error {
 	return watcher.configMapWatcher.Close()
 }
 
-func (watcher Manager) start() {
+func (watcher Manager) Start() {
 	go func() {
 		for {
 			select {

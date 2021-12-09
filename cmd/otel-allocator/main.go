@@ -53,6 +53,7 @@ func main() {
 		}
 	}()
 
+	watcher.Start()
 	for {
 		select {
 		case <-interrupts:
@@ -130,13 +131,13 @@ func newAllocator(log logr.Logger, ctx context.Context, cliConfig config.CLIConf
 	}
 
 	allocator := allocation.NewAllocator(log)
-	discoveryManager.Watch(func(targets []allocation.TargetItem) {
-		allocator.SetWaitingTargets(targets)
-		allocator.AllocateTargets()
-	})
 	k8sClient.Watch(ctx, cfg.LabelSelector, func(collectors []string) {
 		allocator.SetCollectors(collectors)
 		allocator.ReallocateCollectors()
+	})
+	discoveryManager.Watch(func(targets []allocation.TargetItem) {
+		allocator.SetWaitingTargets(targets)
+		allocator.AllocateTargets()
 	})
 	return allocator, discoveryManager, k8sClient, nil
 }
