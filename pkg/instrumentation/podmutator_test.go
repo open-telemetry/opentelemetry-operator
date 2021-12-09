@@ -91,7 +91,7 @@ func TestMutatePod(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name:    initContainerName,
-							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+							Command: []string{"cp", "/autoinstrumentation/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",

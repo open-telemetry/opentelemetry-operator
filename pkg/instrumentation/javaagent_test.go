@@ -55,7 +55,7 @@ func TestInjectJavaagent(t *testing.T) {
 						{
 							Name:    initContainerName,
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+							Command: []string{"cp", "/autoinstrumentation/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
@@ -112,7 +112,7 @@ func TestInjectJavaagent(t *testing.T) {
 						{
 							Name:    initContainerName,
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+							Command: []string{"cp", "/autoinstrumentation/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
