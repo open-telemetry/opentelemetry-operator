@@ -1,0 +1,66 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package upgrade
+
+import (
+	"fmt"
+	"strings"
+
+	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+)
+
+func upgrade0_41_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	if err != nil {
+		return otelcol, fmt.Errorf("couldn't upgrade to v0.39.0, failed to parse configuration: %w", err)
+	}
+
+	// Re-structure the cors section in otlp receiver
+	// in reference to https://github.com/open-telemetry/opentelemetry-collector/pull/4492
+	receivers, _ := cfg["receivers"].(map[interface{}]interface{})
+
+	for k1, v1 := range receivers {
+		if strings.HasPrefix(k1.(string), "otlp") {
+			otlpReceiver, _ := v1.(map[interface{}]interface{})
+			var createdCors bool
+			for k2, v2 := range otlpReceiver {
+				if k2.(string) == "cors_allowed_origins" || k2.(string) == "cors_allowed_headers" {
+					if !createdCors {
+						otlpReceiver["cors"] = make(map[interface{}]interface{})
+						createdCors = true
+					}
+					newsCorsKey := strings.Replace(k2.(string), "cors_", "", 1)
+					otlpCors, _ := otlpReceiver["cors"].(map[interface{}]interface{})
+					otlpCors[newsCorsKey] = v2
+					delete(otlpReceiver, k2)
+				}
+
+				otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.41.0 has re-structured the %s inside otlp "+
+					"receiver config according to the upstream otlp receiver changes in 0.41.0 release", k2))
+			}
+		}
+	}
+
+	res, err := yaml.Marshal(cfg)
+	if err != nil {
+		return otelcol, fmt.Errorf("couldn't upgrade to v0.41.0, failed to marshall back configuration: %w", err)
+	}
+	otelcol.Spec.Config = string(res)
+	return otelcol, nil
+}
