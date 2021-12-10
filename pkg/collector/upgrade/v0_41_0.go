@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"strings"
 
-	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -49,18 +48,12 @@ func upgrade0_41_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 					otlpCors, _ := otlpReceiver["cors"].(map[interface{}]interface{})
 					otlpCors[newsCorsKey] = v2
 					delete(otlpReceiver, k2)
+					otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.41.0 has re-structured the %s inside otlp "+
+						"receiver config according to the upstream otlp receiver changes in 0.41.0 release", k2))
 				}
-
-				otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.41.0 has re-structured the %s inside otlp "+
-					"receiver config according to the upstream otlp receiver changes in 0.41.0 release", k2))
 			}
 		}
 	}
 
-	res, err := yaml.Marshal(cfg)
-	if err != nil {
-		return otelcol, fmt.Errorf("couldn't upgrade to v0.41.0, failed to marshall back configuration: %w", err)
-	}
-	otelcol.Spec.Config = string(res)
-	return otelcol, nil
+	return updateConfig(otelcol, cfg)
 }
