@@ -689,6 +689,13 @@ spec:
                       type: string
                   type: object
                 type: array
+              upgradeStrategy:
+                description: UpgradeStrategy represents how the operator will handle
+                  upgrades to the CR when a newer version of the operator is deployed
+                enum:
+                - automatic
+                - none
+                type: string
               volumeClaimTemplates:
                 description: VolumeClaimTemplates will provide stable storage using
                   PersistentVolumes. Only available when the mode=statefulset.

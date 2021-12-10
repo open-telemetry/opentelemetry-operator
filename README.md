@@ -57,6 +57,18 @@ The `config` node holds the `YAML` that should be passed down as-is to the under
 
 At this point, the Operator does *not* validate the contents of the configuration file: if the configuration is invalid, the instance will still be created but the underlying OpenTelemetry Collector might crash.
 
+
+### Upgrades
+
+As noted above, the OpenTelemetry Collector format is continuing to evolve.  However, a best-effort attempt is made to upgrade all managed `OpenTelemetryCollector` resources.
+
+In certain scenarios, it may be desirable to prevent the operator from upgrading certain `OpenTelemetryCollector` resources. For example, when a resource is configured with a custom `.Spec.Image`, end users may wish to manage configuration themselves as opposed to having the operator upgrade it.  This can be configured on a resource by resource basis with the exposed property `.Spec.UpgradeStrategy`.
+
+By configuring a resource's `.Spec.UpgradeStrategy` to `none`, the operator will skip the given instance during the upgrade routine.
+
+The default and only other acceptable value for `.Spec.UpgradeStrategy` is `automatic`.
+
+
 ### Deployment modes
 
 The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at [this sample](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/daemonset-features/00-install.yaml) for reference.
@@ -214,6 +226,11 @@ The possible values for the annotation can be
 ### OpenTelemetry Operator vs. OpenTelemetry Collector
 
 The OpenTelemetry Operator follows the same versioning as the operand (OpenTelemetry Collector) up to the minor part of the version. For example, the OpenTelemetry Operator v0.18.1 tracks OpenTelemetry Collector 0.18.0. The patch part of the version indicates the patch level of the operator itself, not that of OpenTelemetry Collector. Whenever a new patch version is released for OpenTelemetry Collector, we'll release a new patch version of the operator.
+
+By default, the OpenTelemetry Operator ensures consistent versioning between itself and the managed `OpenTelemetryCollector` resources.  That is, if the OpenTelemetry Operator is based on version `0.40.0`, it will create resources with an underlying OpenTelemetry Collector at version `0.40.0`.
+
+When a custom `Spec.Image` is used with an `OpenTelemetryCollector` resource, the OpenTelemetry Operator will not manage this versioning and upgrading. In this scenario, it is best practice that the OpenTelemetry Operator version should match the underlying core version. Given a `OpenTelemetryCollector` resource with a `Spec.Image` configured to a custom image based on underlying OpenTelemetry Collector at version `0.40.0`, it is recommended that the OpenTelemetry Operator is kept at version `0.40.0`.
+
 
 ### OpenTelemetry Operator vs. Kubernetes vs. Cert Manager
 
