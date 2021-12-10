@@ -4,6 +4,7 @@ Changes by Version
 0.41.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.41.0
+* Support `OpenTelemetryCollector.Spec.UpgradeStrategy` with allowable values: automatic, none ([#620](https://github.com/open-telemetry/opentelemetry-operator/pull/620), [@adriankostrubiak-tomtom](https://github.com/adriankostrubiak-tomtom))
 * Limit names and labels to 63 characters ([#609](https://github.com/open-telemetry/opentelemetry-operator/pull/609), [@mmatache](https://github.com/mmatache))
 * Support `healthz` and `readyz` probes to controller manager ([#603](https://github.com/open-telemetry/opentelemetry-operator/pull/603), [@adriankostrubiak-tomtom](https://github.com/adriankostrubiak-tomtom))
 
