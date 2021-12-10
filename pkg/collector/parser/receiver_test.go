@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/parser"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -98,10 +97,11 @@ func TestReceiverFailsWhenPortIsntString(t *testing.T) {
 	// verify
 	assert.Nil(t, p)
 }
+
 func TestIgnorekubeletstatsEndpoint(t *testing.T) {
 	// ignore "kubeletstats" receiver endpoint field, this is special case
 	// as this receiver gets parsed by generic receiver parser
-	builder := parser.NewGenericReceiverParser(logger, "kubeletstats", map[interface{}]interface{}{
+	builder := NewGenericReceiverParser(logger, "kubeletstats", map[interface{}]interface{}{
 		"endpoint": "0.0.0.0:9000",
 	})
 
@@ -112,6 +112,7 @@ func TestIgnorekubeletstatsEndpoint(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, ports, 0)
 }
+
 func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
 	// test
 	p := For(logger, "myreceiver", map[interface{}]interface{}{})
