@@ -79,10 +79,10 @@ service:
       - otlp
 `, res.Spec.Config)
 
-	assert.Equal(t, "upgrade to v0.41.0 has re-structured the cors_allowed_origins inside otlp "+
-		"receiver config according to the upstream otlp receiver changes in 0.41.0 release", res.Status.Messages[0])
-	assert.Equal(t, "upgrade to v0.41.0 has re-structured the cors_allowed_headers inside otlp "+
-		"receiver config according to the upstream otlp receiver changes in 0.41.0 release", res.Status.Messages[1])
+	assert.Contains(t, res.Status.Messages, "upgrade to v0.41.0 has re-structured the cors_allowed_origins inside otlp "+
+		"receiver config according to the upstream otlp receiver changes in 0.41.0 release")
+	assert.Contains(t, res.Status.Messages, "upgrade to v0.41.0 has re-structured the cors_allowed_headers inside otlp "+
+		"receiver config according to the upstream otlp receiver changes in 0.41.0 release")
 
 	// TESTCASE 2: re-structure cors for allowed_origins
 	existing = v1alpha1.OpenTelemetryCollector{
