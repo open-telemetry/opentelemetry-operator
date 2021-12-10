@@ -15,13 +15,21 @@
 package controllers_test
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/util/retry"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
@@ -29,15 +37,24 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-var k8sClient client.Client
-var testEnv *envtest.Environment
-var testScheme *runtime.Scheme = scheme.Scheme
+var (
+	k8sClient  client.Client
+	testEnv    *envtest.Environment
+	testScheme *runtime.Scheme = scheme.Scheme
+	ctx        context.Context
+	cancel     context.CancelFunc
+)
 
 func TestMain(m *testing.M) {
+	ctx, cancel = context.WithCancel(context.TODO())
+	defer cancel()
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		WebhookInstallOptions: envtest.WebhookInstallOptions{
+			Paths: []string{filepath.Join("..", "config", "webhook")},
+		},
 	}
-
 	cfg, err := testEnv.Start()
 	if err != nil {
 		fmt.Printf("failed to start testEnv: %v", err)
@@ -55,6 +72,65 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to setup a Kubernetes client: %v", err)
 		os.Exit(1)
 	}
+
+	// start webhook server using Manager
+	webhookInstallOptions := &testEnv.WebhookInstallOptions
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:             testScheme,
+		Host:               webhookInstallOptions.LocalServingHost,
+		Port:               webhookInstallOptions.LocalServingPort,
+		CertDir:            webhookInstallOptions.LocalServingCertDir,
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
+	})
+	if err != nil {
+		fmt.Printf("failed to start webhook server: %v", err)
+		os.Exit(1)
+	}
+
+	if err := (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
+		os.Exit(1)
+	}
+
+	ctx, cancel = context.WithCancel(context.TODO())
+	defer cancel()
+	go func() {
+		if err = mgr.Start(ctx); err != nil {
+			fmt.Printf("failed to start manager: %v", err)
+			os.Exit(1)
+		}
+	}()
+
+	// wait for the webhook server to get ready
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	dialer := &net.Dialer{Timeout: time.Second}
+	addrPort := fmt.Sprintf("%s:%d", webhookInstallOptions.LocalServingHost, webhookInstallOptions.LocalServingPort)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		if err = retry.OnError(wait.Backoff{
+			Steps:    20,
+			Duration: 10 * time.Millisecond,
+			Factor:   1.5,
+			Jitter:   0.1,
+			Cap:      time.Second * 30,
+		}, func(error) bool {
+			return true
+		}, func() error {
+			// #nosec G402
+			conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+			if err != nil {
+				return err
+			}
+			_ = conn.Close()
+			return nil
+		}); err != nil {
+			fmt.Printf("failed to wait for webhook server to be ready: %v", err)
+			os.Exit(1)
+		}
+	}(wg)
+	wg.Wait()
 
 	code := m.Run()
 

@@ -25,6 +25,10 @@ type OpenTelemetryCollectorSpec struct {
 	// +required
 	Config string `json:"config,omitempty"`
 
+	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
+	// +optional
+	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`
+
 	// Args is the set of arguments to pass to the OpenTelemetry Collector binary
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
