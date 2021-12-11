@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-kit/log"
+	"github.com/go-logr/logr"
 	allocatorconfig "github.com/otel-allocator/config"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
@@ -12,18 +13,88 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/prometheus"
 	promconfig "github.com/prometheus/prometheus/config"
 	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 )
 
-type PrometheusCRWatcher struct {
+func newCRDMonitorWatcher(_ logr.Logger, config allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
+	mClient, err := monitoringclient.NewForConfig(config.ClusterConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, allocatorconfig.DefaultResyncTime, nil) //TODO decide what strategy to use regarding namespaces
+
+	serviceMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
+	if err != nil {
+		return nil, err
+	}
+
+	podMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
+	if err != nil {
+		return nil, err
+	}
+
+	monitoringInformers := map[string]*informers.ForResource{
+		monitoringv1.ServiceMonitorName: serviceMonitorInformers,
+		monitoringv1.PodMonitorName:     podMonitorInformers,
+	}
+
+	return &PrometheusCRWatcher{
+		kubeMonitoringClient: mClient,
+		informers:            monitoringInformers,
+		stopChannel:          make(chan struct{}),
+		Errors:               make(chan error),
+		Events:               make(chan Event),
+	}, nil
 }
 
-func newCRDMonitorWatcher() (*PrometheusCRWatcher, error) {
-	// TODO
-	return &PrometheusCRWatcher{}, nil
+type PrometheusCRWatcher struct {
+	kubeMonitoringClient *monitoringclient.Clientset
+	informers            map[string]*informers.ForResource
+	stopChannel          chan struct{}
+	Errors               chan error
+	Events               chan Event
 }
+
+// Start wrapped informers and wait for an initial sync
+func (w *PrometheusCRWatcher) Start() error {
+	event := Event{Source: EventSourcePrometheusCR}
+	success := true
+
+	for name, resource := range w.informers {
+		go resource.Start(w.stopChannel)
+
+		if ok := cache.WaitForNamedCacheSync(name, w.stopChannel, resource.HasSynced); !ok {
+			success = false
+		}
+
+		resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				w.Events <- event
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				w.Events <- event
+			},
+			DeleteFunc: func(obj interface{}) {
+				w.Events <- event
+			},
+		})
+	}
+	if !success {
+		return fmt.Errorf("failed to sync cache")
+	}
+
+	return nil
+}
+
+func (w *PrometheusCRWatcher) Close() error {
+	w.stopChannel <- struct{}{}
+	return nil
+}
+
 func test(kubecfg *rest.Config, client kubernetes.Interface, config2 allocatorconfig.Config, ctx context.Context, logger log.Logger) error {
 	client, err := kubernetes.NewForConfig(kubecfg)
 	if err != nil {
@@ -34,7 +105,7 @@ func test(kubecfg *rest.Config, client kubernetes.Interface, config2 allocatorco
 	if err != nil {
 		return fmt.Errorf("instantiating kubernetes client failed", err)
 	}
-	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{}, map[string]struct{}{}, mclient, allocatorconfig.DefaultResyncTime, nil) //TODO decide what strategy to use regarding namespaces
+	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mclient, allocatorconfig.DefaultResyncTime, nil) //TODO decide what strategy to use regarding namespaces
 
 	serviceMonitorInformers, _ := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
 	podMonitorInformers, _ := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))

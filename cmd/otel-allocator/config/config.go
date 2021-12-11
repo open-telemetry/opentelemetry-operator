@@ -5,6 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"path/filepath"
 	"time"
 
@@ -24,11 +27,11 @@ var (
 	cLIConf        = CLIConfig{
 		ListenAddr:     pflag.String("listen-addr", ":8080", "The address where this service serves."),
 		ConfigFilePath: pflag.String("config-file", DefaultConfigFilePath, "The path to the config file."),
-		KubeconfigPath: pflag.String("KubeconfigPath", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file"),
 	}
+	kubeconfigPath = pflag.String("KubeconfigPath", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
 )
 
-const DefaultResyncTime = 5 + time.Minute
+const DefaultResyncTime = 5 * time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 
 type Config struct {
@@ -39,7 +42,7 @@ type Config struct {
 type CLIConfig struct {
 	ListenAddr     *string
 	ConfigFilePath *string
-	KubeconfigPath *string
+	ClusterConfig  *rest.Config
 	RootLogger     logr.Logger
 }
 
@@ -63,12 +66,18 @@ func unmarshal(cfg *Config, configFile string) error {
 	return nil
 }
 
-func ParseCLI() CLIConfig {
+func ParseCLI() (CLIConfig, error) {
 	opts := zap.Options{}
 	opts.BindFlags(flag.CommandLine)
 	pflag.Parse()
 
+	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
+	if err != nil {
+		return CLIConfig{}, err
+	}
+	cLIConf.ClusterConfig = clusterConfig
 	cLIConf.RootLogger = zap.New(zap.UseFlagOptions(&opts))
+	klog.SetLogger(cLIConf.RootLogger)
 	ctrl.SetLogger(cLIConf.RootLogger)
-	return cLIConf
+	return cLIConf, nil
 }

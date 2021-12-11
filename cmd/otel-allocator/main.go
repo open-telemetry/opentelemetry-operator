@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	gokitlog "github.com/go-kit/log"
@@ -25,21 +24,26 @@ var (
 )
 
 func main() {
-	cliConf := config.ParseCLI()
+	cliConf, err := config.ParseCLI()
+	if err != nil {
+		setupLog.Error(err, "Failed to parse parameters")
+		os.Exit(1)
+	}
 
 	cliConf.RootLogger.Info("Starting the Target Allocator")
 
 	ctx := context.Background()
 
-	watcher, err := allocatorWatcher.NewWatcher(setupLog, filepath.Dir(*cliConf.ConfigFilePath))
+	log := ctrl.Log.WithName("allocator")
+	allocator := allocation.NewAllocator(log)
+	watcher, err := allocatorWatcher.NewWatcher(setupLog, cliConf, allocator)
 	if err != nil {
 		setupLog.Error(err, "Can't start the watchers")
 		os.Exit(1)
 	}
 	defer watcher.Close()
 
-	log := ctrl.Log.WithName("allocator")
-	srv, err := newServer(log, cliConf)
+	srv, err := newServer(log, allocator, cliConf)
 	if err != nil {
 		setupLog.Error(err, "Can't start the server")
 	}
@@ -53,7 +57,6 @@ func main() {
 		}
 	}()
 
-	watcher.Start()
 	for {
 		select {
 		case <-interrupts:
@@ -63,13 +66,14 @@ func main() {
 			}
 			os.Exit(0)
 		case event := <-watcher.Events:
-			if event.Source == allocatorWatcher.EventSourceConfigMap {
+			switch event.Source {
+			case allocatorWatcher.EventSourceConfigMap:
 				setupLog.Info("ConfigMap updated!")
 				// Restart the server to pickup the new config.
 				if err := srv.Shutdown(ctx); err != nil {
 					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv, err = newServer(log, cliConf)
+				srv, err = newServer(log, allocator, cliConf)
 				if err != nil {
 					setupLog.Error(err, "Error restarting the server with new config")
 				}
@@ -78,6 +82,10 @@ func main() {
 						setupLog.Error(err, "Can't restart the server")
 					}
 				}()
+
+			case allocatorWatcher.EventSourcePrometheusCR:
+				// TODO update targets
+				setupLog.Info("PrometheusCR event")
 			}
 		case err := <-watcher.Errors:
 			setupLog.Error(err, "Watcher error")
@@ -93,8 +101,8 @@ type server struct {
 	server           *http.Server
 }
 
-func newServer(log logr.Logger, cliConf config.CLIConfig) (*server, error) {
-	allocator, discoveryManager, k8sclient, err := newAllocator(log, context.Background(), cliConf)
+func newServer(log logr.Logger, allocator *allocation.Allocator, cliConf config.CLIConfig) (*server, error) {
+	discoveryManager, k8sclient, err := newAllocator(log, allocator, context.Background(), cliConf)
 	if err != nil {
 		return nil, err
 	}
@@ -111,15 +119,15 @@ func newServer(log logr.Logger, cliConf config.CLIConfig) (*server, error) {
 	return s, nil
 }
 
-func newAllocator(log logr.Logger, ctx context.Context, cliConfig config.CLIConfig) (*allocation.Allocator, *lbdiscovery.Manager, *collector.Client, error) {
+func newAllocator(log logr.Logger, allocator *allocation.Allocator, ctx context.Context, cliConfig config.CLIConfig) (*lbdiscovery.Manager, *collector.Client, error) {
 	cfg, err := config.Load(*cliConfig.ConfigFilePath)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	k8sClient, err := collector.NewClient(log, cliConfig)
+	k8sClient, err := collector.NewClient(log, cliConfig.ClusterConfig)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	// creates a new discovery manager
@@ -127,19 +135,18 @@ func newAllocator(log logr.Logger, ctx context.Context, cliConfig config.CLIConf
 
 	// returns the list of targets
 	if err := discoveryManager.ApplyConfig(cfg); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	allocator := allocation.NewAllocator(log)
 	k8sClient.Watch(ctx, cfg.LabelSelector, func(collectors []string) {
 		allocator.SetCollectors(collectors)
 		allocator.ReallocateCollectors()
 	})
 	discoveryManager.Watch(func(targets []allocation.TargetItem) {
-		allocator.SetWaitingTargets(targets)
+		allocator.SetWaitingTargets(allocatorWatcher.ConfigMapWatcherVector, targets)
 		allocator.AllocateTargets()
 	})
-	return allocator, discoveryManager, k8sClient, nil
+	return discoveryManager, k8sClient, nil
 }
 
 func (s *server) Start() error {
