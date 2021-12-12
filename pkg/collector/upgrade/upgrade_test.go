@@ -31,59 +31,55 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
-func TestShouldUpgradeAllToLatest(t *testing.T) {
-	// prepare
-	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := v1alpha1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      nsn.Name,
-			Namespace: nsn.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			},
-		},
-	}
-	existing.Status.Version = "0.0.1" // this is the first version we have an upgrade function
-	err := k8sClient.Create(context.Background(), &existing)
-	require.NoError(t, err)
-
-	err = k8sClient.Status().Update(context.Background(), &existing)
-	require.NoError(t, err)
+func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
+	const beginV = "0.0.1" // this is the first version we have an upgrade function
 
 	currentV := version.Get()
 	currentV.OpenTelemetryCollector = upgrade.Latest.String()
 
-	// sanity check
-	persisted := &v1alpha1.OpenTelemetryCollector{}
-	err = k8sClient.Get(context.Background(), nsn, persisted)
-	require.NoError(t, err)
-	require.Equal(t, "0.0.1", persisted.Status.Version)
+	for _, tt := range []struct {
+		strategy  v1alpha1.UpgradeStrategy
+		expectedV string
+	}{
+		{v1alpha1.UpgradeStrategyAutomatic, upgrade.Latest.String()},
+		{v1alpha1.UpgradeStrategyNone, beginV},
+	} {
+		t.Run("spec.UpgradeStrategy = "+string(tt.strategy), func(t *testing.T) {
+			// prepare
+			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
+			existing := makeOtelcol(nsn)
+			existing.Status.Version = beginV
+			err := k8sClient.Create(context.Background(), &existing)
+			require.NoError(t, err)
 
-	// test
-	err = upgrade.ManagedInstances(context.Background(), logger, currentV, k8sClient)
-	assert.NoError(t, err)
+			err = k8sClient.Status().Update(context.Background(), &existing)
+			require.NoError(t, err)
 
-	// verify
-	err = k8sClient.Get(context.Background(), nsn, persisted)
-	assert.NoError(t, err)
-	assert.Equal(t, upgrade.Latest.String(), persisted.Status.Version)
+			// sanity check
+			persisted := &v1alpha1.OpenTelemetryCollector{}
+			err = k8sClient.Get(context.Background(), nsn, persisted)
+			require.NoError(t, err)
+			require.Equal(t, beginV, persisted.Status.Version)
 
-	// cleanup
-	assert.NoError(t, k8sClient.Delete(context.Background(), &existing))
+			// test
+			err = upgrade.ManagedInstances(context.Background(), logger, currentV, k8sClient)
+			assert.NoError(t, err)
+
+			// verify
+			err = k8sClient.Get(context.Background(), nsn, persisted)
+			assert.NoError(t, err)
+			assert.Equal(t, upgrade.Latest.String(), persisted.Status.Version)
+
+			// cleanup
+			assert.NoError(t, k8sClient.Delete(context.Background(), &existing))
+		})
+	}
 }
 
 func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 	// prepare
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := v1alpha1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      nsn.Name,
-			Namespace: nsn.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			},
-		},
-	}
+	existing := makeOtelcol(nsn)
 	existing.Status.Version = "0.8.0"
 
 	currentV := version.Get()
@@ -111,15 +107,7 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			// prepare
 			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-			existing := v1alpha1.OpenTelemetryCollector{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      nsn.Name,
-					Namespace: nsn.Namespace,
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
-				},
-			}
+			existing := makeOtelcol(nsn)
 			existing.Status.Version = tt.v
 
 			currentV := version.Get()
@@ -136,5 +124,17 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 			// verify
 			assert.Equal(t, tt.expectedV, res.Status.Version)
 		})
+	}
+}
+
+func makeOtelcol(nsn types.NamespacedName) v1alpha1.OpenTelemetryCollector {
+	return v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nsn.Name,
+			Namespace: nsn.Namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			},
+		},
 	}
 }

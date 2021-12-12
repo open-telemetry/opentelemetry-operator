@@ -44,6 +44,11 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Versi
 
 	for i := range list.Items {
 		original := list.Items[i]
+		itemLogger := logger.WithValues("name", original.Name, "namespace", original.Namespace)
+		if original.Spec.UpgradeStrategy == v1alpha1.UpgradeStrategyNone {
+			itemLogger.Info("skipping instance upgrade due to UpgradeStrategy")
+			continue
+		}
 		upgraded, err := ManagedInstance(ctx, logger, ver, cl, original)
 		if err != nil {
 			// nothing to do at this level, just go to the next instance
@@ -55,18 +60,18 @@ func ManagedInstances(ctx context.Context, logger logr.Logger, ver version.Versi
 			st := upgraded.Status
 			patch := client.MergeFrom(&original)
 			if err := cl.Patch(ctx, &upgraded, patch); err != nil {
-				logger.Error(err, "failed to apply changes to instance", "name", upgraded.Name, "namespace", upgraded.Namespace)
+				itemLogger.Error(err, "failed to apply changes to instance")
 				continue
 			}
 
 			// the status object requires its own update
 			upgraded.Status = st
 			if err := cl.Status().Patch(ctx, &upgraded, patch); err != nil {
-				logger.Error(err, "failed to apply changes to instance's status object", "name", upgraded.Name, "namespace", upgraded.Namespace)
+				itemLogger.Error(err, "failed to apply changes to instance's status object")
 				continue
 			}
 
-			logger.Info("instance upgraded", "name", upgraded.Name, "namespace", upgraded.Namespace, "version", upgraded.Status.Version)
+			itemLogger.Info("instance upgraded", "version", upgraded.Status.Version)
 		}
 	}
 
