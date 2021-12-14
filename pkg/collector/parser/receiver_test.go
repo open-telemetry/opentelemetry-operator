@@ -98,6 +98,21 @@ func TestReceiverFailsWhenPortIsntString(t *testing.T) {
 	assert.Nil(t, p)
 }
 
+func TestIgnorekubeletstatsEndpoint(t *testing.T) {
+	// ignore "kubeletstats" receiver endpoint field, this is special case
+	// as this receiver gets parsed by generic receiver parser
+	builder := NewGenericReceiverParser(logger, "kubeletstats", map[interface{}]interface{}{
+		"endpoint": "0.0.0.0:9000",
+	})
+
+	// test
+	ports, err := builder.Ports()
+
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 0)
+}
+
 func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
 	// test
 	p := For(logger, "myreceiver", map[interface{}]interface{}{})

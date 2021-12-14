@@ -100,6 +100,12 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	case name == "tcplog" || name == "udplog":
 		endpoint = getAddressFromConfig(logger, name, listenAddressKey, config)
 
+	// ignore kubeletstats receiver as it holds the field key endpoint, and it
+	// is a scraper, we only expose endpoint through k8s service objects for
+	// receivers that aren't scrapers.
+	case name == "kubeletstats":
+		return nil
+
 	default:
 		endpoint = getAddressFromConfig(logger, name, endpointKey, config)
 	}
