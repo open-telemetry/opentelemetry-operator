@@ -13,7 +13,6 @@ jobs:
     strategy:
       matrix:
        kube-version:
-       - "1.19"
        - "1.21"
        - "1.22"
        - "1.23"
