@@ -240,10 +240,10 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
 		u := &instrumentationupgrade.InstrumentationUpgrade{
-			Logger:                 ctrl.Log.WithName("instrumentation-upgrade"),
-			DefaultAutoInstrJava:   cfg.AutoInstrumentationJavaImage(),
-			DefaultAutoInstrNodeJS: cfg.AutoInstrumentationJavaImage(),
-			Client:                 mgr.GetClient(),
+			Logger:                ctrl.Log.WithName("instrumentation-upgrade"),
+			DefaultAutoInstJava:   cfg.AutoInstrumentationJavaImage(),
+			DefaultAutoInstNodeJS: cfg.AutoInstrumentationJavaImage(),
+			Client:                mgr.GetClient(),
 		}
 		return u.ManagedInstances(c)
 	}))

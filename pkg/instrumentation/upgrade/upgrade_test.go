@@ -62,11 +62,11 @@ func TestUpgrade(t *testing.T) {
 	require.NoError(t, err)
 
 	up := &InstrumentationUpgrade{
-		Logger:                 logr.Discard(),
-		DefaultAutoInstrJava:   "java:2",
-		DefaultAutoInstrNodeJS: "nodejs:2",
-		DefaultAutoInstrPython: "python:2",
-		Client:                 k8sClient,
+		Logger:                logr.Discard(),
+		DefaultAutoInstJava:   "java:2",
+		DefaultAutoInstNodeJS: "nodejs:2",
+		DefaultAutoInstPython: "python:2",
+		Client:                k8sClient,
 	}
 	err = up.ManagedInstances(context.Background())
 	require.NoError(t, err)

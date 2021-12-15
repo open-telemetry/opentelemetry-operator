@@ -26,11 +26,11 @@ import (
 )
 
 type InstrumentationUpgrade struct {
-	Logger                 logr.Logger
-	DefaultAutoInstrJava   string
-	DefaultAutoInstrNodeJS string
-	DefaultAutoInstrPython string
-	Client                 client.Client
+	Logger                logr.Logger
+	DefaultAutoInstJava   string
+	DefaultAutoInstNodeJS string
+	DefaultAutoInstPython string
+	Client                client.Client
 }
 
 //+kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
@@ -72,24 +72,24 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 	if autoInstJava != "" {
 		// upgrade the image only if the image matches the annotation
 		if inst.Spec.Java.Image == autoInstJava {
-			inst.Spec.Java.Image = u.DefaultAutoInstrJava
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava] = u.DefaultAutoInstrJava
+			inst.Spec.Java.Image = u.DefaultAutoInstJava
+			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava] = u.DefaultAutoInstJava
 		}
 	}
 	autoInstNodeJS := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS]
 	if autoInstNodeJS != "" {
 		// upgrade the image only if the image matches the annotation
 		if inst.Spec.NodeJS.Image == autoInstNodeJS {
-			inst.Spec.NodeJS.Image = u.DefaultAutoInstrNodeJS
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS] = u.DefaultAutoInstrNodeJS
+			inst.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
+			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS] = u.DefaultAutoInstNodeJS
 		}
 	}
-	autoInstNodePython := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython]
-	if autoInstNodePython != "" {
+	autoInstPython := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython]
+	if autoInstPython != "" {
 		// upgrade the image only if the image matches the annotation
-		if inst.Spec.Python.Image == autoInstNodePython {
-			inst.Spec.Python.Image = u.DefaultAutoInstrPython
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython] = u.DefaultAutoInstrPython
+		if inst.Spec.Python.Image == autoInstPython {
+			inst.Spec.Python.Image = u.DefaultAutoInstPython
+			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython] = u.DefaultAutoInstPython
 		}
 	}
 	return inst
