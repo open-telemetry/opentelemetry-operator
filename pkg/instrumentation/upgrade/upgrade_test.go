@@ -43,7 +43,9 @@ func TestUpgrade(t *testing.T) {
 			Name:      "my-inst",
 			Namespace: nsName,
 			Annotations: map[string]string{
-				v1alpha1.AnnotationDefaultAutoInstrumentationJava: "java:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationJava:   "java:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS: "nodejs:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationPython: "python:1",
 			},
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -54,13 +56,17 @@ func TestUpgrade(t *testing.T) {
 	}
 	inst.Default()
 	assert.Equal(t, "java:1", inst.Spec.Java.Image)
+	assert.Equal(t, "nodejs:1", inst.Spec.NodeJS.Image)
+	assert.Equal(t, "python:1", inst.Spec.Python.Image)
 	err = k8sClient.Create(context.Background(), inst)
 	require.NoError(t, err)
 
 	up := &InstrumentationUpgrade{
-		Logger:               logr.Discard(),
-		DefaultAutoInstrJava: "java:2",
-		Client:               k8sClient,
+		Logger:                logr.Discard(),
+		DefaultAutoInstJava:   "java:2",
+		DefaultAutoInstNodeJS: "nodejs:2",
+		DefaultAutoInstPython: "python:2",
+		Client:                k8sClient,
 	}
 	err = up.ManagedInstances(context.Background())
 	require.NoError(t, err)
@@ -73,4 +79,8 @@ func TestUpgrade(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "java:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava])
 	assert.Equal(t, "java:2", updated.Spec.Java.Image)
+	assert.Equal(t, "nodejs:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS])
+	assert.Equal(t, "nodejs:2", updated.Spec.NodeJS.Image)
+	assert.Equal(t, "python:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython])
+	assert.Equal(t, "python:2", updated.Spec.Python.Image)
 }

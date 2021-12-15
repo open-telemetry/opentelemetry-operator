@@ -21,43 +21,52 @@ import (
 )
 
 var (
-	version                 string
-	buildDate               string
-	otelCol                 string
-	targetAllocator         string
-	autoInstrumentationJava string
+	version                   string
+	buildDate                 string
+	otelCol                   string
+	targetAllocator           string
+	autoInstrumentationJava   string
+	autoInstrumentationNodeJS string
+	autoInstrumentationPython string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
 type Version struct {
-	Operator                string `json:"opentelemetry-operator"`
-	BuildDate               string `json:"build-date"`
-	OpenTelemetryCollector  string `json:"opentelemetry-collector-version"`
-	Go                      string `json:"go-version"`
-	TargetAllocator         string `json:"target-allocator-version"`
-	JavaAutoInstrumentation string `json:"auto-instrumentation-java"`
+	Operator                  string `json:"opentelemetry-operator"`
+	BuildDate                 string `json:"build-date"`
+	OpenTelemetryCollector    string `json:"opentelemetry-collector-version"`
+	Go                        string `json:"go-version"`
+	TargetAllocator           string `json:"target-allocator-version"`
+	AutoInstrumentationJava   string `json:"auto-instrumentation-java"`
+	AutoInstrumentationNodeJS string `json:"auto-instrumentation-nodejs"`
+	AutoInstrumentationPython string `json:"auto-instrumentation-python"`
 }
 
 // Get returns the Version object with the relevant information.
 func Get() Version {
 	return Version{
-		Operator:                version,
-		BuildDate:               buildDate,
-		OpenTelemetryCollector:  OpenTelemetryCollector(),
-		Go:                      runtime.Version(),
-		TargetAllocator:         TargetAllocator(),
-		JavaAutoInstrumentation: javaAutoInstrumentation(),
+		Operator:                  version,
+		BuildDate:                 buildDate,
+		OpenTelemetryCollector:    OpenTelemetryCollector(),
+		Go:                        runtime.Version(),
+		TargetAllocator:           TargetAllocator(),
+		AutoInstrumentationJava:   AutoInstrumentationJava(),
+		AutoInstrumentationNodeJS: AutoInstrumentationNodeJS(),
+		AutoInstrumentationPython: AutoInstrumentationPython(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v')",
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
 		v.Go,
 		v.TargetAllocator,
+		v.AutoInstrumentationJava,
+		v.AutoInstrumentationNodeJS,
+		v.AutoInstrumentationPython,
 	)
 }
 
@@ -83,9 +92,23 @@ func TargetAllocator() string {
 	return "0.0.0"
 }
 
-func javaAutoInstrumentation() string {
+func AutoInstrumentationJava() string {
 	if len(autoInstrumentationJava) > 0 {
 		return autoInstrumentationJava
+	}
+	return "0.0.0"
+}
+
+func AutoInstrumentationNodeJS() string {
+	if len(autoInstrumentationNodeJS) > 0 {
+		return autoInstrumentationNodeJS
+	}
+	return "0.0.0"
+}
+
+func AutoInstrumentationPython() string {
+	if len(autoInstrumentationPython) > 0 {
+		return autoInstrumentationPython
 	}
 	return "0.0.0"
 }

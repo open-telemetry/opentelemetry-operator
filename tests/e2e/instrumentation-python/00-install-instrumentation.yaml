@@ -8,5 +8,3 @@ spec:
   propagators:
     - jaeger
     - b3
-  python:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest

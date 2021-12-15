@@ -44,12 +44,14 @@ type Config struct {
 	onChange            []func() error
 
 	// config state
-	collectorImage                string
-	collectorConfigMapEntry       string
-	targetAllocatorImage          string
-	targetAllocatorConfigMapEntry string
-	platform                      platform.Platform
-	autoInstrumentationJavaImage  string
+	collectorImage                 string
+	collectorConfigMapEntry        string
+	targetAllocatorImage           string
+	targetAllocatorConfigMapEntry  string
+	platform                       platform.Platform
+	autoInstrumentationJavaImage   string
+	autoInstrumentationNodeJSImage string
+	autoInstrumentationPythonImage string
 }
 
 // New constructs a new configuration based on the given options.
@@ -68,16 +70,18 @@ func New(opts ...Option) Config {
 	}
 
 	return Config{
-		autoDetect:                    o.autoDetect,
-		autoDetectFrequency:           o.autoDetectFrequency,
-		collectorImage:                o.collectorImage,
-		collectorConfigMapEntry:       o.collectorConfigMapEntry,
-		targetAllocatorImage:          o.targetAllocatorImage,
-		targetAllocatorConfigMapEntry: o.targetAllocatorConfigMapEntry,
-		logger:                        o.logger,
-		onChange:                      o.onChange,
-		platform:                      o.platform,
-		autoInstrumentationJavaImage:  o.autoInstrumentationjavaImage,
+		autoDetect:                     o.autoDetect,
+		autoDetectFrequency:            o.autoDetectFrequency,
+		collectorImage:                 o.collectorImage,
+		collectorConfigMapEntry:        o.collectorConfigMapEntry,
+		targetAllocatorImage:           o.targetAllocatorImage,
+		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
+		logger:                         o.logger,
+		onChange:                       o.onChange,
+		platform:                       o.platform,
+		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
+		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
+		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
 	}
 }
 
@@ -169,7 +173,17 @@ func (c *Config) Platform() platform.Platform {
 	return c.platform
 }
 
-// AutoInstrumentationJavaImage returns OpenTelemetry auto-instrumentation container image.
+// AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
 func (c *Config) AutoInstrumentationJavaImage() string {
 	return c.autoInstrumentationJavaImage
+}
+
+// AutoInstrumentationNodeJSImage returns OpenTelemetry NodeJS auto-instrumentation container image.
+func (c *Config) AutoInstrumentationNodeJSImage() string {
+	return c.autoInstrumentationNodeJSImage
+}
+
+// AutoInstrumentationPythonImage returns OpenTelemetry Python auto-instrumentation container image.
+func (c *Config) AutoInstrumentationPythonImage() string {
+	return c.autoInstrumentationPythonImage
 }

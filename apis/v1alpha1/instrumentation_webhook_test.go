@@ -24,11 +24,17 @@ import (
 func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	inst := &Instrumentation{
 		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{AnnotationDefaultAutoInstrumentationJava: "img:1"},
+			Annotations: map[string]string{
+				AnnotationDefaultAutoInstrumentationJava:   "java-img:1",
+				AnnotationDefaultAutoInstrumentationNodeJS: "nodejs-img:1",
+				AnnotationDefaultAutoInstrumentationPython: "python-img:1",
+			},
 		},
 	}
 	inst.Default()
-	assert.Equal(t, "img:1", inst.Spec.Java.Image)
+	assert.Equal(t, "java-img:1", inst.Spec.Java.Image)
+	assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
+	assert.Equal(t, "python-img:1", inst.Spec.Python.Image)
 }
 
 func TestInstrumentationValidatingWebhook(t *testing.T) {

@@ -28,17 +28,19 @@ import (
 type Option func(c *options)
 
 type options struct {
-	autoDetect                    autodetect.AutoDetect
-	autoDetectFrequency           time.Duration
-	targetAllocatorImage          string
-	collectorImage                string
-	autoInstrumentationjavaImage  string
-	collectorConfigMapEntry       string
-	targetAllocatorConfigMapEntry string
-	logger                        logr.Logger
-	onChange                      []func() error
-	platform                      platform.Platform
-	version                       version.Version
+	autoDetect                     autodetect.AutoDetect
+	autoDetectFrequency            time.Duration
+	targetAllocatorImage           string
+	collectorImage                 string
+	autoInstrumentationJavaImage   string
+	autoInstrumentationNodeJSImage string
+	autoInstrumentationPythonImage string
+	collectorConfigMapEntry        string
+	targetAllocatorConfigMapEntry  string
+	logger                         logr.Logger
+	onChange                       []func() error
+	platform                       platform.Platform
+	version                        version.Version
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -98,6 +100,18 @@ func WithVersion(v version.Version) Option {
 
 func WithAutoInstrumentationJavaImage(s string) Option {
 	return func(o *options) {
-		o.autoInstrumentationjavaImage = s
+		o.autoInstrumentationJavaImage = s
+	}
+}
+
+func WithAutoInstrumentationNodeJSImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationNodeJSImage = s
+	}
+}
+
+func WithAutoInstrumentationPythonImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationPythonImage = s
 	}
 }
