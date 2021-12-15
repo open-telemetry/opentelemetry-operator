@@ -51,5 +51,13 @@ func TestTargetAllocatorVersionFromBuild(t *testing.T) {
 }
 
 func TestAutoInstrumentationJavaFallbackVersion(t *testing.T) {
-	assert.Equal(t, "0.0.0", javaAutoInstrumentation())
+	assert.Equal(t, "0.0.0", AutoInstrumentationJava())
+}
+
+func TestAutoInstrumentationNodeJSFallbackVersion(t *testing.T) {
+	assert.Equal(t, "0.0.0", AutoInstrumentationNodeJS())
+}
+
+func TestAutoInstrumentationPythonFallbackVersion(t *testing.T) {
+	assert.Equal(t, "0.0.0", AutoInstrumentationPython())
 }
