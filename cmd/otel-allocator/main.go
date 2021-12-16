@@ -43,7 +43,15 @@ func main() {
 	}
 	defer watcher.Close()
 
-	srv, err := newServer(log, allocator, cliConf)
+	// creates a new discovery manager
+	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger())
+	defer discoveryManager.Close()
+	discoveryManager.Watch(func(targets []allocation.TargetItem) {
+		allocator.SetWaitingTargets(targets)
+		allocator.AllocateTargets()
+	})
+
+	srv, err := newServer(log, allocator, discoveryManager, cliConf)
 	if err != nil {
 		setupLog.Error(err, "Can't start the server")
 	}
@@ -73,7 +81,7 @@ func main() {
 				if err := srv.Shutdown(ctx); err != nil {
 					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv, err = newServer(log, allocator, cliConf)
+				srv, err = newServer(log, allocator, discoveryManager, cliConf)
 				if err != nil {
 					setupLog.Error(err, "Error restarting the server with new config")
 				}
@@ -84,8 +92,15 @@ func main() {
 				}()
 
 			case allocatorWatcher.EventSourcePrometheusCR:
-				// TODO update targets
-				setupLog.Info("PrometheusCR event")
+				setupLog.Info("PrometheusCRs changed")
+				promConfig, err := watcher.PromCrWatcher.CreatePromConfig()
+				if err != nil {
+					setupLog.Error(err, "failed to compile Prometheus config")
+				}
+				err = discoveryManager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, promConfig)
+				if err != nil {
+					setupLog.Error(err, "failed to apply Prometheus config")
+				}
 			}
 		case err := <-watcher.Errors:
 			setupLog.Error(err, "Watcher error")
@@ -101,8 +116,8 @@ type server struct {
 	server           *http.Server
 }
 
-func newServer(log logr.Logger, allocator *allocation.Allocator, cliConf config.CLIConfig) (*server, error) {
-	discoveryManager, k8sclient, err := newAllocator(log, allocator, context.Background(), cliConf)
+func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, cliConf config.CLIConfig) (*server, error) {
+	k8sclient, err := newAllocator(log, allocator, discoveryManager, context.Background(), cliConf)
 	if err != nil {
 		return nil, err
 	}
@@ -119,34 +134,27 @@ func newServer(log logr.Logger, allocator *allocation.Allocator, cliConf config.
 	return s, nil
 }
 
-func newAllocator(log logr.Logger, allocator *allocation.Allocator, ctx context.Context, cliConfig config.CLIConfig) (*lbdiscovery.Manager, *collector.Client, error) {
+func newAllocator(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
 	cfg, err := config.Load(*cliConfig.ConfigFilePath)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	k8sClient, err := collector.NewClient(log, cliConfig.ClusterConfig)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	// creates a new discovery manager
-	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger())
-
 	// returns the list of targets
-	if err := discoveryManager.ApplyConfig(cfg); err != nil {
-		return nil, nil, err
+	if err := discoveryManager.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.Config); err != nil {
+		return nil, err
 	}
 
 	k8sClient.Watch(ctx, cfg.LabelSelector, func(collectors []string) {
 		allocator.SetCollectors(collectors)
 		allocator.ReallocateCollectors()
 	})
-	discoveryManager.Watch(func(targets []allocation.TargetItem) {
-		allocator.SetWaitingTargets(allocatorWatcher.ConfigMapWatcherVector, targets)
-		allocator.AllocateTargets()
-	})
-	return discoveryManager, k8sClient, nil
+	return k8sClient, nil
 }
 
 func (s *server) Start() error {
@@ -157,7 +165,6 @@ func (s *server) Start() error {
 func (s *server) Shutdown(ctx context.Context) error {
 	s.logger.Info("Shutting down server...")
 	s.k8sClient.Close()
-	s.discoveryManager.Close()
 	return s.server.Shutdown(ctx)
 }
 

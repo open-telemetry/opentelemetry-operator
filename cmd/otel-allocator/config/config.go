@@ -4,11 +4,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -17,18 +19,12 @@ import (
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/util/homedir"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 // ErrInvalidYAML represents an error in the format of the original YAML configuration file.
 var (
 	ErrInvalidYAML = errors.New("couldn't parse the loadbalancer configuration")
-	cLIConf        = CLIConfig{
-		ListenAddr:     pflag.String("listen-addr", ":8080", "The address where this service serves."),
-		ConfigFilePath: pflag.String("config-file", DefaultConfigFilePath, "The path to the config file."),
-	}
-	kubeconfigPath = pflag.String("KubeconfigPath", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
 )
 
 const DefaultResyncTime = 5 * time.Minute
@@ -69,15 +65,27 @@ func unmarshal(cfg *Config, configFile string) error {
 func ParseCLI() (CLIConfig, error) {
 	opts := zap.Options{}
 	opts.BindFlags(flag.CommandLine)
+	cLIConf := CLIConfig{
+		ListenAddr:     pflag.String("listen-addr", ":8080", "The address where this service serves."),
+		ConfigFilePath: pflag.String("config-file", DefaultConfigFilePath, "The path to the config file."),
+	}
+	kubeconfigPath := pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
 	pflag.Parse()
 
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
-	if err != nil {
-		return CLIConfig{}, err
-	}
-	cLIConf.ClusterConfig = clusterConfig
 	cLIConf.RootLogger = zap.New(zap.UseFlagOptions(&opts))
 	klog.SetLogger(cLIConf.RootLogger)
 	ctrl.SetLogger(cLIConf.RootLogger)
+
+	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
+	if err != nil {
+		if _, ok := err.(*fs.PathError); !ok {
+			return CLIConfig{}, err
+		}
+		clusterConfig, err = rest.InClusterConfig()
+		if err != nil {
+			return CLIConfig{}, err
+		}
+	}
+	cLIConf.ClusterConfig = clusterConfig
 	return cLIConf, nil
 }

@@ -22,8 +22,6 @@ type TargetItem struct {
 	Collector *collector
 }
 
-type SourceTargets map[string]TargetItem
-
 // Create a struct that holds collector - and jobs for that collector
 // This struct will be parsed into endpoint with collector and jobs info
 
@@ -39,7 +37,7 @@ type collector struct {
 type Allocator struct {
 	m sync.Mutex
 
-	targetsWaiting map[string]SourceTargets // temp buffer to keep targets that are waiting to be processed
+	targetsWaiting map[string]TargetItem // temp buffer to keep targets that are waiting to be processed
 
 	collectors map[string]*collector // all current collectors
 
@@ -68,15 +66,15 @@ func (allocator *Allocator) findNextCollector() *collector {
 // SetTargets accepts the a list of targets that will be used to make
 // load balancing decisions. This method should be called when where are
 // new targets discovered or existing targets are shutdown.
-func (allocator *Allocator) SetWaitingTargets(sectionKey string, targets []TargetItem) {
+func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	// Dump old data
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 
-	allocator.targetsWaiting[sectionKey] = make(map[string]TargetItem, len(targets))
+	allocator.targetsWaiting = make(map[string]TargetItem, len(targets))
 	// Set new data
 	for _, i := range targets {
-		allocator.targetsWaiting[sectionKey][i.JobName+i.TargetURL] = i
+		allocator.targetsWaiting[i.JobName+i.TargetURL] = i
 	}
 }
 
@@ -129,21 +127,19 @@ func (allocator *Allocator) removeOutdatedTargets() {
 
 // processWaitingTargets processes the newly set targets.
 func (allocator *Allocator) processWaitingTargets() {
-	for _, value := range allocator.targetsWaiting {
-		for k, v := range value {
-			if _, ok := allocator.TargetItems[k]; !ok {
-				col := allocator.findNextCollector()
-				allocator.TargetItems[k] = &v
-				targetItem := TargetItem{
-					JobName:   v.JobName,
-					Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", v.JobName)},
-					TargetURL: v.TargetURL,
-					Label:     v.Label,
-					Collector: col,
-				}
-				col.NumTargets++
-				allocator.TargetItems[v.JobName+v.TargetURL] = &targetItem
+	for k, v := range allocator.targetsWaiting {
+		if _, ok := allocator.TargetItems[k]; !ok {
+			col := allocator.findNextCollector()
+			allocator.TargetItems[k] = &v
+			targetItem := TargetItem{
+				JobName:   v.JobName,
+				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", v.JobName)},
+				TargetURL: v.TargetURL,
+				Label:     v.Label,
+				Collector: col,
 			}
+			col.NumTargets++
+			allocator.TargetItems[v.JobName+v.TargetURL] = &targetItem
 		}
 	}
 }
@@ -151,7 +147,7 @@ func (allocator *Allocator) processWaitingTargets() {
 func NewAllocator(log logr.Logger) *Allocator {
 	return &Allocator{
 		log:            log,
-		targetsWaiting: make(map[string]SourceTargets),
+		targetsWaiting: make(map[string]TargetItem),
 		collectors:     make(map[string]*collector),
 		TargetItems:    make(map[string]*TargetItem),
 	}

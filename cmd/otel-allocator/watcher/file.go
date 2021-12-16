@@ -7,10 +7,6 @@ import (
 	"path/filepath"
 )
 
-const (
-	ConfigMapWatcherVector = "configMap"
-)
-
 func newConfigMapWatcher(logger logr.Logger, config config.CLIConfig) (*fsnotify.Watcher, error) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	if err != nil {

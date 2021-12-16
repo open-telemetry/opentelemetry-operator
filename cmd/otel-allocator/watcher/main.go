@@ -10,7 +10,7 @@ import (
 
 type Manager struct {
 	configMapWatcher *fsnotify.Watcher
-	promCrWatcher    *PrometheusCRWatcher
+	PromCrWatcher    *PrometheusCRWatcher
 	Events           chan Event
 	Errors           chan error
 	allocator        *allocation.Allocator
@@ -40,7 +40,7 @@ func NewWatcher(logger logr.Logger, config config.CLIConfig, allocator *allocati
 
 	watcher := Manager{
 		configMapWatcher: fileWatcher,
-		promCrWatcher:    promWatcher,
+		PromCrWatcher:    promWatcher,
 		allocator:        allocator,
 		Events:           make(chan Event),
 		Errors:           make(chan error),
@@ -51,10 +51,10 @@ func NewWatcher(logger logr.Logger, config config.CLIConfig, allocator *allocati
 
 func (watcher Manager) Close() error {
 	configMapErr := watcher.configMapWatcher.Close()
-	prometheusCRErr := watcher.promCrWatcher.Close()
+	prometheusCRErr := watcher.PromCrWatcher.Close()
 
 	if configMapErr != nil && prometheusCRErr != nil {
-		return fmt.Errorf("combined error: %v %v", configMapErr, prometheusCRErr)
+		return fmt.Errorf("combined error: %v %v", configMapErr.Error(), prometheusCRErr.Error())
 	}
 	if configMapErr != nil {
 		return configMapErr
@@ -72,7 +72,9 @@ func (watcher Manager) Start() error {
 			select {
 			case fileEvent := <-watcher.configMapWatcher.Events:
 				if fileEvent.Op == fsnotify.Create {
-					watcher.Events <- Event{Source: EventSourceConfigMap}
+					watcher.Events <- Event{
+						Source: EventSourceConfigMap,
+					}
 				}
 			case err := <-watcher.configMapWatcher.Errors:
 				watcher.Errors <- err
@@ -81,13 +83,13 @@ func (watcher Manager) Start() error {
 	}()
 
 	// copy to central event stream
-	err := watcher.promCrWatcher.Start()
+	err := watcher.PromCrWatcher.Start()
 	go func() {
 		for {
 			select {
-			case event := <-watcher.promCrWatcher.Events:
+			case event := <-watcher.PromCrWatcher.Events:
 				watcher.Events <- event
-			case err := <-watcher.promCrWatcher.Errors:
+			case err := <-watcher.PromCrWatcher.Errors:
 				watcher.Errors <- err
 			}
 		}

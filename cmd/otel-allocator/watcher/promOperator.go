@@ -14,12 +14,13 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 )
 
-func newCRDMonitorWatcher(_ logr.Logger, config allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
+func newCRDMonitorWatcher(logger logr.Logger, config allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
 	mClient, err := monitoringclient.NewForConfig(config.ClusterConfig)
 	if err != nil {
 		return nil, err
@@ -42,12 +43,15 @@ func newCRDMonitorWatcher(_ logr.Logger, config allocatorconfig.CLIConfig) (*Pro
 		monitoringv1.PodMonitorName:     podMonitorInformers,
 	}
 
+	generator := prometheus.NewConfigGenerator(log.NewNopLogger()) // TODO replace Nop?
+
 	return &PrometheusCRWatcher{
 		kubeMonitoringClient: mClient,
 		informers:            monitoringInformers,
 		stopChannel:          make(chan struct{}),
 		Errors:               make(chan error),
 		Events:               make(chan Event),
+		configGenerator:      generator,
 	}, nil
 }
 
@@ -57,6 +61,7 @@ type PrometheusCRWatcher struct {
 	stopChannel          chan struct{}
 	Errors               chan error
 	Events               chan Event
+	configGenerator      *prometheus.ConfigGenerator
 }
 
 // Start wrapped informers and wait for an initial sync
@@ -93,6 +98,48 @@ func (w *PrometheusCRWatcher) Start() error {
 func (w *PrometheusCRWatcher) Close() error {
 	w.stopChannel <- struct{}{}
 	return nil
+}
+
+func (w *PrometheusCRWatcher) CreatePromConfig() (*promconfig.Config, error) {
+	serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
+	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(labels.NewSelector(), func(sm interface{}) {
+		monitor := sm.(*monitoringv1.ServiceMonitor)
+		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
+		serviceMonitorInstances[key] = monitor
+	})
+	if smRetrieveErr != nil {
+		return nil, smRetrieveErr
+	}
+
+	podMonitorInstances := make(map[string]*monitoringv1.PodMonitor)
+	pmRetrieveErr := w.informers[monitoringv1.PodMonitorName].ListAll(labels.NewSelector(), func(pm interface{}) {
+		monitor := pm.(*monitoringv1.PodMonitor)
+		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
+		podMonitorInstances[key] = monitor
+	})
+	if pmRetrieveErr != nil {
+		return nil, pmRetrieveErr
+	}
+
+	store := assets.Store{
+		TLSAssets:       nil,
+		TokenAssets:     nil,
+		BasicAuthAssets: nil,
+		OAuth2Assets:    nil,
+		SigV4Assets:     nil,
+	}
+	generatedConfig, err := w.configGenerator.GenerateConfig(&monitoringv1.Prometheus{}, serviceMonitorInstances, podMonitorInstances, map[string]*monitoringv1.Probe{}, &store, nil, nil, nil, []string{})
+	if err != nil {
+		return nil, err
+	}
+
+	promCfg := &promconfig.Config{}
+	unmarshalErr := yaml.Unmarshal(generatedConfig, promCfg)
+	if unmarshalErr != nil {
+		return nil, unmarshalErr
+	}
+
+	return promCfg, nil
 }
 
 func test(kubecfg *rest.Config, client kubernetes.Interface, config2 allocatorconfig.Config, ctx context.Context, logger log.Logger) error {
