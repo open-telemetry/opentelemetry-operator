@@ -35,11 +35,11 @@ func init() {
 func Truncate(format string, max int, values ...interface{}) string {
 	var truncated []interface{}
 	result := fmt.Sprintf(format, values...)
-
 	if excess := len(result) - max; excess > 0 {
 		// we try to reduce the first string we find
 		for _, value := range values {
 			if excess == 0 {
+				truncated = append(truncated, value)
 				continue
 			}
 
@@ -55,7 +55,6 @@ func Truncate(format string, max int, values ...interface{}) string {
 
 			truncated = append(truncated, value)
 		}
-
 		result = fmt.Sprintf(format, truncated...)
 	}
 
