@@ -10,4 +10,4 @@ FROM busybox
 
 COPY --from=build /operator-build/workspace /autoinstrumentation
 
-RUN chmod -R o+r /autoinstrumentation
+RUN chmod -R go+r /autoinstrumentation
