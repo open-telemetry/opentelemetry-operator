@@ -158,13 +158,11 @@ func portName(receiverName string, port int32) string {
 
 func portFromEndpoint(endpoint string) (int32, error) {
 	u, err := url.Parse(endpoint)
-
 	if err != nil {
 			return 0, err
 	}
 
 	host, port, err := net.SplitHostPort(u.Host)
-
 	if err != nil {
 			return 0, err
 	}
