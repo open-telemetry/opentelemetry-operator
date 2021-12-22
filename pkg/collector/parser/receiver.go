@@ -156,26 +156,30 @@ func portName(receiverName string, port int32) string {
 	return candidate
 }
 
-func portFromEndpoint(endpoint string) (int32, error) {
+func portFromEndpoint(endpoint string) (int64, error) {
+	var host, netport string
+	var err error
+	var port int64
+
 	u, err := url.Parse(endpoint)
 	if err != nil {
 			return 0, err
 	}
 
-	host, port, err := net.SplitHostPort(u.Host)
+	host, netport, err = net.SplitHostPort(u.Host)
 	if err != nil {
 			return 0, err
 	}
 
-	if len(host) > 0 {
-			port, err := strconv.ParseInt(port, 10, 32)
-			return int32(port), err
-	} else {
+	if len(host) == 0 {
 			i := strings.LastIndex(endpoint, ":") + 1
-			part := endpoint[i:]
-			port, err := strconv.ParseInt(part, 10, 32)
-			return int32(port), err
+			var part = endpoint[i:]
+			port, err = strconv.ParseInt(part, 10, 32)
+	} else {
+			port, err = strconv.ParseInt(netport, 10, 32)
 	}
+
+	return port, err
 }
 
 func receiverType(name string) string {
