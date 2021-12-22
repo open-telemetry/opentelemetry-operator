@@ -1,6 +1,11 @@
 Changes by Version
 ==================
 
+0.41.1
+-------------------
+* Add support for nodejs and python image defaulting and upgrade ([#607](https://github.com/open-telemetry/opentelemetry-operator/pull/607), [@pavolloffay](https://github.com/pavolloffay))
+* Bugfix for `kubeletstats` receiver operator is exposing the service port, ignore port exposition as it is a scraper ([#558](https://github.com/open-telemetry/opentelemetry-operator/pull/558), [@mritunjaysharma394](https://github.com/mritunjaysharma394))
+
 0.41.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.41.0
