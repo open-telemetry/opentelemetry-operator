@@ -17,15 +17,13 @@ package parser
 
 import (
 	"fmt"
-	"net"
-	"net/url"
-	"regexp"
-	"strconv"
-	"strings"
+    "regexp"
+    "strconv"
+    "strings"
 
-	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
+    "github.com/go-logr/logr"
+    corev1 "k8s.io/api/core/v1"
+    v1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -157,29 +155,25 @@ func portName(receiverName string, port int32) string {
 }
 
 func portFromEndpoint(endpoint string) (int32, error) {
-	var host, hostport string
 	var err error
-	var cport int64
-	var port int32
+	var cport string
+	var port int64
 
-	u, err := url.Parse(endpoint)
-	if err != nil {
-			return 0, err
+	var r = regexp.MustCompile(":[0-9]+")
+
+	if r.MatchString(endpoint) {
+			cport = strings.Replace(r.FindString(endpoint), ":", "", -1)
+			port, err = strconv.ParseInt(cport, 10, 32)
+
+			if err != nil {
+					return 0, err
+			}
+
 	}
 
-	host, hostport, err = net.SplitHostPort(u.Host)
-
-	if len(host) == 0 {
-			i := strings.LastIndex(endpoint, ":") + 1
-			var part = endpoint[i:]
-			cport, err = strconv.ParseInt(part, 10, 32)
-	} else {
-			cport, err = strconv.ParseInt(hostport, 10, 32)
-	}
-
-	port = int32(cport)
-	return port, err
+	return int32(port), err
 }
+
 func receiverType(name string) string {
 	// receivers have a name like:
 	// - myreceiver/custom
