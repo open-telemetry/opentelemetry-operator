@@ -17,13 +17,13 @@ package parser
 
 import (
 	"fmt"
-    "regexp"
-    "strconv"
-    "strings"
+	"regexp"
+	"strconv"
+	"strings"
 
-    "github.com/go-logr/logr"
-    corev1 "k8s.io/api/core/v1"
-    v1 "k8s.io/api/core/v1"
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 var (
