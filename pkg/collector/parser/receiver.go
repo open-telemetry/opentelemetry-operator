@@ -174,9 +174,9 @@ func portFromEndpoint(endpoint string) (int64, error) {
 	if len(host) == 0 {
 			i := strings.LastIndex(endpoint, ":") + 1
 			var part = endpoint[i:]
-			port, err = strconv.ParseInt(part, 10, 32)
+			port, err = strconv.ParseInt(part, 10, 64)
 	} else {
-			port, err = strconv.ParseInt(netport, 10, 32)
+			port, err = strconv.ParseInt(netport, 10, 64)
 	}
 
 	return port, err
