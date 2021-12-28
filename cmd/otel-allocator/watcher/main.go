@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"fmt"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
 	"github.com/otel-allocator/allocation"

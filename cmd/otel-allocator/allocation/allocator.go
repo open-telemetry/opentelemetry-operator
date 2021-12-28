@@ -70,7 +70,6 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	// Dump old data
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
-
 	allocator.targetsWaiting = make(map[string]TargetItem, len(targets))
 	// Set new data
 	for _, i := range targets {

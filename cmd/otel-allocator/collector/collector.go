@@ -2,7 +2,6 @@ package collector
 
 import (
 	"context"
-	"k8s.io/client-go/rest"
 	"os"
 	"strconv"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 const (

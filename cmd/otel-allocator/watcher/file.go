@@ -1,10 +1,11 @@
 package watcher
 
 import (
+	"path/filepath"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
 	"github.com/otel-allocator/config"
-	"path/filepath"
 )
 
 func newConfigMapWatcher(logger logr.Logger, config config.CLIConfig) (*fsnotify.Watcher, error) {

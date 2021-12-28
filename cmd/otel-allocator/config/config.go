@@ -6,11 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog/v2"
 	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -18,7 +14,11 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"k8s.io/klog/v2"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 

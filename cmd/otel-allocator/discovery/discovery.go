@@ -2,13 +2,13 @@ package discovery
 
 import (
 	"context"
-	allocatorWatcher "github.com/otel-allocator/watcher"
-	"github.com/prometheus/prometheus/config"
 
 	"github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/otel-allocator/allocation"
+	allocatorWatcher "github.com/otel-allocator/watcher"
 	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 )
 
@@ -47,7 +47,6 @@ func (m *Manager) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.C
 			discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
 		}
 	}
-
 	return m.manager.ApplyConfig(discoveryCfg)
 }
 

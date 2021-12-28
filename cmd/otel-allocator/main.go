@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	allocatorWatcher "github.com/otel-allocator/watcher"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +15,7 @@ import (
 	"github.com/otel-allocator/collector"
 	"github.com/otel-allocator/config"
 	lbdiscovery "github.com/otel-allocator/discovery"
+	allocatorWatcher "github.com/otel-allocator/watcher"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -117,7 +117,7 @@ type server struct {
 }
 
 func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, cliConf config.CLIConfig) (*server, error) {
-	k8sclient, err := newAllocator(log, allocator, discoveryManager, context.Background(), cliConf)
+	k8sclient, err := configureFileDiscovery(log, allocator, discoveryManager, context.Background(), cliConf)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManage
 	return s, nil
 }
 
-func newAllocator(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
+func configureFileDiscovery(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
 	cfg, err := config.Load(*cliConfig.ConfigFilePath)
 	if err != nil {
 		return nil, err
