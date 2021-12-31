@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -127,7 +128,7 @@ func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManage
 		discoveryManager: discoveryManager,
 		k8sClient:        k8sclient,
 	}
-	router := mux.NewRouter()
+	router := mux.NewRouter().UseEncodedPath()
 	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
 	s.server = &http.Server{Addr: *cliConf.ListenAddr, Handler: router}
@@ -186,7 +187,12 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if len(q) == 0 {
-		displayData := allocation.GetAllTargetsByJob(params["job_id"], compareMap, s.allocator)
+		jobId, err := url.QueryUnescape(params["job_id"])
+		if err != nil {
+			errorHandler(err, w, r)
+			return
+		}
+		displayData := allocation.GetAllTargetsByJob(jobId, compareMap, s.allocator)
 		jsonHandler(w, r, displayData)
 
 	} else {
@@ -198,6 +204,10 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonHandler(w, r, tgs)
 	}
+}
+
+func errorHandler(err error, w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(500)
 }
 
 func jsonHandler(w http.ResponseWriter, r *http.Request, data interface{}) {

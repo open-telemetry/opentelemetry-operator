@@ -2,6 +2,7 @@ package allocation
 
 import (
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -132,7 +133,7 @@ func (allocator *Allocator) processWaitingTargets() {
 			allocator.TargetItems[k] = &v
 			targetItem := TargetItem{
 				JobName:   v.JobName,
-				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", v.JobName)},
+				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(v.JobName))},
 				TargetURL: v.TargetURL,
 				Label:     v.Label,
 				Collector: col,
