@@ -138,7 +138,8 @@ func (w *PrometheusCRWatcher) CreatePromConfig(kubeConfigPath string) (*promconf
 		return nil, unmarshalErr
 	}
 
-	// set kubeconfig path to service discovery configs, else kubernetes_sd will attempt in-cluster authentication
+	// set kubeconfig path to service discovery configs, else kubernetes_sd will always attempt in-cluster
+	// authentication even if running with a detected kubeconfig
 	for _, scrapeConfig := range promCfg.ScrapeConfigs {
 		for _, serviceDiscoveryConfig := range scrapeConfig.ServiceDiscoveryConfigs {
 			if serviceDiscoveryConfig.Name() == "kubernetes" {

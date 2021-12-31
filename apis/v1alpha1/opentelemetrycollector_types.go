@@ -120,13 +120,13 @@ type OpenTelemetryTargetAllocator struct {
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
 
-	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
-	// +optional
-	Image string `json:"image,omitempty"`
-
 	// PrometheusCR defines the configuration for Prometheus custom resource retrieval.
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+
+	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
+	// +optional
+	Image string `json:"image,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {
