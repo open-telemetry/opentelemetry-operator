@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
 	"github.com/prometheus-operator/prometheus-operator/pkg/prometheus"
 	promconfig "github.com/prometheus/prometheus/config"
+	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -47,8 +48,6 @@ func newCRDMonitorWatcher(logger logr.Logger, config allocatorconfig.CLIConfig) 
 		kubeMonitoringClient: mClient,
 		informers:            monitoringInformers,
 		stopChannel:          make(chan struct{}),
-		Errors:               make(chan error),
-		Events:               make(chan Event),
 		configGenerator:      generator,
 	}, nil
 }
@@ -57,18 +56,20 @@ type PrometheusCRWatcher struct {
 	kubeMonitoringClient *monitoringclient.Clientset
 	informers            map[string]*informers.ForResource
 	stopChannel          chan struct{}
-	Errors               chan error
-	Events               chan Event
 	configGenerator      *prometheus.ConfigGenerator
 }
 
 // Start wrapped informers and wait for an initial sync
-func (w *PrometheusCRWatcher) Start() error {
-	event := Event{Source: EventSourcePrometheusCR}
+func (w *PrometheusCRWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error) error {
+	watcher := Watcher(w)
+	event := Event{
+		Source:  EventSourcePrometheusCR,
+		Watcher: &watcher,
+	}
 	success := true
 
 	for name, resource := range w.informers {
-		go resource.Start(w.stopChannel)
+		resource.Start(w.stopChannel)
 
 		if ok := cache.WaitForNamedCacheSync(name, w.stopChannel, resource.HasSynced); !ok {
 			success = false
@@ -76,13 +77,13 @@ func (w *PrometheusCRWatcher) Start() error {
 
 		resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				w.Events <- event
+				upstreamEvents <- event
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				w.Events <- event
+				upstreamEvents <- event
 			},
 			DeleteFunc: func(obj interface{}) {
-				w.Events <- event
+				upstreamEvents <- event
 			},
 		})
 	}
@@ -98,7 +99,7 @@ func (w *PrometheusCRWatcher) Close() error {
 	return nil
 }
 
-func (w *PrometheusCRWatcher) CreatePromConfig() (*promconfig.Config, error) {
+func (w *PrometheusCRWatcher) CreatePromConfig(kubeConfigPath string) (*promconfig.Config, error) {
 	serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
 	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(labels.NewSelector(), func(sm interface{}) {
 		monitor := sm.(*monitoringv1.ServiceMonitor)
@@ -137,5 +138,14 @@ func (w *PrometheusCRWatcher) CreatePromConfig() (*promconfig.Config, error) {
 		return nil, unmarshalErr
 	}
 
+	// set kubeconfig path to service discovery configs, else kubernetes_sd will attempt in-cluster authentication
+	for _, scrapeConfig := range promCfg.ScrapeConfigs {
+		for _, serviceDiscoveryConfig := range scrapeConfig.ServiceDiscoveryConfigs {
+			if serviceDiscoveryConfig.Name() == "kubernetes" {
+				sdConfig := interface{}(serviceDiscoveryConfig).(*kubeDiscovery.SDConfig)
+				sdConfig.KubeConfig = kubeConfigPath
+			}
+		}
+	}
 	return promCfg, nil
 }

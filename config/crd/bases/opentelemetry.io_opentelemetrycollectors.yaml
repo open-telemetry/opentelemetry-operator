@@ -648,6 +648,15 @@ spec:
                     description: Image indicates the container image to use for the
                       OpenTelemetry TargetAllocator.
                     type: string
+                  prometheusCR:
+                    description: PrometheusCR defines the configuration for Prometheus
+                      custom resource retrieval.
+                    properties:
+                      enabled:
+                        description: Enabled indicates whether to use a Prometheus
+                          custom resources as target or not.
+                        type: boolean
+                    type: object
                 type: object
               tolerations:
                 description: Toleration to schedule OpenTelemetry Collector pods.

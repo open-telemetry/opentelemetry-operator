@@ -94,7 +94,7 @@ func main() {
 
 			case allocatorWatcher.EventSourcePrometheusCR:
 				setupLog.Info("PrometheusCRs changed")
-				promConfig, err := watcher.PromCrWatcher.CreatePromConfig()
+				promConfig, err := interface{}(*event.Watcher).(*allocatorWatcher.PrometheusCRWatcher).CreatePromConfig(cliConf.KubeConfigFilePath)
 				if err != nil {
 					setupLog.Error(err, "failed to compile Prometheus config")
 				}

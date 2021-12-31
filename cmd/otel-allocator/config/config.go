@@ -35,11 +35,18 @@ type Config struct {
 	Config        *promconfig.Config `yaml:"config"`
 }
 
+type PrometheusCRWatcherConfig struct {
+	Enabled *bool
+}
+
 type CLIConfig struct {
 	ListenAddr     *string
 	ConfigFilePath *string
 	ClusterConfig  *rest.Config
-	RootLogger     logr.Logger
+	// KubeConfigFilePath empty if in cluster configuration is in use
+	KubeConfigFilePath string
+	RootLogger         logr.Logger
+	PromCRWatcherConf  PrometheusCRWatcherConfig
 }
 
 func Load(file string) (Config, error) {
@@ -68,6 +75,9 @@ func ParseCLI() (CLIConfig, error) {
 	cLIConf := CLIConfig{
 		ListenAddr:     pflag.String("listen-addr", ":8080", "The address where this service serves."),
 		ConfigFilePath: pflag.String("config-file", DefaultConfigFilePath, "The path to the config file."),
+		PromCRWatcherConf: PrometheusCRWatcherConfig{
+			Enabled: pflag.Bool("enable-prometheus-cr-watcher", false, "Enable Prometheus CRs as target sources"),
+		},
 	}
 	kubeconfigPath := pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
 	pflag.Parse()
@@ -77,6 +87,7 @@ func ParseCLI() (CLIConfig, error) {
 	ctrl.SetLogger(cLIConf.RootLogger)
 
 	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
+	cLIConf.KubeConfigFilePath = *kubeconfigPath
 	if err != nil {
 		if _, ok := err.(*fs.PathError); !ok {
 			return CLIConfig{}, err
@@ -85,6 +96,7 @@ func ParseCLI() (CLIConfig, error) {
 		if err != nil {
 			return CLIConfig{}, err
 		}
+		cLIConf.KubeConfigFilePath = "" // reset as we use in cluster configuration
 	}
 	cLIConf.ClusterConfig = clusterConfig
 	return cLIConf, nil
