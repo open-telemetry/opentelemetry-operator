@@ -42,7 +42,10 @@ func newCRDMonitorWatcher(logger logr.Logger, config allocatorconfig.CLIConfig) 
 		monitoringv1.PodMonitorName:     podMonitorInformers,
 	}
 
-	generator := prometheus.NewConfigGenerator(log.NewNopLogger()) // TODO replace Nop?
+	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), &monitoringv1.Prometheus{}) // TODO replace Nop?
+	if err != nil {
+		return nil, err
+	}
 
 	return &PrometheusCRWatcher{
 		kubeMonitoringClient: mClient,
@@ -127,7 +130,7 @@ func (w *PrometheusCRWatcher) CreatePromConfig(kubeConfigPath string) (*promconf
 		OAuth2Assets:    nil,
 		SigV4Assets:     nil,
 	}
-	generatedConfig, err := w.configGenerator.GenerateConfig(&monitoringv1.Prometheus{}, serviceMonitorInstances, podMonitorInstances, map[string]*monitoringv1.Probe{}, &store, nil, nil, nil, []string{})
+	generatedConfig, err := w.configGenerator.Generate(&monitoringv1.Prometheus{}, serviceMonitorInstances, podMonitorInstances, map[string]*monitoringv1.Probe{}, &store, nil, nil, nil, []string{})
 	if err != nil {
 		return nil, err
 	}
