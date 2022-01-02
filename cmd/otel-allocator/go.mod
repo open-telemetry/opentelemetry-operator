@@ -17,7 +17,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.23.0
 	k8s.io/apimachinery v0.23.0
-	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/client-go v0.23.0
 	k8s.io/klog/v2 v2.30.0
 	sigs.k8s.io/controller-runtime v0.11.0
 )
@@ -163,6 +163,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-// A replace directive is needed for k8s.io/client-go because Cortex (which
+// A exclude directive is needed for k8s.io/client-go because Cortex (which
 // is an indirect dependency through Thanos and PrometheusOperator) has a requirement on v12.0.0.
-replace k8s.io/client-go => k8s.io/client-go v0.23.0
+exclude k8s.io/client-go v12.0.0+incompatible
