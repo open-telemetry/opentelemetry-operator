@@ -20,6 +20,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"errors"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -156,18 +157,20 @@ func portName(receiverName string, port int32) string {
 
 func portFromEndpoint(endpoint string) (int32, error) {
 	var err error
-	var cport string
 	var port int64
 
 	var r = regexp.MustCompile(":[0-9]+")
 
 	if r.MatchString(endpoint) {
-		cport = strings.Replace(r.FindString(endpoint), ":", "", -1)
+		port, err = strconv.ParseInt(strings.Replace(r.FindString(endpoint), ":", "", -1), 10, 32)
 	}
-	port, err = strconv.ParseInt(cport, 10, 32)
 
 	if err != nil {
 		return 0, err
+	}
+
+	if port == 0 {
+		return 0, errors.New("Port should not be empty")
 	}
 
 	return int32(port), err
