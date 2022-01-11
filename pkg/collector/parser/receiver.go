@@ -16,6 +16,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -155,9 +156,23 @@ func portName(receiverName string, port int32) string {
 }
 
 func portFromEndpoint(endpoint string) (int32, error) {
-	i := strings.LastIndex(endpoint, ":") + 1
-	part := endpoint[i:]
-	port, err := strconv.ParseInt(part, 10, 32)
+	var err error
+	var port int64
+
+	r := regexp.MustCompile(":[0-9]+")
+
+	if r.MatchString(endpoint) {
+		port, err = strconv.ParseInt(strings.Replace(r.FindString(endpoint), ":", "", -1), 10, 32)
+
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	if port == 0 {
+		return 0, errors.New("Port should not be empty")
+	}
+
 	return int32(port), err
 }
 
