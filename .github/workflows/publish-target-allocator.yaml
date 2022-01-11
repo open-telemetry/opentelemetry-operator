@@ -1,0 +1,44 @@
+name: "Publish target allocator"
+
+on:
+  push:
+    paths:
+      - 'cmd/otel-allocator/**'
+      - '.github/workflows/publish-target-allocator.yaml'
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2.4.0
+
+      - name: Read version
+        run: echo "VERSION=$(cat cmd/otel-allocator/version.txt)" >> $GITHUB_ENV
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3.6.1
+        with:
+          images: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
+          tags: |
+            type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
+
+      - name: Login to GitHub Package Registry
+        uses: docker/login-action@v1.12.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2.7.0
+        with:
+          context: cmd/otel-allocator
+          push: true
+          build-args: version=${{ env.VERSION }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
