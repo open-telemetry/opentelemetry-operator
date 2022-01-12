@@ -3,6 +3,7 @@ Changes by Version
 
 0.42.0
 -------------------
+* Bumped OpenTelemetry Collector to v0.42.0
 * Parse flags before using them in config ([#662](https://github.com/open-telemetry/opentelemetry-operator/pull/662), [@rubenvp8510](https://github.com/rubenvp8510))
 * Fix port derivation ([#651](https://github.com/open-telemetry/opentelemetry-operator/pull/651), [@yuriolisa](https://github.com/yuriolisa))
 * Remove publishing operator image to quay.io ([#661](https://github.com/open-telemetry/opentelemetry-operator/pull/661), [@pavolloffay](https://github.com/pavolloffay))
