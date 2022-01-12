@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/spf13/pflag"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -83,18 +82,6 @@ func New(opts ...Option) Config {
 		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
 	}
-}
-
-// FlagSet binds the flags to the user-modifiable values of the operator's configuration.
-func (c *Config) FlagSet() *pflag.FlagSet {
-	fs := pflag.NewFlagSet("opentelemetry-operator", pflag.ExitOnError)
-	pflag.StringVar(&c.collectorImage,
-		"otelcol-image",
-		c.collectorImage,
-		"The default image to use for OpenTelemetry Collector when not specified in the individual custom resource (CR)",
-	)
-
-	return fs
 }
 
 // StartAutoDetect attempts to automatically detect relevant information for this operator. This will block until the first
