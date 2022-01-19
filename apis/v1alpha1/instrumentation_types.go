@@ -36,6 +36,9 @@ type InstrumentationSpec struct {
 	// +optional
 	Sampler `json:"sampler,omitempty"`
 
+	// Env defines customized environments.
+	Env []Env `json:"env,omitempty"`
+
 	// Java defines configuration for java auto-instrumentation.
 	// +optional
 	Java Java `json:"java,omitempty"`
@@ -83,11 +86,25 @@ type Sampler struct {
 	Argument string `json:"argument,omitempty"`
 }
 
+// Env defines customized envs.
+type Env struct {
+	// Name defines environments name.
+	Name string `json:"name"`
+
+	// Value defines environments value.
+	// +optional
+	Value string `json:"value,omitempty"`
+}
+
 // Java defines Java SDK and instrumentation configuration.
 type Java struct {
 	// Image is a container image with javaagent auto-instrumentation JAR.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Env defines customized environments.
+	// +optional
+	Env []Env `json:"env,omitempty"`
 }
 
 // NodeJS defines NodeJS SDK and instrumentation configuration.
@@ -95,6 +112,10 @@ type NodeJS struct {
 	// Image is a container image with NodeJS SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Env defines customized environments.
+	// +optional
+	Env []Env `json:"env,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.
@@ -102,6 +123,10 @@ type Python struct {
 	// Image is a container image with Python SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Env defines customized environments.
+	// +optional
+	Env []Env `json:"env,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.
