@@ -22,9 +22,9 @@ import (
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.
-func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+func Annotations(instance v1alpha1.OpenTelemetryCollector) (map[string]string, map[string]string) {
 	// new map every time, so that we don't touch the instance's annotations
-	annotations := map[string]string{}
+	annotations, podAnnotations := map[string]string{}, map[string]string{}
 
 	// set default prometheus annotations
 	annotations["prometheus.io/scrape"] = "true"
@@ -37,10 +37,18 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 			annotations[k] = v
 		}
 	}
+
+	if nil != instance.Spec.PodAnnotations {
+		for k, v := range instance.Spec.PodAnnotations {
+			podAnnotations[k] = v
+		}
+	}
+
 	// make sure sha256 for configMap is always calculated
 	annotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	podAnnotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
 
-	return annotations
+	return annotations, podAnnotations
 }
 
 func getConfigMapSHA(config string) string {

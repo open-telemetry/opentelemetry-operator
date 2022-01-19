@@ -30,7 +30,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 	labels := Labels(otelcol)
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
-	annotations := Annotations(otelcol)
+	annotations, podAnnotations := Annotations(otelcol)
 
 	return appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -47,7 +47,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: otelcol.Spec.PodAnnotations,
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: ServiceAccountName(otelcol),
