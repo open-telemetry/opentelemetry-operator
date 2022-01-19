@@ -63,7 +63,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Operator image
-        uses: docker/build-push-action@v2.6.1
+        uses: docker/build-push-action@v2.8.0
         with:
           context: .
           file: ./Dockerfile
