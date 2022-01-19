@@ -16,6 +16,9 @@ IMG_REPO ?= opentelemetry-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:$(addprefix v,${VERSION})
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 
+TARGETALLOCATOR_IMG_REPO ?= target-allocator
+TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,${VERSION})
+
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -123,7 +126,7 @@ generate: controller-gen api-docs
 e2e:
 	$(KUTTL) test
 
-prepare-e2e: kuttl set-test-image-vars set-image-controller container start-kind
+prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind load-image-all
 	mkdir -p tests/_build/crds tests/_build/manifests
 	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
@@ -133,6 +136,7 @@ scorecard-tests:
 
 set-test-image-vars:
 	$(eval IMG=local/opentelemetry-operator:e2e)
+	$(eval TARGETALLOCATOR_IMG=local/opentelemetry-operator-targetallocator:e2e)
 
 # Build the container image, used only for local dev purposes
 container:
@@ -142,9 +146,19 @@ container:
 container-push:
 	docker push ${IMG}
 
+container-target-allocator:
+	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
+
 start-kind:
 	kind create cluster --config $(KIND_CONFIG)
+
+load-image-all: load-image-operator load-image-target-allocator
+
+load-image-operator:
 	kind load docker-image local/opentelemetry-operator:e2e
+
+load-image-target-allocator:
+	kind load docker-image ${TARGETALLOCATOR_IMG}
 
 cert-manager: cmctl
 	# Consider using cmctl to install the cert-manager once install command is not experimental
