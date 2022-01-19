@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,6 +29,7 @@ const (
 	AnnotationDefaultAutoInstrumentationJava   = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
 	AnnotationDefaultAutoInstrumentationNodeJS = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
 	AnnotationDefaultAutoInstrumentationPython = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
+	CustomizedEnvPrefix = "OTEL_"
 )
 
 // log is for logging in this package.
@@ -106,6 +108,32 @@ func (in *Instrumentation) validate() error {
 			}
 		}
 	case AlwaysOn, AlwaysOff, JaegerRemote, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
+	}
+
+	// validate customized environments
+	if err := in.validateEnv(in.Spec.Env); err != nil {
+		return err
+	}
+	if err := in.validateEnv(in.Spec.Java.Env); err != nil {
+		return err
+	}
+	if err := in.validateEnv(in.Spec.NodeJS.Env); err != nil {
+		return err
+	}
+	if err := in.validateEnv(in.Spec.Python.Env); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (in *Instrumentation) validateEnv(envs []Env) error {
+	if len(envs) > 0 {
+		for _, env := range envs {
+			if !strings.HasPrefix(env.Name, CustomizedEnvPrefix) {
+				return fmt.Errorf("customized env name should start with \"OTEL_\": %s", env.Name)
+			}
+		}
 	}
 	return nil
 }
