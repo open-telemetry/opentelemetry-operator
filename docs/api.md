@@ -86,6 +86,13 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#instrumentationspecenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          Env defines customized environments.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecexporter">exporter</a></b></td>
         <td>object</td>
         <td>
@@ -138,6 +145,40 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
 </table>
 
 
+### Instrumentation.spec.env[index]
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+Env defines customized envs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name defines environments name.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value defines environments value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.exporter
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -182,10 +223,51 @@ Java defines configuration for java auto-instrumentation.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#instrumentationspecjavaenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          Env defines customized environments.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
           Image is a container image with javaagent auto-instrumentation JAR.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.env[index]
+<sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
+
+
+
+Env defines customized envs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name defines environments name.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value defines environments value.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -209,10 +291,51 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#instrumentationspecnodejsenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          Env defines customized environments.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
           Image is a container image with NodeJS SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.env[index]
+<sup><sup>[↩ Parent](#instrumentationspecnodejs)</sup></sup>
+
+
+
+Env defines customized envs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name defines environments name.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value defines environments value.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -236,10 +359,51 @@ Python defines configuration for python auto-instrumentation.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#instrumentationspecpythonenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          Env defines customized environments.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
           Image is a container image with Python SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.env[index]
+<sup><sup>[↩ Parent](#instrumentationspecpython)</sup></sup>
+
+
+
+Env defines customized envs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name defines environments name.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value defines environments value.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

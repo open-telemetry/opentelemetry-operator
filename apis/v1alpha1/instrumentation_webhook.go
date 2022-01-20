@@ -29,7 +29,7 @@ const (
 	AnnotationDefaultAutoInstrumentationJava   = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
 	AnnotationDefaultAutoInstrumentationNodeJS = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
 	AnnotationDefaultAutoInstrumentationPython = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
-	CustomizedEnvPrefix = "OTEL_"
+	CustomizedEnvPrefix                        = "OTEL_"
 )
 
 // log is for logging in this package.

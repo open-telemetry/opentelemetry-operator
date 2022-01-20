@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/duncan/opentelemetry-operator/opentelemetry-operator
-  newTag: v0.42.0
+  newTag: v0.42.0-3-gb5e0cdf
