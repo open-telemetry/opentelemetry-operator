@@ -30,7 +30,7 @@ const (
 	AnnotationDefaultAutoInstrumentationJava   = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
 	AnnotationDefaultAutoInstrumentationNodeJS = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
 	AnnotationDefaultAutoInstrumentationPython = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
-	EnvPrefix                                  = "OTEL_"
+	envPrefix                                  = "OTEL_"
 )
 
 // log is for logging in this package.
@@ -131,7 +131,7 @@ func (in *Instrumentation) validate() error {
 func (in *Instrumentation) validateEnv(envs []corev1.EnvVar) error {
 	if len(envs) > 0 {
 		for _, env := range envs {
-			if !strings.HasPrefix(env.Name, EnvPrefix) {
+			if !strings.HasPrefix(env.Name, envPrefix) {
 				return fmt.Errorf("env name should start with \"OTEL_\": %s", env.Name)
 			}
 		}
