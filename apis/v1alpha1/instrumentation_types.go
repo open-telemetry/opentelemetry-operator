@@ -37,7 +37,9 @@ type InstrumentationSpec struct {
 	// +optional
 	Sampler `json:"sampler,omitempty"`
 
-	// Env defines env vars.
+	// Env defines common env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
@@ -94,7 +96,9 @@ type Java struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Env defines env vars.
+	// Env defines java specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
@@ -105,7 +109,9 @@ type NodeJS struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Env defines env vars.
+	// Env defines nodejs specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
@@ -116,7 +122,9 @@ type Python struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Env defines env vars.
+	// Env defines python specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }

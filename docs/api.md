@@ -89,7 +89,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b><a href="#instrumentationspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines env vars.<br/>
+          Env defines common env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -438,7 +438,7 @@ Java defines configuration for java auto-instrumentation.
         <td><b><a href="#instrumentationspecjavaenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines env vars.<br/>
+          Env defines java specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -718,7 +718,7 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         <td><b><a href="#instrumentationspecnodejsenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines env vars.<br/>
+          Env defines nodejs specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -998,7 +998,7 @@ Python defines configuration for python auto-instrumentation.
         <td><b><a href="#instrumentationspecpythonenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines env vars.<br/>
+          Env defines python specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>

@@ -16,10 +16,10 @@ package v1alpha1
 
 import (
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
 	"strconv"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -129,11 +129,9 @@ func (in *Instrumentation) validate() error {
 }
 
 func (in *Instrumentation) validateEnv(envs []corev1.EnvVar) error {
-	if len(envs) > 0 {
-		for _, env := range envs {
-			if !strings.HasPrefix(env.Name, envPrefix) {
-				return fmt.Errorf("env name should start with \"OTEL_\": %s", env.Name)
-			}
+	for _, env := range envs {
+		if !strings.HasPrefix(env.Name, envPrefix) {
+			return fmt.Errorf("env name should start with \"OTEL_\": %s", env.Name)
 		}
 	}
 	return nil
