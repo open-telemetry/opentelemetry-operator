@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
 	"strconv"
 	"strings"
 
@@ -29,7 +30,7 @@ const (
 	AnnotationDefaultAutoInstrumentationJava   = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
 	AnnotationDefaultAutoInstrumentationNodeJS = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
 	AnnotationDefaultAutoInstrumentationPython = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
-	CustomizedEnvPrefix                        = "OTEL_"
+	EnvPrefix                                  = "OTEL_"
 )
 
 // log is for logging in this package.
@@ -110,7 +111,7 @@ func (in *Instrumentation) validate() error {
 	case AlwaysOn, AlwaysOff, JaegerRemote, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
 	}
 
-	// validate customized environments
+	// validate env vars
 	if err := in.validateEnv(in.Spec.Env); err != nil {
 		return err
 	}
@@ -127,11 +128,11 @@ func (in *Instrumentation) validate() error {
 	return nil
 }
 
-func (in *Instrumentation) validateEnv(envs []Env) error {
+func (in *Instrumentation) validateEnv(envs []corev1.EnvVar) error {
 	if len(envs) > 0 {
 		for _, env := range envs {
-			if !strings.HasPrefix(env.Name, CustomizedEnvPrefix) {
-				return fmt.Errorf("customized env name should start with \"OTEL_\": %s", env.Name)
+			if !strings.HasPrefix(env.Name, EnvPrefix) {
+				return fmt.Errorf("env name should start with \"OTEL_\": %s", env.Name)
 			}
 		}
 	}

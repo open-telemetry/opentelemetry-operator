@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,8 +37,9 @@ type InstrumentationSpec struct {
 	// +optional
 	Sampler `json:"sampler,omitempty"`
 
-	// Env defines customized environments.
-	Env []Env `json:"env,omitempty"`
+	// Env defines env vars.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Java defines configuration for java auto-instrumentation.
 	// +optional
@@ -86,25 +88,15 @@ type Sampler struct {
 	Argument string `json:"argument,omitempty"`
 }
 
-// Env defines customized envs.
-type Env struct {
-	// Name defines environments name.
-	Name string `json:"name"`
-
-	// Value defines environments value.
-	// +optional
-	Value string `json:"value,omitempty"`
-}
-
 // Java defines Java SDK and instrumentation configuration.
 type Java struct {
 	// Image is a container image with javaagent auto-instrumentation JAR.
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Env defines customized environments.
+	// Env defines env vars.
 	// +optional
-	Env []Env `json:"env,omitempty"`
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // NodeJS defines NodeJS SDK and instrumentation configuration.
@@ -113,9 +105,9 @@ type NodeJS struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Env defines customized environments.
+	// Env defines env vars.
 	// +optional
-	Env []Env `json:"env,omitempty"`
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.
@@ -124,9 +116,9 @@ type Python struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Env defines customized environments.
+	// Env defines env vars.
 	// +optional
-	Env []Env `json:"env,omitempty"`
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.

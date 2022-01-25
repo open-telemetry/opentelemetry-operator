@@ -67,35 +67,32 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.Java
 		i.logger.V(1).Info("injecting java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 		pod = injectJavaagent(i.logger, otelinst.Spec.Java, pod)
-		pod = i.injectCommonCustomizedEnv(otelinst, ns, pod)
+		pod = i.injectCommonEnvVar(otelinst, ns, pod)
 		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
 	}
 	if insts.NodeJS != nil {
 		otelinst := *insts.NodeJS
 		i.logger.V(1).Info("injecting nodejs instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 		pod = injectNodeJSSDK(i.logger, otelinst.Spec.NodeJS, pod)
-		pod = i.injectCommonCustomizedEnv(otelinst, ns, pod)
+		pod = i.injectCommonEnvVar(otelinst, ns, pod)
 		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
 	}
 	if insts.Python != nil {
 		otelinst := *insts.Python
 		i.logger.V(1).Info("injecting python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 		pod = injectPythonSDK(i.logger, otelinst.Spec.Python, pod)
-		pod = i.injectCommonCustomizedEnv(otelinst, ns, pod)
+		pod = i.injectCommonEnvVar(otelinst, ns, pod)
 		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
 	}
 	return pod
 }
 
-func (i *sdkInjector) injectCommonCustomizedEnv(otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
+func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
 	container := &pod.Spec.Containers[0]
 	for _, env := range otelinst.Spec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 && len(env.Value) > 0 {
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  env.Name,
-				Value: env.Value,
-			})
+		if idx == -1 {
+			container.Env = append(container.Env, env)
 		}
 	}
 	return pod
