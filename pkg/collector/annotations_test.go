@@ -36,7 +36,8 @@ func TestDefaultAnnotations(t *testing.T) {
 	}
 
 	// test
-	annotations, podAnnotations := Annotations(otelcol)
+	annotations := Annotations(otelcol)
+	podAnnotations := PodAnnotations(otelcol)
 
 	//verify
 	assert.Equal(t, "true", annotations["prometheus.io/scrape"])
@@ -64,7 +65,8 @@ func TestUserAnnotations(t *testing.T) {
 	}
 
 	// test
-	annotations, podAnnotations := Annotations(otelcol)
+	annotations := Annotations(otelcol)
+	podAnnotations := PodAnnotations(otelcol)
 
 	//verify
 	assert.Equal(t, "false", annotations["prometheus.io/scrape"])
@@ -86,7 +88,8 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 	}
 
 	// test
-	annotations, podAnnotations := Annotations(otelcol)
+	annotations := Annotations(otelcol)
+	podAnnotations := PodAnnotations(otelcol)
 
 	// verify
 	assert.Len(t, annotations, 5)

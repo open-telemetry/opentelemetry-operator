@@ -30,7 +30,8 @@ func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	labels := Labels(otelcol)
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
-	annotations, podAnnotations := Annotations(otelcol)
+	annotations := Annotations(otelcol)
+	podAnnotations := PodAnnotations(otelcol)
 
 	return appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
