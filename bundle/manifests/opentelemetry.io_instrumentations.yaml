@@ -43,7 +43,11 @@ spec:
               SDK and instrumentation.
             properties:
               env:
-                description: Env defines env vars.
+                description: 'Env defines common env vars. There are four layers for
+                  env vars'' definitions and the precedence order is: `original container
+                  env vars` > `language specific env vars` > `common env vars` > `instrument
+                  spec configs'' vars`. If the former var had been defined, then the
+                  other vars would be ignored.'
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -158,7 +162,11 @@ spec:
                 description: Java defines configuration for java auto-instrumentation.
                 properties:
                   env:
-                    description: Env defines env vars.
+                    description: 'Env defines java specific env vars. There are four
+                      layers for env vars'' definitions and the precedence order is:
+                      `original container env vars` > `language specific env vars`
+                      > `common env vars` > `instrument spec configs'' vars`. If the
+                      former var had been defined, then the other vars would be ignored.'
                     items:
                       description: EnvVar represents an environment variable present
                         in a Container.
@@ -276,7 +284,11 @@ spec:
                 description: NodeJS defines configuration for nodejs auto-instrumentation.
                 properties:
                   env:
-                    description: Env defines env vars.
+                    description: 'Env defines nodejs specific env vars. There are
+                      four layers for env vars'' definitions and the precedence order
+                      is: `original container env vars` > `language specific env vars`
+                      > `common env vars` > `instrument spec configs'' vars`. If the
+                      former var had been defined, then the other vars would be ignored.'
                     items:
                       description: EnvVar represents an environment variable present
                         in a Container.
@@ -409,7 +421,11 @@ spec:
                 description: Python defines configuration for python auto-instrumentation.
                 properties:
                   env:
-                    description: Env defines env vars.
+                    description: 'Env defines python specific env vars. There are
+                      four layers for env vars'' definitions and the precedence order
+                      is: `original container env vars` > `language specific env vars`
+                      > `common env vars` > `instrument spec configs'' vars`. If the
+                      former var had been defined, then the other vars would be ignored.'
                     items:
                       description: EnvVar represents an environment variable present
                         in a Container.

@@ -432,6 +432,10 @@ func TestInjectJava(t *testing.T) {
 					},
 					Env: []corev1.EnvVar{
 						{
+							Name:  "JAVA_TOOL_OPTIONS",
+							Value: javaJVMArgument,
+						},
+						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
 						},
@@ -458,10 +462,6 @@ func TestInjectJava(t *testing.T) {
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
 							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
-						},
-						{
-							Name:  "JAVA_TOOL_OPTIONS",
-							Value: javaJVMArgument,
 						},
 					},
 				},
@@ -530,6 +530,10 @@ func TestInjectNodeJS(t *testing.T) {
 					},
 					Env: []corev1.EnvVar{
 						{
+							Name:  "NODE_OPTIONS",
+							Value: nodeRequireArgument,
+						},
+						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
 						},
@@ -556,10 +560,6 @@ func TestInjectNodeJS(t *testing.T) {
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
 							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
-						},
-						{
-							Name:  "NODE_OPTIONS",
-							Value: nodeRequireArgument,
 						},
 					},
 				},
@@ -629,6 +629,14 @@ func TestInjectPython(t *testing.T) {
 					},
 					Env: []corev1.EnvVar{
 						{
+							Name:  "PYTHONPATH",
+							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+						},
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp_proto_http",
+						},
+						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
 						},
@@ -655,14 +663,6 @@ func TestInjectPython(t *testing.T) {
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
 							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
-						},
-						{
-							Name:  "PYTHONPATH",
-							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
-						},
-						{
-							Name:  "OTEL_TRACES_EXPORTER",
-							Value: "otlp_proto_http",
 						},
 					},
 				},
