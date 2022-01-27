@@ -120,7 +120,7 @@ type OpenTelemetryTargetAllocator struct {
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
 
-	// PrometheusCR defines the configuration for Prometheus custom resource retrieval.
+	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
 
@@ -130,7 +130,7 @@ type OpenTelemetryTargetAllocator struct {
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {
-	// Enabled indicates whether to use a Prometheus custom resources as target or not.
+	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
 }
