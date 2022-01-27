@@ -59,8 +59,11 @@ func TestDeploymentNewDefault(t *testing.T) {
 
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
 
-	// none of the default annotations should propagate down to the pod
-	assert.Empty(t, d.Spec.Template.Annotations)
+	// verify sha256 podAnnotation
+	expectedAnnotations := map[string]string{
+		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	}
+	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
 	// the pod selector should match the pod spec's labels
 	assert.Equal(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
@@ -81,6 +84,9 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 
 	// test
 	d := Deployment(cfg, logger, otelcol)
+
+	//Add sha256 podAnnotation
+	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 	// verify
 	assert.Equal(t, "my-instance-collector", d.Name)

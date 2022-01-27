@@ -55,8 +55,11 @@ func TestStatefulSetNewDefault(t *testing.T) {
 
 	assert.Len(t, ss.Spec.Template.Spec.Containers, 1)
 
-	// none of the default annotations should propagate down to the pod
-	assert.Empty(t, ss.Spec.Template.Annotations)
+	// verify sha256 podAnnotation
+	expectedAnnotations := map[string]string{
+		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	}
+	assert.Equal(t, expectedAnnotations, ss.Spec.Template.Annotations)
 
 	// the pod selector should match the pod spec's labels
 	assert.Equal(t, ss.Spec.Selector.MatchLabels, ss.Spec.Template.Labels)
@@ -140,6 +143,9 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 
 	// test
 	ss := StatefulSet(cfg, logger, otelcol)
+
+	//Add sha256 podAnnotation
+	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 	// verify
 	assert.Equal(t, "my-instance-collector", ss.Name)

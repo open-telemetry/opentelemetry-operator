@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: restarting-collector
+spec:
+  ports:
+  - targetPort: 4317
