@@ -2,6 +2,7 @@ Changes by Version
 ==================
 
 0.43.0
+-------------------
 * Bumped OpenTelemetry Collector to v0.43.0
 * Fix collector config update ([#670] (https://github.com/open-telemetry/opentelemetry-operator/pull/670), [@mcariapas](https://github.com/mcariapas))
 
