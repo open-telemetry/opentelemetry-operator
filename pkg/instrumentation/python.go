@@ -33,6 +33,15 @@ const (
 func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod) corev1.Pod {
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[0]
+
+	// inject env vars
+	for _, env := range pythonSpec.Env {
+		idx := getIndexOfEnv(container.Env, env.Name)
+		if idx == -1 {
+			container.Env = append(container.Env, env)
+		}
+	}
+
 	idx := getIndexOfEnv(container.Env, envPythonPath)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{

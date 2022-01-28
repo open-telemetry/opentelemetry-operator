@@ -17,7 +17,9 @@ package v1alpha1
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -28,6 +30,7 @@ const (
 	AnnotationDefaultAutoInstrumentationJava   = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
 	AnnotationDefaultAutoInstrumentationNodeJS = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
 	AnnotationDefaultAutoInstrumentationPython = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
+	envPrefix                                  = "OTEL_"
 )
 
 // log is for logging in this package.
@@ -106,6 +109,30 @@ func (in *Instrumentation) validate() error {
 			}
 		}
 	case AlwaysOn, AlwaysOff, JaegerRemote, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
+	}
+
+	// validate env vars
+	if err := in.validateEnv(in.Spec.Env); err != nil {
+		return err
+	}
+	if err := in.validateEnv(in.Spec.Java.Env); err != nil {
+		return err
+	}
+	if err := in.validateEnv(in.Spec.NodeJS.Env); err != nil {
+		return err
+	}
+	if err := in.validateEnv(in.Spec.Python.Env); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (in *Instrumentation) validateEnv(envs []corev1.EnvVar) error {
+	for _, env := range envs {
+		if !strings.HasPrefix(env.Name, envPrefix) {
+			return fmt.Errorf("env name should start with \"OTEL_\": %s", env.Name)
+		}
 	}
 	return nil
 }
