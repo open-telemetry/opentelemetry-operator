@@ -10,19 +10,27 @@ spec:
   containers:
   - name: myapp
     env:
+    - name: OTEL_LOG_LEVEL
+      value: "debug"
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp_proto_http
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4317
+    - name: PYTHONPATH
+      value: "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation"
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20"
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
     - name: OTEL_SERVICE_NAME
       value: my-deployment-with-sidecar
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4318/v1/traces
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
-    - name: PYTHONPATH
-      value: "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation"
-    - name: OTEL_TRACES_EXPORTER
-      value: otlp_proto_http
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
     - mountPath: /otel-auto-instrumentation

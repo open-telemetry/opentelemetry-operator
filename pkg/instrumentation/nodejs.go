@@ -29,6 +29,15 @@ const (
 func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod) corev1.Pod {
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[0]
+
+	// inject env vars
+	for _, env := range nodeJSSpec.Env {
+		idx := getIndexOfEnv(container.Env, env.Name)
+		if idx == -1 {
+			container.Env = append(container.Env, env)
+		}
+	}
+
 	idx := getIndexOfEnv(container.Env, envNodeOptions)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
