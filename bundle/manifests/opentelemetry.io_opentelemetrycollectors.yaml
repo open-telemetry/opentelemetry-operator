@@ -648,12 +648,13 @@ spec:
                       OpenTelemetry TargetAllocator.
                     type: string
                   prometheusCR:
-                    description: PrometheusCR defines the configuration for Prometheus
-                      custom resource retrieval.
+                    description: PrometheusCR defines the configuration for the retrieval
+                      of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1
+                      and podmonitor.monitoring.coreos.com/v1 )  retrieval.
                     properties:
                       enabled:
-                        description: Enabled indicates whether to use a Prometheus
-                          custom resources as target or not.
+                        description: Enabled indicates whether to use a PrometheusOperator
+                          custom resources as targets or not.
                         type: boolean
                     type: object
                 type: object

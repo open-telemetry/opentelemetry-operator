@@ -1562,7 +1562,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscr">prometheusCR</a></b></td>
         <td>object</td>
         <td>
-          PrometheusCR defines the configuration for Prometheus custom resource retrieval.<br/>
+          PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1574,7 +1574,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
 
 
 
-PrometheusCR defines the configuration for Prometheus custom resource retrieval.
+PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
 
 <table>
     <thead>
@@ -1589,7 +1589,7 @@ PrometheusCR defines the configuration for Prometheus custom resource retrieval.
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
-          Enabled indicates whether to use a Prometheus custom resources as target or not.<br/>
+          Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
