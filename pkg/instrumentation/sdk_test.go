@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -404,7 +405,7 @@ func TestInjectJava(t *testing.T) {
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: volumeName,
+					Name: javaVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
@@ -412,12 +413,12 @@ func TestInjectJava(t *testing.T) {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Name:    initContainerName,
+					Name:    javaInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+					Command: []string{"cp", "/javaagent.jar", path.Join(javaMountPath, "javaagent.jar")},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      volumeName,
-						MountPath: "/otel-auto-instrumentation",
+						Name:      javaVolumeName,
+						MountPath: javaMountPath,
 					}},
 				},
 			},
@@ -426,8 +427,8 @@ func TestInjectJava(t *testing.T) {
 					Name: "app",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      volumeName,
-							MountPath: "/otel-auto-instrumentation",
+							Name:      javaVolumeName,
+							MountPath: javaMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{

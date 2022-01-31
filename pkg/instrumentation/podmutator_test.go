@@ -17,6 +17,7 @@ package instrumentation
 import (
 	"context"
 	"fmt"
+	"path"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -115,7 +116,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation",
+							Name: javaVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
@@ -123,11 +124,11 @@ func TestMutatePod(t *testing.T) {
 					},
 					InitContainers: []corev1.Container{
 						{
-							Name:    initContainerName,
-							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+							Name:    javaInitContainerName,
+							Command: []string{"cp", "/javaagent.jar", path.Join(javaMountPath, "javaagent.jar")},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      volumeName,
-								MountPath: "/otel-auto-instrumentation",
+								Name:      javaVolumeName,
+								MountPath: javaMountPath,
 							}},
 						},
 					},
@@ -194,8 +195,8 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation",
-									MountPath: "/otel-auto-instrumentation",
+									Name:      javaVolumeName,
+									MountPath: javaMountPath,
 								},
 							},
 						},
