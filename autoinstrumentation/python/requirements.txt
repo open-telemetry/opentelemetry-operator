@@ -3,6 +3,9 @@ opentelemetry-distro==0.26b1
 # injected auto-instrumentation, where it has a strict dependency on the OS / Python version the artifact is built for.
 opentelemetry-exporter-otlp-proto-http==1.7.1
 
+opentelemetry-propagator-b3==1.7.1
+opentelemetry-propagator-jaeger==1.7.1
+
 opentelemetry-instrumentation==0.26b1
 
 # Copied in from https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation
