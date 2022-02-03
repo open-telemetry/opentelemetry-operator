@@ -7,6 +7,10 @@ on:
       - '.github/workflows/publish-autoinstrumentation-python.yaml'
     branches:
       - main
+  pull_request:
+    paths:
+      - 'autoinstrumentation/python/**'
+      - '.github/workflows/publish-autoinstrumentation-python.yaml'
   workflow_dispatch:
 
 jobs:
@@ -38,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v2.8.0
         with:
           context: autoinstrumentation/python
-          push: true
+          push: ${{ github.event_name == 'push' }}
           build-args: version=${{ env.VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
