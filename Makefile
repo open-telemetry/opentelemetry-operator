@@ -50,6 +50,10 @@ KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
 CERTMANAGER_VERSION ?= 1.6.1
 
+ifndef ignore-not-found
+  ignore-not-found = false
+endif
+
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-generate-is-noop: USER=open-telemetry
 ensure-generate-is-noop: set-image-controller generate bundle
@@ -80,7 +84,7 @@ install: manifests kustomize
 
 # Uninstall CRDs from a cluster
 uninstall: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 # Set the controller image parameters
 set-image-controller: manifests kustomize
@@ -92,7 +96,7 @@ deploy: set-image-controller
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 undeploy: set-image-controller
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 # Generates the released manifests
 release-artifacts: set-image-controller
@@ -169,7 +173,7 @@ endif
 controller-gen:
 ifeq (, $(shell which controller-gen))
 	@{ \
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.0-beta.0 ;\
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0 ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
