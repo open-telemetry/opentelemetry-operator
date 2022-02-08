@@ -188,7 +188,6 @@ cmctl:
 	@{ \
 	set -e ;\
 	TMP_DIR=$$(mktemp -d) ;\
-	echo $$TMP_DIR ;\
 	curl -L -o $$TMP_DIR/cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/download/v$(CERTMANAGER_VERSION)/cmctl-`go env GOOS`-`go env GOARCH`.tar.gz ;\
 	tar xzf $$TMP_DIR/cmctl.tar.gz -C $$TMP_DIR ;\
 	[ -d bin ] || mkdir bin ;\
