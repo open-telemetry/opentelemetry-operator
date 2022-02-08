@@ -20,5 +20,4 @@ spec:
           receivers: [jaeger, otlp]
           processors: []
           exporters: [logging]
-  args:
-    metrics-level: detailed
+
