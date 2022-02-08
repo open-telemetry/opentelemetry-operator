@@ -54,6 +54,7 @@ ifndef ignore-not-found
   ignore-not-found = false
 endif
 
+.PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-generate-is-noop: USER=open-telemetry
 ensure-generate-is-noop: set-image-controller generate bundle
@@ -63,7 +64,9 @@ ensure-generate-is-noop: set-image-controller generate bundle
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
+.PHONY: all
 all: manager
+.PHONY: ci
 ci: test
 
 # Run tests
@@ -73,90 +76,112 @@ test: generate fmt vet ensure-generate-is-noop envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
 
 # Build manager binary
+.PHONY: manager
 manager: generate fmt vet
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
+.PHONY: run
 run: generate fmt vet manifests
 	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) go run -ldflags ${LD_FLAGS} ./main.go --zap-devel
 
 # Install CRDs into a cluster
+.PHONY: install
 install: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 # Uninstall CRDs from a cluster
+.PHONY: uninstall
 uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 # Set the controller image parameters
+.PHONY: set-image-controller
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
+.PHONY: deploy
 deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
+.PHONY: undeploy
 undeploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 # Generates the released manifests
+.PHONY: release-artifacts
 release-artifacts: set-image-controller
 	mkdir -p dist
 	$(KUSTOMIZE) build config/default -o dist/opentelemetry-operator.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
+.PHONY: manifests
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
+.PHONY: fmt
 fmt:
 	go fmt ./...
 
 # Run go vet against code
+.PHONY: vet
 vet:
 	go vet ./...
 
 # Run go lint against code
+.PHONY: lint
 lint:
 	golangci-lint run
 
 # Generate code
+.PHONY: generate
 generate: controller-gen api-docs
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # end-to-tests
+.PHONY: e2e
 e2e:
 	$(KUTTL) test
 
+.PHONY: prepare-e2e
 prepare-e2e: kuttl set-test-image-vars set-image-controller container start-kind
 	mkdir -p tests/_build/crds tests/_build/manifests
 	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
 
+.PHONY: scorecard-tests
 scorecard-tests:
 	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
 
+.PHONY: set-test-image-vars
 set-test-image-vars:
 	$(eval IMG=local/opentelemetry-operator:e2e)
 
 # Build the container image, used only for local dev purposes
+.PHONY: container
 container:
 	docker build -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION}  --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} .
 
 # Push the container image, used only for local dev purposes
+.PHONY: container-push
 container-push:
 	docker push ${IMG}
 
+.PHONY: start-kind
 start-kind:
 	kind create cluster --config $(KIND_CONFIG)
 	kind load docker-image local/opentelemetry-operator:e2e
 
+.PHONY: cert-manager
 cert-manager: cmctl
 	# Consider using cmctl to install the cert-manager once install command is not experimental
 	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v${CERTMANAGER_VERSION}/cert-manager.yaml
 	cmctl check api --wait=5m
 
+.PHONY: cmctl
 cmctl:
 ifeq (, $(shell which cmctl))
 	@{ \
@@ -199,7 +224,7 @@ rm -rf $$TMP_DIR ;\
 }
 endef
 
-
+.PHONY: kuttl
 kuttl:
 ifeq (, $(shell which kubectl-kuttl))
 	echo ${PATH}
@@ -218,6 +243,7 @@ else
 KUTTL=$(shell which kubectl-kuttl)
 endif
 
+.PHONY: kind
 kind:
 ifeq (, $(shell which kind))
 	@{ \
@@ -232,6 +258,7 @@ else
 KIND=$(shell which kind)
 endif
 
+.PHONY: operator-sdk
 operator-sdk:
 ifeq (, $(shell which operator-sdk))
 	@{ \
@@ -247,21 +274,25 @@ OPERATOR_SDK=$(shell which operator-sdk)
 endif
 
 # Generate bundle manifests and metadata, then validate generated files.
+.PHONY: bundle
 bundle: kustomize operator-sdk manifests set-image-controller
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
 # Build the bundle image, used only for local dev purposes
+.PHONY: bundle-build
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
+.PHONY: bundle-push
 bundle-push:
 	docker push $(BUNDLE_IMG)
 
+.PHONY: tools
 tools: ginkgo kustomize controller-gen operator-sdk
 
-
+.PHONY: api-docs
 api-docs: crdoc kustomize
 	@{ \
 	set -e ;\
@@ -271,6 +302,7 @@ api-docs: crdoc kustomize
 	}
 
 # Find or download crdoc
+.PHONY: crdoc
 crdoc:
 ifeq (, $(shell which crdoc))
 	@{ \
