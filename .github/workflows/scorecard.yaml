@@ -41,7 +41,7 @@ jobs:
 
       - uses: jpkrohling/setup-operator-sdk@v1.1.0
         with:
-          operator-sdk-version: v1.13.1
+          operator-sdk-version: v1.17.0
 
       - name: "run scorecard test"
         run: make scorecard-tests
