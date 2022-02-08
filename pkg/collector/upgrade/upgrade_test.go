@@ -17,6 +17,7 @@ package upgrade_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,12 +49,14 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			// prepare
 			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 			existing := makeOtelcol(nsn)
-			existing.Status.Version = beginV
 			err := k8sClient.Create(context.Background(), &existing)
 			require.NoError(t, err)
 
+			existing.Status.Version = beginV
 			err = k8sClient.Status().Update(context.Background(), &existing)
 			require.NoError(t, err)
+
+			time.Sleep(time.Second * 2)
 
 			// sanity check
 			persisted := &v1alpha1.OpenTelemetryCollector{}

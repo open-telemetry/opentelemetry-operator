@@ -88,6 +88,16 @@ USE_EXISTING_CLUSTER=true make test
 
 Tests can also be run without an existing cluster. For that, install [`kubebuilder`](https://book.kubebuilder.io/quick-start.html#installation). In this case, the tests will bootstrap `etcd` and `kubernetes-api-server` for the tests. Run against an existing cluster whenever possible, though.
 
+### Unit tests
+
+Some unit tests use [envtest](https://book.kubebuilder.io/reference/envtest.html) which requires Kubernetes binaries (e.g. `api-server`, `etcd` and `kubectl`) to be present on the host filesystem. Makefile takes care of installing all dependent binaries, however running the tests from IDE or via `go test` might not work out-of-the-box. The `envtest` uses env variable `KUBEBUILDER_ASSETS` that points to a directory with these binaries. To make the test work in IDE or `go test` the environment variable has to be correctly set. Use `make test` to introspect how `KUBEBUIDLER_ASSETS` should be configured.
+
+For instance:
+
+```bash
+KUBEBUILDER_ASSETS="/home/$USER/.local/share/kubebuilder-envtest/k8s/1.21.2-linux-amd64" go test ./pkg...
+```
+
 ### End to end tests
 
 To run the end-to-end tests, you'll need [`kind`](https://kind.sigs.k8s.io) and [`kuttl`](https://kuttl.dev). Refer to their documentation for installation instructions.
