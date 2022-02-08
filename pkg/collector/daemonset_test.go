@@ -67,6 +67,7 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
 	})
 	assert.False(t, d1.Spec.Template.Spec.HostNetwork)
+	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// verify custom
 	d2 := DaemonSet(config.New(), logger, v1alpha1.OpenTelemetryCollector{
@@ -75,6 +76,7 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 		},
 	})
 	assert.True(t, d2.Spec.Template.Spec.HostNetwork)
+	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
 
 func TestDaemonsetPodAnnotations(t *testing.T) {
