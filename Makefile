@@ -179,21 +179,21 @@ start-kind:
 cert-manager: cmctl
 	# Consider using cmctl to install the cert-manager once install command is not experimental
 	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v${CERTMANAGER_VERSION}/cert-manager.yaml
-	cmctl check api --wait=5m
+	$(CMCTL) check api --wait=5m
 
+PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+CMCTL = $(shell pwd)/bin/cmctl
 .PHONY: cmctl
 cmctl:
-ifeq (, $(shell which cmctl))
 	@{ \
-	curl -L -o /tmp/cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/download/v$(CERTMANAGER_VERSION)/cmctl-`go env GOOS`-`go env GOARCH`.tar.gz ;\
-	cd /tmp ;\
-	tar xzf cmctl.tar.gz ;\
-	mv cmctl $(GOBIN) ;\
+	set -e ;\
+	TMP_DIR=$$(mktemp -d) ;\
+	echo $$TMP_DIR ;\
+	curl -L -o $$TMP_DIR/cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/download/v$(CERTMANAGER_VERSION)/cmctl-`go env GOOS`-`go env GOARCH`.tar.gz ;\
+	tar xzf $$TMP_DIR/cmctl.tar.gz -C $$TMP_DIR ;\
+	[ -d bin ] || mkdir bin ;\
+	mv $$TMP_DIR/cmctl $(CMCTL) ;\
 	}
-CTL=$(GOBIN)/cmctl
-else
-CTL=$(shell which cmctl)
-endif
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
@@ -209,6 +209,11 @@ ENVTEST = $(shell pwd)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+
+CRDOC = $(shell pwd)/bin/crdoc
+.PHONY: crdoc
+crdoc: ## Download crdoc locally if necessary.
+	$(call go-get-tool,$(CRDOC), fybrik.io/crdoc@v0.5.2)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -298,22 +303,5 @@ api-docs: crdoc kustomize
 	set -e ;\
 	TMP_DIR=$$(mktemp -d) ; \
 	$(KUSTOMIZE) build config/crd -o $$TMP_DIR/crd-output.yaml ;\
-	$(API_REF_GEN) crdoc --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
+	$(CRDOC) --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
 	}
-
-# Find or download crdoc
-.PHONY: crdoc
-crdoc:
-ifeq (, $(shell which crdoc))
-	@{ \
-	set -e ;\
-	API_REF_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$API_REF_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get fybrik.io/crdoc@v0.5.2 ;\
-	rm -rf $$API_REF_GEN_TMP_DIR ;\
-	}
-API_REF_GEN=$(GOBIN)/crdoc
-else
-API_REF_GEN=$(shell which crdoc)
-endif
