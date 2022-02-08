@@ -16,14 +16,12 @@ package upgrade_test
 
 import (
 	"context"
-	"testing"
-	"time"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"testing"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -55,8 +53,6 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			existing.Status.Version = beginV
 			err = k8sClient.Status().Update(context.Background(), &existing)
 			require.NoError(t, err)
-
-			time.Sleep(time.Second * 2)
 
 			// sanity check
 			persisted := &v1alpha1.OpenTelemetryCollector{}
