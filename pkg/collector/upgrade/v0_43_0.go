@@ -15,83 +15,82 @@
 package upgrade
 
 import (
-	"fmt"
-	"reflect"
-	"sort"
-	"strings"
+    "fmt"
+    "reflect"
+    "sort"
+    "strings"
 
-	"gopkg.in/yaml.v2"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+    "gopkg.in/yaml.v2"
+    "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+    "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+    "github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 )
 
 func upgrade0_43_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-	// return if args exist
-	if len(otelcol.Spec.Args) == 0 {
-		return otelcol, nil
-	}
+    // return if args exist
+    if len(otelcol.Spec.Args) == 0 {
+            return otelcol, nil
+    }
 
-	foundMetricsArgs := make(map[string]string)
-	for argKey, argValue := range otelcol.Spec.Args {
-		if argKey == "--metrics-addr" || argKey == "--metrics-level" {
-			foundMetricsArgs[argKey] = argValue
-			delete(otelcol.Spec.Args, argKey)
-		}
-	}
+    foundMetricsArgs := make(map[string]string)
+    for argKey, argValue := range otelcol.Spec.Args {
+            if argKey == "--metrics-addr" || argKey == "--metrics-level" {
+                    foundMetricsArgs[argKey] = argValue
+                    delete(otelcol.Spec.Args, argKey)
+            }
+    }
 
-	if len(foundMetricsArgs) > 0 {
-		cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
-		if err != nil {
-			return otelcol, fmt.Errorf("couldn't upgrade to v0.43.0, failed to parse configuration: %w", err)
-		}
+    if len(foundMetricsArgs) > 0 {
+        cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
+        if err != nil {
+            return otelcol, fmt.Errorf("couldn't upgrade to v0.43.0, failed to parse configuration: %w", err)
+        }
 
-		serviceConfig, ok := cfg["service"].(map[interface{}]interface{})
-		if !ok {
-			
-			cfg["service"] = make(map[interface{}]interface{})
-			serviceConfig, _ = cfg["service"].(map[interface{}]interface{})
-		}
+        serviceConfig, ok := cfg["service"].(map[interface{}]interface{})
+        if !ok {
 
-		telemetryConfig, ok := serviceConfig["telemetry"].(map[interface{}]interface{})
-		if !ok {
-			serviceConfig["telemetry"] = make(map[interface{}]interface{})
-			telemetryConfig, _ = serviceConfig["telemetry"].(map[interface{}]interface{})
-		}
+            cfg["service"] = make(map[interface{}]interface{})
+            serviceConfig, _ = cfg["service"].(map[interface{}]interface{})
+        }
 
-		metricsConfig, ok := telemetryConfig["metrics"].(map[interface{}]interface{})
-		if !ok {
-			telemetryConfig["metrics"] = make(map[interface{}]interface{})
-			metricsConfig, _ = telemetryConfig["metrics"].(map[interface{}]interface{})
-		}
+        telemetryConfig, ok := serviceConfig["telemetry"].(map[interface{}]interface{})
+        if !ok {
+            serviceConfig["telemetry"] = make(map[interface{}]interface{})
+            telemetryConfig, _ = serviceConfig["telemetry"].(map[interface{}]interface{})
+        }
 
-		if len(metricsConfig) == 0 {
-			if val, ok := foundMetricsArgs["--metrics-addr"]; ok {
-				metricsConfig["address"] = val
-			}
-			if val, ok := foundMetricsArgs["--metrics-level"]; ok {
-				metricsConfig["level"] = val
-			}
-		}
-		cfg["service"] = serviceConfig
-		res, err := yaml.Marshal(cfg)
+        metricsConfig, ok := telemetryConfig["metrics"].(map[interface{}]interface{})
+        if !ok {
+            telemetryConfig["metrics"] = make(map[interface{}]interface{})
+            metricsConfig, _ = telemetryConfig["metrics"].(map[interface{}]interface{})
+        }
 
-		if err != nil {
-			return otelcol, fmt.Errorf("couldn't upgrade to v0.43.0, failed to marshall back configuration: %w", err)
-		}
+        if len(metricsConfig) == 0 {
+            if val, ok := foundMetricsArgs["--metrics-addr"]; ok {
+                metricsConfig["address"] = val
+            }
+        	if val, ok := foundMetricsArgs["--metrics-level"]; ok {
+                metricsConfig["level"] = val
+            }
+        }
+        cfg["service"] = serviceConfig
+        res, err := yaml.Marshal(cfg)
 
-		otelcol.Spec.Config = string(res)
+        if err != nil {
+            return otelcol, fmt.Errorf("couldn't upgrade to v0.43.0, failed to marshall back configuration: %w", err)
+        }
 
-		keys := reflect.ValueOf(foundMetricsArgs).MapKeys()
+        otelcol.Spec.Config = string(res)
 
-		sort.Slice(keys, func(i, j int) bool {
-			return strings.Compare(keys[i].String(), keys[j].String()) <= 0
-		})
+        keys := reflect.ValueOf(foundMetricsArgs).MapKeys()
 
-		otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.43.0 dropped the deprecated metrics arguments "+
-		"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.metrics., if no metrics settings are configured already.", keys))
-	}
+        sort.Slice(keys, func(i, j int) bool {
+            return strings.Compare(keys[i].String(), keys[j].String()) <= 0
+        })
 
-	return otelcol,nil
+        otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.43.0 dropped the deprecated metrics arguments " + "i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.metrics., if no metrics settings are configured already.", keys))
+    }
+
+    return otelcol, nil
 }
