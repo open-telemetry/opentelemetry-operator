@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -44,18 +43,95 @@ func TestRemoveMetricsArgs(t *testing.T) {
 				"--metrics-addr":  ":8988",
 				"--metrics-level": "detailed",
 			},
+			Config: `
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+processors:
+
+exporters:
+  logging:
+
+service:
+  pipelines:
+    traces: 
+      receivers: [otlp]
+      processors: []
+      exporters: [logging]
+`,
 		},
 	}
 	existing.Status.Version = "0.42.0"
-
-	require.Contains(t, existing.Spec.Args, "--metrics-addr")
-	require.Contains(t, existing.Spec.Args, "--metrics-level")
 
 	// test
 	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
 	assert.NoError(t, err)
 
 	// verify
-	assert.NotContains(t, res.Spec.Args, "--metrics-addr")
-	assert.NotContains(t, res.Spec.Args, "--metrics-level")
+	assert.Equal(t, `receivers:
+    otlp:
+      protocols:
+        grpc:
+  
+  processors:
+  
+  exporters:
+    logging:
+  
+  service:
+    telemetry:
+      metrics:
+        address: ":8988"
+        level: "detailed"
+    pipelines:
+      traces: 
+        receivers: [otlp]
+        processors: []
+        exporters: [logging]`, res.Spec.Config)
+
+	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+
+		"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+
+		"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
+
+	configWithMetrics := `receivers:
+        otlp:
+          protocols:
+            grpc:
+      
+      processors:
+      
+      exporters:
+        logging:
+      
+      service:
+        telemetry:
+          metrics:
+            address: ":8988"
+            level: "detailed"
+        pipelines:
+          traces: 
+            receivers: [otlp]
+            processors: []
+            exporters: [logging]
+`
+	existing.Spec.Config = configWithMetrics
+	existing.Spec.Args = map[string]string{
+		"--metrics-addr":  ":8988",
+		"--metrics-level": "detailed",
+	}
+	res, err = upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	assert.NoError(t, err)
+
+	// verify
+	assert.Equal(t, configWithMetrics, res.Spec.Config)
+	assert.Equal(t, map[string]string{
+		"--metrics-addr":  ":8988",
+		"--metrics-level": "detailed",
+	}, res.Spec.Args)
+
+	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+
+		"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+
+		"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already..", res.Status.Messages[0])
 }
