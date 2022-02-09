@@ -5,6 +5,9 @@ Changes by Version
 -------------------
 * Bumped OpenTelemetry Collector to v0.43.0
 * Fix collector config update ([#670] (https://github.com/open-telemetry/opentelemetry-operator/pull/670), [@mcariapas](https://github.com/mcariapas))
+* Remove deprecate flags --metrics-level and --metrics-addr (#4695)
+  - Usages of `--metrics-level={VALUE}` can be replaced by `--set=service.telemetry.metrics.level={VALUE}`;
+  - Usages of `--metrics-addr={VALUE}` can be replaced by `--set=service.telemetry.metrics.address={VALUE}`;
 
 0.42.0
 -------------------
