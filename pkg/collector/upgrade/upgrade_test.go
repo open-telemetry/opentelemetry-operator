@@ -48,10 +48,10 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			// prepare
 			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 			existing := makeOtelcol(nsn)
-			existing.Status.Version = beginV
 			err := k8sClient.Create(context.Background(), &existing)
 			require.NoError(t, err)
 
+			existing.Status.Version = beginV
 			err = k8sClient.Status().Update(context.Background(), &existing)
 			require.NoError(t, err)
 

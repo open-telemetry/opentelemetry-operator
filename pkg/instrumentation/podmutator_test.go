@@ -53,7 +53,40 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "javaagent",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.Java{},
+					Java: v1alpha1.Java{
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_JAVAAGENT_DEBUG",
+								Value: "true",
+							},
+							{
+								Name:  "OTEL_INSTRUMENTATION_JDBC_ENABLED",
+								Value: "false",
+							},
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "http://localhost:4317",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+					},
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "http://collector:12345",
 					},
@@ -103,12 +136,40 @@ func TestMutatePod(t *testing.T) {
 							Name: "app",
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "app",
+									Name:  "OTEL_JAVAAGENT_DEBUG",
+									Value: "true",
+								},
+								{
+									Name:  "OTEL_INSTRUMENTATION_JDBC_ENABLED",
+									Value: "false",
+								},
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: javaJVMArgument,
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
+									Value: "http://localhost:4317",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
 								},
 								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
@@ -129,10 +190,6 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=app,k8s.namespace.name=javaagent,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
-								},
-								{
-									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaJVMArgument,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -161,6 +218,34 @@ func TestMutatePod(t *testing.T) {
 				Spec: v1alpha1.InstrumentationSpec{
 					NodeJS: v1alpha1.NodeJS{
 						Image: "otel/nodejs:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_NODEJS_DEBUG",
+								Value: "true",
+							},
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "http://localhost:4317",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
 					},
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "http://collector:12345",
@@ -212,12 +297,36 @@ func TestMutatePod(t *testing.T) {
 							Name: "app",
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "app",
+									Name:  "OTEL_NODEJS_DEBUG",
+									Value: "true",
+								},
+								{
+									Name:  "NODE_OPTIONS",
+									Value: nodeRequireArgument,
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
+									Value: "http://localhost:4317",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
 								},
 								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
@@ -238,10 +347,6 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=app,k8s.namespace.name=nodejs,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
-								},
-								{
-									Name:  "NODE_OPTIONS",
-									Value: nodeRequireArgument,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -270,9 +375,37 @@ func TestMutatePod(t *testing.T) {
 				Spec: v1alpha1.InstrumentationSpec{
 					Python: v1alpha1.Python{
 						Image: "otel/python:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+							{
+								Name:  "OTEL_TRACES_EXPORTER",
+								Value: "otlp_proto_http",
+							},
+							{
+								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+								Value: "http://localhost:4317",
+							},
+						},
 					},
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "http://collector:12345",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
 					},
 				},
 			},
@@ -321,12 +454,36 @@ func TestMutatePod(t *testing.T) {
 							Name: "app",
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "app",
+									Name:  "OTEL_LOG_LEVEL",
+									Value: "debug",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp_proto_http",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
+									Value: "http://localhost:4317",
+								},
+								{
+									Name:  "PYTHONPATH",
+									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
 								},
 								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
@@ -347,14 +504,6 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=app,k8s.namespace.name=python,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
-								},
-								{
-									Name:  "PYTHONPATH",
-									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
-								},
-								{
-									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp_proto_http",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{

@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,6 +36,12 @@ type InstrumentationSpec struct {
 	// Sampler defines sampling configuration.
 	// +optional
 	Sampler `json:"sampler,omitempty"`
+
+	// Env defines common env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Java defines configuration for java auto-instrumentation.
 	// +optional
@@ -88,6 +95,12 @@ type Java struct {
 	// Image is a container image with javaagent auto-instrumentation JAR.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Env defines java specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // NodeJS defines NodeJS SDK and instrumentation configuration.
@@ -95,6 +108,12 @@ type NodeJS struct {
 	// Image is a container image with NodeJS SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Env defines nodejs specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.
@@ -102,6 +121,12 @@ type Python struct {
 	// Image is a container image with Python SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Env defines python specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.

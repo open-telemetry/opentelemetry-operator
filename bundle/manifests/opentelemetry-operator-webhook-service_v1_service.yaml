@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: opentelemetry-operator
   name: opentelemetry-operator-webhook-service
 spec:
   ports:
@@ -9,6 +11,7 @@ spec:
     protocol: TCP
     targetPort: 9443
   selector:
+    app.kubernetes.io/name: opentelemetry-operator
     control-plane: controller-manager
 status:
   loadBalancer: {}

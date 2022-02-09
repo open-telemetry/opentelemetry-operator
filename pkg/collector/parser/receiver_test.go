@@ -67,6 +67,7 @@ func TestReceiverParsePortFromEndpoint(t *testing.T) {
 		errorExpected bool
 	}{
 		{"regular case", "http://localhost:1234", 1234, false},
+		{"absolute with path", "http://localhost:1234/server-status?auto", 1234, false},
 		{"no protocol", "0.0.0.0:1234", 1234, false},
 		{"just port", ":1234", 1234, false},
 		{"no port at all", "http://localhost", 0, true},

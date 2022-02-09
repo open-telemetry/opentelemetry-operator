@@ -101,7 +101,7 @@ func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, 
 func createProbeFromExtension(extension interface{}) (*corev1.Probe, error) {
 	probeCfg := extractProbeConfigurationFromExtension(extension)
 	return &corev1.Probe{
-		Handler: corev1.Handler{
+		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: probeCfg.path,
 				Port: probeCfg.port,

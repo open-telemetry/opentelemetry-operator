@@ -29,6 +29,15 @@ const (
 func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod) corev1.Pod {
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[0]
+
+	// inject env vars
+	for _, env := range javaSpec.Env {
+		idx := getIndexOfEnv(container.Env, env.Name)
+		if idx == -1 {
+			container.Env = append(container.Env, env)
+		}
+	}
+
 	idx := getIndexOfEnv(container.Env, envJavaToolsOptions)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
