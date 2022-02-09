@@ -16,9 +16,7 @@ package upgrade
 
 import (
 	"fmt"
-	"reflect"
 	"sort"
-	"strings"
 
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -83,11 +81,13 @@ func upgrade0_43_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 		otelcol.Spec.Config = string(res)
 
-		keys := reflect.ValueOf(foundMetricsArgs).MapKeys()
+		keys := make([]string, 0, len(foundMetricsArgs))
 
-		sort.Slice(keys, func(i, j int) bool {
-			return strings.Compare(keys[i].String(), keys[j].String()) <= 0
-		})
+		for k := range foundMetricsArgs {
+			keys = append(keys, k)
+		}
+
+		sort.Strings(keys)
 
 		otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.metrics., if no metrics settings are configured already.", keys))
 	}

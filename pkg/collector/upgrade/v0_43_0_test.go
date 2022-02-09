@@ -70,6 +70,12 @@ service:
 	assert.NoError(t, err)
 
 	// verify
+	assert.Equal(t, map[string]string{
+		"--metrics-addr":  ":8988",
+		"--metrics-level": "detailed",
+	}, res.Spec.Args)
+
+	// verify
 	assert.Equal(t, `receivers:
     otlp:
       protocols:
