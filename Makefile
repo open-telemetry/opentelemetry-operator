@@ -148,7 +148,6 @@ generate: controller-gen api-docs
 e2e:
 	$(KUTTL) test
 
-prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind load-image-all
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind load-image-all
 	mkdir -p tests/_build/crds tests/_build/manifests
@@ -182,8 +181,10 @@ container-target-allocator:
 start-kind:
 	kind create cluster --config $(KIND_CONFIG)
 
+.PHONY: load-image-all
 load-image-all: load-image-operator load-image-target-allocator
 
+.PHONY: load-image-operator
 load-image-operator:
 	kind load docker-image local/opentelemetry-operator:e2e
 
