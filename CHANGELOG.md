@@ -6,6 +6,7 @@ Changes by Version
 * Bumped OpenTelemetry Collector to v0.43.0
 * Upgrade to 0.43.0 will move the metrics CLI arguments into the config, in response to ([#4695](https://github.com/open-telemetry/opentelemetry-collector/pull/4695), [@codebote](https://github.com/codeboten))
 * Add unique label and selector for operator objects ([#697](https://github.com/open-telemetry/opentelemetry-operator/pull/697), [@pavolloffay](https://github.com/pavolloffay))
+* Bump operator-sdk to 1.17 ([#692](https://github.com/open-telemetry/opentelemetry-operator/pull/692), [@pavolloffay](https://github.com/pavolloffay))
 * Update java instrumentation to 1.10.1 ([#688](https://github.com/open-telemetry/opentelemetry-operator/pull/688), [@anuraaga](https://github.com/anuraaga))
 * Update nodejs instrumentation to 0.27.0 ([#687](https://github.com/open-telemetry/opentelemetry-operator/pull/687), [@anuraaga](https://github.com/anuraaga))
 * Update python instrumentation to 0.28b1 ([#686](https://github.com/open-telemetry/opentelemetry-operator/pull/686), [@anuraaga](https://github.com/anuraaga))
