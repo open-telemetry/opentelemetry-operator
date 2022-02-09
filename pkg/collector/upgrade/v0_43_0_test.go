@@ -27,7 +27,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
 
-func TestRemoveMetricsArgs(t *testing.T) {
+func Test0_43_0Upgrade(t *testing.T) {
 	// prepare
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	existing := v1alpha1.OpenTelemetryCollector{
@@ -42,6 +42,8 @@ func TestRemoveMetricsArgs(t *testing.T) {
 			Args: map[string]string{
 				"--metrics-addr":  ":8988",
 				"--metrics-level": "detailed",
+                "--test-upgrade43": "true",
+                "--test-arg1": "otel",
 			},
 			Config: `
 receivers:
@@ -71,8 +73,8 @@ service:
 
 	// verify
 	assert.Equal(t, map[string]string{
-		"--metrics-addr":  ":8988",
-		"--metrics-level": "detailed",
+		"--test-upgrade43": "true",
+        "--test-arg1": "otel",
 	}, res.Spec.Args)
 
 	// verify
@@ -126,6 +128,8 @@ service:
 	existing.Spec.Args = map[string]string{
 		"--metrics-addr":  ":8988",
 		"--metrics-level": "detailed",
+        "--test-upgrade43": "true",
+        "--test-arg1": "otel",
 	}
 	res, err = upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
 	assert.NoError(t, err)
@@ -133,8 +137,8 @@ service:
 	// verify
 	assert.Equal(t, configWithMetrics, res.Spec.Config)
 	assert.Equal(t, map[string]string{
-		"--metrics-addr":  ":8988",
-		"--metrics-level": "detailed",
+		"--test-upgrade43": "true",
+        "--test-arg1": "otel",
 	}, res.Spec.Args)
 
 	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+
