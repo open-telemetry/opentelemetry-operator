@@ -115,10 +115,12 @@ func TestDesiredService(t *testing.T) {
 	})
 	t.Run("should return service with port mentioned in Instance.Spec.Ports and inferred ports", func(t *testing.T) {
 
+		grpc := "grpc"
 		jaegerPorts := v1.ServicePort{
-			Name:     "jaeger-grpc",
-			Protocol: "TCP",
-			Port:     14250,
+			Name:        "jaeger-grpc",
+			Protocol:    "TCP",
+			Port:        14250,
+			AppProtocol: &grpc,
 		}
 		ports := append(params().Instance.Spec.Ports, jaegerPorts)
 		expected := service("test-collector", ports)
