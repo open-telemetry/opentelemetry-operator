@@ -40,28 +40,27 @@ func Test0_43_0Upgrade(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Args: map[string]string{
-				"--metrics-addr":  ":8988",
-				"--metrics-level": "detailed",
-                "--test-upgrade43": "true",
-                "--test-arg1": "otel",
+				"--metrics-addr":   ":8988",
+				"--metrics-level":  "detailed",
+				"--test-upgrade43": "true",
+				"--test-arg1":      "otel",
 			},
 			Config: `
-receivers:
-  otlp:
-    protocols:
-      grpc:
-
-processors:
+ receivers:
+    otlp/mtls:
+      protocols:
+        http:
+          endpoint: mysite.local:55690
 
 exporters:
-  logging:
+  otlp:
+    endpoint: "example.com"
 
 service:
   pipelines:
     traces: 
-      receivers: [otlp]
-      processors: []
-      exporters: [logging]
+      receivers: [otlp/mtls]
+      exporters: [otlp]
 `,
 		},
 	}
@@ -74,62 +73,61 @@ service:
 	// verify
 	assert.Equal(t, map[string]string{
 		"--test-upgrade43": "true",
-        "--test-arg1": "otel",
+		"--test-arg1":      "otel",
 	}, res.Spec.Args)
 
 	// verify
-	assert.Equal(t, `receivers:
+	assert.Equal(t, `exporters:
     otlp:
+      endpoint: example.com
+  receivers:
+    otlp/mtls:
       protocols:
-        grpc:
-  
-  processors:
-  
-  exporters:
-    logging:
-  
+        http:
+          endpoint: mysite.local:55690
   service:
+    pipelines:
+      traces:
+        exporters:
+        - otlp
+        receivers:
+        - otlp/mtls
     telemetry:
       metrics:
         address: ":8988"
         level: "detailed"
-    pipelines:
-      traces: 
-        receivers: [otlp]
-        processors: []
-        exporters: [logging]`, res.Spec.Config)
+`, res.Spec.Config)
 
 	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+
 		"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+
 		"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 
-	configWithMetrics := `receivers:
-        otlp:
-          protocols:
-            grpc:
-      
-      processors:
-      
-      exporters:
-        logging:
-      
-      service:
-        telemetry:
-          metrics:
-            address: ":8988"
-            level: "detailed"
-        pipelines:
-          traces: 
-            receivers: [otlp]
-            processors: []
-            exporters: [logging]
+	configWithMetrics := `exporters:
+    otlp:
+      endpoint: example.com
+  receivers:
+    otlp/mtls:
+      protocols:
+        http:
+          endpoint: mysite.local:55690
+  service:
+    pipelines:
+      traces:
+        exporters:
+        - otlp
+        receivers:
+        - otlp/mtls
+    telemetry:
+      metrics:
+        address: ":8988"
+        level: "detailed"
 `
 	existing.Spec.Config = configWithMetrics
 	existing.Spec.Args = map[string]string{
-		"--metrics-addr":  ":8988",
-		"--metrics-level": "detailed",
-        "--test-upgrade43": "true",
-        "--test-arg1": "otel",
+		"--metrics-addr":   ":8988",
+		"--metrics-level":  "detailed",
+		"--test-upgrade43": "true",
+		"--test-arg1":      "otel",
 	}
 	res, err = upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
 	assert.NoError(t, err)
@@ -138,10 +136,10 @@ service:
 	assert.Equal(t, configWithMetrics, res.Spec.Config)
 	assert.Equal(t, map[string]string{
 		"--test-upgrade43": "true",
-        "--test-arg1": "otel",
+		"--test-arg1":      "otel",
 	}, res.Spec.Args)
 
 	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+
 		"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+
-		"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already..", res.Status.Messages[0])
+		"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 }
