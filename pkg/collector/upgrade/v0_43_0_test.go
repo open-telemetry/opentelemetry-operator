@@ -27,7 +27,6 @@ func TestRemoveMetricsArgs(t *testing.T) {
         },
         Spec: v1alpha1.OpenTelemetryCollectorSpec{
             Args: map[string]string{
-                // this would not happen in the real world, as it's either one or another, but we aren't going that far
                 "--metrics-addr":  ":8988",
                 "--metrics-level": "detailed",
             },
