@@ -12,12 +12,12 @@ targetallocator=0.1.0
 
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
-autoinstrumentation-java=1.7.2
+autoinstrumentation-java=1.10.1
 
 # Represents the current release of NodeJS instrumentation.
 # Should match value in autoinstrumentation/nodejs/package.json
-autoinstrumentation-nodejs=0.26.0
+autoinstrumentation-nodejs=0.27.0
 
 # Represents the current release of Python instrumentation.
 # Should match value in autoinstrumentation/python/requirements.txt
-autoinstrumentation-python=0.26b1
+autoinstrumentation-python=0.28b1
