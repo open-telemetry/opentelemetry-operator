@@ -46,11 +46,11 @@ func Test0_43_0Upgrade(t *testing.T) {
 				"--test-arg1":      "otel",
 			},
 			Config: `
- receivers:
-    otlp/mtls:
-      protocols:
-        http:
-          endpoint: mysite.local:55690
+receivers:
+  otlp/mtls:
+    protocols:
+      http:
+        endpoint: mysite.local:55690
 
 exporters:
   otlp:
@@ -78,24 +78,24 @@ service:
 
 	// verify
 	assert.Equal(t, `exporters:
-    otlp:
-      endpoint: example.com
-  receivers:
-    otlp/mtls:
-      protocols:
-        http:
-          endpoint: mysite.local:55690
-  service:
-    pipelines:
-      traces:
-        exporters:
-        - otlp
-        receivers:
-        - otlp/mtls
-    telemetry:
-      metrics:
-        address: ":8988"
-        level: "detailed"
+  otlp:
+    endpoint: example.com
+receivers:
+  otlp/mtls:
+    protocols:
+      http:
+        endpoint: mysite.local:55690
+service:
+  pipelines:
+    traces:
+      exporters:
+      - otlp
+      receivers:
+      - otlp/mtls
+  telemetry:
+    metrics:
+      address: ":8988"
+      level: "detailed"
 `, res.Spec.Config)
 
 	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+
@@ -103,24 +103,24 @@ service:
 		"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 
 	configWithMetrics := `exporters:
-    otlp:
-      endpoint: example.com
-  receivers:
-    otlp/mtls:
-      protocols:
-        http:
-          endpoint: mysite.local:55690
-  service:
-    pipelines:
-      traces:
-        exporters:
-        - otlp
-        receivers:
-        - otlp/mtls
-    telemetry:
-      metrics:
-        address: ":8988"
-        level: "detailed"
+  otlp:
+    endpoint: example.com
+receivers:
+  otlp/mtls:
+    protocols:
+      http:
+        endpoint: mysite.local:55690
+service:
+  pipelines:
+    traces:
+      exporters:
+      - otlp
+     receivers:
+     - otlp/mtls
+  telemetry:
+    metrics:
+      address: ":8988"
+      level: "detailed"
 `
 	existing.Spec.Config = configWithMetrics
 	existing.Spec.Args = map[string]string{
