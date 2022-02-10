@@ -4,7 +4,7 @@ Changes by Version
 0.43.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.43.0
-* Upgrade to 0.43.0 will move the metrics CLI arguments into the config, in response to ([#680](https://github.com/open-telemetry/opentelemetry-operator/pull/680), [@codebote](https://github.com/yuriolisa))
+* Upgrade to 0.43.0 will move the metrics CLI arguments into the config, in response to ([#680](https://github.com/open-telemetry/opentelemetry-operator/pull/680), [@yuriolisa](https://github.com/yuriolisa))
 * Add unique label and selector for operator objects ([#697](https://github.com/open-telemetry/opentelemetry-operator/pull/697), [@pavolloffay](https://github.com/pavolloffay))
 * Bump operator-sdk to 1.17 ([#692](https://github.com/open-telemetry/opentelemetry-operator/pull/692), [@pavolloffay](https://github.com/pavolloffay))
 * Update java instrumentation to 1.10.1 ([#688](https://github.com/open-telemetry/opentelemetry-operator/pull/688), [@anuraaga](https://github.com/anuraaga))
