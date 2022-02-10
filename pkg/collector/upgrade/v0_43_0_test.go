@@ -113,8 +113,8 @@ service:
     traces:
       exporters:
       - otlp
-     receivers:
-     - otlp/mtls
+      receivers:
+      - otlp/mtls
   telemetry:
     metrics:
       address: :8988
