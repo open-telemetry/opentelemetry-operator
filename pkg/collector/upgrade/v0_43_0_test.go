@@ -94,13 +94,11 @@ service:
       - otlp/mtls
   telemetry:
     metrics:
-      address: ":8988"
-      level: "detailed"
+      address: :8988
+      level: detailed
 `, res.Spec.Config)
 
-	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+
-		"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+
-		"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
+	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 
 	configWithMetrics := `exporters:
   otlp:
@@ -119,8 +117,8 @@ service:
      - otlp/mtls
   telemetry:
     metrics:
-      address: ":8988"
-      level: "detailed"
+      address: :8988
+      level: detailed
 `
 	existing.Spec.Config = configWithMetrics
 	existing.Spec.Args = map[string]string{
@@ -139,7 +137,5 @@ service:
 		"--test-arg1":      "otel",
 	}, res.Spec.Args)
 
-	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+
-		"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+
-		"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
+	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 }

@@ -89,7 +89,7 @@ func upgrade0_43_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 		sort.Strings(keys)
 
-		otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics settings are configured already.", keys))
+		otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", keys))
 	}
 
 	return otelcol, nil
