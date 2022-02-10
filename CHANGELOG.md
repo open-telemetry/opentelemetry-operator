@@ -1,6 +1,19 @@
 Changes by Version
 ==================
 
+0.43.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.43.0
+* Upgrade to 0.43.0 will move the metrics CLI arguments into the config, in response to ([#680](https://github.com/open-telemetry/opentelemetry-operator/pull/680), [@yuriolisa](https://github.com/yuriolisa))
+* Add unique label and selector for operator objects ([#697](https://github.com/open-telemetry/opentelemetry-operator/pull/697), [@pavolloffay](https://github.com/pavolloffay))
+* Bump operator-sdk to 1.17 ([#692](https://github.com/open-telemetry/opentelemetry-operator/pull/692), [@pavolloffay](https://github.com/pavolloffay))
+* Update java instrumentation to 1.10.1 ([#688](https://github.com/open-telemetry/opentelemetry-operator/pull/688), [@anuraaga](https://github.com/anuraaga))
+* Update nodejs instrumentation to 0.27.0 ([#687](https://github.com/open-telemetry/opentelemetry-operator/pull/687), [@anuraaga](https://github.com/anuraaga))
+* Update python instrumentation to 0.28b1 ([#686](https://github.com/open-telemetry/opentelemetry-operator/pull/686), [@anuraaga](https://github.com/anuraaga))
+* Add b3, jaeger, ottrace propagators to python instrumentation ([#684](https://github.com/open-telemetry/opentelemetry-operator/pull/684), [@anuraaga](https://github.com/anuraaga))
+* Add env support to instrumentation kind  ([#674](https://github.com/open-telemetry/opentelemetry-operator/pull/674), [@Duncan-tree-zhou](https://github.com/Duncan-tree-zhou))
+* Fix collector config update ([#670](https://github.com/open-telemetry/opentelemetry-operator/pull/670), [@mcariapas](https://github.com/mcariapas))
+
 0.42.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.42.0

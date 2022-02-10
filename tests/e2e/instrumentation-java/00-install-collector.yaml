@@ -4,8 +4,6 @@ metadata:
   name: sidecar
 spec:
   mode: sidecar
-  args:
-    metrics-level: detailed
   config: |
     receivers:
       otlp:
