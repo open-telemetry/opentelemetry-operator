@@ -31,6 +31,9 @@ func upgrade0_43_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 		return otelcol, nil
 	}
 
+	//Removing deprecated Spec.Args (--metrics-addr and --metrics-level) based on
+	// https://github.com/open-telemetry/opentelemetry-collector/pull/4695
+	//Both args can be used now on the Spec.Config
 	foundMetricsArgs := make(map[string]string)
 	for argKey, argValue := range otelcol.Spec.Args {
 		if argKey == "--metrics-addr" || argKey == "--metrics-level" {
@@ -39,6 +42,7 @@ func upgrade0_43_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 		}
 	}
 
+	// If we find metrics being used on Spec.Args we'll move to the syntax on Spec.Config
 	if len(foundMetricsArgs) > 0 {
 		cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
 		if err != nil {
@@ -64,6 +68,8 @@ func upgrade0_43_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 			metricsConfig, _ = telemetryConfig["metrics"].(map[interface{}]interface{})
 		}
 
+		// if there are already those Args under Spec.Config
+		// then we won't override them.
 		if len(metricsConfig) == 0 {
 			if val, ok := foundMetricsArgs["--metrics-addr"]; ok {
 				metricsConfig["address"] = val

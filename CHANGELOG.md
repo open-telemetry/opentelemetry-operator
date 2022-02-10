@@ -14,7 +14,6 @@ Changes by Version
 * Add env support to instrumentation kind  ([#674](https://github.com/open-telemetry/opentelemetry-operator/pull/674), [@Duncan-tree-zhou](https://github.com/Duncan-tree-zhou))
 * Fix collector config update ([#670](https://github.com/open-telemetry/opentelemetry-operator/pull/670), [@mcariapas](https://github.com/mcariapas))
 
-
 0.42.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.42.0
@@ -22,7 +21,6 @@ Changes by Version
 * Fix port derivation ([#651](https://github.com/open-telemetry/opentelemetry-operator/pull/651), [@yuriolisa](https://github.com/yuriolisa))
 * Remove publishing operator image to quay.io ([#661](https://github.com/open-telemetry/opentelemetry-operator/pull/661), [@pavolloffay](https://github.com/pavolloffay))
 * Use target allocator from GHCR ([#660](https://github.com/open-telemetry/opentelemetry-operator/pull/660), [@pavolloffay](https://github.com/pavolloffay))
-
 
 0.41.1
 -------------------
