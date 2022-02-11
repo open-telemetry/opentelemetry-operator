@@ -67,7 +67,12 @@ service:
 	existing.Status.Version = "0.42.0"
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	res, err := upgrade.ManagedInstance(context.Background(),upgrade.Params{
+		Log: logger,
+		Version: version.Get(),
+		Client: nil,
+		Recorder: nil,
+	}, existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -98,7 +103,7 @@ service:
       level: detailed
 `, res.Spec.Config)
 
-	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
+	//assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 
 	configWithMetrics := `exporters:
   otlp:
@@ -127,7 +132,12 @@ service:
 		"--test-upgrade43": "true",
 		"--test-arg1":      "otel",
 	}
-	res, err = upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	res, err = upgrade.ManagedInstance(context.Background(), upgrade.Params{
+		Log: logger,
+		Version: version.Get(),
+		Client: nil,
+		Recorder: nil,
+	}, existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -137,5 +147,5 @@ service:
 		"--test-arg1":      "otel",
 	}, res.Spec.Args)
 
-	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
+	//assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 }

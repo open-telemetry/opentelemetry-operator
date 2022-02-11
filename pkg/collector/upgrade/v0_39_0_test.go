@@ -68,7 +68,12 @@ service:
 
 	// TESTCASE 1: verify httpd receiver renamed to apache
 	// drop processors.memory_limiter field 'ballast_size_mib'
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
+		Recorder: nil,
+	}, existing)
 	assert.NoError(t, err)
 
 	assert.Equal(t, `processors:
@@ -126,7 +131,12 @@ service:
 	}
 
 	existing1.Status.Version = "0.38.0"
-	res, err = upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing1)
+	res, err = upgrade.ManagedInstance(context.Background(), upgrade.Params{
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
+		Recorder: nil,
+	}, existing1)
 	assert.NoError(t, err)
 
 	// verify

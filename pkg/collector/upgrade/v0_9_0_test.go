@@ -53,7 +53,12 @@ func TestRemoveConnectionDelay(t *testing.T) {
 	require.Contains(t, existing.Spec.Config, "reconnection_delay")
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
+		Recorder: nil,
+	}, existing)
 	assert.NoError(t, err)
 
 	// verify

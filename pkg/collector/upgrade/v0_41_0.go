@@ -18,13 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 )
 
-func upgrade0_41_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_41_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.41.0, failed to parse configuration: %w", err)
