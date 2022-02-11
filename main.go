@@ -229,9 +229,9 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
 		return collectorupgrade.ManagedInstances(c, collectorupgrade.Params{
-			Log:  ctrl.Log.WithName("collector-upgrade"),
-			Version: v,
-			Client: mgr.GetClient(),
+			Log:      ctrl.Log.WithName("collector-upgrade"),
+			Version:  v,
+			Client:   mgr.GetClient(),
 			Recorder: nil,
 		})
 	}))

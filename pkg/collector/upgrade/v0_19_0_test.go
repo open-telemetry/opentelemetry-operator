@@ -58,7 +58,7 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 	require.Contains(t, existing.Spec.Config, "num_workers: 123") // checking one property is sufficient
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(),upgrade.Params{
+	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,

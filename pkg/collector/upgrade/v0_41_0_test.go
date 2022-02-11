@@ -117,11 +117,10 @@ service:
 
 	existing.Status.Version = "0.40.0"
 	res, err = upgrade.ManagedInstance(context.Background(), upgrade.Params{
-		Log: logger,
-		Version: version.Get(),
-		Client: nil,
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
 		Recorder: nil,
-
 	}, existing)
 	assert.NoError(t, err)
 

@@ -30,15 +30,16 @@ import (
 )
 
 type Params struct {
-	Log logr.Logger
-	Version version.Version
-	Client client.Client
+	Log      logr.Logger
+	Version  version.Version
+	Client   client.Client
 	Recorder record.EventRecorder
 }
+
 // ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary.
 func ManagedInstances(ctx context.Context, params Params) error {
 	params.Log.Info("looking for managed instances to upgrade")
-	
+
 	opts := []client.ListOption{
 		client.MatchingLabels(map[string]string{
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",

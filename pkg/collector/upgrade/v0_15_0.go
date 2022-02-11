@@ -15,7 +15,6 @@
 package upgrade
 
 import (
-	
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 

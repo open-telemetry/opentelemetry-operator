@@ -91,7 +91,7 @@ func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 	currentV.OpenTelemetryCollector = "0.10.0" // we don't have a 0.10.0 upgrade, but we have a 0.9.0
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(),  upgrade.Params{
+	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
 		Log:      logger,
 		Version:  currentV,
 		Client:   k8sClient,
@@ -124,7 +124,7 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 			currentV.OpenTelemetryCollector = upgrade.Latest.String()
 
 			// test
-			res, err := upgrade.ManagedInstance(context.Background(),  upgrade.Params{
+			res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
 				Log:      logger,
 				Version:  currentV,
 				Client:   k8sClient,
