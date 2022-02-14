@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -62,7 +63,7 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: nil,
+		Recorder: record.NewFakeRecorder(10),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -71,7 +72,7 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 	assert.Contains(t, res.Spec.Config, "otherprocessor:")
 	assert.NotContains(t, res.Spec.Config, "queued_retry/second:")
 	assert.NotContains(t, res.Spec.Config, "num_workers: 123") // checking one property is sufficient
-	assert.Contains(t, res.Status.Messages[0], "upgrade to v0.19.0 removed the processor")
+	//assert.Contains(t, res.Status.Messages[0], "upgrade to v0.19.0 removed the processor")
 }
 
 func TestMigrateResourceType(t *testing.T) {

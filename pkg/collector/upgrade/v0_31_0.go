@@ -22,6 +22,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func upgrade0_31_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
@@ -54,7 +56,9 @@ func upgrade0_31_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 			for fieldKey := range influxdbConfig {
 				if strings.HasPrefix(fieldKey.(string), "metrics_schema") {
 					delete(influxdbConfig, fieldKey)
-					otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.31.0 dropped the 'metrics_schema' field from %q receiver", k))
+					existing := &corev1.ConfigMap{}
+					updated := existing.DeepCopy()
+					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.31.0 dropped the 'metrics_schema' field from %q receiver", k))
 					continue
 				}
 			}

@@ -22,6 +22,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func upgrade0_36_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
@@ -73,7 +75,9 @@ func upgrade0_36_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 								if k4.(string) == "tls_settings" {
 									grpcHttpConfig["tls"] = v4
 									delete(grpcHttpConfig, "tls_settings")
-									otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", k3, k1))
+									existing := &corev1.ConfigMap{}
+									updated := existing.DeepCopy()
+									params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", k3, k1))
 								}
 							}
 						}

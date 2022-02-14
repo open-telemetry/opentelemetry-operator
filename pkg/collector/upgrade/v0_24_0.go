@@ -22,6 +22,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func upgrade0_24_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
@@ -47,7 +49,9 @@ func upgrade0_24_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 				if port, ok := extension["port"]; ok {
 					delete(extension, "port")
 					extension["endpoint"] = fmt.Sprintf("0.0.0.0:%d", port)
-					otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension %q", k))
+					existing := &corev1.ConfigMap{}
+					updated := existing.DeepCopy()
+					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension %q", k))
 				}
 			case string:
 				if len(extension) == 0 {

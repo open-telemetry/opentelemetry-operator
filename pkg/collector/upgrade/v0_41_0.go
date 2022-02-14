@@ -20,6 +20,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func upgrade0_41_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
@@ -46,8 +48,10 @@ func upgrade0_41_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 					otlpCors, _ := otlpReceiver["cors"].(map[interface{}]interface{})
 					otlpCors[newsCorsKey] = v2
 					delete(otlpReceiver, k2)
-					otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.41.0 has re-structured the %s inside otlp "+
-						"receiver config according to the upstream otlp receiver changes in 0.41.0 release", k2))
+
+					existing := &corev1.ConfigMap{}
+					updated := existing.DeepCopy()
+					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.41.0 has re-structured the %s inside otlp "+"receiver config according to the upstream otlp receiver changes in 0.41.0 release.", k2))
 				}
 			}
 		}

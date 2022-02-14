@@ -22,6 +22,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func upgrade0_9_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
@@ -45,7 +47,9 @@ func upgrade0_9_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1a
 			case map[interface{}]interface{}:
 				// delete is a noop if there's no such entry
 				delete(exporter, "reconnection_delay")
-				otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.9.0 removed the property reconnection_delay for exporter %q", k))
+				existing := &corev1.ConfigMap{}
+				updated := existing.DeepCopy()
+				params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.9.0 removed the property reconnection_delay for exporter %q", k))
 				exporters[k] = exporter
 			case string:
 				if len(exporter) == 0 {

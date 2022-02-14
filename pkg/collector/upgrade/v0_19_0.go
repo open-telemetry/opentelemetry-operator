@@ -22,6 +22,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func upgrade0_19_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
@@ -70,7 +72,9 @@ func upgrade0_19_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 
 					processor["attributes"] = attributes
 					delete(processor, "type")
-					otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.19.0 migrated the property 'type' for processor %q", k))
+					existing := &corev1.ConfigMap{}
+					updated := existing.DeepCopy()
+					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.19.0 migrated the property 'type' for processor %q", k))
 				}
 
 				// handle labels
@@ -94,7 +98,9 @@ func upgrade0_19_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 
 					processor["attributes"] = attributes
 					delete(processor, "labels")
-					otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.19.0 migrated the property 'labels' for processor %q", k))
+					existing := &corev1.ConfigMap{}
+					updated := existing.DeepCopy()
+					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.19.0 migrated the property 'labels' for processor %q", k))
 				}
 
 				processors[k] = processor

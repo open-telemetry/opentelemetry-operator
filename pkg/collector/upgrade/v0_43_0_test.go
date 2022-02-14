@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -71,7 +72,7 @@ service:
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: nil,
+		Recorder: record.NewFakeRecorder(10),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -102,8 +103,6 @@ service:
       address: :8988
       level: detailed
 `, res.Spec.Config)
-
-	//assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 
 	configWithMetrics := `exporters:
   otlp:
@@ -136,7 +135,7 @@ service:
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: nil,
+		Recorder: record.NewFakeRecorder(10),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -147,5 +146,4 @@ service:
 		"--test-arg1":      "otel",
 	}, res.Spec.Args)
 
-	//assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 }
