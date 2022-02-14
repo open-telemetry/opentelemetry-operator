@@ -100,7 +100,7 @@ func TestMigrateResourceType(t *testing.T) {
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: nil,
+		Recorder: record.NewFakeRecorder(10),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -142,7 +142,7 @@ func TestMigrateLabels(t *testing.T) {
 		Log:      logger,
 		Version:  version.Version{},
 		Client:   nil,
-		Recorder: nil,
+		Recorder: record.NewFakeRecorder(10),
 	}, existing)
 	assert.NoError(t, err)
 
