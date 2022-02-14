@@ -80,19 +80,19 @@ var _ webhook.Validator = &Instrumentation{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Instrumentation) ValidateCreate() error {
-	opentelemetrycollectorlog.Info("validate create", "name", in.Name)
+	instrumentationlog.Info("validate create", "name", in.Name)
 	return in.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Instrumentation) ValidateUpdate(old runtime.Object) error {
-	opentelemetrycollectorlog.Info("validate update", "name", in.Name)
+	instrumentationlog.Info("validate update", "name", in.Name)
 	return in.validate()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Instrumentation) ValidateDelete() error {
-	opentelemetrycollectorlog.Info("validate delete", "name", in.Name)
+	instrumentationlog.Info("validate delete", "name", in.Name)
 	return nil
 }
 
