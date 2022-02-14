@@ -48,7 +48,9 @@ func upgrade0_19_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 		// Remove deprecated queued_retry processor
 		if strings.HasPrefix(k.(string), "queued_retry") {
 			delete(processors, k)
-			otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.19.0 removed the processor %q", k))
+			existing := &corev1.ConfigMap{}
+			updated := existing.DeepCopy()
+			params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.19.0 removed the processor %q", k))
 			continue
 		}
 
