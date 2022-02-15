@@ -63,6 +63,10 @@ func TestMutatePod(t *testing.T) {
 								Name:  "OTEL_INSTRUMENTATION_JDBC_ENABLED",
 								Value: "false",
 							},
+							{
+								Name:  "SPLUNK_PROFILER_ENABLED",
+								Value: "false",
+							},
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -85,6 +89,10 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:  "OTEL_TRACES_SAMPLER_ARG",
 							Value: "0.85",
+						},
+						{
+							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+							Value: "true",
 						},
 					},
 					Exporter: v1alpha1.Exporter{
@@ -144,6 +152,10 @@ func TestMutatePod(t *testing.T) {
 									Value: "false",
 								},
 								{
+									Name:  "SPLUNK_PROFILER_ENABLED",
+									Value: "false",
+								},
+								{
 									Name:  "JAVA_TOOL_OPTIONS",
 									Value: javaJVMArgument,
 								},
@@ -166,6 +178,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_TRACES_SAMPLER_ARG",
 									Value: "0.85",
+								},
+								{
+									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+									Value: "true",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -246,6 +262,10 @@ func TestMutatePod(t *testing.T) {
 							Name:  "OTEL_TRACES_SAMPLER_ARG",
 							Value: "0.85",
 						},
+						{
+							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+							Value: "true",
+						},
 					},
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "http://collector:12345",
@@ -323,6 +343,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_TRACES_SAMPLER_ARG",
 									Value: "0.85",
+								},
+								{
+									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+									Value: "true",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -406,6 +430,10 @@ func TestMutatePod(t *testing.T) {
 							Name:  "OTEL_TRACES_SAMPLER_ARG",
 							Value: "0.85",
 						},
+						{
+							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+							Value: "true",
+						},
 					},
 				},
 			},
@@ -480,6 +508,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_TRACES_SAMPLER_ARG",
 									Value: "0.85",
+								},
+								{
+									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+									Value: "true",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
