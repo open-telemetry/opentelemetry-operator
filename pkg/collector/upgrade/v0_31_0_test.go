@@ -65,7 +65,7 @@ service:
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -84,5 +84,4 @@ service:
       receivers:
       - influxdb
 `, res.Spec.Config)
-	//assert.Equal(t, "upgrade to v0.31.0 dropped the 'metrics_schema' field from \"influxdb\" receiver", res.Status.Messages[0])
 }

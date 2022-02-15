@@ -36,6 +36,8 @@ type Params struct {
 	Recorder record.EventRecorder
 }
 
+const RecordBufferSize int = 10
+
 // ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary.
 func ManagedInstances(ctx context.Context, params Params) error {
 	params.Log.Info("looking for managed instances to upgrade")

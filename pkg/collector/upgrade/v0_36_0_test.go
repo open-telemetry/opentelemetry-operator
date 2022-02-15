@@ -82,7 +82,7 @@ service:
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -121,7 +121,4 @@ service:
       receivers:
       - otlp/mtls
 `, res.Spec.Config)
-	//assert.Contains(t, res.Status.Messages, fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", "grpc", "otlp/mtls"))
-	//assert.Contains(t, res.Status.Messages, fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", "http", "otlp/mtls"))
-	//assert.Contains(t, res.Status.Messages, fmt.Sprintf("upgrade to v0.36.0 move tls config i.e. ca_file, key_file, cert_file, min_version, max_version to tls.* in %s exporter", "otlp"))
 }

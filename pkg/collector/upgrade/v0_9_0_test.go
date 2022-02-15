@@ -58,7 +58,7 @@ func TestRemoveConnectionDelay(t *testing.T) {
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -67,5 +67,4 @@ func TestRemoveConnectionDelay(t *testing.T) {
 	assert.Contains(t, res.Spec.Config, `compression: "on"`)
 	assert.NotContains(t, res.Spec.Config, "reconnection_delay")
 	assert.Contains(t, res.Spec.Config, "num_workers: 123")
-	//assert.Contains(t, res.Status.Messages[0], "upgrade to v0.9.0 removed the property reconnection_delay for exporter")
 }

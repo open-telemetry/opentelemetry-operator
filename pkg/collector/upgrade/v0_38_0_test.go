@@ -74,7 +74,7 @@ service:
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -106,10 +106,6 @@ service:
       encoding: hii
       level: debug
 `, res.Spec.Config)
-
-	//	assert.Equal(t, "upgrade to v0.38.0 dropped the deprecated logging arguments "+
-	//		"i.e. [--log-format --log-level --log-profile] from otelcol custom resource otelcol.spec.args and "+
-	//		"adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", res.Status.Messages[0])
 
 	// TESTCASE 2: verify logging args exist and also config logging parameters exist
 	// EXPECTED: drop logging args and persist logging parameters as configured in config
@@ -146,7 +142,7 @@ service:
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -156,8 +152,4 @@ service:
 		"--hii":  "hello",
 		"--arg1": "",
 	}, res.Spec.Args)
-
-	//	assert.Equal(t, "upgrade to v0.38.0 dropped the deprecated logging arguments "+
-	//		"i.e. [--log-format --log-level --log-profile] from otelcol custom resource otelcol.spec.args and "+
-	//		"adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", res.Status.Messages[0])
 }

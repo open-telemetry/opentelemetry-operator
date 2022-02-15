@@ -73,7 +73,7 @@ service:
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -98,10 +98,6 @@ service:
       - apache/mtls
       - apache
 `, res.Spec.Config)
-
-	//	assert.Equal(t, "upgrade to v0.39.0 has dropped the ballast_size_mib field name from memory_limiter/with-settings processor", res.Status.Messages[0])
-	//	assert.Equal(t, "upgrade to v0.39.0 has renamed the httpd/mtls to apache/mtls receiver", res.Status.Messages[1])
-	//	assert.Equal(t, "upgrade to v0.39.0 has renamed the httpd to apache receiver", res.Status.Messages[2])
 
 	// TESTCASE 2: Drop ballast_size_mib from memory_limiter processor
 	existing1 := v1alpha1.OpenTelemetryCollector{
@@ -136,7 +132,7 @@ service:
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing1)
 	assert.NoError(t, err)
 
@@ -162,7 +158,4 @@ service:
       - otlp/mtls
       - otlp
 `, res.Spec.Config)
-
-	//	assert.Equal(t, "upgrade to v0.39.0 has dropped the ballast_size_mib field name from memory_limiter/with-settings processor", res.Status.Messages[0])
-
 }

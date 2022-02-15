@@ -57,7 +57,7 @@ func TestHealthCheckEndpointMigration(t *testing.T) {
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -70,5 +70,4 @@ func TestHealthCheckEndpointMigration(t *testing.T) {
   health_check/3:
     endpoint: 0.0.0.0:13133
 `, res.Spec.Config)
-	//assert.Equal(t, "upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension \"health_check/3\"", res.Status.Messages[0])
 }

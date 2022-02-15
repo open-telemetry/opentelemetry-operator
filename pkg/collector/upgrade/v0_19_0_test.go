@@ -63,7 +63,7 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -72,7 +72,6 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 	assert.Contains(t, res.Spec.Config, "otherprocessor:")
 	assert.NotContains(t, res.Spec.Config, "queued_retry/second:")
 	assert.NotContains(t, res.Spec.Config, "num_workers: 123") // checking one property is sufficient
-	//assert.Contains(t, res.Status.Messages[0], "upgrade to v0.19.0 removed the processor")
 }
 
 func TestMigrateResourceType(t *testing.T) {
@@ -100,7 +99,7 @@ func TestMigrateResourceType(t *testing.T) {
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -112,7 +111,6 @@ func TestMigrateResourceType(t *testing.T) {
       key: opencensus.type
       value: some-type
 `, res.Spec.Config)
-	//assert.Contains(t, res.Status.Messages[0], "upgrade to v0.19.0 migrated the property 'type' for processor")
 }
 
 func TestMigrateLabels(t *testing.T) {
@@ -142,7 +140,7 @@ func TestMigrateLabels(t *testing.T) {
 		Log:      logger,
 		Version:  version.Version{},
 		Client:   nil,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 	assert.NoError(t, err)
 
@@ -155,5 +153,4 @@ func TestMigrateLabels(t *testing.T) {
 	// verify
 	assert.Len(t, actualAttrs, 2)
 	assert.Nil(t, actualProcessor["labels"])
-	//assert.Contains(t, res.Status.Messages[0], "upgrade to v0.19.0 migrated the property 'labels' for processor")
 }

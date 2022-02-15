@@ -42,6 +42,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
@@ -233,7 +234,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 			Log:      ctrl.Log.WithName("collector-upgrade"),
 			Version:  v,
 			Client:   mgr.GetClient(),
-			Recorder: record.NewFakeRecorder(10),
+			Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 		})
 	}))
 	if err != nil {

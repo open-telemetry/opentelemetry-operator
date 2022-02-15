@@ -67,7 +67,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 				Log:      logger,
 				Version:  currentV,
 				Client:   k8sClient,
-				Recorder: record.NewFakeRecorder(10),
+				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 			})
 			assert.NoError(t, err)
 
@@ -96,7 +96,7 @@ func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 		Log:      logger,
 		Version:  currentV,
 		Client:   k8sClient,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}, existing)
 
 	// verify
@@ -129,7 +129,7 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 				Log:      logger,
 				Version:  currentV,
 				Client:   k8sClient,
-				Recorder: record.NewFakeRecorder(10),
+				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 			}, existing)
 			if tt.failureExpected {
 				assert.Error(t, err)
