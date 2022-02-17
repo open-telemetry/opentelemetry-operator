@@ -1,6 +1,12 @@
 Changes by Version
 ==================
 
+0.44.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.44.0
+* Add SPLUNK_ env prefix support to Instrumentation kind ([#709](https://github.com/open-telemetry/opentelemetry-operator/pull/709), [@elvis-cai](https://github.com/elvis-cai))
+* Fix logger in instrumentation webhook ([#698](https://github.com/open-telemetry/opentelemetry-operator/pull/698), [@pavolloffay](https://github.com/pavolloffay))
+
 0.43.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.43.0
