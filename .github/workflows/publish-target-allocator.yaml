@@ -28,7 +28,7 @@ jobs:
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 
       - name: Login to GitHub Package Registry
-        uses: docker/login-action@v1.12.0
+        uses: docker/login-action@v1.13.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
