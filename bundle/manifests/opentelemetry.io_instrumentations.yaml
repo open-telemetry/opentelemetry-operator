@@ -23,6 +23,15 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - jsonPath: .spec.exporter.endpoint
+      name: Endpoint
+      type: string
+    - jsonPath: .spec.sampler.type
+      name: Sampler
+      type: string
+    - jsonPath: .spec.sampler.argument
+      name: Sampler Arg
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
