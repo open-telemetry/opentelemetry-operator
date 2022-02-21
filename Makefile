@@ -270,6 +270,7 @@ OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
 operator-sdk:
 	@{ \
 	set -e ;\
+	[ -d bin ] || mkdir bin ;\
 	curl -L -o $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION}/operator-sdk_`go env GOOS`_`go env GOARCH`;\
 	chmod +x $(OPERATOR_SDK) ;\
 	}
