@@ -47,6 +47,8 @@ endif
 KUBE_VERSION ?= 1.21
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
+OPERATOR_SDK_VERSION ?= 1.17.0
+
 CERTMANAGER_VERSION ?= 1.6.1
 
 ifndef ignore-not-found
@@ -152,7 +154,7 @@ prepare-e2e: kuttl set-test-image-vars set-image-controller container start-kind
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
 
 .PHONY: scorecard-tests
-scorecard-tests:
+scorecard-tests: operator-sdk
 	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
 
 .PHONY: set-test-image-vars
@@ -263,20 +265,15 @@ else
 KIND=$(shell which kind)
 endif
 
+OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
 .PHONY: operator-sdk
 operator-sdk:
-ifeq (, $(shell which operator-sdk))
 	@{ \
 	set -e ;\
-	echo "" ;\
-	echo "ERROR: operator-sdk not found." ;\
-	echo "Please check https://sdk.operatorframework.io for installation instructions and try again." ;\
-	echo "" ;\
-	exit 1 ;\
+	[ -d bin ] || mkdir bin ;\
+	curl -L -o $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION}/operator-sdk_`go env GOOS`_`go env GOARCH`;\
+	chmod +x $(OPERATOR_SDK) ;\
 	}
-else
-OPERATOR_SDK=$(shell which operator-sdk)
-endif
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle

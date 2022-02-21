@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -67,7 +68,13 @@ service:
 	existing.Status.Version = "0.42.0"
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -98,8 +105,6 @@ service:
       level: detailed
 `, res.Spec.Config)
 
-	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
-
 	configWithMetrics := `exporters:
   otlp:
     endpoint: example.com
@@ -127,7 +132,7 @@ service:
 		"--test-upgrade43": "true",
 		"--test-arg1":      "otel",
 	}
-	res, err = upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	res, err = up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -137,5 +142,4 @@ service:
 		"--test-arg1":      "otel",
 	}, res.Spec.Args)
 
-	assert.Equal(t, "upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. [--metrics-addr --metrics-level] from otelcol custom resource otelcol.spec.args and "+"adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", res.Status.Messages[0])
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -60,9 +61,15 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			err = k8sClient.Get(context.Background(), nsn, persisted)
 			require.NoError(t, err)
 			require.Equal(t, beginV, persisted.Status.Version)
+			up := &upgrade.VersionUpgrade{
+				Log:      logger,
+				Version:  currentV,
+				Client:   k8sClient,
+				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+			}
 
 			// test
-			err = upgrade.ManagedInstances(context.Background(), logger, currentV, k8sClient)
+			err = up.ManagedInstances(context.Background())
 			assert.NoError(t, err)
 
 			// verify
@@ -84,9 +91,14 @@ func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 
 	currentV := version.Get()
 	currentV.OpenTelemetryCollector = "0.10.0" // we don't have a 0.10.0 upgrade, but we have a 0.9.0
-
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  currentV,
+		Client:   k8sClient,
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+	}
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, currentV, k8sClient, existing)
+	res, err := up.ManagedInstance(context.Background(), existing)
 
 	// verify
 	assert.NoError(t, err)
@@ -113,8 +125,15 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 			currentV := version.Get()
 			currentV.OpenTelemetryCollector = upgrade.Latest.String()
 
+			up := &upgrade.VersionUpgrade{
+				Log:      logger,
+				Version:  currentV,
+				Client:   k8sClient,
+				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+			}
+
 			// test
-			res, err := upgrade.ManagedInstance(context.Background(), logger, currentV, k8sClient, existing)
+			res, err := up.ManagedInstance(context.Background(), existing)
 			if tt.failureExpected {
 				assert.Error(t, err)
 			} else {

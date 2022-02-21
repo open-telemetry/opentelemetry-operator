@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -69,7 +70,13 @@ service:
 
 	// TESTCASE 1: verify logging args exist and no config logging parameters
 	// EXPECTED: drop logging args and configure logging parameters into config from args
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -100,10 +107,6 @@ service:
       encoding: hii
       level: debug
 `, res.Spec.Config)
-
-	assert.Equal(t, "upgrade to v0.38.0 dropped the deprecated logging arguments "+
-		"i.e. [--log-format --log-level --log-profile] from otelcol custom resource otelcol.spec.args and "+
-		"adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", res.Status.Messages[0])
 
 	// TESTCASE 2: verify logging args exist and also config logging parameters exist
 	// EXPECTED: drop logging args and persist logging parameters as configured in config
@@ -136,7 +139,8 @@ service:
 		"--log-level":   "debug",
 		"--arg1":        "",
 	}
-	res, err = upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+
+	res, err = up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -145,8 +149,4 @@ service:
 		"--hii":  "hello",
 		"--arg1": "",
 	}, res.Spec.Args)
-
-	assert.Equal(t, "upgrade to v0.38.0 dropped the deprecated logging arguments "+
-		"i.e. [--log-format --log-level --log-profile] from otelcol custom resource otelcol.spec.args and "+
-		"adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", res.Status.Messages[0])
 }

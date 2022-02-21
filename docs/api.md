@@ -1405,6 +1405,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>autoscale</b></td>
+        <td>boolean</td>
+        <td>
+          Autoscale turns on/off the autoscale feature. By default, it's enabled if the Replicas field is not set.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>config</b></td>
         <td>string</td>
         <td>
@@ -1444,6 +1451,24 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>string</td>
         <td>
           ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxReplicas</b></td>
+        <td>integer</td>
+        <td>
+          MaxReplicas sets an upper bound to the autoscaling feature. When autoscaling is enabled and no value is provided, a default value is used.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minReplicas</b></td>
+        <td>integer</td>
+        <td>
+          MinReplicas sets a lower bound to the autoscaling feature.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6099,7 +6124,7 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         <td><b>messages</b></td>
         <td>[]string</td>
         <td>
-          Messages about actions performed by the operator on this resource.<br/>
+          Messages about actions performed by the operator on this resource. Deprecated: use Kubernetes events instead.<br/>
         </td>
         <td>false</td>
       </tr><tr>

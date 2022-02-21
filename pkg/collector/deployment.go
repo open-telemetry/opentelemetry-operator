@@ -33,6 +33,12 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 	annotations := Annotations(otelcol)
 	podAnnotations := PodAnnotations(otelcol)
 
+	// if autoscale is enabled, set replicas to minReplicas
+	replicas := otelcol.Spec.Replicas
+	if otelcol.Spec.Autoscale != nil && *otelcol.Spec.Autoscale {
+		replicas = otelcol.Spec.MinReplicas
+	}
+
 	return appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Collector(otelcol),
@@ -41,7 +47,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: otelcol.Spec.Replicas,
+			Replicas: replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},

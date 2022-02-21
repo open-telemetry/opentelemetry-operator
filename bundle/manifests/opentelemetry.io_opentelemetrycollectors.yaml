@@ -59,6 +59,10 @@ spec:
                 description: Args is the set of arguments to pass to the OpenTelemetry
                   Collector binary
                 type: object
+              autoscale:
+                description: Autoscale turns on/off the autoscale feature. By default,
+                  it's enabled if the Replicas field is not set.
+                type: boolean
               config:
                 description: Config is the raw JSON to be used as the collector's
                   configuration. Refer to the OpenTelemetry Collector documentation
@@ -218,6 +222,16 @@ spec:
                 description: ImagePullPolicy indicates the pull policy to be used
                   for retrieving the container image (Always, Never, IfNotPresent)
                 type: string
+              maxReplicas:
+                description: MaxReplicas sets an upper bound to the autoscaling feature.
+                  When autoscaling is enabled and no value is provided, a default
+                  value is used.
+                format: int32
+                type: integer
+              minReplicas:
+                description: MinReplicas sets a lower bound to the autoscaling feature.
+                format: int32
+                type: integer
               mode:
                 description: Mode represents how the collector should be deployed
                   (deployment, daemonset, statefulset or sidecar)
@@ -2555,8 +2569,8 @@ spec:
               OpenTelemetryCollector.
             properties:
               messages:
-                description: Messages about actions performed by the operator on this
-                  resource.
+                description: 'Messages about actions performed by the operator on
+                  this resource. Deprecated: use Kubernetes events instead.'
                 items:
                   type: string
                 type: array

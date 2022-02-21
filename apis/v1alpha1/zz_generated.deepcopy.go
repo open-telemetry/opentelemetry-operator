@@ -259,8 +259,23 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 			(*out)[key] = val
 		}
 	}
+	if in.Autoscale != nil {
+		in, out := &in.Autoscale, &out.Autoscale
+		*out = new(bool)
+		**out = **in
+	}
 	if in.Replicas != nil {
 		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
+	if in.MinReplicas != nil {
+		in, out := &in.MinReplicas, &out.MinReplicas
+		*out = new(int32)
+		**out = **in
+	}
+	if in.MaxReplicas != nil {
+		in, out := &in.MaxReplicas, &out.MaxReplicas
 		*out = new(int32)
 		**out = **in
 	}
