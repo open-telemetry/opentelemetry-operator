@@ -14,18 +14,24 @@
 
 package parser
 
-import "github.com/go-logr/logr"
+import (
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+)
 
 const parserNameZipkin = "__zipkin"
 
 // NewZipkinReceiverParser builds a new parser for Zipkin receivers.
 func NewZipkinReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+	http := "http"
 	return &GenericReceiver{
-		logger:      logger,
-		name:        name,
-		config:      config,
-		defaultPort: 9411,
-		parserName:  parserNameZipkin,
+		logger:             logger,
+		name:               name,
+		config:             config,
+		defaultPort:        9411,
+		defaultProtocol:    corev1.ProtocolTCP,
+		defaultAppProtocol: &http,
+		parserName:         parserNameZipkin,
 	}
 }
 

@@ -25,11 +25,13 @@ var _ ReceiverParser = &GenericReceiver{}
 
 // GenericReceiver is a special parser for generic receivers. It doesn't self-register and should be created/used directly.
 type GenericReceiver struct {
-	logger      logr.Logger
-	name        string
-	config      map[interface{}]interface{}
-	defaultPort int32
-	parserName  string
+	logger             logr.Logger
+	name               string
+	config             map[interface{}]interface{}
+	defaultPort        int32
+	defaultProtocol    corev1.Protocol
+	defaultAppProtocol *string
+	parserName         string
 }
 
 // NOTE: Operator will sync with only receivers that aren't scrapers. Operator sync up receivers
@@ -49,13 +51,17 @@ func NewGenericReceiverParser(logger logr.Logger, name string, config map[interf
 func (g *GenericReceiver) Ports() ([]corev1.ServicePort, error) {
 	port := singlePortFromConfigEndpoint(g.logger, g.name, g.config)
 	if port != nil {
+		port.Protocol = g.defaultProtocol
+		port.AppProtocol = g.defaultAppProtocol
 		return []corev1.ServicePort{*port}, nil
 	}
 
 	if g.defaultPort > 0 {
 		return []corev1.ServicePort{{
-			Port: g.defaultPort,
-			Name: portName(g.name, g.defaultPort),
+			Port:        g.defaultPort,
+			Name:        portName(g.name, g.defaultPort),
+			Protocol:    g.defaultProtocol,
+			AppProtocol: g.defaultAppProtocol,
 		}}, nil
 	}
 

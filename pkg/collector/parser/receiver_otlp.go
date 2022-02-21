@@ -32,6 +32,11 @@ const (
 	defaultOTLPHTTPPort       int32 = 4318
 )
 
+var (
+	grpc = "grpc"
+	http = "http"
+)
+
 // OTLPReceiverParser parses the configuration for OTLP receivers.
 type OTLPReceiverParser struct {
 	logger logr.Logger
@@ -64,27 +69,30 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 		defaultPorts []corev1.ServicePort
 	}{
 		{
-			name: "grpc",
+			name: grpc,
 			defaultPorts: []corev1.ServicePort{
 				{
-					Name:       portName(fmt.Sprintf("%s-grpc", o.name), defaultOTLPGRPCPort),
-					Port:       defaultOTLPGRPCPort,
-					TargetPort: intstr.FromInt(int(defaultOTLPGRPCPort)),
+					Name:        portName(fmt.Sprintf("%s-grpc", o.name), defaultOTLPGRPCPort),
+					Port:        defaultOTLPGRPCPort,
+					TargetPort:  intstr.FromInt(int(defaultOTLPGRPCPort)),
+					AppProtocol: &grpc,
 				},
 			},
 		},
 		{
-			name: "http",
+			name: http,
 			defaultPorts: []corev1.ServicePort{
 				{
-					Name:       portName(fmt.Sprintf("%s-http", o.name), defaultOTLPHTTPPort),
-					Port:       defaultOTLPHTTPPort,
-					TargetPort: intstr.FromInt(int(defaultOTLPHTTPPort)),
+					Name:        portName(fmt.Sprintf("%s-http", o.name), defaultOTLPHTTPPort),
+					Port:        defaultOTLPHTTPPort,
+					TargetPort:  intstr.FromInt(int(defaultOTLPHTTPPort)),
+					AppProtocol: &http,
 				},
 				{
-					Name:       portName(fmt.Sprintf("%s-http-legacy", o.name), defaultOTLPHTTPLegacyPort),
-					Port:       defaultOTLPHTTPLegacyPort,
-					TargetPort: intstr.FromInt(int(defaultOTLPHTTPPort)), // we target the official port, not the legacy
+					Name:        portName(fmt.Sprintf("%s-http-legacy", o.name), defaultOTLPHTTPLegacyPort),
+					Port:        defaultOTLPHTTPLegacyPort,
+					TargetPort:  intstr.FromInt(int(defaultOTLPHTTPPort)), // we target the official port, not the legacy
+					AppProtocol: &http,
 				},
 			},
 		},
@@ -106,6 +114,14 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			if protocolPort == nil {
 				ports = append(ports, protocol.defaultPorts...)
 			} else {
+				// infer protocol and appProtocol from protocol.name
+				if protocol.name == grpc {
+					protocolPort.Protocol = corev1.ProtocolTCP
+					protocolPort.AppProtocol = &grpc
+				} else if protocol.name == http {
+					protocolPort.Protocol = corev1.ProtocolTCP
+					protocolPort.AppProtocol = &http
+				}
 				ports = append(ports, *protocolPort)
 			}
 		}
