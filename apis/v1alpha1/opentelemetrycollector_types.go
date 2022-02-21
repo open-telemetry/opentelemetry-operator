@@ -33,9 +33,21 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
 
+	// Autoscale turns on/off the autoscale feature. By default, it's enabled if the Replicas field is not set.
+	// +optional
+	Autoscale *bool `json:"autoscale,omitempty"`
+
 	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// MinReplicas sets a lower bound to the autoscaling feature.
+	// +optional
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+
+	// MaxReplicas sets an upper bound to the autoscaling feature. When autoscaling is enabled and no value is provided, a default value is used.
+	// +optional
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
