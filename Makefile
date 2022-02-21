@@ -154,7 +154,7 @@ prepare-e2e: kuttl set-test-image-vars set-image-controller container start-kind
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
 
 .PHONY: scorecard-tests
-scorecard-tests:
+scorecard-tests: operator-sdk
 	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
 
 .PHONY: set-test-image-vars
