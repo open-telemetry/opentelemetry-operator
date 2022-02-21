@@ -4,6 +4,9 @@ Changes by Version
 0.44.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.44.0
+* Bump default java auto-instrumentation version to `1.11.1` ([#731](https://github.com/open-telemetry/opentelemetry-operator/pull/731), [@pavolloffay](https://github.com/pavolloffay))
+* Add status fields for instrumentation kind ([#717](https://github.com/open-telemetry/opentelemetry-operator/pull/717), [@frzifus](https://github.com/frzifus))
+* Add appProtocol for otlp and jaeger receiver parsers ([#704](https://github.com/open-telemetry/opentelemetry-operator/pull/704), [@binjip978](https://github.com/binjip978))
 * Add SPLUNK_ env prefix support to Instrumentation kind ([#709](https://github.com/open-telemetry/opentelemetry-operator/pull/709), [@elvis-cai](https://github.com/elvis-cai))
 * Fix logger in instrumentation webhook ([#698](https://github.com/open-telemetry/opentelemetry-operator/pull/698), [@pavolloffay](https://github.com/pavolloffay))
 
