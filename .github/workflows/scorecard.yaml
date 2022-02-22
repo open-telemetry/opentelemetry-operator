@@ -39,9 +39,5 @@ jobs:
       - name: "wait until cluster is ready"
         run:  kubectl wait --timeout=5m --for=condition=available deployment/coredns -n kube-system
 
-      - uses: jpkrohling/setup-operator-sdk@v1.1.0
-        with:
-          operator-sdk-version: v1.17.0
-
       - name: "run scorecard test"
         run: make scorecard-tests

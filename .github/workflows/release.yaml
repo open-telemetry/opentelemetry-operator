@@ -21,10 +21,6 @@ jobs:
     - name: "install kustomize"
       run: ./hack/install-kustomize.sh
 
-    - uses: jpkrohling/setup-operator-sdk@v1.1.0
-      with:
-        operator-sdk-version: v1.17.0
-
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator"
 
