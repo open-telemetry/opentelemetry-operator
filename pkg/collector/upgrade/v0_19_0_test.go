@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -58,7 +59,13 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 	require.Contains(t, existing.Spec.Config, "num_workers: 123") // checking one property is sufficient
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -66,7 +73,6 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 	assert.Contains(t, res.Spec.Config, "otherprocessor:")
 	assert.NotContains(t, res.Spec.Config, "queued_retry/second:")
 	assert.NotContains(t, res.Spec.Config, "num_workers: 123") // checking one property is sufficient
-	assert.Contains(t, res.Status.Messages[0], "upgrade to v0.19.0 removed the processor")
 }
 
 func TestMigrateResourceType(t *testing.T) {
@@ -90,7 +96,13 @@ func TestMigrateResourceType(t *testing.T) {
 	existing.Status.Version = "0.18.0"
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -101,7 +113,6 @@ func TestMigrateResourceType(t *testing.T) {
       key: opencensus.type
       value: some-type
 `, res.Spec.Config)
-	assert.Contains(t, res.Status.Messages[0], "upgrade to v0.19.0 migrated the property 'type' for processor")
 }
 
 func TestMigrateLabels(t *testing.T) {
@@ -127,7 +138,13 @@ func TestMigrateLabels(t *testing.T) {
 	existing.Status.Version = "0.18.0"
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	actual, err := adapters.ConfigFromString(res.Spec.Config)
@@ -139,5 +156,4 @@ func TestMigrateLabels(t *testing.T) {
 	// verify
 	assert.Len(t, actualAttrs, 2)
 	assert.Nil(t, actualProcessor["labels"])
-	assert.Contains(t, res.Status.Messages[0], "upgrade to v0.19.0 migrated the property 'labels' for processor")
 }

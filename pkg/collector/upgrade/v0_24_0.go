@@ -19,13 +19,14 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v2"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_24_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_24_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	if len(otelcol.Spec.Config) == 0 {
 		return otelcol, nil
 	}
@@ -48,7 +49,9 @@ func upgrade0_24_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 				if port, ok := extension["port"]; ok {
 					delete(extension, "port")
 					extension["endpoint"] = fmt.Sprintf("0.0.0.0:%d", port)
-					otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension %q", k))
+					existing := &corev1.ConfigMap{}
+					updated := existing.DeepCopy()
+					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension %q", k))
 				}
 			case string:
 				if len(extension) == 0 {

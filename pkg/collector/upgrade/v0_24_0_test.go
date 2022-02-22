@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -52,7 +53,13 @@ func TestHealthCheckEndpointMigration(t *testing.T) {
 	existing.Status.Version = "0.23.0"
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), logger, version.Get(), nil, existing)
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  version.Get(),
+		Client:   nil,
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -64,5 +71,4 @@ func TestHealthCheckEndpointMigration(t *testing.T) {
   health_check/3:
     endpoint: 0.0.0.0:13133
 `, res.Spec.Config)
-	assert.Equal(t, "upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension \"health_check/3\"", res.Status.Messages[0])
 }
