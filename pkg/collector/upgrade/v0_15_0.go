@@ -20,12 +20,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_15_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_15_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	delete(otelcol.Spec.Args, "--new-metrics")
 	delete(otelcol.Spec.Args, "--legacy-metrics")
 	existing := &corev1.ConfigMap{}
 	updated := existing.DeepCopy()
-	params.Recorder.Event(updated, "Normal", "Upgrade", "upgrade to v0.15.0 dropped the deprecated metrics arguments")
+	u.Recorder.Event(updated, "Normal", "Upgrade", "upgrade to v0.15.0 dropped the deprecated metrics arguments")
 
 	return otelcol, nil
 }

@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_24_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_24_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	if len(otelcol.Spec.Config) == 0 {
 		return otelcol, nil
 	}
@@ -51,7 +51,7 @@ func upgrade0_24_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 					extension["endpoint"] = fmt.Sprintf("0.0.0.0:%d", port)
 					existing := &corev1.ConfigMap{}
 					updated := existing.DeepCopy()
-					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension %q", k))
+					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension %q", k))
 				}
 			case string:
 				if len(extension) == 0 {

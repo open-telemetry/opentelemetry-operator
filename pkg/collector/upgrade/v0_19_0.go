@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_19_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_19_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	if len(otelcol.Spec.Config) == 0 {
 		return otelcol, nil
 	}
@@ -50,7 +50,7 @@ func upgrade0_19_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 			delete(processors, k)
 			existing := &corev1.ConfigMap{}
 			updated := existing.DeepCopy()
-			params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.19.0 removed the processor %q", k))
+			u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.19.0 removed the processor %q", k))
 			continue
 		}
 
@@ -76,7 +76,7 @@ func upgrade0_19_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 					delete(processor, "type")
 					existing := &corev1.ConfigMap{}
 					updated := existing.DeepCopy()
-					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.19.0 migrated the property 'type' for processor %q", k))
+					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.19.0 migrated the property 'type' for processor %q", k))
 				}
 
 				// handle labels
@@ -102,7 +102,7 @@ func upgrade0_19_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 					delete(processor, "labels")
 					existing := &corev1.ConfigMap{}
 					updated := existing.DeepCopy()
-					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.19.0 migrated the property 'labels' for processor %q", k))
+					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.19.0 migrated the property 'labels' for processor %q", k))
 				}
 
 				processors[k] = processor

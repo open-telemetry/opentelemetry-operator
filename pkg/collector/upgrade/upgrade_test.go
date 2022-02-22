@@ -61,14 +61,15 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			err = k8sClient.Get(context.Background(), nsn, persisted)
 			require.NoError(t, err)
 			require.Equal(t, beginV, persisted.Status.Version)
-
-			// test
-			err = upgrade.ManagedInstances(context.Background(), upgrade.Params{
+			up := &upgrade.VersionUpgrade{
 				Log:      logger,
 				Version:  currentV,
 				Client:   k8sClient,
 				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-			})
+			}
+
+			// test
+			err = up.ManagedInstances(context.Background())
 			assert.NoError(t, err)
 
 			// verify
@@ -90,14 +91,14 @@ func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 
 	currentV := version.Get()
 	currentV.OpenTelemetryCollector = "0.10.0" // we don't have a 0.10.0 upgrade, but we have a 0.9.0
-
-	// test
-	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  currentV,
 		Client:   k8sClient,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}, existing)
+	}
+	// test
+	res, err := up.ManagedInstance(context.Background(), existing)
 
 	// verify
 	assert.NoError(t, err)
@@ -124,13 +125,15 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 			currentV := version.Get()
 			currentV.OpenTelemetryCollector = upgrade.Latest.String()
 
-			// test
-			res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+			up := &upgrade.VersionUpgrade{
 				Log:      logger,
 				Version:  currentV,
 				Client:   k8sClient,
 				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-			}, existing)
+			}
+
+			// test
+			res, err := up.ManagedInstance(context.Background(), existing)
 			if tt.failureExpected {
 				assert.Error(t, err)
 			} else {

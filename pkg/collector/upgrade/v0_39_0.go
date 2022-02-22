@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_39_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_39_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.39.0, failed to parse configuration: %w", err)
@@ -45,7 +45,7 @@ func upgrade0_39_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 					delete(memoryLimiter, k2)
 					existing := &corev1.ConfigMap{}
 					updated := existing.DeepCopy()
-					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", k1))
+					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", k1))
 				}
 			}
 		}
@@ -99,7 +99,7 @@ func upgrade0_39_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 									receiversList[i] = strings.Replace(k4.(string), "httpd", "apache", 1)
 									existing := &corev1.ConfigMap{}
 									updated := existing.DeepCopy()
-									params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", receiversList[i]))
+									u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", receiversList[i]))
 								}
 							}
 						}

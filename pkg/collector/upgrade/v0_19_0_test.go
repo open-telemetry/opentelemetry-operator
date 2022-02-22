@@ -59,12 +59,13 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 	require.Contains(t, existing.Spec.Config, "num_workers: 123") // checking one property is sufficient
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}, existing)
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -95,12 +96,13 @@ func TestMigrateResourceType(t *testing.T) {
 	existing.Status.Version = "0.18.0"
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}, existing)
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -136,12 +138,13 @@ func TestMigrateLabels(t *testing.T) {
 	existing.Status.Version = "0.18.0"
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+	up := &upgrade.VersionUpgrade{
 		Log:      logger,
-		Version:  version.Version{},
+		Version:  version.Get(),
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}, existing)
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	actual, err := adapters.ConfigFromString(res.Spec.Config)

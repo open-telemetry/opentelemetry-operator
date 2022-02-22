@@ -68,12 +68,13 @@ service:
 	existing.Status.Version = "0.42.0"
 
 	// test
-	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}, existing)
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -131,12 +132,7 @@ service:
 		"--test-upgrade43": "true",
 		"--test-arg1":      "otel",
 	}
-	res, err = upgrade.ManagedInstance(context.Background(), upgrade.Params{
-		Log:      logger,
-		Version:  version.Get(),
-		Client:   nil,
-		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}, existing)
+	res, err = up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify

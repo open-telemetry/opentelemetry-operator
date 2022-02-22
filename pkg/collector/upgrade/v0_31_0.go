@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_31_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_31_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	if len(otelcol.Spec.Config) == 0 {
 		return otelcol, nil
 	}
@@ -58,7 +58,7 @@ func upgrade0_31_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 					delete(influxdbConfig, fieldKey)
 					existing := &corev1.ConfigMap{}
 					updated := existing.DeepCopy()
-					params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.31.0 dropped the 'metrics_schema' field from %q receiver", k))
+					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.31.0 dropped the 'metrics_schema' field from %q receiver", k))
 					continue
 				}
 			}

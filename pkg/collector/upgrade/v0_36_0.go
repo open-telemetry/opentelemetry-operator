@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_36_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	if len(otelcol.Spec.Config) == 0 {
 		return otelcol, nil
 	}
@@ -77,7 +77,7 @@ func upgrade0_36_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 									delete(grpcHttpConfig, "tls_settings")
 									existing := &corev1.ConfigMap{}
 									updated := existing.DeepCopy()
-									params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", k3, k1))
+									u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", k3, k1))
 								}
 							}
 						}
@@ -114,7 +114,9 @@ func upgrade0_36_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 					delete(otlpConfig, key)
 				}
 				otlpConfig["tls"] = tlsConfig
-				otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.36.0 move tls config i.e. ca_file, key_file, cert_file, min_version, max_version to tls.* in %s exporter", k1))
+				existing := &corev1.ConfigMap{}
+				updated := existing.DeepCopy()
+				u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.36.0 move tls config i.e. ca_file, key_file, cert_file, min_version, max_version to tls.* in %s exporter", k1))
 			}
 		}
 	}

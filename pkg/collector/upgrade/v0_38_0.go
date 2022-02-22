@@ -28,7 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_38_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	// return if args exist
 	if len(otelcol.Spec.Args) == 0 {
 		return otelcol, nil
@@ -97,7 +97,7 @@ func upgrade0_38_0(params Params, otelcol *v1alpha1.OpenTelemetryCollector) (*v1
 		})
 		existing := &corev1.ConfigMap{}
 		updated := existing.DeepCopy()
-		params.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.38.0 dropped the deprecated logging arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", keys))
+		u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.38.0 dropped the deprecated logging arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", keys))
 	}
 	return otelcol, nil
 }

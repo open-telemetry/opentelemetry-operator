@@ -77,13 +77,14 @@ service:
 	}
 	existing.Status.Version = "0.35.0"
 
-	// test
-	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}, existing)
+	}
+	// test
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify

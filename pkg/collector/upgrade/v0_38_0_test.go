@@ -70,12 +70,13 @@ service:
 
 	// TESTCASE 1: verify logging args exist and no config logging parameters
 	// EXPECTED: drop logging args and configure logging parameters into config from args
-	res, err := upgrade.ManagedInstance(context.Background(), upgrade.Params{
+	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  version.Get(),
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}, existing)
+	}
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
@@ -138,12 +139,8 @@ service:
 		"--log-level":   "debug",
 		"--arg1":        "",
 	}
-	res, err = upgrade.ManagedInstance(context.Background(), upgrade.Params{
-		Log:      logger,
-		Version:  version.Get(),
-		Client:   nil,
-		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}, existing)
+
+	res, err = up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
