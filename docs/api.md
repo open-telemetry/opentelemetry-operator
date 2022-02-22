@@ -6099,7 +6099,7 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         <td><b>messages</b></td>
         <td>[]string</td>
         <td>
-          Messages about actions performed by the operator on this resource.<br/>
+          Messages about actions performed by the operator on this resource. Deprecated: use Kubernetes events instead.<br/>
         </td>
         <td>false</td>
       </tr><tr>
