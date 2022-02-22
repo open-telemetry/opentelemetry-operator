@@ -2553,8 +2553,8 @@ spec:
               OpenTelemetryCollector.
             properties:
               messages:
-                description: Messages about actions performed by the operator on this
-                  resource.
+                description: 'Messages about actions performed by the operator on
+                  this resource. Deprecated: use Kubernetes events instead.'
                 items:
                   type: string
                 type: array

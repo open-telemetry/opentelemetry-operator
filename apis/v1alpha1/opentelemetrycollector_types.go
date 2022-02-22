@@ -138,6 +138,7 @@ type OpenTelemetryCollectorStatus struct {
 	// Messages about actions performed by the operator on this resource.
 	// +optional
 	// +listType=atomic
+	// Deprecated: use Kubernetes events instead.
 	Messages []string `json:"messages,omitempty"`
 }
 
