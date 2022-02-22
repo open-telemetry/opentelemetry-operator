@@ -3,9 +3,10 @@ package watcher
 import (
 	"fmt"
 
+	allocatorconfig "github.com/otel-allocator/config"
+
 	"github.com/go-kit/log"
 	"github.com/go-logr/logr"
-	allocatorconfig "github.com/otel-allocator/config"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"

@@ -9,21 +9,8 @@ If the Allocator is activated, all Prometheus configurations will be transferred
 turn mounted to the Allocator.    
 This configuration will be resolved to target configurations and then split across all OpenTelemetryCollector instances.
 
-TargetAllocators exposes the results as [HTTP_SD endpoints](https://prometheus.io/docs/prometheus/latest/http_sd/)
+TargetAllocators expose the results as [HTTP_SD endpoints](https://prometheus.io/docs/prometheus/latest/http_sd/)
 split by collector.
-
-### Watchers
-Watchers are responsible for the translation of external sources into Prometheus readable scrape configurations and 
-triggers updates to the DiscoveryManager
-
-### DiscoveryManager
-Watches the Prometheus service discovery for new targets and sets targets to the Allocator 
-
-### Allocator
-Shards the received targets based on the discovered Collector instances
-
-### Collector
-Client to watch for deployed Collector instances which will then provided to the Allocator. 
 
 #### Endpoints
 `/jobs`:
@@ -80,3 +67,19 @@ Client to watch for deployed Collector instances which will then provided to the
   }
 ]
 ```
+
+
+## Packages
+### Watchers
+Watchers are responsible for the translation of external sources into Prometheus readable scrape configurations and 
+triggers updates to the DiscoveryManager
+
+### DiscoveryManager
+Watches the Prometheus service discovery for new targets and sets targets to the Allocator 
+
+### Allocator
+Shards the received targets based on the discovered Collector instances
+
+### Collector
+Client to watch for deployed Collector instances which will then provided to the Allocator. 
+
