@@ -28,6 +28,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -225,10 +226,15 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 	if err != nil {
 		return fmt.Errorf("failed to start the auto-detect mechanism: %w", err)
 	}
-
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		return collectorupgrade.ManagedInstances(c, ctrl.Log.WithName("collector-upgrade"), v, mgr.GetClient())
+		up := &collectorupgrade.VersionUpgrade{
+			Log:      ctrl.Log.WithName("collector-upgrade"),
+			Version:  v,
+			Client:   mgr.GetClient(),
+			Recorder: record.NewFakeRecorder(collectorupgrade.RecordBufferSize),
+		}
+		return up.ManagedInstances(c)
 	}))
 	if err != nil {
 		return fmt.Errorf("failed to upgrade OpenTelemetryCollector instances: %w", err)
