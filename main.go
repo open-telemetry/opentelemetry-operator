@@ -226,14 +226,14 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 	if err != nil {
 		return fmt.Errorf("failed to start the auto-detect mechanism: %w", err)
 	}
-	up := &collectorupgrade.VersionUpgrade{
-		Log:      ctrl.Log.WithName("collector-upgrade"),
-		Version:  v,
-		Client:   mgr.GetClient(),
-		Recorder: record.NewFakeRecorder(collectorupgrade.RecordBufferSize),
-	}
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
+		up := &collectorupgrade.VersionUpgrade{
+			Log:      ctrl.Log.WithName("collector-upgrade"),
+			Version:  v,
+			Client:   mgr.GetClient(),
+			Recorder: record.NewFakeRecorder(collectorupgrade.RecordBufferSize),
+		}
 		return up.ManagedInstances(c)
 	}))
 	if err != nil {
