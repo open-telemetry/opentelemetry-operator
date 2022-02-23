@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish-target-allocator:
+  publish:
     runs-on: ubuntu-20.04
 
     steps:
