@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish-containers:
+  publish-operator:
     name: Publish container images
     runs-on: ubuntu-20.04
     steps:
