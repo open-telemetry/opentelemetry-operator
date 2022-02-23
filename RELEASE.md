@@ -19,6 +19,7 @@ Run this generator:
 ```bash
 docker run --rm  -v "${PWD}:/app" pavolloffay/gch:latest --oauth-token ${GH_WRITE_TOKEN} --owner open-telemetry --repo opentelemetry-operator --branch main
 ```
+* Note that you must generate a Personal Access Token (PAT) and set `GH_WRITE_TOKEN` as that.
 
 Remove the commits that are not relevant to users, like:
 * CI or testing-specific commits (e2e, unit test, ...)
