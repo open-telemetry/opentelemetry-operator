@@ -1,6 +1,18 @@
 Changes by Version
 ==================
 
+0.44.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.44.0
+* Deprecate otelcol status messages ([#733](https://github.com/open-telemetry/opentelemetry-operator/pull/733), [@pavolloffay](https://github.com/pavolloffay))
+* Make sure correct version of operator-sdk is always used ([#728](https://github.com/open-telemetry/opentelemetry-operator/pull/728), [@pavolloffay](https://github.com/pavolloffay))
+* Storing upgrade status into events ([#707](https://github.com/open-telemetry/opentelemetry-operator/pull/707), [@yuriolisa](https://github.com/yuriolisa))
+* Bump default java auto-instrumentation version to `1.11.1` ([#731](https://github.com/open-telemetry/opentelemetry-operator/pull/731), [@pavolloffay](https://github.com/pavolloffay))
+* Add status fields for instrumentation kind ([#717](https://github.com/open-telemetry/opentelemetry-operator/pull/717), [@frzifus](https://github.com/frzifus))
+* Add appProtocol for otlp and jaeger receiver parsers ([#704](https://github.com/open-telemetry/opentelemetry-operator/pull/704), [@binjip978](https://github.com/binjip978))
+* Add SPLUNK_ env prefix support to Instrumentation kind ([#709](https://github.com/open-telemetry/opentelemetry-operator/pull/709), [@elvis-cai](https://github.com/elvis-cai))
+* Fix logger in instrumentation webhook ([#698](https://github.com/open-telemetry/opentelemetry-operator/pull/698), [@pavolloffay](https://github.com/pavolloffay))
+
 0.43.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.43.0
