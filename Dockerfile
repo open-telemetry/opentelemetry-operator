@@ -34,6 +34,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -ldflags="-X $
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
-USER 1002:1002
+USER 65532:65532
 
 ENTRYPOINT ["/manager"]
