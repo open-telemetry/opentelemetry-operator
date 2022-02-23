@@ -26,7 +26,7 @@ jobs:
 
     - name: "create the release in GitHub"
       env:
-        GH_WRITE_TOKEN: ${{ secrets.GH_WRITE_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./.ci/create-release-github.sh
 
     - name: "refresh go proxy module info on release"
