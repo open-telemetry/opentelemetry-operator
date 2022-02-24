@@ -1,6 +1,12 @@
 Changes by Version
 ==================
 
+0.45.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.45.0
+* Change container image USER to UID ([#738](https://github.com/open-telemetry/opentelemetry-operator/pull/738), [@kraman](https://github.com/kraman))
+* Use OTEL collector image from GHCR ([#732](https://github.com/open-telemetry/opentelemetry-operator/pull/732), [@pavolloffay](https://github.com/pavolloffay))
+
 0.44.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.44.0
