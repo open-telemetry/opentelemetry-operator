@@ -178,3 +178,35 @@ func TestStatefulSetPodSecurityContext(t *testing.T) {
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
 	assert.Equal(t, &runasGroup, d.Spec.Template.Spec.SecurityContext.RunAsGroup)
 }
+
+func TestStatefulSetHostNetwork(t *testing.T) {
+	// Test default
+	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	d1 := StatefulSet(cfg, logger, otelcol_1)
+
+	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
+	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
+
+	// Test hostNetwork=true
+	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-hostnetwork",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			HostNetwork: true,
+		},
+	}
+
+	cfg = config.New()
+
+	d2 := StatefulSet(cfg, logger, otelcol_2)
+	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
+	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
+}
