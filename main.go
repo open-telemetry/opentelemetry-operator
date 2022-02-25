@@ -137,7 +137,9 @@ func main() {
 	}
 
 	// see https://github.com/openshift/library-go/blob/4362aa519714a4b62b00ab8318197ba2bba51cb7/pkg/config/leaderelection/leaderelection.go#L104
-	renewDeadline := time.Second * 137
+	leaseDuration := time.Second * 137
+	renewDeadline := time.Second * 107
+	retryPeriod := time.Second * 26
 	mgrOptions := ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -146,7 +148,9 @@ func main() {
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "9f7554c3.opentelemetry.io",
 		Namespace:              watchNamespace,
+		LeaseDuration:          &leaseDuration,
 		RenewDeadline:          &renewDeadline,
+		RetryPeriod:            &retryPeriod,
 	}
 
 	if strings.Contains(watchNamespace, ",") {
