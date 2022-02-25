@@ -54,6 +54,8 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 					ServiceAccountName: ServiceAccountName(otelcol),
 					Containers:         []corev1.Container{Container(cfg, logger, otelcol)},
 					Volumes:            Volumes(cfg, otelcol),
+					DNSPolicy:          getDnsPolicy(otelcol),
+					HostNetwork:        otelcol.Spec.HostNetwork,
 					Tolerations:        otelcol.Spec.Tolerations,
 					SecurityContext:    otelcol.Spec.PodSecurityContext,
 				},
