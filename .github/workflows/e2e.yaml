@@ -13,8 +13,7 @@ jobs:
     strategy:
       matrix:
        kube-version:
-       - "1.19" # long term support for OpenShift 4.6 based on k8s 1.19
-       - "1.21"
+       - "1.19"
        - "1.23"
 
     steps:
