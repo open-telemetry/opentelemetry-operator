@@ -43,7 +43,7 @@ jobs:
       uses: golangci/golangci-lint-action@v3
       with:
         args: -v
-        version: v1.29
+        version: v1.44
 
   security:
     name: Security
