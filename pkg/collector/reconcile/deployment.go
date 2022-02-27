@@ -84,11 +84,6 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.Labels = map[string]string{}
 		}
 
-		// if autoscale is enabled, use replicas from current deployment
-		if params.Instance.Spec.Autoscale != nil && *params.Instance.Spec.Autoscale {
-			updated.Spec.Replicas = existing.Spec.Replicas
-		}
-
 		if desired.Labels["app.kubernetes.io/component"] == "opentelemetry-targetallocator" {
 			updated.Spec.Template.Spec.Containers[0].Image = desired.Spec.Template.Spec.Containers[0].Image
 		} else {
@@ -101,6 +96,11 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 		}
 		for k, v := range desired.ObjectMeta.Labels {
 			updated.ObjectMeta.Labels[k] = v
+		}
+
+		// if autoscale is enabled, use replicas from current Status
+		if params.Instance.Spec.Autoscale != nil && *params.Instance.Spec.Autoscale {
+			updated.Spec.Replicas = &existing.Status.Replicas
 		}
 
 		patch := client.MergeFrom(existing)
