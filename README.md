@@ -277,6 +277,7 @@ Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-tel
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [Alex Boten](https://github.com/codeboten), Lightstep
+- [Bogdan Drutu](https://github.com/BogdanDrutu), Splunk
 - [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 - [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
