@@ -13,7 +13,7 @@ jobs:
     name: Publish container images
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3
 
       - name: Unshallow 
         run: git fetch --prune --unshallow
