@@ -52,7 +52,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 }
 
 func isHPARequired(params Params) bool {
-	return params.Instance.Spec.Autoscale != nil && *params.Instance.Spec.Autoscale && params.Instance.Spec.Replicas == nil
+	return params.Instance.Spec.Autoscale != nil && *params.Instance.Spec.Autoscale
 }
 
 func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
@@ -85,7 +85,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 		}
 
 		updated.OwnerReferences = desired.OwnerReferences
-		updated.Spec.MinReplicas = params.Instance.Spec.MinReplicas
+		updated.Spec.MinReplicas = params.Instance.Spec.Replicas
 		if params.Instance.Spec.MaxReplicas != nil {
 			updated.Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
 		}

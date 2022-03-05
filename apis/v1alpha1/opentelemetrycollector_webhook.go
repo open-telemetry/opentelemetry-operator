@@ -111,16 +111,12 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 
 	// validate autoscale with horizontal pod autoscaler
 	if r.Spec.Autoscale != nil && *r.Spec.Autoscale {
-		if r.Spec.Replicas != nil {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas should be nil")
-		}
-
 		if r.Spec.MaxReplicas == nil || *r.Spec.MaxReplicas < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, maaxReplicas should be defined and more than one")
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, maxReplicas should be defined and more than one")
 		}
 
-		if r.Spec.MinReplicas != nil && *r.Spec.MinReplicas > *r.Spec.MaxReplicas {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
+		if r.Spec.Replicas != nil && *r.Spec.Replicas > *r.Spec.MaxReplicas {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
 		}
 	}
 
