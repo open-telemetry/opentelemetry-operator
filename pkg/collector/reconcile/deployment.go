@@ -100,7 +100,13 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 
 		// if autoscale is enabled, use replicas from current Status
 		if params.Instance.Spec.MaxReplicas != nil {
-			updated.Spec.Replicas = &existing.Status.Replicas
+			currentReplicas := existing.Status.Replicas
+			// if replicas (minReplicas from HPA perspective) is bigger than
+			// current status use it.
+			if *params.Instance.Spec.Replicas > currentReplicas {
+				currentReplicas = *params.Instance.Spec.Replicas
+			}
+			updated.Spec.Replicas = &currentReplicas
 		}
 
 		patch := client.MergeFrom(existing)
