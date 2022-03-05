@@ -34,19 +34,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
-func TestIsHPARequired(t *testing.T) {
-	for _, tt := range []struct {
-		params   Params
-		required bool
-	}{
-		{paramsWithHPA(), true},
-		{params(), false},
-	} {
-		r := isHPARequired(tt.params)
-		assert.Equal(t, r, tt.required)
-	}
-}
-
 func TestExpectedHPA(t *testing.T) {
 	params := paramsWithHPA()
 	expectedHPA := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
@@ -97,7 +84,6 @@ func paramsWithHPA() Params {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 
-	enabled := true
 	minReplicas := int32(3)
 	maxReplicas := int32(5)
 
@@ -125,7 +111,6 @@ func paramsWithHPA() Params {
 					NodePort: 0,
 				}},
 				Config:      string(configYAML),
-				Autoscale:   &enabled,
 				Replicas:    &minReplicas,
 				MaxReplicas: &maxReplicas,
 			},

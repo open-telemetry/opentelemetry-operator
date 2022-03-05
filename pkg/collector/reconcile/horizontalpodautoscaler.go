@@ -33,8 +33,8 @@ import (
 func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	desired := []autoscalingv1.HorizontalPodAutoscaler{}
 
-	// check if autoscale mode is on
-	if isHPARequired(params) {
+	// check if autoscale mode is on, e.g MaxReplicas is not nil
+	if params.Instance.Spec.MaxReplicas != nil {
 		desired = append(desired, collector.HorizontalPodAutoscaler(params.Config, params.Log, params.Instance))
 	}
 
@@ -51,10 +51,6 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	return nil
 }
 
-func isHPARequired(params Params) bool {
-	return params.Instance.Spec.Autoscale != nil && *params.Instance.Spec.Autoscale
-}
-
 func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
 	for _, obj := range expected {
 		desired := obj
@@ -66,7 +62,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 		existing := &autoscalingv1.HorizontalPodAutoscaler{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && k8serrors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}

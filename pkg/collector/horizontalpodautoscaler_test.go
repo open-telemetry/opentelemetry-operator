@@ -27,7 +27,6 @@ import (
 
 func TestHPA(t *testing.T) {
 	// prepare
-	enable := true
 	var minReplicas int32 = 3
 	var maxReplicas int32 = 5
 
@@ -38,7 +37,6 @@ func TestHPA(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Replicas:    &minReplicas,
 			MaxReplicas: &maxReplicas,
-			Autoscale:   &enable,
 		},
 	}
 

@@ -99,7 +99,7 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 		}
 
 		// if autoscale is enabled, use replicas from current Status
-		if params.Instance.Spec.Autoscale != nil && *params.Instance.Spec.Autoscale {
+		if params.Instance.Spec.MaxReplicas != nil {
 			updated.Spec.Replicas = &existing.Status.Replicas
 		}
 

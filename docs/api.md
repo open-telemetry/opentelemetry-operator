@@ -1405,13 +1405,6 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>autoscale</b></td>
-        <td>boolean</td>
-        <td>
-          Autoscale turns on/off the autoscale feature. By default, it's enabled if the Replicas field is not set.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>config</b></td>
         <td>string</td>
         <td>
@@ -1457,7 +1450,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>maxReplicas</b></td>
         <td>integer</td>
         <td>
-          MaxReplicas sets an upper bound to the autoscaling feature. When autoscaling is enabled and no value is provided, a default value is used.<br/>
+          MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
