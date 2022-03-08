@@ -243,7 +243,7 @@ spec:
     image: your-customized-auto-instrumentation-image:python
 ```
 
-To build your customized image, you can start with reusing the default dockerfiles. They are stored in the `autoinstrumentation` 
+To build your customized image, you can start by reusing the default dockerfiles. They are stored in the `autoinstrumentation` 
 directory. In general, you should comply with the guidelines below.
 - Python 
   - Ensure the packages are installed in the `/autoinstrumentation` directory. This is required as when instrumenting the pod, 
