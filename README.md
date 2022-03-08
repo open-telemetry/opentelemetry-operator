@@ -240,6 +240,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
 |------------------------|----------------------|----------------------|
+| v0.46.0                | v1.21 to v1.23       | 1.6.1                |
 | v0.45.0                | v1.21 to v1.23       | 1.6.1                |
 | v0.44.0                | v1.21 to v1.23       | 1.6.1                |
 | v0.43.0                | v1.21 to v1.23       | 1.6.1                |
@@ -259,7 +260,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.31.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
 | v0.30.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
 | v0.29.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
-| v0.28.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
 
 ## Contributing and Developing
 
