@@ -243,7 +243,7 @@ spec:
     image: your-customized-auto-instrumentation-image:python
 ```
 
-To build your customized image, you can start with editing the default dockerfiles. They are stored in the `autoinstrumentation` 
+To build your customized image, you can start with reusing the default dockerfiles. They are stored in the `autoinstrumentation` 
 directory. In general, you should comply with the guidelines below.
 - Python 
   - Ensure the packages are installed in the `/autoinstrumentation` directory. This is required as when instrumenting the pod, 
@@ -251,8 +251,8 @@ directory. In general, you should comply with the guidelines below.
     update the `PYTHONPATH` environment variable accordingly. To achieve this, you can mimic the one in `autoinstrumentation/python/Dockerfile`
     by using multi-stage builds. In the first stage, install all the required packages in one custom directory with `pip install --target`.
     Then in the second stage, copy the directory to `/autoinstrumentation`.
-  - Ensure you have `opentelemetry-distro` and `opentelemetry-instrumentation` installed. Those two packages are essential to
-    Python auto-instrumentation.
+  - Ensure you have `opentelemetry-distro` and `opentelemetry-instrumentation` or your customized alternatives installed. 
+    Those two packages are essential to Python auto-instrumentation.
   - Grant the necessary access to `/autoinstrumentation` directory. `chmod -R go+r /autoinstrumentation`
 - Node.js
   - Ensure the packages are installed in the `/autoinstrumentation` directory. This is required as when instrumenting the pod,
@@ -260,7 +260,8 @@ directory. In general, you should comply with the guidelines below.
     update the `NODE_OPTIONS` environment variable accordingly. To achieve this, you can mimic the one in `autoinstrumentation/nodejs/Dockerfile`
     by using multi-stage builds. In the first stage, install all the required packages in one custom directory.
     Then in the second stage, copy the directory to `/autoinstrumentation`.
-  - Ensure you have `@opentelemetry/api`, `@opentelemetry/auto-instrumentations-node`, and `@opentelemetry/sdk-node` installed. 
+  - Ensure you have `@opentelemetry/api`, `@opentelemetry/auto-instrumentations-node`, and `@opentelemetry/sdk-node` or your customized 
+    alternatives installed. 
   - Grant the necessary access to `/autoinstrumentation` directory. `chmod -R go+r /autoinstrumentation`
 - Java
   - Download your customized `javaagent.jar` to `/javaagent.jar`.  This is required as when instrumenting the pod,
