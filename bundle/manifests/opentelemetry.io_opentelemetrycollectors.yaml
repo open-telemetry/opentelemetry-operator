@@ -218,6 +218,11 @@ spec:
                 description: ImagePullPolicy indicates the pull policy to be used
                   for retrieving the container image (Always, Never, IfNotPresent)
                 type: string
+              maxReplicas:
+                description: MaxReplicas sets an upper bound to the autoscaling feature.
+                  If MaxReplicas is set autoscaling is enabled.
+                format: int32
+                type: integer
               mode:
                 description: Mode represents how the collector should be deployed
                   (deployment, daemonset, statefulset or sidecar)
