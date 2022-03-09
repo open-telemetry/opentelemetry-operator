@@ -119,6 +119,7 @@ func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1
 		for _, keep := range expected {
 			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
 				del = false
+				break
 			}
 		}
 
