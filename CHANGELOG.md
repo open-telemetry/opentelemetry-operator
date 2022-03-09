@@ -11,6 +11,10 @@ Changes by Version
 * Bump golangci GHA to v3 ([#743](https://github.com/open-telemetry/opentelemetry-operator/pull/743), [@pavolloffay](https://github.com/pavolloffay))
 * Fix docker meta action ([#745](https://github.com/open-telemetry/opentelemetry-operator/pull/745), [@pavolloffay](https://github.com/pavolloffay))
 
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.46.0)
+* [OpenTelemetry Contrib - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.46.0)
+
 0.45.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.45.0
