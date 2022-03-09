@@ -257,6 +257,7 @@ func deleteServices(ctx context.Context, params Params, expected []corev1.Servic
 		for _, keep := range expected {
 			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
 				del = false
+				break
 			}
 		}
 

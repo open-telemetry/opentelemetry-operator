@@ -125,6 +125,7 @@ func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected
 		for _, keep := range expected {
 			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
 				del = false
+				break
 			}
 		}
 
