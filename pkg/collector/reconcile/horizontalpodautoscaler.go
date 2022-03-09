@@ -18,43 +18,40 @@ import (
 	"context"
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
-// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
-// Deployments reconciles the deployment(s) required for the instance in the current context.
-func Deployments(ctx context.Context, params Params) error {
-	desired := []appsv1.Deployment{}
-	if params.Instance.Spec.Mode == "deployment" {
-		desired = append(desired, collector.Deployment(params.Config, params.Log, params.Instance))
-	}
+// HorizontalPodAutoscaler reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
+func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
+	desired := []autoscalingv1.HorizontalPodAutoscaler{}
 
-	if params.Instance.Spec.TargetAllocator.Enabled {
-		desired = append(desired, targetallocator.Deployment(params.Config, params.Log, params.Instance))
+	// check if autoscale mode is on, e.g MaxReplicas is not nil
+	if params.Instance.Spec.MaxReplicas != nil {
+		desired = append(desired, collector.HorizontalPodAutoscaler(params.Config, params.Log, params.Instance))
 	}
 
 	// first, handle the create/update parts
-	if err := expectedDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected deployments: %w", err)
+	if err := expectedHorizontalPodAutoscalers(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the expected horizontal pod autoscalers: %w", err)
 	}
 
 	// then, delete the extra objects
-	if err := deleteDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the deployments to be deleted: %w", err)
+	if err := deleteHorizontalPodAutoscalers(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the horizontal pod autoscalers: %w", err)
 	}
 
 	return nil
 }
 
-func expectedDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
+func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -62,20 +59,19 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
-		existing := &appsv1.Deployment{}
+		existing := &autoscalingv1.HorizontalPodAutoscaler{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && k8serrors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
-			params.Log.V(2).Info("created", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
+			params.Log.V(2).Info("created", "hpa.name", desired.Name, "hpa.namespace", desired.Namespace)
 			continue
 		} else if err != nil {
-			return fmt.Errorf("failed to get: %w", err)
+			return fmt.Errorf("failed to get %w", err)
 		}
 
-		// it exists already, merge the two if the end result isn't identical to the existing one
 		updated := existing.DeepCopy()
 		if updated.Annotations == nil {
 			updated.Annotations = map[string]string{}
@@ -84,29 +80,17 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.Labels = map[string]string{}
 		}
 
-		if desired.Labels["app.kubernetes.io/component"] == "opentelemetry-targetallocator" {
-			updated.Spec.Template.Spec.Containers[0].Image = desired.Spec.Template.Spec.Containers[0].Image
-		} else {
-			updated.Spec = desired.Spec
-		}
-		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
-
-		for k, v := range desired.ObjectMeta.Annotations {
-			updated.ObjectMeta.Annotations[k] = v
-		}
-		for k, v := range desired.ObjectMeta.Labels {
-			updated.ObjectMeta.Labels[k] = v
-		}
-
-		// if autoscale is enabled, use replicas from current Status
+		updated.OwnerReferences = desired.OwnerReferences
+		updated.Spec.MinReplicas = params.Instance.Spec.Replicas
 		if params.Instance.Spec.MaxReplicas != nil {
-			currentReplicas := existing.Status.Replicas
-			// if replicas (minReplicas from HPA perspective) is bigger than
-			// current status use it.
-			if *params.Instance.Spec.Replicas > currentReplicas {
-				currentReplicas = *params.Instance.Spec.Replicas
-			}
-			updated.Spec.Replicas = &currentReplicas
+			updated.Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
+		}
+
+		for k, v := range desired.Annotations {
+			updated.Annotations[k] = v
+		}
+		for k, v := range desired.Labels {
+			updated.Labels[k] = v
 		}
 
 		patch := client.MergeFrom(existing)
@@ -115,13 +99,13 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
 
-		params.Log.V(2).Info("applied", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
+		params.Log.V(2).Info("applied", "hpa.name", desired.Name, "hpa.namespace", desired.Namespace)
 	}
 
 	return nil
 }
 
-func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
+func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -129,7 +113,8 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &appsv1.DeploymentList{}
+
+	list := &autoscalingv1.HorizontalPodAutoscalerList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -140,7 +125,6 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 		for _, keep := range expected {
 			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
 				del = false
-				break
 			}
 		}
 
@@ -148,7 +132,7 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 			if err := params.Client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %w", err)
 			}
-			params.Log.V(2).Info("deleted", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)
+			params.Log.V(2).Info("deleted", "hpa.name", existing.Name, "hpa.namespace", existing.Namespace)
 		}
 	}
 
