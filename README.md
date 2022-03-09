@@ -215,10 +215,10 @@ The possible values for the annotation can be
 * `"my-instrumentation"` - name of `Instrumentation` CR instance.
 * `"false"` - do not inject
 
-#### Use Customized Image for auto-instrumentation injection
+#### Use customized or vendor instrumentation
 
-Although the default auto-instrumentation image can handle some mostly used libraries, it may still 
-miss the ones you need. In this case, you can tell the operator to use your own customized image.
+By default, the operator uses upstream auto-instrumentation libraries. Custom auto-instrumentation can be configured by
+overriding the image fields in a CR.
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
@@ -226,15 +226,6 @@ kind: Instrumentation
 metadata:
   name: my-instrumentation
 spec:
-  exporter:
-    endpoint: http://otel-collector:4317
-  propagators:
-    - tracecontext
-    - baggage
-    - b3
-  sampler:
-    type: parentbased_traceidratio
-    argument: "0.25"
   java:
     image: your-customized-auto-instrumentation-image:java
   nodejs:
@@ -244,31 +235,7 @@ spec:
 ```
 
 To build your customized image, you can start by reusing the default dockerfiles. They are stored in the `autoinstrumentation` 
-directory. In general, you should comply with the guidelines below.
-- Python 
-  - Ensure the packages are installed in the `/autoinstrumentation` directory. This is required as when instrumenting the pod, 
-    one init container will be created to copy all the content in `/autoinstrumentation` directory to your app's container. Then
-    update the `PYTHONPATH` environment variable accordingly. To achieve this, you can mimic the one in `autoinstrumentation/python/Dockerfile`
-    by using multi-stage builds. In the first stage, install all the required packages in one custom directory with `pip install --target`.
-    Then in the second stage, copy the directory to `/autoinstrumentation`.
-  - Ensure you have `opentelemetry-distro` and `opentelemetry-instrumentation` or your customized alternatives installed. 
-    Those two packages are essential to Python auto-instrumentation.
-  - Grant the necessary access to `/autoinstrumentation` directory. `chmod -R go+r /autoinstrumentation`
-- Node.js
-  - Ensure the packages are installed in the `/autoinstrumentation` directory. This is required as when instrumenting the pod,
-    one init container will be created to copy all the content in `/autoinstrumentation` directory to your app's container. Then
-    update the `NODE_OPTIONS` environment variable accordingly. To achieve this, you can mimic the one in `autoinstrumentation/nodejs/Dockerfile`
-    by using multi-stage builds. In the first stage, install all the required packages in one custom directory.
-    Then in the second stage, copy the directory to `/autoinstrumentation`.
-  - Ensure you have `@opentelemetry/api`, `@opentelemetry/auto-instrumentations-node`, and `@opentelemetry/sdk-node` or your customized 
-    alternatives installed. 
-  - Grant the necessary access to `/autoinstrumentation` directory. `chmod -R go+r /autoinstrumentation`
-- Java
-  - Download your customized `javaagent.jar` to `/javaagent.jar`.  This is required as when instrumenting the pod,
-    one init container will be created to copy the jar to your app's container.
-  - To customize the instrumentation library, you may need fork https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/javaagent
-    and make changes accordingly. 
-  - Grant the necessary access to the jar. `chmod -R go+r /javaagent.jar`
+directory. In general, you should comply with the guidelines described in the dockerfiles under the `autoinstrumentation` directory.
 
 ## Compatibility matrix
 
