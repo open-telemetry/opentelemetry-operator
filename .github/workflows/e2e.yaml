@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
+       # The e2e tests are run on the lowest and highest supported k8s version.
+       # All Kubernetes version in between expose the same APIs, hence the operator
+       # should be compatible with them.
        kube-version:
        - "1.19"
        - "1.23"
