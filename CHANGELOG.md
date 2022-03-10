@@ -6,11 +6,7 @@ Changes by Version
 * Bumped OpenTelemetry Collector to v0.46.0
 * add autoscale option to enable support for Horizontal Pod Autoscaling ([#746](https://github.com/open-telemetry/opentelemetry-operator/pull/746), [@binjip978](https://github.com/binjip978))
 * chore(nodejs): bump auto-instrumentations ([#763](https://github.com/open-telemetry/opentelemetry-operator/pull/763), [@mat-rumian](https://github.com/mat-rumian))
-* Fix publishing main docker tag for operator image ([#758](https://github.com/open-telemetry/opentelemetry-operator/pull/758), [@pavolloffay](https://github.com/pavolloffay))
 * Make operator more resiliant to etcd defrag activity ([#742](https://github.com/open-telemetry/opentelemetry-operator/pull/742), [@pavolloffay](https://github.com/pavolloffay))
-* Bump golangci GHA to v3 ([#743](https://github.com/open-telemetry/opentelemetry-operator/pull/743), [@pavolloffay](https://github.com/pavolloffay))
-* Fix docker meta action ([#745](https://github.com/open-telemetry/opentelemetry-operator/pull/745), [@pavolloffay](https://github.com/pavolloffay))
-
 #### OpenTelemetry Collector and Contrib
 * [OpenTelemetry Collector - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.46.0)
 * [OpenTelemetry Contrib - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.46.0)
