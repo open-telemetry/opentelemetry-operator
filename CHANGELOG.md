@@ -1,6 +1,16 @@
 Changes by Version
 ==================
 
+0.46.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.46.0
+* add autoscale option to enable support for Horizontal Pod Autoscaling ([#746](https://github.com/open-telemetry/opentelemetry-operator/pull/746), [@binjip978](https://github.com/binjip978))
+* chore(nodejs): bump auto-instrumentations ([#763](https://github.com/open-telemetry/opentelemetry-operator/pull/763), [@mat-rumian](https://github.com/mat-rumian))
+* Make operator more resiliant to etcd defrag activity ([#742](https://github.com/open-telemetry/opentelemetry-operator/pull/742), [@pavolloffay](https://github.com/pavolloffay))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.46.0)
+* [OpenTelemetry Contrib - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.46.0)
+
 0.45.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.45.0
