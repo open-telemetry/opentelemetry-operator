@@ -99,8 +99,6 @@ func main() {
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
 
-	pflag.Parse()
-
 	logger.Info("Starting the OpenTelemetry Operator",
 		"opentelemetry-operator", v.Operator,
 		"opentelemetry-collector", collectorImage,
