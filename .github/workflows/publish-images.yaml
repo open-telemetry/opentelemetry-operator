@@ -3,8 +3,7 @@ name: "Publish operator"
 on:
   push:
     branches: [ main ]
-  release:
-    types: [ published ]
+    tags: [ 'v*' ]
 
   workflow_dispatch:
 
@@ -39,6 +38,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{raw}}
             type=ref,event=branch
 
       - name: Set up QEMU
