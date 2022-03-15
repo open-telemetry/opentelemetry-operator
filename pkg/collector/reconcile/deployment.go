@@ -98,6 +98,17 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.ObjectMeta.Labels[k] = v
 		}
 
+		// if autoscale is enabled, use replicas from current Status
+		if params.Instance.Spec.MaxReplicas != nil {
+			currentReplicas := existing.Status.Replicas
+			// if replicas (minReplicas from HPA perspective) is bigger than
+			// current status use it.
+			if *params.Instance.Spec.Replicas > currentReplicas {
+				currentReplicas = *params.Instance.Spec.Replicas
+			}
+			updated.Spec.Replicas = &currentReplicas
+		}
+
 		patch := client.MergeFrom(existing)
 
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
@@ -129,6 +140,7 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 		for _, keep := range expected {
 			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
 				del = false
+				break
 			}
 		}
 

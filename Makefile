@@ -13,7 +13,7 @@ LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= ghcr.io/${USER}/opentelemetry-operator
 IMG_REPO ?= opentelemetry-operator
-IMG ?= ${IMG_PREFIX}/${IMG_REPO}:$(addprefix v,${VERSION})
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 
 # Options for 'bundle-build'
