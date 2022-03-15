@@ -234,8 +234,8 @@ spec:
     image: your-customized-auto-instrumentation-image:python
 ```
 
-To build your customized image, you can start by reusing the default dockerfiles. They are stored in the `autoinstrumentation` 
-directory. In general, you should comply with the guidelines described in the dockerfiles under the `autoinstrumentation` directory.
+The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation). 
+Follow the instructions in the Dockerfiles on how to build a custom container image.
 
 ## Compatibility matrix
 
