@@ -15,7 +15,6 @@
 package adapters
 
 import (
-
 	"errors"
 	"strings"
 
