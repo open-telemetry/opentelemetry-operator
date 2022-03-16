@@ -16,6 +16,7 @@ package adapters
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +52,11 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 	if !ok {
 		return nil, ErrNoReceivers
 	}
-
+	recEnabled, err := ConfigValidate(logger, config)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("%v", recEnabled)
 	receivers, ok := receiversProperty.(map[interface{}]interface{})
 	if !ok {
 		return nil, ErrReceiversNotAMap

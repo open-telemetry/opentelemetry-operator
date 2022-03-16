@@ -130,47 +130,47 @@ func TestConfigToProbeShouldErrorIf(t *testing.T) {
   pprof:
 service:
   extensions: [health_check]`,
-			expectedErr: errNoExtensionHealthCheck,
+			expectedErr: ErrNoExtensionHealthCheck,
 		}, {
 			desc: "BadlyFormattedExtensions",
 			config: `extensions: [hi]
 service:
   extensions: [health_check]`,
-			expectedErr: errExtensionsNotAMap,
+			expectedErr: ErrExtensionsNotAMap,
 		}, {
 			desc: "NoExtensions",
 			config: `service:
   extensions: [health_check]`,
-			expectedErr: errNoExtensions,
+			expectedErr: ErrNoExtensions,
 		}, {
 			desc: "NoHealthCheckInServiceExtensions",
 			config: `service:
   extensions: [pprof]`,
-			expectedErr: errNoServiceExtensionHealthCheck,
+			expectedErr: ErrNoServiceExtensionHealthCheck,
 		}, {
 			desc: "BadlyFormattedServiceExtensions",
 			config: `service:
   extensions:
     this: should-not-be-a-map`,
-			expectedErr: errServiceExtensionsNotSlice,
+			expectedErr: ErrServiceExtensionsNotSlice,
 		}, {
 			desc: "NoServiceExtensions",
 			config: `service:
   pipelines:
     traces:
       receivers: [otlp]`,
-			expectedErr: errNoServiceExtensions,
+			expectedErr: ErrNoServiceExtensions,
 		}, {
 			desc: "BadlyFormattedService",
 			config: `extensions:
   health_check:
 service: [hi]`,
-			expectedErr: errServiceNotAMap,
+			expectedErr: ErrServiceNotAMap,
 		}, {
 			desc: "NoService",
 			config: `extensions:
   health_check:`,
-			expectedErr: errNoService,
+			expectedErr: ErrNoService,
 		},
 	}
 

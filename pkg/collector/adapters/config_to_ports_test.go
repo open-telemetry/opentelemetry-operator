@@ -63,6 +63,17 @@ func TestExtractPortsFromConfig(t *testing.T) {
   zipkin:
   zipkin/2:
         endpoint: 0.0.0.0:33333
+service:
+  pipelines:
+    metrics:
+      receivers: [examplereceiver, examplereceiver/settings]
+      exporters: [logging]
+    metrics/1:
+      receivers: [jaeger, jaeger/custom]
+      exporters: [logging]
+    metrics/1:
+      receivers: [otlp, otlp/2, zipkin]
+      exporters: [logging]
 `
 
 	// prepare

@@ -15,6 +15,7 @@
 package adapters
 
 import (
+
 	"errors"
 	"strings"
 
@@ -23,18 +24,18 @@ import (
 )
 
 var (
-	errNoService    = errors.New("no service available as part of the configuration")
-	errNoExtensions = errors.New("no extensions available as part of the configuration")
+	ErrNoService    = errors.New("no service available as part of the configuration")
+	ErrNoExtensions = errors.New("no extensions available as part of the configuration")
 
-	errServiceNotAMap    = errors.New("service property in the configuration doesn't contain valid services")
-	errExtensionsNotAMap = errors.New("extensions property in the configuration doesn't contain valid extensions")
+	ErrServiceNotAMap    = errors.New("service property in the configuration doesn't contain valid services")
+	ErrExtensionsNotAMap = errors.New("extensions property in the configuration doesn't contain valid extensions")
 
-	errNoExtensionHealthCheck = errors.New("extensions property in the configuration does not contain the expected health_check extension")
+	ErrNoExtensionHealthCheck = errors.New("extensions property in the configuration does not contain the expected health_check extension")
 
-	errNoServiceExtensions = errors.New("service property in the configuration doesn't contain extensions")
+	ErrNoServiceExtensions = errors.New("service property in the configuration doesn't contain extensions")
 
-	errServiceExtensionsNotSlice     = errors.New("service extensions property in the configuration does not contain valid extensions")
-	errNoServiceExtensionHealthCheck = errors.New("no healthcheck extension available in service extension configuration")
+	ErrServiceExtensionsNotSlice     = errors.New("service extensions property in the configuration does not contain valid extensions")
+	ErrNoServiceExtensionHealthCheck = errors.New("no healthcheck extension available in service extension configuration")
 )
 
 type probeConfiguration struct {
@@ -51,21 +52,21 @@ const (
 func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, error) {
 	serviceProperty, ok := config["service"]
 	if !ok {
-		return nil, errNoService
+		return nil, ErrNoService
 	}
 	service, ok := serviceProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, errServiceNotAMap
+		return nil, ErrServiceNotAMap
 	}
 
 	serviceExtensionsProperty, ok := service["extensions"]
 	if !ok {
-		return nil, errNoServiceExtensions
+		return nil, ErrNoServiceExtensions
 	}
 
 	serviceExtensions, ok := serviceExtensionsProperty.([]interface{})
 	if !ok {
-		return nil, errServiceExtensionsNotSlice
+		return nil, ErrServiceExtensionsNotSlice
 	}
 	healthCheckServiceExtensions := make([]string, 0)
 	for _, ext := range serviceExtensions {
@@ -76,16 +77,16 @@ func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, 
 	}
 
 	if len(healthCheckServiceExtensions) == 0 {
-		return nil, errNoServiceExtensionHealthCheck
+		return nil, ErrNoServiceExtensionHealthCheck
 	}
 
 	extensionsProperty, ok := config["extensions"]
 	if !ok {
-		return nil, errNoExtensions
+		return nil, ErrNoExtensions
 	}
 	extensions, ok := extensionsProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, errExtensionsNotAMap
+		return nil, ErrExtensionsNotAMap
 	}
 	// in the event of multiple health_check service extensions defined, we arbitrarily take the first one found
 	for _, healthCheckForProbe := range healthCheckServiceExtensions {
@@ -95,7 +96,7 @@ func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, 
 		}
 	}
 
-	return nil, errNoExtensionHealthCheck
+	return nil, ErrNoExtensionHealthCheck
 }
 
 func createProbeFromExtension(extension interface{}) (*corev1.Probe, error) {
