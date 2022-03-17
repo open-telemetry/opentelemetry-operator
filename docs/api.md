@@ -6115,7 +6115,7 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
-          Replicas is currently not being set and might be removed in the next version.<br/>
+          Replicas is currently not being set and might be removed in the next version. Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>

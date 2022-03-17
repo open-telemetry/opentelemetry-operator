@@ -147,6 +147,7 @@ type ScaleSubresourceStatus struct {
 type OpenTelemetryCollectorStatus struct {
 	// Replicas is currently not being set and might be removed in the next version.
 	// +optional
+	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// Scale is the OpenTelemetryCollector's scale subresource status.

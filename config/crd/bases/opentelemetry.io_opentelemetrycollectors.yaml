@@ -2565,8 +2565,9 @@ spec:
                 type: array
                 x-kubernetes-list-type: atomic
               replicas:
-                description: Replicas is currently not being set and might be removed
-                  in the next version.
+                description: 'Replicas is currently not being set and might be removed
+                  in the next version. Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas"
+                  instead.'
                 format: int32
                 type: integer
               scale:
