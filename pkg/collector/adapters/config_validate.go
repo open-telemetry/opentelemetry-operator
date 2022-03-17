@@ -22,10 +22,12 @@ import (
 )
 
 var (
-	ErrNoPipeline = errors.New("no pipeline available as part of the configuration")
+	errNoPipeline = errors.New("no pipeline available as part of the configuration")
 )
 
-func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map[string]bool, error) {
+//Following Otel Doc: Configuring a receiver does not enable it. The receivers are enabled via pipelines within the service section.
+//ConfigValidate returns all receivers, setting them as true for enabled and false for non-configured services in pipeline set.
+func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map[interface{}]bool, error) {
 	cfgReceivers, ok := config["receivers"]
 	if !ok {
 		return nil, ErrNoReceivers
@@ -34,14 +36,11 @@ func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map
 	if !ok {
 		return nil, ErrReceiversNotAMap
 	}
-	availableReceivers := map[string]bool{}
+	availableReceivers := map[interface{}]bool{}
 
-	for recvID, recvCfg := range receivers {
+	for recvID := range receivers {
+		//Getting all receivers present in the receivers section and setting them to false.
 		availableReceivers[recvID.(string)] = false
-		receiver, ok := recvCfg.(map[interface{}]interface{})
-		if !ok {
-			return nil, fmt.Errorf("receiver %q has invalid configuration: %q", recvID, receiver)
-		}
 	}
 
 	cfgService, ok := config["service"].(map[interface{}]interface{})
@@ -51,11 +50,12 @@ func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map
 
 	pipeline, ok := cfgService["pipelines"].(map[interface{}]interface{})
 	if !ok {
-		return nil, ErrNoPipeline
+		return nil, errNoPipeline
 	}
 	availablePipelines := map[string]bool{}
 
 	for pipID := range pipeline {
+		//Getting all the available pipelines.
 		availablePipelines[pipID.(string)] = true
 	}
 
@@ -73,6 +73,7 @@ func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map
 						if !ok {
 							return nil, fmt.Errorf("no receivers on pipeline configuration %q", receiversList...)
 						}
+						// All enabled receivers will be set as true
 						for _, recKey := range receiversList {
 							availableReceivers[recKey.(string)] = true
 						}

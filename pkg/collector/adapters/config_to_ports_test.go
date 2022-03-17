@@ -62,7 +62,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
         endpoint: 0.0.0.0:55555
   zipkin:
   zipkin/2:
-        endpoint: 0.0.0.0:33333
+    endpoint: 0.0.0.0:33333
 service:
   pipelines:
     metrics:
@@ -71,7 +71,7 @@ service:
     metrics/1:
       receivers: [jaeger, jaeger/custom]
       exporters: [logging]
-    metrics/1:
+    metrics/2:
       receivers: [otlp, otlp/2, zipkin]
       exporters: [logging]
 `
@@ -84,7 +84,7 @@ service:
 	// test
 	ports, err := adapters.ConfigToReceiverPorts(logger, config)
 	assert.NoError(t, err)
-	assert.Len(t, ports, 12)
+	assert.Len(t, ports, 11)
 
 	// verify
 	expectedPorts := map[int32]bool{}
@@ -98,7 +98,6 @@ service:
 	expectedPorts[int32(55681)] = false
 	expectedPorts[int32(55555)] = false
 	expectedPorts[int32(9411)] = false
-	expectedPorts[int32(33333)] = false
 
 	expectedNames := map[string]bool{}
 	expectedNames["examplereceiver"] = false
@@ -112,7 +111,6 @@ service:
 	expectedNames["otlp-http-legacy"] = false
 	expectedNames["otlp-2-grpc"] = false
 	expectedNames["zipkin"] = false
-	expectedNames["zipkin-2"] = false
 
 	expectedAppProtocols := map[string]string{}
 	expectedAppProtocols["otlp-grpc"] = "grpc"
@@ -122,7 +120,6 @@ service:
 	expectedAppProtocols["jaeger-grpc"] = "grpc"
 	expectedAppProtocols["otlp-2-grpc"] = "grpc"
 	expectedAppProtocols["zipkin"] = "http"
-	expectedAppProtocols["zipkin-2"] = "http"
 
 	// make sure we only have the ports in the set
 	for _, port := range ports {
