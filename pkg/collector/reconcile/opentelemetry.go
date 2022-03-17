@@ -82,7 +82,7 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	}
 
 	var replicas int32
-	switch mode {
+	switch mode { // nolint:exhaustive
 	case v1alpha1.ModeDeployment:
 		obj := &appsv1.Deployment{}
 		if err := cli.Get(ctx, objKey, obj); err != nil {
