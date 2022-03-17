@@ -63,7 +63,7 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 	ports := []corev1.ServicePort{}
 	for key, val := range receivers {
 		// This check will pass only the enabled receivers,
-		// then only the related ports will be opened. 
+		// then only the related ports will be opened.
 		if !recEnabled[key] {
 			continue
 		}
