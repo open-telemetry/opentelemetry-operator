@@ -175,3 +175,36 @@ func TestDeploymentFilterLabels(t *testing.T) {
 		assert.NotContains(t, d.ObjectMeta.Labels, k)
 	}
 }
+
+func TestDeploymentNodeSelector(t *testing.T) {
+	// Test default
+	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	d1 := Deployment(cfg, logger, otelcol_1)
+
+	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
+
+	// Test nodeSelector
+	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-hostnetwork",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			HostNetwork: true,
+			NodeSelector: map[string]string{
+				"node-key": "node-value",
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	d2 := Deployment(cfg, logger, otelcol_2)
+	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
+}
