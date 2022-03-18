@@ -193,7 +193,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	// Test nodeSelector
 	otelcol_2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance-hostnetwork",
+			Name: "my-instance-nodeselector",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			HostNetwork: true,
