@@ -183,11 +183,11 @@ func TestInvalidReceivers(t *testing.T) {
 	}{
 		{
 			"receiver isn't a map",
-			"receivers:\n  some-receiver: string",
+			"receivers:\n  some-receiver: string\nservice:\n  pipelines:\n    metrics:\n      receivers: [some-receiver]",
 		},
 		{
 			"receiver's endpoint isn't string",
-			"receivers:\n  some-receiver:\n    endpoint: 123",
+			"receivers:\n  some-receiver:\n    endpoint: 123\nservice:\n  pipelines:\n    metrics:\n      receivers: [some-receiver]",
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -221,6 +221,11 @@ func TestParserFailed(t *testing.T) {
 	config := map[interface{}]interface{}{
 		"receivers": map[interface{}]interface{}{
 			"mock": map[interface{}]interface{}{},
+		},
+		"service": map[interface{}]interface{}{
+			"pipelines": map[interface{}]interface{}{},
+				"metrics": map[interface{}]interface{}{},
+					"receivers": []string{"mock"},
 		},
 	}
 
