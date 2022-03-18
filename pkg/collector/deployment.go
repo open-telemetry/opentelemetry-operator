@@ -57,6 +57,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 					DNSPolicy:          getDnsPolicy(otelcol),
 					HostNetwork:        otelcol.Spec.HostNetwork,
 					Tolerations:        otelcol.Spec.Tolerations,
+					NodeSelector:       otelcol.Spec.NodeSelector,
 					SecurityContext:    otelcol.Spec.PodSecurityContext,
 				},
 			},

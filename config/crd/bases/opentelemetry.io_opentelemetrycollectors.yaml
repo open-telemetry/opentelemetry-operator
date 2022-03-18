@@ -230,6 +230,12 @@ spec:
                 - sidecar
                 - statefulset
                 type: string
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: NodeSelector to schedule OpenTelemetry Collector pods.
+                  This is only relevant to daemonsets, statefulsets and deployments
+                type: object
               podAnnotations:
                 additionalProperties:
                   type: string

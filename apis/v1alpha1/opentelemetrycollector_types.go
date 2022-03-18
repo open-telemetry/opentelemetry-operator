@@ -112,6 +112,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 
+	// NodeSelector to schedule OpenTelemetry Collector pods.
+	// This is only relevant to daemonsets, statefulsets and deployments
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
 	// PodAnnotations is the set of annotations that will be attached to
 	// Collector and Target Allocator pods.
 	// +optional
