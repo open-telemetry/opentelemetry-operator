@@ -1,6 +1,15 @@
 Changes by Version
 ==================
 
+0.47.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.47.0
+* doc: customized auto-instrumentation ([#762](https://github.com/open-telemetry/opentelemetry-operator/pull/762), [@cuichenli](https://github.com/cuichenli))
+* Remove v prefix from the container image version/tag ([#771](https://github.com/open-telemetry/opentelemetry-operator/pull/771), [@pavolloffay](https://github.com/pavolloffay))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.47.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.47.0)
+* [OpenTelemetry Contrib - v0.47.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.47.0)
+
 0.46.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.46.0
