@@ -220,12 +220,15 @@ func TestParserFailed(t *testing.T) {
 
 	config := map[interface{}]interface{}{
 		"receivers": map[interface{}]interface{}{
-			"mock": map[interface{}]interface{}{},
+			"mock":  map[string]interface{}{},
 		},
 		"service": map[interface{}]interface{}{
-			"pipelines": map[interface{}]interface{}{},
-				"metrics": map[interface{}]interface{}{},
-					"receivers": []string{"mock"},
+			"pipelines": map[interface{}]interface{}{
+				"metrics":  map[interface{}]interface{}{
+					"receivers": []interface{}{"mock"},
+					
+				},
+			},
 		},
 	}
 
