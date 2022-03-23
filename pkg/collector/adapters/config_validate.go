@@ -45,7 +45,7 @@ func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map
 
 	cfgService, ok := config["service"].(map[interface{}]interface{})
 	if !ok {
-		return nil, ErrNoService
+		return nil, errNoService
 	}
 
 	pipeline, ok := cfgService["pipelines"].(map[interface{}]interface{})

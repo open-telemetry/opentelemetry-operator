@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	ErrNoService    = errors.New("no service available as part of the configuration")
+	errNoService    = errors.New("no service available as part of the configuration")
 	errNoExtensions = errors.New("no extensions available as part of the configuration")
 
 	errServiceNotAMap    = errors.New("service property in the configuration doesn't contain valid services")
@@ -51,7 +51,7 @@ const (
 func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, error) {
 	serviceProperty, ok := config["service"]
 	if !ok {
-		return nil, ErrNoService
+		return nil, errNoService
 	}
 	service, ok := serviceProperty.(map[interface{}]interface{})
 	if !ok {
