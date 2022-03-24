@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
+    app.kubernetes.io/name: opentelemetry-operator
     control-plane: controller-manager
   name: controller-manager-metrics-service
   namespace: system
@@ -12,4 +13,5 @@ spec:
     targetPort: https
     protocol: TCP
   selector:
+    app.kubernetes.io/name: opentelemetry-operator
     control-plane: controller-manager

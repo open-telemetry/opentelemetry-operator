@@ -10,4 +10,5 @@ spec:
       targetPort: 9443
       protocol: TCP
   selector:
+    app.kubernetes.io/name: opentelemetry-operator
     control-plane: controller-manager
