@@ -31,12 +31,16 @@ func TestLabelsCommonSet(t *testing.T) {
 			Name:      "my-instance",
 			Namespace: "my-ns",
 		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+		},
 	}
 
 	// test
 	labels := Labels(otelcol)
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
+	assert.Equal(t, "0.47.0", labels["app.kubernetes.io/version"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-collector", labels["app.kubernetes.io/component"])
 }

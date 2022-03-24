@@ -15,6 +15,8 @@
 package collector
 
 import (
+	"strings"
+
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
@@ -28,9 +30,11 @@ func Labels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 			base[k] = v
 		}
 	}
+	version := strings.Split(instance.Spec.Image, ":")
 
 	base["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 	base["app.kubernetes.io/instance"] = naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name)
+	base["app.kubernetes.io/version"] = version[len(version)-1]
 	base["app.kubernetes.io/part-of"] = "opentelemetry"
 	base["app.kubernetes.io/component"] = "opentelemetry-collector"
 
