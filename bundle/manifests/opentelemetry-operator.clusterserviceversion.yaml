@@ -297,7 +297,7 @@ spec:
               - args:
                 - --metrics-addr=127.0.0.1:8080
                 - --enable-leader-election
-                image: ghcr.io/jutley/opentelemetry-operator/opentelemetry-operator:0.47.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
