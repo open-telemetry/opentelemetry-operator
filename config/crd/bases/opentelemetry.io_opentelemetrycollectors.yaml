@@ -234,7 +234,8 @@ spec:
                 additionalProperties:
                   type: string
                 description: NodeSelector to schedule OpenTelemetry Collector pods.
-                  This is only relevant to daemonsets, statefulsets and deployments
+                  This is only relevant to daemonset, statefulset, and deployment
+                  mode
                 type: object
               podAnnotations:
                 additionalProperties:
@@ -680,7 +681,8 @@ spec:
                 type: object
               tolerations:
                 description: Toleration to schedule OpenTelemetry Collector pods.
-                  This is only relevant to daemonsets, statefulsets and deployments
+                  This is only relevant to daemonset, statefulset, and deployment
+                  mode
                 items:
                   description: The pod this Toleration is attached to tolerates any
                     taint that matches the triple <key,value,effect> using the matching

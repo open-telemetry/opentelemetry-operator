@@ -108,12 +108,12 @@ type OpenTelemetryCollectorSpec struct {
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Toleration to schedule OpenTelemetry Collector pods.
-	// This is only relevant to daemonsets, statefulsets and deployments
+	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 
 	// NodeSelector to schedule OpenTelemetry Collector pods.
-	// This is only relevant to daemonsets, statefulsets and deployments
+	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
