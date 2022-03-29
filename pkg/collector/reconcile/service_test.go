@@ -213,7 +213,7 @@ func TestMonitoringService(t *testing.T) {
 }
 
 func service(name string, ports []v1.ServicePort) v1.Service {
-	labels := collector.Labels(params().Instance)
+	labels := collector.Labels(params().Instance, []string{})
 	labels["app.kubernetes.io/name"] = name
 
 	selector := labels

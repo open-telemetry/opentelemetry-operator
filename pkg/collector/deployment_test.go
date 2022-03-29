@@ -151,3 +151,27 @@ func TestDeploymentHostNetwork(t *testing.T) {
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
+
+func TestDeploymentFilterLabels(t *testing.T) {
+	excludedLabels := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+	}
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "my-instance",
+			Labels: excludedLabels,
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
+
+	d := Deployment(cfg, logger, otelcol)
+
+	assert.Len(t, d.ObjectMeta.Labels, 5)
+	for k := range excludedLabels {
+		assert.NotContains(t, d.ObjectMeta.Labels, k)
+	}
+}
