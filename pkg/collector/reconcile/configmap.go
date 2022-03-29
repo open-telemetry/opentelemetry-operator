@@ -64,7 +64,7 @@ func ConfigMaps(ctx context.Context, params Params) error {
 
 func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	name := naming.ConfigMap(params.Instance)
-	labels := collector.Labels(params.Instance)
+	labels := collector.Labels(params.Instance, []string{})
 	labels["app.kubernetes.io/name"] = name
 	config, err := ReplaceConfig(params)
 	if err != nil {
