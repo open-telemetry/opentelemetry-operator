@@ -27,7 +27,7 @@ var (
 
 //Following Otel Doc: Configuring a receiver does not enable it. The receivers are enabled via pipelines within the service section.
 //ConfigValidate returns all receivers, setting them as true for enabled and false for non-configured services in pipeline set.
-func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map[interface{}]bool, error) {
+func GetEnabledReceivers(logger logr.Logger, config map[interface{}]interface{}) (map[interface{}]bool, error) {
 	cfgReceivers, ok := config["receivers"]
 	if !ok {
 		return nil, ErrNoReceivers
@@ -39,8 +39,14 @@ func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map
 	availableReceivers := map[interface{}]bool{}
 
 	for recvID := range receivers {
+
+		//Safe Cast
+		receiverID, ok := recvID.(string)
+		if !ok {
+			return nil, fmt.Errorf("ReceiverID is not a string: %v", receiverID)
+		}
 		//Getting all receivers present in the receivers section and setting them to false.
-		availableReceivers[recvID.(string)] = false
+		availableReceivers[receiverID] = false
 	}
 
 	cfgService, ok := config["service"].(map[interface{}]interface{})
@@ -55,14 +61,24 @@ func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map
 	availablePipelines := map[string]bool{}
 
 	for pipID := range pipeline {
+		//Safe Cast
+		pipelineID, ok := pipID.(string)
+		if !ok {
+			return nil, fmt.Errorf("PipelineID is not a string: %v", pipelineID)
+		}
 		//Getting all the available pipelines.
-		availablePipelines[pipID.(string)] = true
+		availablePipelines[pipelineID] = true
 	}
 
 	if len(pipeline) > 0 {
 		for pipelineID, pipelineCfg := range pipeline {
+			//Safe Cast
+			pipelineV, ok := pipelineID.(string)
+			if !ok {
+				return nil, fmt.Errorf("PipelineID is not a string: %v", pipelineV)
+			}
 			//Condition will get information if there are multiple configured pipelines.
-			if len(pipelineID.(string)) > 0 {
+			if len(pipelineV) > 0 {
 				pipelineDesc, ok := pipelineCfg.(map[interface{}]interface{})
 				if !ok {
 					return nil, fmt.Errorf("pipeline was not properly configured")
@@ -73,9 +89,25 @@ func ConfigValidate(logger logr.Logger, config map[interface{}]interface{}) (map
 						if !ok {
 							return nil, fmt.Errorf("no receivers on pipeline configuration %q", receiversList...)
 						}
-						// All enabled receivers will be set as true
-						for _, recKey := range receiversList {
-							availableReceivers[recKey.(string)] = true
+						// If receiversList is empty means that we haven't any enabled Receiver.
+						if len(receiversList) == 0 {
+							availableReceivers = nil
+						} else {
+							// All enabled receivers will be set as true
+							for _, recKey := range receiversList {
+								//Safe Cast
+								receiverKey, ok := recKey.(string)
+								if !ok {
+									return nil, fmt.Errorf("ReceiverKey is not a string: %v", receiverKey)
+								}
+								availableReceivers[receiverKey] = true
+							}
+						}
+						//Removing all non-enabled receivers
+						for recID, recKey := range availableReceivers {
+							if !(recKey) {
+								delete(availableReceivers, recID)
+							}
 						}
 					}
 				}

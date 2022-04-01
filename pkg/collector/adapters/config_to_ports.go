@@ -51,7 +51,7 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 	if !ok {
 		return nil, ErrNoReceivers
 	}
-	recEnabled, err := ConfigValidate(logger, config)
+	recEnabled, err := GetEnabledReceivers(logger, config)
 	if err != nil {
 		return nil, err
 	}

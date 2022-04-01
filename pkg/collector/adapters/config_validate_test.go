@@ -62,7 +62,50 @@ service:
 	require.NotEmpty(t, config)
 
 	// test
-	check, err := ConfigValidate(logger, config)
+	check, err := GetEnabledReceivers(logger, config)
 	assert.NoError(t, err)
 	require.NotEmpty(t, check)
+}
+
+func TestEmptyEnabledReceivers(t *testing.T) {
+	// prepare
+
+	// First Test - Exporters
+	configStr := `
+receivers:
+  httpd/mtls:
+    protocols:
+      http:
+        endpoint: mysite.local:55690
+  jaeger:
+    protocols:
+      grpc:
+  prometheus:
+    protocols:
+      grpc:
+
+processors:
+
+exporters:
+  logging:
+
+service:
+  pipelines:
+    metrics:
+      receivers: []
+      exporters: []
+    metrics/1:
+      receivers: []
+      exporters: []
+`
+	// // prepare
+	config, err := ConfigFromString(configStr)
+	require.NoError(t, err)
+	require.NotEmpty(t, config)
+
+	// test
+	check, err := GetEnabledReceivers(logger, config)
+	assert.NoError(t, err)
+	require.Empty(t, check)
+	//require.NotEmpty(t, check)
 }
