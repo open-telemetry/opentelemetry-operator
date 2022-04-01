@@ -170,7 +170,7 @@ func TestDeploymentFilterLabels(t *testing.T) {
 
 	d := Deployment(cfg, logger, otelcol)
 
-	assert.Len(t, d.ObjectMeta.Labels, 5)
+	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
 		assert.NotContains(t, d.ObjectMeta.Labels, k)
 	}

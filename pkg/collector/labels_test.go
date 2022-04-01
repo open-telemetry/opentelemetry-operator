@@ -78,7 +78,7 @@ func TestLabelsPropagateDown(t *testing.T) {
 	labels := Labels(otelcol, []string{})
 
 	// verify
-	assert.Len(t, labels, 5)
+	assert.Len(t, labels, 6)
 	assert.Equal(t, "mycomponent", labels["myapp"])
 }
 
@@ -93,7 +93,7 @@ func TestLabelsFilter(t *testing.T) {
 	labels := Labels(otelcol, []string{".*.bar.io"})
 
 	// verify
-	assert.Len(t, labels, 5)
+	assert.Len(t, labels, 6)
 	assert.NotContains(t, labels, "test.bar.io")
 	assert.Equal(t, "bar", labels["test.foo.io"])
 }
