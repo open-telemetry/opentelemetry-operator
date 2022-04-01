@@ -96,7 +96,11 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 	version := strings.Split(params.Instance.Spec.Image, ":")
 	labels := targetallocator.Labels(params.Instance)
 	labels["app.kubernetes.io/name"] = name
-	labels["app.kubernetes.io/version"] = version[len(version)-1]
+	if len(version) > 1 {
+		labels["app.kubernetes.io/version"] = version[len(version)-1]
+	} else {
+		labels["app.kubernetes.io/version"] = "latest"
+	}
 
 	promConfig, err := ta.ConfigToPromConfig(params.Instance.Spec.Config)
 	if err != nil {
