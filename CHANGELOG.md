@@ -1,6 +1,15 @@
 Changes by Version
 ==================
 
+0.48.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.48.0
+* Filter out unneeded labels ([#606](https://github.com/open-telemetry/opentelemetry-operator/pull/606), [@ekarlso](https://github.com/ekarlso))
+* add labels in order to make selectors unique ([#796](https://github.com/open-telemetry/opentelemetry-operator/pull/796), [@davidkarlsen](https://github.com/davidkarlsen))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.48.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.48.0)
+* [OpenTelemetry Contrib - v0.48.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.48.0)
+
 0.47.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.47.0
