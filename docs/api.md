@@ -6115,9 +6115,16 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
-          Replicas is currently not being set and might be removed in the next version.<br/>
+          Replicas is currently not being set and might be removed in the next version. Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorstatusscale">scale</a></b></td>
+        <td>object</td>
+        <td>
+          Scale is the OpenTelemetryCollector's scale subresource status.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6125,6 +6132,42 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         <td>string</td>
         <td>
           Version of the managed OpenTelemetry Collector (operand)<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.status.scale
+<sup><sup>[↩ Parent](#opentelemetrycollectorstatus)</sup></sup>
+
+
+
+Scale is the OpenTelemetryCollector's scale subresource status.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          The total number non-terminated pods targeted by this OpenTelemetryCollector's deployment or statefulSet.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>selector</b></td>
+        <td>string</td>
+        <td>
+          The selector used to match the OpenTelemetryCollector's deployment or statefulSet pods.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
