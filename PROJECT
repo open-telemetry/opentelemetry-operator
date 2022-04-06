@@ -30,4 +30,8 @@ resources:
   webhooks:
     defaulting: true
     webhookVersion: v1
+- controller: true
+  domain: opentelemetry.io
+  kind: Instrumentation
+  version: v1
 version: "3"
