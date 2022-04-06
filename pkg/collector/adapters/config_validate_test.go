@@ -19,7 +19,6 @@ import (
 
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -62,8 +61,7 @@ service:
 	require.NotEmpty(t, config)
 
 	// test
-	check, err := GetEnabledReceivers(logger, config)
-	assert.NoError(t, err)
+	check := GetEnabledReceivers(logger, config)
 	require.NotEmpty(t, check)
 }
 
@@ -104,8 +102,7 @@ service:
 	require.NotEmpty(t, config)
 
 	// test
-	check, err := GetEnabledReceivers(logger, config)
-	assert.NoError(t, err)
+	check := GetEnabledReceivers(logger, config)
 	require.Empty(t, check)
 	//require.NotEmpty(t, check)
 }
