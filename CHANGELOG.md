@@ -1,6 +1,34 @@
 Changes by Version
 ==================
 
+0.48.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.48.0
+* Filter out unneeded labels ([#606](https://github.com/open-telemetry/opentelemetry-operator/pull/606), [@ekarlso](https://github.com/ekarlso))
+* add labels in order to make selectors unique ([#796](https://github.com/open-telemetry/opentelemetry-operator/pull/796), [@davidkarlsen](https://github.com/davidkarlsen))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.48.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.48.0)
+* [OpenTelemetry Contrib - v0.48.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.48.0)
+
+0.47.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.47.0
+* doc: customized auto-instrumentation ([#762](https://github.com/open-telemetry/opentelemetry-operator/pull/762), [@cuichenli](https://github.com/cuichenli))
+* Remove v prefix from the container image version/tag ([#771](https://github.com/open-telemetry/opentelemetry-operator/pull/771), [@pavolloffay](https://github.com/pavolloffay))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.47.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.47.0)
+* [OpenTelemetry Contrib - v0.47.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.47.0)
+
+0.46.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.46.0
+* add autoscale option to enable support for Horizontal Pod Autoscaling ([#746](https://github.com/open-telemetry/opentelemetry-operator/pull/746), [@binjip978](https://github.com/binjip978))
+* chore(nodejs): bump auto-instrumentations ([#763](https://github.com/open-telemetry/opentelemetry-operator/pull/763), [@mat-rumian](https://github.com/mat-rumian))
+* Make operator more resiliant to etcd defrag activity ([#742](https://github.com/open-telemetry/opentelemetry-operator/pull/742), [@pavolloffay](https://github.com/pavolloffay))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.46.0)
+* [OpenTelemetry Contrib - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.46.0)
+
 0.45.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.45.0

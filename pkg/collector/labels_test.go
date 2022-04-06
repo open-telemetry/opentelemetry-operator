@@ -31,12 +31,37 @@ func TestLabelsCommonSet(t *testing.T) {
 			Name:      "my-instance",
 			Namespace: "my-ns",
 		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+		},
 	}
 
 	// test
-	labels := Labels(otelcol)
+	labels := Labels(otelcol, []string{})
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
+	assert.Equal(t, "0.47.0", labels["app.kubernetes.io/version"])
+	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
+	assert.Equal(t, "opentelemetry-collector", labels["app.kubernetes.io/component"])
+}
+
+func TestLabelsTagUnset(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-ns",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+		},
+	}
+
+	// test
+	labels := Labels(otelcol, []string{})
+	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
+	assert.Equal(t, "latest", labels["app.kubernetes.io/version"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-collector", labels["app.kubernetes.io/component"])
 }
@@ -50,9 +75,25 @@ func TestLabelsPropagateDown(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol)
+	labels := Labels(otelcol, []string{})
 
 	// verify
-	assert.Len(t, labels, 5)
+	assert.Len(t, labels, 6)
 	assert.Equal(t, "mycomponent", labels["myapp"])
+}
+
+func TestLabelsFilter(t *testing.T) {
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{"test.bar.io": "foo", "test.foo.io": "bar"},
+		},
+	}
+
+	// This requires the filter to be in regex match form and not the other simpler wildcard one.
+	labels := Labels(otelcol, []string{".*.bar.io"})
+
+	// verify
+	assert.Len(t, labels, 6)
+	assert.NotContains(t, labels, "test.bar.io")
+	assert.Equal(t, "bar", labels["test.foo.io"])
 }

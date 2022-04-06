@@ -2565,10 +2565,25 @@ spec:
                 type: array
                 x-kubernetes-list-type: atomic
               replicas:
-                description: Replicas is currently not being set and might be removed
-                  in the next version.
+                description: 'Replicas is currently not being set and might be removed
+                  in the next version. Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas"
+                  instead.'
                 format: int32
                 type: integer
+              scale:
+                description: Scale is the OpenTelemetryCollector's scale subresource
+                  status.
+                properties:
+                  replicas:
+                    description: The total number non-terminated pods targeted by
+                      this OpenTelemetryCollector's deployment or statefulSet.
+                    format: int32
+                    type: integer
+                  selector:
+                    description: The selector used to match the OpenTelemetryCollector's
+                      deployment or statefulSet pods.
+                    type: string
+                type: object
               version:
                 description: Version of the managed OpenTelemetry Collector (operand)
                 type: string
@@ -2578,8 +2593,9 @@ spec:
     storage: true
     subresources:
       scale:
+        labelSelectorPath: .status.scale.selector
         specReplicasPath: .spec.replicas
-        statusReplicasPath: .status.replicas
+        statusReplicasPath: .status.scale.replicas
       status: {}
 status:
   acceptedNames:

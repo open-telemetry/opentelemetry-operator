@@ -36,11 +36,13 @@ func TestDesiredConfigMap(t *testing.T) {
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/instance":   "default.test",
 		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/version":    "0.47.0",
 	}
 
 	t.Run("should return expected collector config map", func(t *testing.T) {
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
+		expectedLables["app.kubernetes.io/version"] = "0.47.0"
 
 		expectedData := map[string]string{
 			"collector.yaml": `processors:

@@ -15,17 +15,31 @@
 package collector
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
+func isFilteredLabel(label string, filterLabels []string) bool {
+	for _, pattern := range filterLabels {
+		match, _ := regexp.MatchString(pattern, label)
+		return match
+	}
+
+	return false
+}
+
 // Labels return the common labels to all objects that are part of a managed OpenTelemetryCollector.
-func Labels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+func Labels(instance v1alpha1.OpenTelemetryCollector, filterLabels []string) map[string]string {
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
 	if nil != instance.Labels {
 		for k, v := range instance.Labels {
-			base[k] = v
+			if !isFilteredLabel(k, filterLabels) {
+				base[k] = v
+			}
 		}
 	}
 
@@ -33,6 +47,12 @@ func Labels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 	base["app.kubernetes.io/instance"] = naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name)
 	base["app.kubernetes.io/part-of"] = "opentelemetry"
 	base["app.kubernetes.io/component"] = "opentelemetry-collector"
+	version := strings.Split(instance.Spec.Image, ":")
+	if len(version) > 1 {
+		base["app.kubernetes.io/version"] = version[len(version)-1]
+	} else {
+		base["app.kubernetes.io/version"] = "latest"
+	}
 
 	return base
 }

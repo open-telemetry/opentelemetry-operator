@@ -129,11 +129,30 @@ type OpenTelemetryTargetAllocator struct {
 	Image string `json:"image,omitempty"`
 }
 
+// ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's
+// scale subresource.
+type ScaleSubresourceStatus struct {
+	// The total number non-terminated pods targeted by this
+	// OpenTelemetryCollector's deployment or statefulSet.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// The selector used to match the OpenTelemetryCollector's
+	// deployment or statefulSet pods.
+	// +optional
+	Selector string `json:"selector,omitempty"`
+}
+
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
 type OpenTelemetryCollectorStatus struct {
 	// Replicas is currently not being set and might be removed in the next version.
 	// +optional
+	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
 	Replicas int32 `json:"replicas,omitempty"`
+
+	// Scale is the OpenTelemetryCollector's scale subresource status.
+	// +optional
+	Scale ScaleSubresourceStatus `json:"scale,omitempty"`
 
 	// Version of the managed OpenTelemetry Collector (operand)
 	// +optional
@@ -149,7 +168,7 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
-// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
