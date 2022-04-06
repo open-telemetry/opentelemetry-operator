@@ -104,5 +104,4 @@ service:
 	// test
 	check := GetEnabledReceivers(logger, config)
 	require.Empty(t, check)
-	//require.NotEmpty(t, check)
 }
