@@ -21,6 +21,12 @@ import (
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
 type InstrumentationSpec struct {
+	// AutoUpdate defines the behavior when the IntrumentationSpec is changed.
+	// NOTE: automatic updating of pod instrumentation is only supported if a pod
+	// is owned by a Deployment, DaemonSet or StatefulSet.
+	// +optional
+	AutoUpdate bool `json:"auto_update,omitempty"`
+
 	// Exporter defines exporter configuration.
 	// +optional
 	Exporter `json:"exporter,omitempty"`
