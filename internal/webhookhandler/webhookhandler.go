@@ -29,7 +29,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=ignore,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.kb.io,sideEffects=none,admissionReviewVersions=v1
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch
@@ -78,19 +78,22 @@ func (p *podSidecarInjector) Handle(ctx context.Context, req admission.Request) 
 	ns := corev1.Namespace{}
 	err = p.client.Get(ctx, types.NamespacedName{Name: req.Namespace, Namespace: ""}, &ns)
 	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+		res := admission.Errored(http.StatusInternalServerError, err)
+		res.Allowed = true
 	}
 
 	for _, m := range p.podMutators {
 		pod, err = m.Mutate(ctx, ns, pod)
 		if err != nil {
-			return admission.Errored(http.StatusInternalServerError, err)
+			res := admission.Errored(http.StatusInternalServerError, err)
+			res.Allowed = true
 		}
 	}
 
 	marshaledPod, err := json.Marshal(pod)
 	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+		res := admission.Errored(http.StatusInternalServerError, err)
+		res.Allowed = true
 	}
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
