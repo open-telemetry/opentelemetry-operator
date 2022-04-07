@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestOELColDefaultingWebhook(t *testing.T) {
+func TestOTELColDefaultingWebhook(t *testing.T) {
 	one := int32(1)
 	five := int32(5)
 	tests := []struct {
