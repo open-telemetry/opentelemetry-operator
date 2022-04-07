@@ -103,7 +103,7 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			currentReplicas := existing.Status.Replicas
 			// if replicas (minReplicas from HPA perspective) is bigger than
 			// current status use it.
-			if *params.Instance.Spec.Replicas > currentReplicas {
+			if params.Instance.Spec.Replicas != nil && *params.Instance.Spec.Replicas > currentReplicas {
 				currentReplicas = *params.Instance.Spec.Replicas
 			}
 			updated.Spec.Replicas = &currentReplicas
