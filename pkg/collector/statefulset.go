@@ -57,6 +57,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 					DNSPolicy:          getDnsPolicy(otelcol),
 					HostNetwork:        otelcol.Spec.HostNetwork,
 					Tolerations:        otelcol.Spec.Tolerations,
+					NodeSelector:       otelcol.Spec.NodeSelector,
 					SecurityContext:    otelcol.Spec.PodSecurityContext,
 				},
 			},
