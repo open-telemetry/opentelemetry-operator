@@ -93,11 +93,6 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
 	}
 
-	// validate replicas
-	if (r.Spec.Mode == ModeSidecar || r.Spec.Mode == ModeDaemonSet) && r.Spec.Replicas != nil {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'replicas'", r.Spec.Mode)
-	}
-
 	// validate tolerations
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
 		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
