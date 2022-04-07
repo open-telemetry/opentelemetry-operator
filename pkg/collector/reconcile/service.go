@@ -68,7 +68,7 @@ func Services(ctx context.Context, params Params) error {
 }
 
 func desiredService(ctx context.Context, params Params) *corev1.Service {
-	labels := collector.Labels(params.Instance)
+	labels := collector.Labels(params.Instance, []string{})
 	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
 	// by coincidence, the selector is the same as the label, but note that the selector points to the deployment
@@ -163,10 +163,10 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 }
 
 func monitoringService(ctx context.Context, params Params) *corev1.Service {
-	labels := collector.Labels(params.Instance)
+	labels := collector.Labels(params.Instance, []string{})
 	labels["app.kubernetes.io/name"] = naming.MonitoringService(params.Instance)
 
-	selector := collector.Labels(params.Instance)
+	selector := collector.Labels(params.Instance, []string{})
 	selector["app.kubernetes.io/name"] = fmt.Sprintf("%s-collector", params.Instance.Name)
 
 	return &corev1.Service{
@@ -257,6 +257,7 @@ func deleteServices(ctx context.Context, params Params, expected []corev1.Servic
 		for _, keep := range expected {
 			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
 				del = false
+				break
 			}
 		}
 

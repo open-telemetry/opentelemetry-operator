@@ -19,13 +19,14 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v2"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_39_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_39_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.39.0, failed to parse configuration: %w", err)
@@ -42,7 +43,9 @@ func upgrade0_39_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 			for k2 := range memoryLimiter {
 				if k2 == "ballast_size_mib" {
 					delete(memoryLimiter, k2)
-					otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", k1))
+					existing := &corev1.ConfigMap{}
+					updated := existing.DeepCopy()
+					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", k1))
 				}
 			}
 		}
@@ -94,7 +97,9 @@ func upgrade0_39_0(cl client.Client, otelcol *v1alpha1.OpenTelemetryCollector) (
 							for i, k4 := range receiversList {
 								if strings.HasPrefix(k4.(string), "httpd") {
 									receiversList[i] = strings.Replace(k4.(string), "httpd", "apache", 1)
-									otelcol.Status.Messages = append(otelcol.Status.Messages, fmt.Sprintf("upgrade to v0.39.0 has renamed the %s to %s receiver", k4.(string), receiversList[i]))
+									existing := &corev1.ConfigMap{}
+									updated := existing.DeepCopy()
+									u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", receiversList[i]))
 								}
 							}
 						}

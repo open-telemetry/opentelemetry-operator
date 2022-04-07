@@ -17,17 +17,13 @@ jobs:
         go-version: 1.17
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v2.4.0
+      uses: actions/checkout@v3
 
     - name: "install kubebuilder"
       run: ./hack/install-kubebuilder.sh
 
     - name: "install kustomize"
       run: ./hack/install-kustomize.sh
-
-    - uses: jpkrohling/setup-operator-sdk@v1.1.0
-      with:
-        operator-sdk-version: v1.17.0
 
     - name: "basic checks"
       run: make ci
@@ -36,21 +32,25 @@ jobs:
     name: Code standards (linting)
     runs-on: ubuntu-20.04
     steps:
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v2.4.0
+      uses: actions/checkout@v3
 
     - name: Lint
-      uses: golangci/golangci-lint-action@v2.5.2
+      uses: golangci/golangci-lint-action@v3
       with:
         args: -v
-        version: v1.29
+        version: v1.44
 
   security:
     name: Security
     runs-on: ubuntu-20.04
     steps:
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v2.4.0
+      uses: actions/checkout@v3
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1

@@ -137,6 +137,9 @@ type InstrumentationStatus struct {
 // +kubebuilder:resource:shortName=otelinst;otelinsts
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Endpoint",type="string",JSONPath=".spec.exporter.endpoint"
+// +kubebuilder:printcolumn:name="Sampler",type="string",JSONPath=".spec.sampler.type"
+// +kubebuilder:printcolumn:name="Sampler Arg",type="string",JSONPath=".spec.sampler.argument"
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Instrumentation"
 // +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1}}
 

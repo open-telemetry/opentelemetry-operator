@@ -51,6 +51,7 @@ type Config struct {
 	autoInstrumentationJavaImage   string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationPythonImage string
+	labelsFilter                   []string
 }
 
 // New constructs a new configuration based on the given options.
@@ -81,6 +82,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
+		labelsFilter:                   o.labelsFilter,
 	}
 }
 
@@ -173,4 +175,9 @@ func (c *Config) AutoInstrumentationNodeJSImage() string {
 // AutoInstrumentationPythonImage returns OpenTelemetry Python auto-instrumentation container image.
 func (c *Config) AutoInstrumentationPythonImage() string {
 	return c.autoInstrumentationPythonImage
+}
+
+// Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+func (c *Config) LabelsFilter() []string {
+	return c.labelsFilter
 }

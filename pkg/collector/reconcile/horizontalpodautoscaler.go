@@ -18,39 +18,40 @@ import (
 	"context"
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
-// ServiceAccounts reconciles the service account(s) required for the instance in the current context.
-func ServiceAccounts(ctx context.Context, params Params) error {
-	desired := []corev1.ServiceAccount{}
-	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
-		desired = append(desired, collector.ServiceAccount(params.Instance))
+// HorizontalPodAutoscaler reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
+func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
+	desired := []autoscalingv1.HorizontalPodAutoscaler{}
+
+	// check if autoscale mode is on, e.g MaxReplicas is not nil
+	if params.Instance.Spec.MaxReplicas != nil {
+		desired = append(desired, collector.HorizontalPodAutoscaler(params.Config, params.Log, params.Instance))
 	}
 
 	// first, handle the create/update parts
-	if err := expectedServiceAccounts(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected service accounts: %w", err)
+	if err := expectedHorizontalPodAutoscalers(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the expected horizontal pod autoscalers: %w", err)
 	}
 
 	// then, delete the extra objects
-	if err := deleteServiceAccounts(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the service accounts to be deleted: %w", err)
+	if err := deleteHorizontalPodAutoscalers(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the horizontal pod autoscalers: %w", err)
 	}
 
 	return nil
 }
 
-func expectedServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
+func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -58,20 +59,19 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
-		existing := &corev1.ServiceAccount{}
+		existing := &autoscalingv1.HorizontalPodAutoscaler{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && k8serrors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
-			params.Log.V(2).Info("created", "serviceaccount.name", desired.Name, "serviceaccount.namespace", desired.Namespace)
+			params.Log.V(2).Info("created", "hpa.name", desired.Name, "hpa.namespace", desired.Namespace)
 			continue
 		} else if err != nil {
-			return fmt.Errorf("failed to get: %w", err)
+			return fmt.Errorf("failed to get %w", err)
 		}
 
-		// it exists already, merge the two if the end result isn't identical to the existing one
 		updated := existing.DeepCopy()
 		if updated.Annotations == nil {
 			updated.Annotations = map[string]string{}
@@ -79,13 +79,18 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 		if updated.Labels == nil {
 			updated.Labels = map[string]string{}
 		}
-		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 
-		for k, v := range desired.ObjectMeta.Annotations {
-			updated.ObjectMeta.Annotations[k] = v
+		updated.OwnerReferences = desired.OwnerReferences
+		updated.Spec.MinReplicas = params.Instance.Spec.Replicas
+		if params.Instance.Spec.MaxReplicas != nil {
+			updated.Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
 		}
-		for k, v := range desired.ObjectMeta.Labels {
-			updated.ObjectMeta.Labels[k] = v
+
+		for k, v := range desired.Annotations {
+			updated.Annotations[k] = v
+		}
+		for k, v := range desired.Labels {
+			updated.Labels[k] = v
 		}
 
 		patch := client.MergeFrom(existing)
@@ -94,13 +99,13 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
 
-		params.Log.V(2).Info("applied", "serviceaccount.name", desired.Name, "serviceaccount.namespace", desired.Namespace)
+		params.Log.V(2).Info("applied", "hpa.name", desired.Name, "hpa.namespace", desired.Namespace)
 	}
 
 	return nil
 }
 
-func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
+func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -108,7 +113,8 @@ func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &corev1.ServiceAccountList{}
+
+	list := &autoscalingv1.HorizontalPodAutoscalerList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -127,7 +133,7 @@ func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1
 			if err := params.Client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %w", err)
 			}
-			params.Log.V(2).Info("deleted", "serviceaccount.name", existing.Name, "serviceaccount.namespace", existing.Namespace)
+			params.Log.V(2).Info("deleted", "hpa.name", existing.Name, "hpa.namespace", existing.Namespace)
 		}
 	}
 

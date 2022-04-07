@@ -1,11 +1,10 @@
 name: "Prepare the release"
 on:
   push:
-    tags:
-    - 'v*'
+    tags: [ 'v*' ]
 
 jobs:
-  unit-tests:
+  release:
     runs-on: ubuntu-20.04
     steps:
     - name: Set up Go
@@ -13,7 +12,7 @@ jobs:
       with:
         go-version: 1.17
 
-    - uses: actions/checkout@v2.4.0
+    - uses: actions/checkout@v3
 
     - name: "install kubebuilder"
       run: ./hack/install-kubebuilder.sh
@@ -21,16 +20,12 @@ jobs:
     - name: "install kustomize"
       run: ./hack/install-kustomize.sh
 
-    - uses: jpkrohling/setup-operator-sdk@v1.1.0
-      with:
-        operator-sdk-version: v1.17.0
-
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator"
 
     - name: "create the release in GitHub"
       env:
-        GH_WRITE_TOKEN: ${{ secrets.GH_WRITE_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./.ci/create-release-github.sh
 
     - name: "refresh go proxy module info on release"

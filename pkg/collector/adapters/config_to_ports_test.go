@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
@@ -53,6 +52,17 @@ func TestExtractPortsFromConfig(t *testing.T) {
     protocols:
       thrift_http:
         endpoint: 0.0.0.0:15268
+  otlp:
+    protocols:
+      grpc:
+      http:
+  otlp/2:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:55555
+  zipkin:
+  zipkin/2:
+        endpoint: 0.0.0.0:33333
 `
 
 	// prepare
@@ -63,7 +73,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	// test
 	ports, err := adapters.ConfigToReceiverPorts(logger, config)
 	assert.NoError(t, err)
-	assert.Len(t, ports, 6)
+	assert.Len(t, ports, 12)
 
 	// verify
 	expectedPorts := map[int32]bool{}
@@ -73,6 +83,11 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	expectedPorts[int32(6831)] = false
 	expectedPorts[int32(6833)] = false
 	expectedPorts[int32(15268)] = false
+	expectedPorts[int32(4318)] = false
+	expectedPorts[int32(55681)] = false
+	expectedPorts[int32(55555)] = false
+	expectedPorts[int32(9411)] = false
+	expectedPorts[int32(33333)] = false
 
 	expectedNames := map[string]bool{}
 	expectedNames["examplereceiver"] = false
@@ -81,6 +96,22 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	expectedNames["jaeger-thrift-compact"] = false
 	expectedNames["jaeger-thrift-binary"] = false
 	expectedNames["jaeger-custom-thrift-http"] = false
+	expectedNames["otlp-grpc"] = false
+	expectedNames["otlp-http"] = false
+	expectedNames["otlp-http-legacy"] = false
+	expectedNames["otlp-2-grpc"] = false
+	expectedNames["zipkin"] = false
+	expectedNames["zipkin-2"] = false
+
+	expectedAppProtocols := map[string]string{}
+	expectedAppProtocols["otlp-grpc"] = "grpc"
+	expectedAppProtocols["otlp-http"] = "http"
+	expectedAppProtocols["otlp-http-legacy"] = "http"
+	expectedAppProtocols["jaeger-custom-thrift-http"] = "http"
+	expectedAppProtocols["jaeger-grpc"] = "grpc"
+	expectedAppProtocols["otlp-2-grpc"] = "grpc"
+	expectedAppProtocols["zipkin"] = "http"
+	expectedAppProtocols["zipkin-2"] = "http"
 
 	// make sure we only have the ports in the set
 	for _, port := range ports {
@@ -88,6 +119,10 @@ func TestExtractPortsFromConfig(t *testing.T) {
 		assert.NotNil(t, expectedNames[port.Name])
 		expectedPorts[port.Port] = true
 		expectedNames[port.Name] = true
+
+		if appProtocol, ok := expectedAppProtocols[port.Name]; ok {
+			assert.Equal(t, appProtocol, *port.AppProtocol)
+		}
 	}
 
 	// and make sure all the ports from the set are there
@@ -95,6 +130,10 @@ func TestExtractPortsFromConfig(t *testing.T) {
 		assert.True(t, val)
 	}
 
+	// make sure we only have the ports names in the set
+	for _, val := range expectedNames {
+		assert.True(t, val)
+	}
 }
 
 func TestNoPortsParsed(t *testing.T) {
@@ -162,7 +201,7 @@ func TestParserFailed(t *testing.T) {
 	// prepare
 	mockParserCalled := false
 	mockParser := &mockParser{
-		portsFunc: func() ([]v1.ServicePort, error) {
+		portsFunc: func() ([]corev1.ServicePort, error) {
 			mockParserCalled = true
 			return nil, errors.New("mocked error")
 		},

@@ -4,8 +4,6 @@ metadata:
   name: sidecar-for-my-app
 spec:
   mode: sidecar
-  args:
-    metrics-level: detailed
   config: |
     receivers:
       jaeger:

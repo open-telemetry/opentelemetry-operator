@@ -27,7 +27,7 @@ import (
 
 // StatefulSet builds the statefulset for the given instance.
 func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.StatefulSet {
-	labels := Labels(otelcol)
+	labels := Labels(otelcol, cfg.LabelsFilter())
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
 	annotations := Annotations(otelcol)
@@ -54,6 +54,8 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 					ServiceAccountName: ServiceAccountName(otelcol),
 					Containers:         []corev1.Container{Container(cfg, logger, otelcol)},
 					Volumes:            Volumes(cfg, otelcol),
+					DNSPolicy:          getDnsPolicy(otelcol),
+					HostNetwork:        otelcol.Spec.HostNetwork,
 					Tolerations:        otelcol.Spec.Tolerations,
 					SecurityContext:    otelcol.Spec.PodSecurityContext,
 				},

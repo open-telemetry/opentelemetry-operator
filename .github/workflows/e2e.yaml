@@ -12,9 +12,11 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
+       # The e2e tests are run on the lowest and highest supported k8s version.
+       # All Kubernetes version in between expose the same APIs, hence the operator
+       # should be compatible with them.
        kube-version:
-       - "1.21"
-       - "1.22"
+       - "1.19"
        - "1.23"
 
     steps:
@@ -25,7 +27,7 @@ jobs:
         go-version: 1.17
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v2.4.0
+      uses: actions/checkout@v3
 
     - name: "install kuttl"
       run: ./hack/install-kuttl.sh

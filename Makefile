@@ -13,7 +13,7 @@ LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= ghcr.io/${USER}/opentelemetry-operator
 IMG_REPO ?= opentelemetry-operator
-IMG ?= ${IMG_PREFIX}/${IMG_REPO}:$(addprefix v,${VERSION})
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 
 TARGETALLOCATOR_IMG_REPO ?= target-allocator
@@ -50,6 +50,8 @@ endif
 KUBE_VERSION ?= 1.21
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
+OPERATOR_SDK_VERSION ?= 1.17.0
+
 CERTMANAGER_VERSION ?= 1.6.1
 
 ifndef ignore-not-found
@@ -64,6 +66,7 @@ ensure-generate-is-noop: set-image-controller generate bundle
 	@git restore config/manager/kustomization.yaml
 	@git diff -s --exit-code api/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code bundle.Dockerfile || (echo "Build failed: the bundle.Dockerfile file has been changed. The file should be the same as generated one. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
 .PHONY: all
@@ -155,7 +158,7 @@ prepare-e2e: kuttl set-test-image-vars set-image-controller container container-
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
 
 .PHONY: scorecard-tests
-scorecard-tests:
+scorecard-tests: operator-sdk
 	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
 
 .PHONY: set-test-image-vars
@@ -281,20 +284,15 @@ else
 KIND=$(shell which kind)
 endif
 
+OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
 .PHONY: operator-sdk
 operator-sdk:
-ifeq (, $(shell which operator-sdk))
 	@{ \
 	set -e ;\
-	echo "" ;\
-	echo "ERROR: operator-sdk not found." ;\
-	echo "Please check https://sdk.operatorframework.io for installation instructions and try again." ;\
-	echo "" ;\
-	exit 1 ;\
+	[ -d bin ] || mkdir bin ;\
+	curl -L -o $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION}/operator-sdk_`go env GOOS`_`go env GOARCH`;\
+	chmod +x $(OPERATOR_SDK) ;\
 	}
-else
-OPERATOR_SDK=$(shell which operator-sdk)
-endif
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle

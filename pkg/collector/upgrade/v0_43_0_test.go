@@ -28,7 +28,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
 
-func Test0_38_0Upgrade(t *testing.T) {
+func Test0_43_0Upgrade(t *testing.T) {
 	// prepare
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	existing := v1alpha1.OpenTelemetryCollector{
@@ -41,11 +41,10 @@ func Test0_38_0Upgrade(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Args: map[string]string{
-				"--hii":         "hello",
-				"--log-profile": "",
-				"--log-format":  "hii",
-				"--log-level":   "debug",
-				"--arg1":        "",
+				"--metrics-addr":   ":8988",
+				"--metrics-level":  "detailed",
+				"--test-upgrade43": "true",
+				"--test-arg1":      "otel",
 			},
 			Config: `
 receivers:
@@ -60,16 +59,15 @@ exporters:
 
 service:
   pipelines:
-    traces:
+    traces: 
       receivers: [otlp/mtls]
       exporters: [otlp]
 `,
 		},
 	}
-	existing.Status.Version = "0.37.0"
+	existing.Status.Version = "0.42.0"
 
-	// TESTCASE 1: verify logging args exist and no config logging parameters
-	// EXPECTED: drop logging args and configure logging parameters into config from args
+	// test
 	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  version.Get(),
@@ -81,8 +79,8 @@ service:
 
 	// verify
 	assert.Equal(t, map[string]string{
-		"--hii":  "hello",
-		"--arg1": "",
+		"--test-upgrade43": "true",
+		"--test-arg1":      "otel",
 	}, res.Spec.Args)
 
 	// verify
@@ -102,15 +100,12 @@ service:
       receivers:
       - otlp/mtls
   telemetry:
-    logs:
-      development: true
-      encoding: hii
-      level: debug
+    metrics:
+      address: :8988
+      level: detailed
 `, res.Spec.Config)
 
-	// TESTCASE 2: verify logging args exist and also config logging parameters exist
-	// EXPECTED: drop logging args and persist logging parameters as configured in config
-	configWithLogging := `exporters:
+	configWithMetrics := `exporters:
   otlp:
     endpoint: example.com
 receivers:
@@ -126,27 +121,25 @@ service:
       receivers:
       - otlp/mtls
   telemetry:
-    logs:
-      development: true
-      encoding: hii
-      level: debug
+    metrics:
+      address: :8988
+      level: detailed
 `
-	existing.Spec.Config = configWithLogging
+	existing.Spec.Config = configWithMetrics
 	existing.Spec.Args = map[string]string{
-		"--hii":         "hello",
-		"--log-profile": "",
-		"--log-format":  "hii",
-		"--log-level":   "debug",
-		"--arg1":        "",
+		"--metrics-addr":   ":8988",
+		"--metrics-level":  "detailed",
+		"--test-upgrade43": "true",
+		"--test-arg1":      "otel",
 	}
-
 	res, err = up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify
-	assert.Equal(t, configWithLogging, res.Spec.Config)
+	assert.Equal(t, configWithMetrics, res.Spec.Config)
 	assert.Equal(t, map[string]string{
-		"--hii":  "hello",
-		"--arg1": "",
+		"--test-upgrade43": "true",
+		"--test-arg1":      "otel",
 	}, res.Spec.Args)
+
 }

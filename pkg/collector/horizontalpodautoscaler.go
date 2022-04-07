@@ -16,8 +16,7 @@ package collector
 
 import (
 	"github.com/go-logr/logr"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -25,41 +24,31 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-// Deployment builds the deployment for the given instance.
-func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.Deployment {
+const defaultCPUTarget int32 = 90
+
+func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) autoscalingv1.HorizontalPodAutoscaler {
 	labels := Labels(otelcol, cfg.LabelsFilter())
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
 	annotations := Annotations(otelcol)
-	podAnnotations := PodAnnotations(otelcol)
+	cpuTarget := defaultCPUTarget
 
-	return appsv1.Deployment{
+	return autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Collector(otelcol),
 			Namespace:   otelcol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: otelcol.Spec.Replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
+				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       naming.Collector(otelcol),
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
-					Annotations: podAnnotations,
-				},
-				Spec: corev1.PodSpec{
-					ServiceAccountName: ServiceAccountName(otelcol),
-					Containers:         []corev1.Container{Container(cfg, logger, otelcol)},
-					Volumes:            Volumes(cfg, otelcol),
-					DNSPolicy:          getDnsPolicy(otelcol),
-					HostNetwork:        otelcol.Spec.HostNetwork,
-					Tolerations:        otelcol.Spec.Tolerations,
-					SecurityContext:    otelcol.Spec.PodSecurityContext,
-				},
-			},
+			MinReplicas:                    otelcol.Spec.Replicas,
+			MaxReplicas:                    *otelcol.Spec.MaxReplicas,
+			TargetCPUUtilizationPercentage: &cpuTarget,
 		},
 	}
 }

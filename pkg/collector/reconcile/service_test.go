@@ -115,10 +115,12 @@ func TestDesiredService(t *testing.T) {
 	})
 	t.Run("should return service with port mentioned in Instance.Spec.Ports and inferred ports", func(t *testing.T) {
 
+		grpc := "grpc"
 		jaegerPorts := v1.ServicePort{
-			Name:     "jaeger-grpc",
-			Protocol: "TCP",
-			Port:     14250,
+			Name:        "jaeger-grpc",
+			Protocol:    "TCP",
+			Port:        14250,
+			AppProtocol: &grpc,
 		}
 		ports := append(params().Instance.Spec.Ports, jaegerPorts)
 		expected := service("test-collector", ports)
@@ -211,7 +213,7 @@ func TestMonitoringService(t *testing.T) {
 }
 
 func service(name string, ports []v1.ServicePort) v1.Service {
-	labels := collector.Labels(params().Instance)
+	labels := collector.Labels(params().Instance, []string{})
 	labels["app.kubernetes.io/name"] = name
 
 	selector := labels

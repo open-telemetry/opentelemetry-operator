@@ -67,6 +67,7 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
 	})
 	assert.False(t, d1.Spec.Template.Spec.HostNetwork)
+	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// verify custom
 	d2 := DaemonSet(config.New(), logger, v1alpha1.OpenTelemetryCollector{
@@ -75,6 +76,7 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 		},
 	})
 	assert.True(t, d2.Spec.Template.Spec.HostNetwork)
+	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
 
 func TestDaemonsetPodAnnotations(t *testing.T) {
@@ -126,4 +128,28 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
 	assert.Equal(t, &runasGroup, d.Spec.Template.Spec.SecurityContext.RunAsGroup)
+}
+
+func TestDaemonsetFilterLabels(t *testing.T) {
+	excludedLabels := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+	}
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "my-instance",
+			Labels: excludedLabels,
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
+
+	d := DaemonSet(cfg, logger, otelcol)
+
+	assert.Len(t, d.ObjectMeta.Labels, 6)
+	for k := range excludedLabels {
+		assert.NotContains(t, d.ObjectMeta.Labels, k)
+	}
 }

@@ -10,6 +10,8 @@ spec:
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
       value: "0.85"
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
   exporter:
     endpoint: http://localhost:4317
   propagators:

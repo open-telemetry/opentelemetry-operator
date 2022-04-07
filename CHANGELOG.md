@@ -1,6 +1,66 @@
 Changes by Version
 ==================
 
+0.48.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.48.0
+* Filter out unneeded labels ([#606](https://github.com/open-telemetry/opentelemetry-operator/pull/606), [@ekarlso](https://github.com/ekarlso))
+* add labels in order to make selectors unique ([#796](https://github.com/open-telemetry/opentelemetry-operator/pull/796), [@davidkarlsen](https://github.com/davidkarlsen))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.48.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.48.0)
+* [OpenTelemetry Contrib - v0.48.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.48.0)
+
+0.47.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.47.0
+* doc: customized auto-instrumentation ([#762](https://github.com/open-telemetry/opentelemetry-operator/pull/762), [@cuichenli](https://github.com/cuichenli))
+* Remove v prefix from the container image version/tag ([#771](https://github.com/open-telemetry/opentelemetry-operator/pull/771), [@pavolloffay](https://github.com/pavolloffay))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.47.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.47.0)
+* [OpenTelemetry Contrib - v0.47.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.47.0)
+
+0.46.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.46.0
+* add autoscale option to enable support for Horizontal Pod Autoscaling ([#746](https://github.com/open-telemetry/opentelemetry-operator/pull/746), [@binjip978](https://github.com/binjip978))
+* chore(nodejs): bump auto-instrumentations ([#763](https://github.com/open-telemetry/opentelemetry-operator/pull/763), [@mat-rumian](https://github.com/mat-rumian))
+* Make operator more resiliant to etcd defrag activity ([#742](https://github.com/open-telemetry/opentelemetry-operator/pull/742), [@pavolloffay](https://github.com/pavolloffay))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.46.0)
+* [OpenTelemetry Contrib - v0.46.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.46.0)
+
+0.45.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.45.0
+* Match pod `dnsPolicy` to `hostNetwork` config ([#691](https://github.com/open-telemetry/opentelemetry-operator/pull/691), [@gai6948](https://github.com/gai6948))
+* Change container image USER to UID ([#738](https://github.com/open-telemetry/opentelemetry-operator/pull/738), [@kraman](https://github.com/kraman))
+* Use OTEL collector image from GHCR ([#732](https://github.com/open-telemetry/opentelemetry-operator/pull/732), [@pavolloffay](https://github.com/pavolloffay))
+
+0.44.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.44.0
+* Deprecate otelcol status messages ([#733](https://github.com/open-telemetry/opentelemetry-operator/pull/733), [@pavolloffay](https://github.com/pavolloffay))
+* Make sure correct version of operator-sdk is always used ([#728](https://github.com/open-telemetry/opentelemetry-operator/pull/728), [@pavolloffay](https://github.com/pavolloffay))
+* Storing upgrade status into events ([#707](https://github.com/open-telemetry/opentelemetry-operator/pull/707), [@yuriolisa](https://github.com/yuriolisa))
+* Bump default java auto-instrumentation version to `1.11.1` ([#731](https://github.com/open-telemetry/opentelemetry-operator/pull/731), [@pavolloffay](https://github.com/pavolloffay))
+* Add status fields for instrumentation kind ([#717](https://github.com/open-telemetry/opentelemetry-operator/pull/717), [@frzifus](https://github.com/frzifus))
+* Add appProtocol for otlp and jaeger receiver parsers ([#704](https://github.com/open-telemetry/opentelemetry-operator/pull/704), [@binjip978](https://github.com/binjip978))
+* Add SPLUNK_ env prefix support to Instrumentation kind ([#709](https://github.com/open-telemetry/opentelemetry-operator/pull/709), [@elvis-cai](https://github.com/elvis-cai))
+* Fix logger in instrumentation webhook ([#698](https://github.com/open-telemetry/opentelemetry-operator/pull/698), [@pavolloffay](https://github.com/pavolloffay))
+
+0.43.0
+-------------------
+* Bumped OpenTelemetry Collector to v0.43.0
+* Upgrade to 0.43.0 will move the metrics CLI arguments into the config, in response to ([#680](https://github.com/open-telemetry/opentelemetry-operator/pull/680), [@yuriolisa](https://github.com/yuriolisa))
+* Add unique label and selector for operator objects ([#697](https://github.com/open-telemetry/opentelemetry-operator/pull/697), [@pavolloffay](https://github.com/pavolloffay))
+* Bump operator-sdk to 1.17 ([#692](https://github.com/open-telemetry/opentelemetry-operator/pull/692), [@pavolloffay](https://github.com/pavolloffay))
+* Update java instrumentation to 1.10.1 ([#688](https://github.com/open-telemetry/opentelemetry-operator/pull/688), [@anuraaga](https://github.com/anuraaga))
+* Update nodejs instrumentation to 0.27.0 ([#687](https://github.com/open-telemetry/opentelemetry-operator/pull/687), [@anuraaga](https://github.com/anuraaga))
+* Update python instrumentation to 0.28b1 ([#686](https://github.com/open-telemetry/opentelemetry-operator/pull/686), [@anuraaga](https://github.com/anuraaga))
+* Add b3, jaeger, ottrace propagators to python instrumentation ([#684](https://github.com/open-telemetry/opentelemetry-operator/pull/684), [@anuraaga](https://github.com/anuraaga))
+* Add env support to instrumentation kind  ([#674](https://github.com/open-telemetry/opentelemetry-operator/pull/674), [@Duncan-tree-zhou](https://github.com/Duncan-tree-zhou))
+* Fix collector config update ([#670](https://github.com/open-telemetry/opentelemetry-operator/pull/670), [@mcariapas](https://github.com/mcariapas))
+
 0.42.0
 -------------------
 * Bumped OpenTelemetry Collector to v0.42.0

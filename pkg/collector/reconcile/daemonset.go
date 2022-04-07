@@ -119,6 +119,7 @@ func deleteDaemonSets(ctx context.Context, params Params, expected []appsv1.Daem
 		for _, keep := range expected {
 			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
 				del = false
+				break
 			}
 		}
 

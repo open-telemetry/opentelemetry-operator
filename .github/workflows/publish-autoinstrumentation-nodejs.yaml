@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2.3.5
+      - uses: actions/checkout@v3
 
       - name: Read version
         run: echo VERSION=$(cat autoinstrumentation/nodejs/package.json | jq -r '.dependencies."@opentelemetry/sdk-node"') >> $GITHUB_ENV
@@ -32,14 +32,14 @@ jobs:
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 
       - name: Login to GitHub Package Registry
-        uses: docker/login-action@v1.12.0
+        uses: docker/login-action@v1.14.1
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v2.9.0
+        uses: docker/build-push-action@v2.10.0
         with:
           context: autoinstrumentation/nodejs
           push: ${{ github.event_name == 'push' }}

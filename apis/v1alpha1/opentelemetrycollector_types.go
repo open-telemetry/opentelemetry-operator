@@ -37,6 +37,10 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 
+	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
+	// +optional
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
@@ -136,11 +140,31 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
+// ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's
+// scale subresource.
+type ScaleSubresourceStatus struct {
+	// The total number non-terminated pods targeted by this
+	// OpenTelemetryCollector's deployment or statefulSet.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// The selector used to match the OpenTelemetryCollector's
+	// deployment or statefulSet pods.
+	// +optional
+	Selector string `json:"selector,omitempty"`
+
+}
+
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
 type OpenTelemetryCollectorStatus struct {
 	// Replicas is currently not being set and might be removed in the next version.
 	// +optional
+	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
 	Replicas int32 `json:"replicas,omitempty"`
+
+	// Scale is the OpenTelemetryCollector's scale subresource status.
+	// +optional
+	Scale ScaleSubresourceStatus `json:"scale,omitempty"`
 
 	// Version of the managed OpenTelemetry Collector (operand)
 	// +optional
@@ -149,13 +173,14 @@ type OpenTelemetryCollectorStatus struct {
 	// Messages about actions performed by the operator on this resource.
 	// +optional
 	// +listType=atomic
+	// Deprecated: use Kubernetes events instead.
 	Messages []string `json:"messages,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
-// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
