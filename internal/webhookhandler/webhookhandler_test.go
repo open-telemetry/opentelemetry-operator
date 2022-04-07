@@ -403,15 +403,17 @@ func TestFailOnInvalidRequest(t *testing.T) {
 		name     string
 		req      admission.Request
 		expected int32
+		allowed  bool
 	}{
 		{
-			"empty payload",
-			admission.Request{},
-			http.StatusBadRequest,
+			name:     "empty payload",
+			req:      admission.Request{},
+			expected: http.StatusBadRequest,
+			allowed:  false,
 		},
 		{
-			"namespace doesn't exist",
-			func() admission.Request {
+			name: "namespace doesn't exist",
+			req: func() admission.Request {
 				pod := corev1.Pod{}
 				encoded, err := json.Marshal(pod)
 				require.NoError(t, err)
@@ -425,7 +427,8 @@ func TestFailOnInvalidRequest(t *testing.T) {
 					},
 				}
 			}(),
-			http.StatusInternalServerError,
+			expected: http.StatusInternalServerError,
+			allowed:  true,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -442,7 +445,7 @@ func TestFailOnInvalidRequest(t *testing.T) {
 			res := injector.Handle(context.Background(), tt.req)
 
 			// verify
-			assert.False(t, res.Allowed)
+			assert.Equal(t, tt.allowed, res.Allowed)
 			assert.NotNil(t, res.AdmissionResponse.Result)
 			assert.Equal(t, tt.expected, res.AdmissionResponse.Result.Code)
 		})
