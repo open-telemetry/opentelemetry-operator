@@ -14,7 +14,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
+        go-version: 1.18
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v3
@@ -35,7 +35,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
+        go-version: 1.18
     - name: Check out code into the Go module directory
       uses: actions/checkout@v3
 
@@ -43,7 +43,7 @@ jobs:
       uses: golangci/golangci-lint-action@v3
       with:
         args: -v
-        version: v1.44
+        version: v1.45
 
   security:
     name: Security
