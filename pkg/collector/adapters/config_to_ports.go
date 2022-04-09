@@ -51,7 +51,10 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 	if !ok {
 		return nil, ErrNoReceivers
 	}
-
+	recEnabled := GetEnabledReceivers(logger, config)
+	if recEnabled == nil {
+		return nil, ErrReceiversNotAMap
+	}
 	receivers, ok := receiversProperty.(map[interface{}]interface{})
 	if !ok {
 		return nil, ErrReceiversNotAMap
@@ -59,6 +62,11 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 
 	ports := []corev1.ServicePort{}
 	for key, val := range receivers {
+		// This check will pass only the enabled receivers,
+		// then only the related ports will be opened.
+		if !recEnabled[key] {
+			continue
+		}
 		receiver, ok := val.(map[interface{}]interface{})
 		if !ok {
 			logger.Info("receiver doesn't seem to be a map of properties", "receiver", key)
