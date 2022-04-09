@@ -157,7 +157,6 @@ type ScaleSubresourceStatus struct {
 	// deployment or statefulSet pods.
 	// +optional
 	Selector string `json:"selector,omitempty"`
-
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
