@@ -40,6 +40,8 @@ var _ webhook.Defaulter = &OpenTelemetryCollector{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) Default() {
+	opentelemetrycollectorlog.Info("default", "name", r.Name)
+
 	if len(r.Spec.Mode) == 0 {
 		r.Spec.Mode = ModeDeployment
 	}
@@ -54,7 +56,12 @@ func (r *OpenTelemetryCollector) Default() {
 		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 	}
 
-	opentelemetrycollectorlog.Info("default", "name", r.Name)
+	if r.Spec.Replicas == nil {
+		// We can default to one because dependent objects Deployment and HorizontalPodAutoScaler
+		// default to 1 as well.
+		one := int32(1)
+		r.Spec.Replicas = &one
+	}
 }
 
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -84,11 +91,6 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
 		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
-	}
-
-	// validate replicas
-	if (r.Spec.Mode == ModeSidecar || r.Spec.Mode == ModeDaemonSet) && r.Spec.Replicas != nil {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'replicas'", r.Spec.Mode)
 	}
 
 	// validate tolerations
