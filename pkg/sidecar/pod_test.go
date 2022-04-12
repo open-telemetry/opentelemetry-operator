@@ -49,7 +49,7 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
-	changed, err := add(cfg, logger, otelcol, pod)
+	changed, err := add(cfg, logger, otelcol, pod, nil)
 
 	// verify
 	assert.NoError(t, err)
@@ -74,7 +74,7 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
-	changed, err := add(cfg, logger, otelcol, pod)
+	changed, err := add(cfg, logger, otelcol, pod, nil)
 
 	// verify
 	assert.NoError(t, err)
@@ -144,4 +144,38 @@ func TestExistsIn(t *testing.T) {
 			assert.Equal(t, tt.expected, existsIn(tt.pod))
 		})
 	}
+}
+
+func TestAddSidecarWithAditionalEnv(t *testing.T) {
+	// prepare
+	pod := corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{Name: "my-app"},
+			},
+		},
+	}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "otelcol-sample",
+			Namespace: "some-app",
+		},
+	}
+	cfg := config.New(config.WithCollectorImage("some-default-image"))
+
+	extraEnv := corev1.EnvVar{
+		Name:  "extraenv",
+		Value: "extravalue",
+	}
+
+	// test
+	changed, err := add(cfg, logger, otelcol, pod, []corev1.EnvVar{
+		extraEnv,
+	})
+
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, changed.Spec.Containers, 2)
+	assert.Contains(t, changed.Spec.Containers[1].Env, extraEnv)
+
 }
