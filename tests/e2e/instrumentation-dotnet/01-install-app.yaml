@@ -21,4 +21,4 @@ spec:
         fsGroup: 2000
       containers:
       - name: myapp
-        image: ghcr.io/pavolloffay/spring-petclinic:latest
+        image: docker.io/adib070/mvc
