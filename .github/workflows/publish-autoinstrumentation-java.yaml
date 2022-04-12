@@ -1,16 +1,16 @@
 name: "Publish Java Auto-Instrumentation"
 
 on:
-  push:
-    paths:
-      - 'autoinstrumentation/java/**'
-      - '.github/workflows/publish-autoinstrumentation-java.yaml'
-    branches:
-      - main
-  pull_request:
-    paths:
-      - 'autoinstrumentation/java/**'
-      - '.github/workflows/publish-autoinstrumentation-java.yaml'
+  # push:
+  #   paths:
+  #     - 'autoinstrumentation/java/**'
+  #     - '.github/workflows/publish-autoinstrumentation-java.yaml'
+  #   branches:
+  #     - main
+  # pull_request:
+  #   paths:
+  #     - 'autoinstrumentation/java/**'
+  #     - '.github/workflows/publish-autoinstrumentation-java.yaml'
   workflow_dispatch:
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3.7.0
         with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java
+          images: ghcr.io/avadhut123pisal/opentelemetry-operator/autoinstrumentation-java
           tags: |
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 

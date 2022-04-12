@@ -30,6 +30,7 @@ const (
 	AnnotationDefaultAutoInstrumentationJava   = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
 	AnnotationDefaultAutoInstrumentationNodeJS = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
 	AnnotationDefaultAutoInstrumentationPython = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
+	AnnotationDefaultAutoInstrumentationDotNet = "instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"
 	envPrefix                                  = "OTEL_"
 	envSplunkPrefix                            = "SPLUNK_"
 )
@@ -70,6 +71,11 @@ func (r *Instrumentation) Default() {
 	if r.Spec.Python.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationPython]; ok {
 			r.Spec.Python.Image = val
+		}
+	}
+	if r.Spec.DotNet.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationDotNet]; ok {
+			r.Spec.DotNet.Image = val
 		}
 	}
 }
@@ -123,6 +129,9 @@ func (in *Instrumentation) validate() error {
 		return err
 	}
 	if err := in.validateEnv(in.Spec.Python.Env); err != nil {
+		return err
+	}
+	if err := in.validateEnv(in.Spec.DotNet.Env); err != nil {
 		return err
 	}
 

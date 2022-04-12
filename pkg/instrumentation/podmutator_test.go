@@ -550,6 +550,171 @@ func TestMutatePod(t *testing.T) {
 			},
 		},
 		{
+			name: "dotnet injection, true",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "dotnet",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "dotnet",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					DotNet: v1alpha1.DotNet{
+						Image: "otel/dotnet:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+							{
+								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+								Value: "http://localhost:4317",
+							},
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+						{
+							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+							Value: "true",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    initContainerName,
+							Image:   "otel/dotnet:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      volumeName,
+								MountPath: "/otel-auto-instrumentation",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_LOG_LEVEL",
+									Value: "debug",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://localhost:4317",
+								},
+								{
+									Name:  envDotNetStartupHook,
+									Value: dotNetStartupHookPath,
+								},
+								{
+									Name:  envDotNetAdditionalDeps,
+									Value: dotNetAdditionalDepsPath,
+								},
+								{
+									Name:  envDotNetSharedStore,
+									Value: dotNetSharedStorePath,
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+									Value: "true",
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.namespace.name=dotnet,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation",
+									MountPath: "/otel-auto-instrumentation",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "missing annotation",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{

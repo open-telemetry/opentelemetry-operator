@@ -1,12 +1,12 @@
 name: "Publish target allocator"
 
 on:
-  push:
-    paths:
-      - 'cmd/otel-allocator/**'
-      - '.github/workflows/publish-target-allocator.yaml'
-    branches:
-      - main
+  # push:
+  #   paths:
+  #     - 'cmd/otel-allocator/**'
+  #     - '.github/workflows/publish-target-allocator.yaml'
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3.7.0
         with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
+          images: ghcr.io/avadhut123pisal/opentelemetry-operator/target-allocator
           tags: |
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 

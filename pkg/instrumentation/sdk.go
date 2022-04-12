@@ -84,6 +84,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		pod = i.injectCommonEnvVar(otelinst, pod)
 		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
 	}
+	if insts.DotNet != nil {
+		otelinst := *insts.DotNet
+		i.logger.V(1).Info("injecting dotnet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod = injectDotNetSDK(i.logger, otelinst.Spec.DotNet, pod)
+		pod = i.injectCommonEnvVar(otelinst, pod)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
+	}
 	return pod
 }
 

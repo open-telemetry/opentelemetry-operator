@@ -80,6 +80,7 @@ func main() {
 		autoInstrumentationJava   string
 		autoInstrumentationNodeJS string
 		autoInstrumentationPython string
+		autoInstrumentationDotNet string
 		labelsFilter              []string
 	)
 
@@ -93,6 +94,7 @@ func main() {
 	pflag.StringVar(&autoInstrumentationJava, "auto-instrumentation-java-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationPython, "auto-instrumentation-python-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationDotNet, "auto-instrumentation-dot-net", fmt.Sprintf("ghcr.io/logicmonitor/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet), "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringArrayVar(&labelsFilter, "labels", []string{}, "Labels to filter away from propagating onto deploys")
 	pflag.Parse()
 
@@ -106,6 +108,7 @@ func main() {
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"auto-instrumentation-python", autoInstrumentationPython,
+		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
@@ -130,6 +133,7 @@ func main() {
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
+		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 	)
@@ -198,6 +202,7 @@ func main() {
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationJava:   autoInstrumentationJava,
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationNodeJS: autoInstrumentationNodeJS,
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationPython: autoInstrumentationPython,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationDotNet: autoInstrumentationDotNet,
 				},
 			},
 		}).SetupWebhookWithManager(mgr); err != nil {
@@ -259,6 +264,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 			Logger:                ctrl.Log.WithName("instrumentation-upgrade"),
 			DefaultAutoInstJava:   cfg.AutoInstrumentationJavaImage(),
 			DefaultAutoInstNodeJS: cfg.AutoInstrumentationJavaImage(),
+			DefaultAutoInstDotNet: cfg.AutoInstrumentationDotNetImage(),
 			Client:                mgr.GetClient(),
 		}
 		return u.ManagedInstances(c)

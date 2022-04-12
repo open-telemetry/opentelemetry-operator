@@ -30,6 +30,7 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstJava   string
 	DefaultAutoInstNodeJS string
 	DefaultAutoInstPython string
+	DefaultAutoInstDotNet string
 	Client                client.Client
 }
 
@@ -90,6 +91,14 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		if inst.Spec.Python.Image == autoInstPython {
 			inst.Spec.Python.Image = u.DefaultAutoInstPython
 			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython] = u.DefaultAutoInstPython
+		}
+	}
+	autoInstDotnet := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet]
+	if autoInstDotnet != "" {
+		// upgrade the image only if the image matches the annotation
+		if inst.Spec.DotNet.Image == autoInstDotnet {
+			inst.Spec.DotNet.Image = u.DefaultAutoInstDotNet
+			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet] = u.DefaultAutoInstDotNet
 		}
 	}
 	return inst

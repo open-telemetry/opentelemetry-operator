@@ -37,6 +37,7 @@ type options struct {
 	autoInstrumentationJavaImage   string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationPythonImage string
+	autoInstrumentationDotNetImage string
 	collectorConfigMapEntry        string
 	targetAllocatorConfigMapEntry  string
 	logger                         logr.Logger
@@ -116,6 +117,12 @@ func WithAutoInstrumentationNodeJSImage(s string) Option {
 func WithAutoInstrumentationPythonImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationPythonImage = s
+	}
+}
+
+func WithAutoInstrumentationDotNetImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationDotNetImage = s
 	}
 }
 

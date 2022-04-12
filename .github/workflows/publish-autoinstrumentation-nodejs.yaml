@@ -1,16 +1,16 @@
 name: "Publish NodeJS Auto-Instrumentation"
 
 on:
-  push:
-    paths:
-      - 'autoinstrumentation/nodejs/**'
-      - '.github/workflows/publish-autoinstrumentation-nodejs.yaml'
-    branches:
-      - main
-  pull_request:
-    paths:
-      - 'autoinstrumentation/nodejs/**'
-      - '.github/workflows/publish-autoinstrumentation-nodejs.yaml'
+  # push:
+  #   paths:
+  #     - 'autoinstrumentation/nodejs/**'
+  #     - '.github/workflows/publish-autoinstrumentation-nodejs.yaml'
+  #   branches:
+  #     - main
+  # pull_request:
+  #   paths:
+  #     - 'autoinstrumentation/nodejs/**'
+  #     - '.github/workflows/publish-autoinstrumentation-nodejs.yaml'
   workflow_dispatch:
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3.7.0
         with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs
+          images: ghcr.io/avadhut123pisal/opentelemetry-operator/autoinstrumentation-nodejs
           tags: |
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 

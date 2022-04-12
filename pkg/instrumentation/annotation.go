@@ -26,6 +26,7 @@ const (
 	annotationInjectJava   = "instrumentation.opentelemetry.io/inject-java"
 	annotationInjectNodeJS = "instrumentation.opentelemetry.io/inject-nodejs"
 	annotationInjectPython = "instrumentation.opentelemetry.io/inject-python"
+	annotationInjectDotNet = "instrumentation.opentelemetry.io/inject-dotnet"
 )
 
 // annotationValue returns the effective annotationInjectJava value, based on the annotations from the pod and namespace.
