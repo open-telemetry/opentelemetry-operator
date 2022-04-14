@@ -17,7 +17,7 @@ COPY internal/ internal/
 COPY pkg/ pkg/
 COPY versions.txt versions.txt
 
-ARG TARGETARCH
+ARG TARGETARCH=amd64
 ARG VERSION_PKG
 ARG VERSION
 ARG VERSION_DATE
