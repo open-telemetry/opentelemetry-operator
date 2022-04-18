@@ -196,6 +196,7 @@ func TestDeleteServices(t *testing.T) {
 func TestHeadlessService(t *testing.T) {
 	t.Run("should return headless service", func(t *testing.T) {
 		actual := headless(context.Background(), params())
+		assert.Equal(t, actual.Annotations["service.beta.openshift.io/serving-cert-secret-name"], "test-collector-headless-tls")
 		assert.Equal(t, actual.Spec.ClusterIP, "None")
 	})
 }
