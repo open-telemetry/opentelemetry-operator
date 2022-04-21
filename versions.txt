@@ -24,4 +24,4 @@ autoinstrumentation-python=0.28b1
 
 # Represents the current release of DotNet instrumentation.
 # Should match autoinstrumentation/dotnet/version.txt
-autoinstrumentation-dotnet=0.0.1
+autoinstrumentation-dotnet=0.0.1-alpha
