@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	gokitlog "github.com/go-kit/log"
+	"github.com/go-logr/logr"
 	"github.com/otel-allocator/allocation"
 	"github.com/otel-allocator/config"
 	"github.com/prometheus/common/model"
@@ -26,7 +27,8 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to load config file: %v", err)
 		os.Exit(1)
 	}
-	manager = NewManager(context.Background(), gokitlog.NewNopLogger())
+	ctx := context.Background()
+	manager = NewManager(logr.FromContextOrDiscard(ctx), ctx, gokitlog.NewNopLogger())
 
 	results = make(chan []string)
 	manager.Watch(func(targets []allocation.TargetItem) {

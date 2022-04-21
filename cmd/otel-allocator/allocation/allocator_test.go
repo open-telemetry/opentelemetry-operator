@@ -1,6 +1,7 @@
 package allocation
 
 import (
+	"context"
 	"math"
 	"testing"
 
@@ -11,7 +12,7 @@ import (
 
 // Tests least connection - The expected collector after running findNextCollector should be the collector with the least amount of workload
 func TestFindNextCollector(t *testing.T) {
-	var log logr.Logger
+	log := logr.FromContextOrDiscard(context.Background())
 	s := NewAllocator(log)
 
 	defaultCol := collector{Name: "default-col", NumTargets: 1}
@@ -25,8 +26,7 @@ func TestFindNextCollector(t *testing.T) {
 }
 
 func TestSetCollectors(t *testing.T) {
-
-	var log logr.Logger
+	log := logr.FromContextOrDiscard(context.Background())
 	s := NewAllocator(log)
 
 	cols := []string{"col-1", "col-2", "col-3"}
@@ -42,7 +42,7 @@ func TestSetCollectors(t *testing.T) {
 
 func TestAddingAndRemovingTargets(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	var log logr.Logger
+	log := logr.FromContextOrDiscard(context.Background())
 	s := NewAllocator(log)
 
 	cols := []string{"col-1", "col-2", "col-3"}
@@ -88,7 +88,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 
 	// prepare allocator with 3 collectors and 'random' amount of targets
-	var log logr.Logger
+	log := logr.FromContextOrDiscard(context.Background())
 	s := NewAllocator(log)
 
 	cols := []string{"col-1", "col-2", "col-3"}

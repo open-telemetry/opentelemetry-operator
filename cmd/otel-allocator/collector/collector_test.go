@@ -7,6 +7,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,6 +20,7 @@ var collectors = []string{}
 
 func TestMain(m *testing.M) {
 	client = Client{
+		log:           logr.FromContextOrDiscard(context.Background()),
 		k8sClient:     fake.NewSimpleClientset(),
 		collectorChan: make(chan []string, 3),
 		close:         make(chan struct{}),
