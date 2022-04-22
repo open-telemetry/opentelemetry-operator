@@ -6,16 +6,18 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/otel-allocator/allocation"
-	"github.com/otel-allocator/config"
+	allocatorWatcher "github.com/otel-allocator/watcher"
 	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 )
 
 type Manager struct {
-	log     logr.Logger
-	manager *discovery.Manager
-	logger  log.Logger
-	close   chan struct{}
+	log        logr.Logger
+	manager    *discovery.Manager
+	logger     log.Logger
+	close      chan struct{}
+	configsMap map[allocatorWatcher.EventSource]*config.Config
 }
 
 func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, options ...func(*discovery.Manager)) *Manager {
@@ -27,24 +29,29 @@ func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, options
 		}
 	}()
 	return &Manager{
-		log:     log,
-		manager: manager,
-		logger:  logger,
-		close:   make(chan struct{}),
+		log:        log,
+		manager:    manager,
+		logger:     logger,
+		close:      make(chan struct{}),
+		configsMap: make(map[allocatorWatcher.EventSource]*config.Config),
 	}
 }
 
-func (m *Manager) ApplyConfig(cfg config.Config) error {
+func (m *Manager) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.Config) error {
+	m.configsMap[source] = cfg
+
 	discoveryCfg := make(map[string]discovery.Configs)
 
-	for _, scrapeConfig := range cfg.Config.ScrapeConfigs {
-		discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
+	for _, value := range m.configsMap {
+		for _, scrapeConfig := range value.ScrapeConfigs {
+			discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
+		}
 	}
 	return m.manager.ApplyConfig(discoveryCfg)
 }
 
 func (m *Manager) Watch(fn func(targets []allocation.TargetItem)) {
-	log := m.log.WithValues("opentelemetry-targetallocator")
+	log := m.log.WithValues("component", "opentelemetry-targetallocator")
 
 	go func() {
 		for {

@@ -19,6 +19,9 @@ spec:
           storage: 1Gi
   targetAllocator:
     enabled: true
+    image: "local/opentelemetry-operator-targetallocator:e2e"
+    prometheusCR:
+      enabled: true
   config: |
     receivers:
       jaeger:
