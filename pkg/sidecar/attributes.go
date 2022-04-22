@@ -20,6 +20,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
@@ -40,9 +41,9 @@ func getAttributesEnv(ns corev1.Namespace, podReferences podReferences) []corev1
 	var envvars []corev1.EnvVar
 
 	attributes := map[attribute.Key]string{
-		semconv.K8SPodNameKey:       "$(POD_NAME)",
-		semconv.K8SPodUIDKey:        "$(POD_UID)",
-		semconv.K8SNodeNameKey:      "$(NODE_NAME)",
+		semconv.K8SPodNameKey:       fmt.Sprintf("$(%s)", constants.EnvPodName),
+		semconv.K8SPodUIDKey:        fmt.Sprintf("$(%s)", constants.EnvPodUID),
+		semconv.K8SNodeNameKey:      fmt.Sprintf("$(%s)", constants.EnvNodeName),
 		semconv.K8SNamespaceNameKey: ns.Name,
 	}
 
@@ -57,7 +58,25 @@ func getAttributesEnv(ns corev1.Namespace, podReferences podReferences) []corev1
 	}
 
 	envvars = append(envvars, corev1.EnvVar{
-		Name: "NODE_NAME",
+		Name: constants.EnvPodName,
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.name",
+			},
+		},
+	})
+
+	envvars = append(envvars, corev1.EnvVar{
+		Name: constants.EnvPodUID,
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.uid",
+			},
+		},
+	})
+
+	envvars = append(envvars, corev1.EnvVar{
+		Name: constants.EnvNodeName,
 		ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "spec.nodeName",
@@ -65,14 +84,6 @@ func getAttributesEnv(ns corev1.Namespace, podReferences podReferences) []corev1
 		},
 	})
 
-	envvars = append(envvars, corev1.EnvVar{
-		Name: "POD_UID",
-		ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.uid",
-			},
-		},
-	})
 	envvars = append(envvars, corev1.EnvVar{
 		Name:  resourceAttributesEnvName,
 		Value: mapToValue(attributes),
