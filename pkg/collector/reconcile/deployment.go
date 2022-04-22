@@ -98,14 +98,20 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		// if autoscale is enabled, use replicas from current Status
 		if params.Instance.Spec.MaxReplicas != nil {
 			currentReplicas := existing.Status.Replicas
-			// if replicas (minReplicas from HPA perspective) is bigger than
-			// current status use it.
-			if params.Instance.Spec.Replicas != nil && *params.Instance.Spec.Replicas > currentReplicas {
-				currentReplicas = *params.Instance.Spec.Replicas
+			if params.Instance.Spec.Replicas != nil {
+				// if replicas (minReplicas from HPA perspective) is bigger than
+				// current status use it.
+				if *params.Instance.Spec.Replicas > currentReplicas {
+					currentReplicas = *params.Instance.Spec.Replicas
+				}
+				// honor hpa max replicas parameter
+				if currentReplicas > *params.Instance.Spec.MaxReplicas {
+					currentReplicas = *params.Instance.Spec.MaxReplicas
+				}
 			}
+
 			updated.Spec.Replicas = &currentReplicas
 		}
 
