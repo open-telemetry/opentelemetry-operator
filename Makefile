@@ -58,7 +58,7 @@ endif
 
 .PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
-ensure-generate-is-noop: USER=avadhut123pisal
+ensure-generate-is-noop: USER=logicmonitor
 ensure-generate-is-noop: set-image-controller generate bundle
 	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
 	@git restore config/manager/kustomization.yaml

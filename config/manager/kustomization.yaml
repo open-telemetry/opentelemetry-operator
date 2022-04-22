@@ -4,5 +4,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: ghcr.io/avadhut123pisal/opentelemetry-operator/opentelemetry-operator
+  newName: ghcr.io/logicmonitor/opentelemetry-operator/opentelemetry-operator
   newTag: 0.48.0

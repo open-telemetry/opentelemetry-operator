@@ -27,7 +27,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3.7.0
         with:
-          images: ghcr.io/avadhut123pisal/opentelemetry-operator/autoinstrumentation-java
+          images: ghcr.io/logicmonitor/opentelemetry-operator/autoinstrumentation-java
           tags: |
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 
