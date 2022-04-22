@@ -15,9 +15,11 @@
 package sidecar
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,8 +52,9 @@ func TestGetAttributesEnvNoPodReferences(t *testing.T) {
 			},
 		},
 		{
-			Name:  resourceAttributesEnvName,
-			Value: "k8s.namespace.name=my-ns,k8s.node.name=$(NODE_NAME),k8s.pod.name=$(POD_NAME),k8s.pod.uid=$(POD_UID)",
+			Name: resourceAttributesEnvName,
+			Value: fmt.Sprintf("%s=my-ns,%s=$(NODE_NAME),%s=$(POD_NAME),%s=$(POD_UID)",
+				semconv.K8SNamespaceNameKey, semconv.K8SNodeNameKey, semconv.K8SPodNameKey, semconv.K8SPodUIDKey),
 		},
 	}
 
@@ -98,8 +101,17 @@ func TestGetAttributesEnvWithPodReferences(t *testing.T) {
 			},
 		},
 		{
-			Name:  resourceAttributesEnvName,
-			Value: "k8s.deployment.name=my-deployment,k8s.deployment.uid=uuid-dep,k8s.namespace.name=my-ns,k8s.node.name=$(NODE_NAME),k8s.pod.name=$(POD_NAME),k8s.pod.uid=$(POD_UID),k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=uuid-replicaset",
+			Name: resourceAttributesEnvName,
+			Value: fmt.Sprintf("%s=my-deployment,%s=uuid-dep,%s=my-ns,%s=$(NODE_NAME),%s=$(POD_NAME),%s=$(POD_UID),%s=my-replicaset,%s=uuid-replicaset",
+				semconv.K8SDeploymentNameKey,
+				semconv.K8SDeploymentUIDKey,
+				semconv.K8SNamespaceNameKey,
+				semconv.K8SNodeNameKey,
+				semconv.K8SPodNameKey,
+				semconv.K8SPodUIDKey,
+				semconv.K8SReplicaSetNameKey,
+				semconv.K8SReplicaSetUIDKey,
+			),
 		},
 	}
 
@@ -115,8 +127,17 @@ func TestHasResourceAttributeEnvVar(t *testing.T) {
 		{
 			"has-attributes", true, []corev1.EnvVar{
 				{
-					Name:  resourceAttributesEnvName,
-					Value: "k8s.namespace.name=my-ns,k8s.deployment.uid=uuid-dep,k8s.deployment.name=my-deployment,k8s.replicaset.uid=uuid-replicaset,k8s.replicaset.name=my-replicaset,k8s.pod.name=$(POD_NAME),k8s.pod.uid=$(POD_UID),k8s.node.name=$(NODE_NAME)",
+					Name: resourceAttributesEnvName,
+					Value: fmt.Sprintf("%s=my-deployment,%s=uuid-dep,%s=my-ns,%s=$(NODE_NAME),%s=$(POD_NAME),%s=$(POD_UID),%s=my-replicaset,%s=uuid-replicaset",
+						semconv.K8SDeploymentNameKey,
+						semconv.K8SDeploymentUIDKey,
+						semconv.K8SNamespaceNameKey,
+						semconv.K8SNodeNameKey,
+						semconv.K8SPodNameKey,
+						semconv.K8SPodUIDKey,
+						semconv.K8SReplicaSetNameKey,
+						semconv.K8SReplicaSetUIDKey,
+					),
 				},
 			},
 		},

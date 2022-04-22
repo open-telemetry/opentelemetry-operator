@@ -20,6 +20,8 @@ import (
 	"sort"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -37,21 +39,21 @@ func getAttributesEnv(ns corev1.Namespace, podReferences podReferences) []corev1
 
 	var envvars []corev1.EnvVar
 
-	attributes := map[string]string{
-		"k8s.pod.name":       "$(POD_NAME)",
-		"k8s.pod.uid":        "$(POD_UID)",
-		"k8s.node.name":      "$(NODE_NAME)",
-		"k8s.namespace.name": ns.Name,
+	attributes := map[attribute.Key]string{
+		semconv.K8SPodNameKey:       "$(POD_NAME)",
+		semconv.K8SPodUIDKey:        "$(POD_UID)",
+		semconv.K8SNodeNameKey:      "$(NODE_NAME)",
+		semconv.K8SNamespaceNameKey: ns.Name,
 	}
 
 	if podReferences.deployment != nil {
-		attributes["k8s.deployment.uid"] = string(podReferences.deployment.UID)
-		attributes["k8s.deployment.name"] = string(podReferences.deployment.Name)
+		attributes[semconv.K8SDeploymentUIDKey] = string(podReferences.deployment.UID)
+		attributes[semconv.K8SDeploymentNameKey] = string(podReferences.deployment.Name)
 	}
 
 	if podReferences.replicaset != nil {
-		attributes["k8s.replicaset.uid"] = string(podReferences.replicaset.UID)
-		attributes["k8s.replicaset.name"] = string(podReferences.replicaset.Name)
+		attributes[semconv.K8SReplicaSetUIDKey] = string(podReferences.replicaset.UID)
+		attributes[semconv.K8SReplicaSetNameKey] = string(podReferences.replicaset.Name)
 	}
 
 	envvars = append(envvars, corev1.EnvVar{
@@ -79,18 +81,18 @@ func getAttributesEnv(ns corev1.Namespace, podReferences podReferences) []corev1
 	return envvars
 }
 
-func mapToValue(attribues map[string]string) string {
+func mapToValue(attributesMap map[attribute.Key]string) string {
 	var parts []string
 
 	// Sort it to make it predictable
-	keys := make([]string, 0, len(attribues))
-	for k := range attribues {
-		keys = append(keys, k)
+	keys := make([]string, 0, len(attributesMap))
+	for k := range attributesMap {
+		keys = append(keys, string(k))
 	}
 	sort.Strings(keys)
 
 	for _, key := range keys {
-		parts = append(parts, fmt.Sprintf("%s=%s", key, attribues[key]))
+		parts = append(parts, fmt.Sprintf("%s=%s", key, attributesMap[attribute.Key(key)]))
 	}
 	return strings.Join(parts, ",")
 }
