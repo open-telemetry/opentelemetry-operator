@@ -1,5 +1,21 @@
 Changes by Version
 ==================
+0.49.0
+-------------------
+### 🚀 New components 🚀
+* Including new label ([#797](https://github.com/open-telemetry/opentelemetry-operator/pull/797), [@yuriolisa](https://github.com/yuriolisa))
+* Add scale subresource status to the OpenTelemetryCollector CRD status ([#785](https://github.com/open-telemetry/opentelemetry-operator/pull/785), [@secat](https://github.com/secat))
+### 💡 Enhancements 💡
+* Set replicas to default value ([#814](https://github.com/open-telemetry/opentelemetry-operator/pull/814), [@pavolloffay](https://github.com/pavolloffay))
+* Use golang 1.18 ([#786](https://github.com/open-telemetry/opentelemetry-operator/pull/786), [@pavolloffay](https://github.com/pavolloffay))
+* Support nodeSelector field for non-sidecar collectors ([#789](https://github.com/open-telemetry/opentelemetry-operator/pull/789), [@jutley](https://github.com/jutley))
+* Fix Missing parameter on labels function ([#809](https://github.com/open-telemetry/opentelemetry-operator/pull/809), [@yuriolisa](https://github.com/yuriolisa))
+### 🧰 Bug fixes 🧰
+* Check exposed svc ports ([#778](https://github.com/open-telemetry/opentelemetry-operator/pull/778), [@yuriolisa](https://github.com/yuriolisa))
+* Fix panic when spec.replicas is nil ([#798](https://github.com/open-telemetry/opentelemetry-operator/pull/798), [@wei840222](https://github.com/wei840222))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.49.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.49.0)
+* [OpenTelemetry Contrib - v0.49.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.49.0)
 
 0.48.0
 -------------------
