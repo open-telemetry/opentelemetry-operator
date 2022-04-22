@@ -2,6 +2,7 @@ package allocation
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/prometheus/common/model"
 )
@@ -43,7 +44,7 @@ func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator *All
 				targetGroupList = append(targetGroupList, targetGroupJSON{Targets: targets, Labels: labelSetMap[targets[0]]})
 
 			}
-			displayData[j.Collector.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", j.JobName, j.Collector.Name), Jobs: targetGroupList}
+			displayData[j.Collector.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.Collector.Name), Jobs: targetGroupList}
 
 		}
 	}

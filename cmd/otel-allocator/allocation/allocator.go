@@ -2,6 +2,7 @@ package allocation
 
 import (
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -80,7 +81,7 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
 // SetCollectors is called when Collectors are added or removed
 func (allocator *Allocator) SetCollectors(collectors []string) {
-	log := allocator.log.WithValues("opentelemetry-targetallocator")
+	log := allocator.log.WithValues("component", "opentelemetry-targetallocator")
 
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
@@ -132,7 +133,7 @@ func (allocator *Allocator) processWaitingTargets() {
 			allocator.TargetItems[k] = &v
 			targetItem := TargetItem{
 				JobName:   v.JobName,
-				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", v.JobName)},
+				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(v.JobName))},
 				TargetURL: v.TargetURL,
 				Label:     v.Label,
 				Collector: col,
