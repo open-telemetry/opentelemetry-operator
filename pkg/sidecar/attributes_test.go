@@ -33,7 +33,7 @@ func TestGetAttributesEnvNoPodReferences(t *testing.T) {
 		},
 	}
 	references := podReferences{}
-	envs := getAttributesEnv(ns, references)
+	envs := getResourceAttributesEnv(ns, references)
 
 	expectedEnv := []corev1.EnvVar{
 		{
@@ -97,7 +97,7 @@ func TestGetAttributesEnvWithPodReferences(t *testing.T) {
 			},
 		},
 	}
-	envs := getAttributesEnv(ns, references)
+	envs := getResourceAttributesEnv(ns, references)
 
 	expectedEnv := []corev1.EnvVar{
 		{

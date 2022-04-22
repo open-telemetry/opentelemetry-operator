@@ -91,7 +91,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 
 	// getting pod references, if any
 	references := p.podReferences(ctx, pod.OwnerReferences, ns)
-	attributes := getAttributesEnv(ns, references)
+	attributes := getResourceAttributesEnv(ns, references)
 
 	// once it's been determined that a sidecar is desired, none exists yet, and we know which instance it should talk to,
 	// we should add the sidecar.
