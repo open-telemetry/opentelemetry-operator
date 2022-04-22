@@ -34,7 +34,7 @@ type podReferences struct {
 	deployment *appsv1.Deployment
 }
 
-// getAttributesEnv returns a list of environment variables. This consists of some pod fields and an environment variable OTEL_RESOURCE_ATTRIBUTES which contains a set of different pod references.
+// getAttributesEnv returns a list of environment variables. The list contains OTEL_RESOURCE_ATTRIBUTES and additional environment variables that use Kubernetes downward API to read pod specification.
 // see: https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/
 func getAttributesEnv(ns corev1.Namespace, podReferences podReferences) []corev1.EnvVar {
 
