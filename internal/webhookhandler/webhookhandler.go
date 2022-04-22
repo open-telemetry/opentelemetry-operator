@@ -78,7 +78,7 @@ func (p *podSidecarInjector) Handle(ctx context.Context, req admission.Request) 
 	ns := corev1.Namespace{}
 	err = p.client.Get(ctx, types.NamespacedName{Name: req.Namespace, Namespace: ""}, &ns)
 	if err != nil {
-		res := admission.Errored(http.StatusBadRequest, err)
+		res := admission.Errored(http.StatusInternalServerError, err)
 		// By default, admission.Errored sets Allowed to false which blocks pod creation even though the failurePolicy=ignore.
 		// Allowed set to true makes sure failure does not block pod creation in case of an error.
 		// Using the http.StatusInternalServerError creates a k8s event associated with the replica set.
