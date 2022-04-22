@@ -25,4 +25,4 @@ WORKDIR /root/
 # Copy the pre-built binary file from the previous stage
 COPY --from=builder /app/main .
 
-CMD ["./main"]
+ENTRYPOINT ["./main"]

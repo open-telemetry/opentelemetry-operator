@@ -6,6 +6,7 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
+    image: "local/opentelemetry-operator-targetallocator:e2e"
   config: |
     receivers:
       jaeger:

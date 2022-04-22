@@ -30,13 +30,8 @@ type Client struct {
 	close         chan struct{}
 }
 
-func NewClient(logger logr.Logger) (*Client, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return &Client{}, err
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
+func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
+	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return &Client{}, err
 	}
@@ -50,7 +45,7 @@ func NewClient(logger logr.Logger) (*Client, error) {
 
 func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors []string)) {
 	collectorMap := map[string]bool{}
-	log := k.log.WithValues("opentelemetry-targetallocator")
+	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
@@ -83,7 +78,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 				return
 			}
 			if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" {
-				log.Info("Collector pod watch event stopped", msg)
+				log.Info("Collector pod watch event stopped " + msg)
 				return
 			}
 		}
@@ -91,7 +86,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 }
 
 func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]bool, fn func(collectors []string)) string {
-	log := k.log.WithValues("opentelemetry-targetallocator")
+	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 	for {
 		select {
 		case <-k.close:

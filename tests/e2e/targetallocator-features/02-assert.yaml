@@ -49,6 +49,8 @@ spec:
     spec:
       containers:
         - name: ta-container
+          args:
+            - --enable-prometheus-cr-watcher
           env:
           - name: OTELCOL_NAMESPACE
             valueFrom:

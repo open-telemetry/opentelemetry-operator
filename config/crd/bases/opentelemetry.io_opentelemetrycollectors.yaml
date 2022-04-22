@@ -678,6 +678,18 @@ spec:
                     description: Image indicates the container image to use for the
                       OpenTelemetry TargetAllocator.
                     type: string
+                  prometheusCR:
+                    description: PrometheusCR defines the configuration for the retrieval
+                      of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1
+                      and podmonitor.monitoring.coreos.com/v1 )  retrieval. All CR
+                      instances which the ServiceAccount has access to will be retrieved.
+                      This includes other namespaces.
+                    properties:
+                      enabled:
+                        description: Enabled indicates whether to use a PrometheusOperator
+                          custom resources as targets or not.
+                        type: boolean
+                    type: object
                 type: object
               tolerations:
                 description: Toleration to schedule OpenTelemetry Collector pods.
