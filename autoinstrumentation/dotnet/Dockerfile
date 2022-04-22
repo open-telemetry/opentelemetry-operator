@@ -8,10 +8,8 @@ ARG version
 
 WORKDIR /autoinstrumentation
 
-# ADD https://github.com/logicmonitor/lm-telemetry-sdk-dotnet/releases/download/$version/lm-telemetry-dotnet-instrumentation-$version.zip lm-telemetry-dotnet-instrumentation-$version.zip
+ADD https://github.com/logicmonitor/lm-telemetry-sdk-dotnet/releases/download/$version/lm-telemetry-dotnet-instrumentation-$version.zip .
 
-COPY tracer-home_all-signed.tar.gz .
+RUN tar -xvf lm-telemetry-dotnet-instrumentation-$version.zip
 
-RUN tar -xvf tracer-home_all-signed.tar.gz
-
-RUN chmod -R go+r bin/
+RUN chmod -R go+r .
