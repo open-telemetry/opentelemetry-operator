@@ -134,6 +134,10 @@ type OpenTelemetryTargetAllocator struct {
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
 
+	// ServiceAccount indicates the name of an existing service account to use with this instance.
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+
 	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
 	// +optional
 	Image string `json:"image,omitempty"`
