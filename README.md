@@ -89,11 +89,7 @@ spec:
     receivers:
       jaeger:
         protocols:
-          grpc:
-      otlp:
-        protocols:
-          grpc:
-          http:
+          thrift_compact:
     processors:
 
     exporters:
@@ -102,7 +98,7 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [otlp, jaeger]
+          receivers: [jaeger]
           processors: []
           exporters: [logging]
 EOF
