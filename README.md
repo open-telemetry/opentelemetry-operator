@@ -210,6 +210,11 @@ Python:
 instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
+DotNet:
+```bash
+instrumentation.opentelemetry.io/inject-dotnet: "true"
+```
+
 The possible values for the annotation can be
 * `"true"` - inject and `Instrumentation` resource from the namespace.
 * `"my-instrumentation"` - name of `Instrumentation` CR instance.
@@ -232,6 +237,8 @@ spec:
     image: your-customized-auto-instrumentation-image:nodejs
   python:
     image: your-customized-auto-instrumentation-image:python
+  dotnet:
+    image: your-customized-auto-instrumentation-image:dotnet
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation). 
