@@ -78,19 +78,30 @@ func (p *podSidecarInjector) Handle(ctx context.Context, req admission.Request) 
 	ns := corev1.Namespace{}
 	err = p.client.Get(ctx, types.NamespacedName{Name: req.Namespace, Namespace: ""}, &ns)
 	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+		res := admission.Errored(http.StatusInternalServerError, err)
+		// By default, admission.Errored sets Allowed to false which blocks pod creation even though the failurePolicy=ignore.
+		// Allowed set to true makes sure failure does not block pod creation in case of an error.
+		// Using the http.StatusInternalServerError creates a k8s event associated with the replica set.
+		// The admission.Allowed("").WithWarnings(err.Error()) or http.StatusBadRequest does not
+		// create any event. Additionally, an event/log cannot be created explicitly because the pod name is not known.
+		res.Allowed = true
+		return res
 	}
 
 	for _, m := range p.podMutators {
 		pod, err = m.Mutate(ctx, ns, pod)
 		if err != nil {
-			return admission.Errored(http.StatusInternalServerError, err)
+			res := admission.Errored(http.StatusInternalServerError, err)
+			res.Allowed = true
+			return res
 		}
 	}
 
 	marshaledPod, err := json.Marshal(pod)
 	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+		res := admission.Errored(http.StatusInternalServerError, err)
+		res.Allowed = true
+		return res
 	}
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
