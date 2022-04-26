@@ -164,6 +164,10 @@ spec:
 EOF
 ```
 
+When using sidecar mode the opentelemetry container will have the environment variable `OTEL_RESOURCE_ATTRIBUTES` set with some pod kubernetes attributes in the format `key=value,key2=value`, ready for be consumed by the resourcedetection processor.
+
+
+
 ### OpenTelemetry auto-instrumentation injection
 
 The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java, NodeJS and Python are supported.
