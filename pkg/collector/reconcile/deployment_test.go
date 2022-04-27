@@ -234,3 +234,21 @@ func TestExpectedDeployments(t *testing.T) {
 
 	})
 }
+
+func TestCurrentReplicasWithHPA(t *testing.T) {
+	minReplicas := int32(2)
+	maxReplicas := int32(5)
+	spec := v1alpha1.OpenTelemetryCollectorSpec{
+		Replicas:    &minReplicas,
+		MaxReplicas: &maxReplicas,
+	}
+
+	res := currentReplicasWithHPA(spec, 10)
+	assert.Equal(t, int32(5), res)
+
+	res = currentReplicasWithHPA(spec, 1)
+	assert.Equal(t, int32(2), res)
+
+	res = currentReplicasWithHPA(spec, 3)
+	assert.Equal(t, int32(3), res)
+}
