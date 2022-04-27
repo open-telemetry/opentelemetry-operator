@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package targetallocator_test
+package targetallocator
 
 import (
 	"testing"
@@ -21,7 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	. "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 func TestServiceAccountNewDefault(t *testing.T) {
