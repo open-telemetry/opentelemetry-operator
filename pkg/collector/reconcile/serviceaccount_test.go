@@ -16,7 +16,6 @@ package reconcile
 
 import (
 	"context"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 func TestExpectedServiceAccounts(t *testing.T) {

@@ -17,7 +17,6 @@ package reconcile
 import (
 	"context"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
@@ -37,7 +37,6 @@ func ServiceAccounts(ctx context.Context, params Params) error {
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
 		desired = append(desired, collector.ServiceAccount(params.Instance))
 	}
-	// QUESTION: Should we create the service account if someone supplies an existing name?
 	if params.Instance.Spec.TargetAllocator.Enabled {
 		desired = append(desired, targetallocator.ServiceAccount(params.Instance))
 	}
