@@ -7,10 +7,10 @@ on:
   #     - '.github/workflows/publish-autoinstrumentation-dotnet.yaml'
   #   branches:
   #     - main
-  pull_request:
-    paths:
-      - 'autoinstrumentation/dotnet/**'
-      - '.github/workflows/publish-autoinstrumentation-dotnet.yaml'
+  # pull_request:
+  #   paths:
+  #     - 'autoinstrumentation/dotnet/**'
+  #     - '.github/workflows/publish-autoinstrumentation-dotnet.yaml'
   workflow_dispatch:
 
 jobs:

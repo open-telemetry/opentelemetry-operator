@@ -158,6 +158,16 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 	}
 
 	h.Name = naming.HeadlessService(params.Instance)
+
+	// copy to avoid modifying params.Instance.Annotations
+	annotations := map[string]string{
+		"service.beta.openshift.io/serving-cert-secret-name": fmt.Sprintf("%s-tls", h.Name),
+	}
+	for k, v := range h.Annotations {
+		annotations[k] = v
+	}
+	h.Annotations = annotations
+
 	h.Spec.ClusterIP = "None"
 	return h
 }

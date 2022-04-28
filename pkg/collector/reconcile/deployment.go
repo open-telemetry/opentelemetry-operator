@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
@@ -98,14 +99,8 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		// if autoscale is enabled, use replicas from current Status
 		if params.Instance.Spec.MaxReplicas != nil {
-			currentReplicas := existing.Status.Replicas
-			// if replicas (minReplicas from HPA perspective) is bigger than
-			// current status use it.
-			if params.Instance.Spec.Replicas != nil && *params.Instance.Spec.Replicas > currentReplicas {
-				currentReplicas = *params.Instance.Spec.Replicas
-			}
+			currentReplicas := currentReplicasWithHPA(params.Instance.Spec, existing.Status.Replicas)
 			updated.Spec.Replicas = &currentReplicas
 		}
 
@@ -153,4 +148,17 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 	}
 
 	return nil
+}
+
+// currentReplicasWithHPA calculates deployment replicas if HPA is enabled.
+func currentReplicasWithHPA(spec v1alpha1.OpenTelemetryCollectorSpec, curr int32) int32 {
+	if curr < *spec.Replicas {
+		return *spec.Replicas
+	}
+
+	if curr > *spec.MaxReplicas {
+		return *spec.MaxReplicas
+	}
+
+	return curr
 }
