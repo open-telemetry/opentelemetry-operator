@@ -31,22 +31,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 const (
 	volumeName        = "opentelemetry-auto-instrumentation"
 	initContainerName = "opentelemetry-auto-instrumentation"
-
-	envOTELServiceName          = "OTEL_SERVICE_NAME"
-	envOTELExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
-	envOTELResourceAttrs        = "OTEL_RESOURCE_ATTRIBUTES"
-	envOTELPropagators          = "OTEL_PROPAGATORS"
-	envOTELTracesSampler        = "OTEL_TRACES_SAMPLER"
-	envOTELTracesSamplerArg     = "OTEL_TRACES_SAMPLER_ARG"
-
-	envPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
-	envPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
-	envNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
 )
 
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
@@ -101,18 +91,18 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
 	container := &pod.Spec.Containers[0]
 	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod)
-	idx := getIndexOfEnv(container.Env, envOTELServiceName)
+	idx := getIndexOfEnv(container.Env, constants.EnvOTELServiceName)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envOTELServiceName,
+			Name:  constants.EnvOTELServiceName,
 			Value: chooseServiceName(pod, resourceMap),
 		})
 	}
 	if otelinst.Spec.Exporter.Endpoint != "" {
-		idx = getIndexOfEnv(container.Env, envOTELExporterOTLPEndpoint)
+		idx = getIndexOfEnv(container.Env, constants.EnvOTELExporterOTLPEndpoint)
 		if idx == -1 {
 			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  envOTELExporterOTLPEndpoint,
+				Name:  constants.EnvOTELExporterOTLPEndpoint,
 				Value: otelinst.Spec.Endpoint,
 			})
 		}
@@ -121,45 +111,45 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 	// Some attributes might be empty, we should get them via k8s downward API
 	if resourceMap[string(semconv.K8SPodNameKey)] == "" {
 		container.Env = append(container.Env, corev1.EnvVar{
-			Name: envPodName,
+			Name: constants.EnvPodName,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.name",
 				},
 			},
 		})
-		resourceMap[string(semconv.K8SPodNameKey)] = fmt.Sprintf("$(%s)", envPodName)
+		resourceMap[string(semconv.K8SPodNameKey)] = fmt.Sprintf("$(%s)", constants.EnvPodName)
 	}
 	if otelinst.Spec.Resource.AddK8sUIDAttributes {
 		if resourceMap[string(semconv.K8SPodUIDKey)] == "" {
 			container.Env = append(container.Env, corev1.EnvVar{
-				Name: envPodUID,
+				Name: constants.EnvPodUID,
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
 						FieldPath: "metadata.uid",
 					},
 				},
 			})
-			resourceMap[string(semconv.K8SPodUIDKey)] = fmt.Sprintf("$(%s)", envPodUID)
+			resourceMap[string(semconv.K8SPodUIDKey)] = fmt.Sprintf("$(%s)", constants.EnvPodUID)
 		}
 	}
 	if resourceMap[string(semconv.K8SNodeNameKey)] == "" {
 		container.Env = append(container.Env, corev1.EnvVar{
-			Name: envNodeName,
+			Name: constants.EnvNodeName,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "spec.nodeName",
 				},
 			},
 		})
-		resourceMap[string(semconv.K8SNodeNameKey)] = fmt.Sprintf("$(%s)", envNodeName)
+		resourceMap[string(semconv.K8SNodeNameKey)] = fmt.Sprintf("$(%s)", constants.EnvNodeName)
 	}
 
-	idx = getIndexOfEnv(container.Env, envOTELResourceAttrs)
+	idx = getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
 	resStr := resourceMapToStr(resourceMap)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envOTELResourceAttrs,
+			Name:  constants.EnvOTELResourceAttrs,
 			Value: resStr,
 		})
 	} else {
@@ -169,27 +159,27 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 		container.Env[idx].Value += resStr
 	}
 
-	idx = getIndexOfEnv(container.Env, envOTELPropagators)
+	idx = getIndexOfEnv(container.Env, constants.EnvOTELPropagators)
 	if idx == -1 && len(otelinst.Spec.Propagators) > 0 {
 		propagators := *(*[]string)((unsafe.Pointer(&otelinst.Spec.Propagators)))
 		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envOTELPropagators,
+			Name:  constants.EnvOTELPropagators,
 			Value: strings.Join(propagators, ","),
 		})
 	}
 
-	idx = getIndexOfEnv(container.Env, envOTELTracesSampler)
+	idx = getIndexOfEnv(container.Env, constants.EnvOTELTracesSampler)
 	// configure sampler only if it is configured in the CR
 	if idx == -1 && otelinst.Spec.Sampler.Type != "" {
-		idxSamplerArg := getIndexOfEnv(container.Env, envOTELTracesSamplerArg)
+		idxSamplerArg := getIndexOfEnv(container.Env, constants.EnvOTELTracesSamplerArg)
 		if idxSamplerArg == -1 {
 			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  envOTELTracesSampler,
+				Name:  constants.EnvOTELTracesSampler,
 				Value: string(otelinst.Spec.Sampler.Type),
 			})
 			if otelinst.Spec.Sampler.Argument != "" {
 				container.Env = append(container.Env, corev1.EnvVar{
-					Name:  envOTELTracesSamplerArg,
+					Name:  constants.EnvOTELTracesSamplerArg,
 					Value: otelinst.Spec.Sampler.Argument,
 				})
 			}
@@ -223,7 +213,7 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string) string {
 func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) map[string]string {
 	// get existing resources env var and parse it into a map
 	existingRes := map[string]bool{}
-	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[0].Env, envOTELResourceAttrs)
+	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[0].Env, constants.EnvOTELResourceAttrs)
 	if existingResourceEnvIdx > -1 {
 		existingResArr := strings.Split(pod.Spec.Containers[0].Env[existingResourceEnvIdx].Value, ",")
 		for _, kv := range existingResArr {
