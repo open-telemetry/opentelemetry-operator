@@ -9,5 +9,11 @@ spec:
   containers:
   - name: myapp
   - name: otc-container
+    env:
+    - name: POD_NAME
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_UID
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+    - name: OTEL_RESOURCE_ATTRIBUTES
 status:
   phase: Running

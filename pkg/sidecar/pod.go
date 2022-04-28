@@ -32,10 +32,13 @@ const (
 )
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
-func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod) (corev1.Pod, error) {
+func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
 	// add the container
 	volumes := collector.Volumes(cfg, otelcol)
 	container := collector.Container(cfg, logger, otelcol)
+	if !hasResourceAttributeEnvVar(container.Env) {
+		container.Env = append(container.Env, attributes...)
+	}
 	pod.Spec.Containers = append(pod.Spec.Containers, container)
 	pod.Spec.Volumes = append(pod.Spec.Volumes, volumes...)
 

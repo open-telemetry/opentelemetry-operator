@@ -258,7 +258,8 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 		u := &instrumentationupgrade.InstrumentationUpgrade{
 			Logger:                ctrl.Log.WithName("instrumentation-upgrade"),
 			DefaultAutoInstJava:   cfg.AutoInstrumentationJavaImage(),
-			DefaultAutoInstNodeJS: cfg.AutoInstrumentationJavaImage(),
+			DefaultAutoInstNodeJS: cfg.AutoInstrumentationNodeJSImage(),
+			DefaultAutoInstPython: cfg.AutoInstrumentationPythonImage(),
 			Client:                mgr.GetClient(),
 		}
 		return u.ManagedInstances(c)
