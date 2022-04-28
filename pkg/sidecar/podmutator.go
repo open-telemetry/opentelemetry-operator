@@ -20,7 +20,9 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -68,7 +70,6 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	}
 
 	// from this point and on, a sidecar is wanted
-
 	// check whether there's a sidecar already -- return the same pod if that's the case.
 	if existsIn(pod) {
 		logger.V(1).Info("pod already has sidecar in it, skipping injection")
@@ -88,10 +89,15 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 		return pod, err
 	}
 
+	// getting pod references, if any
+	references := p.podReferences(ctx, pod.OwnerReferences, ns)
+	attributes := getResourceAttributesEnv(ns, references)
+
 	// once it's been determined that a sidecar is desired, none exists yet, and we know which instance it should talk to,
 	// we should add the sidecar.
 	logger.V(1).Info("injecting sidecar into pod", "otelcol-namespace", otelcol.Namespace, "otelcol-name", otelcol.Name)
-	return add(p.config, p.logger, otelcol, pod)
+
+	return add(p.config, p.logger, otelcol, pod, attributes)
 }
 
 func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.OpenTelemetryCollector, error) {
@@ -137,4 +143,50 @@ func (p *sidecarPodMutator) selectCollectorInstance(ctx context.Context, ns core
 	default:
 		return sidecars[0], nil
 	}
+}
+
+func (p *sidecarPodMutator) podReferences(ctx context.Context, ownerReferences []metav1.OwnerReference, ns corev1.Namespace) podReferences {
+	references := &podReferences{}
+	replicaSet := p.getReplicaSetReference(ctx, ownerReferences, ns)
+	if replicaSet != nil {
+		references.replicaset = replicaSet
+		deployment := p.getDeploymentReference(ctx, replicaSet)
+		if deployment != nil {
+			references.deployment = deployment
+		}
+	}
+	return *references
+}
+
+func (p *sidecarPodMutator) getReplicaSetReference(ctx context.Context, ownerReferences []metav1.OwnerReference, ns corev1.Namespace) *appsv1.ReplicaSet {
+	replicaSetName := findOwnerReferenceKind(ownerReferences, "ReplicaSet")
+	if replicaSetName != "" {
+		replicaSet := &appsv1.ReplicaSet{}
+		err := p.client.Get(ctx, types.NamespacedName{Name: replicaSetName, Namespace: ns.Name}, replicaSet)
+		if err == nil {
+			return replicaSet
+		}
+	}
+	return nil
+}
+
+func (p *sidecarPodMutator) getDeploymentReference(ctx context.Context, replicaSet *appsv1.ReplicaSet) *appsv1.Deployment {
+	deploymentName := findOwnerReferenceKind(replicaSet.OwnerReferences, "Deployment")
+	if deploymentName != "" {
+		deployment := &appsv1.Deployment{}
+		err := p.client.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: replicaSet.Namespace}, deployment)
+		if err == nil {
+			return deployment
+		}
+	}
+	return nil
+}
+
+func findOwnerReferenceKind(references []metav1.OwnerReference, kind string) string {
+	for _, reference := range references {
+		if reference.Kind == kind {
+			return reference.Name
+		}
+	}
+	return ""
 }
