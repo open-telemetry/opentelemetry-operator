@@ -32,7 +32,7 @@ jobs:
 
       - name: Docker meta
         id: docker_meta
-        uses: docker/metadata-action@v3.7.0
+        uses: docker/metadata-action@v3.8.0
         with:
           images: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
           tags: |
