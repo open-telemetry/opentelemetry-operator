@@ -97,3 +97,22 @@ func TestLabelsFilter(t *testing.T) {
 	assert.NotContains(t, labels, "test.bar.io")
 	assert.Equal(t, "bar", labels["test.foo.io"])
 }
+
+func TestSelectorLabels(t *testing.T) {
+	// prepare
+	expected := map[string]string{
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/instance":   "my-namespace.my-opentelemetry-collector",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+	}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{Name: "my-opentelemetry-collector", Namespace: "my-namespace"},
+	}
+
+	// test
+	result := SelectorLabels(otelcol)
+
+	// verify
+	assert.Equal(t, expected, result)
+}

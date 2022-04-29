@@ -43,7 +43,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: naming.Service(otelcol),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: SelectorLabels(otelcol),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
