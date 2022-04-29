@@ -90,6 +90,9 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 			updated.ObjectMeta.Labels[k] = v
 		}
 
+		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
+		updated.Spec.Selector = existing.Spec.Selector.DeepCopy()
+
 		patch := client.MergeFrom(existing)
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
