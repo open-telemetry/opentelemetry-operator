@@ -16,6 +16,7 @@ Changes by Version
 #### OpenTelemetry Collector and Contrib
 * [OpenTelemetry Collector - v0.50.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.50.0)
 * [OpenTelemetry Contrib - v0.50.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.50.0)
+
 0.49.0
 -------------------
 ### 🚀 New components 🚀
