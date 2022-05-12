@@ -186,9 +186,11 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 		}
 	}
 
-	// Move OTEL_RESOURCE_ATTRIBUTES to last position.
-	// All used env vars as value have to be configured before
-	// to avoid incorrect attributes values.
+	// Move OTEL_RESOURCE_ATTRIBUTES to last position on env list.
+	// When OTEL_RESOURCE_ATTRIBUTES environment variable uses other env vars
+	// as attributes value they have to be configured before.
+	// It is mandatory to set right order to avoid attributes with value
+	// pointing to the name of used environment variable instead of its value.
 	idx = getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
 	envs := moveEnvToListEnd(container.Env, idx)
 	container.Env = envs
@@ -330,8 +332,11 @@ func getIndexOfEnv(envs []corev1.EnvVar, name string) int {
 }
 
 func moveEnvToListEnd(envs []corev1.EnvVar, idx int) []corev1.EnvVar {
-	envToMove := envs[idx]
-	envs = append(envs[:idx], envs[idx+1:]...)
-	envs = append(envs, envToMove)
+	if idx >= 0 && idx < len(envs) {
+		envToMove := envs[idx]
+		envs = append(envs[:idx], envs[idx+1:]...)
+		envs = append(envs, envToMove)
+	}
+
 	return envs
 }
