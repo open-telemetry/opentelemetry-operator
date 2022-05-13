@@ -364,7 +364,7 @@ func TestSDKInjection(t *testing.T) {
 			inj := sdkInjector{
 				client: k8sClient,
 			}
-			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod)
+			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, 0)
 			_, err = json.MarshalIndent(pod, "", "  ")
 			assert.NoError(t, err)
 			assert.Equal(t, test.expected, pod)
@@ -399,7 +399,7 @@ func TestInjectJava(t *testing.T) {
 					},
 				},
 			},
-		})
+		}, "")
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
@@ -497,7 +497,7 @@ func TestInjectNodeJS(t *testing.T) {
 					},
 				},
 			},
-		})
+		}, "")
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
@@ -596,7 +596,7 @@ func TestInjectPython(t *testing.T) {
 					},
 				},
 			},
-		})
+		}, "")
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{

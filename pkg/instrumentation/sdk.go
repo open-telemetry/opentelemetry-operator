@@ -46,9 +46,18 @@ type sdkInjector struct {
 	client client.Client
 }
 
-func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
+func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod, containerName string) corev1.Pod {
 	if len(pod.Spec.Containers) < 1 {
 		return pod
+	}
+
+	// We search for specific container to inject variables and if no one is found
+	// We fallback to first container
+	var index = 0
+	for idx, ctnair := range pod.Spec.Containers {
+		if ctnair.Name == containerName {
+			index = idx
+		}
 	}
 
 	// inject only to the first container for now
@@ -56,29 +65,29 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	if insts.Java != nil {
 		otelinst := *insts.Java
 		i.logger.V(1).Info("injecting java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectJavaagent(i.logger, otelinst.Spec.Java, pod)
-		pod = i.injectCommonEnvVar(otelinst, pod)
-		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
+		pod = injectJavaagent(i.logger, otelinst.Spec.Java, pod, index)
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 	}
 	if insts.NodeJS != nil {
 		otelinst := *insts.NodeJS
 		i.logger.V(1).Info("injecting nodejs instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectNodeJSSDK(i.logger, otelinst.Spec.NodeJS, pod)
-		pod = i.injectCommonEnvVar(otelinst, pod)
-		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
+		pod = injectNodeJSSDK(i.logger, otelinst.Spec.NodeJS, pod, index)
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 	}
 	if insts.Python != nil {
 		otelinst := *insts.Python
 		i.logger.V(1).Info("injecting python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectPythonSDK(i.logger, otelinst.Spec.Python, pod)
-		pod = i.injectCommonEnvVar(otelinst, pod)
-		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod)
+		pod = injectPythonSDK(i.logger, otelinst.Spec.Python, pod, index)
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 	}
 	return pod
 }
 
-func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod corev1.Pod) corev1.Pod {
-	container := &pod.Spec.Containers[0]
+func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod corev1.Pod, index int) corev1.Pod {
+	container := &pod.Spec.Containers[index]
 	for _, env := range otelinst.Spec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -88,14 +97,14 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 	return pod
 }
 
-func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
-	container := &pod.Spec.Containers[0]
-	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod)
+func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, index int) corev1.Pod {
+	container := &pod.Spec.Containers[index]
+	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod, index)
 	idx := getIndexOfEnv(container.Env, constants.EnvOTELServiceName)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  constants.EnvOTELServiceName,
-			Value: chooseServiceName(pod, resourceMap),
+			Value: chooseServiceName(pod, resourceMap, index),
 		})
 	}
 	if otelinst.Spec.Exporter.Endpoint != "" {
@@ -198,7 +207,7 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 	return pod
 }
 
-func chooseServiceName(pod corev1.Pod, resources map[string]string) string {
+func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) string {
 	if name := resources[string(semconv.K8SDeploymentNameKey)]; name != "" {
 		return name
 	}
@@ -214,17 +223,17 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string) string {
 	if name := resources[string(semconv.K8SPodNameKey)]; name != "" {
 		return name
 	}
-	return pod.Spec.Containers[0].Name
+	return pod.Spec.Containers[index].Name
 }
 
 // createResourceMap creates resource attribute map.
 // User defined attributes (in explicitly set env var) have higher precedence.
-func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod) map[string]string {
+func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, index int) map[string]string {
 	// get existing resources env var and parse it into a map
 	existingRes := map[string]bool{}
-	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[0].Env, constants.EnvOTELResourceAttrs)
+	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[index].Env, constants.EnvOTELResourceAttrs)
 	if existingResourceEnvIdx > -1 {
-		existingResArr := strings.Split(pod.Spec.Containers[0].Env[existingResourceEnvIdx].Value, ",")
+		existingResArr := strings.Split(pod.Spec.Containers[index].Env[existingResourceEnvIdx].Value, ",")
 		for _, kv := range existingResArr {
 			keyValueArr := strings.Split(strings.TrimSpace(kv), "=")
 			if len(keyValueArr) != 2 {
@@ -243,7 +252,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 
 	k8sResources := map[attribute.Key]string{}
 	k8sResources[semconv.K8SNamespaceNameKey] = ns.Name
-	k8sResources[semconv.K8SContainerNameKey] = pod.Spec.Containers[0].Name
+	k8sResources[semconv.K8SContainerNameKey] = pod.Spec.Containers[index].Name
 	// Some fields might be empty - node name, pod name
 	// The pod name might be empty if the pod is created form deployment template
 	k8sResources[semconv.K8SPodNameKey] = pod.Name

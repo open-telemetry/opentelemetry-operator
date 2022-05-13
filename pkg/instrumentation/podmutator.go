@@ -94,9 +94,17 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, nil
 	}
 
+	// We retrieve the annotation for podname
+	var targetContainers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
+
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
-	return pm.sdkInjector.inject(ctx, insts, ns, pod), nil
+	modifiedPod := pod
+	for _, currentContainer := range strings.Split(targetContainers, ",") {
+		modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod, strings.TrimSpace(currentContainer))
+	}
+
+	return modifiedPod, nil
 }
 
 func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
