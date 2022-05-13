@@ -174,7 +174,7 @@ func TestInjectJavaagent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectJavaagent(logr.Discard(), test.Java, test.pod)
+			pod := injectJavaagent(logr.Discard(), test.Java, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
