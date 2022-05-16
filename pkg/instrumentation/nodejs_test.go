@@ -174,7 +174,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectNodeJSSDK(logr.Discard(), test.NodeJS, test.pod)
+			pod := injectNodeJSSDK(logr.Discard(), test.NodeJS, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
