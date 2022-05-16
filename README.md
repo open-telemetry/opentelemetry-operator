@@ -222,15 +222,23 @@ In some cases (for example in the case of the injection of an Istio sidecar) it 
 
 For this, it is possible to fine-tune the pod(s) on which the injection will be carried out.
 
-For this, we will use the "instrumentation.opentelemetry.io/container-names" annotation for which we will indicate one or more pod names (.spec.containers.name) on which the injection must be made:
+For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more pod names (`.spec.containers.name`) on which the injection must be made:
 
 ```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment-with-sidecar
+spec:
+  selector:
+    matchLabels:
+      app: my-pod-with-sidecar
+  replicas: 1
   template:
     metadata:
       labels:
         app: my-pod-with-sidecar
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-java: "true"
         instrumentation.opentelemetry.io/container-names: "myapp,myapp2"
     spec:
@@ -243,7 +251,7 @@ For this, we will use the "instrumentation.opentelemetry.io/container-names" ann
         image: myImage3
 ```
 
-In the above case, myapp and myapp2 containers will be instrumented, myapp3 will not.
+In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3` will not.
 
 #### Use customized or vendor instrumentation
 
