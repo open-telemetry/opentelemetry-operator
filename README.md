@@ -228,16 +228,16 @@ For this, we will use the `instrumentation.opentelemetry.io/container-names` ann
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-deployment-with-sidecar
+  name: my-deployment-with-multiple-containers
 spec:
   selector:
     matchLabels:
-      app: my-pod-with-sidecar
+      app: my-pod-with-multiple-containers
   replicas: 1
   template:
     metadata:
       labels:
-        app: my-pod-with-sidecar
+        app: my-pod-with-multiple-containers
       annotations:
         instrumentation.opentelemetry.io/inject-java: "true"
         instrumentation.opentelemetry.io/container-names: "myapp,myapp2"
