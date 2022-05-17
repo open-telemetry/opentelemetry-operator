@@ -1,5 +1,22 @@
 Changes by Version
 ==================
+
+0.50.0
+-------------------
+### 🚀 New components 🚀
+* Add resource attributes to collector sidecar ([#832](https://github.com/open-telemetry/opentelemetry-operator/pull/832), [@rubenvp8510](https://github.com/rubenvp8510))
+* Create serving certs for headless services on OpenShift (#818) ([#824](https://github.com/open-telemetry/opentelemetry-operator/pull/824), [@rkukura](https://github.com/rkukura))
+* [targetallocator] PrometheusOperator CRD MVC ([#653](https://github.com/open-telemetry/opentelemetry-operator/pull/653), [@secustor](https://github.com/secustor))
+### 💡 Enhancements 💡
+* Set replicas to MaxReplicas if HPA is enabled ([#833](https://github.com/open-telemetry/opentelemetry-operator/pull/833), [@binjip978](https://github.com/binjip978))
+* Update sidecar example in README ([#837](https://github.com/open-telemetry/opentelemetry-operator/pull/837), [@erichsueh3](https://github.com/erichsueh3))
+### 🧰 Bug fixes 🧰
+* Fix Default Image Annotations ([#842](https://github.com/open-telemetry/opentelemetry-operator/pull/842), [@goatsthatcode](https://github.com/goatsthatcode))
+* Do not block pod creating on internal error in webhook ([#811](https://github.com/open-telemetry/opentelemetry-operator/pull/811), [@pavolloffay](https://github.com/pavolloffay))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.50.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.50.0)
+* [OpenTelemetry Contrib - v0.50.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.50.0)
+
 0.49.0
 -------------------
 ### 🚀 New components 🚀
