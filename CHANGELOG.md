@@ -1,6 +1,20 @@
 Changes by Version
 ==================
 
+0.51.0
+-------------------
+### 🚀 New components 🚀
+* Choose target container injection with annotation ([#689](https://github.com/open-telemetry/opentelemetry-operator/pull/689), [@fscellos](https://github.com/fscellos))
+* Fix K8s attributes values in OTEL_RESOURCE_ATTRIBUTES env var ([#864](https://github.com/open-telemetry/opentelemetry-operator/pull/864), [@mat-rumian](https://github.com/mat-rumian))
+### 💡 Enhancements 💡
+* Update Python auto-instrumentation versions.txt ([#867](https://github.com/open-telemetry/opentelemetry-operator/pull/867), [@mat-rumian](https://github.com/mat-rumian))
+* Update Python instrumentation to 0.30b1 ([#860](https://github.com/open-telemetry/opentelemetry-operator/pull/860), [@mat-rumian](https://github.com/mat-rumian))
+* Fix changelog formatting ([#863](https://github.com/open-telemetry/opentelemetry-operator/pull/863), [@pavolloffay](https://github.com/pavolloffay))
+### 🧰 Bug fixes 🧰
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.51.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.51.0)
+* [OpenTelemetry Contrib - v0.51.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.51.0)
+
 0.50.0
 -------------------
 ### 🚀 New components 🚀
