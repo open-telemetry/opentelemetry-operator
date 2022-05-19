@@ -41,7 +41,7 @@ func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: SelectorLabels(otelcol),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
