@@ -104,6 +104,9 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.Spec.Replicas = &currentReplicas
 		}
 
+		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
+		updated.Spec.Selector = existing.Spec.Selector.DeepCopy()
+
 		patch := client.MergeFrom(existing)
 
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {

@@ -38,7 +38,8 @@ func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance",
+			Name:      "my-instance",
+			Namespace: "my-namespace",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Tolerations: testTolerationValues,
@@ -65,8 +66,28 @@ func TestDeploymentNewDefault(t *testing.T) {
 	}
 	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
-	// the pod selector should match the pod spec's labels
-	assert.Equal(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
+	expectedLabels := map[string]string{
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/instance":   "my-namespace.my-instance",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/name":       "my-instance-collector",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/version":    "latest",
+	}
+	assert.Equal(t, expectedLabels, d.Spec.Template.Labels)
+
+	expectedSelectorLabels := map[string]string{
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/instance":   "my-namespace.my-instance",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+	}
+	assert.Equal(t, expectedSelectorLabels, d.Spec.Selector.MatchLabels)
+
+	// the pod selector must be contained within pod spec's labels
+	for k, v := range d.Spec.Selector.MatchLabels {
+		assert.Equal(t, v, d.Spec.Template.Labels[k])
+	}
 }
 
 func TestDeploymentPodAnnotations(t *testing.T) {
@@ -85,7 +106,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	// test
 	d := Deployment(cfg, logger, otelcol)
 
-	//Add sha256 podAnnotation
+	// Add sha256 podAnnotation
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 	// verify
