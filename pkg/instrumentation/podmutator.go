@@ -118,8 +118,15 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
 	}
 
+	var instNamespacedName types.NamespacedName
+	if instNamespace, instName, namespaced := strings.Cut(instValue, "/"); namespaced {
+		instNamespacedName = types.NamespacedName{Name: instName, Namespace: instNamespace}
+	} else {
+		instNamespacedName = types.NamespacedName{Name: instValue, Namespace: ns.Name}
+	}
+
 	otelInst := &v1alpha1.Instrumentation{}
-	err := pm.Client.Get(ctx, types.NamespacedName{Name: instValue, Namespace: ns.Name}, otelInst)
+	err := pm.Client.Get(ctx, instNamespacedName, otelInst)
 	if err != nil {
 		return nil, err
 	}
