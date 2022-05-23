@@ -6,7 +6,7 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
-    image: "local/opentelemetry-operator-targetallocator:e2e"
+    image: "ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.1.0"
   config: |
     receivers:
       jaeger:
