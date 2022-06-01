@@ -52,7 +52,7 @@ KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
 OPERATOR_SDK_VERSION ?= 1.17.0
 
-CERTMANAGER_VERSION ?= 1.6.1
+CERTMANAGER_VERSION ?= 1.8.0
 
 ifndef ignore-not-found
   ignore-not-found = false
