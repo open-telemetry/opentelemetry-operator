@@ -212,7 +212,8 @@ instrumentation.opentelemetry.io/inject-python: "true"
 
 The possible values for the annotation can be
 * `"true"` - inject and `Instrumentation` resource from the namespace.
-* `"my-instrumentation"` - name of `Instrumentation` CR instance.
+* `"my-instrumentation"` - name of `Instrumentation` CR instance in the current namespace.
+* `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
 
 #### Multi-container pods
