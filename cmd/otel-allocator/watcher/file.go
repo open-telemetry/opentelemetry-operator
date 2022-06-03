@@ -5,7 +5,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
-	"github.com/otel-allocator/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
 type FileWatcher struct {
