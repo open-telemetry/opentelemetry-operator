@@ -2593,6 +2593,13 @@ TargetAllocator indicates a value which determines whether to spawn a target all
           PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval. All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>serviceAccount</b></td>
+        <td>string</td>
+        <td>
+          ServiceAccount indicates the name of an existing service account to use with this instance.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
