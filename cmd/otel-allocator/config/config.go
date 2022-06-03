@@ -24,7 +24,7 @@ import (
 
 // ErrInvalidYAML represents an error in the format of the original YAML configuration file.
 var (
-	ErrInvalidYAML = errors.New("couldn't parse the loadbalancer configuration")
+	ErrInvalidYAML = errors.New("couldn't parse the targetallocator configuration")
 )
 
 const DefaultResyncTime = 5 * time.Minute

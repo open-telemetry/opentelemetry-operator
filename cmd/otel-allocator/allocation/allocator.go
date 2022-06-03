@@ -10,8 +10,8 @@ import (
 )
 
 /*
-	Load balancer will serve on an HTTP server exposing /jobs/<job_id>/targets <- these are configured using least connection
-	Load balancer will need information about the collectors in order to set the URLs
+	Target Allocator will serve on an HTTP server exposing /jobs/<job_id>/targets <- these are configured using least connection
+	Target Allocator will need information about the collectors in order to set the URLs
 	Keep a Map of what each collector currently holds and update it based on new scrape target updates
 */
 
@@ -65,7 +65,7 @@ func (allocator *Allocator) findNextCollector() *collector {
 }
 
 // SetTargets accepts the a list of targets that will be used to make
-// load balancing decisions. This method should be called when where are
+// target allocation decisions. This method should be called when where are
 // new targets discovered or existing targets are shutdown.
 func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	// Dump old data
