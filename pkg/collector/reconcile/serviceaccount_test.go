@@ -24,17 +24,23 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 func TestExpectedServiceAccounts(t *testing.T) {
-	t.Run("should create service account", func(t *testing.T) {
+	t.Run("should create multiple service accounts", func(t *testing.T) {
 		desired := collector.ServiceAccount(params().Instance)
-		err := expectedServiceAccounts(context.Background(), params(), []v1.ServiceAccount{desired})
+		allocatorDesired := targetallocator.ServiceAccount(params().Instance)
+		err := expectedServiceAccounts(context.Background(), params(), []v1.ServiceAccount{desired, allocatorDesired})
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &v1.ServiceAccount{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		assert.NoError(t, err)
 		assert.True(t, exists)
+
+		allocatorExists, err := populateObjectIfExists(t, &v1.ServiceAccount{}, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
+		assert.NoError(t, err)
+		assert.True(t, allocatorExists)
 
 	})
 
