@@ -42,7 +42,11 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		},
 		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
+<<<<<<< HEAD
 				APIVersion: v1alpha1.GroupVersion.String(),
+=======
+				APIVersion: "opentelemetry.io/v1alpha1",
+>>>>>>> cf71e81 (Change horizontal pod autoscaler to use otelcol scale subresource)
 				Kind:       "OpenTelemetryCollector",
 				Name:       otelcol.Name,
 			},
