@@ -12,11 +12,11 @@ import (
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
-	"github.com/otel-allocator/allocation"
-	"github.com/otel-allocator/collector"
-	"github.com/otel-allocator/config"
-	lbdiscovery "github.com/otel-allocator/discovery"
-	allocatorWatcher "github.com/otel-allocator/watcher"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
+	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
+	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

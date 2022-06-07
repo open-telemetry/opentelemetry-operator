@@ -1,4 +1,4 @@
-module github.com/otel-allocator
+module github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator
 
 go 1.18
 
