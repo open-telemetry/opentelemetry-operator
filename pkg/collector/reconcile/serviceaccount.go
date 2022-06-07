@@ -26,6 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
@@ -35,6 +36,9 @@ func ServiceAccounts(ctx context.Context, params Params) error {
 	desired := []corev1.ServiceAccount{}
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
 		desired = append(desired, collector.ServiceAccount(params.Instance))
+	}
+	if params.Instance.Spec.TargetAllocator.Enabled {
+		desired = append(desired, targetallocator.ServiceAccount(params.Instance))
 	}
 
 	// first, handle the create/update parts
