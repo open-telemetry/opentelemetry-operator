@@ -312,12 +312,12 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.40.0                | v1.20 to v1.22       | v1alpha2             |
 | v0.39.0                | v1.20 to v1.22       | v1alpha2             |
 | v0.38.0                | v1.20 to v1.22       | v1alpha2             |
-| v0.37.1                | v1.20 to v1.22       | v1alpha2, v1alpha3   |
-| v0.37.0                | v1.20 to v1.22       | v1alpha2, v1alpha3   |
-| v0.36.0                | v1.20 to v1.22       | v1alpha2, v1alpha3   |
-| v0.35.0                | v1.20 to v1.22       | v1alpha2, v1alpha3   |
-| v0.34.0                | v1.20 to v1.22       | v1alpha2, v1alpha3   |
-| v0.33.0                | v1.20 to v1.22       | v1alpha2, v1alpha3   |
+| v0.37.1                | v1.20 to v1.22       | v1alpha2             |
+| v0.37.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.36.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.35.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.34.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.33.0                | v1.20 to v1.22       | v1alpha2             |
 
 ## Contributing and Developing
 
