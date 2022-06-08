@@ -32,6 +32,7 @@ vendor
 # local resources, not to be committed
 local
 config/manager/kustomization.yaml
+.vscode
 
 # test resources
 kubeconfig
