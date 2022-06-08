@@ -2,6 +2,8 @@ module github.com/open-telemetry/opentelemetry-operator
 
 go 1.18
 
+retract v1.51.0
+
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/go-logr/logr v1.2.3
