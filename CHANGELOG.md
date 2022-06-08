@@ -1,6 +1,22 @@
 Changes by Version
 ==================
 
+0.52.0
+-------------------
+### 🚀 New components 🚀
+* Add creation of ServiceAccount to the Target Allocator ([#836](https://github.com/open-telemetry/opentelemetry-operator/pull/836), [@jaronoff97](https://github.com/jaronoff97))
+* Cross namespace instrumentation ([#889](https://github.com/open-telemetry/opentelemetry-operator/pull/889), [@tKe](https://github.com/tKe))
+* Added extra cli flag webhook-port ([#899](https://github.com/open-telemetry/opentelemetry-operator/pull/899), [@abelperezok](https://github.com/abelperezok))
+### 💡 Enhancements 💡
+* Add cert manager 1.8.0 ([#905](https://github.com/open-telemetry/opentelemetry-operator/pull/905), [@yuriolisa](https://github.com/yuriolisa))
+* updated module name and imports ([#910](https://github.com/open-telemetry/opentelemetry-operator/pull/910), [@evanli02](https://github.com/evanli02))
+### 🧰 Bug fixes 🧰
+* Fix docker multiarch build for operator ([#882](https://github.com/open-telemetry/opentelemetry-operator/pull/882), [@pavolloffay](https://github.com/pavolloffay))
+* avoid non static labels in workload objects selector ([#849](https://github.com/open-telemetry/opentelemetry-operator/pull/849), [@DWonMtl](https://github.com/DWonMtl))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.52.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.52.0)
+* [OpenTelemetry Contrib - v0.52.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.52.0)
+
 0.51.0
 -------------------
 ### 🚀 New components 🚀
