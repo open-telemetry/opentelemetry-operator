@@ -81,7 +81,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 		}
 
 		updated.OwnerReferences = desired.OwnerReferences
-		updated.Spec.MinReplicas = params.Instance.Spec.Replicas
+		updated.Spec.MinReplicas = &params.Instance.Spec.MinReplicas
 		if params.Instance.Spec.MaxReplicas != nil {
 			updated.Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
 		}
