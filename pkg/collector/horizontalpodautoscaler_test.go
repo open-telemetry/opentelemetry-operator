@@ -36,6 +36,7 @@ func TestHPA(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Replicas:    &minReplicas,
+			MinReplicas: minReplicas,
 			MaxReplicas: &maxReplicas,
 		},
 	}
