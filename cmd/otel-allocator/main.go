@@ -185,6 +185,11 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 		compareMap[v.Collector.Name+v.JobName] = append(compareMap[v.Collector.Name+v.JobName], *v)
 	}
 	params := mux.Vars(r)
+	s.logger.Info("------------")
+	s.logger.Info("query params", q)
+	s.logger.Info("params", params)
+	s.logger.Info("compareMap", compareMap)
+	s.logger.Info("------------")
 
 	if len(q) == 0 {
 		jobId, err := url.QueryUnescape(params["job_id"])
