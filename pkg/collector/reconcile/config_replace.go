@@ -16,6 +16,7 @@ package reconcile
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/mitchellh/mapstructure"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -61,9 +62,10 @@ func ReplaceConfig(params Params) (string, error) {
 	}
 
 	for i := range cfg.PromConfig.ScrapeConfigs {
+		escapedJob := url.QueryEscape(cfg.PromConfig.ScrapeConfigs[i].JobName)
 		cfg.PromConfig.ScrapeConfigs[i].ServiceDiscoveryConfigs = discovery.Configs{
 			&http.SDConfig{
-				URL: fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", naming.TAService(params.Instance), cfg.PromConfig.ScrapeConfigs[i].JobName),
+				URL: fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", naming.TAService(params.Instance), escapedJob),
 			},
 		}
 	}
