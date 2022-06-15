@@ -131,15 +131,13 @@ service:
 	t.Run("should return expected escaped collector config map with http_sd_config", func(t *testing.T) {
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
+		expectedLables["app.kubernetes.io/version"] = "latest"
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
   logging: null
 processors: null
 receivers:
-  jaeger:
-    protocols:
-      grpc: null
   prometheus:
     config:
       global:
@@ -149,7 +147,7 @@ receivers:
       scrape_configs:
       - job_name: serviceMonitor/test/test/0
         honor_timestamps: true
-        scrape_interval: 10s
+        scrape_interval: 1m
         scrape_timeout: 10s
         metrics_path: /metrics
         scheme: http
@@ -165,7 +163,6 @@ service:
       processors: []
       receivers:
       - prometheus
-      - jaeger
 `,
 		}
 
@@ -177,6 +174,9 @@ service:
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
+
+		// Reset the value
+		expectedLables["app.kubernetes.io/version"] = "0.47.0"
 
 	})
 
