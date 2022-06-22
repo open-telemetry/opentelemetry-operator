@@ -64,7 +64,6 @@ func TestExpectedHPA(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
-		assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
 		assert.Equal(t, int32(3), actual.Spec.MaxReplicas)
 	})
 
@@ -112,6 +111,7 @@ func paramsWithHPA() Params {
 				}},
 				Config:      string(configYAML),
 				Replicas:    &minReplicas,
+				MinReplicas: minReplicas,
 				MaxReplicas: &maxReplicas,
 			},
 		},
