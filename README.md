@@ -254,6 +254,18 @@ spec:
 
 In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3` will not.
 
+#### Override Service Name
+
+The service name for containers goes in the following priority list
+
+* The `instrumentation.opentelemetry.io/service-name` pod annotation (can be `,` seperated list for multiple container services)
+* The Deployment Name
+* The Statefulset Name
+* The Cronjob Name
+* The Job Name
+* The Pod Name
+* The Container Name
+
 #### Use customized or vendor instrumentation
 
 By default, the operator uses upstream auto-instrumentation libraries. Custom auto-instrumentation can be configured by
