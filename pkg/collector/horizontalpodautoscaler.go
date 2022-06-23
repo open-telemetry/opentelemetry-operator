@@ -44,7 +44,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
 				APIVersion: v1alpha1.GroupVersion.String(),
 				Kind:       "OpenTelemetryCollector",
-				Name:       naming.Collector(otelcol),
+				Name:       otelcol.Name,
 			},
 			MinReplicas:                    &otelcol.Spec.MinReplicas,
 			MaxReplicas:                    *otelcol.Spec.MaxReplicas,
