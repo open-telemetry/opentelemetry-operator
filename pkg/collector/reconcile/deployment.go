@@ -99,11 +99,6 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if params.Instance.Spec.MaxReplicas != nil {
-			currentReplicas := currentReplicasWithHPA(params.Instance.Spec, existing.Status.Replicas)
-			updated.Spec.Replicas = &currentReplicas
-		}
-
 		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
 		updated.Spec.Selector = existing.Spec.Selector.DeepCopy()
 
