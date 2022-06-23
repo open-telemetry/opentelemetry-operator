@@ -2,11 +2,11 @@ package allocation
 
 import (
 	"math"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var logger = logf.Log.WithName("unit-tests")
