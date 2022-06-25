@@ -325,12 +325,12 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
-- [Dmitrii Anoshin](https://github.com/dmitryax), Splunk
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
 
 Emeritus Approvers:
 
 - [Anthony Mirabella](https://github.com/Aneurysm9), AWS
+- [Dmitrii Anoshin](https://github.com/dmitryax), Splunk
 - [Jay Camp](https://github.com/jrcamp), Splunk
 - [James Bebbington](https://github.com/james-bebbington), Google
 - [Owais Lone](https://github.com/owais), Splunk
