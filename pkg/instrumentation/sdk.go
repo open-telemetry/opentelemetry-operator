@@ -208,7 +208,8 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 }
 
 func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) string {
-	if name := strings.Split(pod.Annotations["instrumentation.opentelemetry.io/service-name"], ",")[index]; name != "" {
+	serviceNames := strings.Split(pod.Annotations["instrumentation.opentelemetry.io/service-name"], ",")
+	if name := serviceNames[index]; name != "" {
 		return name
 	}
 	if name := resources[string(semconv.K8SDeploymentNameKey)]; name != "" {
