@@ -185,18 +185,18 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 		compareMap[v.Collector.Name+v.JobName] = append(compareMap[v.Collector.Name+v.JobName], *v)
 	}
 	params := mux.Vars(r)
+	jobId, err := url.QueryUnescape(params["job_id"])
+	if err != nil {
+		errorHandler(err, w, r)
+		return
+	}
 
 	if len(q) == 0 {
-		jobId, err := url.QueryUnescape(params["job_id"])
-		if err != nil {
-			errorHandler(err, w, r)
-			return
-		}
 		displayData := allocation.GetAllTargetsByJob(jobId, compareMap, s.allocator)
 		jsonHandler(w, r, displayData)
 
 	} else {
-		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], params["job_id"], compareMap, s.allocator)
+		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], jobId, compareMap, s.allocator)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
 			jsonHandler(w, r, []interface{}{})

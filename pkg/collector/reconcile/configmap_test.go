@@ -128,6 +128,58 @@ service:
 
 	})
 
+	t.Run("should return expected escaped collector config map with http_sd_config", func(t *testing.T) {
+		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
+		expectedLables["app.kubernetes.io/version"] = "latest"
+
+		expectedData := map[string]string{
+			"collector.yaml": `exporters:
+  logging: null
+processors: null
+receivers:
+  prometheus:
+    config:
+      global:
+        scrape_interval: 1m
+        scrape_timeout: 10s
+        evaluation_interval: 1m
+      scrape_configs:
+      - job_name: serviceMonitor/test/test/0
+        honor_timestamps: true
+        scrape_interval: 1m
+        scrape_timeout: 10s
+        metrics_path: /metrics
+        scheme: http
+        follow_redirects: true
+        http_sd_configs:
+        - follow_redirects: false
+          url: http://test-targetallocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
+service:
+  pipelines:
+    metrics:
+      exporters:
+      - logging
+      processors: []
+      receivers:
+      - prometheus
+`,
+		}
+
+		param, err := newParams("test/test-img", "../testdata/http_sd_config_servicemonitor_test.yaml")
+		assert.NoError(t, err)
+		param.Instance.Spec.TargetAllocator.Enabled = true
+		actual := desiredConfigMap(context.Background(), param)
+
+		assert.Equal(t, "test-collector", actual.Name)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+
+		// Reset the value
+		expectedLables["app.kubernetes.io/version"] = "0.47.0"
+
+	})
+
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
 		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
