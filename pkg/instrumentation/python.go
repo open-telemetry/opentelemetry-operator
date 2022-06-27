@@ -54,7 +54,10 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 			logger.Info("Skipping Python SDK injection, the container defines PYTHONPATH env var value via ValueFrom", "container", container.Name)
 			return pod
 		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
+
+		if IsEnvVarValueInstrumentationMissing(container.Env[idx], pythonPathPrefix) {
+			container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
+		}
 	}
 
 	// Set OTEL_TRACES_EXPORTER to HTTP exporter if not set by user because it is what our autoinstrumentation supports.
@@ -66,10 +69,12 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 		})
 	}
 
-	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      volumeName,
-		MountPath: "/otel-auto-instrumentation",
-	})
+	if IsOtAIVolumeMissing(container.VolumeMounts, logger) {
+		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			Name:      volumeName,
+			MountPath: "/otel-auto-instrumentation",
+		})
+	}
 
 	// We just inject Volumes and init containers for the first processed container
 	if IsInitContainerMissing(pod) {

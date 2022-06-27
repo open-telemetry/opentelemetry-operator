@@ -14,7 +14,12 @@
 
 package instrumentation
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	"strings"
+
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+)
 
 // Calculate if we already inject InitContainers.
 func IsInitContainerMissing(pod corev1.Pod) bool {
@@ -22,6 +27,24 @@ func IsInitContainerMissing(pod corev1.Pod) bool {
 		if initContainer.Name == initContainerName {
 			return false
 		}
+	}
+	return true
+}
+
+// Check if opentelemetry-auto-instrumentation volume is on the list.
+func IsOtAIVolumeMissing(volumeMounts []corev1.VolumeMount, logger logr.Logger) bool {
+	for _, volumeMount := range volumeMounts {
+		if volumeMount.Name == volumeName {
+			return false
+		}
+	}
+	return true
+}
+
+// Check if EnvVar value contains instrumentation string
+func IsEnvVarValueInstrumentationMissing(envVar corev1.EnvVar, instrumentation string) bool {
+	if strings.Contains(envVar.Value, instrumentation) {
+		return false
 	}
 	return true
 }
