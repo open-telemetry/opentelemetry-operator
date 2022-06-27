@@ -259,10 +259,9 @@ In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3
 The operator automatically determines the most suitable service name from the Kubernetes object names. However the service name can be overridden by the `instrumentation.opentelemetry.io/service-name` annotation in the pod specification. Follows the precedence order for determining the service name:
 
 1. The `instrumentation.opentelemetry.io/service-name` pod annotation (can be `,` seperated list for multiple container services)
-2. The Deployment Name
-3. The Statefulset/Cronjob/Job Name
-4. The Pod Name
-5. The Container Name
+2. The Deployment/Statefulset/Cronjob/Job Name
+3. The Pod Name
+4. The Container Name
 
 #### Use customized or vendor instrumentation
 
