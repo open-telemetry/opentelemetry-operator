@@ -35,6 +35,8 @@ import (
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch
 // +kubebuilder:rbac:groups="apps",resources=replicasets,verbs=get;list;watch
 
+const initContainerName = "opentelemetry-auto-instrumentation"
+
 var _ WebhookHandler = (*podSidecarInjector)(nil)
 
 // WebhookHandler is a webhook handler that analyzes new pods and injects appropriate sidecars into it.
@@ -89,11 +91,13 @@ func (p *podSidecarInjector) Handle(ctx context.Context, req admission.Request) 
 	}
 
 	for _, m := range p.podMutators {
-		pod, err = m.Mutate(ctx, ns, pod)
-		if err != nil {
-			res := admission.Errored(http.StatusInternalServerError, err)
-			res.Allowed = true
-			return res
+		if IsPodInstrumentationMissing(pod) {
+			pod, err = m.Mutate(ctx, ns, pod)
+			if err != nil {
+				res := admission.Errored(http.StatusInternalServerError, err)
+				res.Allowed = true
+				return res
+			}
 		}
 	}
 
