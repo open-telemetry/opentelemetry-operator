@@ -30,20 +30,13 @@ func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator *All
 
 			var targetGroupList []targetGroupJSON
 
-			trg := make(map[string][]TargetItem)
 			for _, t := range targetList {
-				trg[t.JobName+t.Label.String()] = append(trg[t.JobName+t.Label.String()], t)
+				targetGroupList = append(targetGroupList, targetGroupJSON{
+					Targets: []string{t.TargetURL},
+					Labels:  t.Label,
+				})
 			}
-			labelSetMap := make(map[string]model.LabelSet)
-			for _, tArr := range trg {
-				var targets []string
-				for _, t := range tArr {
-					labelSetMap[t.TargetURL] = t.Label
-					targets = append(targets, t.TargetURL)
-				}
-				targetGroupList = append(targetGroupList, targetGroupJSON{Targets: targets, Labels: labelSetMap[targets[0]]})
 
-			}
 			displayData[j.Collector.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.Collector.Name), Jobs: targetGroupList}
 
 		}

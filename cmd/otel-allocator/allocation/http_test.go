@@ -1,9 +1,10 @@
 package allocation
 
 import (
-	"github.com/prometheus/common/model"
 	"reflect"
 	"testing"
+
+	"github.com/prometheus/common/model"
 )
 
 func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
