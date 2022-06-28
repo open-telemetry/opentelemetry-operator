@@ -1,5 +1,5 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
 
