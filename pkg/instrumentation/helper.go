@@ -17,7 +17,6 @@ package instrumentation
 import (
 	"strings"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -32,7 +31,7 @@ func IsInitContainerMissing(pod corev1.Pod) bool {
 }
 
 // Check if opentelemetry-auto-instrumentation volume is on the list.
-func IsOtAIVolumeMissing(volumeMounts []corev1.VolumeMount, logger logr.Logger) bool {
+func IsOtAIVolumeMissing(volumeMounts []corev1.VolumeMount) bool {
 	for _, volumeMount := range volumeMounts {
 		if volumeMount.Name == volumeName {
 			return false
