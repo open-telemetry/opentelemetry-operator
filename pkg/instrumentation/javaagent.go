@@ -56,7 +56,7 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 		}
 	}
 
-	if IsOtAIVolumeMissing(container.VolumeMounts, logger) {
+	if IsOtAIVolumeMissing(container.VolumeMounts) {
 		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 			Name:      volumeName,
 			MountPath: "/otel-auto-instrumentation",

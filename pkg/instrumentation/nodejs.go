@@ -56,7 +56,7 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 		}
 	}
 
-	if IsOtAIVolumeMissing(container.VolumeMounts, logger) {
+	if IsOtAIVolumeMissing(container.VolumeMounts) {
 		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 			Name:      volumeName,
 			MountPath: "/otel-auto-instrumentation",

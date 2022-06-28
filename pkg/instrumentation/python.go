@@ -69,7 +69,7 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 		})
 	}
 
-	if IsOtAIVolumeMissing(container.VolumeMounts, logger) {
+	if IsOtAIVolumeMissing(container.VolumeMounts) {
 		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 			Name:      volumeName,
 			MountPath: "/otel-auto-instrumentation",
