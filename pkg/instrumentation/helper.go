@@ -40,7 +40,7 @@ func IsOtAIVolumeMissing(volumeMounts []corev1.VolumeMount) bool {
 	return true
 }
 
-// Check if EnvVar value contains instrumentation string
+// Check if EnvVar value contains instrumentation string.
 func IsEnvVarValueInstrumentationMissing(envVar corev1.EnvVar, instrumentation string) bool {
 	if strings.Contains(envVar.Value, instrumentation) {
 		return false
