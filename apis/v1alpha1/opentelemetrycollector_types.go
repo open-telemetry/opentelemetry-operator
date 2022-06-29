@@ -19,7 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// AutoScaleSpec defines the common elements used for create HPAs
+// AutoScaleSpec defines the common elements used for create HPAs.
 type AutoScaleSpec struct {
 	// MinReplicas sets a lower bound to the autoscaling feature.
 	// +optional
