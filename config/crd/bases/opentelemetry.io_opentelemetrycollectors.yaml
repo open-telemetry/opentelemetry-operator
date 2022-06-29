@@ -59,7 +59,7 @@ spec:
                 type: object
               autoscale:
                 description: AutoScaleSpec defines the common elements used for create
-                  HPAs
+                  HPAs.
                 properties:
                   maxReplicas:
                     description: MaxReplicas sets an upper bound to the autoscaling

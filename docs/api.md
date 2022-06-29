@@ -1408,7 +1408,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecautoscale">autoscale</a></b></td>
         <td>object</td>
         <td>
-          AutoScaleSpec defines the common elements used for create HPAs<br/>
+          AutoScaleSpec defines the common elements used for create HPAs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1573,7 +1573,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 
 
 
-AutoScaleSpec defines the common elements used for create HPAs
+AutoScaleSpec defines the common elements used for create HPAs.
 
 <table>
     <thead>
