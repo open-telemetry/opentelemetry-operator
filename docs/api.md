@@ -1405,6 +1405,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscale">autoscale</a></b></td>
+        <td>object</td>
+        <td>
+          AutoScaleSpec defines the common elements used for create HPAs<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>config</b></td>
         <td>string</td>
         <td>
@@ -1444,24 +1451,6 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>string</td>
         <td>
           ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>maxReplicas</b></td>
-        <td>integer</td>
-        <td>
-          MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>minReplicas</b></td>
-        <td>integer</td>
-        <td>
-          MinReplicas sets a lower bound to the autoscaling feature<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1573,6 +1562,44 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>[]object</td>
         <td>
           Volumes represents which volumes to use in the underlying collector deployment(s).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscale
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+AutoScaleSpec defines the common elements used for create HPAs
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxReplicas</b></td>
+        <td>integer</td>
+        <td>
+          MaxReplicas sets an upper bound to the autoscaling feature.  If MaxReplicas is set autoscaling is enabled.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minReplicas</b></td>
+        <td>integer</td>
+        <td>
+          MinReplicas sets a lower bound to the autoscaling feature.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr></tbody>

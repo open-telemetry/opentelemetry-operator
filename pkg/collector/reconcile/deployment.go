@@ -150,12 +150,12 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 
 // currentReplicasWithHPA calculates deployment replicas if HPA is enabled.
 func currentReplicasWithHPA(spec v1alpha1.OpenTelemetryCollectorSpec, curr int32) int32 {
-	if curr < *spec.Replicas {
-		return *spec.Replicas
+	if curr < *spec.AutoScaleSpec.MinReplicas {
+		return *spec.AutoScaleSpec.MinReplicas
 	}
 
-	if curr > *spec.MaxReplicas {
-		return *spec.MaxReplicas
+	if curr > *spec.AutoScaleSpec.MaxReplicas {
+		return *spec.AutoScaleSpec.MaxReplicas
 	}
 
 	return curr

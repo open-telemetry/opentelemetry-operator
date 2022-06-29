@@ -35,7 +35,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 
 	return autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        otelcol.Name,
+			Name:        naming.HorizontalPodAutoscaler(otelcol),
 			Namespace:   otelcol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
@@ -44,10 +44,11 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
 				APIVersion: v1alpha1.GroupVersion.String(),
 				Kind:       "OpenTelemetryCollector",
-				Name:       otelcol.Name,
+				Name:       naming.OpenTelemetryCollector(otelcol),
 			},
-			MinReplicas:                    &otelcol.Spec.MinReplicas,
-			MaxReplicas:                    *otelcol.Spec.MaxReplicas,
+
+			MinReplicas:                    otelcol.Spec.AutoScaleSpec.MinReplicas,
+			MaxReplicas:                    *otelcol.Spec.AutoScaleSpec.MaxReplicas,
 			TargetCPUUtilizationPercentage: &cpuTarget,
 		},
 	}

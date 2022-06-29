@@ -42,7 +42,7 @@ func TestExpectedHPA(t *testing.T) {
 		err := expectedHorizontalPodAutoscalers(context.Background(), params, []autoscalingv1.HorizontalPodAutoscaler{expectedHPA})
 		assert.NoError(t, err)
 
-		exists, err := populateObjectIfExists(t, &autoscalingv1.HorizontalPodAutoscaler{}, types.NamespacedName{Namespace: "default", Name: "test"})
+		exists, err := populateObjectIfExists(t, &autoscalingv1.HorizontalPodAutoscaler{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		assert.NoError(t, err)
 		assert.True(t, exists)
 	})
@@ -52,18 +52,20 @@ func TestExpectedHPA(t *testing.T) {
 		maxReplicas := int32(3)
 		updateParms := paramsWithHPA()
 		updateParms.Instance.Spec.Replicas = &minReplicas
+		updateParms.Instance.Spec.MinReplicas = &minReplicas
 		updateParms.Instance.Spec.MaxReplicas = &maxReplicas
 		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
 
-		createObjectIfNotExists(t, "test", &updatedHPA)
+		createObjectIfNotExists(t, "test-collector", &updatedHPA)
 		err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []autoscalingv1.HorizontalPodAutoscaler{updatedHPA})
 		assert.NoError(t, err)
 
 		actual := autoscalingv1.HorizontalPodAutoscaler{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test"})
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
+		assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
 		assert.Equal(t, int32(3), actual.Spec.MaxReplicas)
 	})
 
@@ -72,7 +74,7 @@ func TestExpectedHPA(t *testing.T) {
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
-		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test"})
+		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collecto"})
 		assert.False(t, exists)
 	})
 }
@@ -109,10 +111,12 @@ func paramsWithHPA() Params {
 					},
 					NodePort: 0,
 				}},
-				Config:      string(configYAML),
-				Replicas:    &minReplicas,
-				MinReplicas: minReplicas,
-				MaxReplicas: &maxReplicas,
+				Config:   string(configYAML),
+				Replicas: &minReplicas,
+				AutoScaleSpec: v1alpha1.AutoScaleSpec{
+					MinReplicas: &minReplicas,
+					MaxReplicas: &maxReplicas,
+				},
 			},
 		},
 		Scheme:   testScheme,

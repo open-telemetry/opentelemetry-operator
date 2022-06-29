@@ -54,6 +54,16 @@ func Collector(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol.Name))
 }
 
+// HorizontalPodAutoscaler builds the autoscaler name based on the instance.
+func HorizontalPodAutoscaler(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return DNSName(Truncate("%s-collector", 63, otelcol.Name))
+}
+
+// HorizontalPodAutoscaler builds the collector (deployment/daemonset) name based on the instance.
+func OpenTelemetryCollector(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return DNSName(Truncate("%s", 63, otelcol.Name))
+}
+
 // TargetAllocator returns the TargetAllocator deployment resource name.
 func TargetAllocator(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol.Name))

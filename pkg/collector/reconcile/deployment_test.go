@@ -239,8 +239,10 @@ func TestCurrentReplicasWithHPA(t *testing.T) {
 	minReplicas := int32(2)
 	maxReplicas := int32(5)
 	spec := v1alpha1.OpenTelemetryCollectorSpec{
-		Replicas:    &minReplicas,
-		MaxReplicas: &maxReplicas,
+		AutoScaleSpec: v1alpha1.AutoScaleSpec{
+			MinReplicas: &minReplicas,
+			MaxReplicas: &maxReplicas,
+		},
 	}
 
 	res := currentReplicasWithHPA(spec, 10)
