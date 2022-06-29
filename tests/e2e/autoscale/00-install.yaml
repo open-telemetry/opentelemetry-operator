@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  replicas: 1
+  replicas: 2
   autoscale:
     minReplicas: 2
     maxReplicas: 10
