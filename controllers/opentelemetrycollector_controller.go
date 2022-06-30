@@ -21,7 +21,8 @@ import (
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -179,7 +180,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&autoscalingv1.HorizontalPodAutoscaler{}).
+		Owns(&autoscalingv2beta2.HorizontalPodAutoscaler{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.StatefulSet{}).
 		Complete(r)
