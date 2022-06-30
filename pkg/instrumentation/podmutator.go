@@ -61,6 +61,12 @@ func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
 func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
 	logger := pm.Logger.WithValues("namespace", pod.Namespace, "name", pod.Name)
 
+	// We check if Pod is already instrumented.
+	if IsAutoInstrumentationInjected(pod) {
+		logger.Info("Skipping pod instrumentation - already instrumented")
+		return pod, nil
+	}
+
 	var inst *v1alpha1.Instrumentation
 	var err error
 

@@ -47,3 +47,13 @@ func IsEnvVarValueInstrumentationMissing(envVar corev1.EnvVar, instrumentation s
 	}
 	return true
 }
+
+// Checks if Pod is already instrumented by checking Instrumentation InitContainer presence.
+func IsAutoInstrumentationInjected(pod corev1.Pod) bool {
+	for _, cont := range pod.Spec.InitContainers {
+		if cont.Name == initContainerName {
+			return true
+		}
+	}
+	return false
+}
