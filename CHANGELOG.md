@@ -1,6 +1,14 @@
 Changes by Version
 ==================
 
+0.54.0
+-------------------
+### 🧰 Bug fixes 🧰
+* Fix parameter encoding issue ([#930](https://github.com/open-telemetry/opentelemetry-operator/pull/930), [@jaronoff97](https://github.com/jaronoff97))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.54.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.54.0)
+* [OpenTelemetry Contrib - v0.54.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.54.0)
+
 0.53.0
 -------------------
 ### 💡 Enhancements 💡
