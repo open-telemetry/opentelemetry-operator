@@ -99,7 +99,7 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		if params.Instance.Spec.MaxReplicas != nil {
+		if params.Instance.Spec.MaxReplicas != nil && desired.Labels["app.kubernetes.io/component"] == "opentelemetry-collector" {
 			currentReplicas := currentReplicasWithHPA(params.Instance.Spec, existing.Status.Replicas)
 			updated.Spec.Replicas = &currentReplicas
 		}
