@@ -152,7 +152,7 @@ e2e:
 	$(KUTTL) test
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind load-image-all
+prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind install-metrics-server load-image-all
 	mkdir -p tests/_build/crds tests/_build/manifests
 	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
@@ -183,6 +183,10 @@ container-target-allocator:
 .PHONY: start-kind
 start-kind:
 	kind create cluster --config $(KIND_CONFIG)
+
+.PHONY: install-metrics-server
+install-metrics-server:
+	./hack/install-metrics-server.sh
 
 .PHONY: load-image-all
 load-image-all: load-image-operator load-image-target-allocator
