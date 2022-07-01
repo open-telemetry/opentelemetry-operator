@@ -6,7 +6,7 @@ spec:
   replicas: 2
   autoscale:
     minReplicas: 2
-    maxReplicas: 10
+    maxReplicas: 5
   resources:
     limits:
       cpu: 500m
