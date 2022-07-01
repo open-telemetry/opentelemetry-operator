@@ -12,5 +12,5 @@ metadata:
   name: simplest-collector
 spec:
   minReplicas: 2
-  maxReplicas: 10
+  maxReplicas: 5
 
