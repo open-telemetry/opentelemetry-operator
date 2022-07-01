@@ -117,9 +117,12 @@ func TestExpectedDeployments(t *testing.T) {
 					UID:       instanceUID,
 				},
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					MaxReplicas: &maxReplicas,
-					Replicas:    &replicas,
-					Mode:        v1alpha1.ModeStatefulSet,
+					AutoScaleSpec: v1alpha1.AutoScaleSpec{
+						MinReplicas: &replicas,
+						MaxReplicas: &maxReplicas,
+					},
+					Replicas: &replicas,
+					Mode:     v1alpha1.ModeStatefulSet,
 					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 						Enabled: true,
 					},
