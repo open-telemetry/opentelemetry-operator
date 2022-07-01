@@ -3,8 +3,6 @@ Changes by Version
 
 0.54.0
 -------------------
-### 💡 Enhancements 💡
-* Add a simple test to ensure we are opening the correct ports for otlp… ([#945](https://github.com/open-telemetry/opentelemetry-operator/pull/945), [@kevinearls](https://github.com/kevinearls))
 ### 🧰 Bug fixes 🧰
 * Fix parameter encoding issue ([#930](https://github.com/open-telemetry/opentelemetry-operator/pull/930), [@jaronoff97](https://github.com/jaronoff97))
 #### OpenTelemetry Collector and Contrib
