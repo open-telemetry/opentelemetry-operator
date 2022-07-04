@@ -14,6 +14,6 @@ spec:
             - -otlp-endpoint=simplest-collector-headless:4317
             - -otlp-insecure
             - -duration=1m
-            - -workers=10
+            - -workers=20
       restartPolicy: Never
   backoffLimit: 4

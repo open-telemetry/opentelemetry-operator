@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: simplest-collector
 status:
-  readyReplicas: 2
+  readyReplicas: 1
 
 ---
 apiVersion: autoscaling/v1
@@ -11,6 +11,6 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: simplest-collector
 spec:
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 1
+  maxReplicas: 4
 
