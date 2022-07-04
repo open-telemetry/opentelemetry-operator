@@ -67,86 +67,7 @@ func TestInitContainerMissing(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := IsInitContainerMissing(test.pod)
-			assert.Equal(t, test.expected, result)
-		})
-	}
-}
-
-func TestOtAiVolumeMissing(t *testing.T) {
-	tests := []struct {
-		name     string
-		volume   []corev1.VolumeMount
-		expected bool
-	}{
-		{
-			name: "Volume_Already_Inject",
-			volume: []corev1.VolumeMount{
-				{
-					Name: volumeName,
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "Volume_Absent_1",
-			volume: []corev1.VolumeMount{
-				{
-					Name: "magic-volume",
-				},
-			},
-			expected: true,
-		},
-		{
-			name:     "Volume_Absent_2",
-			volume:   []corev1.VolumeMount{},
-			expected: true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result := IsOtAIVolumeMissing(test.volume)
-			assert.Equal(t, test.expected, result)
-		})
-	}
-}
-
-func TestEnvVarInstrumentationValueMissing(t *testing.T) {
-	tests := []struct {
-		name               string
-		envVar             corev1.EnvVar
-		instrumentationStr string
-		expected           bool
-	}{
-		{
-			name: "EnvVar_Instrumentation_Value_Already_Inject",
-			envVar: corev1.EnvVar{
-				Name:  envJavaToolsOptions,
-				Value: javaJVMArgument,
-			},
-			instrumentationStr: javaJVMArgument,
-			expected:           false,
-		},
-		{
-			name: "EnvVar_Instrumentation_Value_Absent_1",
-			envVar: corev1.EnvVar{
-
-				Name:  envNodeOptions,
-				Value: "some-magic-node-options",
-			},
-			instrumentationStr: envNodeOptions,
-			expected:           true,
-		}, {
-			name:               "EnvVar_Instrumentation_Value_Absent_2",
-			envVar:             corev1.EnvVar{},
-			instrumentationStr: envNodeOptions,
-			expected:           true,
-		}}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result := IsEnvVarValueInstrumentationMissing(test.envVar, test.instrumentationStr)
+			result := isInitContainerMissing(test.pod)
 			assert.Equal(t, test.expected, result)
 		})
 	}
@@ -198,7 +119,7 @@ func TestAutoInstrumentationInjected(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := IsAutoInstrumentationInjected(test.pod)
+			result := isAutoInstrumentationInjected(test.pod)
 			assert.Equal(t, test.expected, result)
 		})
 	}

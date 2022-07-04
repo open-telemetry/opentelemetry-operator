@@ -51,20 +51,17 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 			return pod
 		}
 
-		if IsEnvVarValueInstrumentationMissing(container.Env[idx], nodeRequireArgument) {
-			container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
-		}
+		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
+
 	}
 
-	if IsOtAIVolumeMissing(container.VolumeMounts) {
-		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-			Name:      volumeName,
-			MountPath: "/otel-auto-instrumentation",
-		})
-	}
+	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+		Name:      volumeName,
+		MountPath: "/otel-auto-instrumentation",
+	})
 
 	// We just inject Volumes and init containers for the first processed container
-	if IsInitContainerMissing(pod) {
+	if isInitContainerMissing(pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: volumeName,
 			VolumeSource: corev1.VolumeSource{

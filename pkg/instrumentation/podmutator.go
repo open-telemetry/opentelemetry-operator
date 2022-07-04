@@ -62,7 +62,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	logger := pm.Logger.WithValues("namespace", pod.Namespace, "name", pod.Name)
 
 	// We check if Pod is already instrumented.
-	if IsAutoInstrumentationInjected(pod) {
+	if isAutoInstrumentationInjected(pod) {
 		logger.Info("Skipping pod instrumentation - already instrumented")
 		return pod, nil
 	}
