@@ -24,10 +24,12 @@ import (
 )
 
 const (
-	envPythonPath         = "PYTHONPATH"
-	envOtelTracesExporter = "OTEL_TRACES_EXPORTER"
-	pythonPathPrefix      = "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation"
-	pythonPathSuffix      = "/otel-auto-instrumentation"
+	envPythonPath          = "PYTHONPATH"
+	envOtelTracesExporter  = "OTEL_TRACES_EXPORTER"
+	envOtelMetricsExporter = "OTEL_METRICS_EXPORTER"
+	envValOtelHttpExporter = "otlp_proto_http"
+	pythonPathPrefix       = "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation"
+	pythonPathSuffix       = "/otel-auto-instrumentation"
 )
 
 func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod, index int) corev1.Pod {
@@ -64,7 +66,16 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  envOtelTracesExporter,
-			Value: "otlp_proto_http",
+			Value: envValOtelHttpExporter,
+		})
+	}
+
+	// Set OTEL_METRICS_EXPORTER to HTTP exporter if not set by user because it is what our autoinstrumentation supports.
+	idx = getIndexOfEnv(container.Env, envOtelMetricsExporter)
+	if idx == -1 {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envOtelMetricsExporter,
+			Value: envValOtelHttpExporter,
 		})
 	}
 

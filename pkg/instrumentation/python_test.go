@@ -73,12 +73,16 @@ func TestInjectPythonSDK(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "PYTHONPATH",
+									Name:  envPythonPath,
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp_proto_http",
+									Name:  envOtelTracesExporter,
+									Value: envValOtelHttpExporter,
+								},
+								{
+									Name:  envOtelMetricsExporter,
+									Value: envValOtelHttpExporter,
 								},
 							},
 						},
@@ -95,7 +99,7 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Env: []corev1.EnvVar{
 								{
-									Name:  "PYTHONPATH",
+									Name:  envPythonPath,
 									Value: "/foo:/bar",
 								},
 							},
@@ -138,8 +142,12 @@ func TestInjectPythonSDK(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s:%s", pythonPathPrefix, "/foo:/bar", pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp_proto_http",
+									Name:  envOtelTracesExporter,
+									Value: envValOtelHttpExporter,
+								},
+								{
+									Name:  envOtelMetricsExporter,
+									Value: envValOtelHttpExporter,
 								},
 							},
 						},
@@ -156,7 +164,7 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_TRACES_EXPORTER",
+									Name:  envOtelTracesExporter,
 									Value: "zipkin",
 								},
 							},
@@ -195,12 +203,81 @@ func TestInjectPythonSDK(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_TRACES_EXPORTER",
+									Name:  envOtelTracesExporter,
 									Value: "zipkin",
 								},
 								{
-									Name:  "PYTHONPATH",
+									Name:  envPythonPath,
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+								},
+								{
+									Name:  envOtelMetricsExporter,
+									Value: envValOtelHttpExporter,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "OTEL_METRICS_EXPORTER defined",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  envOtelMetricsExporter,
+									Value: "zipkin",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: volumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    initContainerName,
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      volumeName,
+								MountPath: "/otel-auto-instrumentation",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      volumeName,
+									MountPath: "/otel-auto-instrumentation",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  envOtelMetricsExporter,
+									Value: "zipkin",
+								},
+								{
+									Name:  envPythonPath,
+									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+								},
+								{
+									Name:  envOtelTracesExporter,
+									Value: envValOtelHttpExporter,
 								},
 							},
 						},
@@ -217,7 +294,7 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Env: []corev1.EnvVar{
 								{
-									Name:      "PYTHONPATH",
+									Name:      envPythonPath,
 									ValueFrom: &corev1.EnvVarSource{},
 								},
 							},
@@ -231,7 +308,7 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Env: []corev1.EnvVar{
 								{
-									Name:      "PYTHONPATH",
+									Name:      envPythonPath,
 									ValueFrom: &corev1.EnvVarSource{},
 								},
 							},

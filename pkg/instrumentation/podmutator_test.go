@@ -498,6 +498,10 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp_proto_http",
+								},
+								{
 									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
 									Value: "20",
 								},
