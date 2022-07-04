@@ -168,6 +168,11 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java, NodeJS and Python are supported.
 
+Each auto-instrumentation supports different exporters. Make sure your endpoint is configured properly:
+* Java - by default `OTLP gRPC exporter` is used (default port 4317). To change configuration please see [OT Java Auto-Instrumentation](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters)
+* NodeJS - only [OTLP gRPC exporter](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/exporter-trace-otlp-grpc) is supported (default port 4317)
+* Python - only [OTLP Proto HTTP exporter](https://github.com/open-telemetry/opentelemetry-python/tree/main/exporter/opentelemetry-exporter-otlp-proto-http) is supported (default port 4318)
+
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
 ```yaml
