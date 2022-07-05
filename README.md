@@ -166,21 +166,143 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries.
+Currently Java, NodeJS and Python are supported. Each language auto-instrumentation supports different exporters.
+Auto-instrumentation is configured by [Instrumentation](./apis/v1alpha1/instrumentation_types.go) resource.
 
-Each auto-instrumentation supports different exporters. Make sure your endpoint is configured properly:
-* Java - by default `OTLP gRPC exporter` is used (default port 4317). To change configuration please see [OT Java Auto-Instrumentation](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters)
-* NodeJS - only [OTLP gRPC exporter](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/exporter-trace-otlp-grpc) is supported (default port 4317)
-* Python - only [OTLP Proto HTTP exporter](https://github.com/open-telemetry/opentelemetry-python/tree/main/exporter/opentelemetry-exporter-otlp-proto-http) is supported (default port 4318)
+#### Instrumentation resource
 
-To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
+OpenTelemetry-Operator uses Instrumentation resource to define auto-instrumentation configuration.
+A single `Instrumentation` resource can host configuration to all available auto-instrumentations.
+It is mandatory to create an `Instrumentation` resource.
 
 ```yaml
-kubectl apply -f - <<EOF
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
+  ## name - defines name of the instrumentation resource
   name: my-instrumentation
+spec:
+  ## env - a list of Env objects which will be added to the instrumented pod
+  env: 
+    - name: MY_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: CUSTOM_ATTR
+      value: "custom_value"
+  
+  ## exporter.endpoint - defines endpoint to the collector
+  ## and sets OTEL_EXPORTER_OTLP_ENDPOINT environment variable
+  exporter:
+    endpoint: http://otel-collector:4317
+  
+  
+  ## propagators defines which format is used for distributed context
+  ## values are applied to OTEL_PROPAGATORS environment variable
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  
+  ## resource defines the configuration for the resource attributes
+  resource:
+    ## resourceAttributes - defines attributes that are added to the resource.
+    resourceAttributes:
+      attribKey: "attribVal"
+    
+    ## addK8sUIDAttributes defines whether K8s UID attributes should be collected 
+    ## (e.g. k8s.deployment.uid)
+    addK8sUIDAttributes: true
+  
+
+  ## sampler - defines sampling on the instrumentation SDK level
+  ## sets OTEL_TRACES_SAMPLER and OTEL_TRACES_SAMPLER_ARG environment variable
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.25"
+  
+  ## java - defines environment variables specific only for java instrumentation
+  ## and auto-instrumentation libraries image
+  java:
+    ## env - smiliar to spec.env but used only for java auto-instrumentation injection
+    env:
+      - name: EXAMPLE_JAVA_ENV
+        value: "value"
+    ## img - if not set by default points to opentelemetry-operator auto-instrumentation images,
+    ## a place for customized auto-instrumentation libraries
+    img: my-custom.java-img.repository:latest
+
+
+  ## nodejs - defines environment variables specific only for nodejs instrumentation
+  ## and auto-instrumentation libraries image
+  nodejs:
+    ## env - smiliar to spec.env but used only for nodejs auto-instrumentation injection
+    env:
+      - name: EXAMPLE_NODEJS_ENV
+        value: "value"
+    ## img - if not set by default points to opentelemetry-operator auto-instrumentation images,
+    ## a place for customized auto-instrumentation libraries
+    img: my-custom.nodejs-img.repository:latest
+
+  ## python - defines environment variables specific only for python instrumentation
+  ## and auto-instrumentation libraries image
+  python:
+    ## env - smiliar to spec.env but used only for python auto-instrumentation injection
+    env:
+      - name: EXAMPLE_PYTHON_ENV
+        value: "value"
+    ## img - if not set by default points to opentelemetry-operator auto-instrumentation images,
+    ## a place for customized auto-instrumentation libraries
+    img: my-custom.python-img.repository:latest
+```
+
+The above CR can be queried by `kubectl get otelinst`. 
+
+#### Auto-instrumentation injection
+
+To enable auto-instrumentation it is required to add an annotation to a pod. The annotation can be added to a namespace,
+so that all pods within that namespace wil get instrumentation, or by adding the annotation to individual PodSpec
+objects, available as part of Deployment, Statefulset, and other resources.
+
+Each language auto-instrumentation has specific annotation to be set:
+
+* Java:
+    ```yaml
+    instrumentation.opentelemetry.io/inject-java: "true"
+    ```
+
+* NodeJS:
+    ```yaml
+    instrumentation.opentelemetry.io/inject-nodejs: "true"
+    ```
+
+* Python:
+    ```yaml
+    instrumentation.opentelemetry.io/inject-python: "true"
+    ```
+
+The possible values for the annotation can be
+* `"true"` - inject and `Instrumentation` resource from the namespace.
+* `"my-instrumentation"` - name of `Instrumentation` CR instance in the current namespace.
+* `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
+* `"false"` - do not inject
+
+#### Auto-instrumentation injection for multi-container pods
+
+#### Java auto-instrumentation
+
+Auto-instrumentation is provided by [OpenTelemetry Java Instrumentaion](https://github.com/open-telemetry/opentelemetry-java-instrumentation).
+By default `OTLP gRPC exporter` is used and default port is `4317`. 
+To customize configuration please see [OT Java Auto-Instrumentation configuration](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters).
+
+Example `Instrumentation` resource:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-java-instrumentation
 spec:
   exporter:
     endpoint: http://otel-collector:4317
@@ -189,37 +311,65 @@ spec:
     - baggage
     - b3
   sampler:
-    type: parentbased_traceidratio
-    argument: "0.25"
-EOF
+    type: always_on
 ```
 
-The above CR can be queried by `kubectl get otelinst`.
+#### NodeJS auto-instrumentation
 
-Then add an annotation to a pod to enable injection. The annotation can be added to a namespace, so that all pods within
-that namespace wil get instrumentation, or by adding the annotation to individual PodSpec objects, available as part of
-Deployment, Statefulset, and other resources.
+NodeJS auto-instrumentation comes from [OpenTelemetry JS](https://github.com/open-telemetry/opentelemetry-js) for SDK
+and [OpenTelemetry JS Contrib](https://github.com/open-telemetry/opentelemetry-js-contrib) for instrumentation.
+Auto-instrumentation is supporting **only** [OTLP gRPC exporter](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/exporter-trace-otlp-grpc)
+and by default OpenTelemetry Collector accepts telemetry data on port `4317` for this protocol. 
 
-Java:
-```bash
-instrumentation.opentelemetry.io/inject-java: "true"
+Example `Instrumentation` resource:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-nodejs-instrumentation
+spec:
+  exporter:
+    endpoint: http://otel-collector:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: always_on
+  nodejs:
+    env:
+      - name: OTEL_RESOURCE_ATTRIBUTES
+        value: "application=my-js-app"
 ```
 
-NodeJS:
-```bash
-instrumentation.opentelemetry.io/inject-nodejs: "true"
-```
+#### Python auto-instrumentation
 
-Python:
-```bash
-instrumentation.opentelemetry.io/inject-python: "true"
-```
+[OpenTelemetry Python](https://github.com/open-telemetry/opentelemetry-python) and [OpenTelemetry Python Contrib](https://github.com/open-telemetry/opentelemetry-python-contrib)
+are the sources of auto-instrumentation libraries. Python instrumentation supports [OTLP Proto HTTP exporter](https://github.com/open-telemetry/opentelemetry-python/tree/main/exporter/opentelemetry-exporter-otlp-proto-http)
+and default port on the collector side is `4318`. OTLP gRPC exporter is not appropriate for injected auto-instrumentation,
+where it has a strict dependency on the OS / Python version the artifact is built for.
 
-The possible values for the annotation can be
-* `"true"` - inject and `Instrumentation` resource from the namespace.
-* `"my-instrumentation"` - name of `Instrumentation` CR instance in the current namespace.
-* `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
-* `"false"` - do not inject
+Example `Instrumentation` resource:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-python-instrumentation
+spec:
+  exporter:
+    endpoint: http://otel-collector:4318
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  sampler:
+    type: always_on
+  python:
+    env:
+      - name: OTEL_RESOURCE_ATTRIBUTES
+        value: "application=my-python-app"
+```
 
 #### Multi-container pods
 
