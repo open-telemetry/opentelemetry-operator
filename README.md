@@ -288,8 +288,6 @@ The possible values for the annotation can be
 * `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
 
-#### Auto-instrumentation injection for multi-container pods
-
 #### Java auto-instrumentation
 
 Auto-instrumentation is provided by [OpenTelemetry Java Instrumentaion](https://github.com/open-telemetry/opentelemetry-java-instrumentation).
