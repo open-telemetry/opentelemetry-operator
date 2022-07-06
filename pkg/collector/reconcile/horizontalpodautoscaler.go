@@ -35,7 +35,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	desired := []autoscalingv1.HorizontalPodAutoscaler{}
 
 	// check if autoscale mode is on, e.g MaxReplicas is not nil
-	if params.Instance.Spec.AutoScaleSpec.MaxReplicas != nil {
+	if params.Instance.Spec.MaxReplicas != nil {
 		desired = append(desired, collector.HorizontalPodAutoscaler(params.Config, params.Log, params.Instance))
 	}
 
@@ -82,9 +82,9 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 		}
 
 		updated.OwnerReferences = desired.OwnerReferences
-		updated.Spec.MinReplicas = params.Instance.Spec.AutoScaleSpec.MinReplicas
+		updated.Spec.MinReplicas = params.Instance.Spec.Replicas
 		if params.Instance.Spec.MaxReplicas != nil {
-			updated.Spec.MaxReplicas = *params.Instance.Spec.AutoScaleSpec.MaxReplicas
+			updated.Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
 		}
 
 		for k, v := range desired.Annotations {

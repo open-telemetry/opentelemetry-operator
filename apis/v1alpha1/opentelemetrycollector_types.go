@@ -19,17 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// AutoScaleSpec defines the common elements used for create HPAs.
-type AutoScaleSpec struct {
-	// MinReplicas sets a lower bound to the autoscaling feature.
-	// +optional
-	MinReplicas *int32 `json:"minReplicas,omitempty"`
-
-	// MaxReplicas sets an upper bound to the autoscaling feature.  If MaxReplicas is set autoscaling is enabled.
-	// +optional
-	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
-}
-
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
@@ -48,8 +37,9 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 
+	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
-	AutoScaleSpec `json:"autoscale,omitempty"`
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional

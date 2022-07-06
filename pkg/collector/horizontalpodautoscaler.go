@@ -47,8 +47,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				Name:       naming.OpenTelemetryCollector(otelcol),
 			},
 
-			MinReplicas:                    otelcol.Spec.AutoScaleSpec.MinReplicas,
-			MaxReplicas:                    *otelcol.Spec.AutoScaleSpec.MaxReplicas,
+			MinReplicas:                    otelcol.Spec.Replicas,
+			MaxReplicas:                    *otelcol.Spec.MaxReplicas,
 			TargetCPUUtilizationPercentage: &cpuTarget,
 		},
 	}

@@ -4,9 +4,7 @@ metadata:
   name: simplest
 spec:
   replicas: 1
-  autoscale:
-    minReplicas: 1
-    maxReplicas: 2
+  maxReplicas: 2
   resources:
     limits:
       cpu: 500m

@@ -53,7 +53,7 @@ func TestExpectedHPA(t *testing.T) {
 		maxReplicas := int32(3)
 		updateParms := paramsWithHPA()
 		updateParms.Instance.Spec.Replicas = &minReplicas
-		updateParms.Instance.Spec.MinReplicas = &minReplicas
+		updateParms.Instance.Spec.Replicas = &minReplicas
 		updateParms.Instance.Spec.MaxReplicas = &maxReplicas
 		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
 
@@ -112,12 +112,9 @@ func paramsWithHPA() Params {
 					},
 					NodePort: 0,
 				}},
-				Config:   string(configYAML),
-				Replicas: &minReplicas,
-				AutoScaleSpec: v1alpha1.AutoScaleSpec{
-					MinReplicas: &minReplicas,
-					MaxReplicas: &maxReplicas,
-				},
+				Config:      string(configYAML),
+				Replicas:    &minReplicas,
+				MaxReplicas: &maxReplicas,
 			},
 		},
 		Scheme:   testScheme,
