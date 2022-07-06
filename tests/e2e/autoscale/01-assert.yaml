@@ -15,4 +15,4 @@ metadata:
   name: simplest
 status:
   scale:
-    replicas: 4
+    replicas: 2
