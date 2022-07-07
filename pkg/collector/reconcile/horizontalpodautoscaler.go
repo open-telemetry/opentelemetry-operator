@@ -52,6 +52,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 }
 
 func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
+	one := int32(1)
 	for _, obj := range expected {
 		desired := obj
 
@@ -81,9 +82,13 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 		}
 
 		updated.OwnerReferences = desired.OwnerReferences
-		updated.Spec.MinReplicas = params.Instance.Spec.Replicas
 		if params.Instance.Spec.MaxReplicas != nil {
 			updated.Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
+			if params.Instance.Spec.MinReplicas != nil {
+				updated.Spec.MinReplicas = params.Instance.Spec.MinReplicas
+			} else {
+				updated.Spec.MinReplicas = &one
+			}
 		}
 
 		for k, v := range desired.Annotations {

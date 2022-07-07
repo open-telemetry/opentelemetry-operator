@@ -37,6 +37,10 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 
+	// MinReplicas sets a lower bound to the autoscaling feature.
+	// +optional
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`

@@ -223,6 +223,10 @@ spec:
                   If MaxReplicas is set autoscaling is enabled.
                 format: int32
                 type: integer
+              minReplicas:
+                description: MinReplicas sets a lower bound to the autoscaling feature.
+                format: int32
+                type: integer
               mode:
                 description: Mode represents how the collector should be deployed
                   (deployment, daemonset, statefulset or sidecar)
