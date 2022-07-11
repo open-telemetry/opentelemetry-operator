@@ -62,6 +62,11 @@ func (r *OpenTelemetryCollector) Default() {
 		one := int32(1)
 		r.Spec.Replicas = &one
 	}
+
+	if r.Spec.MaxReplicas != nil && r.Spec.MinReplicas == nil {
+		one := int32(1)
+		r.Spec.MinReplicas = &one
+	}
 }
 
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -120,6 +125,15 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		if r.Spec.Replicas != nil && *r.Spec.Replicas > *r.Spec.MaxReplicas {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
 		}
+
+		if r.Spec.MinReplicas != nil && *r.Spec.MinReplicas > *r.Spec.MaxReplicas {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
+		}
+
+		if r.Spec.MinReplicas != nil && *r.Spec.MinReplicas < int32(1) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be more than one")
+		}
+
 	}
 
 	return nil
