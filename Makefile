@@ -48,7 +48,7 @@ else
 GOTEST_OPTS=-race -v
 endif
 
-KUBE_VERSION ?= 1.21
+KUBE_VERSION ?= 1.24
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
 OPERATOR_SDK_VERSION ?= 1.17.0

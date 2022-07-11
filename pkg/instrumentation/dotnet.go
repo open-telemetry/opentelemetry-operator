@@ -95,7 +95,7 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 	})
 
 	// We just inject Volumes and init containers for the first processed container
-	if IsInitContainerMissing(pod) {
+	if isInitContainerMissing(pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: volumeName,
 			VolumeSource: corev1.VolumeSource{
