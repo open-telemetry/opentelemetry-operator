@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	gokitlog "github.com/go-kit/log"
-	"github.com/otel-allocator/allocation"
-	"github.com/otel-allocator/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/assert"

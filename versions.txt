@@ -2,10 +2,10 @@
 # by default with the OpenTelemetry Operator. This would usually be the latest
 # stable OpenTelemetry version. When you update this file, make sure to update the
 # the docs as well.
-opentelemetry-collector=0.49.0
+opentelemetry-collector=0.53.0
 
 # Represents the current release of the OpenTelemetry Operator.
-operator=0.49.0
+operator=0.53.0
 
 # Represents the current release of the Target Allocator.
 targetallocator=0.1.0
@@ -20,7 +20,7 @@ autoinstrumentation-nodejs=0.27.0
 
 # Represents the current release of Python instrumentation.
 # Should match value in autoinstrumentation/python/requirements.txt
-autoinstrumentation-python=0.28b1
+autoinstrumentation-python=0.30b1
 
 # Represents the current release of DotNet instrumentation.
 # Should match autoinstrumentation/dotnet/version.txt

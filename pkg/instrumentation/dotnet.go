@@ -32,9 +32,9 @@ const (
 	dotNetStartupHookPath    = "/otel-auto-instrumentation/bin/tracer-home/netcoreapp3.1/LMStartupHook.dll"
 )
 
-func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.Pod) corev1.Pod {
+func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) corev1.Pod {
 	// caller checks if there is at least one container
-	container := pod.Spec.Containers[0]
+	container := pod.Spec.Containers[index]
 
 	// inject env vars
 	for _, env := range dotNetSpec.Env {
@@ -94,22 +94,25 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 		MountPath: "/otel-auto-instrumentation",
 	})
 
-	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-		Name: volumeName,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		}})
+	// We just inject Volumes and init containers for the first processed container
+	if IsInitContainerMissing(pod) {
+		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+			Name: volumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			}})
 
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-		Name:    initContainerName,
-		Image:   dotNetSpec.Image,
-		Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
-		VolumeMounts: []corev1.VolumeMount{{
-			Name:      volumeName,
-			MountPath: "/otel-auto-instrumentation",
-		}},
-	})
+		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
+			Name:    initContainerName,
+			Image:   dotNetSpec.Image,
+			Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			VolumeMounts: []corev1.VolumeMount{{
+				Name:      volumeName,
+				MountPath: "/otel-auto-instrumentation",
+			}},
+		})
+	}
 
-	pod.Spec.Containers[0] = container
+	pod.Spec.Containers[index] = container
 	return pod
 }

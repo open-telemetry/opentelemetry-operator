@@ -162,6 +162,8 @@ spec:
 EOF
 ```
 
+When using sidecar mode the OpenTelemetry collector container will have the environment variable `OTEL_RESOURCE_ATTRIBUTES`set with Kubernetes resource attributes, ready to be consumed by the [resourcedetection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) processor.
+
 ### OpenTelemetry auto-instrumentation injection
 
 The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java, NodeJS and Python are supported.
@@ -215,8 +217,47 @@ instrumentation.opentelemetry.io/inject-dotnet: "true"
 
 The possible values for the annotation can be
 * `"true"` - inject and `Instrumentation` resource from the namespace.
-* `"my-instrumentation"` - name of `Instrumentation` CR instance.
+* `"my-instrumentation"` - name of `Instrumentation` CR instance in the current namespace.
+* `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
+
+#### Multi-container pods
+
+If nothing else is specified, instrumentation is performed on the first container available in the pod spec.
+In some cases (for example in the case of the injection of an Istio sidecar) it becomes necessary to specify on which container(s) this injection must be performed.
+
+For this, it is possible to fine-tune the pod(s) on which the injection will be carried out.
+
+For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more pod names (`.spec.containers.name`) on which the injection must be made:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment-with-multiple-containers
+spec:
+  selector:
+    matchLabels:
+      app: my-pod-with-multiple-containers
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-pod-with-multiple-containers
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/container-names: "myapp,myapp2"
+    spec:
+      containers:
+      - name: myapp
+        image: myImage1
+      - name: myapp2
+        image: myImage2
+      - name: myapp3
+        image: myImage3
+```
+
+In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3` will not.
 
 #### Use customized or vendor instrumentation
 
@@ -263,26 +304,27 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
 |------------------------|----------------------|----------------------|
-| v0.49.0                | v1.19 to v1.23       | 1.6.1                |
-| v0.48.0                | v1.19 to v1.23       | 1.6.1                |
-| v0.47.0                | v1.19 to v1.23       | 1.6.1                |
-| v0.46.0                | v1.19 to v1.23       | 1.6.1                |
-| v0.45.0                | v1.21 to v1.23       | 1.6.1                |
-| v0.44.0                | v1.21 to v1.23       | 1.6.1                |
-| v0.43.0                | v1.21 to v1.23       | 1.6.1                |
-| v0.42.0                | v1.21 to v1.23       | 1.6.1                |
-| v0.41.1                | v1.21 to v1.23       | 1.6.1                |
-| v0.41.0                | v1.20 to v1.22       | 1.6.1                |
-| v0.40.0                | v1.20 to v1.22       | 1.6.1                |
-| v0.39.0                | v1.20 to v1.22       | 1.6.1                |
-| v0.38.0                | v1.20 to v1.22       | 1.6.1                |
-| v0.37.1                | v1.20 to v1.22       | v1.4.0 to v1.6.1     |
-| v0.37.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.36.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.35.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.34.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.33.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.32.0 (skipped)      | n/a                  | n/a                  |
+| v0.53.0                | v1.19 to v1.24       | v1                   |
+| v0.52.0                | v1.19 to v1.23       | v1                   |
+| v0.51.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.50.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.49.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.48.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.47.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.46.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.45.0                | v1.21 to v1.23       | v1alpha2             |
+| v0.44.0                | v1.21 to v1.23       | v1alpha2             |
+| v0.43.0                | v1.21 to v1.23       | v1alpha2             |
+| v0.42.0                | v1.21 to v1.23       | v1alpha2             |
+| v0.41.1                | v1.21 to v1.23       | v1alpha2             |
+| v0.41.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.40.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.39.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.38.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.37.1                | v1.20 to v1.22       | v1alpha2             |
+| v0.37.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.36.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.35.0                | v1.20 to v1.22       | v1alpha2             |
 
 ## Contributing and Developing
 
@@ -291,6 +333,7 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
 - [Dmitrii Anoshin](https://github.com/dmitryax), Splunk
+- [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
 
 Emeritus Approvers:
 

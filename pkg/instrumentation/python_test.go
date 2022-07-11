@@ -244,7 +244,7 @@ func TestInjectPythonSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectPythonSDK(logr.Discard(), test.Python, test.pod)
+			pod := injectPythonSDK(logr.Discard(), test.Python, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
 		})
 	}

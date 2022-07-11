@@ -49,8 +49,9 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 					Annotations: otelcol.Spec.PodAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{Container(cfg, logger, otelcol)},
-					Volumes:    Volumes(cfg, otelcol),
+					ServiceAccountName: ServiceAccountName(otelcol),
+					Containers:         []corev1.Container{Container(cfg, logger, otelcol)},
+					Volumes:            Volumes(cfg, otelcol),
 				},
 			},
 		},

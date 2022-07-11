@@ -267,7 +267,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectDotNetSDK(logr.Discard(), test.DotNet, test.pod)
+			pod := injectDotNetSDK(logr.Discard(), test.DotNet, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
