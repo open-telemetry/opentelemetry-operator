@@ -83,6 +83,16 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		pod = i.injectCommonEnvVar(otelinst, pod, index)
 		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 	}
+	if insts.Golang != nil {
+		otelinst := *insts.Golang
+		i.logger.V(1).Info("injecting golang instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		containers := len(pod.Spec.Containers)
+		pod = injectGolangSDK(i.logger, otelinst.Spec.Golang, pod)
+		if len(pod.Spec.Containers) > containers {
+			pod = i.injectCommonEnvVar(otelinst, pod, len(pod.Spec.Containers)-1)
+			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, len(pod.Spec.Containers)-1)
+		}
+	}
 	return pod
 }
 
