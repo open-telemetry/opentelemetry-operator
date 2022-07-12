@@ -422,7 +422,7 @@ spec:
                       description: The application protocol for this port. This field
                         follows standard Kubernetes label syntax. Un-prefixed names
                         are reserved for IANA standard service names (as per RFC-6335
-                        and http://www.iana.org/assignments/service-names). Non-standard
+                        and https://www.iana.org/assignments/service-names). Non-standard
                         protocols should use prefixed names such as mycompany.com/my-custom-protocol.
                       type: string
                     name:
@@ -784,17 +784,17 @@ spec:
                           type: string
                       type: object
                     spec:
-                      description: 'Spec defines the desired characteristics of a
+                      description: 'spec defines the desired characteristics of a
                         volume requested by a pod author. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
                       properties:
                         accessModes:
-                          description: 'AccessModes contains the desired access modes
+                          description: 'accessModes contains the desired access modes
                             the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
                           items:
                             type: string
                           type: array
                         dataSource:
-                          description: 'This field can be used to specify either:
+                          description: 'dataSource field can be used to specify either:
                             * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
                             * An existing PVC (PersistentVolumeClaim) If the provisioner
                             or an external controller can support the specified data
@@ -820,26 +820,30 @@ spec:
                           - name
                           type: object
                         dataSourceRef:
-                          description: 'Specifies the object from which to populate
-                            the volume with data, if a non-empty volume is desired.
-                            This may be any local object from a non-empty API group
-                            (non core object) or a PersistentVolumeClaim object. When
-                            this field is specified, volume binding will only succeed
-                            if the type of the specified object matches some installed
-                            volume populator or dynamic provisioner. This field will
-                            replace the functionality of the DataSource field and
-                            as such if both fields are non-empty, they must have the
-                            same value. For backwards compatibility, both fields (DataSource
-                            and DataSourceRef) will be set to the same value automatically
-                            if one of them is empty and the other is non-empty. There
-                            are two important differences between DataSource and DataSourceRef:
-                            * While DataSource only allows two specific types of objects,
-                            DataSourceRef allows any non-core object, as well as PersistentVolumeClaim
-                            objects. * While DataSource ignores disallowed values
+                          description: 'dataSourceRef specifies the object from which
+                             to populate the volume with data, if a non-empty volume
+                             is desired. This may be any local object from a non-empty
+                             API group (non core object) or a PersistentVolumeClaim
+                             object. When this field is specified, volume binding will
+                             only succeed if the type of the specified object matches
+                             some installed volume populator or dynamic provisioner.
+                             This field will replace the functionality of the DataSource
+                             field and as such if both fields are non-empty, they must
+                             have the same value. For backwards compatibility, both
+                             fields (DataSource and DataSourceRef) will be set to the
+                             same value automatically if one of them is empty and the
+                             other is non-empty. There are two important differences
+                             between DataSource and DataSourceRef: * While DataSource
+                             only allows two specific types of objects, DataSourceRef
+                             allows any non-core object, as well as PersistentVolumeClaim
+                             objects. * While DataSource ignores disallowed values
+                             (dropping them), DataSourceRef preserves all values, and
+                             generates an error if a disallowed value is specified.
+                             * While DataSource ignores disallowed values
                             (dropping them), DataSourceRef preserves all values, and
                             generates an error if a disallowed value is specified.
-                            (Alpha) Using this field requires the AnyVolumeDataSource
-                            feature gate to be enabled.'
+                            (Beta) Using this field requires the AnyVolumeDataSource
+                             feature gate to be enabled.'
                           properties:
                             apiGroup:
                               description: APIGroup is the group for the resource
@@ -966,17 +970,17 @@ spec:
                             - type: string
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             x-kubernetes-int-or-string: true
-                          description: The storage resource within AllocatedResources
-                            tracks the capacity allocated to a PVC. It may be larger
-                            than the actual capacity when a volume expansion operation
-                            is requested. For storage quota, the larger value from
-                            allocatedResources and PVC.spec.resources is used. If
-                            allocatedResources is not set, PVC.spec.resources alone
-                            is used for quota calculation. If a volume expansion capacity
-                            request is lowered, allocatedResources is only lowered
-                            if there are no expansion operations in progress and if
-                            the actual volume capacity is equal or lower than the
-                            requested capacity. This is an alpha field and requires
+                          description: allocatedResources is the storage resource
+                            within AllocatedResources tracks the capacity allocated
+                            to a PVC. It may be larger than the actual capacity when
+                            a volume expansion operation is requested. For storage
+                            quota, the larger value from allocatedResources and PVC.spec.resources
+                            is used. If allocatedResources is not set, PVC.spec.resources
+                            alone is used for quota calculation. If a volume expansion
+                            capacity request is lowered, allocatedResources is only
+                            lowered if there are no expansion operations in progress
+                            and if the actual volume capacity is equal or lower than
+                            the requested capacity. This is an alpha field and requires
                             enabling RecoverVolumeExpansionFailure feature.
                           type: object
                         capacity:
@@ -986,36 +990,37 @@ spec:
                             - type: string
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             x-kubernetes-int-or-string: true
-                          description: Represents the actual resources of the underlying
-                            volume.
+                          description: capacity represents the actual resources of
+                            the underlying volume.
                           type: object
                         conditions:
-                          description: Current Condition of persistent volume claim.
-                            If underlying persistent volume is being resized then
-                            the Condition will be set to 'ResizeStarted'.
+                          description: conditions is the current Condition of persistent
+                            volume claim. If underlying persistent volume is being
+                            resized then the Condition will be set to 'ResizeStarted'.
                           items:
                             description: PersistentVolumeClaimCondition contails details
                               about state of pvc
                             properties:
                               lastProbeTime:
-                                description: Last time we probed the condition.
+                                description: lastProbeTime is the time we probed the
+                                  condition.
                                 format: date-time
                                 type: string
                               lastTransitionTime:
-                                description: Last time the condition transitioned
-                                  from one status to another.
+                                description: lastTransitionTime is the time the condition
+                                  transitioned from one status to another.
                                 format: date-time
                                 type: string
                               message:
-                                description: Human-readable message indicating details
-                                  about last transition.
+                                description: message is the human-readable message
+                                  indicating details about last transition.
                                 type: string
                               reason:
-                                description: Unique, this should be a short, machine
-                                  understandable string that gives the reason for
-                                  condition's last transition. If it reports "ResizeStarted"
-                                  that means the underlying persistent volume is being
-                                  resized.
+                                description: reason is a unique, this should be a
+                                  short, machine understandable string that gives
+                                  the reason for condition's last transition. If it
+                                  reports "ResizeStarted" that means the underlying
+                                  persistent volume is being resized.
                                 type: string
                               status:
                                 type: string
@@ -1029,10 +1034,10 @@ spec:
                             type: object
                           type: array
                         phase:
-                          description: Phase represents the current phase of PersistentVolumeClaim.
+                          description: phase represents the current phase of PersistentVolumeClaim.
                           type: string
                         resizeStatus:
-                          description: ResizeStatus stores status of resize operation.
+                          description: resizeStatus stores status of resize operation.
                             ResizeStatus is not set by default but when expansion
                             is complete resizeStatus is set to empty string by resize
                             controller or kubelet. This is an alpha field and requires
@@ -1091,7 +1096,7 @@ spec:
                     be accessed by any container in the pod.
                   properties:
                     awsElasticBlockStore:
-                      description: 'AWSElasticBlockStore represents an AWS Disk resource
+                      description: 'awsElasticBlockStore represents an AWS Disk resource
                         that is attached to a kubelet''s host machine and then exposed
                         to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore'
                       properties:
@@ -1276,7 +1281,7 @@ spec:
                             description: Maps a string key to a path within a volume.
                             properties:
                               key:
-                                description: The key to project.
+                                description: key is the key to project.
                                 type: string
                               mode:
                                 description: 'Optional: mode bits used to set permissions
