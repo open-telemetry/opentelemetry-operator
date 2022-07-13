@@ -1,6 +1,18 @@
 Changes by Version
 ==================
 
+0.55.0
+-------------------
+### 🧰 Bug fixes 🧰
+* Fixing monitor configuration ([#966](https://github.com/open-telemetry/opentelemetry-operator/pull/966), [@yuriolisa](https://github.com/yuriolisa))
+* Fix Pod Mutation loop ([#953](https://github.com/open-telemetry/opentelemetry-operator/pull/953), [@mat-rumian](https://github.com/mat-rumian))
+* Fix the issue that the number of target-allocator replicas  ([#951](https://github.com/open-telemetry/opentelemetry-operator/pull/951), [@CoderPoet](https://github.com/CoderPoet))
+### 💡 Enhancements 💡
+* Update Python auto-instrumentation  0.32b0 ([#961](https://github.com/open-telemetry/opentelemetry-operator/pull/961), [@mat-rumian](https://github.com/mat-rumian))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.55.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.55.0)
+* [OpenTelemetry Contrib - v0.55.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.55.0)
+
 0.54.0
 -------------------
 ### 🧰 Bug fixes 🧰
