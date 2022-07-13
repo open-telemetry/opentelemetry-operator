@@ -48,12 +48,12 @@ else
 GOTEST_OPTS=-race -v
 endif
 
-KUBE_VERSION ?= 1.24
+KUBE_VERSION ?= 1.21
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
 OPERATOR_SDK_VERSION ?= 1.17.0
 
-CERTMANAGER_VERSION ?= 1.8.0
+CERTMANAGER_VERSION ?= 1.6.1
 
 ifndef ignore-not-found
   ignore-not-found = false
@@ -61,7 +61,7 @@ endif
 
 .PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
-ensure-generate-is-noop: USER=logicmonitor
+ensure-generate-is-noop: USER=open-telemetry
 ensure-generate-is-noop: set-image-controller generate bundle
 	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
 	@git restore config/manager/kustomization.yaml
@@ -208,9 +208,6 @@ CMCTL = $(shell pwd)/bin/cmctl
 cmctl:
 	@{ \
 	set -e ;\
-	if (`pwd`/bin/cmctl version | grep ${CERTMANAGER_VERSION}) > /dev/null 2>&1 ; then \
-		exit 0; \
-	fi ;\
 	TMP_DIR=$$(mktemp -d) ;\
 	curl -L -o $$TMP_DIR/cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/download/v$(CERTMANAGER_VERSION)/cmctl-`go env GOOS`-`go env GOARCH`.tar.gz ;\
 	tar xzf $$TMP_DIR/cmctl.tar.gz -C $$TMP_DIR ;\
@@ -293,9 +290,6 @@ OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
 operator-sdk:
 	@{ \
 	set -e ;\
-	if (`pwd`/bin/operator-sdk version | grep ${OPERATOR_SDK_VERSION}) > /dev/null 2>&1 ; then \
-		exit 0; \
-	fi ;\
 	[ -d bin ] || mkdir bin ;\
 	curl -L -o $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION}/operator-sdk_`go env GOOS`_`go env GOARCH`;\
 	chmod +x $(OPERATOR_SDK) ;\

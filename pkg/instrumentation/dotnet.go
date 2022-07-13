@@ -27,9 +27,9 @@ const (
 	envDotNetAdditionalDeps  = "DOTNET_ADDITIONAL_DEPS"
 	envDotNetSharedStore     = "DOTNET_SHARED_STORE"
 	envDotNetStartupHook     = "DOTNET_STARTUP_HOOKS"
-	dotNetAdditionalDepsPath = "./otel-auto-instrumentation/bin/tracer-home/AdditionalDeps"
-	dotNetSharedStorePath    = "/otel-auto-instrumentation/bin/tracer-home/store"
-	dotNetStartupHookPath    = "/otel-auto-instrumentation/bin/tracer-home/netcoreapp3.1/LMStartupHook.dll"
+	dotNetAdditionalDepsPath = "./otel-auto-instrumentation/AdditionalDeps"
+	dotNetSharedStorePath    = "/otel-auto-instrumentation/store"
+	dotNetStartupHookPath    = "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 )
 
 func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) corev1.Pod {

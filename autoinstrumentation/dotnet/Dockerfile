@@ -8,8 +8,8 @@ ARG version
 
 WORKDIR /autoinstrumentation
 
-ADD https://github.com/logicmonitor/lm-telemetry-sdk-dotnet/releases/download/$version/lm-telemetry-dotnet-instrumentation-$version.zip .
+ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$version/opentelemetry-dotnet-instrumentation-linux-glibc.zip .
 
-RUN tar -xvf lm-telemetry-dotnet-instrumentation-$version.zip
+RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc.zip
 
 RUN chmod -R go+r .

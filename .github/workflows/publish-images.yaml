@@ -1,9 +1,9 @@
 name: "Publish operator"
 
 on:
-  # push:
-  #   branches: [ main ]
-  #   tags: [ 'v*' ]
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
 
   workflow_dispatch:
 
@@ -27,7 +27,6 @@ jobs:
           grep -v '\#' versions.txt | grep autoinstrumentation-java | awk -F= '{print "AUTO_INSTRUMENTATION_JAVA_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-nodejs | awk -F= '{print "AUTO_INSTRUMENTATION_NODEJS_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-python | awk -F= '{print "AUTO_INSTRUMENTATION_PYTHON_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep autoinstrumentation-dotnet | awk -F= '{print "AUTO_INSTRUMENTATION_DOTNET_VERSION="$2}' >> $GITHUB_ENV
           echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
           echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
 
@@ -35,7 +34,7 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v4.0.1
         with:
-          images: ghcr.io/logicmonitor/opentelemetry-operator/opentelemetry-operator
+          images: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -69,8 +68,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          # push: ${{ github.event_name != 'pull_request' }}
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           build-args: |
@@ -81,7 +79,6 @@ jobs:
             TARGETALLOCATOR_VERSION=${{ env.TARGETALLOCATOR_VERSION }}
             AUTO_INSTRUMENTATION_JAVA_VERSION=${{ env.AUTO_INSTRUMENTATION_JAVA_VERSION }}
             AUTO_INSTRUMENTATION_NODEJS_VERSION=${{ env.AUTO_INSTRUMENTATION_NODEJS_VERSION }}
-            AUTO_INSTRUMENTATION_PYTHON_VERSION=${{ env.AUTO_INSTRUMENTATION_PYTHON_VERSION }}
-            AUTO_INSTRUMENTATION_DOTNET_VERSION=${{ env.AUTO_INSTRUMENTATION_DOTNET_VERSION }}
+            AUTO_INSTRUMENTATION_PYTHON_VERSION=${{ env. AUTO_INSTRUMENTATION_PYTHON_VERSION }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache

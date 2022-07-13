@@ -13,11 +13,11 @@ spec:
     - name: OTEL_DOTNET_TRACER_INSTRUMENTATIONS
       value: AspNet,HttpClient,SqlClient
     - name: DOTNET_STARTUP_HOOKS
-      value: "/otel-auto-instrumentation/bin/tracer-home/netcoreapp3.1/LMStartupHook.dll"
+      value: "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
     - name: DOTNET_ADDITIONAL_DEPS
-      value: ./otel-auto-instrumentation/bin/tracer-home/AdditionalDeps
+      value: ./otel-auto-instrumentation/AdditionalDeps
     - name: DOTNET_SHARED_STORE
-      value: /otel-auto-instrumentation/bin/tracer-home/store
+      value: /otel-auto-instrumentation/store
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT

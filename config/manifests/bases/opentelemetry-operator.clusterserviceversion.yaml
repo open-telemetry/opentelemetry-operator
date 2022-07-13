@@ -6,7 +6,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     certified: "false"
-    containerImage: ghcr.io/logicmonitor/opentelemetry-operator/opentelemetry-operator
+    containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"
     description: Provides the OpenTelemetry components, including the Collector
     repository: github.com/open-telemetry/opentelemetry-operator
