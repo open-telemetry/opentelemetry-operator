@@ -21,3 +21,7 @@ spec:
           receivers: [otlp]
           processors: []
           exporters: [logging]
+      telemetry:
+        metrics:
+          level: detailed
+

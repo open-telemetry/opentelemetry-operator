@@ -24,3 +24,6 @@ spec:
           receivers: [jaeger]
           processors: []
           exporters: [logging]
+      telemetry:
+        metrics:
+          level: detailed

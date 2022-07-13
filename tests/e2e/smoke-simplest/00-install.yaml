@@ -23,3 +23,6 @@ spec:
           receivers: [jaeger,otlp]
           processors: []
           exporters: [logging]
+      telemetry:
+        metrics:
+          level: detailed
