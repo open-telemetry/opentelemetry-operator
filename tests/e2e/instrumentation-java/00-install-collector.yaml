@@ -24,4 +24,3 @@ spec:
       telemetry:
         metrics:
           level: detailed
-
