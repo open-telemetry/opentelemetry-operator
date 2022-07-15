@@ -126,7 +126,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		}
 
 		if r.Spec.MinReplicas != nil && *r.Spec.MinReplicas < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be more than one")
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
 		}
 
 	}

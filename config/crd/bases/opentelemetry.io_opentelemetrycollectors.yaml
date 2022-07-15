@@ -222,7 +222,8 @@ spec:
                 format: int32
                 type: integer
               minReplicas:
-                description: MinReplicas sets a lower bound to the autoscaling feature.
+                description: MinReplicas sets a lower bound to the autoscaling feature.  It
+                  must be at least 1
                 format: int32
                 type: integer
               mode:

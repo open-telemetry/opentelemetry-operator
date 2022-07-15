@@ -52,7 +52,6 @@ func TestExpectedHPA(t *testing.T) {
 		maxReplicas := int32(3)
 		updateParms := paramsWithHPA()
 		updateParms.Instance.Spec.Replicas = &minReplicas
-		updateParms.Instance.Spec.Replicas = &minReplicas
 		updateParms.Instance.Spec.MaxReplicas = &maxReplicas
 		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
 
