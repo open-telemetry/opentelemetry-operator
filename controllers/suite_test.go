@@ -43,7 +43,6 @@ var (
 	testScheme *runtime.Scheme = scheme.Scheme
 	ctx        context.Context
 	cancel     context.CancelFunc
-	err        error
 )
 
 func TestMain(m *testing.M) {
@@ -56,7 +55,7 @@ func TestMain(m *testing.M) {
 			Paths: []string{filepath.Join("..", "config", "webhook")},
 		},
 	}
-	cfg, err = testEnv.Start()
+	cfg, err := testEnv.Start()
 	if err != nil {
 		fmt.Printf("failed to start testEnv: %v", err)
 		os.Exit(1)
