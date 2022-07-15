@@ -17,7 +17,6 @@ package reconcile
 import (
 	"context"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
