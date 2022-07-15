@@ -24,7 +24,7 @@ func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		return otelcol, nil
 	}
 
-	u.Log.Info(">>>>>> in upgrade0_56_0", "Otel Instance", otelcol.Name, "Upgrade version", u.Version.String())
+	u.Log.Info("in upgrade0_56_0", "Otel Instance", otelcol.Name, "Upgrade version", u.Version.String())
 	one := int32(1)
 	otelcol.Spec.MinReplicas = &one
 
