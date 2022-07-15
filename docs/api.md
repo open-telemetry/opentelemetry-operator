@@ -1459,7 +1459,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  It must be at least 1<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
