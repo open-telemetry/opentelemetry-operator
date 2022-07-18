@@ -24,9 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
@@ -90,16 +88,6 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 				updated.Spec.MinReplicas = params.Instance.Spec.MinReplicas
 			} else {
 				updated.Spec.MinReplicas = &one
-			}
-		}
-
-		// If the deployment has an autoscaler based on Deployment, replace it with one based on OpenTelemetryCollector
-		// Note: this is for version 0.56.0 and can eventually be removed
-		if existing.Spec.ScaleTargetRef.Kind == "Deployment" {
-			updated.Spec.ScaleTargetRef = autoscalingv1.CrossVersionObjectReference{
-				Kind:       "OpenTelemetryCollector",
-				Name:       naming.OpenTelemetryCollectorName(params.Instance.Name),
-				APIVersion: v1alpha1.GroupVersion.String(),
 			}
 		}
 

@@ -15,7 +15,14 @@
 package upgrade
 
 import (
+	"context"
+	"fmt"
+
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
@@ -24,9 +31,44 @@ func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		return otelcol, nil
 	}
 
-	u.Log.Info("in upgrade0_56_0", "Otel Instance", otelcol.Name, "Upgrade version", u.Version.String())
+	// Add minReplicas
 	one := int32(1)
 	otelcol.Spec.MinReplicas = &one
+
+	// Find the existing HPA for this collector and upgrade it if necessary
+	listOptions := []client.ListOption{
+		client.InNamespace(otelcol.Namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name),
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		}),
+	}
+
+	hpaList := &autoscalingv1.HorizontalPodAutoscalerList{}
+	ctx := context.Background()
+	if err := u.Client.List(ctx, hpaList, listOptions...); err != nil {
+		return nil, err
+	}
+
+	for i := range hpaList.Items {
+		existing := hpaList.Items[i]
+		// If there is an autoscaler based on Deployment, replace it with one based on OpenTelemetryCollector
+		if existing.Spec.ScaleTargetRef.Kind == "Deployment" {
+			updated := existing.DeepCopy()
+			updated.Spec.ScaleTargetRef = autoscalingv1.CrossVersionObjectReference{
+				Kind:       "OpenTelemetryCollector",
+				Name:       naming.OpenTelemetryCollectorName(otelcol.Name),
+				APIVersion: v1alpha1.GroupVersion.String(),
+			}
+			patch := client.MergeFrom(&existing)
+			err := u.Client.Patch(ctx, updated, patch)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	u.Log.Info("in upgrade0_56_0", "Otel Instance", otelcol.Name, "Upgrade version", u.Version.String())
 
 	return otelcol, nil
 }
