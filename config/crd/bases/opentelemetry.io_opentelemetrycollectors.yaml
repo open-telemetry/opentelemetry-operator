@@ -222,8 +222,8 @@ spec:
                 format: int32
                 type: integer
               minReplicas:
-                description: MinReplicas sets a lower bound to the autoscaling feature.  It
-                  must be at least 1
+                description: MinReplicas sets a lower bound to the autoscaling feature.  Set
+                  this if your are using autoscaling.  It must be at least 1
                 format: int32
                 type: integer
               mode:
@@ -478,7 +478,7 @@ spec:
                 x-kubernetes-list-type: atomic
               replicas:
                 description: Replicas is the number of pod instances for the underlying
-                  OpenTelemetry Collector
+                  OpenTelemetry Collector.  Set this if your are not using autoscaling
                 format: int32
                 type: integer
               resources:

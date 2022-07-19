@@ -1459,7 +1459,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  It must be at least 1<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling.  It must be at least 1<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -1505,7 +1505,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
-          Replicas is the number of pod instances for the underlying OpenTelemetry Collector<br/>
+          Replicas is the number of pod instances for the underlying OpenTelemetry Collector.  Set this if your are not using autoscaling<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
