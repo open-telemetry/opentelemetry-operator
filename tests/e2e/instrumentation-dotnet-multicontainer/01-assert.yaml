@@ -4,14 +4,14 @@ metadata:
   annotations:
     sidecar.opentelemetry.io/inject: "true"
     instrumentation.opentelemetry.io/container-names: myapp,myrabbit
-    instrumentation.opentelemetry.io/inject-java: "true"
+    instrumentation.opentelemetry.io/inject-dotnet: "true"
   labels:
     app: my-pod-with-sidecar
 spec:
   containers:
   - name: myapp
     env:
-    - name: OTEL_DOTNET_TRACER_INSTRUMENTATIONS
+    - name: OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS
       value: AspNet,HttpClient,SqlClient
     - name: DOTNET_STARTUP_HOOKS
       value: "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
@@ -44,7 +44,7 @@ spec:
       name: opentelemetry-auto-instrumentation
   - name: myrabbit
     env:
-    - name: OTEL_DOTNET_TRACER_INSTRUMENTATIONS
+    - name: OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS
       value: AspNet,HttpClient,SqlClient
     - name: DOTNET_STARTUP_HOOKS
       value: "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
