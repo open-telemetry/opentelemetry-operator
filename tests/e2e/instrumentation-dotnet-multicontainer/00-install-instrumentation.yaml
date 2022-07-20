@@ -1,7 +1,7 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
-  name: java
+  name: dotnet
 spec:
   env:
     - name: OTEL_TRACES_EXPORTER
@@ -24,11 +24,7 @@ spec:
   sampler:
     type: parentbased_traceidratio
     argument: "0.25"
-  java:
+  dotnet:
     env:
-    - name: OTEL_JAVAAGENT_DEBUG
-      value: "true"
-    - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
-      value: "false"
-    - name: SPLUNK_PROFILER_ENABLED
-      value: "false"
+    - name: OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS
+      value: AspNet,HttpClient,SqlClient
