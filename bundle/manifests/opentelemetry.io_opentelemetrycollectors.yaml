@@ -218,6 +218,19 @@ spec:
                 description: ImagePullPolicy indicates the pull policy to be used
                   for retrieving the container image (Always, Never, IfNotPresent)
                 type: string
+              imagePullSecrets:
+                description: ImagePullSecrets is the list of image pull secrets that
+                  will be attached to Collector and Target Allocator pods.
+                items:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                type: array
               maxReplicas:
                 description: MaxReplicas sets an upper bound to the autoscaling feature.
                   If MaxReplicas is set autoscaling is enabled.
