@@ -62,8 +62,13 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 	}
 
 	sortedNames := make([]string, 0, len(receivers))
-	for name := range receivers {
-		sortedNames = append(sortedNames, name.(string))
+	for receiverName := range receivers {
+		name, ok := receiverName.(string)
+		if !ok {
+			logger.V(2).Info("receiver does not match type, want: %s, got: %T", "string", receiverName)
+			continue
+		}
+		sortedNames = append(sortedNames, name)
 	}
 	sort.Strings(sortedNames)
 
