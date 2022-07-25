@@ -33,9 +33,13 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
 
-	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector
+	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// +optional
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
 
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
