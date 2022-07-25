@@ -16,6 +16,7 @@ package adapters
 
 import (
 	"errors"
+	"sort"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -60,28 +61,34 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 		return nil, ErrReceiversNotAMap
 	}
 
+	sortedNames := make([]string, 0, len(receivers))
+	for name := range receivers {
+		sortedNames = append(sortedNames, name.(string))
+	}
+	sort.Strings(sortedNames)
+
 	ports := []corev1.ServicePort{}
-	for key, val := range receivers {
+	for _, name := range sortedNames {
 		// This check will pass only the enabled receivers,
 		// then only the related ports will be opened.
-		if !recEnabled[key] {
+		if !recEnabled[name] {
 			continue
 		}
-		receiver, ok := val.(map[interface{}]interface{})
+
+		receiver, ok := receivers[name].(map[interface{}]interface{})
 		if !ok {
-			logger.Info("receiver doesn't seem to be a map of properties", "receiver", key)
+			logger.Info("receiver doesn't seem to be a map of properties", "receiver", name)
 			receiver = map[interface{}]interface{}{}
 		}
 
-		rcvrName := key.(string)
-		rcvrParser := parser.For(logger, rcvrName, receiver)
+		rcvrParser := parser.For(logger, name, receiver)
 
 		rcvrPorts, err := rcvrParser.Ports()
 		if err != nil {
 			// should we break the process and return an error, or just ignore this faulty parser
 			// and let the other parsers add their ports to the service? right now, the best
 			// option seems to be to log the failures and move on, instead of failing them all
-			logger.Error(err, "parser for '%s' has returned an error: %w", rcvrName, err)
+			logger.Error(err, "parser for '%s' has returned an error: %w", name, err)
 			continue
 		}
 
