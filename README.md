@@ -166,7 +166,7 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Java, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -210,11 +210,19 @@ Python:
 instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
+DotNet:
+```bash
+instrumentation.opentelemetry.io/inject-dotnet: "true"
+```
+
 The possible values for the annotation can be
 * `"true"` - inject and `Instrumentation` resource from the namespace.
 * `"my-instrumentation"` - name of `Instrumentation` CR instance in the current namespace.
 * `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
+
+
+>**Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitely. 
 
 #### Multi-container pods
 
@@ -271,6 +279,8 @@ spec:
     image: your-customized-auto-instrumentation-image:nodejs
   python:
     image: your-customized-auto-instrumentation-image:python
+  dotnet:
+    image: your-customized-auto-instrumentation-image:dotnet
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation). 

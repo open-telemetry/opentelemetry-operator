@@ -54,6 +54,10 @@ type InstrumentationSpec struct {
 	// Python defines configuration for python auto-instrumentation.
 	// +optional
 	Python Python `json:"python,omitempty"`
+
+	// DotNet defines configuration for DotNet auto-instrumentation.
+	// +optional
+	DotNet DotNet `json:"dotnet,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
@@ -123,6 +127,18 @@ type Python struct {
 	Image string `json:"image,omitempty"`
 
 	// Env defines python specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+}
+
+type DotNet struct {
+	// Image is a container image with DotNet SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// Env defines DotNet specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
