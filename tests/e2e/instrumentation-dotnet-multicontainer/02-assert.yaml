@@ -14,6 +14,8 @@ spec:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
   - name: myrabbit
     env:
+    - name: OTEL_LOG_LEVEL
+      value: "debug"
     - name: OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS
       value: AspNet,HttpClient,SqlClient
     - name: DOTNET_STARTUP_HOOKS
