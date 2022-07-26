@@ -116,3 +116,25 @@ func TestSelectorLabels(t *testing.T) {
 	// verify
 	assert.Equal(t, expected, result)
 }
+
+func TestVersionLabelImage(t *testing.T) {
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-opentelemetry-collector", 
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image: "otel/opentelemetry-collector-contrib:0.56.0",
+		},
+	}
+
+	// test
+	labels := Labels(otelcol, []string{})
+
+	// verify
+	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, "my-namespace.my-opentelemetry-collector", labels["app.kubernetes.io/instance"])
+	assert.Equal(t, "0.56.0", labels["app.kubernetes.io/version"])
+	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
+	assert.Equal(t, "opentelemetry-collector", labels["app.kubernetes.io/component"])
+}

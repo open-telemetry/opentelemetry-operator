@@ -47,7 +47,9 @@ func Labels(instance v1alpha1.OpenTelemetryCollector, filterLabels []string) map
 		base[k] = v
 	}
 
-	version := strings.Split(instance.Spec.Image, ":")
+	version := strings.Split(instance.Spec.Image, "otel/opentelemetry-collector-contrib")
+	version = strings.Split(instance.Spec.Image, "otel/opentelemetry-collector")
+	version = strings.Split(instance.Spec.Image, ":")
 	if len(version) > 1 {
 		base["app.kubernetes.io/version"] = version[len(version)-1]
 	} else {
