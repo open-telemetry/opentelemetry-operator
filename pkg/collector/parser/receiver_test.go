@@ -29,13 +29,13 @@ func TestReceiverPortNames(t *testing.T) {
 	for _, tt := range []struct {
 		desc      string
 		candidate string
-		port      int
 		expected  string
+		port      int
 	}{
-		{"regular case", "my-receiver", 123, "my-receiver"},
-		{"name too long", "long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name", 123, "port-123"},
-		{"name with invalid chars", "my-🦄-receiver", 123, "port-123"},
-		{"name starting with invalid char", "-my-receiver", 123, "port-123"},
+		{"regular case", "my-receiver", "my-receiver", 123},
+		{"name too long", "long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name", "port-123", 123},
+		{"name with invalid chars", "my-🦄-receiver", "port-123", 123},
+		{"name starting with invalid char", "-my-receiver", "port-123", 123},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			assert.Equal(t, tt.expected, portName(tt.candidate, int32(tt.port)))

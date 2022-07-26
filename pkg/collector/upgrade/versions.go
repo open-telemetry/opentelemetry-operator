@@ -23,8 +23,8 @@ import (
 type upgradeFunc func(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error)
 
 type otelcolVersion struct {
-	semver.Version
 	upgrade upgradeFunc
+	semver.Version
 }
 
 var (

@@ -34,25 +34,21 @@ const (
 
 // Config holds the static configuration for this operator.
 type Config struct {
-	// Registers a callback, to be called once a configuration change happens
-	OnChange func() error
-
-	logger              logr.Logger
-	autoDetect          autodetect.AutoDetect
-	autoDetectFrequency time.Duration
-	onChange            []func() error
-
-	// config state
+	autoDetect                     autodetect.AutoDetect
+	OnChange                       func() error
+	logger                         logr.Logger
+	targetAllocatorImage           string
+	autoInstrumentationPythonImage string
 	collectorImage                 string
 	collectorConfigMapEntry        string
-	targetAllocatorImage           string
-	targetAllocatorConfigMapEntry  string
-	platform                       platform.Platform
-	autoInstrumentationJavaImage   string
-	autoInstrumentationNodeJSImage string
-	autoInstrumentationPythonImage string
 	autoInstrumentationDotNetImage string
+	targetAllocatorConfigMapEntry  string
+	autoInstrumentationNodeJSImage string
+	autoInstrumentationJavaImage   string
+	onChange                       []func() error
 	labelsFilter                   []string
+	platform                       platform.Platform
+	autoDetectFrequency            time.Duration
 }
 
 // New constructs a new configuration based on the given options.

@@ -34,9 +34,9 @@ var (
 )
 
 type instPodMutator struct {
-	Logger      logr.Logger
 	Client      client.Client
 	sdkInjector *sdkInjector
+	Logger      logr.Logger
 }
 
 type languageInstrumentations struct {

@@ -26,12 +26,12 @@ import (
 )
 
 type InstrumentationUpgrade struct {
+	Client                client.Client
 	Logger                logr.Logger
 	DefaultAutoInstJava   string
 	DefaultAutoInstNodeJS string
 	DefaultAutoInstPython string
 	DefaultAutoInstDotNet string
-	Client                client.Client
 }
 
 //+kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch

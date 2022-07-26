@@ -37,28 +37,28 @@ import (
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
 type OpenTelemetryCollectorReconciler struct {
 	client.Client
-	log      logr.Logger
-	scheme   *runtime.Scheme
-	config   config.Config
-	tasks    []Task
 	recorder record.EventRecorder
+	scheme   *runtime.Scheme
+	log      logr.Logger
+	tasks    []Task
+	config   config.Config
 }
 
 // Task represents a reconciliation task to be executed by the reconciler.
 type Task struct {
-	Name        string
 	Do          func(context.Context, reconcile.Params) error
+	Name        string
 	BailOnError bool
 }
 
 // Params is the set of options to build a new openTelemetryCollectorReconciler.
 type Params struct {
 	client.Client
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Config   config.Config
-	Tasks    []Task
 	Recorder record.EventRecorder
+	Scheme   *runtime.Scheme
+	Log      logr.Logger
+	Tasks    []Task
+	Config   config.Config
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -66,43 +66,43 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	if len(p.Tasks) == 0 {
 		p.Tasks = []Task{
 			{
-				"config maps",
 				reconcile.ConfigMaps,
+				"config maps",
 				true,
 			},
 			{
-				"service accounts",
 				reconcile.ServiceAccounts,
+				"service accounts",
 				true,
 			},
 			{
-				"services",
 				reconcile.Services,
+				"services",
 				true,
 			},
 			{
-				"deployments",
 				reconcile.Deployments,
+				"deployments",
 				true,
 			},
 			{
-				"horizontal pod autoscalers",
 				reconcile.HorizontalPodAutoscalers,
+				"horizontal pod autoscalers",
 				true,
 			},
 			{
-				"daemon sets",
 				reconcile.DaemonSets,
+				"daemon sets",
 				true,
 			},
 			{
-				"stateful sets",
 				reconcile.StatefulSets,
+				"stateful sets",
 				true,
 			},
 			{
-				"opentelemetry",
 				reconcile.Self,
+				"opentelemetry",
 				true,
 			},
 		}

@@ -162,9 +162,9 @@ type InstrumentationStatus struct {
 // Instrumentation is the spec for OpenTelemetry instrumentation.
 type Instrumentation struct {
 	Status            InstrumentationStatus `json:"status,omitempty"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              InstrumentationSpec `json:"spec,omitempty"`
 	metav1.TypeMeta   `json:",inline"`
+	Spec              InstrumentationSpec `json:"spec,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 }
 
 // +kubebuilder:object:root=true
