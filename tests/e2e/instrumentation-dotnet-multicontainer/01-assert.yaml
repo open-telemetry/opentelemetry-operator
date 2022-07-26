@@ -46,6 +46,8 @@ spec:
       name: opentelemetry-auto-instrumentation
   - name: myrabbit
     env:
+    - name: OTEL_LOG_LEVEL
+      value: "debug"
     - name: OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS
       value: AspNet,HttpClient,SqlClient
     - name: DOTNET_STARTUP_HOOKS
