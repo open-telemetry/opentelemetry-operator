@@ -12,6 +12,7 @@ linters-settings:
   misspell:
     locale: US
   govet:
+    disable-all: true
     enable:
       - fieldalignment
 
@@ -21,6 +22,7 @@ linters:
     - goimports
     - misspell
     - gosec
+    - govet
     - exhaustive
     - godot
     - unparam
