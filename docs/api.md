@@ -1746,7 +1746,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1<br/>
+          <br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -1778,7 +1778,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecpodsecuritycontext">podSecurityContext</a></b></td>
         <td>object</td>
         <td>
-          PodSecurityContext holds pod-level security attributes and common container settings. Some fields are also present in container.securityContext.  Field values of container.securityContext take precedence over field values of PodSecurityContext.<br/>
+          SecurityContext will be set as the container security context.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2226,7 +2226,7 @@ The Secret to select from
 
 
 
-PodSecurityContext holds pod-level security attributes and common container settings. Some fields are also present in container.securityContext.  Field values of container.securityContext take precedence over field values of PodSecurityContext.
+SecurityContext will be set as the container security context.
 
 <table>
     <thead>
@@ -2872,28 +2872,28 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
-          Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
-          Image indicates the container image to use for the OpenTelemetry TargetAllocator.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscr">prometheusCR</a></b></td>
         <td>object</td>
         <td>
-          PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval. All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>serviceAccount</b></td>
         <td>string</td>
         <td>
-          ServiceAccount indicates the name of an existing service account to use with this instance.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2905,7 +2905,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
 
 
 
-PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval. All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
+
 
 <table>
     <thead>
@@ -6452,14 +6452,14 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         <td><b>messages</b></td>
         <td>[]string</td>
         <td>
-          Messages about actions performed by the operator on this resource. Deprecated: use Kubernetes events instead.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
-          Replicas is currently not being set and might be removed in the next version. Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.<br/>
+          <br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -6468,14 +6468,14 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         <td><b><a href="#opentelemetrycollectorstatusscale">scale</a></b></td>
         <td>object</td>
         <td>
-          Scale is the OpenTelemetryCollector's scale subresource status.<br/>
+          ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's scale subresource.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>version</b></td>
         <td>string</td>
         <td>
-          Version of the managed OpenTelemetry Collector (operand)<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6487,7 +6487,7 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
 
 
 
-Scale is the OpenTelemetryCollector's scale subresource status.
+ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's scale subresource.
 
 <table>
     <thead>
@@ -6502,7 +6502,7 @@ Scale is the OpenTelemetryCollector's scale subresource status.
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
-          The total number non-terminated pods targeted by this OpenTelemetryCollector's deployment or statefulSet.<br/>
+          <br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -6511,7 +6511,7 @@ Scale is the OpenTelemetryCollector's scale subresource status.
         <td><b>selector</b></td>
         <td>string</td>
         <td>
-          The selector used to match the OpenTelemetryCollector's deployment or statefulSet pods.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
