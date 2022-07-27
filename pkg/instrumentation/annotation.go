@@ -27,6 +27,7 @@ const (
 	annotationInjectNodeJS        = "instrumentation.opentelemetry.io/inject-nodejs"
 	annotationInjectPython        = "instrumentation.opentelemetry.io/inject-python"
 	annotationInjectDotNet        = "instrumentation.opentelemetry.io/inject-dotnet"
+	annotationInjectSdk           = "instrumentation.opentelemetry.io/inject-sdk"
 	annotationInjectContainerName = "instrumentation.opentelemetry.io/container-names"
 )
 
