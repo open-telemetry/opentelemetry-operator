@@ -224,6 +224,8 @@ spec:
                 format: int32
                 type: integer
               minReplicas:
+                description: MinReplicas sets a lower bound to the autoscaling feature.  Set
+                  this if your are using autoscaling. It must be at least 1
                 format: int32
                 type: integer
               mode:
@@ -249,8 +251,10 @@ spec:
                   attached to Collector and Target Allocator pods.
                 type: object
               podSecurityContext:
-                description: SecurityContext will be set as the container security
-                  context.
+                description: PodSecurityContext holds pod-level security attributes
+                  and common container settings. Some fields are also present in container.securityContext.  Field
+                  values of container.securityContext take precedence over field values
+                  of PodSecurityContext.
                 properties:
                   fsGroup:
                     description: "A special supplemental group that applies to all
@@ -674,10 +678,19 @@ spec:
                   to spawn a target allocation resource or not.
                 properties:
                   enabled:
+                    description: Enabled indicates whether to use a target allocation
+                      mechanism for Prometheus targets or not.
                     type: boolean
                   image:
+                    description: Image indicates the container image to use for the
+                      OpenTelemetry TargetAllocator.
                     type: string
                   prometheusCR:
+                    description: PrometheusCR defines the configuration for the retrieval
+                      of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1
+                      and podmonitor.monitoring.coreos.com/v1 )  retrieval. All CR
+                      instances which the ServiceAccount has access to will be retrieved.
+                      This includes other namespaces.
                     properties:
                       enabled:
                         description: Enabled indicates whether to use a PrometheusOperator
@@ -685,6 +698,8 @@ spec:
                         type: boolean
                     type: object
                   serviceAccount:
+                    description: ServiceAccount indicates the name of an existing
+                      service account to use with this instance.
                     type: string
                 type: object
               tolerations:
@@ -2597,23 +2612,34 @@ spec:
               OpenTelemetryCollector.
             properties:
               messages:
+                description: 'Messages about actions performed by the operator on
+                  this resource. Deprecated: use Kubernetes events instead.'
                 items:
                   type: string
                 type: array
+                x-kubernetes-list-type: atomic
               replicas:
+                description: 'Replicas is currently not being set and might be removed
+                  in the next version. Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas"
+                  instead.'
                 format: int32
                 type: integer
               scale:
-                description: ScaleSubresourceStatus defines the observed state of
-                  the OpenTelemetryCollector's scale subresource.
+                description: Scale is the OpenTelemetryCollector's scale subresource
+                  status.
                 properties:
                   replicas:
+                    description: The total number non-terminated pods targeted by
+                      this OpenTelemetryCollector's deployment or statefulSet.
                     format: int32
                     type: integer
                   selector:
+                    description: The selector used to match the OpenTelemetryCollector's
+                      deployment or statefulSet pods.
                     type: string
                 type: object
               version:
+                description: Version of the managed OpenTelemetry Collector (operand)
                 type: string
             type: object
         type: object
