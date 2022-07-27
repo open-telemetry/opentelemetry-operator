@@ -215,6 +215,11 @@ DotNet:
 instrumentation.opentelemetry.io/inject-dotnet: "true"
 ```
 
+OpenTelemetry SDK environment variables only:
+```bash
+instrumentation.opentelemetry.io/inject-sdk: "true"
+```
+
 The possible values for the annotation can be
 * `"true"` - inject and `Instrumentation` resource from the namespace.
 * `"my-instrumentation"` - name of `Instrumentation` CR instance in the current namespace.
@@ -222,7 +227,7 @@ The possible values for the annotation can be
 * `"false"` - do not inject
 
 
->**Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitely. 
+>**Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitely.
 
 #### Multi-container pods
 
@@ -283,8 +288,16 @@ spec:
     image: your-customized-auto-instrumentation-image:dotnet
 ```
 
-The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation). 
+The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).
 Follow the instructions in the Dockerfiles on how to build a custom container image.
+
+#### Inject OpenTelemetry SDK environment variables only
+
+You can configure the OpenTelemetry SDK for applications which can't currently be autoinstrumented by using `inject-sdk` in place of (e.g.) `inject-python` or `inject-java`. This will inject environment variables like `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_TRACES_SAMPLER`, and `OTEL_EXPORTER_OTLP_ENDPOINT`, that you can configure in the `Instrumentation`, but will not actually provide the SDK.
+
+```bash
+instrumentation.opentelemetry.io/inject-sdk: "true"
+```
 
 ## Compatibility matrix
 
