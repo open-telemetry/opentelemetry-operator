@@ -36,7 +36,6 @@ type OpenTelemetryCollectorSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
 	// +optional
-
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
@@ -44,8 +43,7 @@ type OpenTelemetryCollectorSpec struct {
 	// SecurityContext will be set as the container security context.
 	// +optional
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
-	// SecurityContext will be set as the container security context.
-	// +optional
+
 	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
 	// PodAnnotations is the set of annotations that will be attached to
 	// Collector and Target Allocator pods.
@@ -110,10 +108,19 @@ type OpenTelemetryCollectorSpec struct {
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
 type OpenTelemetryTargetAllocator struct {
-	ServiceAccount string                                   `json:"serviceAccount,omitempty"`
-	Image          string                                   `json:"image,omitempty"`
-	Enabled        bool                                     `json:"enabled,omitempty"`
-	PrometheusCR   OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// ServiceAccount indicates the name of an existing service account to use with this instance.
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
+	// +optional
+	Image string `json:"image,omitempty"`
+	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
+	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
+	// +optional
+	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {
@@ -125,16 +132,37 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 // ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's
 // scale subresource.
 type ScaleSubresourceStatus struct {
+	// The selector used to match the OpenTelemetryCollector's
+	// deployment or statefulSet pods.
+	// +optional
 	Selector string `json:"selector,omitempty"`
-	Replicas int32  `json:"replicas,omitempty"`
+
+	// The total number non-terminated pods targeted by this
+	// OpenTelemetryCollector's deployment or statefulSet.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
 type OpenTelemetryCollectorStatus struct {
-	Scale    ScaleSubresourceStatus `json:"scale,omitempty"`
-	Version  string                 `json:"version,omitempty"`
-	Messages []string               `json:"messages,omitempty"`
-	Replicas int32                  `json:"replicas,omitempty"`
+	// Scale is the OpenTelemetryCollector's scale subresource status.
+	// +optional
+	Scale ScaleSubresourceStatus `json:"scale,omitempty"`
+
+	// Version of the managed OpenTelemetry Collector (operand)
+	// +optional
+	Version string `json:"version,omitempty"`
+
+	// Messages about actions performed by the operator on this resource.
+	// +optional
+	// +listType=atomic
+	// Deprecated: use Kubernetes events instead.
+	Messages []string `json:"messages,omitempty"`
+
+	// Replicas is currently not being set and might be removed in the next version.
+	// +optional
+	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // +kubebuilder:object:root=true
