@@ -38,9 +38,9 @@ var (
 )
 
 type sidecarPodMutator struct {
-	config config.Config
-	logger logr.Logger
 	client client.Client
+	logger logr.Logger
+	config config.Config
 }
 
 var _ webhookhandler.PodMutator = (*sidecarPodMutator)(nil)

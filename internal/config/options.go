@@ -31,20 +31,20 @@ type Option func(c *options)
 
 type options struct {
 	autoDetect                     autodetect.AutoDetect
-	autoDetectFrequency            time.Duration
-	targetAllocatorImage           string
-	collectorImage                 string
+	version                        version.Version
+	logger                         logr.Logger
+	autoInstrumentationDotNetImage string
 	autoInstrumentationJavaImage   string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationPythonImage string
-	autoInstrumentationDotNetImage string
+	collectorImage                 string
 	collectorConfigMapEntry        string
 	targetAllocatorConfigMapEntry  string
-	logger                         logr.Logger
+	targetAllocatorImage           string
 	onChange                       []func() error
-	platform                       platform.Platform
-	version                        version.Version
 	labelsFilter                   []string
+	platform                       platform.Platform
+	autoDetectFrequency            time.Duration
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {

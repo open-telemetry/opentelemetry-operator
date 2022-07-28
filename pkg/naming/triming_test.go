@@ -26,10 +26,10 @@ import (
 func TestTruncate(t *testing.T) {
 	for _, tt := range []struct {
 		format   string
-		max      int
-		values   []interface{}
 		expected string
 		cap      string
+		values   []interface{}
+		max      int
 	}{
 		{
 			format:   "%s-collector",

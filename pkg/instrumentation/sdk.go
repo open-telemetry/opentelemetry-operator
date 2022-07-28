@@ -42,8 +42,8 @@ const (
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 
 type sdkInjector struct {
-	logger logr.Logger
 	client client.Client
+	logger logr.Logger
 }
 
 func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod, containerName string) corev1.Pod {
