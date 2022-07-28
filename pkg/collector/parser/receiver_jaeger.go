@@ -34,9 +34,9 @@ const (
 
 // JaegerReceiverParser parses the configuration for Jaeger-specific receivers.
 type JaegerReceiverParser struct {
+	config map[interface{}]interface{}
 	logger logr.Logger
 	name   string
-	config map[interface{}]interface{}
 }
 
 // NewJaegerReceiverParser builds a new parser for Jaeger receivers.
@@ -61,9 +61,9 @@ func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 
 	for _, protocol := range []struct {
 		name              string
-		defaultPort       int32
 		transportProtocol corev1.Protocol
 		appProtocol       string
+		defaultPort       int32
 	}{
 		{
 			name:              "grpc",

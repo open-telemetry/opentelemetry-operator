@@ -39,9 +39,9 @@ var (
 
 // OTLPReceiverParser parses the configuration for OTLP receivers.
 type OTLPReceiverParser struct {
+	config map[interface{}]interface{}
 	logger logr.Logger
 	name   string
-	config map[interface{}]interface{}
 }
 
 // NewOTLPReceiverParser builds a new parser for OTLP receivers.

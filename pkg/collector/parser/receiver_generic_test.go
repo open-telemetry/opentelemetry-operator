@@ -59,27 +59,27 @@ func TestFailedToParseEndpoint(t *testing.T) {
 
 func TestDownstreamParsers(t *testing.T) {
 	for _, tt := range []struct {
+		builder      func(logr.Logger, string, map[interface{}]interface{}) parser.ReceiverParser
 		desc         string
 		receiverName string
 		parserName   string
 		defaultPort  int
-		builder      func(logr.Logger, string, map[interface{}]interface{}) parser.ReceiverParser
 	}{
-		{"zipkin", "zipkin", "__zipkin", 9411, parser.NewZipkinReceiverParser},
-		{"opencensus", "opencensus", "__opencensus", 55678, parser.NewOpenCensusReceiverParser},
+		{parser.NewZipkinReceiverParser, "zipkin", "zipkin", "__zipkin", 9411},
+		{parser.NewOpenCensusReceiverParser, "opencensus", "opencensus", "__opencensus", 55678},
 
 		// contrib receivers
-		{"carbon", "carbon", "__carbon", 2003, parser.NewCarbonReceiverParser},
-		{"collectd", "collectd", "__collectd", 8081, parser.NewCollectdReceiverParser},
-		{"sapm", "sapm", "__sapm", 7276, parser.NewSAPMReceiverParser},
-		{"signalfx", "signalfx", "__signalfx", 9943, parser.NewSignalFxReceiverParser},
-		{"wavefront", "wavefront", "__wavefront", 2003, parser.NewWavefrontReceiverParser},
-		{"zipkin-scribe", "zipkin-scribe", "__zipkinscribe", 9410, parser.NewZipkinScribeReceiverParser},
-		{"fluentforward", "fluentforward", "__fluentforward", 8006, parser.NewFluentForwardReceiverParser},
-		{"statsd", "statsd", "__statsd", 8125, parser.NewStatsdReceiverParser},
-		{"influxdb", "influxdb", "__influxdb", 8086, parser.NewInfluxdbReceiverParser},
-		{"splunk-hec", "splunk-hec", "__splunk_hec", 8088, parser.NewSplunkHecReceiverParser},
-		{"awsxray", "awsxray", "__awsxray", 2000, parser.NewAWSXrayReceiverParser},
+		{parser.NewCarbonReceiverParser, "carbon", "carbon", "__carbon", 2003},
+		{parser.NewCollectdReceiverParser, "collectd", "collectd", "__collectd", 8081},
+		{parser.NewSAPMReceiverParser, "sapm", "sapm", "__sapm", 7276},
+		{parser.NewSignalFxReceiverParser, "signalfx", "signalfx", "__signalfx", 9943},
+		{parser.NewWavefrontReceiverParser, "wavefront", "wavefront", "__wavefront", 2003},
+		{parser.NewZipkinScribeReceiverParser, "zipkin-scribe", "zipkin-scribe", "__zipkinscribe", 9410},
+		{parser.NewFluentForwardReceiverParser, "fluentforward", "fluentforward", "__fluentforward", 8006},
+		{parser.NewStatsdReceiverParser, "statsd", "statsd", "__statsd", 8125},
+		{parser.NewInfluxdbReceiverParser, "influxdb", "influxdb", "__influxdb", 8086},
+		{parser.NewSplunkHecReceiverParser, "splunk-hec", "splunk-hec", "__splunk_hec", 8088},
+		{parser.NewAWSXrayReceiverParser, "awsxray", "awsxray", "__awsxray", 2000},
 	} {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {

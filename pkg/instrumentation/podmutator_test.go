@@ -34,11 +34,11 @@ func TestMutatePod(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		ns       corev1.Namespace
-		pod      corev1.Pod
-		inst     v1alpha1.Instrumentation
-		expected corev1.Pod
 		err      string
+		pod      corev1.Pod
+		expected corev1.Pod
+		inst     v1alpha1.Instrumentation
+		ns       corev1.Namespace
 	}{
 		{
 			name: "javaagent injection, true",

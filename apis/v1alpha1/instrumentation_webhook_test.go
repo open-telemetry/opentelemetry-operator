@@ -74,8 +74,8 @@ func TestInstrumentationDefaultingWebhookOtelDotNetTracesEnabledInstruEnvSet(t *
 func TestInstrumentationValidatingWebhook(t *testing.T) {
 	tests := []struct {
 		name string
-		inst Instrumentation
 		err  string
+		inst Instrumentation
 	}{
 		{
 			name: "argument is not a number",

@@ -146,19 +146,19 @@ service:
 
 func TestNoPortsParsed(t *testing.T) {
 	for _, tt := range []struct {
+		expected  error
 		desc      string
 		configStr string
-		expected  error
 	}{
 		{
-			"empty",
-			"",
-			adapters.ErrNoReceivers,
+			expected:  adapters.ErrNoReceivers,
+			desc:      "empty",
+			configStr: "",
 		},
 		{
-			"not a map",
-			"receivers: some-string",
-			adapters.ErrReceiversNotAMap,
+			expected:  adapters.ErrReceiversNotAMap,
+			desc:      "not a map",
+			configStr: "receivers: some-string",
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
