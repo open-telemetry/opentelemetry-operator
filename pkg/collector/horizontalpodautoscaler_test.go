@@ -94,6 +94,7 @@ func TestHPA(t *testing.T) {
 			}
 		})
 	}
+	
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
