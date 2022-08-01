@@ -1,0 +1,24 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: sdk-only
+spec:
+  env:
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
+  exporter:
+    endpoint: http://localhost:4317
+  propagators:
+    - jaeger
+    - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.25"
+  nodejs:
+    env:
+      - name: OTEL_NODEJS_DEBUG
+        value: "true"
+  python:
+    env:
+      - name: OTEL_ENV_VAR
+        value: "true"

@@ -45,11 +45,11 @@ type WebhookHandler interface {
 
 // the implementation.
 type podSidecarInjector struct {
-	config      config.Config
-	logger      logr.Logger
 	client      client.Client
 	decoder     *admission.Decoder
+	logger      logr.Logger
 	podMutators []PodMutator
+	config      config.Config
 }
 
 // PodMutator mutates a pod.

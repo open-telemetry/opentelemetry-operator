@@ -149,11 +149,12 @@ func TestGetAttributesEnvWithPodReferences(t *testing.T) {
 func TestHasResourceAttributeEnvVar(t *testing.T) {
 	for _, tt := range []struct {
 		desc     string
-		expected bool
 		env      []corev1.EnvVar
+		expected bool
 	}{
 		{
-			"has-attributes", true, []corev1.EnvVar{
+			"has-attributes",
+			[]corev1.EnvVar{
 				{
 					Name: resourceAttributesEnvName,
 					Value: fmt.Sprintf("%s=my-deployment,%s=uuid-dep,%s=my-ns,%s=$(%s),%s=$(%s),%s=$(%s),%s=my-replicaset,%s=uuid-replicaset",
@@ -171,15 +172,18 @@ func TestHasResourceAttributeEnvVar(t *testing.T) {
 					),
 				},
 			},
+			true,
 		},
 
 		{
-			"does-not-have-attributes", false, []corev1.EnvVar{
+			"does-not-have-attributes",
+			[]corev1.EnvVar{
 				{
 					Name:  "other_env",
 					Value: "other_value",
 				},
 			},
+			false,
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {

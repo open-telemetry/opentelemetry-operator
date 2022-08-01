@@ -30,10 +30,10 @@ import (
 )
 
 type VersionUpgrade struct {
-	Log      logr.Logger
-	Version  version.Version
 	Client   client.Client
 	Recorder record.EventRecorder
+	Version  version.Version
+	Log      logr.Logger
 }
 
 const RecordBufferSize int = 10

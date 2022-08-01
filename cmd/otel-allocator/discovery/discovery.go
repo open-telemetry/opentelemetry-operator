@@ -68,7 +68,7 @@ func (m *Manager) Watch(fn func(targets []allocation.TargetItem)) {
 							targets = append(targets, allocation.TargetItem{
 								JobName:   jobName,
 								TargetURL: string(t[model.AddressLabel]),
-								Label:     tg.Labels,
+								Label:     t.Merge(tg.Labels),
 							})
 						}
 					}

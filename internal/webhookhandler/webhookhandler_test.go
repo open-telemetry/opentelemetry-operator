@@ -400,8 +400,8 @@ func TestFailOnInvalidRequest(t *testing.T) {
 	// we use a typical Go table-test instad of Ginkgo's DescribeTable because we need to
 	// do an assertion during the declaration of the table params, which isn't supported (yet?)
 	for _, tt := range []struct {
-		name     string
 		req      admission.Request
+		name     string
 		expected int32
 		allowed  bool
 	}{

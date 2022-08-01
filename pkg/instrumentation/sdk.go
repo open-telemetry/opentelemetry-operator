@@ -42,8 +42,8 @@ const (
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 
 type sdkInjector struct {
-	logger logr.Logger
 	client client.Client
+	logger logr.Logger
 }
 
 func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod, containerName string) corev1.Pod {
@@ -83,6 +83,20 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		pod = i.injectCommonEnvVar(otelinst, pod, index)
 		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 	}
+	if insts.DotNet != nil {
+		otelinst := *insts.DotNet
+		i.logger.V(1).Info("injecting dotnet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod = injectDotNetSDK(i.logger, otelinst.Spec.DotNet, pod, index)
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+	}
+	if insts.Sdk != nil {
+		otelinst := *insts.Sdk
+		i.logger.V(1).Info("injecting sdk-only instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+	}
+
 	return pod
 }
 

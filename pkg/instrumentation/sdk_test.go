@@ -674,3 +674,176 @@ func TestInjectPython(t *testing.T) {
 		},
 	}, pod)
 }
+
+func TestInjectDotNet(t *testing.T) {
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			DotNet: v1alpha1.DotNet{
+				Image: "img:1",
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		DotNet: &inst,
+	}
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	pod := inj.inject(context.Background(), insts,
+		corev1.Namespace{},
+		corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name: "app",
+					},
+				},
+			},
+		}, "")
+	assert.Equal(t, corev1.Pod{
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: volumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:    initContainerName,
+					Image:   "img:1",
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      volumeName,
+						MountPath: "/otel-auto-instrumentation",
+					}},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name: "app",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      volumeName,
+							MountPath: "/otel-auto-instrumentation",
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  envDotNetStartupHook,
+							Value: dotNetStartupHookPath,
+						},
+						{
+							Name:  envDotNetAdditionalDeps,
+							Value: dotNetAdditionalDepsPath,
+						},
+						{
+							Name:  envDotNetSharedStore,
+							Value: dotNetSharedStorePath,
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "app",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+						},
+					},
+				},
+			},
+		},
+	}, pod)
+}
+
+func TestInjectSdkOnly(t *testing.T) {
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		Sdk: &inst,
+	}
+
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	pod := inj.inject(context.Background(), insts,
+		corev1.Namespace{},
+		corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name: "app",
+					},
+				},
+			},
+		}, "")
+	assert.Equal(t, corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name: "app",
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "app",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+						},
+					},
+				},
+			},
+		},
+	}, pod)
+}
