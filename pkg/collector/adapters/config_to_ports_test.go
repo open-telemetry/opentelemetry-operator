@@ -144,6 +144,39 @@ service:
 	}
 }
 
+func TestReceiverPortsSortedCorrectly(t *testing.T) {
+	configurationString := `receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:  
+  jaeger:
+    protocols:
+      grpc:
+service:
+  pipelines:
+    traces:
+      receivers: [otlp, jaeger]
+      exporters: [logging]
+`
+	configuration, err := adapters.ConfigFromString(configurationString)
+	require.NoError(t, err)
+	require.NotEmpty(t, configuration)
+
+	ports, err := adapters.ConfigToReceiverPorts(logger, configuration)
+	assert.NoError(t, err)
+	assert.Len(t, ports, 4)
+
+	// Ports should be ordered by receiver (alphabetically) and by port number within receiver
+	assert.Equal(t, "jaeger-grpc", ports[0].Name)
+	assert.Equal(t, int32(14250), ports[0].Port)
+
+	assert.Equal(t, "otlp-grpc", ports[1].Name)
+	assert.Equal(t, int32(4317), ports[1].Port)
+	assert.Equal(t, int32(4318), ports[2].Port)
+	assert.Equal(t, int32(55681), ports[3].Port)
+}
+
 func TestNoPortsParsed(t *testing.T) {
 	for _, tt := range []struct {
 		desc      string
