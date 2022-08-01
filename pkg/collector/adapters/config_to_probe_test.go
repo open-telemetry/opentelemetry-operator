@@ -25,8 +25,8 @@ func TestConfigToProbeShouldCreateProbeFor(t *testing.T) {
 	tests := []struct {
 		desc         string
 		config       string
-		expectedPort int32
 		expectedPath string
+		expectedPort int32
 	}{
 		{
 			desc:         "SimpleHappyPath",
@@ -120,9 +120,9 @@ service:
 
 func TestConfigToProbeShouldErrorIf(t *testing.T) {
 	tests := []struct {
+		expectedErr error
 		desc        string
 		config      string
-		expectedErr error
 	}{
 		{
 			desc: "NoHealthCheckExtension",

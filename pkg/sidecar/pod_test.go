@@ -122,23 +122,27 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 func TestExistsIn(t *testing.T) {
 	for _, tt := range []struct {
 		desc     string
-		expected bool
 		pod      corev1.Pod
+		expected bool
 	}{
-		{"has-sidecar", true, corev1.Pod{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{Name: "my-app"},
-					{Name: naming.Container()},
+		{"has-sidecar",
+			corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "my-app"},
+						{Name: naming.Container()},
+					},
 				},
 			},
-		}},
+			true},
 
-		{"does-not-have-sidecar", false, corev1.Pod{
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{},
+		{"does-not-have-sidecar",
+			corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{},
+				},
 			},
-		}},
+			false},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			assert.Equal(t, tt.expected, existsIn(tt.pod))

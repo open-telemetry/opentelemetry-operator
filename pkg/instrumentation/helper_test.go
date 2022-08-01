@@ -67,7 +67,59 @@ func TestInitContainerMissing(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := IsInitContainerMissing(test.pod)
+			result := isInitContainerMissing(test.pod)
+			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
+func TestAutoInstrumentationInjected(t *testing.T) {
+	tests := []struct {
+		name     string
+		pod      corev1.Pod
+		expected bool
+	}{
+		{
+			name: "AutoInstrumentation_Already_Inject",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "magic-init",
+						},
+						{
+							Name: initContainerName,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "AutoInstrumentation_Absent_1",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "magic-init",
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "AutoInstrumentation_Absent_2",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{},
+			},
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := isAutoInstrumentationInjected(test.pod)
 			assert.Equal(t, test.expected, result)
 		})
 	}

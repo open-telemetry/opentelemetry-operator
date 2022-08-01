@@ -50,15 +50,18 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 			logger.Info("Skipping javaagent injection, the container defines JAVA_TOOL_OPTIONS env var value via ValueFrom", "container", container.Name)
 			return pod
 		}
+
 		container.Env[idx].Value = container.Env[idx].Value + javaJVMArgument
+
 	}
+
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volumeName,
 		MountPath: "/otel-auto-instrumentation",
 	})
 
 	// We just inject Volumes and init containers for the first processed container
-	if IsInitContainerMissing(pod) {
+	if isInitContainerMissing(pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: volumeName,
 			VolumeSource: corev1.VolumeSource{

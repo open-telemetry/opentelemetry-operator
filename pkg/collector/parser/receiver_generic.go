@@ -25,13 +25,13 @@ var _ ReceiverParser = &GenericReceiver{}
 
 // GenericReceiver is a special parser for generic receivers. It doesn't self-register and should be created/used directly.
 type GenericReceiver struct {
+	config             map[interface{}]interface{}
+	defaultAppProtocol *string
 	logger             logr.Logger
 	name               string
-	config             map[interface{}]interface{}
-	defaultPort        int32
 	defaultProtocol    corev1.Protocol
-	defaultAppProtocol *string
 	parserName         string
+	defaultPort        int32
 }
 
 // NOTE: Operator will sync with only receivers that aren't scrapers. Operator sync up receivers

@@ -1,6 +1,36 @@
 Changes by Version
 ==================
 
+0.56.0
+-------------------
+### 💡 Enhancements 💡
+* Upgrade operator-sdk ([#982](https://github.com/open-telemetry/opentelemetry-operator/pull/982), [@yuriolisa](https://github.com/yuriolisa))
+* build and push dotnet-auto-instrumentation image ([#989](https://github.com/open-telemetry/opentelemetry-operator/pull/989), [@avadhut123pisal](https://github.com/avadhut123pisal)
+* Change Horizontal Pod Autoscaler to scale on OpenTelemetry Collector … ([#984](https://github.com/open-telemetry/opentelemetry-operator/pull/984), [@kevinearls](https://github.com/kevinearls))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.56.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.56.0)
+* [OpenTelemetry Contrib - v0.56.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.56.0)
+
+0.55.0
+-------------------
+### 🧰 Bug fixes 🧰
+* Fixing monitor configuration ([#966](https://github.com/open-telemetry/opentelemetry-operator/pull/966), [@yuriolisa](https://github.com/yuriolisa))
+* Fix Pod Mutation loop ([#953](https://github.com/open-telemetry/opentelemetry-operator/pull/953), [@mat-rumian](https://github.com/mat-rumian))
+* Fix the issue that the number of target-allocator replicas  ([#951](https://github.com/open-telemetry/opentelemetry-operator/pull/951), [@CoderPoet](https://github.com/CoderPoet))
+### 💡 Enhancements 💡
+* Update Python auto-instrumentation  0.32b0 ([#961](https://github.com/open-telemetry/opentelemetry-operator/pull/961), [@mat-rumian](https://github.com/mat-rumian))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.55.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.55.0)
+* [OpenTelemetry Contrib - v0.55.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.55.0)
+
+0.54.0
+-------------------
+### 🧰 Bug fixes 🧰
+* Fix parameter encoding issue ([#930](https://github.com/open-telemetry/opentelemetry-operator/pull/930), [@jaronoff97](https://github.com/jaronoff97))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.54.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.54.0)
+* [OpenTelemetry Contrib - v0.54.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.54.0)
+
 0.53.0
 -------------------
 ### 💡 Enhancements 💡

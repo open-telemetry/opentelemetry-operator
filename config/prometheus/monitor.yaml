@@ -15,7 +15,11 @@ spec:
       scheme: https
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
-        insecureSkipVerify: true
+        insecureSkipVerify: false
+        ca:
+          secret:
+            key: ca.crt
+            name: opentelemetry-operator-controller-manager-service-cert
   selector:
     matchLabels:
       app.kubernetes.io/name: opentelemetry-operator
