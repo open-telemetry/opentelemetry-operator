@@ -41,6 +41,7 @@ type options struct {
 	collectorConfigMapEntry        string
 	targetAllocatorConfigMapEntry  string
 	targetAllocatorImage           string
+	autoscalingVersion             string
 	onChange                       []func() error
 	labelsFilter                   []string
 	platform                       platform.Platform

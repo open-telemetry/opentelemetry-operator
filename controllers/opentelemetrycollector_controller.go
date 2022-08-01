@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -173,7 +174,12 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	err := r.config.AutoDetect()
+	if err != nil {
+		return err
+	}
+	autoscalingVersion := r.config.AutoscalingVersion()
+	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
@@ -181,6 +187,13 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&appsv1.Deployment{}).
 		Owns(&autoscalingv2beta2.HorizontalPodAutoscaler{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{}).
-		Complete(r)
+		Owns(&appsv1.StatefulSet{})
+
+	if autoscalingVersion == config.AutoscalingVersionV2 {
+		builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
+	} else {
+		builder = builder.Owns(&autoscalingv2beta2.HorizontalPodAutoscaler{})
+	}
+
+	return builder.Complete(r)
 }

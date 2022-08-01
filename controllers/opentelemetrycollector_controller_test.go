@@ -36,14 +36,22 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 var logger = logf.Log.WithName("unit-tests")
+var mockAutoDetector = &mockAutoDetect{
+	HPAVersionFunc: func() (string, error) {
+		return config.AutoscalingVersionV2Beta2, nil // FIXME how do we test both?
+	},
+}
 
 func TestNewObjectsOnReconciliation(t *testing.T) {
 	// prepare
-	cfg := config.New(config.WithCollectorImage("default-collector"), config.WithTargetAllocatorImage("default-ta-allocator"))
+
+	cfg := config.New(config.WithCollectorImage("default-collector"), config.WithTargetAllocatorImage("default-ta-allocator"), config.WithAutoDetect(mockAutoDetector))
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{
 		Client: k8sClient,
@@ -129,7 +137,7 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 
 func TestNewStatefulSetObjectsOnReconciliation(t *testing.T) {
 	// prepare
-	cfg := config.New()
+	cfg := config.New(config.WithAutoDetect(mockAutoDetector))
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{
 		Client: k8sClient,
@@ -340,4 +348,22 @@ func TestRegisterWithManager(t *testing.T) {
 
 	// verify
 	assert.NoError(t, err)
+}
+
+var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
+
+type mockAutoDetect struct {
+	PlatformFunc   func() (platform.Platform, error)
+	HPAVersionFunc func() (string, error)
+}
+
+func (m *mockAutoDetect) HPAVersion() (string, error) {
+	return m.HPAVersionFunc()
+}
+
+func (m *mockAutoDetect) Platform() (platform.Platform, error) {
+	if m.PlatformFunc != nil {
+		return m.PlatformFunc()
+	}
+	return platform.Unknown, nil
 }

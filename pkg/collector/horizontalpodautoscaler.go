@@ -16,9 +16,11 @@ package collector
 
 import (
 	"github.com/go-logr/logr"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -27,45 +29,88 @@ import (
 
 const defaultCPUTarget int32 = 90
 
-func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) autoscalingv2beta2.HorizontalPodAutoscaler {
+func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) runtime.Object {
+	err := cfg.AutoDetect()
+	if err != nil {
+		logger.Error(err, "cfg.Autodetect failed")
+	}
+	autoscalingVersion := cfg.AutoscalingVersion()
+	logger.Info(">>>>>>>>>> In HorizontalPodAutoscaler, autoscaling version is", autoscalingVersion) // TODO update, change level, etc...
+
 	labels := Labels(otelcol, cfg.LabelsFilter())
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
 	annotations := Annotations(otelcol)
 	cpuTarget := defaultCPUTarget
+	var o runtime.Object
 
-	targetCPUUtilization := autoscalingv2beta2.MetricSpec{
-		Type: autoscalingv2beta2.ResourceMetricSourceType,
-		Resource: &autoscalingv2beta2.ResourceMetricSource{
-			Name: corev1.ResourceCPU,
-			Target: autoscalingv2beta2.MetricTarget{
-				Type:               autoscalingv2beta2.UtilizationMetricType,
-				AverageUtilization: &cpuTarget,
-			},
-		},
-		ContainerResource: nil,
-		External:          nil,
+	objectMeta := metav1.ObjectMeta{
+		Name:        naming.HorizontalPodAutoscaler(otelcol),
+		Namespace:   otelcol.Namespace,
+		Labels:      labels,
+		Annotations: annotations,
 	}
 
-	metrics := []autoscalingv2beta2.MetricSpec{targetCPUUtilization}
-
-	return autoscalingv2beta2.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.HorizontalPodAutoscaler(otelcol),
-			Namespace:   otelcol.Namespace,
-			Labels:      labels,
-			Annotations: annotations,
-		},
-		Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
-				APIVersion: v1alpha1.GroupVersion.String(),
-				Kind:       "OpenTelemetryCollector",
-				Name:       naming.OpenTelemetryCollector(otelcol),
+	if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
+		targetCPUUtilization := autoscalingv2beta2.MetricSpec{
+			Type: autoscalingv2beta2.ResourceMetricSourceType,
+			Resource: &autoscalingv2beta2.ResourceMetricSource{
+				Name: corev1.ResourceCPU,
+				Target: autoscalingv2beta2.MetricTarget{
+					Type:               autoscalingv2beta2.UtilizationMetricType,
+					AverageUtilization: &cpuTarget,
+				},
 			},
+			ContainerResource: nil,
+			External:          nil,
+		}
+		metrics := []autoscalingv2beta2.MetricSpec{targetCPUUtilization}
 
-			MinReplicas: otelcol.Spec.Replicas,
-			MaxReplicas: *otelcol.Spec.MaxReplicas,
-			Metrics:     metrics,
-		},
+		autoscaler := autoscalingv2beta2.HorizontalPodAutoscaler{
+			ObjectMeta: objectMeta,
+			Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
+				ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
+					APIVersion: v1alpha1.GroupVersion.String(),
+					Kind:       "OpenTelemetryCollector",
+					Name:       naming.OpenTelemetryCollector(otelcol),
+				},
+				MinReplicas: otelcol.Spec.Replicas,
+				MaxReplicas: *otelcol.Spec.MaxReplicas,
+				Metrics:     metrics,
+			},
+		}
+		o = &autoscaler
+		//return o
+	} else {
+		targetCPUUtilization := autoscalingv2.MetricSpec{
+			Type: autoscalingv2.ResourceMetricSourceType,
+			Resource: &autoscalingv2.ResourceMetricSource{
+				Name: corev1.ResourceCPU,
+				Target: autoscalingv2.MetricTarget{
+					Type:               autoscalingv2.UtilizationMetricType,
+					AverageUtilization: &cpuTarget,
+				},
+			},
+			ContainerResource: nil,
+			External:          nil,
+		}
+		metrics := []autoscalingv2.MetricSpec{targetCPUUtilization}
+
+		autoscaler := autoscalingv2.HorizontalPodAutoscaler{
+			ObjectMeta: objectMeta,
+			Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
+				ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
+					APIVersion: v1alpha1.GroupVersion.String(),
+					Kind:       "OpenTelemetryCollector",
+					Name:       naming.OpenTelemetryCollector(otelcol),
+				},
+				MinReplicas: otelcol.Spec.Replicas,
+				MaxReplicas: *otelcol.Spec.MaxReplicas,
+				Metrics:     metrics,
+			},
+		}
+		o = &autoscaler
 	}
+
+	return o
 }

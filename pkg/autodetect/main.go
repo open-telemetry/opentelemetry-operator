@@ -27,6 +27,7 @@ var _ AutoDetect = (*autoDetect)(nil)
 // AutoDetect provides an assortment of routines that auto-detect traits based on the runtime.
 type AutoDetect interface {
 	Platform() (platform.Platform, error)
+	HPAVersion() (string, error)
 }
 
 type autoDetect struct {
@@ -63,4 +64,25 @@ func (a *autoDetect) Platform() (platform.Platform, error) {
 	}
 
 	return platform.Kubernetes, nil
+}
+
+func (a *autoDetect) HPAVersion() (string, error) {
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return "", err
+	}
+
+	for _, apiGroup := range apiList.Groups {
+		if apiGroup.Name == "autoscaling" {
+			for _, version := range apiGroup.Versions {
+				if version.Version == "v2" { // FIXME use constants here
+					return version.Version, nil
+				}
+			}
+			return "v2beta2", nil
+		}
+	}
+
+	// FIXME we should never get here....what to do? Return v2beta2?
+	return "", nil
 }

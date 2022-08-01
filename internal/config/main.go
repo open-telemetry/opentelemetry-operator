@@ -30,6 +30,9 @@ const (
 	defaultAutoDetectFrequency           = 5 * time.Second
 	defaultCollectorConfigMapEntry       = "collector.yaml"
 	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
+	AutoscalingVersionV2                 = "v2"
+	AutoscalingVersionV2Beta2            = "V2Beta2"
+	DefaultAutoscalingVersion            = "fred" //FIXME change this back to AutoscalingVersionV2...or should it be v2beta2???
 )
 
 // Config holds the static configuration for this operator.
@@ -45,6 +48,7 @@ type Config struct {
 	targetAllocatorConfigMapEntry  string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationJavaImage   string
+	autoscalingVersion             string
 	onChange                       []func() error
 	labelsFilter                   []string
 	platform                       platform.Platform
@@ -61,6 +65,7 @@ func New(opts ...Option) Config {
 		logger:                        logf.Log.WithName("config"),
 		platform:                      platform.Unknown,
 		version:                       version.Get(),
+		autoscalingVersion:            DefaultAutoscalingVersion,
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -81,6 +86,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
 		autoInstrumentationDotNetImage: o.autoInstrumentationDotNetImage,
 		labelsFilter:                   o.labelsFilter,
+		autoscalingVersion:             o.autoscalingVersion,
 	}
 }
 
@@ -132,6 +138,14 @@ func (c *Config) AutoDetect() error {
 		}
 	}
 
+	hpaVersion, err := c.autoDetect.HPAVersion()
+	if err != nil {
+		return err
+	} else {
+		c.autoscalingVersion = hpaVersion
+		c.logger.Info(">>>>>> In Autodetect, Set HPA version to [", c.autoscalingVersion, "] from [", hpaVersion, "]") // TODO set level
+	}
+
 	return nil
 }
 
@@ -158,6 +172,11 @@ func (c *Config) TargetAllocatorConfigMapEntry() string {
 // Platform represents the type of the platform this operator is running.
 func (c *Config) Platform() platform.Platform {
 	return c.platform
+}
+
+// AutoscalingVersion represents the preferred version of autoscaling.
+func (c *Config) AutoscalingVersion() string {
+	return c.autoscalingVersion
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
