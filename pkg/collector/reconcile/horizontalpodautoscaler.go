@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,7 +31,7 @@ import (
 
 // HorizontalPodAutoscaler reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
 func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
-	desired := []autoscalingv1.HorizontalPodAutoscaler{}
+	desired := []autoscalingv2beta2.HorizontalPodAutoscaler{}
 
 	// check if autoscale mode is on, e.g MaxReplicas is not nil
 	if params.Instance.Spec.MaxReplicas != nil {
@@ -51,7 +51,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
+func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv2beta2.HorizontalPodAutoscaler) error {
 	one := int32(1)
 	for _, obj := range expected {
 		desired := obj
@@ -60,7 +60,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
-		existing := &autoscalingv1.HorizontalPodAutoscaler{}
+		existing := &autoscalingv2beta2.HorizontalPodAutoscaler{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if k8serrors.IsNotFound(err) {
@@ -110,7 +110,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 	return nil
 }
 
-func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
+func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv2beta2.HorizontalPodAutoscaler) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -119,7 +119,7 @@ func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected
 		}),
 	}
 
-	list := &autoscalingv1.HorizontalPodAutoscalerList{}
+	list := &autoscalingv2beta2.HorizontalPodAutoscalerList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}

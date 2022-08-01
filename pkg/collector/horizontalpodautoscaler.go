@@ -16,7 +16,8 @@ package collector
 
 import (
 	"github.com/go-logr/logr"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -26,30 +27,45 @@ import (
 
 const defaultCPUTarget int32 = 90
 
-func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) autoscalingv1.HorizontalPodAutoscaler {
+func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) autoscalingv2beta2.HorizontalPodAutoscaler {
 	labels := Labels(otelcol, cfg.LabelsFilter())
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
 	annotations := Annotations(otelcol)
 	cpuTarget := defaultCPUTarget
 
-	return autoscalingv1.HorizontalPodAutoscaler{
+	targetCPUUtilization := autoscalingv2beta2.MetricSpec{
+		Type: autoscalingv2beta2.ResourceMetricSourceType,
+		Resource: &autoscalingv2beta2.ResourceMetricSource{
+			Name: corev1.ResourceCPU,
+			Target: autoscalingv2beta2.MetricTarget{
+				Type:               autoscalingv2beta2.UtilizationMetricType,
+				AverageUtilization: &cpuTarget,
+			},
+		},
+		ContainerResource: nil,
+		External:          nil,
+	}
+
+	metrics := []autoscalingv2beta2.MetricSpec{targetCPUUtilization}
+
+	return autoscalingv2beta2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.HorizontalPodAutoscaler(otelcol),
 			Namespace:   otelcol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
+		Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
 				APIVersion: v1alpha1.GroupVersion.String(),
 				Kind:       "OpenTelemetryCollector",
 				Name:       naming.OpenTelemetryCollector(otelcol),
 			},
 
-			MinReplicas:                    otelcol.Spec.Replicas,
-			MaxReplicas:                    *otelcol.Spec.MaxReplicas,
-			TargetCPUUtilizationPercentage: &cpuTarget,
+			MinReplicas: otelcol.Spec.Replicas,
+			MaxReplicas: *otelcol.Spec.MaxReplicas,
+			Metrics:     metrics,
 		},
 	}
 }

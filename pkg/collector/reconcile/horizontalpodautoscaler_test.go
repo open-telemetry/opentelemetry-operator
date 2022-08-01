@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,10 +39,10 @@ func TestExpectedHPA(t *testing.T) {
 	expectedHPA := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
 
 	t.Run("should create HPA", func(t *testing.T) {
-		err := expectedHorizontalPodAutoscalers(context.Background(), params, []autoscalingv1.HorizontalPodAutoscaler{expectedHPA})
+		err := expectedHorizontalPodAutoscalers(context.Background(), params, []autoscalingv2beta2.HorizontalPodAutoscaler{expectedHPA})
 		assert.NoError(t, err)
 
-		exists, err := populateObjectIfExists(t, &autoscalingv1.HorizontalPodAutoscaler{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+		exists, err := populateObjectIfExists(t, &autoscalingv2beta2.HorizontalPodAutoscaler{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		assert.NoError(t, err)
 		assert.True(t, exists)
 	})
@@ -56,10 +56,10 @@ func TestExpectedHPA(t *testing.T) {
 		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
 
 		createObjectIfNotExists(t, "test-collector", &updatedHPA)
-		err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []autoscalingv1.HorizontalPodAutoscaler{updatedHPA})
+		err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []autoscalingv2beta2.HorizontalPodAutoscaler{updatedHPA})
 		assert.NoError(t, err)
 
-		actual := autoscalingv1.HorizontalPodAutoscaler{}
+		actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
 		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 
 		assert.NoError(t, err)
@@ -69,7 +69,7 @@ func TestExpectedHPA(t *testing.T) {
 	})
 
 	t.Run("should delete HPA", func(t *testing.T) {
-		err := deleteHorizontalPodAutoscalers(context.Background(), params, []autoscalingv1.HorizontalPodAutoscaler{expectedHPA})
+		err := deleteHorizontalPodAutoscalers(context.Background(), params, []autoscalingv2beta2.HorizontalPodAutoscaler{expectedHPA})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
