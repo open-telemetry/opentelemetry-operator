@@ -61,48 +61,41 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 		return nil, ErrReceiversNotAMap
 	}
 
-	sortedNames := make([]string, 0, len(receivers))
-	for receiverName := range receivers {
-		name, ok := receiverName.(string)
-		if !ok {
-			logger.V(2).Info("receiver does not match type, want: %s, got: %T", "string", receiverName)
-			continue
-		}
-		sortedNames = append(sortedNames, name)
-	}
-	sort.Strings(sortedNames)
-
 	ports := []corev1.ServicePort{}
-	for _, name := range sortedNames {
+	for key, val := range receivers {
 		// This check will pass only the enabled receivers,
 		// then only the related ports will be opened.
-		if !recEnabled[name] {
+		if !recEnabled[key] {
 			continue
 		}
-
-		receiver, ok := receivers[name].(map[interface{}]interface{})
+		receiver, ok := val.(map[interface{}]interface{})
 		if !ok {
-			logger.Info("receiver doesn't seem to be a map of properties", "receiver", name)
+			logger.Info("receiver doesn't seem to be a map of properties", "receiver", key)
 			receiver = map[interface{}]interface{}{}
 		}
 
-		rcvrParser := parser.For(logger, name, receiver)
+		rcvrName := key.(string)
+		rcvrParser := parser.For(logger, rcvrName, receiver)
 
 		rcvrPorts, err := rcvrParser.Ports()
 		if err != nil {
 			// should we break the process and return an error, or just ignore this faulty parser
 			// and let the other parsers add their ports to the service? right now, the best
 			// option seems to be to log the failures and move on, instead of failing them all
-			logger.Error(err, "parser for '%s' has returned an error: %w", name, err)
+			logger.Error(err, "parser for '%s' has returned an error: %w", rcvrName, err)
 			continue
 		}
 
 		if len(rcvrPorts) > 0 {
-			sort.Slice(ports, func(i, j int) bool {
-				return ports[i].Name < ports[j].Name
-			})
 			ports = append(ports, rcvrPorts...)
 		}
 	}
+
+	if len(ports) > 0 {
+		sort.Slice(ports, func(i, j int) bool {
+			return ports[i].Name < ports[j].Name
+		})
+	}
+
 	return ports, nil
 }
