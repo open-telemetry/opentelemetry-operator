@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -48,5 +49,7 @@ func TestHPA(t *testing.T) {
 	assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)
 	assert.Equal(t, int32(5), hpa.Spec.MaxReplicas)
-	assert.Equal(t, int32(90), *hpa.Spec.TargetCPUUtilizationPercentage)
+	assert.Equal(t, 1, len(hpa.Spec.Metrics))
+	assert.Equal(t, corev1.ResourceCPU, hpa.Spec.Metrics[0].Resource.Name)
+	assert.Equal(t, int32(90), *hpa.Spec.Metrics[0].Resource.Target.AverageUtilization)
 }
