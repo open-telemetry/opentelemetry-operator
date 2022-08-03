@@ -17,7 +17,7 @@ package reconcile
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -102,7 +102,7 @@ func TestExpectedHPA(t *testing.T) {
 }
 
 func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
-	configYAML, err := ioutil.ReadFile("../testdata/test.yaml")
+	configYAML, err := os.ReadFile("../testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
