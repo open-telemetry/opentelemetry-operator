@@ -61,6 +61,7 @@ func TestHPA(t *testing.T) {
 				},
 			}
 			configuration := config.New(config.WithAutoDetect(mockAutoDetector))
+			configuration.AutoDetect()
 			raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
 			err := configuration.AutoDetect()
 			if err != nil {

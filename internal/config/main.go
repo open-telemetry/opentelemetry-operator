@@ -31,7 +31,7 @@ const (
 	defaultCollectorConfigMapEntry       = "collector.yaml"
 	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
 	AutoscalingVersionV2                 = "v2"
-	AutoscalingVersionV2Beta2            = "V2Beta2"
+	AutoscalingVersionV2Beta2            = "v2beta2"
 	DefaultAutoscalingVersion            = "fred" //FIXME change this back to AutoscalingVersionV2...or should it be v2beta2???
 )
 

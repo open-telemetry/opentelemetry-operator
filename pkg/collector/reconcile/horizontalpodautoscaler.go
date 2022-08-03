@@ -55,12 +55,8 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 }
 
 func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []runtime.Object) error {
-	err := params.Config.AutoDetect() //  WTF
-	if err != nil {
-		params.Log.Error(err, "cfg.Autodetect failed")
-	}
 	autoscalingVersion := params.Config.AutoscalingVersion()
-	params.Log.Info(">>>>>>>>>> In expectedHorizontalPodAutoscalers, autoscaling version is", autoscalingVersion) // TODO update, change level, etc...
+	params.Log.Info(">>>>>>>>>> In expectedHorizontalPodAutoscalers", "autoscaling version is", autoscalingVersion) // TODO update, change level, etc...
 	one := int32(1)
 
 	for _, obj := range expected {
@@ -175,12 +171,8 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 }
 
 func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []runtime.Object) error {
-	err := params.Config.AutoDetect()
-	if err != nil {
-		params.Log.Error(err, "cfg.Autodetect failed")
-	}
 	autoscalingVersion := params.Config.AutoscalingVersion()
-	params.Log.Info(">>>>>>>>>> In expectedHorizontalPodAutoscalers, autoscaling version is", autoscalingVersion) // TODO update, change level, etc...
+	params.Log.Info(">>>>>>>>>> In expectedHorizontalPodAutoscalers", "autoscaling version is", autoscalingVersion) // TODO update, change level, etc...
 
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
