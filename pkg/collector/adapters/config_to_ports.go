@@ -91,11 +91,9 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 		}
 	}
 
-	if len(ports) > 0 {
-		sort.Slice(ports, func(i, j int) bool {
-			return ports[i].Name < ports[j].Name
-		})
-	}
+	sort.Slice(ports, func(i, j int) bool {
+		return ports[i].Name < ports[j].Name
+	})
 
 	return ports, nil
 }
