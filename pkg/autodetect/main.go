@@ -17,6 +17,7 @@ package autodetect
 
 import (
 	"errors"
+
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
