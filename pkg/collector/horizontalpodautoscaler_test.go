@@ -61,12 +61,11 @@ func TestHPA(t *testing.T) {
 				},
 			}
 			configuration := config.New(config.WithAutoDetect(mockAutoDetector))
-			configuration.AutoDetect()
-			raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
 			err := configuration.AutoDetect()
 			if err != nil {
 				t.Errorf("configuration.autodetect failed %v", err)
 			}
+			raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
 
 			logger.Info("Running ", t.Name(), "with autoscaling version", configuration.AutoscalingVersion()) // FIXME this print nothing
 			fmt.Printf("In test %s using autoscaling version %s\n", t.Name(), configuration.AutoscalingVersion())
