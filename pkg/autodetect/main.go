@@ -16,6 +16,7 @@
 package autodetect
 
 import (
+	"errors"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
@@ -75,7 +76,7 @@ func (a *autoDetect) HPAVersion() (string, error) {
 	for _, apiGroup := range apiList.Groups {
 		if apiGroup.Name == "autoscaling" {
 			for _, version := range apiGroup.Versions {
-				if version.Version == "v2" { // FIXME use constants here
+				if version.Version == "v2" { // We can't use the constants from internal/config/main.go as that would create an import cycle
 					return version.Version, nil
 				}
 			}
@@ -83,6 +84,5 @@ func (a *autoDetect) HPAVersion() (string, error) {
 		}
 	}
 
-	// FIXME we should never get here....what to do? Return v2beta2?
-	return "", nil
+	return "", errors.New("Failed to find apiGroup autoscaling")
 }

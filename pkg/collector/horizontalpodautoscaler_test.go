@@ -15,7 +15,6 @@
 package collector_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,8 +35,8 @@ func TestHPA(t *testing.T) {
 		name               string
 		autoscalingVersion string
 	}
-	v2Test := test{"V2", "v2"}
-	v2beta2Test := test{"V2Beta2", config.AutoscalingVersionV2Beta2}
+	v2Test := test{config.AutoscalingVersionV2, config.AutoscalingVersionV2}
+	v2beta2Test := test{config.AutoscalingVersionV2Beta2, config.AutoscalingVersionV2Beta2}
 	tests := []test{v2Test, v2beta2Test}
 
 	var minReplicas int32 = 3
@@ -62,13 +61,9 @@ func TestHPA(t *testing.T) {
 			}
 			configuration := config.New(config.WithAutoDetect(mockAutoDetector))
 			err := configuration.AutoDetect()
-			if err != nil {
-				t.Errorf("configuration.autodetect failed %v", err)
-			}
+			assert.NoError(t, err)
 			raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
 
-			logger.Info("Running ", t.Name(), "with autoscaling version", configuration.AutoscalingVersion()) // FIXME this print nothing
-			fmt.Printf("In test %s using autoscaling version %s\n", t.Name(), configuration.AutoscalingVersion())
 			if configuration.AutoscalingVersion() == config.AutoscalingVersionV2Beta2 {
 				hpa := raw.(*autoscalingv2beta2.HorizontalPodAutoscaler)
 
@@ -94,7 +89,6 @@ func TestHPA(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)

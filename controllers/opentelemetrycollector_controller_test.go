@@ -44,7 +44,7 @@ import (
 var logger = logf.Log.WithName("unit-tests")
 var mockAutoDetector = &mockAutoDetect{
 	HPAVersionFunc: func() (string, error) {
-		return config.AutoscalingVersionV2Beta2, nil // FIXME how do we test both?
+		return config.AutoscalingVersionV2Beta2, nil // TODO do we need to test both?
 	},
 }
 

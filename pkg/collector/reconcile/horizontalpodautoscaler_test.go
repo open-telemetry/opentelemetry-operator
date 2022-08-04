@@ -40,10 +40,8 @@ import (
 
 func TestExpectedHPA(t *testing.T) {
 	params := paramsWithHPA(config.AutoscalingVersionV2Beta2)
-	err := params.Config.AutoDetect() // Do I need to do this?
-	if err != nil {
-		params.Log.Error(err, "params.Config.Autodetect failed")
-	}
+	err := params.Config.AutoDetect()
+	assert.NoError(t, err)
 	autoscalingVersion := params.Config.AutoscalingVersion()
 
 	expectedHPA := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)

@@ -98,7 +98,7 @@ func TestAutoDetectInBackground(t *testing.T) {
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
-type mockAutoDetect struct {
+type mockAutoDetect struct { // FIXME is there some way to only define this once?
 	PlatformFunc func() (platform.Platform, error)
 }
 

@@ -38,7 +38,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 
 	annotations := Annotations(otelcol)
 	cpuTarget := defaultCPUTarget
-	var o runtime.Object
+	var result runtime.Object
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        naming.HorizontalPodAutoscaler(otelcol),
@@ -57,8 +57,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					AverageUtilization: &cpuTarget,
 				},
 			},
-			ContainerResource: nil,
-			External:          nil,
 		}
 		metrics := []autoscalingv2beta2.MetricSpec{targetCPUUtilization}
 
@@ -75,8 +73,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				Metrics:     metrics,
 			},
 		}
-		o = &autoscaler
-		//return o
+		result = &autoscaler
 	} else {
 		targetCPUUtilization := autoscalingv2.MetricSpec{
 			Type: autoscalingv2.ResourceMetricSourceType,
@@ -87,8 +84,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					AverageUtilization: &cpuTarget,
 				},
 			},
-			ContainerResource: nil,
-			External:          nil,
 		}
 		metrics := []autoscalingv2.MetricSpec{targetCPUUtilization}
 
@@ -105,8 +100,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				Metrics:     metrics,
 			},
 		}
-		o = &autoscaler
+		result = &autoscaler
 	}
 
-	return o
+	return result
 }
