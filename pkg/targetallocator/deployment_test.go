@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -68,4 +69,29 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", ds.Name)
 	assert.Equal(t, testPodAnnotationValues, ds.Spec.Template.Annotations)
+}
+
+func TestDeploymentImagePullSecrets(t *testing.T) {
+	// prepare
+	testImagePullSecretValues := []v1.LocalObjectReference{
+		{
+			Name: "my-registry-secret",
+		},
+	}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ImagePullSecrets: testImagePullSecretValues,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	ds := Deployment(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, "my-instance-targetallocator", ds.Name)
+	assert.Equal(t, testImagePullSecretValues, ds.Spec.Template.Spec.ImagePullSecrets)
 }

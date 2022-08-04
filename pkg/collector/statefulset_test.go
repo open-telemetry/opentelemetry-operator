@@ -288,3 +288,37 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 	d2 := StatefulSet(cfg, logger, otelcol_2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
+
+func TestStatefulSetImagePullSecrets(t *testing.T) {
+	// Test default
+	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	d1 := StatefulSet(cfg, logger, otelcol_1)
+
+	assert.Empty(t, d1.Spec.Template.Spec.ImagePullSecrets)
+
+	// Test imagePullSecrets
+	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-nodeselector",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ImagePullSecrets: []v1.LocalObjectReference{
+				{
+					Name: "my-registry-secret",
+				},
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	d2 := StatefulSet(cfg, logger, otelcol_2)
+	assert.Equal(t, d2.Spec.Template.Spec.ImagePullSecrets, []v1.LocalObjectReference{{Name: "my-registry-secret"}})
+}
