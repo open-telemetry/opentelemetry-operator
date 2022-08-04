@@ -31,7 +31,6 @@ const defaultCPUTarget int32 = 90
 
 func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) runtime.Object {
 	autoscalingVersion := cfg.AutoscalingVersion()
-	logger.Info(">>>>>>>>>> In HorizontalPodAutoscaler", "autoscaling version is", autoscalingVersion) // TODO update, change level, etc...
 
 	labels := Labels(otelcol, cfg.LabelsFilter())
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)

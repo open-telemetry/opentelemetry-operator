@@ -77,7 +77,7 @@ func (a *autoDetect) HPAVersion() (string, error) {
 	for _, apiGroup := range apiList.Groups {
 		if apiGroup.Name == "autoscaling" {
 			for _, version := range apiGroup.Versions {
-				if version.Version == "v2" { // We can't use the constants from internal/config/main.go as that would create an import cycle
+				if version.Version == "v2" { // Can't use the constants from internal/config/main.go as that would create an import cycle
 					return version.Version, nil
 				}
 			}

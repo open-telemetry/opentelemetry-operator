@@ -44,13 +44,12 @@ import (
 var logger = logf.Log.WithName("unit-tests")
 var mockAutoDetector = &mockAutoDetect{
 	HPAVersionFunc: func() (string, error) {
-		return config.AutoscalingVersionV2Beta2, nil // TODO do we need to test both?
+		return config.AutoscalingVersionV2Beta2, nil
 	},
 }
 
 func TestNewObjectsOnReconciliation(t *testing.T) {
 	// prepare
-
 	cfg := config.New(config.WithCollectorImage("default-collector"), config.WithTargetAllocatorImage("default-ta-allocator"), config.WithAutoDetect(mockAutoDetector))
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{

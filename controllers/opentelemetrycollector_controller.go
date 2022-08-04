@@ -174,7 +174,7 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	err := r.config.AutoDetect() // TODO explain
+	err := r.config.AutoDetect() // We need to call this so we can get the correct autodetect version
 	if err != nil {
 		return err
 	}

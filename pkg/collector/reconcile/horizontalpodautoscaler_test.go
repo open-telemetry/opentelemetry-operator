@@ -45,61 +45,61 @@ func TestExpectedHPA(t *testing.T) {
 	autoscalingVersion := params.Config.AutoscalingVersion()
 
 	expectedHPA := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
-	//t.Run("should create HPA", func(t *testing.T) {
-	err = expectedHorizontalPodAutoscalers(context.Background(), params, []runtime.Object{expectedHPA})
-	assert.NoError(t, err)
-
-	exists, err := populateObjectIfExists(t, &autoscalingv2beta2.HorizontalPodAutoscaler{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
-	assert.NoError(t, err)
-	assert.True(t, exists)
-	//})
-
-	//t.Run("should update HPA", func(t *testing.T) {
-	minReplicas := int32(1)
-	maxReplicas := int32(3)
-	updateParms := paramsWithHPA(config.AutoscalingVersionV2Beta2)
-	updateParms.Instance.Spec.Replicas = &minReplicas
-	updateParms.Instance.Spec.MaxReplicas = &maxReplicas
-	updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
-
-	if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
-		updatedAutoscaler := *updatedHPA.(*autoscalingv2beta2.HorizontalPodAutoscaler)
-		createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
-		err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []runtime.Object{updatedHPA})
+	t.Run("should create HPA", func(t *testing.T) {
+		err = expectedHorizontalPodAutoscalers(context.Background(), params, []runtime.Object{expectedHPA})
 		assert.NoError(t, err)
 
-		actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
-
+		exists, err := populateObjectIfExists(t, &autoscalingv2beta2.HorizontalPodAutoscaler{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		assert.NoError(t, err)
 		assert.True(t, exists)
-		assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
-		assert.Equal(t, int32(3), actual.Spec.MaxReplicas)
-	} else {
-		updatedAutoscaler := *updatedHPA.(*autoscalingv2.HorizontalPodAutoscaler)
-		createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
-		err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []runtime.Object{updatedHPA})
+	})
+
+	t.Run("should update HPA", func(t *testing.T) {
+		minReplicas := int32(1)
+		maxReplicas := int32(3)
+		updateParms := paramsWithHPA(config.AutoscalingVersionV2Beta2)
+		updateParms.Instance.Spec.Replicas = &minReplicas
+		updateParms.Instance.Spec.MaxReplicas = &maxReplicas
+		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
+
+		t.Log("Eat me")
+		if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
+			updatedAutoscaler := *updatedHPA.(*autoscalingv2beta2.HorizontalPodAutoscaler)
+			createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
+			err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []runtime.Object{updatedHPA})
+			assert.NoError(t, err)
+
+			actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
+			exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+
+			assert.NoError(t, err)
+			assert.True(t, exists)
+			assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
+			assert.Equal(t, int32(3), actual.Spec.MaxReplicas)
+		} else {
+			updatedAutoscaler := *updatedHPA.(*autoscalingv2.HorizontalPodAutoscaler)
+			createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
+			err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []runtime.Object{updatedHPA})
+			assert.NoError(t, err)
+
+			actual := autoscalingv2.HorizontalPodAutoscaler{}
+			exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+
+			assert.NoError(t, err)
+			assert.True(t, exists)
+			assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
+			assert.Equal(t, int32(3), actual.Spec.MaxReplicas)
+		}
+	})
+
+	t.Run("should delete HPA", func(t *testing.T) {
+		err = deleteHorizontalPodAutoscalers(context.Background(), params, []runtime.Object{expectedHPA})
 		assert.NoError(t, err)
 
-		actual := autoscalingv2.HorizontalPodAutoscaler{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-		assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
-		assert.Equal(t, int32(3), actual.Spec.MaxReplicas)
-	}
-
-	//})
-
-	//t.Run("should delete HPA", func(t *testing.T) {
-	err = deleteHorizontalPodAutoscalers(context.Background(), params, []runtime.Object{expectedHPA})
-	assert.NoError(t, err)
-
-	actual := v1.Deployment{}
-	exists, _ = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collecto"})
-	assert.False(t, exists)
-	//})
+		actual := v1.Deployment{}
+		exists, _ := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collecto"})
+		assert.False(t, exists)
+	})
 }
 
 func paramsWithHPA(autoscalingVersion string) Params {
@@ -156,7 +156,6 @@ func paramsWithHPA(autoscalingVersion string) Params {
 	}
 }
 
-// FIXME we need some way to make this global.
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
