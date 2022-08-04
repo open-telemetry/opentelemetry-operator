@@ -101,13 +101,13 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +listType=atomic
 	Volumes []v1.Volume `json:"volumes,omitempty"`
-	// HostNetwork indicates if the pod should run in the host networking namespace.
-	// +optional
-	HostNetwork bool `json:"hostNetwork,omitempty"`
 	// ImagePullSecrets is the list of image pull secrets that will be
 	// attached to Collector and Target Allocator pods.
 	// +optional
 	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	// HostNetwork indicates if the pod should run in the host networking namespace.
+	// +optional
+	HostNetwork bool `json:"hostNetwork,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
