@@ -209,7 +209,8 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
-		assert.NotEqual(t, expectedTADeploy.Spec.Template.Spec.Containers[0].Image, actual.Spec.Template.Spec.Containers[0].Image)
+		assert.True(t, len(actual.Spec.Template.Spec.Containers[0].Args) == 1)
+		assert.True(t, actual.Spec.Template.Spec.Containers[0].Args[0] == "--enable-prometheus-cr-watcher")
 		assert.Equal(t, int32(1), *actual.Spec.Replicas)
 	})
 
