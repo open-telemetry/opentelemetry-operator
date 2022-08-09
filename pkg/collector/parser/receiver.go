@@ -107,6 +107,10 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	case name == "kubeletstats":
 		return nil
 
+	// ignore prometheus receiver as it has no listening endpoint
+	case name == "prometheus":
+		return nil
+
 	default:
 		endpoint = getAddressFromConfig(logger, name, endpointKey, config)
 	}

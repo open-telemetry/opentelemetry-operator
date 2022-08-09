@@ -85,11 +85,7 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.Labels = map[string]string{}
 		}
 
-		if desired.Labels["app.kubernetes.io/component"] == "opentelemetry-targetallocator" {
-			updated.Spec.Template.Spec.Containers[0].Image = desired.Spec.Template.Spec.Containers[0].Image
-		} else {
-			updated.Spec = desired.Spec
-		}
+		updated.Spec = desired.Spec
 		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 
 		for k, v := range desired.ObjectMeta.Annotations {
