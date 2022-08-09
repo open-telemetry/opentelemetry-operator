@@ -16,6 +16,7 @@ package adapters
 
 import (
 	"errors"
+	"sort"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -89,5 +90,10 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 			ports = append(ports, rcvrPorts...)
 		}
 	}
+
+	sort.Slice(ports, func(i, j int) bool {
+		return ports[i].Name < ports[j].Name
+	})
+
 	return ports, nil
 }
