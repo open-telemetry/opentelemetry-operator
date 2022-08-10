@@ -62,7 +62,6 @@ func TestExpectedHPA(t *testing.T) {
 		updateParms.Instance.Spec.MaxReplicas = &maxReplicas
 		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
 
-		t.Log("Eat me")
 		if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
 			updatedAutoscaler := *updatedHPA.(*autoscalingv2beta2.HorizontalPodAutoscaler)
 			createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
