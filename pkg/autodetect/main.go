@@ -17,6 +17,7 @@ package autodetect
 
 import (
 	"errors"
+	"sort"
 
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -76,12 +77,18 @@ func (a *autoDetect) HPAVersion() (string, error) {
 
 	for _, apiGroup := range apiList.Groups {
 		if apiGroup.Name == "autoscaling" {
-			for _, version := range apiGroup.Versions {
-				if version.Version == "v2" { // Can't use the constants from internal/config/main.go as that would create an import cycle
+			// Sort this so we can make sure to get v2 before v2beta2
+			versions := apiGroup.Versions
+			sort.Slice(versions, func(i, j int) bool {
+				return versions[i].Version < versions[j].Version
+			})
+
+			for _, version := range versions {
+				if version.Version == "v2" || version.Version == "v2beta2" { // Can't use the constants from internal/config/main.go as that would create an import cycle
 					return version.Version, nil
 				}
 			}
-			return "v2beta2", nil
+			return "", errors.New("Failed to find appropriate version of apiGroup autoscaling")
 		}
 	}
 
