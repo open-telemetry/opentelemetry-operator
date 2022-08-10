@@ -2,6 +2,8 @@ package collector
 
 import (
 	"context"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"os"
 	"strconv"
 	"time"
@@ -20,7 +22,11 @@ const (
 )
 
 var (
-	ns = os.Getenv("OTELCOL_NAMESPACE")
+	ns         = os.Getenv("OTELCOL_NAMESPACE")
+	collectors = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "allocator_collectors_discovered",
+		Help: "Number of collectors discovered.",
+	})
 )
 
 type Client struct {
@@ -89,6 +95,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]bool, fn func(collectors []string)) string {
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 	for {
+		collectors.Set(float64(len(collectorMap)))
 		select {
 		case <-k.close:
 			return "kubernetes client closed"

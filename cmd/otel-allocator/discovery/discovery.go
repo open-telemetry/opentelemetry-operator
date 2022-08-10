@@ -2,6 +2,8 @@ package discovery
 
 import (
 	"context"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/go-kit/log"
 	"github.com/go-logr/logr"
@@ -10,6 +12,13 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
+)
+
+var (
+	targetsDiscovered = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "allocator_targets",
+		Help: "Number of targets discovered.",
+	}, []string{"job_name"})
 )
 
 type Manager struct {
@@ -63,8 +72,10 @@ func (m *Manager) Watch(fn func(targets []allocation.TargetItem)) {
 				targets := []allocation.TargetItem{}
 
 				for jobName, tgs := range tsets {
+					var count float64 = 0
 					for _, tg := range tgs {
 						for _, t := range tg.Targets {
+							count++
 							targets = append(targets, allocation.TargetItem{
 								JobName:   jobName,
 								TargetURL: string(t[model.AddressLabel]),
@@ -72,6 +83,7 @@ func (m *Manager) Watch(fn func(targets []allocation.TargetItem)) {
 							})
 						}
 					}
+					targetsDiscovered.WithLabelValues(jobName).Set(count)
 				}
 				fn(targets)
 			}

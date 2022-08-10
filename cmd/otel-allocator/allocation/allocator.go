@@ -2,11 +2,24 @@ package allocation
 
 import (
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"net/url"
 	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/model"
+)
+
+var (
+	collectorsAllocatable = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "allocator_collectors_allocatable",
+		Help: "Number of collectors the allocator is able to allocate to.",
+	})
+	timeToAssign = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "allocator_time_to_allocate",
+		Help: "The time it takes to allocate",
+	}, []string{"method"})
 )
 
 /*
@@ -96,12 +109,15 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	for _, i := range collectors {
 		allocator.collectors[i] = &collector{Name: i, NumTargets: 0}
 	}
+	collectorsAllocatable.Set(float64(len(collectors)))
 }
 
 // Reallocate needs to be called to process the new target updates.
 // Until Reallocate is called, old targets will be served.
 func (allocator *Allocator) AllocateTargets() {
 	allocator.m.Lock()
+	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("AllocateTargets"))
+	defer timer.ObserveDuration()
 	defer allocator.m.Unlock()
 	allocator.removeOutdatedTargets()
 	allocator.processWaitingTargets()
@@ -110,6 +126,8 @@ func (allocator *Allocator) AllocateTargets() {
 // ReallocateCollectors reallocates the targets among the new collector instances
 func (allocator *Allocator) ReallocateCollectors() {
 	allocator.m.Lock()
+	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("ReallocateCollectors"))
+	defer timer.ObserveDuration()
 	defer allocator.m.Unlock()
 	allocator.TargetItems = make(map[string]*TargetItem)
 	allocator.processWaitingTargets()

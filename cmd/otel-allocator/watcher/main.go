@@ -2,7 +2,6 @@ package watcher
 
 import (
 	"fmt"
-
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
@@ -31,6 +30,13 @@ type EventSource int
 const (
 	EventSourceConfigMap EventSource = iota
 	EventSourcePrometheusCR
+)
+
+var (
+	EventSourceToString = map[EventSource]string{
+		EventSourceConfigMap:    "EventSourceConfigMap",
+		EventSourcePrometheusCR: "EventSourcePrometheusCR",
+	}
 )
 
 func NewWatcher(logger logr.Logger, config config.CLIConfig, allocator *allocation.Allocator) (*Manager, error) {

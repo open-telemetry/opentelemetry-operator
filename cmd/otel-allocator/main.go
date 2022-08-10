@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,10 +21,20 @@ import (
 	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 var (
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog     = ctrl.Log.WithName("setup")
+	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "allocator_http_duration_seconds",
+		Help: "Duration of HTTP requests.",
+	}, []string{"path"})
+	events = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "allocator_events",
+		Help: "Number of events in the channel.",
+	}, []string{"source"})
 )
 
 func main() {
@@ -75,6 +88,7 @@ func main() {
 			}
 			os.Exit(0)
 		case event := <-watcher.Events:
+			events.WithLabelValues(allocatorWatcher.EventSourceToString[event.Source]).Inc()
 			switch event.Source {
 			case allocatorWatcher.EventSourceConfigMap:
 				setupLog.Info("ConfigMap updated!")
@@ -129,8 +143,10 @@ func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManage
 		k8sClient:        k8sclient,
 	}
 	router := mux.NewRouter().UseEncodedPath()
+	router.Use(s.PrometheusMiddleware)
 	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
+	router.Path("/metrics").Handler(promhttp.Handler())
 	s.server = &http.Server{Addr: *cliConf.ListenAddr, Handler: router}
 	return s, nil
 }
@@ -175,6 +191,17 @@ func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
 		displayData[v.JobName] = allocation.LinkJSON{v.Link.Link}
 	}
 	jsonHandler(w, r, displayData)
+}
+
+// PrometheusMiddleware implements mux.MiddlewareFunc.
+func (s *server) PrometheusMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		route := mux.CurrentRoute(r)
+		path, _ := route.GetPathTemplate()
+		timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
+		next.ServeHTTP(w, r)
+		timer.ObserveDuration()
+	})
 }
 
 func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
