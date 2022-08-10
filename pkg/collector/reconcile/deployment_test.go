@@ -102,6 +102,29 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.Len(t, expected, 0)
 	})
 
+	t.Run("should update target allocator deployment when the prometheusCR is updated", func(t *testing.T) {
+		ctx := context.Background()
+		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
+		orgUID := expectedTADeploy.OwnerReferences[0].UID
+
+		updatedParam, err := newParams(expectedTADeploy.Spec.Template.Spec.Containers[0].Image, "")
+		assert.NoError(t, err)
+		updatedParam.Instance.Spec.TargetAllocator.PrometheusCR.Enabled = true
+		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
+
+		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		assert.NoError(t, err)
+
+		actual := v1.Deployment{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
+		assert.ElementsMatch(t, actual.Spec.Template.Spec.Containers[0].Args, []string{"--enable-prometheus-cr-watcher"})
+		assert.Equal(t, int32(1), *actual.Spec.Replicas)
+	})
+
 	t.Run("should not update target allocator deployment replicas when collector max replicas is set", func(t *testing.T) {
 		replicas, maxReplicas := int32(2), int32(10)
 		param := Params{
@@ -187,30 +210,6 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.True(t, exists)
 		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
 		assert.NotEqual(t, expectedTADeploy.Spec.Template.Spec.Containers[0].Image, actual.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, int32(1), *actual.Spec.Replicas)
-	})
-
-	t.Run("should update target allocator deployment when the prometheusCR is updated", func(t *testing.T) {
-		ctx := context.Background()
-		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
-		orgUID := expectedTADeploy.OwnerReferences[0].UID
-
-		updatedParam, err := newParams(expectedTADeploy.Spec.Template.Spec.Containers[0].Image, "")
-		assert.NoError(t, err)
-		updatedParam.Instance.Spec.TargetAllocator.PrometheusCR.Enabled = true
-		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
-
-		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
-		assert.NoError(t, err)
-
-		actual := v1.Deployment{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
-		assert.True(t, len(actual.Spec.Template.Spec.Containers[0].Args) == 1)
-		assert.True(t, actual.Spec.Template.Spec.Containers[0].Args[0] == "--enable-prometheus-cr-watcher")
 		assert.Equal(t, int32(1), *actual.Spec.Replicas)
 	})
 
