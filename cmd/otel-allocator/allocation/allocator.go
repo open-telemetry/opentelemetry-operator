@@ -16,6 +16,10 @@ var (
 		Name: "allocator_collectors_allocatable",
 		Help: "Number of collectors the allocator is able to allocate to.",
 	})
+	targetsPerCollector = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "allocator_targets_per_collector",
+		Help: "The number of targets for each collector.",
+	}, []string{"collector_name"})
 	timeToAssign = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "allocator_time_to_allocate",
 		Help: "The time it takes to allocate",
@@ -157,6 +161,7 @@ func (allocator *Allocator) processWaitingTargets() {
 				Collector: col,
 			}
 			col.NumTargets++
+			targetsPerCollector.WithLabelValues(col.Name).Set(float64(col.NumTargets))
 			allocator.TargetItems[v.JobName+v.TargetURL] = &targetItem
 		}
 	}
