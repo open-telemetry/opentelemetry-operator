@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"fmt"
+
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"

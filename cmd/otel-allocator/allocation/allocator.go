@@ -2,26 +2,26 @@ package allocation
 
 import (
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"net/url"
 	"sync"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/model"
 )
 
 var (
 	collectorsAllocatable = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "allocator_collectors_allocatable",
+		Name: "opentelemetry_allocator_collectors_allocatable",
 		Help: "Number of collectors the allocator is able to allocate to.",
 	})
 	targetsPerCollector = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "allocator_targets_per_collector",
+		Name: "opentelemetry_allocator_targets_per_collector",
 		Help: "The number of targets for each collector.",
 	}, []string{"collector_name"})
 	timeToAssign = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "allocator_time_to_allocate",
+		Name: "opentelemetry_allocator_time_to_allocate",
 		Help: "The time it takes to allocate",
 	}, []string{"method"})
 )

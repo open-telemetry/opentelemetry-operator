@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,17 +17,20 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
 	setupLog     = ctrl.Log.WithName("setup")
 	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "allocator_http_duration_seconds",
-		Help: "Duration of HTTP requests.",
+		Name: "opentelemetry_allocator_http_duration_seconds",
+		Help: "Duration of received HTTP requests.",
 	}, []string{"path"})
-	events = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "allocator_events",
+	eventsMetric = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "opentelemetry_allocator_events",
 		Help: "Number of events in the channel.",
 	}, []string{"source"})
 )
@@ -86,7 +86,7 @@ func main() {
 			}
 			os.Exit(0)
 		case event := <-watcher.Events:
-			events.WithLabelValues(allocatorWatcher.EventSourceToString[event.Source]).Inc()
+			eventsMetric.WithLabelValues(allocatorWatcher.EventSourceToString[event.Source]).Inc()
 			switch event.Source {
 			case allocatorWatcher.EventSourceConfigMap:
 				setupLog.Info("ConfigMap updated!")

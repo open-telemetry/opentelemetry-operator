@@ -2,13 +2,13 @@ package collector
 
 import (
 	"context"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -24,7 +24,7 @@ const (
 var (
 	ns         = os.Getenv("OTELCOL_NAMESPACE")
 	collectors = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "allocator_collectors_discovered",
+		Name: "opentelemetry_allocator_collectors_discovered",
 		Help: "Number of collectors discovered.",
 	})
 )
