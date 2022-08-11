@@ -101,9 +101,11 @@ func (w *PrometheusCRWatcher) Start(upstreamEvents chan Event, upstreamErrors ch
 					if !ok {
 						w.logger.Info("Unable to convert newObj in to ServiceMonitor, reloading")
 						upstreamEvents <- event
+						return
 					} else if !reflect.DeepEqual(convertedNewObj, monitor) {
 						w.logger.Info(fmt.Sprintf("Detected changes to ServiceMonitor %s in namespace %s", monitor.Name, monitor.Namespace))
 						upstreamEvents <- event
+						return
 					}
 					w.logger.Info(fmt.Sprintf("No changes detected for ServiceMonitor %s in namespace %s", monitor.Name, monitor.Namespace))
 				case *monitoringv1.PodMonitor:
@@ -111,9 +113,11 @@ func (w *PrometheusCRWatcher) Start(upstreamEvents chan Event, upstreamErrors ch
 					if !ok {
 						w.logger.Info("Unable to convert newObj in to PodMonitor, reloading")
 						upstreamEvents <- event
+						return
 					} else if !reflect.DeepEqual(convertedNewObj, monitor) {
 						w.logger.Info(fmt.Sprintf("Detected changes to PodMonitor %s in namespace %s", monitor.Name, monitor.Namespace))
 						upstreamEvents <- event
+						return
 					}
 					w.logger.Info(fmt.Sprintf("No changes detected for PodMonitor %s in namespace %s", monitor.Name, monitor.Namespace))
 				default:
