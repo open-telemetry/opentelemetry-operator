@@ -22,7 +22,6 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -35,7 +34,7 @@ import (
 
 // HorizontalPodAutoscaler reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
 func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
-	desired := []runtime.Object{}
+	desired := []client.Object{}
 
 	// check if autoscale mode is on, e.g MaxReplicas is not nil
 	if params.Instance.Spec.MaxReplicas != nil {
@@ -55,7 +54,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []runtime.Object) error {
+func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
 	autoscalingVersion := params.Config.AutoscalingVersion()
 	var existing client.Object
 	if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
@@ -74,7 +73,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 		nns := types.NamespacedName{Namespace: desired.GetNamespace(), Name: desired.GetName()}
 		err := params.Client.Get(ctx, nns, existing)
 		if k8serrors.IsNotFound(err) {
-			if err := params.Client.Create(ctx, obj.(client.Object)); err != nil {
+			if err := params.Client.Create(ctx, obj); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
 			params.Log.V(2).Info("created", "hpa.name", desired.GetName(), "hpa.namespace", desired.GetNamespace())
@@ -131,7 +130,7 @@ func setAutoscalerSpec(params Params, autoscalingVersion string, updated client.
 	}
 }
 
-func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []runtime.Object) error {
+func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
 	autoscalingVersion := params.Config.AutoscalingVersion()
 
 	opts := []client.ListOption{

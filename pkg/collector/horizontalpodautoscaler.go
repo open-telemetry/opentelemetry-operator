@@ -20,7 +20,7 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -29,7 +29,7 @@ import (
 
 const defaultCPUTarget int32 = 90
 
-func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) runtime.Object {
+func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
 	autoscalingVersion := cfg.AutoscalingVersion()
 
 	labels := Labels(otelcol, cfg.LabelsFilter())
@@ -37,7 +37,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 
 	annotations := Annotations(otelcol)
 	cpuTarget := defaultCPUTarget
-	var result runtime.Object
+	var result client.Object
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        naming.HorizontalPodAutoscaler(otelcol),

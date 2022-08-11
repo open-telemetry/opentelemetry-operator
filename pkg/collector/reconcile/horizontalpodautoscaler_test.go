@@ -26,10 +26,10 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -46,7 +46,7 @@ func TestExpectedHPA(t *testing.T) {
 
 	expectedHPA := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
 	t.Run("should create HPA", func(t *testing.T) {
-		err = expectedHorizontalPodAutoscalers(context.Background(), params, []runtime.Object{expectedHPA})
+		err = expectedHorizontalPodAutoscalers(context.Background(), params, []client.Object{expectedHPA})
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &autoscalingv2beta2.HorizontalPodAutoscaler{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
@@ -65,7 +65,7 @@ func TestExpectedHPA(t *testing.T) {
 		if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
 			updatedAutoscaler := *updatedHPA.(*autoscalingv2beta2.HorizontalPodAutoscaler)
 			createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
-			err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []runtime.Object{updatedHPA})
+			err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
 			assert.NoError(t, err)
 
 			actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
@@ -78,7 +78,7 @@ func TestExpectedHPA(t *testing.T) {
 		} else {
 			updatedAutoscaler := *updatedHPA.(*autoscalingv2.HorizontalPodAutoscaler)
 			createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
-			err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []runtime.Object{updatedHPA})
+			err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
 			assert.NoError(t, err)
 
 			actual := autoscalingv2.HorizontalPodAutoscaler{}
@@ -92,7 +92,7 @@ func TestExpectedHPA(t *testing.T) {
 	})
 
 	t.Run("should delete HPA", func(t *testing.T) {
-		err = deleteHorizontalPodAutoscalers(context.Background(), params, []runtime.Object{expectedHPA})
+		err = deleteHorizontalPodAutoscalers(context.Background(), params, []client.Object{expectedHPA})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
