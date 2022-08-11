@@ -21,8 +21,6 @@ import (
 	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 	ctrl "sigs.k8s.io/controller-runtime"
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 var (
