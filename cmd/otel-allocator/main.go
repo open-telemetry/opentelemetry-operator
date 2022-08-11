@@ -50,7 +50,7 @@ func main() {
 
 	log := ctrl.Log.WithName("allocator")
 	allocator := allocation.NewAllocator(log)
-	watcher, err := allocatorWatcher.NewWatcher(setupLog, cliConf, allocator)
+	watcher, err := allocatorWatcher.NewWatcher(setupLog.WithName("allocatorWatcher"), cliConf, allocator)
 	if err != nil {
 		setupLog.Error(err, "Can't start the watchers")
 		os.Exit(1)
@@ -107,7 +107,6 @@ func main() {
 				}()
 
 			case allocatorWatcher.EventSourcePrometheusCR:
-				setupLog.Info("PrometheusCRs changed")
 				promConfig, err := interface{}(*event.Watcher).(*allocatorWatcher.PrometheusCRWatcher).CreatePromConfig(cliConf.KubeConfigFilePath)
 				if err != nil {
 					setupLog.Error(err, "failed to compile Prometheus config")

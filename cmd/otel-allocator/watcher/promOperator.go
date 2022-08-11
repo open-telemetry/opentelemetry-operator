@@ -2,10 +2,11 @@ package watcher
 
 import (
 	"fmt"
+	"github.com/go-kit/log"
+	"reflect"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 
-	"github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
@@ -53,6 +54,7 @@ func newCRDMonitorWatcher(logger logr.Logger, config allocatorconfig.CLIConfig) 
 		informers:            monitoringInformers,
 		stopChannel:          make(chan struct{}),
 		configGenerator:      generator,
+		logger:               logger,
 	}, nil
 }
 
@@ -61,6 +63,7 @@ type PrometheusCRWatcher struct {
 	informers            map[string]*informers.ForResource
 	stopChannel          chan struct{}
 	configGenerator      *prometheus.ConfigGenerator
+	logger               logr.Logger
 }
 
 // Start wrapped informers and wait for an initial sync
@@ -81,10 +84,42 @@ func (w *PrometheusCRWatcher) Start(upstreamEvents chan Event, upstreamErrors ch
 
 		resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
+				switch monitor := obj.(type) {
+				case *monitoringv1.ServiceMonitor:
+					w.logger.Info(fmt.Sprintf("Adding a new ServiceMonitor: %s in namespace %s", monitor.Name, monitor.Namespace))
+				case *monitoringv1.PodMonitor:
+					w.logger.Info(fmt.Sprintf("Adding a new PodMonitor: %s in namespace %s", monitor.Name, monitor.Namespace))
+				default:
+					w.logger.Info("Unknown object type given to resource handler", "obj", obj)
+				}
 				upstreamEvents <- event
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				upstreamEvents <- event
+				switch monitor := oldObj.(type) {
+				case *monitoringv1.ServiceMonitor:
+					convertedNewObj, ok := newObj.(*monitoringv1.ServiceMonitor)
+					if !ok {
+						w.logger.Info("Unable to convert newObj in to ServiceMonitor, reloading")
+						upstreamEvents <- event
+					} else if !reflect.DeepEqual(convertedNewObj, monitor) {
+						w.logger.Info(fmt.Sprintf("Detected changes to ServiceMonitor %s in namespace %s", monitor.Name, monitor.Namespace))
+						upstreamEvents <- event
+					}
+					w.logger.Info(fmt.Sprintf("No changes detected for ServiceMonitor %s in namespace %s", monitor.Name, monitor.Namespace))
+				case *monitoringv1.PodMonitor:
+					convertedNewObj, ok := newObj.(*monitoringv1.PodMonitor)
+					if !ok {
+						w.logger.Info("Unable to convert newObj in to PodMonitor, reloading")
+						upstreamEvents <- event
+					} else if !reflect.DeepEqual(convertedNewObj, monitor) {
+						w.logger.Info(fmt.Sprintf("Detected changes to PodMonitor %s in namespace %s", monitor.Name, monitor.Namespace))
+						upstreamEvents <- event
+					}
+					w.logger.Info(fmt.Sprintf("No changes detected for PodMonitor %s in namespace %s", monitor.Name, monitor.Namespace))
+				default:
+					w.logger.Info("Unknown type found, reloading")
+					upstreamEvents <- event
+				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				upstreamEvents <- event
