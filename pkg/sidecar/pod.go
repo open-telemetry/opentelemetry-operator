@@ -28,7 +28,9 @@ import (
 )
 
 const (
-	label = "sidecar.opentelemetry.io/injected"
+	label          = "sidecar.opentelemetry.io/injected"
+	labelNamespace = "sidecar.opentelemetry.io/injected-namespace"
+	labelName      = "sidecar.opentelemetry.io/injected-name"
 )
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
@@ -45,7 +47,12 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCo
 	if pod.Labels == nil {
 		pod.Labels = map[string]string{}
 	}
-	pod.Labels[label] = fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name)
+	pod.Labels[labelNamespace] = otelcol.Namespace
+	pod.Labels[labelName] = otelcol.Name
+	labelValue := fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name)
+	if len(labelValue) < 64 {
+		pod.Labels[label] = labelValue
+	}
 
 	return pod, nil
 }
