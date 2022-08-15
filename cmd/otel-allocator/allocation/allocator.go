@@ -6,7 +6,24 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/model"
+)
+
+var (
+	collectorsAllocatable = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "opentelemetry_allocator_collectors_allocatable",
+		Help: "Number of collectors the allocator is able to allocate to.",
+	})
+	targetsPerCollector = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "opentelemetry_allocator_targets_per_collector",
+		Help: "The number of targets for each collector.",
+	}, []string{"collector_name"})
+	timeToAssign = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "opentelemetry_allocator_time_to_allocate",
+		Help: "The time it takes to allocate",
+	}, []string{"method"})
 )
 
 /*
@@ -96,12 +113,15 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	for _, i := range collectors {
 		allocator.collectors[i] = &collector{Name: i, NumTargets: 0}
 	}
+	collectorsAllocatable.Set(float64(len(collectors)))
 }
 
 // Reallocate needs to be called to process the new target updates.
 // Until Reallocate is called, old targets will be served.
 func (allocator *Allocator) AllocateTargets() {
 	allocator.m.Lock()
+	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("AllocateTargets"))
+	defer timer.ObserveDuration()
 	defer allocator.m.Unlock()
 	allocator.removeOutdatedTargets()
 	allocator.processWaitingTargets()
@@ -110,6 +130,8 @@ func (allocator *Allocator) AllocateTargets() {
 // ReallocateCollectors reallocates the targets among the new collector instances
 func (allocator *Allocator) ReallocateCollectors() {
 	allocator.m.Lock()
+	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("ReallocateCollectors"))
+	defer timer.ObserveDuration()
 	defer allocator.m.Unlock()
 	allocator.TargetItems = make(map[string]*TargetItem)
 	allocator.processWaitingTargets()
@@ -139,6 +161,7 @@ func (allocator *Allocator) processWaitingTargets() {
 				Collector: col,
 			}
 			col.NumTargets++
+			targetsPerCollector.WithLabelValues(col.Name).Set(float64(col.NumTargets))
 			allocator.TargetItems[v.JobName+v.TargetURL] = &targetItem
 		}
 	}
