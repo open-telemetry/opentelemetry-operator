@@ -86,7 +86,7 @@ func main() {
 			}
 			os.Exit(0)
 		case event := <-watcher.Events:
-			eventsMetric.WithLabelValues(allocatorWatcher.EventSourceToString[event.Source]).Inc()
+			eventsMetric.WithLabelValues(event.Source.String()).Inc()
 			switch event.Source {
 			case allocatorWatcher.EventSourceConfigMap:
 				setupLog.Info("ConfigMap updated!")
