@@ -21,6 +21,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	//_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 var (
@@ -185,7 +186,7 @@ func (s *server) Shutdown(ctx context.Context) error {
 
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
 	displayData := make(map[string]allocation.LinkJSON)
-	for _, v := range s.allocator.TargetItems {
+	for _, v := range s.allocator.TargetItems() {
 		displayData[v.JobName] = allocation.LinkJSON{v.Link.Link}
 	}
 	jsonHandler(w, r, displayData)
@@ -206,7 +207,7 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()["collector_id"]
 
 	var compareMap = make(map[string][]allocation.TargetItem) // CollectorName+jobName -> TargetItem
-	for _, v := range s.allocator.TargetItems {
+	for _, v := range s.allocator.TargetItems() {
 		compareMap[v.Collector.Name+v.JobName] = append(compareMap[v.Collector.Name+v.JobName], *v)
 	}
 	params := mux.Vars(r)
