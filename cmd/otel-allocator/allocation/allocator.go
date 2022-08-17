@@ -57,7 +57,7 @@ type collector struct {
 // Users need to call SetTargets when they have new targets in their
 // clusters and call Reshard to process the new targets and reshard.
 type Allocator struct {
-	m sync.Mutex
+	m sync.RWMutex
 
 	targetsWaiting map[string]TargetItem // temp buffer to keep targets that are waiting to be processed
 
@@ -68,8 +68,27 @@ type Allocator struct {
 	log logr.Logger
 }
 
+// TargetItems returns a shallow copy of the targetItems map.
 func (allocator *Allocator) TargetItems() map[string]*TargetItem {
-	return allocator.targetItems
+	allocator.m.RLock()
+	defer allocator.m.RUnlock()
+	targetItemsCopy := make(map[string]*TargetItem)
+	for k, v := range allocator.targetItems {
+		targetItemsCopy[k] = v
+	}
+	return targetItemsCopy
+}
+
+// Collectors returns a shallow copy of the collectors map.
+func (allocator *Allocator) Collectors() map[string]*collector {
+	allocator.m.RLock()
+	defer allocator.m.RUnlock()
+	collectorsCopy := make(map[string]*collector)
+	for k, v := range allocator.collectors {
+		collectorsCopy[k] = v
+	}
+	return collectorsCopy
+
 }
 
 // findNextCollector finds the next collector with less number of targets.

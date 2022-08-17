@@ -112,7 +112,7 @@ func TestAllocationCollision(t *testing.T) {
 
 	// verify results map
 	for _, i := range targetList {
-		_, ok := s.TargetItems()[i.hash()]
+		_, ok := s.targetItems[i.hash()]
 		assert.True(t, ok)
 	}
 }
@@ -139,8 +139,8 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	// Divisor needed to get 15%
 	divisor := 6.7
 
-	count := len(s.TargetItems()) / len(s.collectors)
-	percent := float64(len(s.TargetItems())) / divisor
+	count := len(s.targetItems) / len(s.collectors)
+	percent := float64(len(s.targetItems)) / divisor
 
 	// test
 	for _, i := range s.collectors {
@@ -158,8 +158,8 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	s.SetWaitingTargets(newTargetList)
 	s.AllocateTargets()
 
-	count = len(s.TargetItems()) / len(s.collectors)
-	percent = float64(len(s.TargetItems())) / divisor
+	count = len(s.targetItems) / len(s.collectors)
+	percent = float64(len(s.targetItems)) / divisor
 
 	// test
 	for _, i := range s.collectors {
@@ -176,8 +176,8 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	s.SetWaitingTargets(newTargetList)
 	s.AllocateTargets()
 
-	count = len(s.TargetItems()) / len(s.collectors)
-	percent = float64(len(s.TargetItems())) / divisor
+	count = len(s.targetItems) / len(s.collectors)
+	percent = float64(len(s.targetItems)) / divisor
 
 	// test
 	for _, i := range s.collectors {
