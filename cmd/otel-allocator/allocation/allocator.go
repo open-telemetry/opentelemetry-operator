@@ -101,7 +101,6 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	for _, i := range targets {
 		allocator.targetsWaiting[i.hash()] = i
 	}
-	//allocator.log.Info(fmt.Sprintf("len(targetsWaiting): %d\nlen(targets): %d", len(allocator.targetsWaiting), len(targets)))
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.

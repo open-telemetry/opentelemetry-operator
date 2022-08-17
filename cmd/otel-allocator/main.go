@@ -21,7 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ctrl "sigs.k8s.io/controller-runtime"
-	//_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 var (
