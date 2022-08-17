@@ -103,7 +103,7 @@ type mockAutoDetect struct {
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
-	return autodetect.DefaultAutoscalingVersion, nil // TODO add a test?
+	return autodetect.DefaultAutoscalingVersion, nil
 }
 
 func (m *mockAutoDetect) Platform() (platform.Platform, error) {

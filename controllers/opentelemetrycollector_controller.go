@@ -179,7 +179,6 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 	if err != nil {
 		return err
 	}
-	autoscalingVersion := r.config.AutoscalingVersion()
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).
 		Owns(&corev1.ConfigMap{}).
@@ -189,6 +188,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.StatefulSet{})
 
+	autoscalingVersion := r.config.AutoscalingVersion()
 	if autoscalingVersion == autodetect.AutoscalingVersionV2 {
 		builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
 	} else {
