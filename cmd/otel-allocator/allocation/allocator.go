@@ -88,7 +88,6 @@ func (allocator *Allocator) Collectors() map[string]*collector {
 		collectorsCopy[k] = v
 	}
 	return collectorsCopy
-
 }
 
 // findNextCollector finds the next collector with less number of targets.
