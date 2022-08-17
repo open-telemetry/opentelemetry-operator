@@ -30,12 +30,22 @@ var _ AutoDetect = (*autoDetect)(nil)
 // AutoDetect provides an assortment of routines that auto-detect traits based on the runtime.
 type AutoDetect interface {
 	Platform() (platform.Platform, error)
-	HPAVersion() (string, error)
+	HPAVersion() (AutoscalingVersion, error)
 }
 
 type autoDetect struct {
 	dcl discovery.DiscoveryInterface
 }
+
+type AutoscalingVersion int
+
+const (
+	AutoscalingVersionV2 AutoscalingVersion = iota
+	AutoscalingVersionV2Beta2
+	AutoscalingVersionUnknown
+)
+
+const DefaultAutoscalingVersion = AutoscalingVersionV2
 
 // New creates a new auto-detection worker, using the given client when talking to the current cluster.
 func New(restConfig *rest.Config) (AutoDetect, error) {
@@ -69,10 +79,10 @@ func (a *autoDetect) Platform() (platform.Platform, error) {
 	return platform.Kubernetes, nil
 }
 
-func (a *autoDetect) HPAVersion() (string, error) {
+func (a *autoDetect) HPAVersion() (AutoscalingVersion, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
-		return "", err
+		return AutoscalingVersionUnknown, err
 	}
 
 	for _, apiGroup := range apiList.Groups {
@@ -84,13 +94,35 @@ func (a *autoDetect) HPAVersion() (string, error) {
 			})
 
 			for _, version := range versions {
-				if version.Version == "v2" || version.Version == "v2beta2" { // Can't use the constants from internal/config/main.go as that would create an import cycle
-					return version.Version, nil
+				if version.Version == "v2" || version.Version == "v2beta2" {
+					return toAutoscalingVersion(version.Version), nil
 				}
 			}
-			return "", errors.New("Failed to find appropriate version of apiGroup autoscaling, only v2 and v2beta2 are supported")
+			return AutoscalingVersionUnknown, errors.New("Failed to find appropriate version of apiGroup autoscaling, only v2 and v2beta2 are supported")
 		}
 	}
 
-	return "", errors.New("Failed to find apiGroup autoscaling")
+	return AutoscalingVersionUnknown, errors.New("Failed to find apiGroup autoscaling")
+}
+
+func (v AutoscalingVersion) String() string {
+	switch v {
+	case AutoscalingVersionV2:
+		return "v2"
+	case AutoscalingVersionV2Beta2:
+		return "v2beta2"
+	case AutoscalingVersionUnknown:
+		return "unknown"
+	}
+	return "unknown"
+}
+
+func toAutoscalingVersion(version string) AutoscalingVersion {
+	switch version {
+	case "v2":
+		return AutoscalingVersionV2Beta2
+	case "v2beta2":
+		return AutoscalingVersionV2Beta2
+	}
+	return AutoscalingVersionUnknown
 }

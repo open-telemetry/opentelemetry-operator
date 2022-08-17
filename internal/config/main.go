@@ -30,9 +30,6 @@ const (
 	defaultAutoDetectFrequency           = 5 * time.Second
 	defaultCollectorConfigMapEntry       = "collector.yaml"
 	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
-	AutoscalingVersionV2                 = "v2"
-	AutoscalingVersionV2Beta2            = "v2beta2"
-	DefaultAutoscalingVersion            = AutoscalingVersionV2
 )
 
 // Config holds the static configuration for this operator.
@@ -48,11 +45,11 @@ type Config struct {
 	targetAllocatorConfigMapEntry  string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationJavaImage   string
-	autoscalingVersion             string
 	onChange                       []func() error
 	labelsFilter                   []string
 	platform                       platform.Platform
 	autoDetectFrequency            time.Duration
+	autoscalingVersion             autodetect.AutoscalingVersion
 }
 
 // New constructs a new configuration based on the given options.
@@ -65,7 +62,7 @@ func New(opts ...Option) Config {
 		logger:                        logf.Log.WithName("config"),
 		platform:                      platform.Unknown,
 		version:                       version.Get(),
-		autoscalingVersion:            DefaultAutoscalingVersion,
+		autoscalingVersion:            autodetect.DefaultAutoscalingVersion,
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -174,7 +171,7 @@ func (c *Config) Platform() platform.Platform {
 }
 
 // AutoscalingVersion represents the preferred version of autoscaling.
-func (c *Config) AutoscalingVersion() string {
+func (c *Config) AutoscalingVersion() autodetect.AutoscalingVersion {
 	return c.autoscalingVersion
 }
 

@@ -33,10 +33,10 @@ import (
 func TestHPA(t *testing.T) {
 	type test struct {
 		name               string
-		autoscalingVersion string
+		autoscalingVersion autodetect.AutoscalingVersion
 	}
-	v2Test := test{config.AutoscalingVersionV2, config.AutoscalingVersionV2}
-	v2beta2Test := test{config.AutoscalingVersionV2Beta2, config.AutoscalingVersionV2Beta2}
+	v2Test := test{autodetect.AutoscalingVersionV2.String(), autodetect.AutoscalingVersionV2}
+	v2beta2Test := test{autodetect.AutoscalingVersionV2Beta2.String(), autodetect.AutoscalingVersionV2Beta2}
 	tests := []test{v2Test, v2beta2Test}
 
 	var minReplicas int32 = 3
@@ -55,7 +55,7 @@ func TestHPA(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			mockAutoDetector := &mockAutoDetect{
-				HPAVersionFunc: func() (string, error) {
+				HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
 					return test.autoscalingVersion, nil
 				},
 			}
@@ -64,7 +64,7 @@ func TestHPA(t *testing.T) {
 			assert.NoError(t, err)
 			raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
 
-			if configuration.AutoscalingVersion() == config.AutoscalingVersionV2Beta2 {
+			if configuration.AutoscalingVersion() == autodetect.AutoscalingVersionV2Beta2 {
 				hpa := raw.(*autoscalingv2beta2.HorizontalPodAutoscaler)
 
 				// verify
@@ -95,10 +95,10 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	PlatformFunc   func() (platform.Platform, error)
-	HPAVersionFunc func() (string, error)
+	HPAVersionFunc func() (autodetect.AutoscalingVersion, error)
 }
 
-func (m *mockAutoDetect) HPAVersion() (string, error) {
+func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
 	return m.HPAVersionFunc()
 }
 

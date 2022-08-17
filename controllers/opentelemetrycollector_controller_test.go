@@ -43,8 +43,8 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 var mockAutoDetector = &mockAutoDetect{
-	HPAVersionFunc: func() (string, error) {
-		return config.AutoscalingVersionV2Beta2, nil
+	HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
+		return autodetect.AutoscalingVersionV2Beta2, nil
 	},
 }
 
@@ -353,10 +353,10 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	PlatformFunc   func() (platform.Platform, error)
-	HPAVersionFunc func() (string, error)
+	HPAVersionFunc func() (autodetect.AutoscalingVersion, error)
 }
 
-func (m *mockAutoDetect) HPAVersion() (string, error) {
+func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
 	return m.HPAVersionFunc()
 }
 

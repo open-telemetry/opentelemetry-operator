@@ -24,6 +24,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
@@ -46,7 +47,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		Annotations: annotations,
 	}
 
-	if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
+	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 		targetCPUUtilization := autoscalingv2beta2.MetricSpec{
 			Type: autoscalingv2beta2.ResourceMetricSourceType,
 			Resource: &autoscalingv2beta2.ResourceMetricSource{

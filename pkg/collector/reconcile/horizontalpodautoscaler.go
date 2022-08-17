@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
@@ -57,7 +57,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
 	autoscalingVersion := params.Config.AutoscalingVersion()
 	var existing client.Object
-	if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
+	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 		existing = &autoscalingv2beta2.HorizontalPodAutoscaler{}
 	} else {
 		existing = &autoscalingv2.HorizontalPodAutoscaler{}
@@ -109,10 +109,10 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 	return nil
 }
 
-func setAutoscalerSpec(params Params, autoscalingVersion string, updated client.Object) {
+func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object) {
 	one := int32(1)
 	if params.Instance.Spec.MaxReplicas != nil {
-		if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
+		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
 			if params.Instance.Spec.MinReplicas != nil {
 				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = params.Instance.Spec.MinReplicas
@@ -141,7 +141,7 @@ func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected
 		}),
 	}
 
-	if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
+	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 		list := &autoscalingv2beta2.HorizontalPodAutoscalerList{}
 		if err := params.Client.List(ctx, list, opts...); err != nil {
 			return fmt.Errorf("failed to list: %w", err)

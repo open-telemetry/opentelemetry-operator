@@ -88,3 +88,9 @@ func TestUnknownPlatformOnError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, platform.Unknown, plt)
 }
+
+func TestAutoscalingVersionToString(t *testing.T) {
+	assert.Equal(t, "v2", autodetect.AutoscalingVersionV2.String())
+	assert.Equal(t, "v2beta2", autodetect.AutoscalingVersionV2Beta2.String())
+	assert.Equal(t, "unknown", autodetect.AutoscalingVersionUnknown.String())
+}

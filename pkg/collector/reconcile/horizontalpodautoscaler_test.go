@@ -39,7 +39,7 @@ import (
 )
 
 func TestExpectedHPA(t *testing.T) {
-	params := paramsWithHPA(config.AutoscalingVersionV2Beta2)
+	params := paramsWithHPA(autodetect.AutoscalingVersionV2Beta2)
 	err := params.Config.AutoDetect()
 	assert.NoError(t, err)
 	autoscalingVersion := params.Config.AutoscalingVersion()
@@ -57,12 +57,12 @@ func TestExpectedHPA(t *testing.T) {
 	t.Run("should update HPA", func(t *testing.T) {
 		minReplicas := int32(1)
 		maxReplicas := int32(3)
-		updateParms := paramsWithHPA(config.AutoscalingVersionV2Beta2)
+		updateParms := paramsWithHPA(autodetect.AutoscalingVersionV2Beta2)
 		updateParms.Instance.Spec.Replicas = &minReplicas
 		updateParms.Instance.Spec.MaxReplicas = &maxReplicas
 		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
 
-		if autoscalingVersion == config.AutoscalingVersionV2Beta2 {
+		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 			updatedAutoscaler := *updatedHPA.(*autoscalingv2beta2.HorizontalPodAutoscaler)
 			createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
 			err := expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
@@ -101,7 +101,7 @@ func TestExpectedHPA(t *testing.T) {
 	})
 }
 
-func paramsWithHPA(autoscalingVersion string) Params {
+func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
 	configYAML, err := ioutil.ReadFile("../testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
@@ -111,7 +111,7 @@ func paramsWithHPA(autoscalingVersion string) Params {
 	maxReplicas := int32(5)
 
 	mockAutoDetector := &mockAutoDetect{
-		HPAVersionFunc: func() (string, error) {
+		HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
 			return autoscalingVersion, nil
 		},
 	}
@@ -159,10 +159,10 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	PlatformFunc   func() (platform.Platform, error)
-	HPAVersionFunc func() (string, error)
+	HPAVersionFunc func() (autodetect.AutoscalingVersion, error)
 }
 
-func (m *mockAutoDetect) HPAVersion() (string, error) {
+func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
 	return m.HPAVersionFunc()
 }
 

@@ -32,6 +32,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 )
 
@@ -188,7 +189,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.StatefulSet{})
 
-	if autoscalingVersion == config.AutoscalingVersionV2 {
+	if autoscalingVersion == autodetect.AutoscalingVersionV2 {
 		builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
 	} else {
 		builder = builder.Owns(&autoscalingv2beta2.HorizontalPodAutoscaler{})
