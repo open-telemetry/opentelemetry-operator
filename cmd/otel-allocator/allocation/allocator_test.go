@@ -55,7 +55,6 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 
 	// test that targets and collectors are added properly
 	s.SetWaitingTargets(targetList)
-	s.AllocateTargets()
 
 	// verify
 	expectedTargetLen := len(initTargets)
@@ -70,7 +69,6 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 
 	// test that less targets are found - removed
 	s.SetWaitingTargets(newTargetList)
-	s.AllocateTargets()
 
 	// verify
 	expectedNewTargetLen := len(tar)
@@ -104,7 +102,6 @@ func TestAllocationCollision(t *testing.T) {
 
 	// test that targets and collectors are added properly
 	s.SetWaitingTargets(targetList)
-	s.AllocateTargets()
 
 	// verify
 	expectedTargetLen := len(targetList)
@@ -134,7 +131,6 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
 	s.SetWaitingTargets(newTargetList)
-	s.AllocateTargets()
 
 	// Divisor needed to get 15%
 	divisor := 6.7
@@ -156,7 +152,6 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
 	s.SetWaitingTargets(newTargetList)
-	s.AllocateTargets()
 
 	count = len(s.TargetItems()) / len(s.collectors)
 	percent = float64(len(s.TargetItems())) / divisor
@@ -174,7 +169,6 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
 	s.SetWaitingTargets(newTargetList)
-	s.AllocateTargets()
 
 	count = len(s.TargetItems()) / len(s.collectors)
 	percent = float64(len(s.TargetItems())) / divisor

@@ -59,7 +59,7 @@ type collector struct {
 type Allocator struct {
 	m sync.Mutex
 
-	targetsWaiting map[string]TargetItem // temp buffer to keep targets that are waiting to be processed
+	//targetsWaiting map[string]TargetItem // temp buffer to keep targets that are waiting to be processed
 
 	collectors map[string]*collector // all current collectors
 
@@ -89,17 +89,63 @@ func (allocator *Allocator) findNextCollector() *collector {
 	return col
 }
 
+// allCollectorsPresent checks if all of the collectors provided are in the allocator's map
+func (allocator *Allocator) allCollectorsPresent(collectors []string) bool {
+	if len(collectors) != len(allocator.collectors) {
+		return false
+	}
+	for _, s := range collectors {
+		if _, ok := allocator.collectors[s]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // SetTargets accepts the a list of targets that will be used to make
 // load balancing decisions. This method should be called when where are
 // new targets discovered or existing targets are shutdown.
 func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
+	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("SetWaitingTargets"))
+	defer timer.ObserveDuration()
 	// Dump old data
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
-	allocator.targetsWaiting = make(map[string]TargetItem, len(targets))
-	// Set new data
-	for _, i := range targets {
-		allocator.targetsWaiting[i.hash()] = i
+
+	// Make the temp map for access
+	tempTargetMap := make(map[string]TargetItem, len(targets))
+	for _, target := range targets {
+		tempTargetMap[target.hash()] = target
+	}
+
+	// Check for removals
+	for k, target := range allocator.targetItems {
+		// if the old target is no longer in the new list, remove it
+		if _, ok := tempTargetMap[k]; !ok {
+			allocator.collectors[target.Collector.Name].NumTargets--
+			delete(allocator.targetItems, k)
+		}
+	}
+
+	// Check for additions
+	for k, target := range tempTargetMap {
+		// Do nothing if the item is already there
+		if _, ok := allocator.targetItems[k]; ok {
+			continue
+		} else {
+			// Assign a collector to the new target
+			col := allocator.findNextCollector()
+			targetItem := TargetItem{
+				JobName:   target.JobName,
+				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(target.JobName))},
+				TargetURL: target.TargetURL,
+				Label:     target.Label,
+				Collector: col,
+			}
+			col.NumTargets++
+			targetsPerCollector.WithLabelValues(col.Name).Set(float64(col.NumTargets))
+			allocator.targetItems[k] = &targetItem
+		}
 	}
 }
 
@@ -107,11 +153,16 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 // SetCollectors is called when Collectors are added or removed
 func (allocator *Allocator) SetCollectors(collectors []string) {
 	log := allocator.log.WithValues("component", "opentelemetry-targetallocator")
+	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("SetCollectors"))
+	defer timer.ObserveDuration()
 
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 	if len(collectors) == 0 {
 		log.Info("No collector instances present")
+		return
+	} else if allocator.allCollectorsPresent(collectors) {
+		log.Info("No changes to the collectors found")
 		return
 	}
 	for k := range allocator.collectors {
@@ -121,65 +172,19 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	for _, i := range collectors {
 		allocator.collectors[i] = &collector{Name: i, NumTargets: 0}
 	}
+	for k, _ := range allocator.targetItems {
+		chosenCollector := allocator.findNextCollector()
+		allocator.targetItems[k].Collector = chosenCollector
+		chosenCollector.NumTargets++
+		targetsPerCollector.WithLabelValues(chosenCollector.Name).Set(float64(chosenCollector.NumTargets))
+	}
 	collectorsAllocatable.Set(float64(len(collectors)))
-}
-
-// Reallocate needs to be called to process the new target updates.
-// Until Reallocate is called, old targets will be served.
-func (allocator *Allocator) AllocateTargets() {
-	allocator.m.Lock()
-	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("AllocateTargets"))
-	defer timer.ObserveDuration()
-	defer allocator.m.Unlock()
-	allocator.removeOutdatedTargets()
-	allocator.processWaitingTargets()
-}
-
-// ReallocateCollectors reallocates the targets among the new collector instances
-func (allocator *Allocator) ReallocateCollectors() {
-	allocator.m.Lock()
-	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("ReallocateCollectors"))
-	defer timer.ObserveDuration()
-	defer allocator.m.Unlock()
-	allocator.targetItems = make(map[string]*TargetItem)
-	allocator.processWaitingTargets()
-}
-
-// removeOutdatedTargets removes targets that are no longer available.
-func (allocator *Allocator) removeOutdatedTargets() {
-	for k := range allocator.targetItems {
-		if _, ok := allocator.targetsWaiting[k]; !ok {
-			allocator.collectors[allocator.targetItems[k].Collector.Name].NumTargets--
-			delete(allocator.targetItems, k)
-		}
-	}
-}
-
-// processWaitingTargets processes the newly set targets.
-func (allocator *Allocator) processWaitingTargets() {
-	for k, v := range allocator.targetsWaiting {
-		if _, ok := allocator.targetItems[k]; !ok {
-			col := allocator.findNextCollector()
-			allocator.targetItems[k] = &v
-			targetItem := TargetItem{
-				JobName:   v.JobName,
-				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(v.JobName))},
-				TargetURL: v.TargetURL,
-				Label:     v.Label,
-				Collector: col,
-			}
-			col.NumTargets++
-			targetsPerCollector.WithLabelValues(col.Name).Set(float64(col.NumTargets))
-			allocator.targetItems[v.hash()] = &targetItem
-		}
-	}
 }
 
 func NewAllocator(log logr.Logger) *Allocator {
 	return &Allocator{
-		log:            log,
-		targetsWaiting: make(map[string]TargetItem),
-		collectors:     make(map[string]*collector),
-		targetItems:    make(map[string]*TargetItem),
+		log:         log,
+		collectors:  make(map[string]*collector),
+		targetItems: make(map[string]*TargetItem),
 	}
 }
