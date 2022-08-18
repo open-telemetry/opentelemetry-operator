@@ -31,11 +31,12 @@ func TestSetCollectors(t *testing.T) {
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
 
-	excpectedColLen := len(cols)
-	assert.Len(t, s.collectors, excpectedColLen)
+	expectedColLen := len(cols)
+	collectors := s.Collectors()
+	assert.Len(t, collectors, expectedColLen)
 
 	for _, i := range cols {
-		assert.NotNil(t, s.collectors[i])
+		assert.NotNil(t, collectors[i])
 	}
 }
 
@@ -71,12 +72,13 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	s.SetWaitingTargets(newTargetList)
 
 	// verify
+	targetItems := s.TargetItems()
 	expectedNewTargetLen := len(tar)
-	assert.Len(t, s.TargetItems(), expectedNewTargetLen)
+	assert.Len(t, targetItems, expectedNewTargetLen)
 
 	// verify results map
 	for _, i := range tar {
-		_, ok := s.TargetItems()["sample-name"+i+labels.Fingerprint().String()]
+		_, ok := targetItems["sample-name"+i+labels.Fingerprint().String()]
 		assert.True(t, ok)
 	}
 }
@@ -104,12 +106,13 @@ func TestAllocationCollision(t *testing.T) {
 	s.SetWaitingTargets(targetList)
 
 	// verify
+	targetItems := s.TargetItems()
 	expectedTargetLen := len(targetList)
-	assert.Len(t, s.TargetItems(), expectedTargetLen)
+	assert.Len(t, targetItems, expectedTargetLen)
 
 	// verify results map
 	for _, i := range targetList {
-		_, ok := s.TargetItems()[i.hash()]
+		_, ok := targetItems[i.hash()]
 		assert.True(t, ok)
 	}
 }
@@ -170,11 +173,13 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	// Divisor needed to get 15%
 	divisor := 6.7
 
-	count := len(s.TargetItems()) / len(s.collectors)
-	percent := float64(len(s.TargetItems())) / divisor
+	targetItemLen := len(s.TargetItems())
+	collectors := s.Collectors()
+	count := targetItemLen / len(collectors)
+	percent := float64(targetItemLen) / divisor
 
 	// test
-	for _, i := range s.collectors {
+	for _, i := range collectors {
 		assert.InDelta(t, i.NumTargets, count, percent)
 	}
 
@@ -188,11 +193,13 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	}
 	s.SetWaitingTargets(newTargetList)
 
-	count = len(s.TargetItems()) / len(s.collectors)
-	percent = float64(len(s.TargetItems())) / divisor
+	targetItemLen = len(s.TargetItems())
+	collectors = s.Collectors()
+	count = targetItemLen / len(collectors)
+	percent = float64(targetItemLen) / divisor
 
 	// test
-	for _, i := range s.collectors {
+	for _, i := range collectors {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 	// adding targets at 'random'
@@ -205,11 +212,13 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	}
 	s.SetWaitingTargets(newTargetList)
 
-	count = len(s.TargetItems()) / len(s.collectors)
-	percent = float64(len(s.TargetItems())) / divisor
+	targetItemLen = len(s.TargetItems())
+	collectors = s.Collectors()
+	count = targetItemLen / len(collectors)
+	percent = float64(targetItemLen) / divisor
 
 	// test
-	for _, i := range s.collectors {
+	for _, i := range collectors {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 }

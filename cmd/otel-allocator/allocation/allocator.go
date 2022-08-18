@@ -27,7 +27,8 @@ var (
 )
 
 /*
-	Load balancer will serve on an HTTP server exposing /jobs/<job_id>/targets <- these are configured using least connection
+	Load balancer will serve on an HTTP server exposing /jobs/<job_id>/targets
+    The targets are allocated using the least connection method
 	Load balancer will need information about the collectors in order to set the URLs
 	Keep a Map of what each collector currently holds and update it based on new scrape target updates
 */
@@ -57,20 +58,39 @@ type collector struct {
 // Users need to call SetTargets when they have new targets in their
 // clusters and call SetCollectors when the collectors have changed.
 type Allocator struct {
-	m sync.Mutex
-
-	collectors map[string]*collector // all current collectors
-
+	// m protects targetsWaiting, collectors, and targetItems for concurrent use.
+	m           sync.RWMutex
+	collectors  map[string]*collector // all current collectors
 	targetItems map[string]*TargetItem
 
 	log logr.Logger
 }
 
+// TargetItems returns a shallow copy of the targetItems map.
 func (allocator *Allocator) TargetItems() map[string]*TargetItem {
-	return allocator.targetItems
+	allocator.m.RLock()
+	defer allocator.m.RUnlock()
+	targetItemsCopy := make(map[string]*TargetItem)
+	for k, v := range allocator.targetItems {
+		targetItemsCopy[k] = v
+	}
+	return targetItemsCopy
 }
 
-// findNextCollector finds the next collector with less number of targets.
+// Collectors returns a shallow copy of the collectors map.
+func (allocator *Allocator) Collectors() map[string]*collector {
+	allocator.m.RLock()
+	defer allocator.m.RUnlock()
+	collectorsCopy := make(map[string]*collector)
+	for k, v := range allocator.collectors {
+		collectorsCopy[k] = v
+	}
+	return collectorsCopy
+}
+
+// findNextCollector finds the next collector with fewer number of targets.
+// This method is called from within SetWaitingTargets and SetCollectors, whose caller
+// acquires the needed lock.
 func (allocator *Allocator) findNextCollector() *collector {
 	var col *collector
 	for _, v := range allocator.collectors {
@@ -87,7 +107,22 @@ func (allocator *Allocator) findNextCollector() *collector {
 	return col
 }
 
-// allCollectorsPresent checks if all of the collectors provided are in the allocator's map
+// assignTargetToNextCollector assigns a target to the next available collector
+func (allocator *Allocator) assignTargetToNextCollector(target *TargetItem) {
+	chosenCollector := allocator.findNextCollector()
+	targetItem := TargetItem{
+		JobName:   target.JobName,
+		Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(target.JobName))},
+		TargetURL: target.TargetURL,
+		Label:     target.Label,
+		Collector: chosenCollector,
+	}
+	allocator.targetItems[targetItem.hash()] = &targetItem
+	chosenCollector.NumTargets++
+	targetsPerCollector.WithLabelValues(chosenCollector.Name).Set(float64(chosenCollector.NumTargets))
+}
+
+// allCollectorsPresent checks if all the collectors provided are in the allocator's map
 func (allocator *Allocator) allCollectorsPresent(collectors []string) bool {
 	if len(collectors) != len(allocator.collectors) {
 		return false
@@ -100,8 +135,8 @@ func (allocator *Allocator) allCollectorsPresent(collectors []string) bool {
 	return true
 }
 
-// SetTargets accepts the a list of targets that will be used to make
-// load balancing decisions. This method should be called when where are
+// SetWaitingTargets accepts a list of targets that will be used to make
+// load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
 func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("SetWaitingTargets"))
@@ -132,23 +167,13 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 			continue
 		} else {
 			// Assign a collector to the new target
-			col := allocator.findNextCollector()
-			targetItem := TargetItem{
-				JobName:   target.JobName,
-				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(target.JobName))},
-				TargetURL: target.TargetURL,
-				Label:     target.Label,
-				Collector: col,
-			}
-			col.NumTargets++
-			targetsPerCollector.WithLabelValues(col.Name).Set(float64(col.NumTargets))
-			allocator.targetItems[k] = &targetItem
+			allocator.assignTargetToNextCollector(&target)
 		}
 	}
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
-// SetCollectors is called when Collectors are added or removed
+// This method is called when Collectors are added or removed.
 func (allocator *Allocator) SetCollectors(collectors []string) {
 	log := allocator.log.WithValues("component", "opentelemetry-targetallocator")
 	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("SetCollectors"))
@@ -163,19 +188,22 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 		log.Info("No changes to the collectors found")
 		return
 	}
+
+	// Clear existing collectors
 	for k := range allocator.collectors {
 		delete(allocator.collectors, k)
 	}
 
+	// Insert the new collectors
 	for _, i := range collectors {
 		allocator.collectors[i] = &collector{Name: i, NumTargets: 0}
 	}
-	for k, _ := range allocator.targetItems {
-		chosenCollector := allocator.findNextCollector()
-		allocator.targetItems[k].Collector = chosenCollector
-		chosenCollector.NumTargets++
-		targetsPerCollector.WithLabelValues(chosenCollector.Name).Set(float64(chosenCollector.NumTargets))
+
+	// Re-Allocate the existing targets
+	for _, item := range allocator.targetItems {
+		allocator.assignTargetToNextCollector(item)
 	}
+	
 	collectorsAllocatable.Set(float64(len(collectors)))
 }
 
