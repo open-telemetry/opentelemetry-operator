@@ -55,11 +55,9 @@ type collector struct {
 // Allocator makes decisions to distribute work among
 // a number of OpenTelemetry collectors based on the number of targets.
 // Users need to call SetTargets when they have new targets in their
-// clusters and call Reshard to process the new targets and reshard.
+// clusters and call SetCollectors when the collectors have changed.
 type Allocator struct {
 	m sync.Mutex
-
-	//targetsWaiting map[string]TargetItem // temp buffer to keep targets that are waiting to be processed
 
 	collectors map[string]*collector // all current collectors
 
