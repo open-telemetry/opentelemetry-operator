@@ -259,8 +259,7 @@ func createObjectIfNotExists(tb testing.TB, name string, object client.Object) {
 	tb.Helper()
 	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, object)
 	if errors.IsNotFound(err) {
-		err := k8sClient.Create(context.Background(),
-			object)
+		err := k8sClient.Create(context.Background(), object)
 		assert.NoError(tb, err)
 	}
 }
