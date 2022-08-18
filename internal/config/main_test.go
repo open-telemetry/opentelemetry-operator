@@ -102,6 +102,10 @@ type mockAutoDetect struct {
 	PlatformFunc func() (platform.Platform, error)
 }
 
+func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
+	return autodetect.DefaultAutoscalingVersion, nil
+}
+
 func (m *mockAutoDetect) Platform() (platform.Platform, error) {
 	if m.PlatformFunc != nil {
 		return m.PlatformFunc()
