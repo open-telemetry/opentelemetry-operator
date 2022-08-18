@@ -114,6 +114,41 @@ func TestAllocationCollision(t *testing.T) {
 	}
 }
 
+func TestNoCollectorReassignment(t *testing.T) {
+	s := NewAllocator(logger)
+
+	cols := []string{"col-1", "col-2", "col-3"}
+	s.SetCollectors(cols)
+	labels := model.LabelSet{}
+
+	excpectedColLen := len(cols)
+	assert.Len(t, s.collectors, excpectedColLen)
+
+	for _, i := range cols {
+		assert.NotNil(t, s.collectors[i])
+	}
+	initTargets := []string{"prometheus:1000", "prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005"}
+	var targetList []TargetItem
+	for _, i := range initTargets {
+		targetList = append(targetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
+	}
+	// test that targets and collectors are added properly
+	s.SetWaitingTargets(targetList)
+
+	// verify
+	expectedTargetLen := len(initTargets)
+	targetItems := s.TargetItems()
+	assert.Len(t, targetItems, expectedTargetLen)
+
+	// assign new set of collectors with the same names
+	newCols := []string{"col-1", "col-2", "col-3"}
+	s.SetCollectors(newCols)
+
+	newTargetItems := s.TargetItems()
+	assert.Equal(t, targetItems, newTargetItems)
+
+}
+
 // Tests that the delta in number of targets per collector is less than 15% of an even distribution
 func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 
