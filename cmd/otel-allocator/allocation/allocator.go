@@ -57,40 +57,39 @@ type collector struct {
 // Users need to call SetTargets when they have new targets in their
 // clusters and call Reshard to process the new targets and reshard.
 type Allocator struct {
-	m sync.Mutex
-
+	// m protects targetsWaiting, collectors, and targetItems for concurrent use.
+	m              sync.RWMutex
 	targetsWaiting map[string]TargetItem // temp buffer to keep targets that are waiting to be processed
-
-	collectors map[string]*collector // all current collectors
-
-	targetItems map[string]*TargetItem
+	collectors     map[string]*collector // all current collectors
+	targetItems    map[string]*TargetItem
 
 	log logr.Logger
 }
 
+// TargetItems returns a shallow copy of the targetItems map.
 func (allocator *Allocator) TargetItems() map[string]*TargetItem {
-	return allocator.targetItems
-}
-
-// findNextCollector finds the next collector with less number of targets.
-func (allocator *Allocator) findNextCollector() *collector {
-	var col *collector
-	for _, v := range allocator.collectors {
-		// If the initial collector is empty, set the initial collector to the first element of map
-		if col == nil {
-			col = v
-		} else {
-			if v.NumTargets < col.NumTargets {
-				col = v
-			}
-		}
-
+	allocator.m.RLock()
+	defer allocator.m.RUnlock()
+	targetItemsCopy := make(map[string]*TargetItem)
+	for k, v := range allocator.targetItems {
+		targetItemsCopy[k] = v
 	}
-	return col
+	return targetItemsCopy
 }
 
-// SetTargets accepts the a list of targets that will be used to make
-// load balancing decisions. This method should be called when where are
+// Collectors returns a shallow copy of the collectors map.
+func (allocator *Allocator) Collectors() map[string]*collector {
+	allocator.m.RLock()
+	defer allocator.m.RUnlock()
+	collectorsCopy := make(map[string]*collector)
+	for k, v := range allocator.collectors {
+		collectorsCopy[k] = v
+	}
+	return collectorsCopy
+}
+
+// SetWaitingTargets accepts a list of targets that will be used to make
+// load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
 func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	// Dump old data
@@ -104,7 +103,7 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
-// SetCollectors is called when Collectors are added or removed
+// This method is called when Collectors are added or removed.
 func (allocator *Allocator) SetCollectors(collectors []string) {
 	log := allocator.log.WithValues("component", "opentelemetry-targetallocator")
 
@@ -124,8 +123,9 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	collectorsAllocatable.Set(float64(len(collectors)))
 }
 
-// Reallocate needs to be called to process the new target updates.
-// Until Reallocate is called, old targets will be served.
+// AllocateTargets removes outdated targets and adds new ones from
+// waitingTargets. This method needs to be called to process the new target
+// updates. Until it is called, old targets will be served.
 func (allocator *Allocator) AllocateTargets() {
 	allocator.m.Lock()
 	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("AllocateTargets"))
@@ -135,7 +135,7 @@ func (allocator *Allocator) AllocateTargets() {
 	allocator.processWaitingTargets()
 }
 
-// ReallocateCollectors reallocates the targets among the new collector instances
+// ReallocateCollectors reallocates the targets among the new collector instances.
 func (allocator *Allocator) ReallocateCollectors() {
 	allocator.m.Lock()
 	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("ReallocateCollectors"))
@@ -145,7 +145,8 @@ func (allocator *Allocator) ReallocateCollectors() {
 	allocator.processWaitingTargets()
 }
 
-// removeOutdatedTargets removes targets that are no longer available.
+// removeOutdatedTargets removes targets that are no longer available. This
+// method is called after a lock has been acquired in ReallocateCollectors().
 func (allocator *Allocator) removeOutdatedTargets() {
 	for k := range allocator.targetItems {
 		if _, ok := allocator.targetsWaiting[k]; !ok {
@@ -155,7 +156,8 @@ func (allocator *Allocator) removeOutdatedTargets() {
 	}
 }
 
-// processWaitingTargets processes the newly set targets.
+// processWaitingTargets processes the newly set targets. This method is called
+// after a lock has been acquired in AllocateTargets() or ReallocateCollectors().
 func (allocator *Allocator) processWaitingTargets() {
 	for k, v := range allocator.targetsWaiting {
 		if _, ok := allocator.targetItems[k]; !ok {
@@ -173,6 +175,25 @@ func (allocator *Allocator) processWaitingTargets() {
 			allocator.targetItems[v.hash()] = &targetItem
 		}
 	}
+}
+
+// findNextCollector finds the next collector with fewer number of targets.
+// This method is called from within processWaitingTargets(), whose caller
+// acquires the needed lock.
+func (allocator *Allocator) findNextCollector() *collector {
+	var col *collector
+	for _, v := range allocator.collectors {
+		// If the initial collector is empty, set the initial collector to the first element of map
+		if col == nil {
+			col = v
+		} else {
+			if v.NumTargets < col.NumTargets {
+				col = v
+			}
+		}
+
+	}
+	return col
 }
 
 func NewAllocator(log logr.Logger) *Allocator {

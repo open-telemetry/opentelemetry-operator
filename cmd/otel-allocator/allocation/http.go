@@ -48,7 +48,7 @@ func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[strin
 	var tgs []targetGroupJSON
 	group := make(map[string]string)
 	labelSet := make(map[string]model.LabelSet)
-	for _, col := range allocator.collectors {
+	for _, col := range allocator.Collectors() {
 		if col.Name == collector {
 			for _, targetItemArr := range cMap {
 				for _, targetItem := range targetItemArr {
