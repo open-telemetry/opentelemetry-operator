@@ -40,6 +40,10 @@ type TargetItem struct {
 	Collector *collector
 }
 
+func (t TargetItem) hash() string {
+	return t.JobName + t.TargetURL + t.Label.Fingerprint().String()
+}
+
 // Create a struct that holds collector - and jobs for that collector
 // This struct will be parsed into endpoint with collector and jobs info
 
@@ -59,9 +63,13 @@ type Allocator struct {
 
 	collectors map[string]*collector // all current collectors
 
-	TargetItems map[string]*TargetItem
+	targetItems map[string]*TargetItem
 
 	log logr.Logger
+}
+
+func (allocator *Allocator) TargetItems() map[string]*TargetItem {
+	return allocator.targetItems
 }
 
 // findNextCollector finds the next collector with less number of targets.
@@ -91,7 +99,7 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 	allocator.targetsWaiting = make(map[string]TargetItem, len(targets))
 	// Set new data
 	for _, i := range targets {
-		allocator.targetsWaiting[i.JobName+i.TargetURL] = i
+		allocator.targetsWaiting[i.hash()] = i
 	}
 }
 
@@ -133,16 +141,16 @@ func (allocator *Allocator) ReallocateCollectors() {
 	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("ReallocateCollectors"))
 	defer timer.ObserveDuration()
 	defer allocator.m.Unlock()
-	allocator.TargetItems = make(map[string]*TargetItem)
+	allocator.targetItems = make(map[string]*TargetItem)
 	allocator.processWaitingTargets()
 }
 
 // removeOutdatedTargets removes targets that are no longer available.
 func (allocator *Allocator) removeOutdatedTargets() {
-	for k := range allocator.TargetItems {
+	for k := range allocator.targetItems {
 		if _, ok := allocator.targetsWaiting[k]; !ok {
-			allocator.collectors[allocator.TargetItems[k].Collector.Name].NumTargets--
-			delete(allocator.TargetItems, k)
+			allocator.collectors[allocator.targetItems[k].Collector.Name].NumTargets--
+			delete(allocator.targetItems, k)
 		}
 	}
 }
@@ -150,9 +158,9 @@ func (allocator *Allocator) removeOutdatedTargets() {
 // processWaitingTargets processes the newly set targets.
 func (allocator *Allocator) processWaitingTargets() {
 	for k, v := range allocator.targetsWaiting {
-		if _, ok := allocator.TargetItems[k]; !ok {
+		if _, ok := allocator.targetItems[k]; !ok {
 			col := allocator.findNextCollector()
-			allocator.TargetItems[k] = &v
+			allocator.targetItems[k] = &v
 			targetItem := TargetItem{
 				JobName:   v.JobName,
 				Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(v.JobName))},
@@ -162,7 +170,7 @@ func (allocator *Allocator) processWaitingTargets() {
 			}
 			col.NumTargets++
 			targetsPerCollector.WithLabelValues(col.Name).Set(float64(col.NumTargets))
-			allocator.TargetItems[v.JobName+v.TargetURL] = &targetItem
+			allocator.targetItems[v.hash()] = &targetItem
 		}
 	}
 }
@@ -172,6 +180,6 @@ func NewAllocator(log logr.Logger) *Allocator {
 		log:            log,
 		targetsWaiting: make(map[string]TargetItem),
 		collectors:     make(map[string]*collector),
-		TargetItems:    make(map[string]*TargetItem),
+		targetItems:    make(map[string]*TargetItem),
 	}
 }
