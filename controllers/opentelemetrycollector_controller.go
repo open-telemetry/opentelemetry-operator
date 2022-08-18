@@ -21,7 +21,8 @@ import (
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,6 +32,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 )
 
@@ -173,14 +175,25 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	err := r.config.AutoDetect() // We need to call this so we can get the correct autodetect version
+	if err != nil {
+		return err
+	}
+	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&autoscalingv1.HorizontalPodAutoscaler{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{}).
-		Complete(r)
+		Owns(&appsv1.StatefulSet{})
+
+	autoscalingVersion := r.config.AutoscalingVersion()
+	if autoscalingVersion == autodetect.AutoscalingVersionV2 {
+		builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
+	} else {
+		builder = builder.Owns(&autoscalingv2beta2.HorizontalPodAutoscaler{})
+	}
+
+	return builder.Complete(r)
 }
