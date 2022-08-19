@@ -23,7 +23,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 
-	corev1 "k8s.io/api/core/v1"
 )
 
 func upgrade0_57_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
@@ -37,7 +36,7 @@ func upgrade0_57_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.57.2, failed to parse configuration: %w", err)
 	}
 
-	//Remove externsions.healthcheckextension - Remove deprecated port field from config. (#12668)
+	//Remove deprecated port field from config. (https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/10853)
 	extensionsConfig, ok := otelCfg["extensions"].(map[interface{}]interface{})
 	if !ok {
 		// In case there is no health check config.
@@ -60,10 +59,7 @@ func upgrade0_57_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 					}
 
 					otelcol.Spec.Config = string(res)
-					//trings.ReplaceAll(string(res), " null", "")
-					existing := &corev1.ConfigMap{}
-					updated := existing.DeepCopy()
-					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.57.2 has deprecated port for healthcheck extension %q", keyExt))
+					u.Recorder.Event(otelcol, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.57.2 has deprecated port for healthcheck extension %q", keyExt))
 				}
 			default:
 				return otelcol, fmt.Errorf("couldn't upgrade to v0.57.2, the extension %q is invalid (expected string or map but was %t)", keyExt, valExt)
