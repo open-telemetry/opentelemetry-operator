@@ -108,8 +108,8 @@ func (allocator *Allocator) findNextCollector() *collector {
 }
 
 // addTargetToTargetItems assigns a target to the next available collector and adds it to the allocator's targetItems
-// This method is called from within SetTargets and SetCollectors, whose caller
-// acquires the needed lock.
+// This method is called from within SetTargets and SetCollectors, whose caller acquires the needed lock.
+// This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap
 func (allocator *Allocator) addTargetToTargetItems(target *TargetItem) {
 	chosenCollector := allocator.findNextCollector()
 	targetItem := TargetItem{
@@ -204,6 +204,7 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	// Clear existing collectors
 	for _, k := range removedCollectors {
 		delete(allocator.collectors, k)
+		targetsPerCollector.WithLabelValues(k).Set(0)
 	}
 	// Insert the new collectors
 	for _, i := range newCollectors {
