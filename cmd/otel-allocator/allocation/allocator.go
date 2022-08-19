@@ -89,7 +89,7 @@ func (allocator *Allocator) Collectors() map[string]*collector {
 }
 
 // findNextCollector finds the next collector with fewer number of targets.
-// This method is called from within SetWaitingTargets and SetCollectors, whose caller
+// This method is called from within SetTargets and SetCollectors, whose caller
 // acquires the needed lock.
 func (allocator *Allocator) findNextCollector() *collector {
 	var col *collector
@@ -107,8 +107,10 @@ func (allocator *Allocator) findNextCollector() *collector {
 	return col
 }
 
-// assignTargetToNextCollector assigns a target to the next available collector
-func (allocator *Allocator) assignTargetToNextCollector(target *TargetItem) {
+// addTargetToTargetItems assigns a target to the next available collector and adds it to the allocator's targetItems
+// This method is called from within SetTargets and SetCollectors, whose caller
+// acquires the needed lock.
+func (allocator *Allocator) addTargetToTargetItems(target *TargetItem) {
 	chosenCollector := allocator.findNextCollector()
 	targetItem := TargetItem{
 		JobName:   target.JobName,
@@ -122,26 +124,34 @@ func (allocator *Allocator) assignTargetToNextCollector(target *TargetItem) {
 	targetsPerCollector.WithLabelValues(chosenCollector.Name).Set(float64(chosenCollector.NumTargets))
 }
 
-// allCollectorsPresent checks if all the collectors provided are in the allocator's map
-func (allocator *Allocator) allCollectorsPresent(collectors []string) bool {
-	if len(collectors) != len(allocator.collectors) {
-		return false
-	}
+// getCollectorChanges returns the new and removed collectors respectively.
+// This method is called from within SetCollectors, which acquires the needed lock.
+func (allocator *Allocator) getCollectorChanges(collectors []string) ([]string, []string) {
+	var newCollectors []string
+	var removedCollectors []string
+	// Used as a set to check for removed collectors
+	tempCollectorMap := map[string]bool{}
 	for _, s := range collectors {
-		if _, ok := allocator.collectors[s]; !ok {
-			return false
+		if _, found := allocator.collectors[s]; !found {
+			newCollectors = append(newCollectors, s)
+		}
+		tempCollectorMap[s] = true
+	}
+	for k := range allocator.collectors {
+		if _, found := tempCollectorMap[k]; !found {
+			removedCollectors = append(removedCollectors, k)
 		}
 	}
-	return true
+	return newCollectors, removedCollectors
 }
 
-// SetWaitingTargets accepts a list of targets that will be used to make
+// SetTargets accepts a list of targets that will be used to make
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
-func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
-	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("SetWaitingTargets"))
+func (allocator *Allocator) SetTargets(targets []TargetItem) {
+	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("SetTargets"))
 	defer timer.ObserveDuration()
-	// Dump old data
+
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 
@@ -157,6 +167,7 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 		if _, ok := tempTargetMap[k]; !ok {
 			allocator.collectors[target.Collector.Name].NumTargets--
 			delete(allocator.targetItems, k)
+			targetsPerCollector.WithLabelValues(target.Collector.Name).Set(float64(allocator.collectors[target.Collector.Name].NumTargets))
 		}
 	}
 
@@ -167,7 +178,7 @@ func (allocator *Allocator) SetWaitingTargets(targets []TargetItem) {
 			continue
 		} else {
 			// Assign a collector to the new target
-			allocator.assignTargetToNextCollector(&target)
+			allocator.addTargetToTargetItems(&target)
 		}
 	}
 }
@@ -181,27 +192,36 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
+	newCollectors, removedCollectors := allocator.getCollectorChanges(collectors)
 	if len(collectors) == 0 {
 		log.Info("No collector instances present")
 		return
-	} else if allocator.allCollectorsPresent(collectors) {
+	} else if len(newCollectors) == 0 && len(removedCollectors) == 0 {
 		log.Info("No changes to the collectors found")
 		return
 	}
 
 	// Clear existing collectors
-	for k := range allocator.collectors {
+	for _, k := range removedCollectors {
 		delete(allocator.collectors, k)
 	}
-
 	// Insert the new collectors
-	for _, i := range collectors {
+	for _, i := range newCollectors {
 		allocator.collectors[i] = &collector{Name: i, NumTargets: 0}
 	}
 
-	// Re-Allocate the existing targets
+	// find targets which need to be redistributed
+	var redistribute []*TargetItem
 	for _, item := range allocator.targetItems {
-		allocator.assignTargetToNextCollector(item)
+		for _, s := range removedCollectors {
+			if item.Collector.Name == s {
+				redistribute = append(redistribute, item)
+			}
+		}
+	}
+	// Re-Allocate the existing targets
+	for _, item := range redistribute {
+		allocator.addTargetToTargetItems(item)
 	}
 
 	collectorsAllocatable.Set(float64(len(collectors)))

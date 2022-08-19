@@ -58,7 +58,7 @@ func main() {
 	// creates a new discovery manager
 	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger())
 	defer discoveryManager.Close()
-	discoveryManager.Watch(allocator.SetWaitingTargets)
+	discoveryManager.Watch(allocator.SetTargets)
 
 	srv, err := newServer(log, allocator, discoveryManager, cliConf)
 	if err != nil {

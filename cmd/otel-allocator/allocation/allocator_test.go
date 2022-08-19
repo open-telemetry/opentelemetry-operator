@@ -11,7 +11,7 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
-// Tests least connection - The expected collector after running findNextCollector should be the collector with the least amount of workload
+// Tests the least connection - The expected collector after running findNextCollector should be the collector with the least amount of workload
 func TestFindNextCollector(t *testing.T) {
 	s := NewAllocator(logger)
 
@@ -55,7 +55,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	}
 
 	// test that targets and collectors are added properly
-	s.SetWaitingTargets(targetList)
+	s.SetTargets(targetList)
 
 	// verify
 	expectedTargetLen := len(initTargets)
@@ -68,8 +68,8 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
 	}
 
-	// test that less targets are found - removed
-	s.SetWaitingTargets(newTargetList)
+	// test that fewer targets are found - removed
+	s.SetTargets(newTargetList)
 
 	// verify
 	targetItems := s.TargetItems()
@@ -98,12 +98,12 @@ func TestAllocationCollision(t *testing.T) {
 	}
 
 	targetList := []TargetItem{
-		TargetItem{JobName: "sample-name", TargetURL: "0.0.0.0:8000", Label: firstLabels},
-		TargetItem{JobName: "sample-name", TargetURL: "0.0.0.0:8000", Label: secondLabels},
+		{JobName: "sample-name", TargetURL: "0.0.0.0:8000", Label: firstLabels},
+		{JobName: "sample-name", TargetURL: "0.0.0.0:8000", Label: secondLabels},
 	}
 
 	// test that targets and collectors are added properly
-	s.SetWaitingTargets(targetList)
+	s.SetTargets(targetList)
 
 	// verify
 	targetItems := s.TargetItems()
@@ -124,8 +124,8 @@ func TestNoCollectorReassignment(t *testing.T) {
 	s.SetCollectors(cols)
 	labels := model.LabelSet{}
 
-	excpectedColLen := len(cols)
-	assert.Len(t, s.collectors, excpectedColLen)
+	expectedColLen := len(cols)
+	assert.Len(t, s.collectors, expectedColLen)
 
 	for _, i := range cols {
 		assert.NotNil(t, s.collectors[i])
@@ -136,7 +136,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 		targetList = append(targetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
 	}
 	// test that targets and collectors are added properly
-	s.SetWaitingTargets(targetList)
+	s.SetTargets(targetList)
 
 	// verify
 	expectedTargetLen := len(initTargets)
@@ -150,6 +150,49 @@ func TestNoCollectorReassignment(t *testing.T) {
 	newTargetItems := s.TargetItems()
 	assert.Equal(t, targetItems, newTargetItems)
 
+}
+
+func TestSmartCollectorReassignment(t *testing.T) {
+	s := NewAllocator(logger)
+
+	cols := []string{"col-1", "col-2", "col-3"}
+	s.SetCollectors(cols)
+	labels := model.LabelSet{}
+
+	expectedColLen := len(cols)
+	assert.Len(t, s.collectors, expectedColLen)
+
+	for _, i := range cols {
+		assert.NotNil(t, s.collectors[i])
+	}
+	initTargets := []string{"prometheus:1000", "prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005"}
+	var targetList []TargetItem
+	for _, i := range initTargets {
+		targetList = append(targetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
+	}
+	// test that targets and collectors are added properly
+	s.SetTargets(targetList)
+
+	// verify
+	expectedTargetLen := len(initTargets)
+	targetItems := s.TargetItems()
+	assert.Len(t, targetItems, expectedTargetLen)
+
+	// assign new set of collectors with the same names
+	newCols := []string{"col-1", "col-2", "col-4"}
+	s.SetCollectors(newCols)
+
+	newTargetItems := s.TargetItems()
+	assert.Equal(t, len(targetItems), len(newTargetItems))
+	for key, targetItem := range targetItems {
+		item, ok := newTargetItems[key]
+		assert.True(t, ok, "all target items should be found in new target item list")
+		if targetItem.Collector.Name != "col-3" {
+			assert.Equal(t, targetItem.Collector.Name, item.Collector.Name)
+		} else {
+			assert.Equal(t, "col-4", item.Collector.Name)
+		}
+	}
 }
 
 // Tests that the delta in number of targets per collector is less than 15% of an even distribution
@@ -168,7 +211,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	for _, i := range targets {
 		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
-	s.SetWaitingTargets(newTargetList)
+	s.SetTargets(newTargetList)
 
 	// Divisor needed to get 15%
 	divisor := 6.7
@@ -191,7 +234,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	for _, i := range targets {
 		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
-	s.SetWaitingTargets(newTargetList)
+	s.SetTargets(newTargetList)
 
 	targetItemLen = len(s.TargetItems())
 	collectors = s.Collectors()
@@ -210,7 +253,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	for _, i := range targets {
 		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
 	}
-	s.SetWaitingTargets(newTargetList)
+	s.SetTargets(newTargetList)
 
 	targetItemLen = len(s.TargetItems())
 	collectors = s.Collectors()
