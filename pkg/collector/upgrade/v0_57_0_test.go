@@ -34,21 +34,25 @@ func Test0_57_0Upgrade(t *testing.T) {
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-instance",
+			Name:      "otel-my-instance",
 			Namespace: "somewhere",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: `extensions:
-health_check:
-health_check/1:
-  endpoint: "localhost"
-  port: "4444"
-  check_collector_pipeline:
-    enabled: false
-    interval: "5m"
-    exporter_failure_threshold: 5
+			Config: `receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: mysite.local:55690
+extensions:
+  health_check:
+    endpoint: "localhost"
+    port: "4444"
+    check_collector_pipeline:
+      enabled: false
+      exporter_failure_threshold: 5
+      interval: 5m
 service:
-  extensions: [health_check/1]
+  extensions: [health_check]
   pipelines:
     metrics:
       receivers: [otlp]
@@ -69,18 +73,25 @@ service:
 	upgradedInstance, err := versionUpgrade.ManagedInstance(context.Background(), collectorInstance)
 	assert.NoError(t, err)
 	assert.Equal(t, `extensions:
-health_check:
-health_check/1:
-  endpoint: "localhost:4444"
-  check_collector_pipeline:
-    enabled: false
-    interval: "5m"
-    exporter_failure_threshold: 5
+  health_check:
+    check_collector_pipeline:
+      enabled: false
+      exporter_failure_threshold: 5
+      interval: 5m
+    endpoint: localhost:4444
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: mysite.local:55690
 service:
-  extensions: [health_check/1]
+  extensions:
+  - health_check
   pipelines:
     metrics:
-      receivers: [otlp]
-      exporters: [nop]
+      exporters:
+      - nop
+      receivers:
+      - otlp
 `, upgradedInstance.Spec.Config)
 }

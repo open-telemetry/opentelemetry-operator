@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 
@@ -26,13 +28,17 @@ import (
 
 func upgrade0_57_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 
-	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	if len(otelcol.Spec.Config) == 0 {
+		return otelcol, nil
+	}
+
+	otelCfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.57.2, failed to parse configuration: %w", err)
 	}
 
 	//Remove externsions.healthcheckextension - Remove deprecated port field from config. (#12668)
-	extensionsConfig, ok := cfg["extensions"].(map[interface{}]interface{})
+	extensionsConfig, ok := otelCfg["extensions"].(map[interface{}]interface{})
 	if !ok {
 		// In case there is no health check config.
 		return otelcol, nil
@@ -44,8 +50,17 @@ func upgrade0_57_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 			case map[interface{}]interface{}:
 				if port, ok := extensions["port"]; ok {
 					endpointV := extensions["endpoint"]
-					extensions["endpoint"] = fmt.Sprintf("%s:%d", endpointV, port)
+					extensions["endpoint"] = fmt.Sprintf("%s:%s", endpointV, port)
 					delete(extensions, "port")
+
+					otelCfg["extensions"] = extensionsConfig
+					res, err := yaml.Marshal(otelCfg)
+					if err != nil {
+						return otelcol, fmt.Errorf("couldn't upgrade to v0.57.2, failed to marshall back configuration: %w", err)
+					}
+
+					otelcol.Spec.Config = string(res)
+					//trings.ReplaceAll(string(res), " null", "")
 					existing := &corev1.ConfigMap{}
 					updated := existing.DeepCopy()
 					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.57.2 has deprecated port for healthcheck extension %q", keyExt))
