@@ -28,8 +28,7 @@ func errorNotAMap(component string) error {
 	return fmt.Errorf("%s property in the configuration doesn't contain valid %s", component, component)
 }
 
-// ConfigToPromConfig converts the incoming configuration object into a the Prometheus receiver config.
-func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
+func configToPromReceiverConfig(cfg string) (map[interface{}]interface{}, error) {
 	config, err := adapters.ConfigFromString(cfg)
 	if err != nil {
 		return nil, err
@@ -54,6 +53,15 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 	if !ok {
 		return nil, errorNotAMap("prometheus")
 	}
+	return prometheus, nil
+}
+
+// ConfigToPromConfig converts the incoming configuration object into a the Prometheus receiver config.
+func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
+	prometheus, err := configToPromReceiverConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
@@ -66,4 +74,23 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 	}
 
 	return prometheusConfig, nil
+}
+
+// ConfigToCollectorTAConfig converts the incoming configuration object into the allocator client config.
+func ConfigToCollectorTAConfig(cfg string) (map[interface{}]interface{}, error) {
+	prometheus, err := configToPromReceiverConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	targetAllocatorProperty, ok := prometheus["target_allocator"]
+	if !ok {
+		return nil, nil // this is expected if the user does not configure any target_allocator configs
+	}
+	targetAllocatorCfg, ok := targetAllocatorProperty.(map[interface{}]interface{})
+	if !ok {
+		return nil, errorNotAMap("target_allocator")
+	}
+
+	return targetAllocatorCfg, nil
 }
