@@ -1,6 +1,22 @@
 Changes by Version
 ==================
 
+0.57.2
+-------------------
+### 🚀 New components 🚀
+* Support DotNet auto-instrumentation ([#976](https://github.com/open-telemetry/opentelemetry-operator/pull/976), [@avadhut123pisal](https://github.com/avadhut123pisal))
+* Enable instrumentation injecting only core SDK config ([#1000](https://github.com/open-telemetry/opentelemetry-operator/pull/1000), [@bilbof](https://github.com/bilbof))
+### 💡 Enhancements 💡
+* chore(nodejs): update versions.txt to 0.31.0 ([#1015](https://github.com/open-telemetry/opentelemetry-operator/pull/1015), [@mat-rumian](https://github.com/mat-rumian))
+* chore(nodejs): update to 0.31.0 ([#955](https://github.com/open-telemetry/opentelemetry-operator/pull/955), [@mat-rumian](https://github.com/mat-rumian))
+* chore(operator): update python inst to 0.32b0 ([#1012](https://github.com/open-telemetry/opentelemetry-operator/pull/1012), [@ianmcnally](https://github.com/ianmcnally))
+* Sort order of ports returned to fix flaky tests ([#1003](https://github.com/open-telemetry/opentelemetry-operator/pull/1003), [@kevinearls](https://github.com/kevinearls))
+### 🧰 Bug fixes 🧰
+* Fix the issue that target-level metadata labels were missing (#948) ([#949](https://github.com/open-telemetry/opentelemetry-operator/pull/949), [@CoderPoet](https://github.com/CoderPoet))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.57.2](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.57.2)
+* [OpenTelemetry Contrib - v0.57.2](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.57.2)
+
 0.56.0
 -------------------
 ### 💡 Enhancements 💡
