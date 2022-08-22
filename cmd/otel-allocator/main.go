@@ -58,10 +58,7 @@ func main() {
 	// creates a new discovery manager
 	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger())
 	defer discoveryManager.Close()
-	discoveryManager.Watch(func(targets []allocation.TargetItem) {
-		allocator.SetWaitingTargets(targets)
-		allocator.AllocateTargets()
-	})
+	discoveryManager.Watch(allocator.SetTargets)
 
 	srv, err := newServer(log, allocator, discoveryManager, cliConf)
 	if err != nil {
@@ -165,10 +162,7 @@ func configureFileDiscovery(log logr.Logger, allocator *allocation.Allocator, di
 		return nil, err
 	}
 
-	k8sClient.Watch(ctx, cfg.LabelSelector, func(collectors []string) {
-		allocator.SetCollectors(collectors)
-		allocator.ReallocateCollectors()
-	})
+	k8sClient.Watch(ctx, cfg.LabelSelector, allocator.SetCollectors)
 	return k8sClient, nil
 }
 
