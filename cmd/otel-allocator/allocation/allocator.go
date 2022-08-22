@@ -188,6 +188,8 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	log := allocator.log.WithValues("component", "opentelemetry-targetallocator")
 	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("SetCollectors"))
 	defer timer.ObserveDuration()
+
+	collectorsAllocatable.Set(float64(len(collectors)))
 	if len(collectors) == 0 {
 		log.Info("No collector instances present")
 		return
@@ -224,8 +226,6 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	for _, item := range redistribute {
 		allocator.addTargetToTargetItems(item)
 	}
-
-	collectorsAllocatable.Set(float64(len(collectors)))
 }
 
 func NewAllocator(log logr.Logger) *Allocator {
