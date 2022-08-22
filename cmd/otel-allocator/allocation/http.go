@@ -23,7 +23,7 @@ type targetGroupJSON struct {
 
 func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator *Allocator) map[string]collectorJSON {
 	displayData := make(map[string]collectorJSON)
-	for _, j := range allocator.TargetItems {
+	for _, j := range allocator.TargetItems() {
 		if j.JobName == job {
 			var targetList []TargetItem
 			targetList = append(targetList, cMap[j.Collector.Name+j.JobName]...)
@@ -48,11 +48,11 @@ func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[strin
 	var tgs []targetGroupJSON
 	group := make(map[string]string)
 	labelSet := make(map[string]model.LabelSet)
-	for _, col := range allocator.collectors {
+	for _, col := range allocator.Collectors() {
 		if col.Name == collector {
 			for _, targetItemArr := range cMap {
 				for _, targetItem := range targetItemArr {
-					if targetItem.Collector.Name == collector && targetItem.JobName == job  {
+					if targetItem.Collector.Name == collector && targetItem.JobName == job {
 						group[targetItem.Label.String()] = targetItem.TargetURL
 						labelSet[targetItem.TargetURL] = targetItem.Label
 					}

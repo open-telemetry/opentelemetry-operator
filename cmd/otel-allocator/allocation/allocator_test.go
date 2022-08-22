@@ -31,11 +31,12 @@ func TestSetCollectors(t *testing.T) {
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
 
-	excpectedColLen := len(cols)
-	assert.Len(t, s.collectors, excpectedColLen)
+	expectedColLen := len(cols)
+	collectors := s.Collectors()
+	assert.Len(t, collectors, expectedColLen)
 
 	for _, i := range cols {
-		assert.NotNil(t, s.collectors[i])
+		assert.NotNil(t, collectors[i])
 	}
 }
 
@@ -45,11 +46,12 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
+	labels := model.LabelSet{}
 
 	initTargets := []string{"prometheus:1000", "prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005"}
 	var targetList []TargetItem
 	for _, i := range initTargets {
-		targetList = append(targetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
+		targetList = append(targetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
 	}
 
 	// test that targets and collectors are added properly
@@ -58,13 +60,13 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 
 	// verify
 	expectedTargetLen := len(initTargets)
-	assert.Len(t, s.TargetItems, expectedTargetLen)
+	assert.Len(t, s.TargetItems(), expectedTargetLen)
 
 	// prepare second round of targets
 	tar := []string{"prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004"}
 	var newTargetList []TargetItem
 	for _, i := range tar {
-		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
+		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
 	}
 
 	// test that less targets are found - removed
@@ -72,12 +74,48 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	s.AllocateTargets()
 
 	// verify
+	targetItems := s.TargetItems()
 	expectedNewTargetLen := len(tar)
-	assert.Len(t, s.TargetItems, expectedNewTargetLen)
+	assert.Len(t, targetItems, expectedNewTargetLen)
 
 	// verify results map
 	for _, i := range tar {
-		_, ok := s.TargetItems["sample-name"+i]
+		_, ok := targetItems["sample-name"+i+labels.Fingerprint().String()]
+		assert.True(t, ok)
+	}
+}
+
+// Tests that two targets with the same target url and job name but different label set are both added
+func TestAllocationCollision(t *testing.T) {
+	// prepare allocator with initial targets and collectors
+	s := NewAllocator(logger)
+
+	cols := []string{"col-1", "col-2", "col-3"}
+	s.SetCollectors(cols)
+	firstLabels := model.LabelSet{
+		"test": "test1",
+	}
+	secondLabels := model.LabelSet{
+		"test": "test2",
+	}
+
+	targetList := []TargetItem{
+		TargetItem{JobName: "sample-name", TargetURL: "0.0.0.0:8000", Label: firstLabels},
+		TargetItem{JobName: "sample-name", TargetURL: "0.0.0.0:8000", Label: secondLabels},
+	}
+
+	// test that targets and collectors are added properly
+	s.SetWaitingTargets(targetList)
+	s.AllocateTargets()
+
+	// verify
+	targetItems := s.TargetItems()
+	expectedTargetLen := len(targetList)
+	assert.Len(t, targetItems, expectedTargetLen)
+
+	// verify results map
+	for _, i := range targetList {
+		_, ok := targetItems[i.hash()]
 		assert.True(t, ok)
 	}
 }
@@ -104,11 +142,13 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	// Divisor needed to get 15%
 	divisor := 6.7
 
-	count := len(s.TargetItems) / len(s.collectors)
-	percent := float64(len(s.TargetItems)) / divisor
+	targetItemLen := len(s.TargetItems())
+	collectors := s.Collectors()
+	count := targetItemLen / len(collectors)
+	percent := float64(targetItemLen) / divisor
 
 	// test
-	for _, i := range s.collectors {
+	for _, i := range collectors {
 		assert.InDelta(t, i.NumTargets, count, percent)
 	}
 
@@ -123,11 +163,13 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	s.SetWaitingTargets(newTargetList)
 	s.AllocateTargets()
 
-	count = len(s.TargetItems) / len(s.collectors)
-	percent = float64(len(s.TargetItems)) / divisor
+	targetItemLen = len(s.TargetItems())
+	collectors = s.Collectors()
+	count = targetItemLen / len(collectors)
+	percent = float64(targetItemLen) / divisor
 
 	// test
-	for _, i := range s.collectors {
+	for _, i := range collectors {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 	// adding targets at 'random'
@@ -141,11 +183,13 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	s.SetWaitingTargets(newTargetList)
 	s.AllocateTargets()
 
-	count = len(s.TargetItems) / len(s.collectors)
-	percent = float64(len(s.TargetItems)) / divisor
+	targetItemLen = len(s.TargetItems())
+	collectors = s.Collectors()
+	count = targetItemLen / len(collectors)
+	percent = float64(targetItemLen) / divisor
 
 	// test
-	for _, i := range s.collectors {
+	for _, i := range collectors {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 }
