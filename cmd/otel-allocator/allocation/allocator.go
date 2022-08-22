@@ -58,7 +58,7 @@ type collector struct {
 // Users need to call SetTargets when they have new targets in their
 // clusters and call SetCollectors when the collectors have changed.
 type Allocator struct {
-	// m protects targetsWaiting, collectors, and targetItems for concurrent use.
+	// m protects collectors and targetItems for concurrent use.
 	m           sync.RWMutex
 	collectors  map[string]*collector // all current collectors
 	targetItems map[string]*TargetItem
@@ -102,7 +102,6 @@ func (allocator *Allocator) findNextCollector() *collector {
 				col = v
 			}
 		}
-
 	}
 	return col
 }
@@ -177,7 +176,7 @@ func (allocator *Allocator) SetTargets(targets []TargetItem) {
 		if _, ok := allocator.targetItems[k]; ok {
 			continue
 		} else {
-			// Assign a collector to the new target
+			// Assign new set of collectors with the one different name
 			allocator.addTargetToTargetItems(&target)
 		}
 	}
@@ -189,14 +188,15 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	log := allocator.log.WithValues("component", "opentelemetry-targetallocator")
 	timer := prometheus.NewTimer(timeToAssign.WithLabelValues("SetCollectors"))
 	defer timer.ObserveDuration()
+	if len(collectors) == 0 {
+		log.Info("No collector instances present")
+		return
+	}
 
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 	newCollectors, removedCollectors := allocator.getCollectorChanges(collectors)
-	if len(collectors) == 0 {
-		log.Info("No collector instances present")
-		return
-	} else if len(newCollectors) == 0 && len(removedCollectors) == 0 {
+	if len(newCollectors) == 0 && len(removedCollectors) == 0 {
 		log.Info("No changes to the collectors found")
 		return
 	}
