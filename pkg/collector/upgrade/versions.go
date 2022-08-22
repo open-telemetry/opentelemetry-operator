@@ -78,8 +78,8 @@ var (
 			upgrade: upgrade0_56_0,
 		},
 		{
-			Version: *semver.MustParse("0.57.0"),
-			upgrade: upgrade0_57_0,
+			Version: *semver.MustParse("0.57.2"),
+			upgrade: upgrade0_57_2,
 		},
 	}
 

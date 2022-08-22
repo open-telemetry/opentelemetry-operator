@@ -24,7 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 )
 
-func upgrade0_57_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_57_2(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 
 	if len(otelcol.Spec.Config) == 0 {
 		return otelcol, nil
