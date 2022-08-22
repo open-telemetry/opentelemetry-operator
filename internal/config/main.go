@@ -49,6 +49,7 @@ type Config struct {
 	labelsFilter                   []string
 	platform                       platform.Platform
 	autoDetectFrequency            time.Duration
+	autoscalingVersion             autodetect.AutoscalingVersion
 }
 
 // New constructs a new configuration based on the given options.
@@ -61,6 +62,7 @@ func New(opts ...Option) Config {
 		logger:                        logf.Log.WithName("config"),
 		platform:                      platform.Unknown,
 		version:                       version.Get(),
+		autoscalingVersion:            autodetect.DefaultAutoscalingVersion,
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -81,6 +83,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
 		autoInstrumentationDotNetImage: o.autoInstrumentationDotNetImage,
 		labelsFilter:                   o.labelsFilter,
+		autoscalingVersion:             o.autoscalingVersion,
 	}
 }
 
@@ -132,6 +135,13 @@ func (c *Config) AutoDetect() error {
 		}
 	}
 
+	hpaVersion, err := c.autoDetect.HPAVersion()
+	if err != nil {
+		return err
+	}
+	c.autoscalingVersion = hpaVersion
+	c.logger.Info("In Autodetect, Set HPA version to [", c.autoscalingVersion, "] from [", hpaVersion, "]")
+
 	return nil
 }
 
@@ -158,6 +168,11 @@ func (c *Config) TargetAllocatorConfigMapEntry() string {
 // Platform represents the type of the platform this operator is running.
 func (c *Config) Platform() platform.Platform {
 	return c.platform
+}
+
+// AutoscalingVersion represents the preferred version of autoscaling.
+func (c *Config) AutoscalingVersion() autodetect.AutoscalingVersion {
+	return c.autoscalingVersion
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.

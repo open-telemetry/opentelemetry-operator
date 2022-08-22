@@ -33,6 +33,17 @@ const (
 	EventSourcePrometheusCR
 )
 
+var (
+	eventSourceToString = map[EventSource]string{
+		EventSourceConfigMap:    "EventSourceConfigMap",
+		EventSourcePrometheusCR: "EventSourcePrometheusCR",
+	}
+)
+
+func (e EventSource) String() string {
+	return eventSourceToString[e]
+}
+
 func NewWatcher(logger logr.Logger, config config.CLIConfig, allocator *allocation.Allocator) (*Manager, error) {
 	watcher := Manager{
 		allocator: allocator,
