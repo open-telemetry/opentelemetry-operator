@@ -4,7 +4,6 @@ Changes by Version
 0.58.0
 -------------------
 ### 🧰 Bug fixes 🧰
-
 * Fix unnecessary and incorrect reallocation ([#1041](https://github.com/open-telemetry/opentelemetry-operator/pull/1041), [@jaronoff97](https://github.com/jaronoff97))
 #### OpenTelemetry Collector and Contrib
 * [OpenTelemetry Collector - v0.58.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.58.0)
