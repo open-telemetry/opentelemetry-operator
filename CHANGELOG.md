@@ -1,17 +1,30 @@
 Changes by Version
 ==================
 
+0.58.0
+-------------------
+### 🧰 Bug fixes 🧰
+* Fix unnecessary and incorrect reallocation ([#1041](https://github.com/open-telemetry/opentelemetry-operator/pull/1041), [@jaronoff97](https://github.com/jaronoff97))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.58.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.58.0)
+* [OpenTelemetry Contrib - v0.58.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.58.0)
+
 0.57.2
 -------------------
 ### 🚀 New components 🚀
 * Support DotNet auto-instrumentation ([#976](https://github.com/open-telemetry/opentelemetry-operator/pull/976), [@avadhut123pisal](https://github.com/avadhut123pisal))
 * Enable instrumentation injecting only core SDK config ([#1000](https://github.com/open-telemetry/opentelemetry-operator/pull/1000), [@bilbof](https://github.com/bilbof))
+* Instrument TA with prometheus ([#1030](https://github.com/open-telemetry/opentelemetry-operator/pull/1030), [@jaronoff97](https://github.com/jaronoff97))
 ### 💡 Enhancements 💡
+* Protect allocator maps behind mutex, create getter funcs for them ([#1040](https://github.com/open-telemetry/opentelemetry-operator/pull/1040), [@kristinapathak](https://github.com/kristinapathak))
+* Simultaneously support versions v2 and v2beta2 of Autoscaling ([#1014](https://github.com/open-telemetry/opentelemetry-operator/pull/1014), [@kevinearls](https://github.com/kevinearls))
+* Update the target allocator on any manifest change ([#1027](https://github.com/open-telemetry/opentelemetry-operator/pull/1027), [@jaronoff97](https://github.com/jaronoff97))
 * chore(nodejs): update versions.txt to 0.31.0 ([#1015](https://github.com/open-telemetry/opentelemetry-operator/pull/1015), [@mat-rumian](https://github.com/mat-rumian))
 * chore(nodejs): update to 0.31.0 ([#955](https://github.com/open-telemetry/opentelemetry-operator/pull/955), [@mat-rumian](https://github.com/mat-rumian))
 * chore(operator): update python inst to 0.32b0 ([#1012](https://github.com/open-telemetry/opentelemetry-operator/pull/1012), [@ianmcnally](https://github.com/ianmcnally))
 * Sort order of ports returned to fix flaky tests ([#1003](https://github.com/open-telemetry/opentelemetry-operator/pull/1003), [@kevinearls](https://github.com/kevinearls))
 ### 🧰 Bug fixes 🧰
+* Resolve bug where TA doesn't allocate all targets ([#1039](https://github.com/open-telemetry/opentelemetry-operator/pull/1039), [@jaronoff97](https://github.com/jaronoff97))
 * Fix the issue that target-level metadata labels were missing (#948) ([#949](https://github.com/open-telemetry/opentelemetry-operator/pull/949), [@CoderPoet](https://github.com/CoderPoet))
 #### OpenTelemetry Collector and Contrib
 * [OpenTelemetry Collector - v0.57.2](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.57.2)
