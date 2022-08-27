@@ -182,6 +182,12 @@ spec:
                             type: integer
                         type: object
                     type: object
+                  targetCPUUtilization:
+                    description: TargetCPUUtilization sets the target average CPU
+                      used across all replicas. If average CPU exceeds this value,
+                      the HPA will scale up. Defaults to 90 percent.
+                    format: int32
+                    type: integer
                 type: object
               config:
                 description: Config is the raw JSON to be used as the collector's

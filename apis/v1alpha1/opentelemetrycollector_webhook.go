@@ -65,6 +65,12 @@ func (r *OpenTelemetryCollector) Default() {
 	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Replicas == nil {
 		r.Spec.TargetAllocator.Replicas = &one
 	}
+
+	// Set default targetCPUUtilization for autoscaler
+	if r.Spec.MaxReplicas != nil && r.Spec.Autoscaler.TargetCPUUtilization == nil {
+		defaultCPUTarget := int32(90)
+		r.Spec.Autoscaler.TargetCPUUtilization = &defaultCPUTarget
+	}
 }
 
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -141,6 +147,10 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
 			}
 		}
+		if r.Spec.Autoscaler.TargetCPUUtilization != nil && (*r.Spec.Autoscaler.TargetCPUUtilization < int32(1) || *r.Spec.Autoscaler.TargetCPUUtilization > int32(99)) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
+		}
+
 	}
 
 	return nil
