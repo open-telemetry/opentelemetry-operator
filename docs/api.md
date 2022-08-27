@@ -1826,6 +1826,16 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>targetCPUUtilization</b></td>
+        <td>integer</td>
+        <td>
+          TargetCPUUtilization sets the target average CPU used across all replicas.
+          If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectolerationsindex">tolerations</a></b></td>
         <td>[]object</td>
         <td>

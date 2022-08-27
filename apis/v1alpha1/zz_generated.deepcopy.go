@@ -305,6 +305,11 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 		*out = new(int32)
 		**out = **in
 	}
+	if in.TargetCPUUtilization != nil {
+		in, out := &in.TargetCPUUtilization, &out.TargetCPUUtilization
+		*out = new(int32)
+		**out = **in
+	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
 		*out = new(v1.SecurityContext)

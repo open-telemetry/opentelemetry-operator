@@ -40,6 +40,10 @@ type OpenTelemetryCollectorSpec struct {
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+	// TargetCPUUtilization sets the target average CPU used across all replicas.
+	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
+	// +optional
+	TargetCPUUtilization *int32 `json:"targetCPUUtilization,omitempty"`
 	// SecurityContext will be set as the container security context.
 	// +optional
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`

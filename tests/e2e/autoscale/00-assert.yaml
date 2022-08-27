@@ -13,4 +13,5 @@ metadata:
 spec:
   minReplicas: 1
   maxReplicas: 2
+  TargetCPUUtilization: 50
 
