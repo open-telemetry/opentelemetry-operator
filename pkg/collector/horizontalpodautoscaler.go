@@ -39,7 +39,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	annotations := Annotations(otelcol)
 	var cpuTarget int32
 	if otelcol.Spec.TargetCPUUtilization != nil {
-		cpuTarget = otelcol.Spec.TargetCPUUtilization
+		cpuTarget = *otelcol.Spec.TargetCPUUtilization
 	} else {
 		cpuTarget = defaultCPUTarget
 	}
