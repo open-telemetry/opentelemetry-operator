@@ -37,10 +37,11 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
 	annotations := Annotations(otelcol)
+	var cpuTarget int32
 	if otelcol.Spec.TargetCPUUtilization != nil {
 		cpuTarget = otelcol.Spec.TargetCPUUtilization
 	} else {
-		cpuTarget := defaultCPUTarget
+		cpuTarget = defaultCPUTarget
 	}
 	var result client.Object
 
