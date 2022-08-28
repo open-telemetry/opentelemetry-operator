@@ -11,6 +11,7 @@ jobs:
   publish:
     name: Publish container images
     runs-on: ubuntu-20.04
+    permissions: write-all
     steps:
       - uses: actions/checkout@v3
 
@@ -34,7 +35,7 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v4.0.1
         with:
-          images: moh-osman3/opentelemetry-operator
+          images: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator 
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
