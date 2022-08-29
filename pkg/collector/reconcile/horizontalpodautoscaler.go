@@ -111,6 +111,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 
 func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object) {
 	one := int32(1)
+	ninety := int32(90)
 	if params.Instance.Spec.MaxReplicas != nil {
 		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
@@ -119,12 +120,22 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 			} else {
 				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}
+			if params.Instance.Spec.TargetCPUUtilization != nil {
+				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.TargetCPUUtilization = params.Instance.Spec.TargetCPUUtilization
+			} else {
+				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = &ninety
+			}
 		} else {
 			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
 			if params.Instance.Spec.MinReplicas != nil {
 				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = params.Instance.Spec.MinReplicas
 			} else {
 				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
+			}
+			if params.Instance.Spec.TargetCPUUtilization != nil {
+				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.TargetCPUUtilization = params.Instance.Spec.TargetCPUUtilization
+			} else {
+				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.TargetCPUUtilization = &ninety
 			}
 		}
 	}

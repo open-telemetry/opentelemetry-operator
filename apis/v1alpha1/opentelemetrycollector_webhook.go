@@ -129,6 +129,10 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
 		}
 
+		if r.Spec.TargetCPUUtilization != nil && (r.Spec.TargetCPUUtilization < int32(1) || r.Spec.TargetCPUUtilization > int32(99)) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
+		}
+
 	}
 
 	return nil
