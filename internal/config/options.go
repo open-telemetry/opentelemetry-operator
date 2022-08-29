@@ -15,6 +15,8 @@
 package config
 
 import (
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -29,18 +31,21 @@ type Option func(c *options)
 
 type options struct {
 	autoDetect                     autodetect.AutoDetect
-	autoDetectFrequency            time.Duration
-	targetAllocatorImage           string
-	collectorImage                 string
+	version                        version.Version
+	logger                         logr.Logger
+	autoInstrumentationDotNetImage string
 	autoInstrumentationJavaImage   string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationPythonImage string
+	collectorImage                 string
 	collectorConfigMapEntry        string
 	targetAllocatorConfigMapEntry  string
-	logger                         logr.Logger
+	targetAllocatorImage           string
 	onChange                       []func() error
+	labelsFilter                   []string
 	platform                       platform.Platform
-	version                        version.Version
+	autoDetectFrequency            time.Duration
+	autoscalingVersion             autodetect.AutoscalingVersion
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -113,5 +118,36 @@ func WithAutoInstrumentationNodeJSImage(s string) Option {
 func WithAutoInstrumentationPythonImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationPythonImage = s
+	}
+}
+
+func WithAutoInstrumentationDotNetImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationDotNetImage = s
+	}
+}
+
+func WithLabelFilters(labelFilters []string) Option {
+	return func(o *options) {
+
+		filters := []string{}
+		for _, pattern := range labelFilters {
+			var result strings.Builder
+
+			for i, literal := range strings.Split(pattern, "*") {
+
+				// Replace * with .*
+				if i > 0 {
+					result.WriteString(".*")
+				}
+
+				// Quote any regular expression meta characters in the
+				// literal text.
+				result.WriteString(regexp.QuoteMeta(literal))
+			}
+			filters = append(filters, result.String())
+		}
+
+		o.labelsFilter = filters
 	}
 }

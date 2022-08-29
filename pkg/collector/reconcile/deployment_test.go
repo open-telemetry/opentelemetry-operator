@@ -102,6 +102,81 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.Len(t, expected, 0)
 	})
 
+	t.Run("should update target allocator deployment when the prometheusCR is updated", func(t *testing.T) {
+		ctx := context.Background()
+		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
+		orgUID := expectedTADeploy.OwnerReferences[0].UID
+
+		updatedParam, err := newParams(expectedTADeploy.Spec.Template.Spec.Containers[0].Image, "")
+		assert.NoError(t, err)
+		updatedParam.Instance.Spec.TargetAllocator.PrometheusCR.Enabled = true
+		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
+
+		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		assert.NoError(t, err)
+
+		actual := v1.Deployment{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
+		assert.ElementsMatch(t, actual.Spec.Template.Spec.Containers[0].Args, []string{"--enable-prometheus-cr-watcher"})
+		assert.Equal(t, int32(1), *actual.Spec.Replicas)
+	})
+
+	t.Run("should not update target allocator deployment replicas when collector max replicas is set", func(t *testing.T) {
+		replicas, maxReplicas := int32(2), int32(10)
+		param := Params{
+			Client: k8sClient,
+			Instance: v1alpha1.OpenTelemetryCollector{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "opentelemetry.io",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					UID:       instanceUID,
+				},
+				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					MaxReplicas: &maxReplicas,
+					Replicas:    &replicas,
+					Mode:        v1alpha1.ModeStatefulSet,
+					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+						Enabled: true,
+					},
+					Config: `
+				receivers:
+				jaeger:
+					protocols:
+					grpc:
+				processors:
+			
+				exporters:
+				logging:
+			
+				service:
+				pipelines:
+					traces:
+					receivers: [jaeger]
+					processors: []
+					exporters: [logging]
+			
+			`,
+				},
+			},
+			Scheme: testScheme,
+			Log:    logger,
+		}
+		expected := []v1.Deployment{}
+		allocator := targetallocator.Deployment(param.Config, param.Log, param.Instance)
+		expected = append(expected, allocator)
+
+		assert.Len(t, expected, 1)
+		assert.Equal(t, *allocator.Spec.Replicas, int32(1))
+	})
+
 	t.Run("should update deployment", func(t *testing.T) {
 		createObjectIfNotExists(t, "test-collector", &expectedDeploy)
 		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
@@ -114,29 +189,6 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.True(t, exists)
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
 		assert.Equal(t, int32(2), *actual.Spec.Replicas)
-	})
-
-	t.Run("should not update target allocator deployment when the container image is not updated", func(t *testing.T) {
-		ctx := context.Background()
-		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
-		orgUID := expectedTADeploy.OwnerReferences[0].UID
-
-		updatedParam, err := newParams("test/test-img", "")
-		assert.NoError(t, err)
-		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, param.Instance)
-		*updatedDeploy.Spec.Replicas = int32(3)
-
-		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
-		assert.NoError(t, err)
-
-		actual := v1.Deployment{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
-		assert.Equal(t, expectedTADeploy.Spec.Template.Spec.Containers[0].Image, actual.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, int32(1), *actual.Spec.Replicas)
 	})
 
 	t.Run("should update target allocator deployment when the container image is updated", func(t *testing.T) {
@@ -233,4 +285,22 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.True(t, exists)
 
 	})
+}
+
+func TestCurrentReplicasWithHPA(t *testing.T) {
+	minReplicas := int32(2)
+	maxReplicas := int32(5)
+	spec := v1alpha1.OpenTelemetryCollectorSpec{
+		Replicas:    &minReplicas,
+		MaxReplicas: &maxReplicas,
+	}
+
+	res := currentReplicasWithHPA(spec, 10)
+	assert.Equal(t, int32(5), res)
+
+	res = currentReplicasWithHPA(spec, 1)
+	assert.Equal(t, int32(2), res)
+
+	res = currentReplicasWithHPA(spec, 3)
+	assert.Equal(t, int32(3), res)
 }

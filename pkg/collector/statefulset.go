@@ -27,7 +27,7 @@ import (
 
 // StatefulSet builds the statefulset for the given instance.
 func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.StatefulSet {
-	labels := Labels(otelcol)
+	labels := Labels(otelcol, cfg.LabelsFilter())
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
 	annotations := Annotations(otelcol)
@@ -43,7 +43,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: naming.Service(otelcol),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: SelectorLabels(otelcol),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -57,6 +57,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 					DNSPolicy:          getDnsPolicy(otelcol),
 					HostNetwork:        otelcol.Spec.HostNetwork,
 					Tolerations:        otelcol.Spec.Tolerations,
+					NodeSelector:       otelcol.Spec.NodeSelector,
 					SecurityContext:    otelcol.Spec.PodSecurityContext,
 				},
 			},

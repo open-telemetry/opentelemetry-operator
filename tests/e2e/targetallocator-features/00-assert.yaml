@@ -49,6 +49,8 @@ spec:
     spec:
       containers:
         - name: ta-container
+          args:
+            - --enable-prometheus-cr-watcher
           env:
           - name: OTELCOL_NAMESPACE
             valueFrom:
@@ -72,3 +74,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: stateful-targetallocator
+---
+# Print TA pod logs if test fails
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - selector: app.kubernetes.io/component=opentelemetry-targetallocator

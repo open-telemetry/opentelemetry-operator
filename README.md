@@ -57,6 +57,8 @@ The `config` node holds the `YAML` that should be passed down as-is to the under
 
 At this point, the Operator does *not* validate the contents of the configuration file: if the configuration is invalid, the instance will still be created but the underlying OpenTelemetry Collector might crash.
 
+The Operator does examine the configuration file to discover configured receivers and their ports. If it finds receivers with ports, it creates a pair of kubernetes services, one headless, exposing those ports within the cluster. The headless service contains a `service.beta.openshift.io/serving-cert-secret-name` annotation that will cause OpenShift to create a secret containing a certificate and key. This secret can be mounted as a volume and the certificate and key used in those receivers' TLS configurations.
+
 
 ### Upgrades
 
@@ -89,11 +91,7 @@ spec:
     receivers:
       jaeger:
         protocols:
-          grpc:
-      otlp:
-        protocols:
-          grpc:
-          http:
+          thrift_compact:
     processors:
 
     exporters:
@@ -102,7 +100,7 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [otlp, jaeger]
+          receivers: [jaeger]
           processors: []
           exporters: [logging]
 EOF
@@ -164,9 +162,11 @@ spec:
 EOF
 ```
 
+When using sidecar mode the OpenTelemetry collector container will have the environment variable `OTEL_RESOURCE_ATTRIBUTES`set with Kubernetes resource attributes, ready to be consumed by the [resourcedetection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) processor.
+
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Java, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -210,10 +210,62 @@ Python:
 instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
+DotNet:
+```bash
+instrumentation.opentelemetry.io/inject-dotnet: "true"
+```
+
+OpenTelemetry SDK environment variables only:
+```bash
+instrumentation.opentelemetry.io/inject-sdk: "true"
+```
+
 The possible values for the annotation can be
 * `"true"` - inject and `Instrumentation` resource from the namespace.
-* `"my-instrumentation"` - name of `Instrumentation` CR instance.
+* `"my-instrumentation"` - name of `Instrumentation` CR instance in the current namespace.
+* `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
+
+
+>**Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitely.
+
+#### Multi-container pods
+
+If nothing else is specified, instrumentation is performed on the first container available in the pod spec.
+In some cases (for example in the case of the injection of an Istio sidecar) it becomes necessary to specify on which container(s) this injection must be performed.
+
+For this, it is possible to fine-tune the pod(s) on which the injection will be carried out.
+
+For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more pod names (`.spec.containers.name`) on which the injection must be made:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment-with-multiple-containers
+spec:
+  selector:
+    matchLabels:
+      app: my-pod-with-multiple-containers
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-pod-with-multiple-containers
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/container-names: "myapp,myapp2"
+    spec:
+      containers:
+      - name: myapp
+        image: myImage1
+      - name: myapp2
+        image: myImage2
+      - name: myapp3
+        image: myImage3
+```
+
+In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3` will not.
 
 #### Use customized or vendor instrumentation
 
@@ -232,10 +284,20 @@ spec:
     image: your-customized-auto-instrumentation-image:nodejs
   python:
     image: your-customized-auto-instrumentation-image:python
+  dotnet:
+    image: your-customized-auto-instrumentation-image:dotnet
 ```
 
-The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation). 
+The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).
 Follow the instructions in the Dockerfiles on how to build a custom container image.
+
+#### Inject OpenTelemetry SDK environment variables only
+
+You can configure the OpenTelemetry SDK for applications which can't currently be autoinstrumented by using `inject-sdk` in place of (e.g.) `inject-python` or `inject-java`. This will inject environment variables like `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_TRACES_SAMPLER`, and `OTEL_EXPORTER_OTLP_ENDPOINT`, that you can configure in the `Instrumentation`, but will not actually provide the SDK.
+
+```bash
+instrumentation.opentelemetry.io/inject-sdk: "true"
+```
 
 ## Compatibility matrix
 
@@ -258,26 +320,29 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
 |------------------------|----------------------|----------------------|
-| v0.47.0                | v1.19 to v1.23       | 1.6.1                |
-| v0.46.0                | v1.19 to v1.23       | 1.6.1                |
-| v0.45.0                | v1.21 to v1.23       | 1.6.1                |
-| v0.44.0                | v1.21 to v1.23       | 1.6.1                |
-| v0.43.0                | v1.21 to v1.23       | 1.6.1                |
-| v0.42.0                | v1.21 to v1.23       | 1.6.1                |
-| v0.41.1                | v1.21 to v1.23       | 1.6.1                |
-| v0.41.0                | v1.20 to v1.22       | 1.6.1                |
-| v0.40.0                | v1.20 to v1.22       | 1.6.1                |
-| v0.39.0                | v1.20 to v1.22       | 1.6.1                |
-| v0.38.0                | v1.20 to v1.22       | 1.6.1                |
-| v0.37.1                | v1.20 to v1.22       | v1.4.0 to v1.6.1     |
-| v0.37.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.36.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.35.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.34.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.33.0                | v1.20 to v1.22       | v1.4.0 to v1.5.4     |
-| v0.32.0 (skipped)      | n/a                  | n/a                  |
-| v0.31.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
-| v0.30.0                | v1.19 to v1.21       | v1.4.0 to v1.5.4     |
+| v0.58.0                | v1.19 to v1.24       | v1                   |
+| v0.57.2                | v1.19 to v1.24       | v1                   |
+| v0.56.0                | v1.19 to v1.24       | v1                   |
+| v0.55.0                | v1.19 to v1.24       | v1                   |
+| v0.54.0                | v1.19 to v1.24       | v1                   |
+| v0.53.0                | v1.19 to v1.24       | v1                   |
+| v0.52.0                | v1.19 to v1.23       | v1                   |
+| v0.51.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.50.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.49.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.48.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.47.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.46.0                | v1.19 to v1.23       | v1alpha2             |
+| v0.45.0                | v1.21 to v1.23       | v1alpha2             |
+| v0.44.0                | v1.21 to v1.23       | v1alpha2             |
+| v0.43.0                | v1.21 to v1.23       | v1alpha2             |
+| v0.42.0                | v1.21 to v1.23       | v1alpha2             |
+| v0.41.1                | v1.21 to v1.23       | v1alpha2             |
+| v0.41.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.40.0                | v1.20 to v1.22       | v1alpha2             |
+| v0.39.0                | v1.20 to v1.22       | v1alpha2             |
+
+
 
 ## Contributing and Developing
 
@@ -285,11 +350,12 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
-- [Dmitrii Anoshin](https://github.com/dmitryax), Splunk
+- [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
 
 Emeritus Approvers:
 
 - [Anthony Mirabella](https://github.com/Aneurysm9), AWS
+- [Dmitrii Anoshin](https://github.com/dmitryax), Splunk
 - [Jay Camp](https://github.com/jrcamp), Splunk
 - [James Bebbington](https://github.com/james-bebbington), Google
 - [Owais Lone](https://github.com/owais), Splunk

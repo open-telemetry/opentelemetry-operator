@@ -46,10 +46,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		},
 	})
 
+	var args []string
+	if otelcol.Spec.TargetAllocator.PrometheusCR.Enabled {
+		args = append(args, "--enable-prometheus-cr-watcher")
+	}
 	return corev1.Container{
 		Name:         naming.TAContainer(),
 		Image:        image,
 		Env:          envVars,
 		VolumeMounts: volumeMounts,
+		Args:         args,
 	}
 }

@@ -31,9 +31,9 @@ func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
 	return instance.Spec.ServiceAccount
 }
 
-//ServiceAccount returns the service account for the given instance.
+// ServiceAccount returns the service account for the given instance.
 func ServiceAccount(otelcol v1alpha1.OpenTelemetryCollector) corev1.ServiceAccount {
-	labels := Labels(otelcol)
+	labels := Labels(otelcol, []string{})
 	labels["app.kubernetes.io/name"] = naming.ServiceAccount(otelcol)
 
 	return corev1.ServiceAccount{

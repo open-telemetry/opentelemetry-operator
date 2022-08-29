@@ -34,23 +34,22 @@ const (
 
 // Config holds the static configuration for this operator.
 type Config struct {
-	// Registers a callback, to be called once a configuration change happens
-	OnChange func() error
-
-	logger              logr.Logger
-	autoDetect          autodetect.AutoDetect
-	autoDetectFrequency time.Duration
-	onChange            []func() error
-
-	// config state
+	autoDetect                     autodetect.AutoDetect
+	OnChange                       func() error
+	logger                         logr.Logger
+	targetAllocatorImage           string
+	autoInstrumentationPythonImage string
 	collectorImage                 string
 	collectorConfigMapEntry        string
-	targetAllocatorImage           string
+	autoInstrumentationDotNetImage string
 	targetAllocatorConfigMapEntry  string
-	platform                       platform.Platform
-	autoInstrumentationJavaImage   string
 	autoInstrumentationNodeJSImage string
-	autoInstrumentationPythonImage string
+	autoInstrumentationJavaImage   string
+	onChange                       []func() error
+	labelsFilter                   []string
+	platform                       platform.Platform
+	autoDetectFrequency            time.Duration
+	autoscalingVersion             autodetect.AutoscalingVersion
 }
 
 // New constructs a new configuration based on the given options.
@@ -63,6 +62,7 @@ func New(opts ...Option) Config {
 		logger:                        logf.Log.WithName("config"),
 		platform:                      platform.Unknown,
 		version:                       version.Get(),
+		autoscalingVersion:            autodetect.DefaultAutoscalingVersion,
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -81,6 +81,9 @@ func New(opts ...Option) Config {
 		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
+		autoInstrumentationDotNetImage: o.autoInstrumentationDotNetImage,
+		labelsFilter:                   o.labelsFilter,
+		autoscalingVersion:             o.autoscalingVersion,
 	}
 }
 
@@ -132,6 +135,13 @@ func (c *Config) AutoDetect() error {
 		}
 	}
 
+	hpaVersion, err := c.autoDetect.HPAVersion()
+	if err != nil {
+		return err
+	}
+	c.autoscalingVersion = hpaVersion
+	c.logger.Info("In Autodetect, Set HPA version to [", c.autoscalingVersion, "] from [", hpaVersion, "]")
+
 	return nil
 }
 
@@ -160,6 +170,11 @@ func (c *Config) Platform() platform.Platform {
 	return c.platform
 }
 
+// AutoscalingVersion represents the preferred version of autoscaling.
+func (c *Config) AutoscalingVersion() autodetect.AutoscalingVersion {
+	return c.autoscalingVersion
+}
+
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
 func (c *Config) AutoInstrumentationJavaImage() string {
 	return c.autoInstrumentationJavaImage
@@ -173,4 +188,14 @@ func (c *Config) AutoInstrumentationNodeJSImage() string {
 // AutoInstrumentationPythonImage returns OpenTelemetry Python auto-instrumentation container image.
 func (c *Config) AutoInstrumentationPythonImage() string {
 	return c.autoInstrumentationPythonImage
+}
+
+// AutoInstrumentationDotNetImage returns OpenTelemetry DotNet auto-instrumentation container image.
+func (c *Config) AutoInstrumentationDotNetImage() string {
+	return c.autoInstrumentationDotNetImage
+}
+
+// Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+func (c *Config) LabelsFilter() []string {
+	return c.labelsFilter
 }

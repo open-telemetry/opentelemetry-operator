@@ -1,3 +1,9 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ta
+automountServiceAccountToken: true
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -6,3 +12,59 @@ rules:
 - apiGroups: [""]
   resources: [ "pods" ]
   verbs: [ "get", "list", "watch"]
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl -n $NAMESPACE create rolebinding default-view-$NAMESPACE --role=pod-view --serviceaccount=$NAMESPACE:ta
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: stateful
+spec:
+  mode: statefulset
+  volumes:
+    - name: testvolume
+  volumeMounts:
+    - name: testvolume
+      mountPath: /usr/share/testvolume
+  volumeClaimTemplates:
+    - metadata:
+        name: testvolume
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
+  targetAllocator:
+    enabled: true
+    image: "local/opentelemetry-operator-targetallocator:e2e"
+    serviceAccount: ta
+    prometheusCR:
+      enabled: true
+  config: |
+    receivers:
+      jaeger:
+          protocols:
+            grpc:
+
+      # Collect own metrics
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'otel-collector'
+              scrape_interval: 10s
+              static_configs:
+                - targets: [ '0.0.0.0:8888' ]
+    
+    processors:
+
+    exporters:
+      logging:
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: []
+          exporters: [logging]

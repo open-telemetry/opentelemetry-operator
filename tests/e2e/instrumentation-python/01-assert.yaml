@@ -30,9 +30,9 @@ spec:
       value: my-deployment-with-sidecar
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-    - name: OTEL_RESOURCE_ATTRIBUTES
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
+    - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
     - mountPath: /otel-auto-instrumentation

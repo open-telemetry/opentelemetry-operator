@@ -30,9 +30,9 @@ const (
 	pythonPathSuffix      = "/otel-auto-instrumentation"
 )
 
-func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod) corev1.Pod {
+func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod, index int) corev1.Pod {
 	// caller checks if there is at least one container
-	container := &pod.Spec.Containers[0]
+	container := &pod.Spec.Containers[index]
 
 	// inject env vars
 	for _, env := range pythonSpec.Env {
@@ -54,7 +54,9 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 			logger.Info("Skipping Python SDK injection, the container defines PYTHONPATH env var value via ValueFrom", "container", container.Name)
 			return pod
 		}
+
 		container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
+
 	}
 
 	// Set OTEL_TRACES_EXPORTER to HTTP exporter if not set by user because it is what our autoinstrumentation supports.
@@ -71,21 +73,24 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 		MountPath: "/otel-auto-instrumentation",
 	})
 
-	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-		Name: volumeName,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		}})
+	// We just inject Volumes and init containers for the first processed container
+	if isInitContainerMissing(pod) {
+		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+			Name: volumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			}})
 
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-		Name:    initContainerName,
-		Image:   pythonSpec.Image,
-		Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
-		VolumeMounts: []corev1.VolumeMount{{
-			Name:      volumeName,
-			MountPath: "/otel-auto-instrumentation",
-		}},
-	})
+		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
+			Name:    initContainerName,
+			Image:   pythonSpec.Image,
+			Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			VolumeMounts: []corev1.VolumeMount{{
+				Name:      volumeName,
+				MountPath: "/otel-auto-instrumentation",
+			}},
+		})
+	}
 
 	return pod
 }

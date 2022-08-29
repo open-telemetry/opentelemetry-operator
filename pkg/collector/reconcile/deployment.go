@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
@@ -84,11 +85,7 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.Labels = map[string]string{}
 		}
 
-		if desired.Labels["app.kubernetes.io/component"] == "opentelemetry-targetallocator" {
-			updated.Spec.Template.Spec.Containers[0].Image = desired.Spec.Template.Spec.Containers[0].Image
-		} else {
-			updated.Spec = desired.Spec
-		}
+		updated.Spec = desired.Spec
 		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 
 		for k, v := range desired.ObjectMeta.Annotations {
@@ -98,16 +95,8 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		// if autoscale is enabled, use replicas from current Status
-		if params.Instance.Spec.MaxReplicas != nil {
-			currentReplicas := existing.Status.Replicas
-			// if replicas (minReplicas from HPA perspective) is bigger than
-			// current status use it.
-			if *params.Instance.Spec.Replicas > currentReplicas {
-				currentReplicas = *params.Instance.Spec.Replicas
-			}
-			updated.Spec.Replicas = &currentReplicas
-		}
+		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
+		updated.Spec.Selector = existing.Spec.Selector.DeepCopy()
 
 		patch := client.MergeFrom(existing)
 
@@ -153,4 +142,17 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 	}
 
 	return nil
+}
+
+// currentReplicasWithHPA calculates deployment replicas if HPA is enabled.
+func currentReplicasWithHPA(spec v1alpha1.OpenTelemetryCollectorSpec, curr int32) int32 {
+	if curr < *spec.Replicas {
+		return *spec.Replicas
+	}
+
+	if curr > *spec.MaxReplicas {
+		return *spec.MaxReplicas
+	}
+
+	return curr
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
@@ -62,7 +63,18 @@ func TestExtractPortsFromConfig(t *testing.T) {
         endpoint: 0.0.0.0:55555
   zipkin:
   zipkin/2:
-        endpoint: 0.0.0.0:33333
+    endpoint: 0.0.0.0:33333
+service:
+  pipelines:
+    metrics:
+      receivers: [examplereceiver, examplereceiver/settings]
+      exporters: [logging]
+    metrics/1:
+      receivers: [jaeger, jaeger/custom]
+      exporters: [logging]
+    metrics/2:
+      receivers: [otlp, otlp/2, zipkin]
+      exporters: [logging]
 `
 
 	// prepare
@@ -73,84 +85,44 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	// test
 	ports, err := adapters.ConfigToReceiverPorts(logger, config)
 	assert.NoError(t, err)
-	assert.Len(t, ports, 12)
+	assert.Len(t, ports, 11)
 
 	// verify
-	expectedPorts := map[int32]bool{}
-	expectedPorts[int32(12345)] = false
-	expectedPorts[int32(12346)] = false
-	expectedPorts[int32(14250)] = false
-	expectedPorts[int32(6831)] = false
-	expectedPorts[int32(6833)] = false
-	expectedPorts[int32(15268)] = false
-	expectedPorts[int32(4318)] = false
-	expectedPorts[int32(55681)] = false
-	expectedPorts[int32(55555)] = false
-	expectedPorts[int32(9411)] = false
-	expectedPorts[int32(33333)] = false
+	httpAppProtocol := "http"
+	grpcAppProtocol := "grpc"
+	targetPortZero := intstr.IntOrString{Type: 0, IntVal: 0, StrVal: ""}
+	targetPort4317 := intstr.IntOrString{Type: 0, IntVal: 4317, StrVal: ""}
+	targetPort4318 := intstr.IntOrString{Type: 0, IntVal: 4318, StrVal: ""}
 
-	expectedNames := map[string]bool{}
-	expectedNames["examplereceiver"] = false
-	expectedNames["examplereceiver-settings"] = false
-	expectedNames["jaeger-grpc"] = false
-	expectedNames["jaeger-thrift-compact"] = false
-	expectedNames["jaeger-thrift-binary"] = false
-	expectedNames["jaeger-custom-thrift-http"] = false
-	expectedNames["otlp-grpc"] = false
-	expectedNames["otlp-http"] = false
-	expectedNames["otlp-http-legacy"] = false
-	expectedNames["otlp-2-grpc"] = false
-	expectedNames["zipkin"] = false
-	expectedNames["zipkin-2"] = false
-
-	expectedAppProtocols := map[string]string{}
-	expectedAppProtocols["otlp-grpc"] = "grpc"
-	expectedAppProtocols["otlp-http"] = "http"
-	expectedAppProtocols["otlp-http-legacy"] = "http"
-	expectedAppProtocols["jaeger-custom-thrift-http"] = "http"
-	expectedAppProtocols["jaeger-grpc"] = "grpc"
-	expectedAppProtocols["otlp-2-grpc"] = "grpc"
-	expectedAppProtocols["zipkin"] = "http"
-	expectedAppProtocols["zipkin-2"] = "http"
-
-	// make sure we only have the ports in the set
-	for _, port := range ports {
-		assert.NotNil(t, expectedPorts[port.Port])
-		assert.NotNil(t, expectedNames[port.Name])
-		expectedPorts[port.Port] = true
-		expectedNames[port.Name] = true
-
-		if appProtocol, ok := expectedAppProtocols[port.Name]; ok {
-			assert.Equal(t, appProtocol, *port.AppProtocol)
-		}
-	}
-
-	// and make sure all the ports from the set are there
-	for _, val := range expectedPorts {
-		assert.True(t, val)
-	}
-
-	// make sure we only have the ports names in the set
-	for _, val := range expectedNames {
-		assert.True(t, val)
-	}
+	assert.Len(t, ports, 11)
+	assert.Equal(t, corev1.ServicePort{Name: "examplereceiver", Port: int32(12345)}, ports[0])
+	assert.Equal(t, corev1.ServicePort{Name: "examplereceiver-settings", Port: int32(12346)}, ports[1])
+	assert.Equal(t, corev1.ServicePort{Name: "jaeger-custom-thrift-http", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: int32(15268), TargetPort: targetPortZero}, ports[2])
+	assert.Equal(t, corev1.ServicePort{Name: "jaeger-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: int32(14250)}, ports[3])
+	assert.Equal(t, corev1.ServicePort{Name: "jaeger-thrift-binary", Protocol: "UDP", Port: int32(6833)}, ports[4])
+	assert.Equal(t, corev1.ServicePort{Name: "jaeger-thrift-compact", Protocol: "UDP", Port: int32(6831)}, ports[5])
+	assert.Equal(t, corev1.ServicePort{Name: "otlp-2-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: int32(55555)}, ports[6])
+	assert.Equal(t, corev1.ServicePort{Name: "otlp-grpc", AppProtocol: &grpcAppProtocol, Port: int32(4317), TargetPort: targetPort4317}, ports[7])
+	assert.Equal(t, corev1.ServicePort{Name: "otlp-http", AppProtocol: &httpAppProtocol, Port: int32(4318), TargetPort: targetPort4318}, ports[8])
+	assert.Equal(t, corev1.ServicePort{Name: "otlp-http-legacy", AppProtocol: &httpAppProtocol, Port: int32(55681), TargetPort: targetPort4318}, ports[9])
+	assert.Equal(t, corev1.ServicePort{Name: "zipkin", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: int32(9411)}, ports[10])
 }
 
 func TestNoPortsParsed(t *testing.T) {
 	for _, tt := range []struct {
+		expected  error
 		desc      string
 		configStr string
-		expected  error
 	}{
 		{
-			"empty",
-			"",
-			adapters.ErrNoReceivers,
+			expected:  adapters.ErrNoReceivers,
+			desc:      "empty",
+			configStr: "",
 		},
 		{
-			"not a map",
-			"receivers: some-string",
-			adapters.ErrReceiversNotAMap,
+			expected:  adapters.ErrReceiversNotAMap,
+			desc:      "not a map",
+			configStr: "receivers: some-string",
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -175,11 +147,11 @@ func TestInvalidReceivers(t *testing.T) {
 	}{
 		{
 			"receiver isn't a map",
-			"receivers:\n  some-receiver: string",
+			"receivers:\n  some-receiver: string\nservice:\n  pipelines:\n    metrics:\n      receivers: [some-receiver]",
 		},
 		{
 			"receiver's endpoint isn't string",
-			"receivers:\n  some-receiver:\n    endpoint: 123",
+			"receivers:\n  some-receiver:\n    endpoint: 123\nservice:\n  pipelines:\n    metrics:\n      receivers: [some-receiver]",
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -212,7 +184,14 @@ func TestParserFailed(t *testing.T) {
 
 	config := map[interface{}]interface{}{
 		"receivers": map[interface{}]interface{}{
-			"mock": map[interface{}]interface{}{},
+			"mock": map[string]interface{}{},
+		},
+		"service": map[interface{}]interface{}{
+			"pipelines": map[interface{}]interface{}{
+				"metrics": map[interface{}]interface{}{
+					"receivers": []interface{}{"mock"},
+				},
+			},
 		},
 	}
 

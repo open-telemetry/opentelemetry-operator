@@ -80,9 +80,13 @@ func main() {
 		autoInstrumentationJava   string
 		autoInstrumentationNodeJS string
 		autoInstrumentationPython string
+		autoInstrumentationDotNet string
+		labelsFilter              []string
+		webhookPort               int
 	)
+
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-addr", ":8081", "The address the probe endpoint binds to.")
+	pflag.StringVar(&probeAddr, "health-probe-addr", ":8081", "The address the probe endpoint binds to.")
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -91,6 +95,9 @@ func main() {
 	pflag.StringVar(&autoInstrumentationJava, "auto-instrumentation-java-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationPython, "auto-instrumentation-python-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet), "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringArrayVar(&labelsFilter, "labels", []string{}, "Labels to filter away from propagating onto deploys")
+	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
 	pflag.Parse()
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
@@ -103,10 +110,12 @@ func main() {
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"auto-instrumentation-python", autoInstrumentationPython,
+		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
 		"go-os", runtime.GOOS,
+		"labels-filter", labelsFilter,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
@@ -126,7 +135,9 @@ func main() {
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
+		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
 		config.WithAutoDetect(ad),
+		config.WithLabelFilters(labelsFilter),
 	)
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
@@ -143,7 +154,7 @@ func main() {
 	mgrOptions := ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Port:                   webhookPort,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "9f7554c3.opentelemetry.io",
@@ -193,6 +204,7 @@ func main() {
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationJava:   autoInstrumentationJava,
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationNodeJS: autoInstrumentationNodeJS,
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationPython: autoInstrumentationPython,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationDotNet: autoInstrumentationDotNet,
 				},
 			},
 		}).SetupWebhookWithManager(mgr); err != nil {
@@ -253,7 +265,9 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 		u := &instrumentationupgrade.InstrumentationUpgrade{
 			Logger:                ctrl.Log.WithName("instrumentation-upgrade"),
 			DefaultAutoInstJava:   cfg.AutoInstrumentationJavaImage(),
-			DefaultAutoInstNodeJS: cfg.AutoInstrumentationJavaImage(),
+			DefaultAutoInstNodeJS: cfg.AutoInstrumentationNodeJSImage(),
+			DefaultAutoInstPython: cfg.AutoInstrumentationPythonImage(),
+			DefaultAutoInstDotNet: cfg.AutoInstrumentationDotNetImage(),
 			Client:                mgr.GetClient(),
 		}
 		return u.ManagedInstances(c)

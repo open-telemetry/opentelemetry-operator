@@ -8,6 +8,10 @@ spec:
       jaeger:
         protocols:
           grpc:
+      otlp:
+        protocols:
+          grpc:
+          http:
     processors:
 
     exporters:
@@ -16,6 +20,6 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [jaeger]
+          receivers: [jaeger,otlp]
           processors: []
           exporters: [logging]

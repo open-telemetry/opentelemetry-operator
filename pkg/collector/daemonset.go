@@ -27,7 +27,7 @@ import (
 
 // DaemonSet builds the deployment for the given instance.
 func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.DaemonSet {
-	labels := Labels(otelcol)
+	labels := Labels(otelcol, cfg.LabelsFilter())
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
 	annotations := Annotations(otelcol)
@@ -41,7 +41,7 @@ func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: SelectorLabels(otelcol),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -53,6 +53,7 @@ func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 					Containers:         []corev1.Container{Container(cfg, logger, otelcol)},
 					Volumes:            Volumes(cfg, otelcol),
 					Tolerations:        otelcol.Spec.Tolerations,
+					NodeSelector:       otelcol.Spec.NodeSelector,
 					HostNetwork:        otelcol.Spec.HostNetwork,
 					DNSPolicy:          getDnsPolicy(otelcol),
 					SecurityContext:    otelcol.Spec.PodSecurityContext,

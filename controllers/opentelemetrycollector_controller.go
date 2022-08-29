@@ -21,7 +21,8 @@ import (
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,34 +32,35 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
 type OpenTelemetryCollectorReconciler struct {
 	client.Client
-	log      logr.Logger
-	scheme   *runtime.Scheme
-	config   config.Config
-	tasks    []Task
 	recorder record.EventRecorder
+	scheme   *runtime.Scheme
+	log      logr.Logger
+	tasks    []Task
+	config   config.Config
 }
 
 // Task represents a reconciliation task to be executed by the reconciler.
 type Task struct {
-	Name        string
 	Do          func(context.Context, reconcile.Params) error
+	Name        string
 	BailOnError bool
 }
 
 // Params is the set of options to build a new openTelemetryCollectorReconciler.
 type Params struct {
 	client.Client
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Config   config.Config
-	Tasks    []Task
 	Recorder record.EventRecorder
+	Scheme   *runtime.Scheme
+	Log      logr.Logger
+	Tasks    []Task
+	Config   config.Config
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -66,43 +68,43 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	if len(p.Tasks) == 0 {
 		p.Tasks = []Task{
 			{
-				"config maps",
 				reconcile.ConfigMaps,
+				"config maps",
 				true,
 			},
 			{
-				"service accounts",
 				reconcile.ServiceAccounts,
+				"service accounts",
 				true,
 			},
 			{
-				"services",
 				reconcile.Services,
+				"services",
 				true,
 			},
 			{
-				"deployments",
 				reconcile.Deployments,
+				"deployments",
 				true,
 			},
 			{
-				"horizontal pod autoscalers",
 				reconcile.HorizontalPodAutoscalers,
+				"horizontal pod autoscalers",
 				true,
 			},
 			{
-				"daemon sets",
 				reconcile.DaemonSets,
+				"daemon sets",
 				true,
 			},
 			{
-				"stateful sets",
 				reconcile.StatefulSets,
+				"stateful sets",
 				true,
 			},
 			{
-				"opentelemetry",
 				reconcile.Self,
+				"opentelemetry",
 				true,
 			},
 		}
@@ -173,14 +175,25 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	err := r.config.AutoDetect() // We need to call this so we can get the correct autodetect version
+	if err != nil {
+		return err
+	}
+	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&autoscalingv1.HorizontalPodAutoscaler{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{}).
-		Complete(r)
+		Owns(&appsv1.StatefulSet{})
+
+	autoscalingVersion := r.config.AutoscalingVersion()
+	if autoscalingVersion == autodetect.AutoscalingVersionV2 {
+		builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
+	} else {
+		builder = builder.Owns(&autoscalingv2beta2.HorizontalPodAutoscaler{})
+	}
+
+	return builder.Complete(r)
 }

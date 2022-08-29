@@ -8,11 +8,14 @@ import (
 	"testing"
 
 	gokitlog "github.com/go-kit/log"
-	"github.com/otel-allocator/allocation"
-	"github.com/otel-allocator/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
+	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 	"github.com/prometheus/common/model"
+	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/assert"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var cfg config.Config
@@ -26,7 +29,7 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to load config file: %v", err)
 		os.Exit(1)
 	}
-	manager = NewManager(context.Background(), gokitlog.NewNopLogger())
+	manager = NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger())
 
 	results = make(chan []string)
 	manager.Watch(func(targets []allocation.TargetItem) {
@@ -45,7 +48,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestTargetDiscovery(t *testing.T) {
-	err := manager.ApplyConfig(cfg)
+	err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, &promconfig.Config{})
 	assert.NoError(t, err)
 
 	gotTargets := <-results
@@ -70,7 +73,7 @@ func TestTargetUpdate(t *testing.T) {
 		},
 	}
 
-	err := manager.ApplyConfig(cfg)
+	err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, &promconfig.Config{})
 	assert.NoError(t, err)
 
 	gotTargets := <-results

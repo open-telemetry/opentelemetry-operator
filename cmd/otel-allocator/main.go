@@ -3,61 +3,64 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/fsnotify/fsnotify"
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
-	"github.com/otel-allocator/allocation"
-	"github.com/otel-allocator/collector"
-	"github.com/otel-allocator/config"
-	lbdiscovery "github.com/otel-allocator/discovery"
-	"github.com/spf13/pflag"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
+	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
+	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var (
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog     = ctrl.Log.WithName("setup")
+	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "opentelemetry_allocator_http_duration_seconds",
+		Help: "Duration of received HTTP requests.",
+	}, []string{"path"})
+	eventsMetric = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "opentelemetry_allocator_events",
+		Help: "Number of events in the channel.",
+	}, []string{"source"})
 )
 
 func main() {
-	// Trying zap logger
-	opts := zap.Options{}
-	opts.BindFlags(flag.CommandLine)
-	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	var listenAddr string
-	var configDir string
-	pflag.StringVar(&listenAddr, "listen-addr", ":8080", "The address where this service serves.")
-	pflag.StringVar(&configDir, "config-dir", "/conf/", "The directory for the config file.")
-	pflag.Parse()
-	logger := zap.New(zap.UseFlagOptions(&opts))
-	ctrl.SetLogger(logger)
+	cliConf, err := config.ParseCLI()
+	if err != nil {
+		setupLog.Error(err, "Failed to parse parameters")
+		os.Exit(1)
+	}
 
-	logger.Info("Starting the Target Allocator")
-
-	//
+	cliConf.RootLogger.Info("Starting the Target Allocator")
 
 	ctx := context.Background()
 
-	// watcher to monitor file changes in ConfigMap
-	watcher, err := fsnotify.NewWatcher()
+	log := ctrl.Log.WithName("allocator")
+	allocator := allocation.NewAllocator(log)
+	watcher, err := allocatorWatcher.NewWatcher(setupLog, cliConf, allocator)
 	if err != nil {
-		setupLog.Error(err, "Can't start the watcher")
+		setupLog.Error(err, "Can't start the watchers")
 		os.Exit(1)
 	}
 	defer watcher.Close()
 
-	if err := watcher.Add(configDir); err != nil {
-		setupLog.Error(err, "Can't add directory to watcher")
-	}
-	log := ctrl.Log.WithName("allocator")
-	srv, err := newServer(log, listenAddr)
+	// creates a new discovery manager
+	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger())
+	defer discoveryManager.Close()
+	discoveryManager.Watch(allocator.SetTargets)
+
+	srv, err := newServer(log, allocator, discoveryManager, cliConf)
 	if err != nil {
 		setupLog.Error(err, "Can't start the server")
 	}
@@ -80,14 +83,15 @@ func main() {
 			}
 			os.Exit(0)
 		case event := <-watcher.Events:
-			switch event.Op {
-			case fsnotify.Create:
+			eventsMetric.WithLabelValues(event.Source.String()).Inc()
+			switch event.Source {
+			case allocatorWatcher.EventSourceConfigMap:
 				setupLog.Info("ConfigMap updated!")
 				// Restart the server to pickup the new config.
 				if err := srv.Shutdown(ctx); err != nil {
 					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv, err = newServer(log, listenAddr)
+				srv, err = newServer(log, allocator, discoveryManager, cliConf)
 				if err != nil {
 					setupLog.Error(err, "Error restarting the server with new config")
 				}
@@ -96,6 +100,17 @@ func main() {
 						setupLog.Error(err, "Can't restart the server")
 					}
 				}()
+
+			case allocatorWatcher.EventSourcePrometheusCR:
+				setupLog.Info("PrometheusCRs changed")
+				promConfig, err := interface{}(*event.Watcher).(*allocatorWatcher.PrometheusCRWatcher).CreatePromConfig(cliConf.KubeConfigFilePath)
+				if err != nil {
+					setupLog.Error(err, "failed to compile Prometheus config")
+				}
+				err = discoveryManager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, promConfig)
+				if err != nil {
+					setupLog.Error(err, "failed to apply Prometheus config")
+				}
 			}
 		case err := <-watcher.Errors:
 			setupLog.Error(err, "Watcher error")
@@ -111,8 +126,8 @@ type server struct {
 	server           *http.Server
 }
 
-func newServer(log logr.Logger, addr string) (*server, error) {
-	allocator, discoveryManager, k8sclient, err := newAllocator(log, context.Background())
+func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, cliConf config.CLIConfig) (*server, error) {
+	k8sclient, err := configureFileDiscovery(log, allocator, discoveryManager, context.Background(), cliConf)
 	if err != nil {
 		return nil, err
 	}
@@ -122,42 +137,33 @@ func newServer(log logr.Logger, addr string) (*server, error) {
 		discoveryManager: discoveryManager,
 		k8sClient:        k8sclient,
 	}
-	router := mux.NewRouter()
+	router := mux.NewRouter().UseEncodedPath()
+	router.Use(s.PrometheusMiddleware)
 	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
-	s.server = &http.Server{Addr: addr, Handler: router}
+	router.Path("/metrics").Handler(promhttp.Handler())
+	s.server = &http.Server{Addr: *cliConf.ListenAddr, Handler: router}
 	return s, nil
 }
 
-func newAllocator(log logr.Logger, ctx context.Context) (*allocation.Allocator, *lbdiscovery.Manager, *collector.Client, error) {
-	cfg, err := config.Load("")
+func configureFileDiscovery(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
+	cfg, err := config.Load(*cliConfig.ConfigFilePath)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
-	k8sClient, err := collector.NewClient(log)
+	k8sClient, err := collector.NewClient(log, cliConfig.ClusterConfig)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
-
-	// creates a new discovery manager
-	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger())
 
 	// returns the list of targets
-	if err := discoveryManager.ApplyConfig(cfg); err != nil {
-		return nil, nil, nil, err
+	if err := discoveryManager.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.Config); err != nil {
+		return nil, err
 	}
 
-	allocator := allocation.NewAllocator(log)
-	discoveryManager.Watch(func(targets []allocation.TargetItem) {
-		allocator.SetWaitingTargets(targets)
-		allocator.AllocateTargets()
-	})
-	k8sClient.Watch(ctx, cfg.LabelSelector, func(collectors []string) {
-		allocator.SetCollectors(collectors)
-		allocator.ReallocateCollectors()
-	})
-	return allocator, discoveryManager, k8sClient, nil
+	k8sClient.Watch(ctx, cfg.LabelSelector, allocator.SetCollectors)
+	return k8sClient, nil
 }
 
 func (s *server) Start() error {
@@ -168,33 +174,48 @@ func (s *server) Start() error {
 func (s *server) Shutdown(ctx context.Context) error {
 	s.logger.Info("Shutting down server...")
 	s.k8sClient.Close()
-	s.discoveryManager.Close()
 	return s.server.Shutdown(ctx)
 }
 
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
 	displayData := make(map[string]allocation.LinkJSON)
-	for _, v := range s.allocator.TargetItems {
+	for _, v := range s.allocator.TargetItems() {
 		displayData[v.JobName] = allocation.LinkJSON{v.Link.Link}
 	}
 	jsonHandler(w, r, displayData)
+}
+
+// PrometheusMiddleware implements mux.MiddlewareFunc.
+func (s *server) PrometheusMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		route := mux.CurrentRoute(r)
+		path, _ := route.GetPathTemplate()
+		timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
+		next.ServeHTTP(w, r)
+		timer.ObserveDuration()
+	})
 }
 
 func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()["collector_id"]
 
 	var compareMap = make(map[string][]allocation.TargetItem) // CollectorName+jobName -> TargetItem
-	for _, v := range s.allocator.TargetItems {
+	for _, v := range s.allocator.TargetItems() {
 		compareMap[v.Collector.Name+v.JobName] = append(compareMap[v.Collector.Name+v.JobName], *v)
 	}
 	params := mux.Vars(r)
+	jobId, err := url.QueryUnescape(params["job_id"])
+	if err != nil {
+		errorHandler(err, w, r)
+		return
+	}
 
 	if len(q) == 0 {
-		displayData := allocation.GetAllTargetsByJob(params["job_id"], compareMap, s.allocator)
+		displayData := allocation.GetAllTargetsByJob(jobId, compareMap, s.allocator)
 		jsonHandler(w, r, displayData)
 
 	} else {
-		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], params["job_id"], compareMap, s.allocator)
+		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], jobId, compareMap, s.allocator)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
 			jsonHandler(w, r, []interface{}{})
@@ -202,6 +223,10 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonHandler(w, r, tgs)
 	}
+}
+
+func errorHandler(err error, w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(500)
 }
 
 func jsonHandler(w http.ResponseWriter, r *http.Request, data interface{}) {

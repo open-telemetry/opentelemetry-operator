@@ -18,12 +18,15 @@ import (
 	"context"
 	"fmt"
 
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
@@ -31,7 +34,7 @@ import (
 
 // HorizontalPodAutoscaler reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
 func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
-	desired := []autoscalingv1.HorizontalPodAutoscaler{}
+	desired := []client.Object{}
 
 	// check if autoscale mode is on, e.g MaxReplicas is not nil
 	if params.Instance.Spec.MaxReplicas != nil {
@@ -51,47 +54,48 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
-	for _, obj := range expected {
-		desired := obj
+func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
+	autoscalingVersion := params.Config.AutoscalingVersion()
+	var existing client.Object
+	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
+		existing = &autoscalingv2beta2.HorizontalPodAutoscaler{}
+	} else {
+		existing = &autoscalingv2.HorizontalPodAutoscaler{}
+	}
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+	for _, obj := range expected {
+		desired, _ := meta.Accessor(obj)
+
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
-		existing := &autoscalingv1.HorizontalPodAutoscaler{}
-		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
+		nns := types.NamespacedName{Namespace: desired.GetNamespace(), Name: desired.GetName()}
 		err := params.Client.Get(ctx, nns, existing)
 		if k8serrors.IsNotFound(err) {
-			if err := params.Client.Create(ctx, &desired); err != nil {
+			if err := params.Client.Create(ctx, obj); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
-			params.Log.V(2).Info("created", "hpa.name", desired.Name, "hpa.namespace", desired.Namespace)
+			params.Log.V(2).Info("created", "hpa.name", desired.GetName(), "hpa.namespace", desired.GetNamespace())
 			continue
 		} else if err != nil {
 			return fmt.Errorf("failed to get %w", err)
 		}
 
-		updated := existing.DeepCopy()
-		if updated.Annotations == nil {
-			updated.Annotations = map[string]string{}
-		}
-		if updated.Labels == nil {
-			updated.Labels = map[string]string{}
-		}
+		updated := existing.DeepCopyObject().(client.Object)
+		updated.SetOwnerReferences(desired.GetOwnerReferences())
+		setAutoscalerSpec(params, autoscalingVersion, updated)
 
-		updated.OwnerReferences = desired.OwnerReferences
-		updated.Spec.MinReplicas = params.Instance.Spec.Replicas
-		if params.Instance.Spec.MaxReplicas != nil {
-			updated.Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
+		annotations := updated.GetAnnotations()
+		for k, v := range desired.GetAnnotations() {
+			annotations[k] = v
 		}
-
-		for k, v := range desired.Annotations {
-			updated.Annotations[k] = v
+		updated.SetAnnotations(annotations)
+		labels := updated.GetLabels()
+		for k, v := range desired.GetLabels() {
+			labels[k] = v
 		}
-		for k, v := range desired.Labels {
-			updated.Labels[k] = v
-		}
+		updated.SetLabels(labels)
 
 		patch := client.MergeFrom(existing)
 
@@ -99,13 +103,36 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
 
-		params.Log.V(2).Info("applied", "hpa.name", desired.Name, "hpa.namespace", desired.Namespace)
+		params.Log.V(2).Info("applied", "hpa.name", desired.GetName(), "hpa.namespace", desired.GetNamespace())
 	}
 
 	return nil
 }
 
-func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []autoscalingv1.HorizontalPodAutoscaler) error {
+func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object) {
+	one := int32(1)
+	if params.Instance.Spec.MaxReplicas != nil {
+		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
+			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
+			if params.Instance.Spec.MinReplicas != nil {
+				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = params.Instance.Spec.MinReplicas
+			} else {
+				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
+			}
+		} else {
+			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
+			if params.Instance.Spec.MinReplicas != nil {
+				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = params.Instance.Spec.MinReplicas
+			} else {
+				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
+			}
+		}
+	}
+}
+
+func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
+	autoscalingVersion := params.Config.AutoscalingVersion()
+
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -114,26 +141,53 @@ func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected
 		}),
 	}
 
-	list := &autoscalingv1.HorizontalPodAutoscalerList{}
-	if err := params.Client.List(ctx, list, opts...); err != nil {
-		return fmt.Errorf("failed to list: %w", err)
-	}
-
-	for i := range list.Items {
-		existing := list.Items[i]
-		del := true
-		for _, keep := range expected {
-			if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
-				del = false
-				break
-			}
+	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
+		list := &autoscalingv2beta2.HorizontalPodAutoscalerList{}
+		if err := params.Client.List(ctx, list, opts...); err != nil {
+			return fmt.Errorf("failed to list: %w", err)
 		}
 
-		if del {
-			if err := params.Client.Delete(ctx, &existing); err != nil {
-				return fmt.Errorf("failed to delete: %w", err)
+		for i := range list.Items {
+			existing := list.Items[i]
+			del := true
+			for _, k := range expected {
+				keep := k.(*autoscalingv2beta2.HorizontalPodAutoscaler)
+				if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
+					del = false
+					break
+				}
 			}
-			params.Log.V(2).Info("deleted", "hpa.name", existing.Name, "hpa.namespace", existing.Namespace)
+
+			if del {
+				if err := params.Client.Delete(ctx, &existing); err != nil {
+					return fmt.Errorf("failed to delete: %w", err)
+				}
+				params.Log.V(2).Info("deleted", "hpa.name", existing.Name, "hpa.namespace", existing.Namespace)
+			}
+		}
+	} else {
+		list := &autoscalingv2.HorizontalPodAutoscalerList{}
+		if err := params.Client.List(ctx, list, opts...); err != nil {
+			return fmt.Errorf("failed to list: %w", err)
+		}
+
+		for i := range list.Items {
+			existing := list.Items[i]
+			del := true
+			for _, k := range expected {
+				keep := k.(*autoscalingv2.HorizontalPodAutoscaler)
+				if keep.Name == existing.Name && keep.Namespace == existing.Namespace {
+					del = false
+					break
+				}
+			}
+
+			if del {
+				if err := params.Client.Delete(ctx, &existing); err != nil {
+					return fmt.Errorf("failed to delete: %w", err)
+				}
+				params.Log.V(2).Info("deleted", "hpa.name", existing.Name, "hpa.namespace", existing.Namespace)
+			}
 		}
 	}
 

@@ -1,5 +1,5 @@
 # Build the target allocator binary
-FROM golang:1.17 as builder
+FROM golang:1.18 as builder
 
 WORKDIR /app
 
@@ -23,4 +23,4 @@ WORKDIR /root/
 # Copy the pre-built binary file from the previous stage
 COPY --from=builder /app/main .
 
-CMD ["./main"]
+ENTRYPOINT ["./main"]

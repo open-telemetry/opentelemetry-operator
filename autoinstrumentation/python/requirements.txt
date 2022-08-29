@@ -5,6 +5,7 @@ opentelemetry-exporter-otlp-proto-http==1.12.0
 
 opentelemetry-propagator-b3==1.12.0
 opentelemetry-propagator-jaeger==1.12.0
+opentelemetry-propagator-aws-xray==1.0.1
 
 opentelemetry-instrumentation==0.33b0
 opentelemetry-propagator-ot-trace==0.33b0

@@ -68,7 +68,7 @@ func Services(ctx context.Context, params Params) error {
 }
 
 func desiredService(ctx context.Context, params Params) *corev1.Service {
-	labels := collector.Labels(params.Instance)
+	labels := collector.Labels(params.Instance, []string{})
 	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
 	// by coincidence, the selector is the same as the label, but note that the selector points to the deployment
@@ -158,15 +158,25 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 	}
 
 	h.Name = naming.HeadlessService(params.Instance)
+
+	// copy to avoid modifying params.Instance.Annotations
+	annotations := map[string]string{
+		"service.beta.openshift.io/serving-cert-secret-name": fmt.Sprintf("%s-tls", h.Name),
+	}
+	for k, v := range h.Annotations {
+		annotations[k] = v
+	}
+	h.Annotations = annotations
+
 	h.Spec.ClusterIP = "None"
 	return h
 }
 
 func monitoringService(ctx context.Context, params Params) *corev1.Service {
-	labels := collector.Labels(params.Instance)
+	labels := collector.Labels(params.Instance, []string{})
 	labels["app.kubernetes.io/name"] = naming.MonitoringService(params.Instance)
 
-	selector := collector.Labels(params.Instance)
+	selector := collector.Labels(params.Instance, []string{})
 	selector["app.kubernetes.io/name"] = fmt.Sprintf("%s-collector", params.Instance.Name)
 
 	return &corev1.Service{

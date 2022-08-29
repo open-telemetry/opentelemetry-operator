@@ -33,7 +33,8 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance",
+			Name:      "my-instance",
+			Namespace: "my-namespace",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Mode:        "statefulset",
@@ -61,8 +62,28 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	}
 	assert.Equal(t, expectedAnnotations, ss.Spec.Template.Annotations)
 
-	// the pod selector should match the pod spec's labels
-	assert.Equal(t, ss.Spec.Selector.MatchLabels, ss.Spec.Template.Labels)
+	expectedLabels := map[string]string{
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/instance":   "my-namespace.my-instance",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/name":       "my-instance-collector",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/version":    "latest",
+	}
+	assert.Equal(t, expectedLabels, ss.Spec.Template.Labels)
+
+	expectedSelectorLabels := map[string]string{
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/instance":   "my-namespace.my-instance",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+	}
+	assert.Equal(t, expectedSelectorLabels, ss.Spec.Selector.MatchLabels)
+
+	// the pod selector must be contained within pod spec's labels
+	for k, v := range ss.Spec.Selector.MatchLabels {
+		assert.Equal(t, v, ss.Spec.Template.Labels[k])
+	}
 
 	// assert correct service name
 	assert.Equal(t, "my-instance-collector", ss.Spec.ServiceName)
@@ -144,7 +165,7 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 	// test
 	ss := StatefulSet(cfg, logger, otelcol)
 
-	//Add sha256 podAnnotation
+	// Add sha256 podAnnotation
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 	// verify
@@ -209,4 +230,61 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 	d2 := StatefulSet(cfg, logger, otelcol_2)
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
+}
+
+func TestStatefulSetFilterLabels(t *testing.T) {
+	excludedLabels := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+	}
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "my-instance",
+			Labels: excludedLabels,
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
+
+	d := StatefulSet(cfg, logger, otelcol)
+
+	assert.Len(t, d.ObjectMeta.Labels, 6)
+	for k := range excludedLabels {
+		assert.NotContains(t, d.ObjectMeta.Labels, k)
+	}
+}
+
+func TestStatefulSetNodeSelector(t *testing.T) {
+	// Test default
+	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	d1 := StatefulSet(cfg, logger, otelcol_1)
+
+	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
+
+	// Test nodeSelector
+	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-nodeselector",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			HostNetwork: true,
+			NodeSelector: map[string]string{
+				"node-key": "node-value",
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	d2 := StatefulSet(cfg, logger, otelcol_2)
+	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }

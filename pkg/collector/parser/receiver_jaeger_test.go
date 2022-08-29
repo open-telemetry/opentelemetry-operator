@@ -84,9 +84,9 @@ func TestJaegerExposeDefaultPorts(t *testing.T) {
 	})
 
 	expectedResults := map[string]struct {
+		transportProtocol corev1.Protocol
 		portNumber        int32
 		seen              bool
-		transportProtocol corev1.Protocol
 	}{
 		"jaeger-grpc":           {portNumber: 14250, transportProtocol: corev1.ProtocolTCP},
 		"jaeger-thrift-http":    {portNumber: 14268, transportProtocol: corev1.ProtocolTCP},

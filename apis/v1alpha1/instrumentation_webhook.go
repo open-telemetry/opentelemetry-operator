@@ -27,11 +27,14 @@ import (
 )
 
 const (
-	AnnotationDefaultAutoInstrumentationJava   = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
-	AnnotationDefaultAutoInstrumentationNodeJS = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
-	AnnotationDefaultAutoInstrumentationPython = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
-	envPrefix                                  = "OTEL_"
-	envSplunkPrefix                            = "SPLUNK_"
+	AnnotationDefaultAutoInstrumentationJava       = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
+	AnnotationDefaultAutoInstrumentationNodeJS     = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
+	AnnotationDefaultAutoInstrumentationPython     = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
+	AnnotationDefaultAutoInstrumentationDotNet     = "instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"
+	envPrefix                                      = "OTEL_"
+	envSplunkPrefix                                = "SPLUNK_"
+	envOtelDotnetAutoTracesEnabledInstrumentations = "OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS"
+	defaultEnabledTracesInstrumentations           = "AspNet,HttpClient,SqlClient"
 )
 
 // log is for logging in this package.
@@ -71,6 +74,18 @@ func (r *Instrumentation) Default() {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationPython]; ok {
 			r.Spec.Python.Image = val
 		}
+	}
+	if r.Spec.DotNet.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationDotNet]; ok {
+			r.Spec.DotNet.Image = val
+		}
+	}
+	// by default set all the available instrumentations for dotnet unless the env is already set
+	if !r.isEnvVarSet(envOtelDotnetAutoTracesEnabledInstrumentations) {
+		r.Spec.DotNet.Env = append(r.Spec.DotNet.Env, corev1.EnvVar{
+			Name:  envOtelDotnetAutoTracesEnabledInstrumentations,
+			Value: defaultEnabledTracesInstrumentations,
+		})
 	}
 }
 
@@ -125,6 +140,9 @@ func (in *Instrumentation) validate() error {
 	if err := in.validateEnv(in.Spec.Python.Env); err != nil {
 		return err
 	}
+	if err := in.validateEnv(in.Spec.DotNet.Env); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -136,4 +154,13 @@ func (in *Instrumentation) validateEnv(envs []corev1.EnvVar) error {
 		}
 	}
 	return nil
+}
+
+func (in *Instrumentation) isEnvVarSet(name string) bool {
+	for _, env := range in.Spec.DotNet.Env {
+		if env.Name == name {
+			return true
+		}
+	}
+	return false
 }

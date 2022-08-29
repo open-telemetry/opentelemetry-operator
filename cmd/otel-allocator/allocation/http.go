@@ -2,6 +2,7 @@ package allocation
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/prometheus/common/model"
 )
@@ -22,28 +23,21 @@ type targetGroupJSON struct {
 
 func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator *Allocator) map[string]collectorJSON {
 	displayData := make(map[string]collectorJSON)
-	for _, j := range allocator.TargetItems {
+	for _, j := range allocator.TargetItems() {
 		if j.JobName == job {
 			var targetList []TargetItem
 			targetList = append(targetList, cMap[j.Collector.Name+j.JobName]...)
 
 			var targetGroupList []targetGroupJSON
 
-			trg := make(map[string][]TargetItem)
 			for _, t := range targetList {
-				trg[t.JobName+t.Label.String()] = append(trg[t.JobName+t.Label.String()], t)
+				targetGroupList = append(targetGroupList, targetGroupJSON{
+					Targets: []string{t.TargetURL},
+					Labels:  t.Label,
+				})
 			}
-			labelSetMap := make(map[string]model.LabelSet)
-			for _, tArr := range trg {
-				var targets []string
-				for _, t := range tArr {
-					labelSetMap[t.TargetURL] = t.Label
-					targets = append(targets, t.TargetURL)
-				}
-				targetGroupList = append(targetGroupList, targetGroupJSON{Targets: targets, Labels: labelSetMap[targets[0]]})
 
-			}
-			displayData[j.Collector.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", j.JobName, j.Collector.Name), Jobs: targetGroupList}
+			displayData[j.Collector.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.Collector.Name), Jobs: targetGroupList}
 
 		}
 	}
@@ -52,14 +46,14 @@ func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator *All
 
 func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]TargetItem, allocator *Allocator) []targetGroupJSON {
 	var tgs []targetGroupJSON
-	group := make(map[string][]string)
+	group := make(map[string]string)
 	labelSet := make(map[string]model.LabelSet)
-	for _, col := range allocator.collectors {
+	for _, col := range allocator.Collectors() {
 		if col.Name == collector {
 			for _, targetItemArr := range cMap {
 				for _, targetItem := range targetItemArr {
 					if targetItem.Collector.Name == collector && targetItem.JobName == job {
-						group[targetItem.Label.String()] = append(group[targetItem.Label.String()], targetItem.TargetURL)
+						group[targetItem.Label.String()] = targetItem.TargetURL
 						labelSet[targetItem.TargetURL] = targetItem.Label
 					}
 				}
@@ -68,7 +62,7 @@ func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[strin
 	}
 
 	for _, v := range group {
-		tgs = append(tgs, targetGroupJSON{Targets: v, Labels: labelSet[v[0]]})
+		tgs = append(tgs, targetGroupJSON{Targets: []string{v}, Labels: labelSet[v]})
 	}
 
 	return tgs
