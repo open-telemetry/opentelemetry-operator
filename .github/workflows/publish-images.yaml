@@ -34,7 +34,7 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v4.0.1
         with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator 
+          images: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
