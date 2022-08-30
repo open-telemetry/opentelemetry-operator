@@ -47,7 +47,9 @@ func main() {
 	ctx := context.Background()
 
 	log := ctrl.Log.WithName("allocator")
-	allocator := allocation.NewAllocator(log)
+
+	strategy, _ := allocation.NewStrategy(*cliConf.AllocationStrategy)
+	allocator := allocation.NewAllocator(log, strategy)
 	watcher, err := allocatorWatcher.NewWatcher(setupLog, cliConf, allocator)
 	if err != nil {
 		setupLog.Error(err, "Can't start the watchers")
@@ -201,7 +203,7 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var compareMap = make(map[string][]allocation.TargetItem) // CollectorName+jobName -> TargetItem
 	for _, v := range s.allocator.TargetItems() {
-		compareMap[v.Collector.Name+v.JobName] = append(compareMap[v.Collector.Name+v.JobName], *v)
+		compareMap[v.CollectorName+v.JobName] = append(compareMap[v.CollectorName+v.JobName], v)
 	}
 	params := mux.Vars(r)
 	jobId, err := url.QueryUnescape(params["job_id"])

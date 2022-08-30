@@ -47,6 +47,7 @@ type CLIConfig struct {
 	KubeConfigFilePath string
 	RootLogger         logr.Logger
 	PromCRWatcherConf  PrometheusCRWatcherConfig
+	AllocationStrategy *string
 }
 
 func Load(file string) (Config, error) {
@@ -78,6 +79,7 @@ func ParseCLI() (CLIConfig, error) {
 		PromCRWatcherConf: PrometheusCRWatcherConfig{
 			Enabled: pflag.Bool("enable-prometheus-cr-watcher", false, "Enable Prometheus CRs as target sources"),
 		},
+		AllocationStrategy: pflag.String("allocation-strategy", "least-weighted", "The allocation strategy to use"),
 	}
 	kubeconfigPath := pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
 	pflag.Parse()

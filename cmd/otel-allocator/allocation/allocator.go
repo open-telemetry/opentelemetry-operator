@@ -1,6 +1,7 @@
 package allocation
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"sync"
@@ -34,11 +35,21 @@ var (
 */
 
 type TargetItem struct {
-	JobName   string
-	Link      LinkJSON
-	TargetURL string
-	Label     model.LabelSet
-	Collector *collector
+	JobName       string
+	Link          LinkJSON
+	TargetURL     string
+	Label         model.LabelSet
+	CollectorName string
+}
+
+func NewTargetItem(jobName string, targetURL string, label model.LabelSet, collectorName string) TargetItem {
+	return TargetItem{
+		JobName:       jobName,
+		Link:          LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))},
+		TargetURL:     targetURL,
+		Label:         label,
+		CollectorName: collectorName,
+	}
 }
 
 func (t TargetItem) hash() string {
@@ -47,10 +58,59 @@ func (t TargetItem) hash() string {
 
 // Create a struct that holds collector - and jobs for that collector
 // This struct will be parsed into endpoint with collector and jobs info
-
+// This struct can be extended with information like annotations and labels in the future
 type collector struct {
 	Name       string
 	NumTargets int
+}
+
+type State struct {
+	// collectors is a map from a collector's name to a collector instance
+	collectors map[string]collector
+	// targetItems is a map from a target item's hash to the target items allocated state
+	targetItems map[string]TargetItem
+}
+
+func NewState(collectors map[string]collector, targetItems map[string]TargetItem) State {
+	return State{collectors: collectors, targetItems: targetItems}
+}
+
+type changes[T any] struct {
+	additions map[string]T
+	removals  map[string]T
+}
+
+func diff[T any](current, new map[string]T) changes[T] {
+	additions := map[string]T{}
+	removals := map[string]T{}
+	// Used as a set to check for removed items
+	newMembership := map[string]bool{}
+	for key, value := range new {
+		if _, found := current[key]; !found {
+			additions[key] = value
+		}
+		newMembership[key] = true
+	}
+	for key, value := range current {
+		if _, found := newMembership[key]; !found {
+			removals[key] = value
+		}
+	}
+	return changes[T]{
+		additions: additions,
+		removals:  removals,
+	}
+}
+
+type AllocatorStrategy interface {
+	Allocate(currentState, newState State) State
+}
+
+func NewStrategy(kind string) (AllocatorStrategy, error) {
+	if kind == "least-weighted" {
+		return LeastWeightedStrategy{}, nil
+	}
+	return nil, errors.New("invalid strategy supplied valid options are [least-weighted]")
 }
 
 // Allocator makes decisions to distribute work among
@@ -59,89 +119,33 @@ type collector struct {
 // clusters and call SetCollectors when the collectors have changed.
 type Allocator struct {
 	// m protects collectors and targetItems for concurrent use.
-	m           sync.RWMutex
-	collectors  map[string]*collector // all current collectors
-	targetItems map[string]*TargetItem
+	m     sync.RWMutex
+	state State
 
-	log logr.Logger
+	log      logr.Logger
+	strategy AllocatorStrategy
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
-func (allocator *Allocator) TargetItems() map[string]*TargetItem {
+func (allocator *Allocator) TargetItems() map[string]TargetItem {
 	allocator.m.RLock()
 	defer allocator.m.RUnlock()
-	targetItemsCopy := make(map[string]*TargetItem)
-	for k, v := range allocator.targetItems {
+	targetItemsCopy := make(map[string]TargetItem)
+	for k, v := range allocator.state.targetItems {
 		targetItemsCopy[k] = v
 	}
 	return targetItemsCopy
 }
 
 // Collectors returns a shallow copy of the collectors map.
-func (allocator *Allocator) Collectors() map[string]*collector {
+func (allocator *Allocator) Collectors() map[string]collector {
 	allocator.m.RLock()
 	defer allocator.m.RUnlock()
-	collectorsCopy := make(map[string]*collector)
-	for k, v := range allocator.collectors {
+	collectorsCopy := make(map[string]collector)
+	for k, v := range allocator.state.collectors {
 		collectorsCopy[k] = v
 	}
 	return collectorsCopy
-}
-
-// findNextCollector finds the next collector with fewer number of targets.
-// This method is called from within SetTargets and SetCollectors, whose caller
-// acquires the needed lock.
-func (allocator *Allocator) findNextCollector() *collector {
-	var col *collector
-	for _, v := range allocator.collectors {
-		// If the initial collector is empty, set the initial collector to the first element of map
-		if col == nil {
-			col = v
-		} else {
-			if v.NumTargets < col.NumTargets {
-				col = v
-			}
-		}
-	}
-	return col
-}
-
-// addTargetToTargetItems assigns a target to the next available collector and adds it to the allocator's targetItems
-// This method is called from within SetTargets and SetCollectors, whose caller acquires the needed lock.
-// This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap
-func (allocator *Allocator) addTargetToTargetItems(target *TargetItem) {
-	chosenCollector := allocator.findNextCollector()
-	targetItem := TargetItem{
-		JobName:   target.JobName,
-		Link:      LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(target.JobName))},
-		TargetURL: target.TargetURL,
-		Label:     target.Label,
-		Collector: chosenCollector,
-	}
-	allocator.targetItems[targetItem.hash()] = &targetItem
-	chosenCollector.NumTargets++
-	targetsPerCollector.WithLabelValues(chosenCollector.Name).Set(float64(chosenCollector.NumTargets))
-}
-
-// getCollectorChanges returns the new and removed collectors respectively.
-// This method is called from within SetCollectors, which acquires the needed lock.
-func (allocator *Allocator) getCollectorChanges(collectors []string) ([]string, []string) {
-	var newCollectors []string
-	var removedCollectors []string
-	// Used as a set to check for removed collectors
-	tempCollectorMap := map[string]bool{}
-	for _, s := range collectors {
-		if _, found := allocator.collectors[s]; !found {
-			newCollectors = append(newCollectors, s)
-		}
-		tempCollectorMap[s] = true
-	}
-	for k := range allocator.collectors {
-		if _, found := tempCollectorMap[k]; !found {
-			removedCollectors = append(removedCollectors, k)
-		}
-	}
-	return newCollectors, removedCollectors
 }
 
 // SetTargets accepts a list of targets that will be used to make
@@ -159,30 +163,11 @@ func (allocator *Allocator) SetTargets(targets []TargetItem) {
 	for _, target := range targets {
 		tempTargetMap[target.hash()] = target
 	}
-
-	// Check for removals
-	for k, target := range allocator.targetItems {
-		// if the old target is no longer in the new list, remove it
-		if _, ok := tempTargetMap[k]; !ok {
-			allocator.collectors[target.Collector.Name].NumTargets--
-			delete(allocator.targetItems, k)
-			targetsPerCollector.WithLabelValues(target.Collector.Name).Set(float64(allocator.collectors[target.Collector.Name].NumTargets))
-		}
-	}
-
-	// Check for additions
-	for k, target := range tempTargetMap {
-		// Do nothing if the item is already there
-		if _, ok := allocator.targetItems[k]; ok {
-			continue
-		} else {
-			// Assign new set of collectors with the one different name
-			allocator.addTargetToTargetItems(&target)
-		}
-	}
+	newState := NewState(allocator.state.collectors, tempTargetMap)
+	allocator.state = allocator.strategy.Allocate(allocator.state, newState)
 }
 
-// SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
+// SetCollectors sets the set of collectors with key=collectorName, value=CollectorName object.
 // This method is called when Collectors are added or removed.
 func (allocator *Allocator) SetCollectors(collectors []string) {
 	log := allocator.log.WithValues("component", "opentelemetry-targetallocator")
@@ -197,41 +182,24 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
-	newCollectors, removedCollectors := allocator.getCollectorChanges(collectors)
-	if len(newCollectors) == 0 && len(removedCollectors) == 0 {
-		log.Info("No changes to the collectors found")
-		return
-	}
-
-	// Clear existing collectors
-	for _, k := range removedCollectors {
-		delete(allocator.collectors, k)
-		targetsPerCollector.WithLabelValues(k).Set(0)
-	}
-	// Insert the new collectors
-	for _, i := range newCollectors {
-		allocator.collectors[i] = &collector{Name: i, NumTargets: 0}
-	}
-
-	// find targets which need to be redistributed
-	var redistribute []*TargetItem
-	for _, item := range allocator.targetItems {
-		for _, s := range removedCollectors {
-			if item.Collector.Name == s {
-				redistribute = append(redistribute, item)
-			}
+	newCollectors := map[string]collector{}
+	for _, s := range collectors {
+		newCollectors[s] = collector{
+			Name:       s,
+			NumTargets: 0,
 		}
 	}
-	// Re-Allocate the existing targets
-	for _, item := range redistribute {
-		allocator.addTargetToTargetItems(item)
-	}
+	newState := NewState(newCollectors, allocator.state.targetItems)
+	allocator.state = allocator.strategy.Allocate(allocator.state, newState)
 }
 
-func NewAllocator(log logr.Logger) *Allocator {
+func NewAllocator(log logr.Logger, strategy AllocatorStrategy) *Allocator {
 	return &Allocator{
-		log:         log,
-		collectors:  make(map[string]*collector),
-		targetItems: make(map[string]*TargetItem),
+		log: log,
+		state: State{
+			collectors:  make(map[string]collector),
+			targetItems: make(map[string]TargetItem),
+		},
+		strategy: strategy,
 	}
 }

@@ -85,7 +85,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 			}
 			log.Info("Successfully started a collector pod watcher")
 			if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" {
-				log.Info("Collector pod watch event stopped " + msg)
+				log.Info("CollectorName pod watch event stopped " + msg)
 				return
 			}
 		}

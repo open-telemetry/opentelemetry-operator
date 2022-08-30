@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 
 	watcher, err := client.k8sClient.CoreV1().Pods("test-ns").Watch(context.Background(), opts)
 	if err != nil {
-		fmt.Printf("failed to setup a Collector Pod watcher: %v", err)
+		fmt.Printf("failed to setup a CollectorName Pod watcher: %v", err)
 		os.Exit(1)
 	}
 

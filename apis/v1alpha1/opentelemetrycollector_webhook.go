@@ -90,17 +90,17 @@ func (r *OpenTelemetryCollector) ValidateDelete() error {
 func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
+		return fmt.Errorf("the OpenTelemetry CollectorName mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
 	}
 
 	// validate tolerations
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
+		return fmt.Errorf("the OpenTelemetry CollectorName mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
 	}
 
 	// validate target allocation
 	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
+		return fmt.Errorf("the OpenTelemetry CollectorName mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
 	}
 
 	// validate Prometheus config for target allocation

@@ -11,22 +11,9 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
-// Tests the least connection - The expected collector after running findNextCollector should be the collector with the least amount of workload
-func TestFindNextCollector(t *testing.T) {
-	s := NewAllocator(logger)
-
-	defaultCol := collector{Name: "default-col", NumTargets: 1}
-	maxCol := collector{Name: "max-col", NumTargets: 2}
-	leastCol := collector{Name: "least-col", NumTargets: 0}
-	s.collectors[maxCol.Name] = &maxCol
-	s.collectors[leastCol.Name] = &leastCol
-	s.collectors[defaultCol.Name] = &defaultCol
-
-	assert.Equal(t, "least-col", s.findNextCollector().Name)
-}
-
 func TestSetCollectors(t *testing.T) {
-	s := NewAllocator(logger)
+	strategy, _ := NewStrategy("least-weighted")
+	s := NewAllocator(logger, strategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
@@ -42,7 +29,8 @@ func TestSetCollectors(t *testing.T) {
 
 func TestAddingAndRemovingTargets(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s := NewAllocator(logger)
+	strategy, _ := NewStrategy("least-weighted")
+	s := NewAllocator(logger, strategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
@@ -86,7 +74,8 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 // Tests that two targets with the same target url and job name but different label set are both added
 func TestAllocationCollision(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s := NewAllocator(logger)
+	strategy, _ := NewStrategy("least-weighted")
+	s := NewAllocator(logger, strategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
@@ -118,17 +107,18 @@ func TestAllocationCollision(t *testing.T) {
 }
 
 func TestNoCollectorReassignment(t *testing.T) {
-	s := NewAllocator(logger)
+	strategy, _ := NewStrategy("least-weighted")
+	s := NewAllocator(logger, strategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
 	labels := model.LabelSet{}
 
 	expectedColLen := len(cols)
-	assert.Len(t, s.collectors, expectedColLen)
+	assert.Len(t, s.state.collectors, expectedColLen)
 
 	for _, i := range cols {
-		assert.NotNil(t, s.collectors[i])
+		assert.NotNil(t, s.state.collectors[i])
 	}
 	initTargets := []string{"prometheus:1000", "prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005"}
 	var targetList []TargetItem
@@ -153,17 +143,18 @@ func TestNoCollectorReassignment(t *testing.T) {
 }
 
 func TestSmartCollectorReassignment(t *testing.T) {
-	s := NewAllocator(logger)
+	strategy, _ := NewStrategy("least-weighted")
+	s := NewAllocator(logger, strategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
 	labels := model.LabelSet{}
 
 	expectedColLen := len(cols)
-	assert.Len(t, s.collectors, expectedColLen)
+	assert.Len(t, s.state.collectors, expectedColLen)
 
 	for _, i := range cols {
-		assert.NotNil(t, s.collectors[i])
+		assert.NotNil(t, s.state.collectors[i])
 	}
 	initTargets := []string{"prometheus:1000", "prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005"}
 	var targetList []TargetItem
@@ -187,10 +178,10 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	for key, targetItem := range targetItems {
 		item, ok := newTargetItems[key]
 		assert.True(t, ok, "all target items should be found in new target item list")
-		if targetItem.Collector.Name != "col-3" {
-			assert.Equal(t, targetItem.Collector.Name, item.Collector.Name)
+		if targetItem.CollectorName != "col-3" {
+			assert.Equal(t, targetItem.CollectorName, item.CollectorName)
 		} else {
-			assert.Equal(t, "col-4", item.Collector.Name)
+			assert.Equal(t, "col-4", item.CollectorName)
 		}
 	}
 }
@@ -199,7 +190,8 @@ func TestSmartCollectorReassignment(t *testing.T) {
 func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 
 	// prepare allocator with 3 collectors and 'random' amount of targets
-	s := NewAllocator(logger)
+	strategy, _ := NewStrategy("least-weighted")
+	s := NewAllocator(logger, strategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
 	s.SetCollectors(cols)
