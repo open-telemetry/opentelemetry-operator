@@ -34,7 +34,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 	}{
 		{
 			name:   "DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS not defined",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{{Name: "OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS", Value: "AspNet,HttpClient,SqlClient"}}},
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -72,10 +72,6 @@ func TestInjectDotNetSDK(t *testing.T) {
 								},
 							},
 							Env: []corev1.EnvVar{
-								{
-									Name:  "OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS",
-									Value: "AspNet,HttpClient,SqlClient",
-								},
 								{
 									Name:  envDotNetStartupHook,
 									Value: dotNetStartupHookPath,
