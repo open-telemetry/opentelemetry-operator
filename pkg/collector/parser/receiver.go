@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package parser is for parsing the OpenTelemetry CollectorName configuration.
+// Package parser is for parsing the OpenTelemetry Collector configuration.
 package parser
 
 import (

@@ -32,9 +32,9 @@ import (
 )
 
 var (
-	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry CollectorName instances available, cannot determine which one to select")
-	errNoInstancesAvailable      = errors.New("no OpenTelemetry CollectorName instances available")
-	errInstanceNotSidecar        = errors.New("the OpenTelemetry CollectorName's mode is not set to sidecar")
+	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Collector instances available, cannot determine which one to select")
+	errNoInstancesAvailable      = errors.New("no OpenTelemetry Collector instances available")
+	errInstanceNotSidecar        = errors.New("the OpenTelemetry Collector's mode is not set to sidecar")
 )
 
 type sidecarPodMutator struct {
@@ -81,7 +81,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	if err != nil {
 		if err == errMultipleInstancesPossible || err == errNoInstancesAvailable || err == errInstanceNotSidecar {
 			// we still allow the pod to be created, but we log a message to the operator's logs
-			logger.Error(err, "failed to select an OpenTelemetry CollectorName instance for this pod's sidecar")
+			logger.Error(err, "failed to select an OpenTelemetry Collector instance for this pod's sidecar")
 			return pod, nil
 		}
 

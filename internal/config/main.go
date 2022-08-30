@@ -145,7 +145,7 @@ func (c *Config) AutoDetect() error {
 	return nil
 }
 
-// CollectorImage represents the flag to override the OpenTelemetry CollectorName container image.
+// CollectorImage represents the flag to override the OpenTelemetry Collector container image.
 func (c *Config) CollectorImage() string {
 	return c.collectorImage
 }

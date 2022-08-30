@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package upgrade handles the upgrade routine from one OpenTelemetry CollectorName to the next.
+// Package upgrade handles the upgrade routine from one OpenTelemetry Collector to the next.
 package upgrade
 
 import (
@@ -101,12 +101,12 @@ func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.Op
 
 	instanceV, err := semver.NewVersion(otelcol.Status.Version)
 	if err != nil {
-		u.Log.Error(err, "failed to parse version for OpenTelemetry CollectorName instance", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
+		u.Log.Error(err, "failed to parse version for OpenTelemetry Collector instance", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
 		return otelcol, err
 	}
 
 	if instanceV.GreaterThan(&Latest.Version) {
-		u.Log.Info("skipping upgrade for OpenTelemetry CollectorName instance, as it's newer than our latest version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version, "latest", Latest.Version.String())
+		u.Log.Info("skipping upgrade for OpenTelemetry Collector instance, as it's newer than our latest version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version, "latest", Latest.Version.String())
 		return otelcol, nil
 	}
 

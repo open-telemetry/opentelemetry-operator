@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package reconcile contains reconciliation logic for OpenTelemetry CollectorName components.
+// Package reconcile contains reconciliation logic for OpenTelemetry Collector components.
 package reconcile
 
 import (

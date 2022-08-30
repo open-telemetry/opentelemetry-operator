@@ -21,17 +21,17 @@ import (
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
-	// Resources to set on the OpenTelemetry CollectorName pods.
+	// Resources to set on the OpenTelemetry Collector pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
-	// NodeSelector to schedule OpenTelemetry CollectorName pods.
+	// NodeSelector to schedule OpenTelemetry Collector pods.
 	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Args is the set of arguments to pass to the OpenTelemetry CollectorName binary
+	// Args is the set of arguments to pass to the OpenTelemetry Collector binary
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
-	// Replicas is the number of pod instances for the underlying OpenTelemetry CollectorName. Set this if your are not using autoscaling
+	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
@@ -46,7 +46,7 @@ type OpenTelemetryCollectorSpec struct {
 
 	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
 	// PodAnnotations is the set of annotations that will be attached to
-	// CollectorName and Target Allocator pods.
+	// Collector and Target Allocator pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
@@ -58,7 +58,7 @@ type OpenTelemetryCollectorSpec struct {
 	// ServiceAccount indicates the name of an existing service account to use with this instance.
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
-	// Image indicates the container image to use for the OpenTelemetry CollectorName.
+	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	Image string `json:"image,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
@@ -68,7 +68,7 @@ type OpenTelemetryCollectorSpec struct {
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry CollectorName documentation for details.
+	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// +required
 	Config string `json:"config,omitempty"`
 	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
@@ -81,19 +81,19 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +listType=atomic
 	Ports []v1.ServicePort `json:"ports,omitempty"`
-	// ENV vars to set on the OpenTelemetry CollectorName's Pods. These can then in certain cases be
-	// consumed in the config file for the CollectorName.
+	// ENV vars to set on the OpenTelemetry Collector's Pods. These can then in certain cases be
+	// consumed in the config file for the Collector.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
-	// List of sources to populate environment variables on the OpenTelemetry CollectorName's Pods.
-	// These can then in certain cases be consumed in the config file for the CollectorName.
+	// List of sources to populate environment variables on the OpenTelemetry Collector's Pods.
+	// These can then in certain cases be consumed in the config file for the Collector.
 	// +optional
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 	// VolumeClaimTemplates will provide stable storage using PersistentVolumes. Only available when the mode=statefulset.
 	// +optional
 	// +listType=atomic
 	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
-	// Toleration to schedule OpenTelemetry CollectorName pods.
+	// Toleration to schedule OpenTelemetry Collector pods.
 	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
@@ -149,7 +149,7 @@ type OpenTelemetryCollectorStatus struct {
 	// +optional
 	Scale ScaleSubresourceStatus `json:"scale,omitempty"`
 
-	// Version of the managed OpenTelemetry CollectorName (operand)
+	// Version of the managed OpenTelemetry Collector (operand)
 	// +optional
 	Version string `json:"version,omitempty"`
 
@@ -172,7 +172,7 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-// +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry CollectorName"
+// +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
 // This annotation provides a hint for OLM which resources are managed by OpenTelemetryCollector kind.
 // It's not mandatory to list all resources.
 // +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{DaemonSets,apps/v1},{StatefulSets,apps/v1},{ConfigMaps,v1},{Service,v1}}

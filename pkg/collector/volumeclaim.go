@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package collector handles the OpenTelemetry CollectorName.
+// Package collector handles the OpenTelemetry Collector.
 package collector
 
 import (
