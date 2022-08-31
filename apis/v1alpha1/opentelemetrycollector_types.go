@@ -108,6 +108,8 @@ type OpenTelemetryCollectorSpec struct {
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
 type OpenTelemetryTargetAllocator struct {
+	// AllocationStrategy determines which strategy the target allocator should use for allocation
+	AllocationStrategy string `json:"allocationStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance.
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
@@ -121,8 +123,6 @@ type OpenTelemetryTargetAllocator struct {
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
-	// AllocationStrategy determines which strategy the target allocator should use for allocation
-	AllocationStrategy string `json:"allocationStrategy,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {
