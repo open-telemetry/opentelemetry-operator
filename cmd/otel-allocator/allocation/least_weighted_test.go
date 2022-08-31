@@ -2,8 +2,9 @@ package allocation
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func makeNNewTargets(n int, numCollectors int) map[string]TargetItem {
