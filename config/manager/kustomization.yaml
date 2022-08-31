@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/jacob.aronoff/opentelemetry-operator/opentelemetry-operator
-  newTag: 0.49.0-87-g02c5591
+  newTag: 0.49.0-93-ge127879
