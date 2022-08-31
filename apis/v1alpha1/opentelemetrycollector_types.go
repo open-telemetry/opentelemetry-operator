@@ -121,6 +121,8 @@ type OpenTelemetryTargetAllocator struct {
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// AllocationStrategy determines which strategy the target allocator should use for allocation
+	AllocationStrategy string `json:"allocationStrategy,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {

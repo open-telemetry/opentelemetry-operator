@@ -37,7 +37,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.58.0
+  name: opentelemetry-operator.v0.49.0-87-g02c5591
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -280,9 +280,27 @@ spec:
             spec:
               containers:
               - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=0
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 5m
+                    memory: 64Mi
+              - args:
                 - --metrics-addr=127.0.0.1:8080
                 - --enable-leader-election
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.58.0
+                image: ghcr.io/jacob.aronoff/opentelemetry-operator/opentelemetry-operator:0.49.0-87-g02c5591
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -311,24 +329,6 @@ spec:
                 - mountPath: /tmp/k8s-webhook-server/serving-certs
                   name: cert
                   readOnly: true
-              - args:
-                - --secure-listen-address=0.0.0.0:8443
-                - --upstream=http://127.0.0.1:8080/
-                - --logtostderr=true
-                - --v=0
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
-                name: kube-rbac-proxy
-                ports:
-                - containerPort: 8443
-                  name: https
-                  protocol: TCP
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 128Mi
-                  requests:
-                    cpu: 5m
-                    memory: 64Mi
               serviceAccountName: opentelemetry-operator-controller-manager
               terminationGracePeriodSeconds: 10
               volumes:
@@ -392,7 +392,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.58.0
+  version: 0.49.0-87-g02c5591
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
