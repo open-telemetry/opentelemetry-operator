@@ -15,8 +15,6 @@
 package targetallocator
 
 import (
-	"fmt"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
@@ -51,9 +49,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	var args []string
 	if otelcol.Spec.TargetAllocator.PrometheusCR.Enabled {
 		args = append(args, "--enable-prometheus-cr-watcher")
-	}
-	if len(otelcol.Spec.TargetAllocator.AllocationStrategy) > 0 {
-		args = append(args, fmt.Sprintf("--allocation-strategy=%s", otelcol.Spec.TargetAllocator.AllocationStrategy))
 	}
 	return corev1.Container{
 		Name:         naming.TAContainer(),

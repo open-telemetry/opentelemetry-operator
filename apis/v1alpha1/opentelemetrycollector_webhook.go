@@ -62,10 +62,6 @@ func (r *OpenTelemetryCollector) Default() {
 		one := int32(1)
 		r.Spec.Replicas = &one
 	}
-	if r.Spec.TargetAllocator.Enabled {
-		// Set the default target allocation strategy
-		r.Spec.TargetAllocator.AllocationStrategy = "least-weighted"
-	}
 }
 
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1

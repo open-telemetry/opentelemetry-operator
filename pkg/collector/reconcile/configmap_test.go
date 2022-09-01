@@ -185,7 +185,8 @@ service:
 		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
 
 		expectedData := map[string]string{
-			"targetallocator.yaml": `config:
+			"targetallocator.yaml": `allocation_strategy: least-weighted
+config:
   scrape_configs:
   - job_name: otel-collector
     scrape_interval: 10s
@@ -324,6 +325,7 @@ func TestExpectedConfigMap(t *testing.T) {
 			"app.kubernetes.io/component":  "opentelemetry-collector",
 		}
 		taConfig["config"] = parmConfig
+		taConfig["allocation_strategy"] = "least-weighted"
 		taConfigYAML, _ := yaml.Marshal(taConfig)
 
 		assert.Equal(t, string(taConfigYAML), actual.Data["targetallocator.yaml"])

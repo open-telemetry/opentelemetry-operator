@@ -3,6 +3,8 @@ package discovery
 import (
 	"context"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
+
 	"github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,7 +13,6 @@ import (
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
@@ -60,7 +61,7 @@ func (m *Manager) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.C
 	return m.manager.ApplyConfig(discoveryCfg)
 }
 
-func (m *Manager) Watch(fn func(targets []allocation.TargetItem)) {
+func (m *Manager) Watch(fn func(targets []strategy.TargetItem)) {
 	log := m.log.WithValues("component", "opentelemetry-targetallocator")
 
 	go func() {
@@ -70,14 +71,14 @@ func (m *Manager) Watch(fn func(targets []allocation.TargetItem)) {
 				log.Info("Service Discovery watch event stopped: discovery manager closed")
 				return
 			case tsets := <-m.manager.SyncCh():
-				targets := []allocation.TargetItem{}
+				targets := []strategy.TargetItem{}
 
 				for jobName, tgs := range tsets {
 					var count float64 = 0
 					for _, tg := range tgs {
 						for _, t := range tg.Targets {
 							count++
-							targets = append(targets, allocation.TargetItem{
+							targets = append(targets, strategy.TargetItem{
 								JobName:   jobName,
 								TargetURL: string(t[model.AddressLabel]),
 								Label:     t.Merge(tg.Labels),

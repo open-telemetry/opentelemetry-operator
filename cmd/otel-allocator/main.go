@@ -9,6 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
+
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
@@ -49,7 +51,11 @@ func main() {
 
 	log := ctrl.Log.WithName("allocator")
 
-	strategy, _ := allocation.NewStrategy(*cliConf.AllocationStrategy)
+	strategy, err := strategy.NewStrategy(*cliConf.AllocationStrategy)
+	if err != nil {
+		setupLog.Error(err, "Unable to initialize allocation strategy")
+		os.Exit(1)
+	}
 	allocator := allocation.NewAllocator(log, strategy)
 	watcher, err := allocatorWatcher.NewWatcher(setupLog, cliConf, allocator)
 	if err != nil {
@@ -181,9 +187,9 @@ func (s *server) Shutdown(ctx context.Context) error {
 }
 
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
-	displayData := make(map[string]allocation.LinkJSON)
+	displayData := make(map[string]strategy.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
-		displayData[v.JobName] = allocation.LinkJSON{v.Link.Link}
+		displayData[v.JobName] = strategy.LinkJSON{v.Link.Link}
 	}
 	jsonHandler(w, r, displayData)
 }
@@ -202,7 +208,7 @@ func (s *server) PrometheusMiddleware(next http.Handler) http.Handler {
 func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()["collector_id"]
 
-	var compareMap = make(map[string][]allocation.TargetItem) // CollectorName+jobName -> TargetItem
+	var compareMap = make(map[string][]strategy.TargetItem) // CollectorName+jobName -> TargetItem
 	for _, v := range s.allocator.TargetItems() {
 		compareMap[v.CollectorName+v.JobName] = append(compareMap[v.CollectorName+v.JobName], v)
 	}

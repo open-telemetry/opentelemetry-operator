@@ -4,33 +4,35 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
+
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
-	strategy, _ := NewStrategy("least-weighted")
-	baseAllocator := NewAllocator(logger, strategy)
+	allocatorStrategy, _ := strategy.NewStrategy("least-weighted")
+	baseAllocator := NewAllocator(logger, allocatorStrategy)
 	baseAllocator.SetCollectors([]string{"test-collector"})
-	statefulAllocator := NewAllocator(logger, strategy)
+	statefulAllocator := NewAllocator(logger, allocatorStrategy)
 	statefulAllocator.SetCollectors([]string{"test-collector-0"})
 	type args struct {
 		collector string
 		job       string
-		cMap      map[string][]TargetItem
+		cMap      map[string][]strategy.TargetItem
 		allocator *Allocator
 	}
 	var tests = []struct {
 		name string
 		args args
-		want []targetGroupJSON
+		want []strategy.TargetGroupJSON
 	}{
 		{
 			name: "Empty target map",
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap:      map[string][]TargetItem{},
+				cMap:      map[string][]strategy.TargetItem{},
 				allocator: baseAllocator,
 			},
 			want: nil,
@@ -40,9 +42,9 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string][]TargetItem{
+				cMap: map[string][]strategy.TargetItem{
 					"test-collectortest-job": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job",
 							Label: model.LabelSet{
 								"test-label": "test-value",
@@ -54,7 +56,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: baseAllocator,
 			},
-			want: []targetGroupJSON{
+			want: []strategy.TargetGroupJSON{
 				{
 					Targets: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
@@ -68,9 +70,9 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string][]TargetItem{
+				cMap: map[string][]strategy.TargetItem{
 					"test-collectortest-job": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job",
 							Label: model.LabelSet{
 								"test-label": "test-value",
@@ -80,7 +82,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 						},
 					},
 					"test-collectortest-job2": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job2",
 							Label: model.LabelSet{
 								"test-label": "test-value",
@@ -92,7 +94,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: baseAllocator,
 			},
-			want: []targetGroupJSON{
+			want: []strategy.TargetGroupJSON{
 				{
 					Targets: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
@@ -106,9 +108,9 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string][]TargetItem{
+				cMap: map[string][]strategy.TargetItem{
 					"test-collectortest-job": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job",
 							Label: model.LabelSet{
 								"test-label": "test-value",
@@ -119,7 +121,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 						},
 					},
 					"test-collectortest-job2": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job",
 							Label: model.LabelSet{
 								"test-label": "test-value",
@@ -131,7 +133,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: baseAllocator,
 			},
-			want: []targetGroupJSON{
+			want: []strategy.TargetGroupJSON{
 				{
 					Targets: []string{"test-url1"},
 					Labels: map[model.LabelName]model.LabelValue{
