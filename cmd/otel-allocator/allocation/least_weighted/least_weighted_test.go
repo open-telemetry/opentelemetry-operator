@@ -47,13 +47,7 @@ func TestLeastWeightedStrategy_Allocate(t *testing.T) {
 				currentState: strategy.NewState(makeNCollectors(1, 0), makeNNewTargets(0, 1)),
 				newState:     strategy.NewState(makeNCollectors(1, 0), makeNNewTargets(1, 1)),
 			},
-			want: strategy.NewState(map[string]strategy.Collector{
-				"collector-0": {
-					Name:       "collector-0",
-					NumTargets: 1,
-				},
-			},
-				makeNNewTargets(1, 1)),
+			want: strategy.NewState(makeNCollectors(1, 1), makeNNewTargets(1, 1)),
 		},
 		{
 			name: "test set new collectors",
