@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -164,7 +163,7 @@ func TestMain(m *testing.M) {
 
 func params() Params {
 	replicas := int32(2)
-	configYAML, err := ioutil.ReadFile("../testdata/test.yaml")
+	configYAML, err := os.ReadFile("../testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
@@ -208,9 +207,9 @@ func newParams(taContainerImage string, file string) (Params, error) {
 	var err error
 
 	if file == "" {
-		configYAML, err = ioutil.ReadFile("../testdata/test.yaml")
+		configYAML, err = os.ReadFile("../testdata/test.yaml")
 	} else {
-		configYAML, err = ioutil.ReadFile(file)
+		configYAML, err = os.ReadFile(file)
 	}
 	if err != nil {
 		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
