@@ -140,7 +140,7 @@ func (c *Config) AutoDetect() error {
 		return err
 	}
 	c.autoscalingVersion = hpaVersion
-	c.logger.V(2).Info("In Autodetect, Set HPA version to [", c.autoscalingVersion.String(), "] from [", hpaVersion.String(), "]")
+	c.logger.V(1).Info("autoscaling version detected", "autoscaling-version", c.autoscalingVersion.String())
 
 	return nil
 }
