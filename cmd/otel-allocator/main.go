@@ -18,6 +18,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	_ "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/least_weighted"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
