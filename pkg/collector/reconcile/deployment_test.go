@@ -144,7 +144,7 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, orgUID, actual.OwnerReferences[0].UID)
-		assert.ElementsMatch(t, actual.Spec.Template.Spec.Containers[0].Args, []string{"--allocation-strategy test"})
+		assert.ElementsMatch(t, actual.Spec.Template.Spec.Containers[0].Args, []string{"--allocation-strategy=test"})
 		assert.Equal(t, int32(1), *actual.Spec.Replicas)
 	})
 
