@@ -51,6 +51,7 @@ spec:
         - name: ta-container
           args:
             - --enable-prometheus-cr-watcher
+            - --allocation-strategy=least-weighted
           env:
           - name: OTELCOL_NAMESPACE
             valueFrom:
