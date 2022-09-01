@@ -48,28 +48,50 @@ func TestOTLPPortsOverridden(t *testing.T) {
 
 	expectedResults := map[string]struct {
 		portNumber int32
-		seen       bool
 	}{
 		"otlp-grpc": {portNumber: 1234},
 		"otlp-http": {portNumber: 1235},
 	}
 
-	// test
-	ports, err := builder.Ports()
+	t.Run("service ports overridden", func(t *testing.T) {
+		// test
+		ports, err := builder.Ports()
 
-	// verify
-	assert.NoError(t, err)
-	assert.Len(t, ports, len(expectedResults))
+		// verify
+		assert.NoError(t, err)
+		assert.Len(t, ports, len(expectedResults))
 
-	for _, port := range ports {
-		r := expectedResults[port.Name]
-		r.seen = true
-		expectedResults[port.Name] = r
-		assert.EqualValues(t, r.portNumber, port.Port)
-	}
-	for k, v := range expectedResults {
-		assert.True(t, v.seen, "the port %s wasn't included in the service ports", k)
-	}
+		seen := map[string]bool{}
+		for _, port := range ports {
+			r, ok := expectedResults[port.Name]
+			seen[port.Name] = true
+			assert.True(t, ok, "unexpected service port %s", port.Name)
+			assert.EqualValues(t, r.portNumber, port.Port)
+		}
+		for k := range expectedResults {
+			assert.True(t, seen[k], "the port %s wasn't included in the service ports", k)
+		}
+	})
+
+	t.Run("container ports overridden", func(t *testing.T) {
+		// test
+		ports, err := builder.ContainerPorts()
+
+		// verify
+		assert.NoError(t, err)
+		assert.Len(t, ports, len(expectedResults))
+
+		seen := map[string]bool{}
+		for _, port := range ports {
+			r, ok := expectedResults[port.Name]
+			seen[port.Name] = true
+			assert.True(t, ok, "unexpected container port %s", port.Name)
+			assert.EqualValues(t, r.portNumber, port.ContainerPort)
+		}
+		for k := range expectedResults {
+			assert.True(t, seen[k], "the port %s wasn't included in the container ports", k)
+		}
+	})
 }
 
 func TestOTLPExposeDefaultPorts(t *testing.T) {
@@ -83,27 +105,49 @@ func TestOTLPExposeDefaultPorts(t *testing.T) {
 
 	expectedResults := map[string]struct {
 		portNumber int32
-		seen       bool
 	}{
 		"otlp-grpc":        {portNumber: 4317},
 		"otlp-http":        {portNumber: 4318},
 		"otlp-http-legacy": {portNumber: 55681},
 	}
 
-	// test
-	ports, err := builder.Ports()
+	t.Run("service ports exposed", func(t *testing.T) {
+		// test
+		ports, err := builder.Ports()
 
-	// verify
-	assert.NoError(t, err)
-	assert.Len(t, ports, len(expectedResults))
+		// verify
+		assert.NoError(t, err)
+		assert.Len(t, ports, len(expectedResults))
 
-	for _, port := range ports {
-		r := expectedResults[port.Name]
-		r.seen = true
-		expectedResults[port.Name] = r
-		assert.EqualValues(t, r.portNumber, port.Port)
-	}
-	for k, v := range expectedResults {
-		assert.True(t, v.seen, "the port %s wasn't included in the service ports", k)
-	}
+		seen := map[string]bool{}
+		for _, port := range ports {
+			r, ok := expectedResults[port.Name]
+			seen[port.Name] = true
+			assert.True(t, ok, "unexpected service port %s", port.Name)
+			assert.EqualValues(t, r.portNumber, port.Port)
+		}
+		for k := range expectedResults {
+			assert.True(t, seen[k], "the port %s wasn't included in the service ports", k)
+		}
+	})
+
+	t.Run("container ports exposed", func(t *testing.T) {
+		// test
+		ports, err := builder.ContainerPorts()
+
+		// verify
+		assert.NoError(t, err)
+		assert.Len(t, ports, len(expectedResults))
+
+		seen := map[string]bool{}
+		for _, port := range ports {
+			r, ok := expectedResults[port.Name]
+			seen[port.Name] = true
+			assert.True(t, ok, "unexpected container port %s", port.Name)
+			assert.EqualValues(t, r.portNumber, port.ContainerPort)
+		}
+		for k := range expectedResults {
+			assert.True(t, seen[k], "the port %s wasn't included in the container ports", k)
+		}
+	})
 }

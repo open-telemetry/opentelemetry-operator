@@ -15,10 +15,16 @@
 package collector
 
 import (
+	"errors"
 	"fmt"
+	"net"
+	"sort"
+	"strconv"
 
 	"github.com/go-logr/logr"
+	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -26,11 +32,34 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
+const maxPortLen = 15
+
+var errInvalidPort = errors.New("invalid port name/num")
+
 // Container builds a container for the given collector.
 func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
 	image := otelcol.Spec.Image
 	if len(image) == 0 {
 		image = cfg.CollectorImage()
+	}
+
+	// build port map
+	ports := getConfigContainerPorts(logger, otelcol.Spec.Config)
+	for _, p := range otelcol.Spec.ContainerPorts {
+		truncName := naming.Truncate(p.Name, maxPortLen)
+		if p.Name != truncName {
+			logger.Info("truncating container port name",
+				"port.name.prev", p.Name, "port.name.new", truncName)
+			p.Name = truncName
+		}
+		nameErrs := validation.IsValidPortName(p.Name)
+		numErrs := validation.IsValidPortNum(int(p.ContainerPort))
+		if len(nameErrs) > 0 || len(numErrs) > 0 {
+			logger.Error(errInvalidPort, "dropping container port", "port.name", p.Name, "port.num", p.ContainerPort,
+				"port.name.errs", nameErrs, "num.errs", numErrs)
+			continue
+		}
+		ports[p.Name] = p
 	}
 
 	argsMap := otelcol.Spec.Args
@@ -89,6 +118,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		Name:            naming.Container(),
 		Image:           image,
 		ImagePullPolicy: otelcol.Spec.ImagePullPolicy,
+		Ports:           portMapToList(ports),
 		VolumeMounts:    volumeMounts,
 		Args:            args,
 		Env:             envVars,
@@ -97,4 +127,90 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		SecurityContext: otelcol.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
 	}
+}
+
+func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.ContainerPort {
+	ports := map[string]corev1.ContainerPort{}
+	c, err := adapters.ConfigFromString(cfg)
+	if err != nil {
+		logger.Error(err, "couldn't extract the configuration")
+		return ports
+	}
+	ps, err := adapters.ConfigToContainerPorts(logger, c)
+	if err != nil {
+		logger.Error(err, "couldn't build container ports from configuration")
+	} else {
+		for _, p := range ps {
+			truncName := naming.Truncate(p.Name, maxPortLen)
+			if p.Name != truncName {
+				logger.Info("truncating container port name",
+					"port.name.prev", p.Name, "port.name.new", truncName)
+				p.Name = truncName
+			}
+			nameErrs := validation.IsValidPortName(p.Name)
+			numErrs := validation.IsValidPortNum(int(p.ContainerPort))
+			if len(nameErrs) > 0 || len(numErrs) > 0 {
+				logger.Error(errInvalidPort, "dropping container port", "port.name", p.Name, "port.num", p.ContainerPort,
+					"port.name.errs", nameErrs, "num.errs", numErrs)
+				continue
+			}
+			ports[p.Name] = p
+		}
+	}
+
+	metricsPort, err := getMetricsPort(c)
+	if err != nil {
+		logger.Error(err, "couldn't determine metrics port from configuration, using 8888 default value")
+		metricsPort = 8888
+	}
+	ports["metrics"] = corev1.ContainerPort{
+		Name:          "metrics",
+		ContainerPort: metricsPort,
+		Protocol:      corev1.ProtocolTCP,
+	}
+	return ports
+}
+
+func getMetricsPort(c map[interface{}]interface{}) (int32, error) {
+	// we don't need to unmarshal the whole config, just follow the keys down to
+	// the metrics address.
+	type metricsCfg struct {
+		Address string
+	}
+	type telemetryCfg struct {
+		Metrics metricsCfg
+	}
+	type serviceCfg struct {
+		Telemetry telemetryCfg
+	}
+	type cfg struct {
+		Service serviceCfg
+	}
+	var cOut cfg
+	err := mapstructure.Decode(c, &cOut)
+	if err != nil {
+		return 0, err
+	}
+
+	_, port, err := net.SplitHostPort(cOut.Service.Telemetry.Metrics.Address)
+	if err != nil {
+		return 0, err
+	}
+	i64, err := strconv.ParseInt(port, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(i64), nil
+}
+
+func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {
+	ports := make([]corev1.ContainerPort, 0, len(portMap))
+	for _, p := range portMap {
+		ports = append(ports, p)
+	}
+	sort.Slice(ports, func(i, j int) bool {
+		return ports[i].Name < ports[j].Name
+	})
+	return ports
 }

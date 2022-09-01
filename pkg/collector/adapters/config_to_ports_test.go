@@ -31,8 +31,7 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
-func TestExtractPortsFromConfig(t *testing.T) {
-	configStr := `receivers:
+var portConfigStr = `receivers:
   examplereceiver:
     endpoint: "0.0.0.0:12345"
   examplereceiver/settings:
@@ -77,8 +76,9 @@ service:
       exporters: [logging]
 `
 
+func TestExtractPortsFromConfig(t *testing.T) {
 	// prepare
-	config, err := adapters.ConfigFromString(configStr)
+	config, err := adapters.ConfigFromString(portConfigStr)
 	require.NoError(t, err)
 	require.NotEmpty(t, config)
 
@@ -94,18 +94,48 @@ service:
 	targetPort4317 := intstr.IntOrString{Type: 0, IntVal: 4317, StrVal: ""}
 	targetPort4318 := intstr.IntOrString{Type: 0, IntVal: 4318, StrVal: ""}
 
+	expectedPorts := []corev1.ServicePort{
+		{Name: "examplereceiver", Port: 12345},
+		{Name: "examplereceiver-settings", Port: 12346},
+		{Name: "jaeger-custom-thrift-http", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: 15268, TargetPort: targetPortZero},
+		{Name: "jaeger-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: 14250},
+		{Name: "jaeger-thrift-binary", Protocol: "UDP", Port: 6833},
+		{Name: "jaeger-thrift-compact", Protocol: "UDP", Port: 6831},
+		{Name: "otlp-2-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: 55555},
+		{Name: "otlp-grpc", AppProtocol: &grpcAppProtocol, Port: 4317, TargetPort: targetPort4317},
+		{Name: "otlp-http", AppProtocol: &httpAppProtocol, Port: 4318, TargetPort: targetPort4318},
+		{Name: "otlp-http-legacy", AppProtocol: &httpAppProtocol, Port: 55681, TargetPort: targetPort4318},
+		{Name: "zipkin", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: 9411},
+	}
+	assert.ElementsMatch(t, expectedPorts, ports)
+}
+
+func TestExtractContainerPortsFromConfig(t *testing.T) {
+	// prepare
+	config, err := adapters.ConfigFromString(portConfigStr)
+	require.NoError(t, err)
+	require.NotEmpty(t, config)
+
+	// test
+	ports, err := adapters.ConfigToContainerPorts(logger, config)
+	assert.NoError(t, err)
 	assert.Len(t, ports, 11)
-	assert.Equal(t, corev1.ServicePort{Name: "examplereceiver", Port: int32(12345)}, ports[0])
-	assert.Equal(t, corev1.ServicePort{Name: "examplereceiver-settings", Port: int32(12346)}, ports[1])
-	assert.Equal(t, corev1.ServicePort{Name: "jaeger-custom-thrift-http", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: int32(15268), TargetPort: targetPortZero}, ports[2])
-	assert.Equal(t, corev1.ServicePort{Name: "jaeger-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: int32(14250)}, ports[3])
-	assert.Equal(t, corev1.ServicePort{Name: "jaeger-thrift-binary", Protocol: "UDP", Port: int32(6833)}, ports[4])
-	assert.Equal(t, corev1.ServicePort{Name: "jaeger-thrift-compact", Protocol: "UDP", Port: int32(6831)}, ports[5])
-	assert.Equal(t, corev1.ServicePort{Name: "otlp-2-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: int32(55555)}, ports[6])
-	assert.Equal(t, corev1.ServicePort{Name: "otlp-grpc", AppProtocol: &grpcAppProtocol, Port: int32(4317), TargetPort: targetPort4317}, ports[7])
-	assert.Equal(t, corev1.ServicePort{Name: "otlp-http", AppProtocol: &httpAppProtocol, Port: int32(4318), TargetPort: targetPort4318}, ports[8])
-	assert.Equal(t, corev1.ServicePort{Name: "otlp-http-legacy", AppProtocol: &httpAppProtocol, Port: int32(55681), TargetPort: targetPort4318}, ports[9])
-	assert.Equal(t, corev1.ServicePort{Name: "zipkin", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: int32(9411)}, ports[10])
+
+	// verify
+	expectedPorts := []corev1.ContainerPort{
+		{Name: "examplereceiver", ContainerPort: 12345},
+		{Name: "examplereceiver-settings", ContainerPort: 12346},
+		{Name: "jaeger-custom-thrift-http", Protocol: "TCP", ContainerPort: 15268},
+		{Name: "jaeger-grpc", Protocol: "TCP", ContainerPort: 14250},
+		{Name: "jaeger-thrift-binary", Protocol: "UDP", ContainerPort: 6833},
+		{Name: "jaeger-thrift-compact", Protocol: "UDP", ContainerPort: 6831},
+		{Name: "otlp-2-grpc", Protocol: "TCP", ContainerPort: 55555},
+		{Name: "otlp-grpc", Protocol: "TCP", ContainerPort: 4317},
+		{Name: "otlp-http", Protocol: "TCP", ContainerPort: 4318},
+		{Name: "otlp-http-legacy", Protocol: "TCP", ContainerPort: 55681},
+		{Name: "zipkin", Protocol: "TCP", ContainerPort: 9411},
+	}
+	assert.ElementsMatch(t, expectedPorts, ports)
 }
 
 func TestNoPortsParsed(t *testing.T) {
@@ -132,10 +162,13 @@ func TestNoPortsParsed(t *testing.T) {
 
 			// test
 			ports, err := adapters.ConfigToReceiverPorts(logger, config)
+			cPorts, cErr := adapters.ConfigToContainerPorts(logger, config)
 
 			// verify
 			assert.Nil(t, ports)
 			assert.Equal(t, tt.expected, err)
+			assert.Nil(t, cPorts)
+			assert.Equal(t, tt.expected, cErr)
 		})
 	}
 }
@@ -205,12 +238,21 @@ func TestParserFailed(t *testing.T) {
 }
 
 type mockParser struct {
-	portsFunc func() ([]corev1.ServicePort, error)
+	portsFunc          func() ([]corev1.ServicePort, error)
+	containerPortsFunc func() ([]corev1.ContainerPort, error)
 }
 
 func (m *mockParser) Ports() ([]corev1.ServicePort, error) {
 	if m.portsFunc != nil {
 		return m.portsFunc()
+	}
+
+	return nil, nil
+}
+
+func (m *mockParser) ContainerPorts() ([]corev1.ContainerPort, error) {
+	if m.containerPortsFunc != nil {
+		return m.containerPortsFunc()
 	}
 
 	return nil, nil

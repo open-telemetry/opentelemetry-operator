@@ -37,6 +37,9 @@ type ReceiverParser interface {
 	// Ports returns the service ports parsed based on the receiver's configuration
 	Ports() ([]corev1.ServicePort, error)
 
+	// ContainerPorts returns the container ports parsed based on the receiver's configuration.
+	ContainerPorts() ([]corev1.ContainerPort, error)
+
 	// ParserName returns the name of this parser
 	ParserName() string
 }
@@ -126,6 +129,60 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 		return &corev1.ServicePort{
 			Name: portName(name, port),
 			Port: port,
+		}
+	default:
+		logger.Info("receiver's endpoint isn't a string")
+	}
+
+	return nil
+}
+func singleContainerPortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *v1.ContainerPort {
+	var endpoint interface{}
+	switch {
+	// syslog receiver contains the endpoint
+	// that needs to be exposed one level down inside config
+	// i.e. either in tcp or udp section with field key
+	// as `listen_address`
+	case name == "syslog":
+		var c map[interface{}]interface{}
+		if udp, isUDP := config["udp"]; isUDP && udp != nil {
+			c = udp.(map[interface{}]interface{})
+			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
+		} else if tcp, isTCP := config["tcp"]; isTCP && tcp != nil {
+			c = tcp.(map[interface{}]interface{})
+			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
+		}
+
+	// tcplog and udplog receivers hold the endpoint
+	// value in `listen_address` field
+	case name == "tcplog" || name == "udplog":
+		endpoint = getAddressFromConfig(logger, name, listenAddressKey, config)
+
+	// ignore kubeletstats receiver as it holds the field key endpoint, and it
+	// is a scraper, we only expose endpoint through k8s service objects for
+	// receivers that aren't scrapers.
+	case name == "kubeletstats":
+		return nil
+
+	// ignore prometheus receiver as it has no listening endpoint
+	case name == "prometheus":
+		return nil
+
+	default:
+		endpoint = getAddressFromConfig(logger, name, endpointKey, config)
+	}
+
+	switch endpoint := endpoint.(type) {
+	case string:
+		port, err := portFromEndpoint(endpoint)
+		if err != nil {
+			logger.WithValues(endpointKey, endpoint).Info("couldn't parse the endpoint's port")
+			return nil
+		}
+
+		return &corev1.ContainerPort{
+			Name:          portName(name, port),
+			ContainerPort: port,
 		}
 	default:
 		logger.Info("receiver's endpoint isn't a string")

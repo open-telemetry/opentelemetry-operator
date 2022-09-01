@@ -92,11 +92,21 @@ func TestReceiverFailsWhenPortIsntString(t *testing.T) {
 		"endpoint": 123,
 	}
 
-	// test
-	p := singlePortFromConfigEndpoint(logger, "myreceiver", config)
+	t.Run("service port fails", func(t *testing.T) {
+		// test
+		p := singlePortFromConfigEndpoint(logger, "myreceiver", config)
 
-	// verify
-	assert.Nil(t, p)
+		// verify
+		assert.Nil(t, p)
+	})
+
+	t.Run("container port fails", func(t *testing.T) {
+		// test
+		p := singleContainerPortFromConfigEndpoint(logger, "myreceiver", config)
+
+		// verify
+		assert.Nil(t, p)
+	})
 }
 
 func TestIgnorekubeletstatsEndpoint(t *testing.T) {
@@ -106,12 +116,23 @@ func TestIgnorekubeletstatsEndpoint(t *testing.T) {
 		"endpoint": "0.0.0.0:9000",
 	})
 
-	// test
-	ports, err := builder.Ports()
+	t.Run("no service ports", func(t *testing.T) {
+		// test
+		ports, err := builder.Ports()
 
-	// verify
-	assert.NoError(t, err)
-	assert.Len(t, ports, 0)
+		// verify
+		assert.NoError(t, err)
+		assert.Len(t, ports, 0)
+	})
+
+	t.Run("no container ports", func(t *testing.T) {
+		// test
+		ports, err := builder.ContainerPorts()
+
+		// verify
+		assert.NoError(t, err)
+		assert.Len(t, ports, 0)
+	})
 }
 
 func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
@@ -141,6 +162,10 @@ type mockParser struct {
 }
 
 func (m *mockParser) Ports() ([]corev1.ServicePort, error) {
+	return nil, nil
+}
+
+func (m *mockParser) ContainerPorts() ([]corev1.ContainerPort, error) {
 	return nil, nil
 }
 
