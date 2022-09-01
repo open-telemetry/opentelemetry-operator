@@ -55,7 +55,7 @@ func main() {
 
 	log := ctrl.Log.WithName("allocator")
 
-	allocatorStrategy, err := strategy.NewStrategy(*cfg.AllocationStrategy)
+	allocatorStrategy, err := strategy.New(*cfg.AllocationStrategy)
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)

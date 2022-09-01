@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
-	allocatorStrategy, _ := strategy.NewStrategy("least-weighted")
+	allocatorStrategy, _ := strategy.New("least-weighted")
 	baseAllocator := NewAllocator(logger, allocatorStrategy)
 	baseAllocator.SetCollectors([]string{"test-collector"})
 	statefulAllocator := NewAllocator(logger, allocatorStrategy)

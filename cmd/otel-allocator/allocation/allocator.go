@@ -39,7 +39,7 @@ type Allocator struct {
 	state strategy.State
 
 	log      logr.Logger
-	strategy strategy.AllocatorStrategy
+	strategy strategy.Allocator
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
@@ -109,7 +109,7 @@ func (allocator *Allocator) SetCollectors(collectors []string) {
 	allocator.state = allocator.strategy.Allocate(allocator.state, newState)
 }
 
-func NewAllocator(log logr.Logger, allocatorStrategy strategy.AllocatorStrategy) *Allocator {
+func NewAllocator(log logr.Logger, allocatorStrategy strategy.Allocator) *Allocator {
 	return &Allocator{
 		log:      log,
 		state:    strategy.NewState(make(map[string]strategy.Collector), make(map[string]strategy.TargetItem)),

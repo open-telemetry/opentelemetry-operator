@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	err := strategy.RegisterStrategy("least-weighted", NewLeastWeightedStrategy)
+	err := strategy.Register("least-weighted", NewLeastWeightedStrategy)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -17,7 +17,7 @@ func init() {
 type LeastWeightedStrategy struct {
 }
 
-func NewLeastWeightedStrategy() strategy.AllocatorStrategy {
+func NewLeastWeightedStrategy() strategy.Allocator {
 	return &LeastWeightedStrategy{}
 }
 
@@ -42,9 +42,9 @@ func (l LeastWeightedStrategy) addTargetToTargetItems(target strategy.TargetItem
 	nextState := state
 	chosenCollector := l.findNextCollector(nextState)
 	targetItem := strategy.NewTargetItem(target.JobName, target.TargetURL, target.Label, chosenCollector.Name)
-	nextState.TargetItems()[targetItem.Hash()] = targetItem
+	nextState = nextState.SetTargetItem(targetItem.Hash(), targetItem)
 	chosenCollector.NumTargets++
-	nextState.Collectors()[chosenCollector.Name] = chosenCollector
+	nextState = nextState.SetCollector(chosenCollector.Name, chosenCollector)
 	strategy.TargetsPerCollector.WithLabelValues(chosenCollector.Name).Set(float64(chosenCollector.NumTargets))
 	return nextState
 }
@@ -57,8 +57,8 @@ func (l LeastWeightedStrategy) handleTargets(targetDiff utility.Changes[strategy
 		if _, ok := targetDiff.Removals()[k]; ok {
 			c := nextState.Collectors()[target.CollectorName]
 			c.NumTargets--
-			nextState.Collectors()[target.CollectorName] = c
-			delete(nextState.TargetItems(), k)
+			nextState = nextState.SetCollector(target.CollectorName, c)
+			nextState = nextState.RemoveTargetItem(k)
 			strategy.TargetsPerCollector.WithLabelValues(target.CollectorName).Set(float64(nextState.Collectors()[target.CollectorName].NumTargets))
 		}
 	}
@@ -80,12 +80,12 @@ func (l LeastWeightedStrategy) handleCollectors(collectorsDiff utility.Changes[s
 	nextState := currentState
 	// Clear existing collectors
 	for _, k := range collectorsDiff.Removals() {
-		delete(nextState.Collectors(), k.Name)
+		nextState = nextState.RemoveCollector(k.Name)
 		strategy.TargetsPerCollector.WithLabelValues(k.Name).Set(0)
 	}
 	// Insert the new collectors
 	for _, i := range collectorsDiff.Additions() {
-		nextState.Collectors()[i.Name] = strategy.Collector{Name: i.Name, NumTargets: 0}
+		nextState = nextState.SetCollector(i.Name, strategy.Collector{Name: i.Name, NumTargets: 0})
 	}
 
 	// find targets which need to be redistributed

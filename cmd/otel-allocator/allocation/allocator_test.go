@@ -15,7 +15,7 @@ import (
 var logger = logf.Log.WithName("unit-tests")
 
 func TestSetCollectors(t *testing.T) {
-	allocatorStrategy, _ := strategy.NewStrategy("least-weighted")
+	allocatorStrategy, _ := strategy.New("least-weighted")
 	s := NewAllocator(logger, allocatorStrategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
@@ -32,7 +32,7 @@ func TestSetCollectors(t *testing.T) {
 
 func TestAddingAndRemovingTargets(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	allocatorStrategy, _ := strategy.NewStrategy("least-weighted")
+	allocatorStrategy, _ := strategy.New("least-weighted")
 	s := NewAllocator(logger, allocatorStrategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
@@ -77,7 +77,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 // Tests that two targets with the same target url and job name but different label set are both added
 func TestAllocationCollision(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	allocatorStrategy, _ := strategy.NewStrategy("least-weighted")
+	allocatorStrategy, _ := strategy.New("least-weighted")
 	s := NewAllocator(logger, allocatorStrategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
@@ -110,7 +110,7 @@ func TestAllocationCollision(t *testing.T) {
 }
 
 func TestNoCollectorReassignment(t *testing.T) {
-	allocatorStrategy, _ := strategy.NewStrategy("least-weighted")
+	allocatorStrategy, _ := strategy.New("least-weighted")
 	s := NewAllocator(logger, allocatorStrategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
@@ -146,7 +146,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 }
 
 func TestSmartCollectorReassignment(t *testing.T) {
-	allocatorStrategy, _ := strategy.NewStrategy("least-weighted")
+	allocatorStrategy, _ := strategy.New("least-weighted")
 	s := NewAllocator(logger, allocatorStrategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}
@@ -193,7 +193,7 @@ func TestSmartCollectorReassignment(t *testing.T) {
 func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 
 	// prepare allocator with 3 collectors and 'random' amount of targets
-	allocatorStrategy, _ := strategy.NewStrategy("least-weighted")
+	allocatorStrategy, _ := strategy.New("least-weighted")
 	s := NewAllocator(logger, allocatorStrategy)
 
 	cols := []string{"col-1", "col-2", "col-3"}

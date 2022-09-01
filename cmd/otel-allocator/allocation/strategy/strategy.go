@@ -10,7 +10,7 @@ import (
 	"github.com/prometheus/common/model"
 )
 
-type AllocatorProvider func() AllocatorStrategy
+type AllocatorProvider func() Allocator
 
 var (
 	registry = map[string]AllocatorProvider{}
@@ -23,14 +23,14 @@ var (
 	}, []string{"collector_name"})
 )
 
-func NewStrategy(name string) (AllocatorStrategy, error) {
+func New(name string) (Allocator, error) {
 	if p, ok := registry[name]; ok {
 		return p(), nil
 	}
 	return nil, errors.New(fmt.Sprintf("unregistered strategy: %s", name))
 }
 
-func RegisterStrategy(name string, provider AllocatorProvider) error {
+func Register(name string, provider AllocatorProvider) error {
 	if _, ok := registry[name]; ok {
 		return errors.New("already registered")
 	}
@@ -38,7 +38,7 @@ func RegisterStrategy(name string, provider AllocatorProvider) error {
 	return nil
 }
 
-type AllocatorStrategy interface {
+type Allocator interface {
 	Allocate(currentState, newState State) State
 }
 
@@ -78,7 +78,7 @@ func (t TargetItem) Hash() string {
 	return t.JobName + t.TargetURL + t.Label.Fingerprint().String()
 }
 
-// Create a struct that holds Collector - and jobs for that Collector
+// Collector Creates a struct that holds Collector information
 // This struct will be parsed into endpoint with Collector and jobs info
 // This struct can be extended with information like annotations and labels in the future
 type Collector struct {
@@ -99,6 +99,30 @@ func (s State) Collectors() map[string]Collector {
 
 func (s State) TargetItems() map[string]TargetItem {
 	return s.targetItems
+}
+
+func (s State) SetTargetItem(key string, value TargetItem) State {
+	next := s
+	next.targetItems[key] = value
+	return next
+}
+
+func (s State) SetCollector(key string, value Collector) State {
+	next := s
+	next.collectors[key] = value
+	return next
+}
+
+func (s State) RemoveCollector(key string) State {
+	next := s
+	delete(next.collectors, key)
+	return next
+}
+
+func (s State) RemoveTargetItem(key string) State {
+	next := s
+	delete(next.targetItems, key)
+	return next
 }
 
 func NewState(collectors map[string]Collector, targetItems map[string]TargetItem) State {
