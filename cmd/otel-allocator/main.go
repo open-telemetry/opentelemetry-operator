@@ -44,6 +44,10 @@ func main() {
 		setupLog.Error(err, "Failed to parse parameters")
 		os.Exit(1)
 	}
+	cfg, err := config.Load(*cliConf.ConfigFilePath)
+	if err != nil {
+		setupLog.Error(err, "Unable to load configuration")
+	}
 
 	cliConf.RootLogger.Info("Starting the Target Allocator")
 
@@ -51,12 +55,12 @@ func main() {
 
 	log := ctrl.Log.WithName("allocator")
 
-	strategy, err := strategy.NewStrategy(*cliConf.AllocationStrategy)
+	allocatorStrategy, err := strategy.NewStrategy(*cfg.AllocationStrategy)
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
-	allocator := allocation.NewAllocator(log, strategy)
+	allocator := allocation.NewAllocator(log, allocatorStrategy)
 	watcher, err := allocatorWatcher.NewWatcher(setupLog, cliConf, allocator)
 	if err != nil {
 		setupLog.Error(err, "Can't start the watchers")
@@ -69,7 +73,13 @@ func main() {
 	defer discoveryManager.Close()
 	discoveryManager.Watch(allocator.SetTargets)
 
-	srv, err := newServer(log, allocator, discoveryManager, cliConf)
+	k8sclient, err := configureFileDiscovery(log, allocator, discoveryManager, context.Background(), cliConf)
+	if err != nil {
+		setupLog.Error(err, "Can't start the k8s client")
+		os.Exit(1)
+	}
+
+	srv, err := newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 	if err != nil {
 		setupLog.Error(err, "Can't start the server")
 	}
@@ -100,7 +110,7 @@ func main() {
 				if err := srv.Shutdown(ctx); err != nil {
 					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv, err = newServer(log, allocator, discoveryManager, cliConf)
+				srv, err = newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 				if err != nil {
 					setupLog.Error(err, "Error restarting the server with new config")
 				}
@@ -135,11 +145,7 @@ type server struct {
 	server           *http.Server
 }
 
-func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, cliConf config.CLIConfig) (*server, error) {
-	k8sclient, err := configureFileDiscovery(log, allocator, discoveryManager, context.Background(), cliConf)
-	if err != nil {
-		return nil, err
-	}
+func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, k8sclient *collector.Client, listenAddr *string) (*server, error) {
 	s := &server{
 		logger:           log,
 		allocator:        allocator,
@@ -151,7 +157,7 @@ func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManage
 	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
 	router.Path("/metrics").Handler(promhttp.Handler())
-	s.server = &http.Server{Addr: *cliConf.ListenAddr, Handler: router}
+	s.server = &http.Server{Addr: *listenAddr, Handler: router}
 	return s, nil
 }
 
@@ -189,7 +195,7 @@ func (s *server) Shutdown(ctx context.Context) error {
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
 	displayData := make(map[string]strategy.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
-		displayData[v.JobName] = strategy.LinkJSON{v.Link.Link}
+		displayData[v.JobName] = strategy.LinkJSON{Link: v.Link.Link}
 	}
 	jsonHandler(w, r, displayData)
 }
