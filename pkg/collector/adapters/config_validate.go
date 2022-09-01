@@ -18,9 +18,9 @@ import (
 	"github.com/go-logr/logr"
 )
 
-//Following Otel Doc: Configuring a receiver does not enable it. The receivers are enabled via pipelines within the service section.
-//GetEnabledReceivers returns all enabled receivers as a true flag set. If it can't find any receiver, it will return a nil interface.
-func GetEnabledReceivers(logger logr.Logger, config map[interface{}]interface{}) map[interface{}]bool {
+// Following Otel Doc: Configuring a receiver does not enable it. The receivers are enabled via pipelines within the service section.
+// GetEnabledReceivers returns all enabled receivers as a true flag set. If it can't find any receiver, it will return a nil interface.
+func GetEnabledReceivers(_ logr.Logger, config map[interface{}]interface{}) map[interface{}]bool {
 	cfgReceivers, ok := config["receivers"]
 	if !ok {
 		return nil
