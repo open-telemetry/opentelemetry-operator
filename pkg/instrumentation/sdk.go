@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/go-logr/logr"
@@ -28,6 +29,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -244,7 +247,7 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) s
 // User defined attributes (in explicitly set env var) have higher precedence.
 func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, index int) map[string]string {
 	// get existing resources env var and parse it into a map
-	existingRes := map[string]bool{}
+	existingResourceMap := map[string]bool{}
 	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[index].Env, constants.EnvOTELResourceAttrs)
 	if existingResourceEnvIdx > -1 {
 		existingResArr := strings.Split(pod.Spec.Containers[index].Env[existingResourceEnvIdx].Value, ",")
@@ -253,14 +256,14 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 			if len(keyValueArr) != 2 {
 				continue
 			}
-			existingRes[keyValueArr[0]] = true
+			existingResourceMap[keyValueArr[0]] = true
 		}
 	}
 
-	res := map[string]string{}
+	resourceMap := map[string]string{}
 	for k, v := range otelinst.Spec.Resource.Attributes {
-		if !existingRes[k] {
-			res[k] = v
+		if !existingResourceMap[k] {
+			resourceMap[k] = v
 		}
 	}
 
@@ -274,11 +277,11 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
 	for k, v := range k8sResources {
-		if !existingRes[string(k)] && v != "" {
-			res[string(k)] = v
+		if !existingResourceMap[string(k)] && v != "" {
+			resourceMap[string(k)] = v
 		}
 	}
-	return res
+	return resourceMap
 }
 
 func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns corev1.Namespace, objectMeta metav1.ObjectMeta, resources map[attribute.Key]string) {
@@ -291,12 +294,26 @@ func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns 
 			}
 			// parent of ReplicaSet is e.g. Deployment which we are interested to know
 			rs := appsv1.ReplicaSet{}
-			// ignore the error. The object might not exist, the error is not important, getting labels is just the best effort
-			//nolint:errcheck
-			i.client.Get(ctx, types.NamespacedName{
-				Namespace: ns.Name,
-				Name:      owner.Name,
-			}, &rs)
+			nsn := types.NamespacedName{Namespace: ns.Name, Name: owner.Name}
+			backOff := wait.Backoff{Duration: 10 * time.Millisecond, Factor: 1.5, Jitter: 0.1, Steps: 20, Cap: 30 * time.Second} // TODO decide which of these we need and what they should be set to
+
+			checkError := func(err error) bool {
+				// if the error looks like 'ReplicaSet.apps "my-deployment-with-sidecar-f46b479f" not found' ignore it
+				if strings.HasPrefix(err.Error(), "ReplicaSet.apps") && strings.HasSuffix(err.Error(), "not found") {
+					return true
+				}
+				return false
+			}
+
+			getReplicaSet := func() error {
+				return i.client.Get(ctx, nsn, &rs)
+			}
+
+			// use a retry loop to get the Deployment. A single call to client.get fails occasionally
+			err := retry.OnError(backOff, checkError, getReplicaSet)
+			if err != nil {
+				i.logger.Error(err, "failed to get replicaset", "replicaset", nsn.Name, "namespace", nsn.Namespace)
+			}
 			i.addParentResourceLabels(ctx, uid, ns, rs.ObjectMeta, resources)
 		case "deployment":
 			resources[semconv.K8SDeploymentNameKey] = owner.Name
