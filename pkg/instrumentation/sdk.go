@@ -295,7 +295,7 @@ func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns 
 			// parent of ReplicaSet is e.g. Deployment which we are interested to know
 			rs := appsv1.ReplicaSet{}
 			nsn := types.NamespacedName{Namespace: ns.Name, Name: owner.Name}
-			backOff := wait.Backoff{Duration: 10 * time.Millisecond, Factor: 1.5, Jitter: 0.1, Steps: 20, Cap: 30 * time.Second} // TODO decide which of these we need and what they should be set to
+			backOff := wait.Backoff{Duration: 10 * time.Millisecond, Factor: 1.5, Jitter: 0.1, Steps: 20, Cap: 10 * time.Second}
 
 			checkError := func(err error) bool {
 				// if the error looks like 'ReplicaSet.apps "my-deployment-with-sidecar-f46b479f" not found' ignore it
