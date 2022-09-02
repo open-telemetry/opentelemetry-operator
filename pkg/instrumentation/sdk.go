@@ -299,11 +299,7 @@ func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns 
 			backOff := wait.Backoff{Duration: 10 * time.Millisecond, Factor: 1.5, Jitter: 0.1, Steps: 20, Cap: 10 * time.Second}
 
 			checkError := func(err error) bool {
-				// if the error looks like 'ReplicaSet.apps "my-deployment-with-sidecar-f46b479f" not found' ignore it
-				if apierrors.IsNotFound(err) {
-					return true
-				}
-				return false
+				return apierrors.IsNotFound(err)
 			}
 
 			getReplicaSet := func() error {
