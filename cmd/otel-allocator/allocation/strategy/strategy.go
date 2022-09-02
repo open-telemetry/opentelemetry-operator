@@ -101,28 +101,20 @@ func (s State) TargetItems() map[string]TargetItem {
 	return s.targetItems
 }
 
-func (s State) SetTargetItem(key string, value TargetItem) State {
-	next := s
-	next.targetItems[key] = value
-	return next
+func (s State) SetTargetItem(key string, value TargetItem) {
+	s.targetItems[key] = value
 }
 
-func (s State) SetCollector(key string, value Collector) State {
-	next := s
-	next.collectors[key] = value
-	return next
+func (s State) SetCollector(key string, value Collector) {
+	s.collectors[key] = value
 }
 
-func (s State) RemoveCollector(key string) State {
-	next := s
-	delete(next.collectors, key)
-	return next
+func (s State) RemoveCollector(key string) {
+	delete(s.collectors, key)
 }
 
-func (s State) RemoveTargetItem(key string) State {
-	next := s
-	delete(next.targetItems, key)
-	return next
+func (s State) RemoveTargetItem(key string) {
+	delete(s.targetItems, key)
 }
 
 func NewState(collectors map[string]Collector, targetItems map[string]TargetItem) State {

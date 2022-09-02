@@ -42,9 +42,9 @@ func (l LeastWeightedStrategy) addTargetToTargetItems(target strategy.TargetItem
 	nextState := state
 	chosenCollector := l.findNextCollector(nextState)
 	targetItem := strategy.NewTargetItem(target.JobName, target.TargetURL, target.Label, chosenCollector.Name)
-	nextState = nextState.SetTargetItem(targetItem.Hash(), targetItem)
 	chosenCollector.NumTargets++
-	nextState = nextState.SetCollector(chosenCollector.Name, chosenCollector)
+	nextState.SetTargetItem(targetItem.Hash(), targetItem)
+	nextState.SetCollector(chosenCollector.Name, chosenCollector)
 	strategy.TargetsPerCollector.WithLabelValues(chosenCollector.Name).Set(float64(chosenCollector.NumTargets))
 	return nextState
 }
@@ -57,8 +57,8 @@ func (l LeastWeightedStrategy) handleTargets(targetDiff utility.Changes[strategy
 		if _, ok := targetDiff.Removals()[k]; ok {
 			c := nextState.Collectors()[target.CollectorName]
 			c.NumTargets--
-			nextState = nextState.SetCollector(target.CollectorName, c)
-			nextState = nextState.RemoveTargetItem(k)
+			nextState.SetCollector(target.CollectorName, c)
+			nextState.RemoveTargetItem(k)
 			strategy.TargetsPerCollector.WithLabelValues(target.CollectorName).Set(float64(nextState.Collectors()[target.CollectorName].NumTargets))
 		}
 	}
@@ -80,12 +80,12 @@ func (l LeastWeightedStrategy) handleCollectors(collectorsDiff utility.Changes[s
 	nextState := currentState
 	// Clear existing collectors
 	for _, k := range collectorsDiff.Removals() {
-		nextState = nextState.RemoveCollector(k.Name)
+		nextState.RemoveCollector(k.Name)
 		strategy.TargetsPerCollector.WithLabelValues(k.Name).Set(0)
 	}
 	// Insert the new collectors
 	for _, i := range collectorsDiff.Additions() {
-		nextState = nextState.SetCollector(i.Name, strategy.Collector{Name: i.Name, NumTargets: 0})
+		nextState.SetCollector(i.Name, strategy.Collector{Name: i.Name, NumTargets: 0})
 	}
 
 	// find targets which need to be redistributed
