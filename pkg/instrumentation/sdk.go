@@ -27,6 +27,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -247,7 +248,7 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) s
 // User defined attributes (in explicitly set env var) have higher precedence.
 func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, index int) map[string]string {
 	// get existing resources env var and parse it into a map
-	existingResourceMap := map[string]bool{}
+	existingRes := map[string]bool{}
 	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[index].Env, constants.EnvOTELResourceAttrs)
 	if existingResourceEnvIdx > -1 {
 		existingResArr := strings.Split(pod.Spec.Containers[index].Env[existingResourceEnvIdx].Value, ",")
@@ -256,14 +257,14 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 			if len(keyValueArr) != 2 {
 				continue
 			}
-			existingResourceMap[keyValueArr[0]] = true
+			existingRes[keyValueArr[0]] = true
 		}
 	}
 
-	resourceMap := map[string]string{}
+	res := map[string]string{}
 	for k, v := range otelinst.Spec.Resource.Attributes {
-		if !existingResourceMap[k] {
-			resourceMap[k] = v
+		if !existingRes[k] {
+			res[k] = v
 		}
 	}
 
@@ -277,11 +278,11 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
 	for k, v := range k8sResources {
-		if !existingResourceMap[string(k)] && v != "" {
-			resourceMap[string(k)] = v
+		if !existingRes[string(k)] && v != "" {
+			res[string(k)] = v
 		}
 	}
-	return resourceMap
+	return res
 }
 
 func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns corev1.Namespace, objectMeta metav1.ObjectMeta, resources map[attribute.Key]string) {
@@ -299,7 +300,7 @@ func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns 
 
 			checkError := func(err error) bool {
 				// if the error looks like 'ReplicaSet.apps "my-deployment-with-sidecar-f46b479f" not found' ignore it
-				if strings.HasPrefix(err.Error(), "ReplicaSet.apps") && strings.HasSuffix(err.Error(), "not found") {
+				if apierrors.IsNotFound(err) {
 					return true
 				}
 				return false
