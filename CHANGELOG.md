@@ -1,6 +1,22 @@
 Changes by Version
 ==================
 
+0.59.0
+-------------------
+### 💡 Enhancements 💡
+* Change log message to V(2), be sure to pass strings so it doesn't panic ([#1069](https://github.com/open-telemetry/opentelemetry-operator/pull/1069), [@kevinearls](https://github.com/kevinearls))
+* Use golang 1.19 ([#1021](https://github.com/open-telemetry/opentelemetry-operator/pull/1021), [@pavolloffay](https://github.com/pavolloffay))
+* Bump k8s API to 0.25.0 ([#1067](https://github.com/open-telemetry/opentelemetry-operator/pull/1067), [@pavolloffay](https://github.com/pavolloffay))
+* Bump python auto instrumentation version to 1.12&0.33b0 ([#1063](https://github.com/open-telemetry/opentelemetry-operator/pull/1063), [@srikanthccv](https://github.com/srikanthccv))
+* Bump .NET OTel AutoInstrumentation to 0.3.0-beta.1 - adjustment ([#1056](https://github.com/open-telemetry/opentelemetry-operator/pull/1056), [@Kielek](https://github.com/Kielek))
+* Bump .NET OTel AutoInstrumentation to 0.3.0-beta.1 ([#1057](https://github.com/open-telemetry/opentelemetry-operator/pull/1057), [@Kielek](https://github.com/Kielek))
+* Upgrade operator-sdk to 1.23.0 ([#1055](https://github.com/open-telemetry/opentelemetry-operator/pull/1055), [@iblancasa](https://github.com/iblancasa))
+### 🧰 Bug fixes 🧰
+* adds dotnet-auto-instrumentation image version env variable to the operator publish workflow ([#1060](https://github.com/open-telemetry/opentelemetry-operator/pull/1060), [@avadhut123pisal](https://github.com/avadhut123pisal))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.59.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.59.0)
+* [OpenTelemetry Contrib - v0.59.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.59.0)
+
 0.58.0
 -------------------
 ### 🧰 Bug fixes 🧰
