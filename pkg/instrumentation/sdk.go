@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/go-logr/logr"
@@ -26,8 +27,11 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -291,12 +295,22 @@ func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns 
 			}
 			// parent of ReplicaSet is e.g. Deployment which we are interested to know
 			rs := appsv1.ReplicaSet{}
-			// ignore the error. The object might not exist, the error is not important, getting labels is just the best effort
-			//nolint:errcheck
-			i.client.Get(ctx, types.NamespacedName{
-				Namespace: ns.Name,
-				Name:      owner.Name,
-			}, &rs)
+			nsn := types.NamespacedName{Namespace: ns.Name, Name: owner.Name}
+			backOff := wait.Backoff{Duration: 10 * time.Millisecond, Factor: 1.5, Jitter: 0.1, Steps: 20, Cap: 2 * time.Second}
+
+			checkError := func(err error) bool {
+				return apierrors.IsNotFound(err)
+			}
+
+			getReplicaSet := func() error {
+				return i.client.Get(ctx, nsn, &rs)
+			}
+
+			// use a retry loop to get the Deployment. A single call to client.get fails occasionally
+			err := retry.OnError(backOff, checkError, getReplicaSet)
+			if err != nil {
+				i.logger.Error(err, "failed to get replicaset", "replicaset", nsn.Name, "namespace", nsn.Namespace)
+			}
 			i.addParentResourceLabels(ctx, uid, ns, rs.ObjectMeta, resources)
 		case "deployment":
 			resources[semconv.K8SDeploymentNameKey] = owner.Name
