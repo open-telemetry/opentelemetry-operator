@@ -95,7 +95,7 @@ func (a *autoDetect) HPAVersion() (AutoscalingVersion, error) {
 
 			for _, version := range versions {
 				if version.Version == "v2" || version.Version == "v2beta2" {
-					return toAutoscalingVersion(version.Version), nil
+					return ToAutoScalingVersion(version.Version), nil
 				}
 			}
 			return AutoscalingVersionUnknown, errors.New("Failed to find appropriate version of apiGroup autoscaling, only v2 and v2beta2 are supported")
@@ -117,10 +117,10 @@ func (v AutoscalingVersion) String() string {
 	return "unknown"
 }
 
-func toAutoscalingVersion(version string) AutoscalingVersion {
+func ToAutoScalingVersion(version string) AutoscalingVersion {
 	switch version {
 	case "v2":
-		return AutoscalingVersionV2Beta2
+		return AutoscalingVersionV2
 	case "v2beta2":
 		return AutoscalingVersionV2Beta2
 	}

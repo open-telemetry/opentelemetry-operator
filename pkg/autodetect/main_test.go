@@ -94,3 +94,9 @@ func TestAutoscalingVersionToString(t *testing.T) {
 	assert.Equal(t, "v2beta2", autodetect.AutoscalingVersionV2Beta2.String())
 	assert.Equal(t, "unknown", autodetect.AutoscalingVersionUnknown.String())
 }
+
+func TestToAutoScalingVersion(t *testing.T) {
+	assert.Equal(t, autodetect.AutoscalingVersionV2, autodetect.ToAutoScalingVersion("v2"))
+	assert.Equal(t, autodetect.AutoscalingVersionV2Beta2, autodetect.ToAutoScalingVersion("v2beta2"))
+	assert.Equal(t, autodetect.AutoscalingVersionUnknown, autodetect.ToAutoScalingVersion("fred"))
+}
