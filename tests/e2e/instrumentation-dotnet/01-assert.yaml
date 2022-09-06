@@ -10,8 +10,6 @@ spec:
   containers:
   - name: myapp
     env:
-    - name: OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS
-      value: AspNet,HttpClient
     - name: DOTNET_STARTUP_HOOKS
       value: "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
     - name: DOTNET_ADDITIONAL_DEPS

@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,37 +37,6 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python-img:1", inst.Spec.Python.Image)
 	assert.Equal(t, "dotnet-img:1", inst.Spec.DotNet.Image)
-	assert.Equal(t, true, inst.isEnvVarSet(envOtelDotnetAutoTracesEnabledInstrumentations))
-}
-
-func TestInstrumentationDefaultingWebhookOtelDotNetTracesEnabledInstruEnvSet(t *testing.T) {
-	inst := &Instrumentation{
-		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{
-				AnnotationDefaultAutoInstrumentationJava:   "java-img:1",
-				AnnotationDefaultAutoInstrumentationNodeJS: "nodejs-img:1",
-				AnnotationDefaultAutoInstrumentationPython: "python-img:1",
-				AnnotationDefaultAutoInstrumentationDotNet: "dotnet-img:1",
-			},
-		},
-		Spec: InstrumentationSpec{
-			DotNet: DotNet{
-				Env: []v1.EnvVar{
-					{
-						Name:  envOtelDotnetAutoTracesEnabledInstrumentations,
-						Value: "AspNet,HttpClient",
-					},
-				},
-			},
-		},
-	}
-	inst.Default()
-	for _, env := range inst.Spec.DotNet.Env {
-		if env.Name == envOtelDotnetAutoTracesEnabledInstrumentations {
-			assert.Equal(t, "AspNet,HttpClient", env.Value)
-			break
-		}
-	}
 }
 
 func TestInstrumentationValidatingWebhook(t *testing.T) {

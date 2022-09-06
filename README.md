@@ -226,9 +226,6 @@ The possible values for the annotation can be
 * `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
 
-
->**Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitely.
-
 #### Multi-container pods
 
 If nothing else is specified, instrumentation is performed on the first container available in the pod spec.
@@ -320,6 +317,9 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
 |------------------------|----------------------|----------------------|
+| v0.59.0                | v1.19 to v1.24       | v1                   |
+| v0.58.0                | v1.19 to v1.24       | v1                   |
+| v0.57.2                | v1.19 to v1.24       | v1                   |
 | v0.56.0                | v1.19 to v1.24       | v1                   |
 | v0.55.0                | v1.19 to v1.24       | v1                   |
 | v0.54.0                | v1.19 to v1.24       | v1                   |
@@ -338,9 +338,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.41.1                | v1.21 to v1.23       | v1alpha2             |
 | v0.41.0                | v1.20 to v1.22       | v1alpha2             |
 | v0.40.0                | v1.20 to v1.22       | v1alpha2             |
-| v0.39.0                | v1.20 to v1.22       | v1alpha2             |
-| v0.38.0                | v1.20 to v1.22       | v1alpha2             |
-| v0.37.1                | v1.20 to v1.22       | v1alpha2             |
+
 
 
 ## Contributing and Developing
