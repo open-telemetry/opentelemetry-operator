@@ -104,6 +104,12 @@ type OpenTelemetryCollectorSpec struct {
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
+
+	// Autoscaler specifies the pod autoscaling configuration to use
+	// for the OpenTelemetryCollector workload.
+	//
+	// +optional
+	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
@@ -193,6 +199,21 @@ type OpenTelemetryCollectorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []OpenTelemetryCollector `json:"items"`
+}
+
+// AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
+type AutoscalerSpec struct {
+	// ScaleUp is the minimum number of seconds to wait before scaling up
+	//
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	ScaleUp *int32 `json:"scaleUp,omitempty"`
+
+	// ScaleDown is the minimum number of seconds to wait before scaling down
+	//
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	ScaleDown *int32 `json:"scaleDown,omitempty"`
 }
 
 func init() {

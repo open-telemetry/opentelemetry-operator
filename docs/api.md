@@ -1692,6 +1692,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscaler">autoscaler</a></b></td>
+        <td>object</td>
+        <td>
+          Autoscaler specifies the pod autoscaling configuration to use for the OpenTelemetryCollector workload.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>config</b></td>
         <td>string</td>
         <td>
@@ -1860,6 +1867,46 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>[]object</td>
         <td>
           Volumes represents which volumes to use in the underlying collector deployment(s).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+Autoscaler specifies the pod autoscaling configuration to use for the OpenTelemetryCollector workload.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>scaleDown</b></td>
+        <td>integer</td>
+        <td>
+          ScaleDown is the minimum number of seconds to wait before scaling down<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scaleUp</b></td>
+        <td>integer</td>
+        <td>
+          ScaleUp is the minimum number of seconds to wait before scaling up<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr></tbody>

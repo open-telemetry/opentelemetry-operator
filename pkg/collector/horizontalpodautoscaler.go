@@ -29,6 +29,8 @@ import (
 )
 
 const defaultCPUTarget int32 = 90
+const defaultScaleUpTime int32 = 60
+const defaultScaleDownTime int32 = 300
 
 func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
 	autoscalingVersion := cfg.AutoscalingVersion()
@@ -45,6 +47,15 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		Namespace:   otelcol.Namespace,
 		Labels:      labels,
 		Annotations: annotations,
+	}
+
+	scaleUpTime := defaultScaleUpTime
+	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.ScaleDown != nil {
+		scaleUpTime = *otelcol.Spec.Autoscaler.ScaleUp
+	}
+	scaleDownTime := defaultScaleDownTime
+	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.ScaleDown != nil {
+		scaleDownTime = *otelcol.Spec.Autoscaler.ScaleDown
 	}
 
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
@@ -73,6 +84,20 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				Metrics:     metrics,
 			},
 		}
+
+		if otelcol.Spec.Autoscaler != nil {
+			scaleUpRules := &autoscalingv2beta2.HPAScalingRules{
+				StabilizationWindowSeconds: &scaleUpTime,
+			}
+			scaleDownRules := &autoscalingv2beta2.HPAScalingRules{
+				StabilizationWindowSeconds: &scaleDownTime,
+			}
+			behavior := &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
+				ScaleUp:   scaleUpRules,
+				ScaleDown: scaleDownRules,
+			}
+			autoscaler.Spec.Behavior = behavior
+		}
 		result = &autoscaler
 	} else {
 		targetCPUUtilization := autoscalingv2.MetricSpec{
@@ -99,6 +124,20 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				MaxReplicas: *otelcol.Spec.MaxReplicas,
 				Metrics:     metrics,
 			},
+		}
+
+		if otelcol.Spec.Autoscaler != nil {
+			scaleUpRules := &autoscalingv2.HPAScalingRules{
+				StabilizationWindowSeconds: &scaleUpTime,
+			}
+			scaleDownRules := &autoscalingv2.HPAScalingRules{
+				StabilizationWindowSeconds: &scaleDownTime,
+			}
+			behavior := &autoscalingv2.HorizontalPodAutoscalerBehavior{
+				ScaleUp:   scaleUpRules,
+				ScaleDown: scaleDownRules,
+			}
+			autoscaler.Spec.Behavior = behavior
 		}
 		result = &autoscaler
 	}
