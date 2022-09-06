@@ -40,6 +40,13 @@ type OpenTelemetryCollectorSpec struct {
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+
+	// Autoscaler specifies the pod autoscaling configuration to use
+	// for the OpenTelemetryCollector workload.
+	//
+	// +optional
+	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
+
 	// SecurityContext will be set as the container security context.
 	// +optional
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
@@ -104,12 +111,6 @@ type OpenTelemetryCollectorSpec struct {
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
-
-	// Autoscaler specifies the pod autoscaling configuration to use
-	// for the OpenTelemetryCollector workload.
-	//
-	// +optional
-	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
