@@ -35,7 +35,8 @@ func TestPrometheusParser(t *testing.T) {
 		require.NoError(t, err)
 
 		// prepare
-		taColCfg, err := ta.ConfigToCollectorTAConfig(actualConfig)
+		taColCfg, configErr := ta.ConfigToCollectorTAConfig(actualConfig)
+		require.NoError(t, configErr)
 		assert.NotNil(t, taColCfg)
 		assert.Len(t, taColCfg, 2)
 		assert.Contains(t, taColCfg, "endpoint")
@@ -47,8 +48,8 @@ func TestPrometheusParser(t *testing.T) {
 		require.NoError(t, err)
 
 		// prepare
-		taColCfg, err := ta.ConfigToCollectorTAConfig(actualConfig)
-		assert.NotNil(t, taColCfg)
+		taColCfg, configErr := ta.ConfigToCollectorTAConfig(actualConfig)
+		require.NoError(t, configErr)
 		assert.Len(t, taColCfg, 3)
 		assert.Contains(t, taColCfg, "endpoint")
 		assert.Contains(t, taColCfg, "collector_id")
@@ -62,16 +63,16 @@ func TestPrometheusParser(t *testing.T) {
 
 		// prepare
 		var cfg Config
-		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
-		assert.NoError(t, err)
+		promCfgMap, configErr := ta.ConfigToPromConfig(actualConfig)
+		require.NoError(t, configErr)
 
-		promCfg, err := yaml.Marshal(map[string]interface{}{
+		promCfg, marshalErr := yaml.Marshal(map[string]interface{}{
 			"config": promCfgMap,
 		})
-		assert.NoError(t, err)
+		assert.NoError(t, marshalErr)
 
-		err = yaml.UnmarshalStrict(promCfg, &cfg)
-		assert.NoError(t, err)
+		unmarshalErr := yaml.UnmarshalStrict(promCfg, &cfg)
+		assert.NoError(t, unmarshalErr)
 
 		// test
 		expectedMap := map[string]bool{
