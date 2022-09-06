@@ -29,6 +29,8 @@ import (
 )
 
 const defaultCPUTarget int32 = 90
+const defaultScaleUpTime int32 = 60
+const defaultScaleDownTime int32 = 300
 
 func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
 	autoscalingVersion := cfg.AutoscalingVersion()
@@ -47,11 +49,11 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		Annotations: annotations,
 	}
 
-	var scaleUpTime int32
+	scaleUpTime := defaultScaleUpTime
 	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.ScaleDown != nil {
 		scaleUpTime = *otelcol.Spec.Autoscaler.ScaleUp
 	}
-	var scaleDownTime int32
+	scaleDownTime := defaultScaleDownTime
 	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.ScaleDown != nil {
 		scaleDownTime = *otelcol.Spec.Autoscaler.ScaleDown
 	}
@@ -84,18 +86,15 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		}
 
 		if otelcol.Spec.Autoscaler != nil {
-			behavior := &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{}
-			if scaleUpTime != 0 {
-				scaleUpRules := &autoscalingv2beta2.HPAScalingRules{
-					StabilizationWindowSeconds: &scaleUpTime,
-				}
-				behavior.ScaleUp = scaleUpRules
+			scaleUpRules := &autoscalingv2beta2.HPAScalingRules{
+				StabilizationWindowSeconds: &scaleUpTime,
 			}
-			if scaleDownTime != 0 {
-				scaleDownRules := &autoscalingv2beta2.HPAScalingRules{
-					StabilizationWindowSeconds: &scaleDownTime,
-				}
-				behavior.ScaleDown = scaleDownRules
+			scaleDownRules := &autoscalingv2beta2.HPAScalingRules{
+				StabilizationWindowSeconds: &scaleDownTime,
+			}
+			behavior := &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
+				ScaleUp:   scaleUpRules,
+				ScaleDown: scaleDownRules,
 			}
 			autoscaler.Spec.Behavior = behavior
 		}
@@ -128,18 +127,15 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		}
 
 		if otelcol.Spec.Autoscaler != nil {
-			behavior := &autoscalingv2.HorizontalPodAutoscalerBehavior{}
-			if scaleUpTime != 0 {
-				scaleUpRules := &autoscalingv2.HPAScalingRules{
-					StabilizationWindowSeconds: &scaleUpTime,
-				}
-				behavior.ScaleUp = scaleUpRules
+			scaleUpRules := &autoscalingv2.HPAScalingRules{
+				StabilizationWindowSeconds: &scaleUpTime,
 			}
-			if scaleDownTime != 0 {
-				scaleDownRules := &autoscalingv2.HPAScalingRules{
-					StabilizationWindowSeconds: &scaleDownTime,
-				}
-				behavior.ScaleDown = scaleDownRules
+			scaleDownRules := &autoscalingv2.HPAScalingRules{
+				StabilizationWindowSeconds: &scaleDownTime,
+			}
+			behavior := &autoscalingv2.HorizontalPodAutoscalerBehavior{
+				ScaleUp:   scaleUpRules,
+				ScaleDown: scaleDownRules,
 			}
 			autoscaler.Spec.Behavior = behavior
 		}
