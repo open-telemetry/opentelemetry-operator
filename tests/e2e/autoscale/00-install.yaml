@@ -6,7 +6,6 @@ spec:
   minReplicas: 1
   maxReplicas: 2
   autoscaler:
-    scaleUp: 30
     scaleDown: 15
   resources:
     limits:
