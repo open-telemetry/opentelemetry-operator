@@ -31,8 +31,9 @@ const DefaultResyncTime = 5 * time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 
 type Config struct {
-	LabelSelector map[string]string  `yaml:"label_selector,omitempty"`
-	Config        *promconfig.Config `yaml:"config"`
+	LabelSelector      map[string]string  `yaml:"label_selector,omitempty"`
+	Config             *promconfig.Config `yaml:"config"`
+	AllocationStrategy *string            `yaml:"allocation_strategy,omitempty"`
 }
 
 type PrometheusCRWatcherConfig struct {

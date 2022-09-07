@@ -114,6 +114,11 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 		"app.kubernetes.io/component":  "opentelemetry-collector",
 	}
 	taConfig["config"] = promConfig
+	if len(params.Instance.Spec.TargetAllocator.AllocationStrategy) > 0 {
+		taConfig["allocation_strategy"] = params.Instance.Spec.TargetAllocator.AllocationStrategy
+	} else {
+		taConfig["allocation_strategy"] = "least-weighted"
+	}
 	taConfigYAML, err := yaml.Marshal(taConfig)
 	if err != nil {
 		return corev1.ConfigMap{}, err
