@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	_ "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/least_weighted"
@@ -56,7 +57,7 @@ func main() {
 
 	log := ctrl.Log.WithName("allocator")
 
-	allocator, err := strategy.New(*cfg.AllocationStrategy, log)
+	allocator, err := strategy.New(cfg.GetAllocationStrategy(), log)
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)

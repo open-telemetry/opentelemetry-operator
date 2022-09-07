@@ -36,6 +36,13 @@ type Config struct {
 	AllocationStrategy *string            `yaml:"allocation_strategy,omitempty"`
 }
 
+func (c Config) GetAllocationStrategy() string {
+	if c.AllocationStrategy != nil {
+		return *c.AllocationStrategy
+	}
+	return "least-weighted"
+}
+
 type PrometheusCRWatcherConfig struct {
 	Enabled *bool
 }

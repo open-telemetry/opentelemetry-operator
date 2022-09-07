@@ -117,7 +117,7 @@ func (allocator *LeastWeightedAllocator) handleTargets(diff utility.Changes[*str
 	// Check for additions
 	for k, target := range diff.Additions() {
 		// Do nothing if the item is already there
-		if _, ok := allocator.TargetItems()[k]; ok {
+		if _, ok := allocator.state.TargetItems()[k]; ok {
 			continue
 		} else {
 			// Assign new set of collectors with the one different name
@@ -163,7 +163,7 @@ func (allocator *LeastWeightedAllocator) SetTargets(targets map[string]*strategy
 	defer allocator.m.Unlock()
 
 	// Check for target changes
-	targetsDiff := utility.DiffMaps(allocator.TargetItems(), targets)
+	targetsDiff := utility.DiffMaps(allocator.state.TargetItems(), targets)
 	// If there are any additions or removals
 	if len(targetsDiff.Additions()) != 0 || len(targetsDiff.Removals()) != 0 {
 		allocator.handleTargets(targetsDiff)
@@ -188,7 +188,7 @@ func (allocator *LeastWeightedAllocator) SetCollectors(collectors map[string]*st
 	defer allocator.m.Unlock()
 
 	// Check for collector changes
-	collectorsDiff := utility.DiffMaps(allocator.Collectors(), collectors)
+	collectorsDiff := utility.DiffMaps(allocator.state.Collectors(), collectors)
 	if len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0 {
 		allocator.handleCollectors(collectorsDiff)
 	}
