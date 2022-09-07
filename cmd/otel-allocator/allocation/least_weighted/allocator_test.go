@@ -1,8 +1,12 @@
 package least_weighted
 
 import (
+	"fmt"
 	"math"
+	"math/rand"
 	"testing"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
@@ -11,24 +15,32 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
-// Tests the least connection - The expected collector after running findNextCollector should be the collector with the least amount of workload
-func TestFindNextCollector(t *testing.T) {
-	s := NewAllocator(logger)
+func makeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*strategy.TargetItem {
+	toReturn := map[string]*strategy.TargetItem{}
+	for i := startingIndex; i < n+startingIndex; i++ {
+		collector := fmt.Sprintf("collector-%d", i%numCollectors)
+		newTarget := strategy.NewTargetItem(fmt.Sprintf("test-job-%d", i), "test-url", nil, collector)
+		toReturn[newTarget.Hash()] = newTarget
+	}
+	return toReturn
+}
 
-	defaultCol := collector{Name: "default-col", NumTargets: 1}
-	maxCol := collector{Name: "max-col", NumTargets: 2}
-	leastCol := collector{Name: "least-col", NumTargets: 0}
-	s.collectors[maxCol.Name] = &maxCol
-	s.collectors[leastCol.Name] = &leastCol
-	s.collectors[defaultCol.Name] = &defaultCol
-
-	assert.Equal(t, "least-col", s.findNextCollector().Name)
+func makeNCollectors(n int, targetsForEach int) map[string]*strategy.Collector {
+	toReturn := map[string]*strategy.Collector{}
+	for i := 0; i < n; i++ {
+		collector := fmt.Sprintf("collector-%d", i)
+		toReturn[collector] = &strategy.Collector{
+			Name:       collector,
+			NumTargets: targetsForEach,
+		}
+	}
+	return toReturn
 }
 
 func TestSetCollectors(t *testing.T) {
-	s := NewAllocator(logger)
+	s, _ := strategy.New("least-weighted", logger)
 
-	cols := []string{"col-1", "col-2", "col-3"}
+	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
 
 	expectedColLen := len(cols)
@@ -36,40 +48,31 @@ func TestSetCollectors(t *testing.T) {
 	assert.Len(t, collectors, expectedColLen)
 
 	for _, i := range cols {
-		assert.NotNil(t, collectors[i])
+		assert.NotNil(t, collectors[i.Name])
 	}
 }
 
 func TestAddingAndRemovingTargets(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s := NewAllocator(logger)
+	s, _ := strategy.New("least-weighted", logger)
 
-	cols := []string{"col-1", "col-2", "col-3"}
+	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
-	labels := model.LabelSet{}
 
-	initTargets := []string{"prometheus:1000", "prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005"}
-	var targetList []TargetItem
-	for _, i := range initTargets {
-		targetList = append(targetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
-	}
+	initTargets := makeNNewTargets(6, 3, 0)
 
 	// test that targets and collectors are added properly
-	s.SetTargets(targetList)
+	s.SetTargets(initTargets)
 
 	// verify
 	expectedTargetLen := len(initTargets)
 	assert.Len(t, s.TargetItems(), expectedTargetLen)
 
 	// prepare second round of targets
-	tar := []string{"prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004"}
-	var newTargetList []TargetItem
-	for _, i := range tar {
-		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
-	}
+	tar := makeNNewTargets(4, 3, 0)
 
 	// test that fewer targets are found - removed
-	s.SetTargets(newTargetList)
+	s.SetTargets(tar)
 
 	// verify
 	targetItems := s.TargetItems()
@@ -78,7 +81,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 
 	// verify results map
 	for _, i := range tar {
-		_, ok := targetItems["sample-name"+i+labels.Fingerprint().String()]
+		_, ok := targetItems[i.Hash()]
 		assert.True(t, ok)
 	}
 }
@@ -86,9 +89,9 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 // Tests that two targets with the same target url and job name but different label set are both added
 func TestAllocationCollision(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s := NewAllocator(logger)
+	s, _ := strategy.New("least-weighted", logger)
 
-	cols := []string{"col-1", "col-2", "col-3"}
+	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
 	firstLabels := model.LabelSet{
 		"test": "test1",
@@ -96,10 +99,12 @@ func TestAllocationCollision(t *testing.T) {
 	secondLabels := model.LabelSet{
 		"test": "test2",
 	}
+	firstTarget := strategy.NewTargetItem("sample-name", "0.0.0.0:8000", firstLabels, "")
+	secondTarget := strategy.NewTargetItem("sample-name", "0.0.0.0:8000", secondLabels, "")
 
-	targetList := []TargetItem{
-		{JobName: "sample-name", TargetURL: "0.0.0.0:8000", Label: firstLabels},
-		{JobName: "sample-name", TargetURL: "0.0.0.0:8000", Label: secondLabels},
+	targetList := map[string]*strategy.TargetItem{
+		firstTarget.Hash():  firstTarget,
+		secondTarget.Hash(): secondTarget,
 	}
 
 	// test that targets and collectors are added properly
@@ -112,31 +117,27 @@ func TestAllocationCollision(t *testing.T) {
 
 	// verify results map
 	for _, i := range targetList {
-		_, ok := targetItems[i.hash()]
+		_, ok := targetItems[i.Hash()]
 		assert.True(t, ok)
 	}
 }
 
 func TestNoCollectorReassignment(t *testing.T) {
-	s := NewAllocator(logger)
+	s, _ := strategy.New("least-weighted", logger)
 
-	cols := []string{"col-1", "col-2", "col-3"}
+	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
-	labels := model.LabelSet{}
 
 	expectedColLen := len(cols)
-	assert.Len(t, s.collectors, expectedColLen)
+	assert.Len(t, s.Collectors(), expectedColLen)
 
 	for _, i := range cols {
-		assert.NotNil(t, s.collectors[i])
+		assert.NotNil(t, s.Collectors()[i.Name])
 	}
-	initTargets := []string{"prometheus:1000", "prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005"}
-	var targetList []TargetItem
-	for _, i := range initTargets {
-		targetList = append(targetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
-	}
+	initTargets := makeNNewTargets(6, 3, 0)
+
 	// test that targets and collectors are added properly
-	s.SetTargets(targetList)
+	s.SetTargets(initTargets)
 
 	// verify
 	expectedTargetLen := len(initTargets)
@@ -144,7 +145,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 	assert.Len(t, targetItems, expectedTargetLen)
 
 	// assign new set of collectors with the same names
-	newCols := []string{"col-1", "col-2", "col-3"}
+	newCols := makeNCollectors(3, 0)
 	s.SetCollectors(newCols)
 
 	newTargetItems := s.TargetItems()
@@ -153,25 +154,20 @@ func TestNoCollectorReassignment(t *testing.T) {
 }
 
 func TestSmartCollectorReassignment(t *testing.T) {
-	s := NewAllocator(logger)
+	s, _ := strategy.New("least-weighted", logger)
 
-	cols := []string{"col-1", "col-2", "col-3"}
+	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
-	labels := model.LabelSet{}
 
 	expectedColLen := len(cols)
-	assert.Len(t, s.collectors, expectedColLen)
+	assert.Len(t, s.Collectors(), expectedColLen)
 
 	for _, i := range cols {
-		assert.NotNil(t, s.collectors[i])
+		assert.NotNil(t, s.Collectors()[i.Name])
 	}
-	initTargets := []string{"prometheus:1000", "prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005"}
-	var targetList []TargetItem
-	for _, i := range initTargets {
-		targetList = append(targetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: labels})
-	}
+	initTargets := makeNNewTargets(6, 3, 0)
 	// test that targets and collectors are added properly
-	s.SetTargets(targetList)
+	s.SetTargets(initTargets)
 
 	// verify
 	expectedTargetLen := len(initTargets)
@@ -179,7 +175,15 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	assert.Len(t, targetItems, expectedTargetLen)
 
 	// assign new set of collectors with the same names
-	newCols := []string{"col-1", "col-2", "col-4"}
+	newCols := map[string]*strategy.Collector{
+		"collector-1": {
+			Name: "collector-1",
+		}, "collector-2": {
+			Name: "collector-2",
+		}, "collector-4": {
+			Name: "collector-4",
+		},
+	}
 	s.SetCollectors(newCols)
 
 	newTargetItems := s.TargetItems()
@@ -187,10 +191,10 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	for key, targetItem := range targetItems {
 		item, ok := newTargetItems[key]
 		assert.True(t, ok, "all target items should be found in new target item list")
-		if targetItem.Collector.Name != "col-3" {
-			assert.Equal(t, targetItem.Collector.Name, item.Collector.Name)
+		if targetItem.CollectorName != "col-3" {
+			assert.Equal(t, targetItem.CollectorName, item.CollectorName)
 		} else {
-			assert.Equal(t, "col-4", item.Collector.Name)
+			assert.Equal(t, "col-4", item.CollectorName)
 		}
 	}
 }
@@ -199,19 +203,13 @@ func TestSmartCollectorReassignment(t *testing.T) {
 func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 
 	// prepare allocator with 3 collectors and 'random' amount of targets
-	s := NewAllocator(logger)
+	s, _ := strategy.New("least-weighted", logger)
 
-	cols := []string{"col-1", "col-2", "col-3"}
+	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
 
-	targets := []string{"prometheus:1001", "prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1005", "prometheus:1006",
-		"prometheus:1011", "prometheus:1012", "prometheus:1013", "prometheus:1014", "prometheus:1015", "prometheus:1016",
-		"prometheus:1021", "prometheus:1022", "prometheus:1023", "prometheus:1024", "prometheus:1025", "prometheus:1026"}
-	var newTargetList []TargetItem
-	for _, i := range targets {
-		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
-	}
-	s.SetTargets(newTargetList)
+	targets := makeNNewTargets(27, 3, 0)
+	s.SetTargets(targets)
 
 	// Divisor needed to get 15%
 	divisor := 6.7
@@ -227,14 +225,17 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	}
 
 	// removing targets at 'random'
-	targets = []string{"prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1006",
-		"prometheus:1011", "prometheus:1012", "prometheus:1013", "prometheus:1014", "prometheus:1016",
-		"prometheus:1023", "prometheus:1024", "prometheus:1025", "prometheus:1026"}
-	newTargetList = []TargetItem{}
-	for _, i := range targets {
-		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
+	// Remove half of targets randomly
+	toDelete := len(targets) / 2
+	counter := 0
+	for index, _ := range targets {
+		shouldDelete := rand.Intn(toDelete)
+		if counter < shouldDelete {
+			delete(targets, index)
+		}
+		counter++
 	}
-	s.SetTargets(newTargetList)
+	s.SetTargets(targets)
 
 	targetItemLen = len(s.TargetItems())
 	collectors = s.Collectors()
@@ -246,14 +247,10 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 	// adding targets at 'random'
-	targets = []string{"prometheus:1002", "prometheus:1003", "prometheus:1004", "prometheus:1006",
-		"prometheus:1011", "prometheus:1012", "prometheus:1001", "prometheus:1014", "prometheus:1016",
-		"prometheus:1023", "prometheus:1024", "prometheus:1025", "prometheus:1126", "prometheus:1227"}
-	newTargetList = []TargetItem{}
-	for _, i := range targets {
-		newTargetList = append(newTargetList, TargetItem{JobName: "sample-name", TargetURL: i, Label: model.LabelSet{}})
+	for _, item := range makeNNewTargets(13, 3, 100) {
+		targets[item.Hash()] = item
 	}
-	s.SetTargets(newTargetList)
+	s.SetTargets(targets)
 
 	targetItemLen = len(s.TargetItems())
 	collectors = s.Collectors()

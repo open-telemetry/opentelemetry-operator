@@ -29,8 +29,8 @@ type TargetItem struct {
 	CollectorName string
 }
 
-func NewTargetItem(jobName string, targetURL string, label model.LabelSet, collectorName string) TargetItem {
-	return TargetItem{
+func NewTargetItem(jobName string, targetURL string, label model.LabelSet, collectorName string) *TargetItem {
+	return &TargetItem{
 		JobName:       jobName,
 		Link:          LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))},
 		TargetURL:     targetURL,
