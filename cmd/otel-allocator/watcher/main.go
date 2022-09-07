@@ -4,14 +4,15 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
 type Manager struct {
 	Events    chan Event
 	Errors    chan error
-	allocator *allocation.Allocator
+	allocator strategy.Allocator
 	watchers  []Watcher
 }
 
@@ -44,7 +45,7 @@ func (e EventSource) String() string {
 	return eventSourceToString[e]
 }
 
-func NewWatcher(logger logr.Logger, config config.CLIConfig, allocator *allocation.Allocator) (*Manager, error) {
+func NewWatcher(logger logr.Logger, config config.CLIConfig, allocator strategy.Allocator) (*Manager, error) {
 	watcher := Manager{
 		allocator: allocator,
 		Events:    make(chan Event),

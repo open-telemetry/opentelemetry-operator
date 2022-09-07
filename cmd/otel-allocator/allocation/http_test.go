@@ -6,30 +6,36 @@ import (
 
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	_ "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/least_weighted"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 )
 
+var logger = logf.Log.WithName("unit-tests")
+
 func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
-	baseAllocator := NewAllocator(logger)
-	baseAllocator.SetCollectors([]string{"test-collector"})
-	statefulAllocator := NewAllocator(logger)
-	statefulAllocator.SetCollectors([]string{"test-collector-0"})
+	baseAllocator, _ := strategy.New("least-weighted", logger)
+	baseAllocator.SetCollectors(map[string]*strategy.Collector{"test-collector": {Name: "test-collector"}})
+	statefulAllocator, _ := strategy.New("least-weighted", logger)
+	statefulAllocator.SetCollectors(map[string]*strategy.Collector{"test-collector-0": {Name: "test-collector-0"}})
 	type args struct {
 		collector string
 		job       string
-		cMap      map[string][]TargetItem
-		allocator *Allocator
+		cMap      map[string][]strategy.TargetItem
+		allocator strategy.Allocator
 	}
 	var tests = []struct {
 		name string
 		args args
-		want []targetGroupJSON
+		want []strategy.TargetGroupJSON
 	}{
 		{
 			name: "Empty target map",
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap:      map[string][]TargetItem{},
+				cMap:      map[string][]strategy.TargetItem{},
 				allocator: baseAllocator,
 			},
 			want: nil,
@@ -39,24 +45,21 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string][]TargetItem{
+				cMap: map[string][]strategy.TargetItem{
 					"test-collectortest-job": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job",
 							Label: model.LabelSet{
 								"test-label": "test-value",
 							},
-							TargetURL: "test-url",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 1,
-							},
+							TargetURL:     "test-url",
+							CollectorName: "test-collector",
 						},
 					},
 				},
 				allocator: baseAllocator,
 			},
-			want: []targetGroupJSON{
+			want: []strategy.TargetGroupJSON{
 				{
 					Targets: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
@@ -70,37 +73,31 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string][]TargetItem{
+				cMap: map[string][]strategy.TargetItem{
 					"test-collectortest-job": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job",
 							Label: model.LabelSet{
 								"test-label": "test-value",
 							},
-							TargetURL: "test-url",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 1,
-							},
+							TargetURL:     "test-url",
+							CollectorName: "test-collector",
 						},
 					},
 					"test-collectortest-job2": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job2",
 							Label: model.LabelSet{
 								"test-label": "test-value",
 							},
-							TargetURL: "test-url",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 1,
-							},
+							TargetURL:     "test-url",
+							CollectorName: "test-collector",
 						},
 					},
 				},
 				allocator: baseAllocator,
 			},
-			want: []targetGroupJSON{
+			want: []strategy.TargetGroupJSON{
 				{
 					Targets: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
@@ -114,38 +111,32 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string][]TargetItem{
+				cMap: map[string][]strategy.TargetItem{
 					"test-collectortest-job": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job",
 							Label: model.LabelSet{
 								"test-label": "test-value",
 								"foo":        "bar",
 							},
-							TargetURL: "test-url1",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 2,
-							},
+							TargetURL:     "test-url1",
+							CollectorName: "test-collector",
 						},
 					},
 					"test-collectortest-job2": {
-						TargetItem{
+						strategy.TargetItem{
 							JobName: "test-job",
 							Label: model.LabelSet{
 								"test-label": "test-value",
 							},
-							TargetURL: "test-url2",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 2,
-							},
+							TargetURL:     "test-url2",
+							CollectorName: "test-collector",
 						},
 					},
 				},
 				allocator: baseAllocator,
 			},
-			want: []targetGroupJSON{
+			want: []strategy.TargetGroupJSON{
 				{
 					Targets: []string{"test-url1"},
 					Labels: map[model.LabelName]model.LabelValue{

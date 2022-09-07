@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sort"
 	"testing"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -15,13 +16,12 @@ import (
 )
 
 var client Client
-var collectors = []string{}
+var collectors = map[string]*strategy.Collector{}
 
 func TestMain(m *testing.M) {
 	client = Client{
-		k8sClient:     fake.NewSimpleClientset(),
-		collectorChan: make(chan []string, 3),
-		close:         make(chan struct{}),
+		k8sClient: fake.NewSimpleClientset(),
+		close:     make(chan struct{}),
 	}
 
 	labelMap := map[string]string{
@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]bool{}, func(collectorList []string) { getCollectors(collectorList) })
+	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]*strategy.Collector{}, func(colMap map[string]*strategy.Collector) { getCollectors(colMap) })
 
 	code := m.Run()
 
@@ -49,18 +49,25 @@ func TestMain(m *testing.M) {
 }
 
 func TestWatchPodAddition(t *testing.T) {
-	expected := []string{"test-pod1", "test-pod2", "test-pod3"}
+	expected := map[string]*strategy.Collector{
+		"test-pod1": {
+			Name: "test-pod1",
+		},
+		"test-pod2": {
+			Name: "test-pod2",
+		},
+		"test-pod3": {
+			Name: "test-pod3",
+		},
+	}
 
 	for _, k := range []string{"test-pod1", "test-pod2", "test-pod3"} {
 		expected := pod(k)
 		_, err := client.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), expected, metav1.CreateOptions{})
 		assert.NoError(t, err)
-		collectors = <-client.collectorChan
 	}
 
 	assert.Len(t, collectors, 3)
-
-	sort.Strings(collectors)
 	assert.Equal(t, collectors, expected)
 }
 
@@ -70,16 +77,14 @@ func TestWatchPodDeletion(t *testing.T) {
 	for _, k := range []string{"test-pod2", "test-pod3"} {
 		err := client.k8sClient.CoreV1().Pods("test-ns").Delete(context.Background(), k, metav1.DeleteOptions{})
 		assert.NoError(t, err)
-		collectors = <-client.collectorChan
 	}
 
 	assert.Len(t, collectors, 1)
 
-	sort.Strings(collectors)
 	assert.Equal(t, collectors, expected)
 }
 
-func getCollectors(c []string) {
+func getCollectors(c map[string]*strategy.Collector) {
 	collectors = c
 }
 

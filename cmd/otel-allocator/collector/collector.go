@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
+
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -30,10 +32,9 @@ var (
 )
 
 type Client struct {
-	log           logr.Logger
-	k8sClient     kubernetes.Interface
-	collectorChan chan []string
-	close         chan struct{}
+	log       logr.Logger
+	k8sClient kubernetes.Interface
+	close     chan struct{}
 }
 
 func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
@@ -49,8 +50,8 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 	}, nil
 }
 
-func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors []string)) {
-	collectorMap := map[string]bool{}
+func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*strategy.Collector)) {
+	collectorMap := map[string]*strategy.Collector{}
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
 	opts := metav1.ListOptions{
@@ -64,17 +65,11 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	for i := range pods.Items {
 		pod := pods.Items[i]
 		if pod.GetObjectMeta().GetDeletionTimestamp() == nil {
-			collectorMap[pod.Name] = true
+			collectorMap[pod.Name] = strategy.NewCollector(pod.Name)
 		}
 	}
 
-	collectorKeys := make([]string, len(collectorMap))
-	i := 0
-	for keys := range collectorMap {
-		collectorKeys[i] = keys
-		i++
-	}
-	fn(collectorKeys)
+	fn(collectorMap)
 
 	go func() {
 		for {
@@ -92,7 +87,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	}()
 }
 
-func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]bool, fn func(collectors []string)) string {
+func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]*strategy.Collector, fn func(collectors map[string]*strategy.Collector)) string {
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 	for {
 		collectorsDiscovered.Set(float64(len(collectorMap)))
@@ -115,23 +110,11 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 
 			switch event.Type {
 			case watch.Added:
-				collectorMap[pod.Name] = true
+				collectorMap[pod.Name] = strategy.NewCollector(pod.Name)
 			case watch.Deleted:
 				delete(collectorMap, pod.Name)
 			}
-
-			collectorKeys := make([]string, len(collectorMap))
-			i := 0
-			for keys := range collectorMap {
-				collectorKeys[i] = keys
-				i++
-			}
-			fn(collectorKeys)
-			select {
-			case k.collectorChan <- collectorKeys:
-			default:
-				fn(collectorKeys)
-			}
+			fn(collectorMap)
 		case <-time.After(watcherTimeout):
 			log.Info("Restarting watch routine")
 			return ""

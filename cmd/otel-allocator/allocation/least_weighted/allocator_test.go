@@ -1,4 +1,4 @@
-package allocation
+package least_weighted
 
 import (
 	"math"

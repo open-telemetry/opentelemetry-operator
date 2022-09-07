@@ -4,55 +4,43 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
+
 	"github.com/prometheus/common/model"
 )
 
-type LinkJSON struct {
-	Link string `json:"_link"`
-}
-
-type collectorJSON struct {
-	Link string            `json:"_link"`
-	Jobs []targetGroupJSON `json:"targets"`
-}
-
-type targetGroupJSON struct {
-	Targets []string       `json:"targets"`
-	Labels  model.LabelSet `json:"labels"`
-}
-
-func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator *Allocator) map[string]collectorJSON {
-	displayData := make(map[string]collectorJSON)
+func GetAllTargetsByJob(job string, cMap map[string][]strategy.TargetItem, allocator strategy.Allocator) map[string]strategy.CollectorJSON {
+	displayData := make(map[string]strategy.CollectorJSON)
 	for _, j := range allocator.TargetItems() {
 		if j.JobName == job {
-			var targetList []TargetItem
-			targetList = append(targetList, cMap[j.Collector.Name+j.JobName]...)
+			var targetList []strategy.TargetItem
+			targetList = append(targetList, cMap[j.CollectorName+j.JobName]...)
 
-			var targetGroupList []targetGroupJSON
+			var targetGroupList []strategy.TargetGroupJSON
 
 			for _, t := range targetList {
-				targetGroupList = append(targetGroupList, targetGroupJSON{
+				targetGroupList = append(targetGroupList, strategy.TargetGroupJSON{
 					Targets: []string{t.TargetURL},
 					Labels:  t.Label,
 				})
 			}
 
-			displayData[j.Collector.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.Collector.Name), Jobs: targetGroupList}
+			displayData[j.CollectorName] = strategy.CollectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.CollectorName), Jobs: targetGroupList}
 
 		}
 	}
 	return displayData
 }
 
-func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]TargetItem, allocator *Allocator) []targetGroupJSON {
-	var tgs []targetGroupJSON
+func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]strategy.TargetItem, allocator strategy.Allocator) []strategy.TargetGroupJSON {
+	var tgs []strategy.TargetGroupJSON
 	group := make(map[string]string)
 	labelSet := make(map[string]model.LabelSet)
-	for _, col := range allocator.Collectors() {
-		if col.Name == collector {
+	for colName, _ := range allocator.Collectors() {
+		if colName == collector {
 			for _, targetItemArr := range cMap {
 				for _, targetItem := range targetItemArr {
-					if targetItem.Collector.Name == collector && targetItem.JobName == job {
+					if targetItem.CollectorName == collector && targetItem.JobName == job {
 						group[targetItem.Label.String()] = targetItem.TargetURL
 						labelSet[targetItem.TargetURL] = targetItem.Label
 					}
@@ -62,7 +50,7 @@ func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[strin
 	}
 
 	for _, v := range group {
-		tgs = append(tgs, targetGroupJSON{Targets: []string{v}, Labels: labelSet[v]})
+		tgs = append(tgs, strategy.TargetGroupJSON{Targets: []string{v}, Labels: labelSet[v]})
 	}
 
 	return tgs
