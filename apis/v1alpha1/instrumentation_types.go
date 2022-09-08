@@ -150,7 +150,7 @@ type DotNet struct {
 }
 
 type Apache struct {
-	// Image is a container image with DotNet SDK and auto-instrumentation.
+	// Image is a container image with Apache SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
 
