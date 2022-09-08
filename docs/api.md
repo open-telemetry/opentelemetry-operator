@@ -1893,7 +1893,7 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
         <td><b><a href="#opentelemetrycollectorspecautoscalerbehavior">behavior</a></b></td>
         <td>object</td>
         <td>
-          AutoscalerBehaviorSpec configures the scaling behavior of the target<br/>
+          AutoscalerBehaviorSpec configures the scaling behavior of the target.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1905,7 +1905,7 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
 
 
 
-AutoscalerBehaviorSpec configures the scaling behavior of the target
+AutoscalerBehaviorSpec configures the scaling behavior of the target.
 
 <table>
     <thead>
