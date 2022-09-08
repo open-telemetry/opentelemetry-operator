@@ -63,7 +63,7 @@ spec:
                 properties:
                   behavior:
                     description: AutoscalerBehaviorSpec configures the scaling behavior
-                      of the target
+                      of the target.
                     properties:
                       scaleDown:
                         description: ScaleDown is policy for scaling down
