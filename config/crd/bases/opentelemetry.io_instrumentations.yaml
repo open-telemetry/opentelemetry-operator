@@ -53,7 +53,7 @@ spec:
               SDK and instrumentation.
             properties:
               apache:
-                description: Apache defines configuration for DotNet auto-instrumentation.
+                description: Apache defines configuration for Apache auto-instrumentation.
                 properties:
                   attrs:
                     description: 'Attrs defines Apache agent specific attributes.
@@ -282,7 +282,7 @@ spec:
                       type: object
                     type: array
                   image:
-                    description: Image is a container image with DotNet SDK and auto-instrumentation.
+                    description: Image is a container image with Apache SDK and auto-instrumentation.
                     type: string
                   version:
                     description: Apache server version. One of 2.4 or 2.2. Default

@@ -196,7 +196,7 @@ func (c *Config) AutoInstrumentationDotNetImage() string {
 	return c.autoInstrumentationDotNetImage
 }
 
-// AutoInstrumentationDotNetImage returns OpenTelemetry DotNet auto-instrumentation container image.
+// AutoInstrumentationApacheImage returns OpenTelemetry Apache auto-instrumentation container image.
 func (c *Config) AutoInstrumentationApacheImage() string {
 	return c.autoInstrumentationApacheImage
 }
