@@ -166,7 +166,7 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Java, NodeJS, Python and Apache httpd are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -213,6 +213,11 @@ instrumentation.opentelemetry.io/inject-python: "true"
 DotNet:
 ```bash
 instrumentation.opentelemetry.io/inject-dotnet: "true"
+```
+
+Apache:
+```bash
+instrumentation.opentelemetry.io/inject-apache: "true"
 ```
 
 OpenTelemetry SDK environment variables only:
@@ -286,10 +291,30 @@ spec:
     image: your-customized-auto-instrumentation-image:python
   dotnet:
     image: your-customized-auto-instrumentation-image:dotnet
+  apache:
+    image: your-customized-auto-instrumentation-image:apache
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).
 Follow the instructions in the Dockerfiles on how to build a custom container image.
+
+>**Note:** For `Apache` auto-instrumentation, by default, instrumentation assumes httpd version 2.4. If you need to use version 2.2, or you need to adjust agent parameters, adjust instrumentation per following example:
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+  apache:
+    image: your-customized-auto-instrumentation-image:apache
+    version: 2.2
+    attrs:
+    - name: ApacheModuleOtelMaxQueueSize
+      value: "4096"
+    - name: ...
+      value: ...
+```
+List of all attributes can be found at [otel-webserver-module](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module)
+
 
 #### Inject OpenTelemetry SDK environment variables only
 
