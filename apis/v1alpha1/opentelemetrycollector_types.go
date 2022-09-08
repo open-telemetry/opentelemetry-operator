@@ -204,17 +204,27 @@ type OpenTelemetryCollectorList struct {
 
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
-	// ScaleUp is the minimum number of seconds to wait before scaling up
-	//
 	// +optional
-	// +kubebuilder:validation:Minimum=0
-	ScaleUp *int32 `json:"scaleUp,omitempty"`
+	Behavior *AutoscalerBehaviorSpec `json:"behavior,omitempty"`
+}
 
-	// ScaleDown is the minimum number of seconds to wait before scaling down
+// AutoscalerBehaviorSpec configures the scaling behavior of the target.
+type AutoscalerBehaviorSpec struct {
+	// ScaleUp is the policy for scaling up
+	// +optional
+	ScaleUp *AutoScalerRules `json:"scaleUp,omitempty"`
+
+	// ScaleDown is policy for scaling down
 	//
 	// +optional
+	ScaleDown *AutoScalerRules `json:"scaleDown,omitempty"`
+}
+
+// AutoScalerRules configures the scaling behavior for one direction.
+type AutoScalerRules struct {
+	// +optional
 	// +kubebuilder:validation:Minimum=0
-	ScaleDown *int32 `json:"scaleDown,omitempty"`
+	StabilizationWindowSeconds *int32 `json:"stabilizationWindowSeconds,omitempty"`
 }
 
 func init() {

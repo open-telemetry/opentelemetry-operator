@@ -50,12 +50,15 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	}
 
 	scaleUpTime := defaultScaleUpTime
-	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.ScaleDown != nil {
-		scaleUpTime = *otelcol.Spec.Autoscaler.ScaleUp
-	}
 	scaleDownTime := defaultScaleDownTime
-	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.ScaleDown != nil {
-		scaleDownTime = *otelcol.Spec.Autoscaler.ScaleDown
+	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.Behavior != nil {
+		if otelcol.Spec.Autoscaler.Behavior.ScaleUp != nil {
+			scaleUpTime = *otelcol.Spec.Autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds
+		}
+
+		if otelcol.Spec.Autoscaler.Behavior.ScaleDown != nil {
+			scaleDownTime = *otelcol.Spec.Autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds
+		}
 	}
 
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
@@ -85,7 +88,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			},
 		}
 
-		if otelcol.Spec.Autoscaler != nil {
+		if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.Behavior != nil {
 			scaleUpRules := &autoscalingv2beta2.HPAScalingRules{
 				StabilizationWindowSeconds: &scaleUpTime,
 			}
@@ -126,7 +129,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			},
 		}
 
-		if otelcol.Spec.Autoscaler != nil {
+		if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.Behavior != nil {
 			scaleUpRules := &autoscalingv2.HPAScalingRules{
 				StabilizationWindowSeconds: &scaleUpTime,
 			}

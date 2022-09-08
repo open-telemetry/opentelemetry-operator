@@ -1890,20 +1890,101 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>scaleDown</b></td>
+        <td><b><a href="#opentelemetrycollectorspecautoscalerbehavior">behavior</a></b></td>
+        <td>object</td>
+        <td>
+          AutoscalerBehaviorSpec configures the scaling behavior of the target<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.behavior
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscaler)</sup></sup>
+
+
+
+AutoscalerBehaviorSpec configures the scaling behavior of the target
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalerbehaviorscaledown">scaleDown</a></b></td>
+        <td>object</td>
+        <td>
+          ScaleDown is policy for scaling down<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalerbehaviorscaleup">scaleUp</a></b></td>
+        <td>object</td>
+        <td>
+          ScaleUp is the policy for scaling up<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.behavior.scaleDown
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalerbehavior)</sup></sup>
+
+
+
+ScaleDown is policy for scaling down
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>stabilizationWindowSeconds</b></td>
         <td>integer</td>
         <td>
-          ScaleDown is the minimum number of seconds to wait before scaling down<br/>
+          <br/>
           <br/>
             <i>Format</i>: int32<br/>
             <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>scaleUp</b></td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.behavior.scaleUp
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalerbehavior)</sup></sup>
+
+
+
+ScaleUp is the policy for scaling up
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>stabilizationWindowSeconds</b></td>
         <td>integer</td>
         <td>
-          ScaleUp is the minimum number of seconds to wait before scaling up<br/>
+          <br/>
           <br/>
             <i>Format</i>: int32<br/>
             <i>Minimum</i>: 0<br/>

@@ -6,8 +6,11 @@ spec:
   minReplicas: 1
   maxReplicas: 2
   autoscaler:
-    scaleUp: 10
-    scaleDown: 15
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 10
+      scaleDown:
+        stabilizationWindowSeconds: 15
   resources:
     limits:
       cpu: 500m

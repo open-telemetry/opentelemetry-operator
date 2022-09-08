@@ -63,18 +63,27 @@ spec:
                 description: Autoscaler specifies the pod autoscaling configuration
                   to use for the OpenTelemetryCollector workload.
                 properties:
-                  scaleDown:
-                    description: ScaleDown is the minimum number of seconds to wait
-                      before scaling down
-                    format: int32
-                    minimum: 0
-                    type: integer
-                  scaleUp:
-                    description: ScaleUp is the minimum number of seconds to wait
-                      before scaling up
-                    format: int32
-                    minimum: 0
-                    type: integer
+                  behavior:
+                    description: AutoscalerBehaviorSpec configures the scaling behavior
+                      of the target
+                    properties:
+                      scaleDown:
+                        description: ScaleDown is policy for scaling down
+                        properties:
+                          stabilizationWindowSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        type: object
+                      scaleUp:
+                        description: ScaleUp is the policy for scaling up
+                        properties:
+                          stabilizationWindowSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        type: object
+                    type: object
                 type: object
               config:
                 description: Config is the raw JSON to be used as the collector's
