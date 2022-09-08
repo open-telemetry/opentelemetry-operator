@@ -24,12 +24,20 @@ import (
 )
 
 const (
-	envDotNetAdditionalDeps  = "DOTNET_ADDITIONAL_DEPS"
-	envDotNetSharedStore     = "DOTNET_SHARED_STORE"
-	envDotNetStartupHook     = "DOTNET_STARTUP_HOOKS"
-	dotNetAdditionalDepsPath = "./otel-auto-instrumentation/AdditionalDeps"
-	dotNetSharedStorePath    = "/otel-auto-instrumentation/store"
-	dotNetStartupHookPath    = "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	envDotNetCoreClrEnableProfiling     = "CORECLR_ENABLE_PROFILING"
+	envDotNetCoreClrProfiler            = "CORECLR_PROFILER"
+	envDotNetCoreClrProfilerPath        = "CORECLR_PROFILER_PATH"
+	envDotNetAdditionalDeps             = "DOTNET_ADDITIONAL_DEPS"
+	envDotNetSharedStore                = "DOTNET_SHARED_STORE"
+	envDotNetStartupHook                = "DOTNET_STARTUP_HOOKS"
+	envDotNetOTelAutoHome               = "OTEL_DOTNET_AUTO_HOME"
+	dotNetCoreClrEnableProfilingEnabled = "1"
+	dotNetCoreClrProfilerId             = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
+	dotNetCoreClrProfilerPath           = "/otel-auto-instrumentation/OpenTelemetry.AutoInstrumentation.Native.so"
+	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation/AdditionalDeps"
+	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation"
+	dotNetSharedStorePath               = "/otel-auto-instrumentation/store"
+	dotNetStartupHookPath               = "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 )
 
 func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) corev1.Pod {
@@ -44,7 +52,52 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 		}
 	}
 
-	idx := getIndexOfEnv(container.Env, envDotNetStartupHook)
+	idx := getIndexOfEnv(container.Env, envDotNetCoreClrEnableProfiling)
+	if idx == -1 {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envDotNetCoreClrEnableProfiling,
+			Value: dotNetCoreClrEnableProfilingEnabled,
+		})
+	} else if idx > -1 {
+		if container.Env[idx].ValueFrom != nil {
+			// TODO add to status object or submit it as an event
+			logger.Info("Skipping DotNet SDK injection, the container defines CORECLR_ENABLE_PROFILING env var value via ValueFrom", "container", container.Name)
+			return pod
+		}
+		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetCoreClrEnableProfilingEnabled)
+	}
+
+	idx = getIndexOfEnv(container.Env, envDotNetCoreClrProfiler)
+	if idx == -1 {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envDotNetCoreClrProfiler,
+			Value: dotNetCoreClrProfilerId,
+		})
+	} else if idx > -1 {
+		if container.Env[idx].ValueFrom != nil {
+			// TODO add to status object or submit it as an event
+			logger.Info("Skipping DotNet SDK injection, the container defines CORECLR_PROFILER env var value via ValueFrom", "container", container.Name)
+			return pod
+		}
+		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetCoreClrProfilerId)
+	}
+
+	idx = getIndexOfEnv(container.Env, envDotNetCoreClrProfilerPath)
+	if idx == -1 {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envDotNetCoreClrProfilerPath,
+			Value: dotNetCoreClrProfilerPath,
+		})
+	} else if idx > -1 {
+		if container.Env[idx].ValueFrom != nil {
+			// TODO add to status object or submit it as an event
+			logger.Info("Skipping DotNet SDK injection, the container defines CORECLR_PROFILER_PATH env var value via ValueFrom", "container", container.Name)
+			return pod
+		}
+		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetCoreClrProfilerPath)
+	}
+
+	idx = getIndexOfEnv(container.Env, envDotNetStartupHook)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  envDotNetStartupHook,
@@ -72,6 +125,21 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 			return pod
 		}
 		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetAdditionalDepsPath)
+	}
+
+	idx = getIndexOfEnv(container.Env, envDotNetOTelAutoHome)
+	if idx == -1 {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envDotNetOTelAutoHome,
+			Value: dotNetOTelAutoHomePath,
+		})
+	} else if idx > -1 {
+		if container.Env[idx].ValueFrom != nil {
+			// TODO add to status object or submit it as an event
+			logger.Info("Skipping DotNet SDK injection, the container defines OTEL_DOTNET_AUTO_HOME env var value via ValueFrom", "container", container.Name)
+			return pod
+		}
+		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetOTelAutoHomePath)
 	}
 
 	idx = getIndexOfEnv(container.Env, envDotNetSharedStore)

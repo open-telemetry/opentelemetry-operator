@@ -33,7 +33,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		expected corev1.Pod
 	}{
 		{
-			name:   "DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS not defined",
+			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS, OTEL_DOTNET_AUTO_HOME not defined",
 			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -73,12 +73,28 @@ func TestInjectDotNetSDK(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerId,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerPath,
+								},
+								{
 									Name:  envDotNetStartupHook,
 									Value: dotNetStartupHookPath,
 								},
 								{
 									Name:  envDotNetAdditionalDeps,
 									Value: dotNetAdditionalDepsPath,
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
 								},
 								{
 									Name:  envDotNetSharedStore,
@@ -91,13 +107,25 @@ func TestInjectDotNetSDK(t *testing.T) {
 			},
 		},
 		{
-			name:   "DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE defined",
+			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE, OTEL_DOTNET_AUTO_HOME defined",
 			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
 							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: "/foo:/bar",
+								},
 								{
 									Name:  envDotNetStartupHook,
 									Value: "/foo:/bar",
@@ -108,6 +136,10 @@ func TestInjectDotNetSDK(t *testing.T) {
 								},
 								{
 									Name:  envDotNetSharedStore,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
 									Value: "/foo:/bar",
 								},
 							},
@@ -146,6 +178,18 @@ func TestInjectDotNetSDK(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetCoreClrEnableProfilingEnabled),
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetCoreClrProfilerId),
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetCoreClrProfilerPath),
+								},
+								{
 									Name:  envDotNetStartupHook,
 									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetStartupHookPath),
 								},
@@ -156,6 +200,106 @@ func TestInjectDotNetSDK(t *testing.T) {
 								{
 									Name:  envDotNetSharedStore,
 									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetSharedStorePath),
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetOTelAutoHomePath),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "CORECLR_ENABLE_PROFILING defined as ValueFrom",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      envDotNetCoreClrEnableProfiling,
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      envDotNetCoreClrEnableProfiling,
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "CORECLR_PROFILER defined as ValueFrom",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      envDotNetCoreClrProfiler,
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      envDotNetCoreClrProfiler,
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "CORECLR_PROFILER_PATH defined as ValueFrom",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      envDotNetCoreClrProfilerPath,
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      envDotNetCoreClrProfilerPath,
+									ValueFrom: &corev1.EnvVarSource{},
 								},
 							},
 						},
@@ -251,6 +395,38 @@ func TestInjectDotNetSDK(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:      envDotNetSharedStore,
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "OTEL_DOTNET_AUTO_HOME defined as ValueFrom",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      envDotNetOTelAutoHome,
+									ValueFrom: &corev1.EnvVarSource{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:      envDotNetOTelAutoHome,
 									ValueFrom: &corev1.EnvVarSource{},
 								},
 							},
