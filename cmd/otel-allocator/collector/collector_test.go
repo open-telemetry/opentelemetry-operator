@@ -3,10 +3,9 @@ package collector
 import (
 	"context"
 	"fmt"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"os"
 	"testing"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -16,7 +15,7 @@ import (
 )
 
 var client Client
-var collectors = map[string]*strategy.Collector{}
+var collectors = map[string]*allocation.Collector{}
 
 func TestMain(m *testing.M) {
 	client = Client{
@@ -39,7 +38,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]*strategy.Collector{}, func(colMap map[string]*strategy.Collector) { getCollectors(colMap) })
+	go runWatch(context.Background(), &client, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) { getCollectors(colMap) })
 
 	code := m.Run()
 
@@ -49,7 +48,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestWatchPodAddition(t *testing.T) {
-	expected := map[string]*strategy.Collector{
+	expected := map[string]*allocation.Collector{
 		"test-pod1": {
 			Name: "test-pod1",
 		},
@@ -84,7 +83,7 @@ func TestWatchPodDeletion(t *testing.T) {
 	assert.Equal(t, collectors, expected)
 }
 
-func getCollectors(c map[string]*strategy.Collector) {
+func getCollectors(c map[string]*allocation.Collector) {
 	collectors = c
 }
 

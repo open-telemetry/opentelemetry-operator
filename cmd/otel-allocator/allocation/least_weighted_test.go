@@ -1,12 +1,10 @@
-package least_weighted
+package allocation
 
 import (
 	"fmt"
 	"math"
 	"math/rand"
 	"testing"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
@@ -15,21 +13,21 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
-func makeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*strategy.TargetItem {
-	toReturn := map[string]*strategy.TargetItem{}
+func makeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*TargetItem {
+	toReturn := map[string]*TargetItem{}
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", i%numCollectors)
-		newTarget := strategy.NewTargetItem(fmt.Sprintf("test-job-%d", i), "test-url", nil, collector)
+		newTarget := NewTargetItem(fmt.Sprintf("test-job-%d", i), "test-url", nil, collector)
 		toReturn[newTarget.Hash()] = newTarget
 	}
 	return toReturn
 }
 
-func makeNCollectors(n int, targetsForEach int) map[string]*strategy.Collector {
-	toReturn := map[string]*strategy.Collector{}
+func makeNCollectors(n int, targetsForEach int) map[string]*Collector {
+	toReturn := map[string]*Collector{}
 	for i := 0; i < n; i++ {
 		collector := fmt.Sprintf("collector-%d", i)
-		toReturn[collector] = &strategy.Collector{
+		toReturn[collector] = &Collector{
 			Name:       collector,
 			NumTargets: targetsForEach,
 		}
@@ -38,7 +36,7 @@ func makeNCollectors(n int, targetsForEach int) map[string]*strategy.Collector {
 }
 
 func TestSetCollectors(t *testing.T) {
-	s, _ := strategy.New("least-weighted", logger)
+	s, _ := New("least-weighted", logger)
 
 	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
@@ -54,7 +52,7 @@ func TestSetCollectors(t *testing.T) {
 
 func TestAddingAndRemovingTargets(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s, _ := strategy.New("least-weighted", logger)
+	s, _ := New("least-weighted", logger)
 
 	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
@@ -89,7 +87,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 // Tests that two targets with the same target url and job name but different label set are both added
 func TestAllocationCollision(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s, _ := strategy.New("least-weighted", logger)
+	s, _ := New("least-weighted", logger)
 
 	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
@@ -99,10 +97,10 @@ func TestAllocationCollision(t *testing.T) {
 	secondLabels := model.LabelSet{
 		"test": "test2",
 	}
-	firstTarget := strategy.NewTargetItem("sample-name", "0.0.0.0:8000", firstLabels, "")
-	secondTarget := strategy.NewTargetItem("sample-name", "0.0.0.0:8000", secondLabels, "")
+	firstTarget := NewTargetItem("sample-name", "0.0.0.0:8000", firstLabels, "")
+	secondTarget := NewTargetItem("sample-name", "0.0.0.0:8000", secondLabels, "")
 
-	targetList := map[string]*strategy.TargetItem{
+	targetList := map[string]*TargetItem{
 		firstTarget.Hash():  firstTarget,
 		secondTarget.Hash(): secondTarget,
 	}
@@ -123,7 +121,7 @@ func TestAllocationCollision(t *testing.T) {
 }
 
 func TestNoCollectorReassignment(t *testing.T) {
-	s, _ := strategy.New("least-weighted", logger)
+	s, _ := New("least-weighted", logger)
 
 	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)
@@ -154,9 +152,9 @@ func TestNoCollectorReassignment(t *testing.T) {
 }
 
 func TestSmartCollectorReassignment(t *testing.T) {
-	s, _ := strategy.New("least-weighted", logger)
+	s, _ := New("least-weighted", logger)
 
-	cols := makeNCollectors(3, 0)
+	cols := makeNCollectors(4, 0)
 	s.SetCollectors(cols)
 
 	expectedColLen := len(cols)
@@ -165,7 +163,7 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	for _, i := range cols {
 		assert.NotNil(t, s.Collectors()[i.Name])
 	}
-	initTargets := makeNNewTargets(6, 3, 0)
+	initTargets := makeNNewTargets(6, 4, 0)
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
 
@@ -175,8 +173,10 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	assert.Len(t, targetItems, expectedTargetLen)
 
 	// assign new set of collectors with the same names
-	newCols := map[string]*strategy.Collector{
-		"collector-1": {
+	newCols := map[string]*Collector{
+		"collector-0": {
+			Name: "collector-0",
+		}, "collector-1": {
 			Name: "collector-1",
 		}, "collector-2": {
 			Name: "collector-2",
@@ -191,10 +191,10 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	for key, targetItem := range targetItems {
 		item, ok := newTargetItems[key]
 		assert.True(t, ok, "all target items should be found in new target item list")
-		if targetItem.CollectorName != "col-3" {
+		if targetItem.CollectorName != "collector-3" {
 			assert.Equal(t, targetItem.CollectorName, item.CollectorName)
 		} else {
-			assert.Equal(t, "col-4", item.CollectorName)
+			assert.Equal(t, "collector-4", item.CollectorName)
 		}
 	}
 }
@@ -203,7 +203,7 @@ func TestSmartCollectorReassignment(t *testing.T) {
 func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 
 	// prepare allocator with 3 collectors and 'random' amount of targets
-	s, _ := strategy.New("least-weighted", logger)
+	s, _ := New("least-weighted", logger)
 
 	cols := makeNCollectors(3, 0)
 	s.SetCollectors(cols)

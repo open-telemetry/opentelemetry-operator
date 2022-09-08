@@ -1,4 +1,4 @@
-package utility
+package diff
 
 import (
 	"reflect"
@@ -55,7 +55,7 @@ func TestDiffMaps(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := DiffMaps(tt.args.current, tt.args.new); !reflect.DeepEqual(got, tt.want) {
+			if got := Maps(tt.args.current, tt.args.new); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("DiffMaps() = %v, want %v", got, tt.want)
 			}
 		})

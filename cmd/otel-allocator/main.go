@@ -20,8 +20,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	_ "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/least_weighted"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
@@ -57,7 +55,7 @@ func main() {
 
 	log := ctrl.Log.WithName("allocator")
 
-	allocator, err := strategy.New(cfg.GetAllocationStrategy(), log)
+	allocator, err := allocation.New(cfg.GetAllocationStrategy(), log)
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
@@ -140,13 +138,13 @@ func main() {
 
 type server struct {
 	logger           logr.Logger
-	allocator        strategy.Allocator
+	allocator        allocation.Allocator
 	discoveryManager *lbdiscovery.Manager
 	k8sClient        *collector.Client
 	server           *http.Server
 }
 
-func newServer(log logr.Logger, allocator strategy.Allocator, discoveryManager *lbdiscovery.Manager, k8sclient *collector.Client, listenAddr *string) (*server, error) {
+func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, k8sclient *collector.Client, listenAddr *string) (*server, error) {
 	s := &server{
 		logger:           log,
 		allocator:        allocator,
@@ -162,7 +160,7 @@ func newServer(log logr.Logger, allocator strategy.Allocator, discoveryManager *
 	return s, nil
 }
 
-func configureFileDiscovery(log logr.Logger, allocator strategy.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
+func configureFileDiscovery(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
 	cfg, err := config.Load(*cliConfig.ConfigFilePath)
 	if err != nil {
 		return nil, err
@@ -194,9 +192,9 @@ func (s *server) Shutdown(ctx context.Context) error {
 }
 
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
-	displayData := make(map[string]strategy.LinkJSON)
+	displayData := make(map[string]allocation.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
-		displayData[v.JobName] = strategy.LinkJSON{Link: v.Link.Link}
+		displayData[v.JobName] = allocation.LinkJSON{Link: v.Link.Link}
 	}
 	jsonHandler(w, r, displayData)
 }
@@ -215,7 +213,7 @@ func (s *server) PrometheusMiddleware(next http.Handler) http.Handler {
 func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()["collector_id"]
 
-	var compareMap = make(map[string][]strategy.TargetItem) // CollectorName+jobName -> TargetItem
+	var compareMap = make(map[string][]allocation.TargetItem) // CollectorName+jobName -> TargetItem
 	for _, v := range s.allocator.TargetItems() {
 		compareMap[v.CollectorName+v.JobName] = append(compareMap[v.CollectorName+v.JobName], *v)
 	}

@@ -3,11 +3,10 @@ package discovery
 import (
 	"context"
 	"fmt"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"os"
 	"sort"
 	"testing"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 
 	gokitlog "github.com/go-kit/log"
 	"github.com/prometheus/common/model"
@@ -34,7 +33,7 @@ func TestMain(m *testing.M) {
 	manager = NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger())
 
 	results = make(chan []string)
-	manager.Watch(func(targets map[string]*strategy.TargetItem) {
+	manager.Watch(func(targets map[string]*allocation.TargetItem) {
 		var result []string
 		for _, t := range targets {
 			result = append(result, t.TargetURL)

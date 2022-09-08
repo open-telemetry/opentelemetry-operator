@@ -1,4 +1,4 @@
-package utility
+package diff
 
 type Changes[T any] struct {
 	additions map[string]T
@@ -13,7 +13,7 @@ func (c Changes[T]) Removals() map[string]T {
 	return c.removals
 }
 
-func DiffMaps[T any](current, new map[string]T) Changes[T] {
+func Maps[T any](current, new map[string]T) Changes[T] {
 	additions := map[string]T{}
 	removals := map[string]T{}
 	// Used as a set to check for removed items

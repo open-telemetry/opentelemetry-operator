@@ -2,11 +2,10 @@ package collector
 
 import (
 	"context"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation/strategy"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
@@ -50,8 +49,8 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 	}, nil
 }
 
-func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*strategy.Collector)) {
-	collectorMap := map[string]*strategy.Collector{}
+func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) {
+	collectorMap := map[string]*allocation.Collector{}
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
 	opts := metav1.ListOptions{
@@ -65,7 +64,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	for i := range pods.Items {
 		pod := pods.Items[i]
 		if pod.GetObjectMeta().GetDeletionTimestamp() == nil {
-			collectorMap[pod.Name] = strategy.NewCollector(pod.Name)
+			collectorMap[pod.Name] = allocation.NewCollector(pod.Name)
 		}
 	}
 
@@ -87,7 +86,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	}()
 }
 
-func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]*strategy.Collector, fn func(collectors map[string]*strategy.Collector)) string {
+func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) string {
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 	for {
 		collectorsDiscovered.Set(float64(len(collectorMap)))
@@ -110,7 +109,7 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 
 			switch event.Type {
 			case watch.Added:
-				collectorMap[pod.Name] = strategy.NewCollector(pod.Name)
+				collectorMap[pod.Name] = allocation.NewCollector(pod.Name)
 			case watch.Deleted:
 				delete(collectorMap, pod.Name)
 			}
