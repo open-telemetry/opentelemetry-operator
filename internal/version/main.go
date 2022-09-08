@@ -29,6 +29,7 @@ var (
 	autoInstrumentationNodeJS string
 	autoInstrumentationPython string
 	autoInstrumentationDotNet string
+	autoInstrumentationApache string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
@@ -42,6 +43,7 @@ type Version struct {
 	AutoInstrumentationNodeJS string `json:"auto-instrumentation-nodejs"`
 	AutoInstrumentationPython string `json:"auto-instrumentation-python"`
 	AutoInstrumentationDotNet string `json:"auto-instrumentation-dotnet"`
+	AutoInstrumentationApache string `json:"auto-instrumentation-apache"`
 }
 
 // Get returns the Version object with the relevant information.
@@ -56,12 +58,13 @@ func Get() Version {
 		AutoInstrumentationNodeJS: AutoInstrumentationNodeJS(),
 		AutoInstrumentationPython: AutoInstrumentationPython(),
 		AutoInstrumentationDotNet: AutoInstrumentationDotNet(),
+		AutoInstrumentationApache: AutoInstrumentationApache(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v')",
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationApache='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
@@ -71,6 +74,7 @@ func (v Version) String() string {
 		v.AutoInstrumentationNodeJS,
 		v.AutoInstrumentationPython,
 		v.AutoInstrumentationDotNet,
+		v.AutoInstrumentationApache,
 	)
 }
 
@@ -118,6 +122,13 @@ func AutoInstrumentationPython() string {
 }
 
 func AutoInstrumentationDotNet() string {
+	if len(autoInstrumentationDotNet) > 0 {
+		return autoInstrumentationDotNet
+	}
+	return "0.0.0"
+}
+
+func AutoInstrumentationApache() string {
 	if len(autoInstrumentationDotNet) > 0 {
 		return autoInstrumentationDotNet
 	}

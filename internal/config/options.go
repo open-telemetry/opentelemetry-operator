@@ -37,6 +37,7 @@ type options struct {
 	autoInstrumentationJavaImage   string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationPythonImage string
+	autoInstrumentationApacheImage string
 	collectorImage                 string
 	collectorConfigMapEntry        string
 	targetAllocatorConfigMapEntry  string
@@ -124,6 +125,12 @@ func WithAutoInstrumentationPythonImage(s string) Option {
 func WithAutoInstrumentationDotNetImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationDotNetImage = s
+	}
+}
+
+func WithAutoInstrumentationApacheImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationApacheImage = s
 	}
 }
 

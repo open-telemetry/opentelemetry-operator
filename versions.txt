@@ -25,3 +25,7 @@ autoinstrumentation-python=0.32b0
 # Represents the current release of DotNet instrumentation.
 # Should match autoinstrumentation/dotnet/version.txt
 autoinstrumentation-dotnet=0.2.0-beta.1
+
+# Represents the current release of Apache instrumentation.
+# Should match autoinstrumentation/apache/version.txt
+autoinstrumentation-apache=1.0.0

@@ -32,6 +32,7 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstNodeJS string
 	DefaultAutoInstPython string
 	DefaultAutoInstDotNet string
+	DefaultAutoInstApache string
 }
 
 //+kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
@@ -99,6 +100,14 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		if inst.Spec.DotNet.Image == autoInstDotnet {
 			inst.Spec.DotNet.Image = u.DefaultAutoInstDotNet
 			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet] = u.DefaultAutoInstDotNet
+		}
+	}
+	autoInstApache := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApache]
+	if autoInstApache != "" {
+		// upgrade the image only if the image matches the annotation
+		if inst.Spec.Apache.Image == autoInstApache {
+			inst.Spec.Apache.Image = u.DefaultAutoInstApache
+			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApache] = u.DefaultAutoInstApache
 		}
 	}
 	return inst

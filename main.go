@@ -81,6 +81,7 @@ func main() {
 		autoInstrumentationNodeJS string
 		autoInstrumentationPython string
 		autoInstrumentationDotNet string
+		autoInstrumentationApache string
 		labelsFilter              []string
 		webhookPort               int
 	)
@@ -96,6 +97,7 @@ func main() {
 	pflag.StringVar(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationPython, "auto-instrumentation-python-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet), "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationApache, "auto-instrumentation-apache-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache:%s", v.AutoInstrumentationApache), "The default OpenTelemetry Apache instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringArrayVar(&labelsFilter, "labels", []string{}, "Labels to filter away from propagating onto deploys")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
 	pflag.Parse()
@@ -136,6 +138,7 @@ func main() {
 		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
 		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
+		config.WithAutoInstrumentationApacheImage(autoInstrumentationDotNet),
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 	)
@@ -205,6 +208,7 @@ func main() {
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationNodeJS: autoInstrumentationNodeJS,
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationPython: autoInstrumentationPython,
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationDotNet: autoInstrumentationDotNet,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationApache: autoInstrumentationApache,
 				},
 			},
 		}).SetupWebhookWithManager(mgr); err != nil {
@@ -268,6 +272,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 			DefaultAutoInstNodeJS: cfg.AutoInstrumentationNodeJSImage(),
 			DefaultAutoInstPython: cfg.AutoInstrumentationPythonImage(),
 			DefaultAutoInstDotNet: cfg.AutoInstrumentationDotNetImage(),
+			DefaultAutoInstApache: cfg.AutoInstrumentationApacheImage(),
 			Client:                mgr.GetClient(),
 		}
 		return u.ManagedInstances(c)

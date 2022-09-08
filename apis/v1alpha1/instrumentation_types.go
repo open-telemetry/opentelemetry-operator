@@ -58,6 +58,10 @@ type InstrumentationSpec struct {
 	// DotNet defines configuration for DotNet auto-instrumentation.
 	// +optional
 	DotNet DotNet `json:"dotnet,omitempty"`
+
+	// Apache defines configuration for DotNet auto-instrumentation.
+	// +optional
+	Apache Apache `json:"apache,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
@@ -143,6 +147,27 @@ type DotNet struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+}
+
+type Apache struct {
+	// Image is a container image with DotNet SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// Env defines Apache specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Attrs defines Apache agent specific attributes. The precedence is:
+	// `agent default attributes` > `instrument spec attributes`
+	// +optional
+	Attrs []corev1.EnvVar `json:"attrs,omitempty"`
+
+	// Apache server version. One of 2.4 or 2.2. Default is 2.4
+	// +optional
+	Version string `json:"version,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.

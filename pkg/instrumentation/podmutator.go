@@ -44,6 +44,7 @@ type languageInstrumentations struct {
 	NodeJS *v1alpha1.Instrumentation
 	Python *v1alpha1.Instrumentation
 	DotNet *v1alpha1.Instrumentation
+	Apache *v1alpha1.Instrumentation
 	Sdk    *v1alpha1.Instrumentation
 }
 
@@ -68,6 +69,8 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Info("Skipping pod instrumentation - already instrumented")
 		return pod, nil
 	}
+	// TODO
+	logger.Info("Instrumenting " + pod.GenerateName)
 
 	var inst *v1alpha1.Instrumentation
 	var err error
@@ -104,6 +107,15 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.DotNet = inst
 
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectApache); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	insts.Apache = inst
+	// TODO
+	logger.Info("Instrumenting apache" + inst.Name)
+
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
@@ -111,7 +123,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.Sdk = inst
 
-	if insts.Java == nil && insts.NodeJS == nil && insts.Python == nil && insts.DotNet == nil && insts.Sdk == nil {
+	if insts.Java == nil && insts.NodeJS == nil && insts.Python == nil && insts.DotNet == nil && insts.Apache == nil && insts.Sdk == nil {
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}
