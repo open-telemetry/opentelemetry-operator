@@ -113,8 +113,6 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	insts.Apache = inst
-	// TODO
-	logger.Info("Instrumenting apache" + inst.Name)
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs

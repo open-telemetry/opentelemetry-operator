@@ -78,7 +78,7 @@ func TestInjectApacheagent(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
-									Value: "\n#Load the Otel Webserver SDK\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_common.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_resources.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_trace.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_otlp_recordable.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_exporter_ostream_span.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_exporter_otlp_grpc.so\n\n#Load the Otel ApacheModule SDK\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_webserver_sdk.so\n#Load the Apache Module. In this example for Apache 2.4\n#LoadModule otel_apache_module /opt/opentelemetry-webserver/agent/WebServerModule/Apache/libmod_apache_otel.so\n#Load the Apache Module. In this example for Apache 2.2\n#LoadModule otel_apache_module /opt/opentelemetry-webserver/agent/WebServerModule/Apache/libmod_apache_otel22.so\nLoadModule otel_apache_module /opt/opentelemetry-webserver/agent/WebServerModule/Apache/libmod_apache_otel.so\n\n#Attributes\n\nApacheModuleOtelExporterEndpoint http://otlp-endpoint:4317\nApacheModuleServiceName apache-service-name\nApacheModuleServiceNamespace \nApacheModuleEnabled ON\nApacheModuleOtelSpanExporter otlp\nApacheModuleServiceInstanceId <<SID-PLACEHOLDER>>\nApacheModuleResolveBackends  ON\nApacheModuleTraceAsError  ON\n"
+									Value: "\n#Load the Otel Webserver SDK\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_common.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_resources.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_trace.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_otlp_recordable.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_exporter_ostream_span.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_exporter_otlp_grpc.so\n\n#Load the Otel ApacheModule SDK\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_webserver_sdk.so\n#Load the Apache Module. In this example for Apache 2.4\n#LoadModule otel_apache_module /opt/opentelemetry-webserver/agent/WebServerModule/Apache/libmod_apache_otel.so\n#Load the Apache Module. In this example for Apache 2.2\n#LoadModule otel_apache_module /opt/opentelemetry-webserver/agent/WebServerModule/Apache/libmod_apache_otel22.so\nLoadModule otel_apache_module /opt/opentelemetry-webserver/agent/WebServerModule/Apache/libmod_apache_otel.so\n\n#Attributes\n\nApacheModuleEnabled ON\nApacheModuleOtelExporterEndpoint http://otlp-endpoint:4317\nApacheModuleOtelSpanExporter otlp\nApacheModuleResolveBackends  ON\nApacheModuleServiceInstanceId <<SID-PLACEHOLDER>>\nApacheModuleServiceName apache-service-name\nApacheModuleServiceNamespace \nApacheModuleTraceAsError  ON\n",
 								},
 								{Name: apacheServiceInstanceIdEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
@@ -91,11 +91,11 @@ func TestInjectApacheagent(t *testing.T) {
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      apacheAgentVolume,
-									MountPath: apacheConfigDirectory,
+									MountPath: apacheAgentDirectory + apacheAgentSubDirectory,
 								},
 								{
 									Name:      apacheAgentConfigVolume,
-									MountPath: apacheAgentDirectory + apacheAgentSubDirectory,
+									MountPath: apacheAgentConfDirFull,
 								},
 							},
 						},
@@ -109,7 +109,7 @@ func TestInjectApacheagent(t *testing.T) {
 								},
 								{
 									Name:      apacheAgentConfigVolume,
-									MountPath: apacheAgentDirectory + apacheAgentConfigDirectory,
+									MountPath: apacheConfigDirectory,
 								},
 							},
 						},
