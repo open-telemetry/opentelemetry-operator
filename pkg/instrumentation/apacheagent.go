@@ -16,6 +16,7 @@ package instrumentation
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -227,8 +228,14 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 		apacheAgentDirectory+apacheAgentSubDirectory,
 		versionSuffix)
 
-	for attr, val := range attrMap {
-		configFileContent += fmt.Sprintf("%s %s\n", attr, val)
+	keys := make([]string, 0, len(attrMap))
+	for key := range attrMap {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		configFileContent += fmt.Sprintf("%s %s\n", key, attrMap[key])
 	}
 
 	return configFileContent

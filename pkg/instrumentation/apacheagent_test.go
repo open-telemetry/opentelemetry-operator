@@ -46,7 +46,13 @@ func TestInjectApacheagent(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: volumeName,
+							Name: apacheAgentConfigVolume,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: apacheAgentVolume,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
@@ -55,7 +61,7 @@ func TestInjectApacheagent(t *testing.T) {
 					InitContainers: []corev1.Container{
 						{
 							Name:    apacheAgentCloneContainerName,
-							Image:   "foo/bar:1",
+							Image:   "",
 							Command: []string{"/bin/sh", "-c"},
 							Args:    []string{"cp -r /usr/local/apache2/conf/* " + apacheAgentDirectory + apacheAgentConfigDirectory},
 							VolumeMounts: []corev1.VolumeMount{{
@@ -65,20 +71,14 @@ func TestInjectApacheagent(t *testing.T) {
 						},
 						{
 							Name:    apacheAgentInitContainerName,
+							Image:   "foo/bar:1",
 							Command: []string{"/bin/sh", "-c"},
 							Args: []string{
-								// Copy agent binaries to shared volume
-								"cp -ar /opt/opentelemetry/* " + apacheAgentDirectory + apacheAgentSubDirectory + " && " +
-									// Create agent configuration file by pasting content of env var to a file
-									"echo \"$" + apacheAttributesEnvVar + "\" > " + apacheAgentDirectory + apacheAgentConfigDirectory + "/" + apacheAgentConfigFile + " && " +
-									"sed -i 's/" + apacheServiceInstanceId + "/'${" + apacheServiceInstanceIdEnvVar + "}'/g' " + apacheAgentDirectory + apacheAgentConfigDirectory + "/" + apacheAgentConfigFile + " && " +
-									// Include a link to include Apache agent configuration file into httpd.conf
-									"echo 'Include " + apacheConfigDirectory + "/" + apacheAgentConfigFile + "' >> " + apacheAgentDirectory + apacheAgentConfigDirectory + "/" + apacheConfigFile,
-							},
+								"cp -ar /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo \"/opt/opentelemetry-webserver/agent/logs\" | sed 's,/,\\\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml &&echo \"$OTEL_APACHE_AGENT_CONF\" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && echo 'Include /usr/local/apache2/conf/opentemetry_agent.conf' >> /opt/opentelemetry-webserver/source-conf/httpd.conf"},
 							Env: []corev1.EnvVar{
 								{
 									Name:  apacheAttributesEnvVar,
-									Value: "",
+									Value: "\n#Load the Otel Webserver SDK\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_common.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_resources.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_trace.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_otlp_recordable.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_exporter_ostream_span.so\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_exporter_otlp_grpc.so\n\n#Load the Otel ApacheModule SDK\nLoadFile /opt/opentelemetry-webserver/agent/sdk_lib/lib/libopentelemetry_webserver_sdk.so\n#Load the Apache Module. In this example for Apache 2.4\n#LoadModule otel_apache_module /opt/opentelemetry-webserver/agent/WebServerModule/Apache/libmod_apache_otel.so\n#Load the Apache Module. In this example for Apache 2.2\n#LoadModule otel_apache_module /opt/opentelemetry-webserver/agent/WebServerModule/Apache/libmod_apache_otel22.so\nLoadModule otel_apache_module /opt/opentelemetry-webserver/agent/WebServerModule/Apache/libmod_apache_otel.so\n\n#Attributes\n\nApacheModuleOtelExporterEndpoint http://otlp-endpoint:4317\nApacheModuleServiceName apache-service-name\nApacheModuleServiceNamespace \nApacheModuleEnabled ON\nApacheModuleOtelSpanExporter otlp\nApacheModuleServiceInstanceId <<SID-PLACEHOLDER>>\nApacheModuleResolveBackends  ON\nApacheModuleTraceAsError  ON\n"
 								},
 								{Name: apacheServiceInstanceIdEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
@@ -91,11 +91,11 @@ func TestInjectApacheagent(t *testing.T) {
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      apacheAgentVolume,
-									MountPath: apacheAgentDirectory + apacheAgentSubDirectory,
+									MountPath: apacheConfigDirectory,
 								},
 								{
 									Name:      apacheAgentConfigVolume,
-									MountPath: apacheAgentDirectory + apacheAgentConfigDirectory,
+									MountPath: apacheAgentDirectory + apacheAgentSubDirectory,
 								},
 							},
 						},
