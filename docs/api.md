@@ -89,7 +89,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b><a href="#instrumentationspecapache">apache</a></b></td>
         <td>object</td>
         <td>
-          Apache defines configuration for DotNet auto-instrumentation.<br/>
+          Apache defines configuration for Apache auto-instrumentation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -164,7 +164,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
 
 
 
-Apache defines configuration for DotNet auto-instrumentation.
+Apache defines configuration for Apache auto-instrumentation.
 
 <table>
     <thead>
@@ -193,7 +193,7 @@ Apache defines configuration for DotNet auto-instrumentation.
         <td><b>image</b></td>
         <td>string</td>
         <td>
-          Image is a container image with DotNet SDK and auto-instrumentation.<br/>
+          Image is a container image with Apache SDK and auto-instrumentation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
