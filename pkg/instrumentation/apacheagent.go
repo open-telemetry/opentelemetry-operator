@@ -73,6 +73,9 @@ func injectApacheagent(logger logr.Logger, apacheSpec v1alpha1.Apache, pod corev
 			Name:      apacheAgentConfigVolume,
 			MountPath: apacheAgentConfDirFull,
 		})
+		// remove resource requirements since those are then reserved for the lifetime of a pod
+		// and we definitely do not need them for the init container for cp command
+		cloneContainer.Resources = corev1.ResourceRequirements{}
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, *cloneContainer)
 
