@@ -59,7 +59,7 @@ type InstrumentationSpec struct {
 	// +optional
 	DotNet DotNet `json:"dotnet,omitempty"`
 
-	// Apache defines configuration for DotNet auto-instrumentation.
+	// Apache defines configuration for Apache auto-instrumentation.
 	// +optional
 	Apache Apache `json:"apache,omitempty"`
 }
