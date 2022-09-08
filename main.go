@@ -138,7 +138,7 @@ func main() {
 		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
 		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
-		config.WithAutoInstrumentationApacheImage(autoInstrumentationDotNet),
+		config.WithAutoInstrumentationApacheImage(autoInstrumentationApache),
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 	)
