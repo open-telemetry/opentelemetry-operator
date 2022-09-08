@@ -129,8 +129,8 @@ func AutoInstrumentationDotNet() string {
 }
 
 func AutoInstrumentationApache() string {
-	if len(autoInstrumentationDotNet) > 0 {
-		return autoInstrumentationDotNet
+	if len(autoInstrumentationApache) > 0 {
+		return autoInstrumentationApache
 	}
 	return "0.0.0"
 }

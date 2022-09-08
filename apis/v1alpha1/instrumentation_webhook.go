@@ -83,7 +83,7 @@ func (r *Instrumentation) Default() {
 	}
 	if r.Spec.Apache.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationApache]; ok {
-			r.Spec.DotNet.Image = val
+			r.Spec.Apache.Image = val
 		}
 	}
 	// by default set all the available instrumentations for dotnet unless the env is already set
