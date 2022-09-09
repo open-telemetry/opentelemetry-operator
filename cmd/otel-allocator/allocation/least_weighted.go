@@ -11,10 +11,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var (
-	_            Allocator = &leastWeightedAllocator{}
-	strategyName           = "least-weighted"
-)
+var _ Allocator = &leastWeightedAllocator{}
+
+const strategyName = "least-weighted"
 
 /*
 	Load balancer will serve on an HTTP server exposing /jobs/<job_id>/targets
@@ -63,6 +62,7 @@ func (allocator *leastWeightedAllocator) Collectors() map[string]*Collector {
 // findNextCollector finds the next collector with fewer number of targets.
 // This method is called from within SetTargets and SetCollectors, whose caller
 // acquires the needed lock. This method assumes there are is at least 1 collector set
+// INVARIANT: allocator.collectors must have at least 1 collector set
 func (allocator *leastWeightedAllocator) findNextCollector() *Collector {
 	var col *Collector
 	for _, v := range allocator.collectors {
@@ -79,6 +79,7 @@ func (allocator *leastWeightedAllocator) findNextCollector() *Collector {
 // addTargetToTargetItems assigns a target to the next available collector and adds it to the allocator's targetItems
 // This method is called from within SetTargets and SetCollectors, which acquire the needed lock.
 // This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap
+// INVARIANT: allocator.collectors must have at least 1 collector set
 func (allocator *leastWeightedAllocator) addTargetToTargetItems(target *TargetItem) {
 	chosenCollector := allocator.findNextCollector()
 	targetItem := &TargetItem{
@@ -146,6 +147,10 @@ func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*TargetIt
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 
+	if len(allocator.collectors) == 0 {
+		allocator.log.Info("No collector instances present, cannot set targets")
+		return
+	}
 	// Check for target changes
 	targetsDiff := diff.Maps(allocator.targetItems, targets)
 	// If there are any additions or removals

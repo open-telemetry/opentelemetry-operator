@@ -22,7 +22,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 	var tests = []struct {
 		name string
 		args args
-		want []TargetGroupJSON
+		want []targetGroupJSON
 	}{
 		{
 			name: "Empty target map",
@@ -53,7 +53,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: baseAllocator,
 			},
-			want: []TargetGroupJSON{
+			want: []targetGroupJSON{
 				{
 					Targets: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
@@ -91,7 +91,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: baseAllocator,
 			},
-			want: []TargetGroupJSON{
+			want: []targetGroupJSON{
 				{
 					Targets: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
@@ -130,7 +130,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: baseAllocator,
 			},
-			want: []TargetGroupJSON{
+			want: []targetGroupJSON{
 				{
 					Targets: []string{"test-url1"},
 					Labels: map[model.LabelName]model.LabelValue{

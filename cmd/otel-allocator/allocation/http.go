@@ -11,41 +11,41 @@ type LinkJSON struct {
 	Link string `json:"_link"`
 }
 
-type CollectorJSON struct {
+type collectorJSON struct {
 	Link string            `json:"_link"`
-	Jobs []TargetGroupJSON `json:"targets"`
+	Jobs []targetGroupJSON `json:"targets"`
 }
 
-type TargetGroupJSON struct {
+type targetGroupJSON struct {
 	Targets []string       `json:"targets"`
 	Labels  model.LabelSet `json:"labels"`
 }
 
-func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator Allocator) map[string]CollectorJSON {
-	displayData := make(map[string]CollectorJSON)
+func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator Allocator) map[string]collectorJSON {
+	displayData := make(map[string]collectorJSON)
 	for _, j := range allocator.TargetItems() {
 		if j.JobName == job {
 			var targetList []TargetItem
 			targetList = append(targetList, cMap[j.CollectorName+j.JobName]...)
 
-			var targetGroupList []TargetGroupJSON
+			var targetGroupList []targetGroupJSON
 
 			for _, t := range targetList {
-				targetGroupList = append(targetGroupList, TargetGroupJSON{
+				targetGroupList = append(targetGroupList, targetGroupJSON{
 					Targets: []string{t.TargetURL},
 					Labels:  t.Label,
 				})
 			}
 
-			displayData[j.CollectorName] = CollectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.CollectorName), Jobs: targetGroupList}
+			displayData[j.CollectorName] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.CollectorName), Jobs: targetGroupList}
 
 		}
 	}
 	return displayData
 }
 
-func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]TargetItem, allocator Allocator) []TargetGroupJSON {
-	var tgs []TargetGroupJSON
+func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]TargetItem, allocator Allocator) []targetGroupJSON {
+	var tgs []targetGroupJSON
 	group := make(map[string]string)
 	labelSet := make(map[string]model.LabelSet)
 	if _, ok := allocator.Collectors()[collector]; ok {
@@ -59,7 +59,7 @@ func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[strin
 		}
 	}
 	for _, v := range group {
-		tgs = append(tgs, TargetGroupJSON{Targets: []string{v}, Labels: labelSet[v]})
+		tgs = append(tgs, targetGroupJSON{Targets: []string{v}, Labels: labelSet[v]})
 	}
 
 	return tgs
