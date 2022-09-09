@@ -47,7 +47,7 @@ func ReplaceConfig(params Params) (string, error) {
 		targetAllocatorCfg = map[interface{}]interface{}{}
 	}
 
-	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:80/jobs", naming.TAService(params.Instance))
+	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:80", naming.TAService(params.Instance))
 	targetAllocatorCfg["collector_id"] = "$POD_NAME"
 
 	// type coercion checks are handled in the ConfigToPromConfig method above

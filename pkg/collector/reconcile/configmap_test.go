@@ -90,22 +90,9 @@ receivers:
     protocols:
       grpc: null
   prometheus:
-    config:
-      global:
-        scrape_interval: 1m
-        scrape_timeout: 10s
-        evaluation_interval: 1m
-      scrape_configs:
-      - job_name: otel-collector
-        honor_timestamps: true
-        scrape_interval: 10s
-        scrape_timeout: 10s
-        metrics_path: /metrics
-        scheme: http
-        follow_redirects: true
-        http_sd_configs:
-        - follow_redirects: false
-          url: http://test-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
+    target_allocator:
+      collector_id: $POD_NAME
+      endpoint: http://test-targetallocator:80
 service:
   pipelines:
     metrics:
@@ -139,22 +126,9 @@ service:
 processors: null
 receivers:
   prometheus:
-    config:
-      global:
-        scrape_interval: 1m
-        scrape_timeout: 10s
-        evaluation_interval: 1m
-      scrape_configs:
-      - job_name: serviceMonitor/test/test/0
-        honor_timestamps: true
-        scrape_interval: 1m
-        scrape_timeout: 10s
-        metrics_path: /metrics
-        scheme: http
-        follow_redirects: true
-        http_sd_configs:
-        - follow_redirects: false
-          url: http://test-targetallocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
+    target_allocator:
+      collector_id: $POD_NAME
+      endpoint: http://test-targetallocator:80
 service:
   pipelines:
     metrics:

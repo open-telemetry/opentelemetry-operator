@@ -2,6 +2,10 @@ processors:
 receivers:
   prometheus:
     config:
+      global:
+        scrape_interval: 1m
+        scrape_timeout: 10s
+        evaluation_interval: 1m
       scrape_configs:
       - job_name: serviceMonitor/test/test/0
 
