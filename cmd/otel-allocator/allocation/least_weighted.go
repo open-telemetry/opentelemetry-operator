@@ -13,7 +13,7 @@ import (
 
 var _ Allocator = &leastWeightedAllocator{}
 
-const strategyName = "least-weighted"
+const leastWeightedStrategyName = "least-weighted"
 
 /*
 	Load balancer will serve on an HTTP server exposing /jobs/<job_id>/targets
@@ -91,7 +91,7 @@ func (allocator *leastWeightedAllocator) addTargetToTargetItems(target *TargetIt
 	}
 	allocator.targetItems[targetItem.Hash()] = targetItem
 	chosenCollector.NumTargets++
-	TargetsPerCollector.WithLabelValues(chosenCollector.Name, strategyName).Set(float64(chosenCollector.NumTargets))
+	TargetsPerCollector.WithLabelValues(chosenCollector.Name, leastWeightedStrategyName).Set(float64(chosenCollector.NumTargets))
 }
 
 // handleTargets receives the new and removed targets and reconciles the current state.
@@ -105,7 +105,7 @@ func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*Target
 			c := allocator.collectors[target.CollectorName]
 			c.NumTargets--
 			delete(allocator.targetItems, k)
-			TargetsPerCollector.WithLabelValues(target.CollectorName, strategyName).Set(float64(c.NumTargets))
+			TargetsPerCollector.WithLabelValues(target.CollectorName, leastWeightedStrategyName).Set(float64(c.NumTargets))
 		}
 	}
 
@@ -128,7 +128,7 @@ func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Col
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
 		delete(allocator.collectors, k.Name)
-		TargetsPerCollector.WithLabelValues(k.Name, strategyName).Set(0)
+		TargetsPerCollector.WithLabelValues(k.Name, leastWeightedStrategyName).Set(0)
 	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
@@ -147,7 +147,7 @@ func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Col
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
 func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*TargetItem) {
-	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", strategyName))
+	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", leastWeightedStrategyName))
 	defer timer.ObserveDuration()
 
 	allocator.m.Lock()
@@ -170,10 +170,10 @@ func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*TargetIt
 // This method is called when Collectors are added or removed.
 func (allocator *leastWeightedAllocator) SetCollectors(collectors map[string]*Collector) {
 	log := allocator.log.WithValues("component", "opentelemetry-targetallocator")
-	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetCollectors", strategyName))
+	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetCollectors", leastWeightedStrategyName))
 	defer timer.ObserveDuration()
 
-	CollectorsAllocatable.WithLabelValues(strategyName).Set(float64(len(collectors)))
+	CollectorsAllocatable.WithLabelValues(leastWeightedStrategyName).Set(float64(len(collectors)))
 	if len(collectors) == 0 {
 		log.Info("No collector instances present")
 		return
@@ -190,17 +190,10 @@ func (allocator *leastWeightedAllocator) SetCollectors(collectors map[string]*Co
 	return
 }
 
-func NewAllocator(log logr.Logger) Allocator {
+func newLeastWeightedAllocator(log logr.Logger) Allocator {
 	return &leastWeightedAllocator{
 		log:         log,
 		collectors:  make(map[string]*Collector),
 		targetItems: make(map[string]*TargetItem),
-	}
-}
-
-func init() {
-	err := Register(strategyName, NewAllocator)
-	if err != nil {
-		panic(err)
 	}
 }

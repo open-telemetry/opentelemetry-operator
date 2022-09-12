@@ -3,6 +3,7 @@ package allocation
 import (
 	"errors"
 	"fmt"
+	"github.com/buraksezer/consistent"
 	"net/url"
 
 	"github.com/go-logr/logr"
@@ -76,6 +77,8 @@ func (t TargetItem) Hash() string {
 	return t.JobName + t.TargetURL + t.Label.Fingerprint().String()
 }
 
+var _ consistent.Member = Collector{}
+
 // Collector Creates a struct that holds Collector information
 // This struct will be parsed into endpoint with Collector and jobs info
 // This struct can be extended with information like annotations and labels in the future
@@ -84,6 +87,21 @@ type Collector struct {
 	NumTargets int
 }
 
+func (c Collector) String() string {
+	return c.Name
+}
+
 func NewCollector(name string) *Collector {
 	return &Collector{Name: name}
+}
+
+func init() {
+	err := Register(leastWeightedStrategyName, newLeastWeightedAllocator)
+	if err != nil {
+		panic(err)
+	}
+	err = Register(consistentHashingStrategyName, newConsistentHashingAllocator)
+	if err != nil {
+		panic(err)
+	}
 }
