@@ -94,6 +94,9 @@ func (allocator *leastWeightedAllocator) addTargetToTargetItems(target *TargetIt
 	TargetsPerCollector.WithLabelValues(chosenCollector.Name, strategyName).Set(float64(chosenCollector.NumTargets))
 }
 
+// handleTargets receives the new and removed targets and reconciles the current state.
+// Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector
+// Any net-new additions are assigned to the next available collector
 func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*TargetItem]) {
 	// Check for removals
 	for k, target := range allocator.targetItems {
@@ -118,6 +121,9 @@ func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*Target
 	}
 }
 
+// handleCollectors receives the new and removed collectors and reconciles the current state.
+// Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map
+// Finally, any targets of removed collectors are reallocated to the next available collector.
 func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {

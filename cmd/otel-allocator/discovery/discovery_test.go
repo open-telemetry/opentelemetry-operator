@@ -3,7 +3,6 @@ package discovery
 import (
 	"context"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"os"
 	"sort"
 	"testing"
@@ -15,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )

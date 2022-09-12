@@ -3,12 +3,12 @@ package allocation
 import (
 	"errors"
 	"fmt"
-	"github.com/prometheus/common/model"
 	"net/url"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/common/model"
 )
 
 type AllocatorProvider func(log logr.Logger) Allocator

@@ -3,7 +3,6 @@ package collector
 import (
 	"context"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"os"
 	"testing"
 
@@ -12,6 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/fake"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 )
 
 var client Client

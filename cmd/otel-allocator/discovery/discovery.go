@@ -2,7 +2,6 @@ package discovery
 
 import (
 	"context"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 
 	"github.com/go-kit/log"
 	"github.com/go-logr/logr"
@@ -12,6 +11,7 @@ import (
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
