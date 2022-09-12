@@ -160,10 +160,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 								"foo":        "bar",
 							},
 							TargetURL: "test-url",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 2,
-							},
+							CollectorName: "test-collector",
 						},
 						TargetItem{
 							JobName: "test-job",
@@ -171,10 +168,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 								"test-label": "test-value",
 							},
 							TargetURL: "test-url",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 2,
-							},
+							CollectorName: "test-collector",
 						},
 					},
 				},
