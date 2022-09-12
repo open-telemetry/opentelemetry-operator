@@ -681,6 +681,10 @@ spec:
                 description: TargetAllocator indicates a value which determines whether
                   to spawn a target allocation resource or not.
                 properties:
+                  allocationStrategy:
+                    description: AllocationStrategy determines which strategy the
+                      target allocator should use for allocation
+                    type: string
                   enabled:
                     description: Enabled indicates whether to use a target allocation
                       mechanism for Prometheus targets or not.

@@ -8,14 +8,15 @@ import (
 	"testing"
 
 	gokitlog "github.com/go-kit/log"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
-	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
+	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
 var cfg config.Config
@@ -32,7 +33,7 @@ func TestMain(m *testing.M) {
 	manager = NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger())
 
 	results = make(chan []string)
-	manager.Watch(func(targets []allocation.TargetItem) {
+	manager.Watch(func(targets map[string]*allocation.TargetItem) {
 		var result []string
 		for _, t := range targets {
 			result = append(result, t.TargetURL)
