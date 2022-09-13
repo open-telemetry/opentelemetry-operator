@@ -6,7 +6,7 @@ linters-settings:
   goheader:
     template-path: header.txt
   goimports:
-    local-prefixes: github.com/open-telemetry/opentelemetry-operator
+    local-prefixes: github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator
   maligned:
     suggest-new: true
   misspell:

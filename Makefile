@@ -146,6 +146,7 @@ vet:
 .PHONY: lint
 lint:
 	golangci-lint run
+	cd cmd/otel-allocator && golangci-lint run
 
 # Generate code
 .PHONY: generate
