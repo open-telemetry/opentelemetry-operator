@@ -128,6 +128,7 @@ func trySetEnvVar(logger logr.Logger, container *corev1.Container, envVarName st
 		logger.Info("Skipping DotNet SDK injection, the container defines env var value via ValueFrom", "envVar", envVarName, "container", container.Name)
 		return false
 	}
+
 	if concatValues {
 		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, envVarValue)
 	}
