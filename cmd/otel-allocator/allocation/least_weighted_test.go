@@ -14,10 +14,17 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
+func colIndex(index, numCols int) int {
+	if numCols == 0 {
+		return -1
+	}
+	return index % numCols
+}
+
 func makeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*TargetItem {
 	toReturn := map[string]*TargetItem{}
 	for i := startingIndex; i < n+startingIndex; i++ {
-		collector := fmt.Sprintf("collector-%d", i%numCollectors)
+		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
 		label := model.LabelSet{
 			"collector": model.LabelValue(collector),
 			"i":         model.LabelValue(strconv.Itoa(i)),
@@ -169,7 +176,7 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	for _, i := range cols {
 		assert.NotNil(t, s.Collectors()[i.Name])
 	}
-	initTargets := makeNNewTargets(6, 4, 0)
+	initTargets := makeNNewTargets(6, 0, 0)
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
 

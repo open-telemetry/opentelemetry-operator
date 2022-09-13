@@ -22,10 +22,10 @@ func (h hasher) Sum64(data []byte) uint64 {
 }
 
 type consistentHashingAllocator struct {
-	// m protects Consistent for concurrent use.
+	// m protects consistentHasher, collectors and targetItems for concurrent use.
 	m sync.RWMutex
 
-	hasher *consistent.Consistent
+	consistentHasher *consistent.Consistent
 
 	// collectors is a map from a Collector's name to a Collector instance
 	collectors map[string]*Collector
@@ -45,10 +45,10 @@ func newConsistentHashingAllocator(log logr.Logger) Allocator {
 	}
 	consistentHasher := consistent.New(nil, config)
 	return &consistentHashingAllocator{
-		hasher:      consistentHasher,
-		collectors:  make(map[string]*Collector),
-		targetItems: make(map[string]*TargetItem),
-		log:         log,
+		consistentHasher: consistentHasher,
+		collectors:       make(map[string]*Collector),
+		targetItems:      make(map[string]*TargetItem),
+		log:              log,
 	}
 }
 
@@ -57,7 +57,12 @@ func newConsistentHashingAllocator(log logr.Logger) Allocator {
 // This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap
 // INVARIANT: c.collectors must have at least 1 collector set
 func (c *consistentHashingAllocator) addTargetToTargetItems(target *TargetItem) {
-	colOwner := c.hasher.LocateKey([]byte(target.Hash()))
+	// Check if this is a reassignment, if so, decrement the previous collector's NumTargets
+	if previousColName, ok := c.collectors[target.CollectorName]; ok {
+		previousColName.NumTargets--
+		TargetsPerCollector.WithLabelValues(previousColName.String(), consistentHashingStrategyName).Set(float64(c.collectors[previousColName.String()].NumTargets))
+	}
+	colOwner := c.consistentHasher.LocateKey([]byte(target.Hash()))
 	targetItem := &TargetItem{
 		JobName:       target.JobName,
 		Link:          LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(target.JobName))},
@@ -99,18 +104,18 @@ func (c *consistentHashingAllocator) handleTargets(diff diff.Changes[*TargetItem
 
 // handleCollectors receives the new and removed collectors and reconciles the current state.
 // Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map
-// Finally, any targets of removed collectors are reallocated to the next available collector.
+// Finally, update all targets' collectors to match the consistent hashing.
 func (c *consistentHashingAllocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
 		delete(c.collectors, k.Name)
-		c.hasher.Remove(k.Name)
+		c.consistentHasher.Remove(k.Name)
 		TargetsPerCollector.WithLabelValues(k.Name, consistentHashingStrategyName).Set(0)
 	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
 		c.collectors[i.Name] = NewCollector(i.Name)
-		c.hasher.Add(c.collectors[i.Name])
+		c.consistentHasher.Add(c.collectors[i.Name])
 	}
 
 	// Re-Allocate all targets

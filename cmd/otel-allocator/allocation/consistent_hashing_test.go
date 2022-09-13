@@ -25,7 +25,7 @@ func TestRelativelyEvenDistribution(t *testing.T) {
 	expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
 	c := newConsistentHashingAllocator(logger)
 	c.SetCollectors(cols)
-	c.SetTargets(makeNNewTargets(numItems, numCols, 0))
+	c.SetTargets(makeNNewTargets(numItems, 0, 0))
 	actualTargetItems := c.TargetItems()
 	assert.Len(t, actualTargetItems, numItems)
 	actualCollectors := c.Collectors()
