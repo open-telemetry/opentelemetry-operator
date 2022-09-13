@@ -179,15 +179,15 @@ func TestInjectDotNetSDK(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  envDotNetCoreClrEnableProfiling,
-									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetCoreClrEnableProfilingEnabled),
+									Value: "/foo:/bar",
 								},
 								{
 									Name:  envDotNetCoreClrProfiler,
-									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetCoreClrProfilerId),
+									Value: "/foo:/bar",
 								},
 								{
 									Name:  envDotNetCoreClrProfilerPath,
-									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetCoreClrProfilerPath),
+									Value: "/foo:/bar",
 								},
 								{
 									Name:  envDotNetStartupHook,
@@ -203,7 +203,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 								},
 								{
 									Name:  envDotNetOTelAutoHome,
-									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetOTelAutoHomePath),
+									Value: "/foo:/bar",
 								},
 							},
 						},

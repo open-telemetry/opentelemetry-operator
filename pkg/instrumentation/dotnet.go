@@ -52,109 +52,37 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 		}
 	}
 
-	idx := getIndexOfEnv(container.Env, envDotNetCoreClrEnableProfiling)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetCoreClrEnableProfiling,
-			Value: dotNetCoreClrEnableProfilingEnabled,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines CORECLR_ENABLE_PROFILING env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetCoreClrEnableProfilingEnabled)
+	const (
+		doNotConcatEnvValues = false
+		concatEnvValues      = true
+	)
+
+	if !trySetEnvVar(logger, &container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues) {
+		return pod
 	}
 
-	idx = getIndexOfEnv(container.Env, envDotNetCoreClrProfiler)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetCoreClrProfiler,
-			Value: dotNetCoreClrProfilerId,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines CORECLR_PROFILER env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetCoreClrProfilerId)
+	if !trySetEnvVar(logger, &container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerId, doNotConcatEnvValues) {
+		return pod
 	}
 
-	idx = getIndexOfEnv(container.Env, envDotNetCoreClrProfilerPath)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetCoreClrProfilerPath,
-			Value: dotNetCoreClrProfilerPath,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines CORECLR_PROFILER_PATH env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetCoreClrProfilerPath)
+	if !trySetEnvVar(logger, &container, envDotNetCoreClrProfilerPath, dotNetCoreClrProfilerPath, doNotConcatEnvValues) {
+		return pod
 	}
 
-	idx = getIndexOfEnv(container.Env, envDotNetStartupHook)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetStartupHook,
-			Value: dotNetStartupHookPath,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines DOTNET_STARTUP_HOOKS env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetStartupHookPath)
+	if !trySetEnvVar(logger, &container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues) {
+		return pod
 	}
 
-	idx = getIndexOfEnv(container.Env, envDotNetAdditionalDeps)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetAdditionalDeps,
-			Value: dotNetAdditionalDepsPath,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines DOTNET_ADDITIONAL_DEPS env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetAdditionalDepsPath)
+	if !trySetEnvVar(logger, &container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues) {
+		return pod
 	}
 
-	idx = getIndexOfEnv(container.Env, envDotNetOTelAutoHome)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetOTelAutoHome,
-			Value: dotNetOTelAutoHomePath,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines OTEL_DOTNET_AUTO_HOME env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetOTelAutoHomePath)
+	if !trySetEnvVar(logger, &container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues) {
+		return pod
 	}
 
-	idx = getIndexOfEnv(container.Env, envDotNetSharedStore)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetSharedStore,
-			Value: dotNetSharedStorePath,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines DOTNET_SHARED_STORE env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetSharedStorePath)
+	if !trySetEnvVar(logger, &container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues) {
+		return pod
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
@@ -183,4 +111,26 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 
 	pod.Spec.Containers[index] = container
 	return pod
+}
+
+func trySetEnvVar(logger logr.Logger, container *corev1.Container, envVarName string, envVarValue string, concatValues bool) bool {
+	idx := getIndexOfEnv(container.Env, envVarName)
+	if idx < 0 {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envVarName,
+			Value: envVarValue,
+		})
+		return true
+	}
+
+	if container.Env[idx].ValueFrom != nil {
+		// TODO add to status object or submit it as an event
+		logger.Info("Skipping DotNet SDK injection, the container defines env var value via ValueFrom", "envVar", envVarName, "container", container.Name)
+		return false
+	}
+	if concatValues {
+		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, envVarValue)
+	}
+
+	return true
 }
