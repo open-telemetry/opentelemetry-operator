@@ -46,20 +46,20 @@ func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator Allo
 
 func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]TargetItem, allocator Allocator) []targetGroupJSON {
 	var tgs []targetGroupJSON
-	group := make(map[string]string)
+	group := make(map[string]TargetItem)
 	labelSet := make(map[string]model.LabelSet)
 	if _, ok := allocator.Collectors()[collector]; ok {
 		for _, targetItemArr := range cMap {
 			for _, targetItem := range targetItemArr {
 				if targetItem.CollectorName == collector && targetItem.JobName == job {
-					group[targetItem.Label.String()] = targetItem.TargetURL
-					labelSet[targetItem.TargetURL] = targetItem.Label
+					group[targetItem.Label.String()] = targetItem
+					labelSet[targetItem.Hash()] = targetItem.Label
 				}
 			}
 		}
 	}
 	for _, v := range group {
-		tgs = append(tgs, targetGroupJSON{Targets: []string{v}, Labels: labelSet[v]})
+		tgs = append(tgs, targetGroupJSON{Targets: []string{v.TargetURL}, Labels: labelSet[v.Hash()]})
 	}
 
 	return tgs

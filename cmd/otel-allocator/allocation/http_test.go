@@ -146,12 +146,57 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Multiple entry target map with same target address",
+			args: args{
+				collector: "test-collector",
+				job:       "test-job",
+				cMap: map[string][]TargetItem{
+					"test-collectortest-job": {
+						TargetItem{
+							JobName: "test-job",
+							Label: model.LabelSet{
+								"test-label": "test-value",
+								"foo":        "bar",
+							},
+							TargetURL: "test-url",
+							CollectorName: "test-collector",
+						},
+						TargetItem{
+							JobName: "test-job",
+							Label: model.LabelSet{
+								"test-label": "test-value",
+							},
+							TargetURL: "test-url",
+							CollectorName: "test-collector",
+						},
+					},
+				},
+				allocator: baseAllocator,
+			},
+			want: []targetGroupJSON{
+				{
+					Targets: []string{"test-url"},
+					Labels: map[model.LabelName]model.LabelValue{
+						"test-label": "test-value",
+						"foo":        "bar",
+					},
+				},
+				{
+					Targets: []string{"test-url"},
+					Labels: map[model.LabelName]model.LabelValue{
+						"test-label": "test-value",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for _, groupJSON := range GetAllTargetsByCollectorAndJob(tt.args.collector, tt.args.job, tt.args.cMap, tt.args.allocator) {
+			targetGroups := GetAllTargetsByCollectorAndJob(tt.args.collector, tt.args.job, tt.args.cMap, tt.args.allocator)
+			for _, wantGroupJson := range tt.want {
 				exist := false
-				for _, wantGroupJson := range tt.want {
+				for _, groupJSON := range targetGroups {
 					if groupJSON.Labels.String() == wantGroupJson.Labels.String() {
 						exist = reflect.DeepEqual(groupJSON, wantGroupJson)
 					}
