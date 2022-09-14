@@ -127,6 +127,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should not update target allocator deployment replicas when collector max replicas is set", func(t *testing.T) {
 		replicas, maxReplicas := int32(2), int32(10)
+		oneReplica := int32(1)
 		param := Params{
 			Client: k8sClient,
 			Instance: v1alpha1.OpenTelemetryCollector{
@@ -144,7 +145,8 @@ func TestExpectedDeployments(t *testing.T) {
 					Replicas:    &replicas,
 					Mode:        v1alpha1.ModeStatefulSet,
 					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-						Enabled: true,
+						Enabled:  true,
+						Replicas: &oneReplica,
 					},
 					Config: `
 				receivers:
@@ -175,6 +177,61 @@ func TestExpectedDeployments(t *testing.T) {
 
 		assert.Len(t, expected, 1)
 		assert.Equal(t, *allocator.Spec.Replicas, int32(1))
+	})
+
+	t.Run("should update target allocator deployment replicas when changed", func(t *testing.T) {
+		initialReplicas, finalReplicas := int32(1), int32(2)
+		param := Params{
+			Client: k8sClient,
+			Instance: v1alpha1.OpenTelemetryCollector{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "opentelemetry.io",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					UID:       instanceUID,
+				},
+				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Replicas: &initialReplicas,
+					Mode:     v1alpha1.ModeStatefulSet,
+					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+						Enabled:  true,
+						Replicas: &initialReplicas,
+					},
+					Config: `
+				receivers:
+				jaeger:
+					protocols:
+					grpc:
+				processors:
+			
+				exporters:
+				logging:
+			
+				service:
+				pipelines:
+					traces:
+					receivers: [jaeger]
+					processors: []
+					exporters: [logging]
+			
+			`,
+				},
+			},
+			Scheme: testScheme,
+			Log:    logger,
+		}
+		expected := []v1.Deployment{}
+		allocator := targetallocator.Deployment(param.Config, param.Log, param.Instance)
+		expected = append(expected, allocator)
+
+		assert.Len(t, expected, 1)
+		assert.Equal(t, *allocator.Spec.Replicas, int32(1))
+		param.Instance.Spec.TargetAllocator.Replicas = &finalReplicas
+		finalAllocator := targetallocator.Deployment(param.Config, param.Log, param.Instance)
+		assert.Equal(t, *finalAllocator.Spec.Replicas, int32(2))
 	})
 
 	t.Run("should update deployment", func(t *testing.T) {
