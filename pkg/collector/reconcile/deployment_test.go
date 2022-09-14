@@ -180,7 +180,7 @@ func TestExpectedDeployments(t *testing.T) {
 	})
 
 	t.Run("should update target allocator deployment replicas when changed", func(t *testing.T) {
-		initialReplicas, finalReplicas := int32(1), int32(2)
+		initialReplicas, nextReplicas := int32(1), int32(2)
 		param := Params{
 			Client: k8sClient,
 			Instance: v1alpha1.OpenTelemetryCollector{
@@ -229,7 +229,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 		assert.Len(t, expected, 1)
 		assert.Equal(t, *allocator.Spec.Replicas, int32(1))
-		param.Instance.Spec.TargetAllocator.Replicas = &finalReplicas
+		param.Instance.Spec.TargetAllocator.Replicas = &nextReplicas
 		finalAllocator := targetallocator.Deployment(param.Config, param.Log, param.Instance)
 		assert.Equal(t, *finalAllocator.Spec.Replicas, int32(2))
 	})
