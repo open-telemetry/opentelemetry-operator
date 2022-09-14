@@ -108,6 +108,10 @@ type OpenTelemetryCollectorSpec struct {
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
 type OpenTelemetryTargetAllocator struct {
+	// Replicas is the number of pod instances for the underlying TargetAllocator, this can only be set to values other
+	// than 1 if a strategy that allows for high availability is chosen.
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation
 	AllocationStrategy string `json:"allocationStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance.
@@ -123,10 +127,6 @@ type OpenTelemetryTargetAllocator struct {
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
-	// Replicas is the number of pod instances for the underlying TargetAllocator, this can only be set to values other
-	// than 1 if a strategy that allows for high availability is chosen.
-	// +optional
-	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {
