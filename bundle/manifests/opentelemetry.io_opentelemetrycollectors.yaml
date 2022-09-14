@@ -707,6 +707,12 @@ spec:
                           custom resources as targets or not.
                         type: boolean
                     type: object
+                  replicas:
+                    description: Replicas is the number of pod instances for the underlying
+                      TargetAllocator, this can only be set to values other than 1
+                      if a strategy that allows for high availability is chosen.
+                    format: int32
+                    type: integer
                   serviceAccount:
                     description: ServiceAccount indicates the name of an existing
                       service account to use with this instance.

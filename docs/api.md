@@ -2897,6 +2897,15 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Replicas is the number of pod instances for the underlying TargetAllocator, this can only be set to values other than 1 if a strategy that allows for high availability is chosen.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>serviceAccount</b></td>
         <td>string</td>
         <td>
