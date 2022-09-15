@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -205,26 +206,7 @@ type OpenTelemetryCollectorList struct {
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
 	// +optional
-	Behavior *AutoscalerBehaviorSpec `json:"behavior,omitempty"`
-}
-
-// AutoscalerBehaviorSpec configures the scaling behavior of the target.
-type AutoscalerBehaviorSpec struct {
-	// ScaleUp is the policy for scaling up
-	// +optional
-	ScaleUp *AutoScalerRules `json:"scaleUp,omitempty"`
-
-	// ScaleDown is policy for scaling down
-	//
-	// +optional
-	ScaleDown *AutoScalerRules `json:"scaleDown,omitempty"`
-}
-
-// AutoScalerRules configures the scaling behavior for one direction.
-type AutoScalerRules struct {
-	// +optional
-	// +kubebuilder:validation:Minimum=0
-	StabilizationWindowSeconds *int32 `json:"stabilizationWindowSeconds,omitempty"`
+	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
 }
 
 func init() {

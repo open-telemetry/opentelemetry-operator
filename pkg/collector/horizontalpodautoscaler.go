@@ -29,8 +29,6 @@ import (
 )
 
 const defaultCPUTarget int32 = 90
-const defaultScaleUpTime int32 = 60
-const defaultScaleDownTime int32 = 300
 
 func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
 	autoscalingVersion := cfg.AutoscalingVersion()
@@ -49,18 +47,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		Annotations: annotations,
 	}
 
-	scaleUpTime := defaultScaleUpTime
-	scaleDownTime := defaultScaleDownTime
-	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.Behavior != nil {
-		if otelcol.Spec.Autoscaler.Behavior.ScaleUp != nil {
-			scaleUpTime = *otelcol.Spec.Autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds
-		}
-
-		if otelcol.Spec.Autoscaler.Behavior.ScaleDown != nil {
-			scaleDownTime = *otelcol.Spec.Autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds
-		}
-	}
-
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 		targetCPUUtilization := autoscalingv2beta2.MetricSpec{
 			Type: autoscalingv2beta2.ResourceMetricSourceType,
@@ -73,6 +59,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			},
 		}
 		metrics := []autoscalingv2beta2.MetricSpec{targetCPUUtilization}
+		behavior := convertToV2beta2Behavior(*otelcol.Spec.Autoscaler.Behavior)
 
 		autoscaler := autoscalingv2beta2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
@@ -85,22 +72,10 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				MinReplicas: otelcol.Spec.Replicas,
 				MaxReplicas: *otelcol.Spec.MaxReplicas,
 				Metrics:     metrics,
+				Behavior:    &behavior,
 			},
 		}
 
-		if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.Behavior != nil {
-			scaleUpRules := &autoscalingv2beta2.HPAScalingRules{
-				StabilizationWindowSeconds: &scaleUpTime,
-			}
-			scaleDownRules := &autoscalingv2beta2.HPAScalingRules{
-				StabilizationWindowSeconds: &scaleDownTime,
-			}
-			behavior := &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
-				ScaleUp:   scaleUpRules,
-				ScaleDown: scaleDownRules,
-			}
-			autoscaler.Spec.Behavior = behavior
-		}
 		result = &autoscaler
 	} else {
 		targetCPUUtilization := autoscalingv2.MetricSpec{
@@ -126,24 +101,93 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				MinReplicas: otelcol.Spec.Replicas,
 				MaxReplicas: *otelcol.Spec.MaxReplicas,
 				Metrics:     metrics,
+				Behavior:    otelcol.Spec.Autoscaler.Behavior,
 			},
-		}
-
-		if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.Behavior != nil {
-			scaleUpRules := &autoscalingv2.HPAScalingRules{
-				StabilizationWindowSeconds: &scaleUpTime,
-			}
-			scaleDownRules := &autoscalingv2.HPAScalingRules{
-				StabilizationWindowSeconds: &scaleDownTime,
-			}
-			behavior := &autoscalingv2.HorizontalPodAutoscalerBehavior{
-				ScaleUp:   scaleUpRules,
-				ScaleDown: scaleDownRules,
-			}
-			autoscaler.Spec.Behavior = behavior
 		}
 		result = &autoscaler
 	}
 
 	return result
+}
+
+// Create a v2beta2 HorizontalPodAutoscalerBehavior from a v2 instance.
+func convertToV2beta2Behavior(v2behavior autoscalingv2.HorizontalPodAutoscalerBehavior) autoscalingv2beta2.HorizontalPodAutoscalerBehavior {
+	behavior := &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{}
+
+	if v2behavior.ScaleUp != nil {
+		scaleUpRules := &autoscalingv2beta2.HPAScalingRules{}
+		scaleUpTime := *v2behavior.ScaleUp.StabilizationWindowSeconds
+		scaleUpRules.StabilizationWindowSeconds = &scaleUpTime
+
+		if v2behavior.ScaleUp.SelectPolicy != nil {
+			scaleUpSelectPolicy := convertToV2Beta2SelectPolicy(*v2behavior.ScaleUp)
+			scaleUpRules.SelectPolicy = &scaleUpSelectPolicy
+		}
+		if v2behavior.ScaleUp.Policies != nil {
+			scaleUpPolicies := []autoscalingv2beta2.HPAScalingPolicy{}
+			for _, policy := range v2behavior.ScaleUp.Policies {
+				v2beta2policy := convertToV2Beta2HPAScalingPolicy(policy)
+				scaleUpPolicies = append(scaleUpPolicies, v2beta2policy)
+			}
+			scaleUpRules.Policies = scaleUpPolicies
+		}
+
+		behavior.ScaleUp = scaleUpRules
+	}
+
+	if v2behavior.ScaleDown != nil {
+		scaleDownRules := &autoscalingv2beta2.HPAScalingRules{}
+		scaleDownTime := *v2behavior.ScaleDown.StabilizationWindowSeconds
+		scaleDownRules.StabilizationWindowSeconds = &scaleDownTime
+
+		if v2behavior.ScaleDown.SelectPolicy != nil {
+			scaleDownSelectPolicy := convertToV2Beta2SelectPolicy(*v2behavior.ScaleDown)
+			scaleDownRules.SelectPolicy = &scaleDownSelectPolicy
+		}
+		if v2behavior.ScaleDown.Policies != nil {
+			ScaleDownPolicies := []autoscalingv2beta2.HPAScalingPolicy{}
+			for _, policy := range v2behavior.ScaleDown.Policies {
+				v2beta2policy := convertToV2Beta2HPAScalingPolicy(policy)
+				ScaleDownPolicies = append(ScaleDownPolicies, v2beta2policy)
+			}
+			scaleDownRules.Policies = ScaleDownPolicies
+		}
+
+		behavior.ScaleDown = scaleDownRules
+	}
+
+	return *behavior
+}
+
+func convertToV2Beta2HPAScalingPolicy(v2policy autoscalingv2.HPAScalingPolicy) autoscalingv2beta2.HPAScalingPolicy {
+	v2beta2Policy := &autoscalingv2beta2.HPAScalingPolicy{
+		Value:         v2policy.Value,
+		PeriodSeconds: v2policy.PeriodSeconds,
+	}
+
+	switch v2policy.Type {
+	case autoscalingv2.PodsScalingPolicy:
+		v2beta2Policy.Type = autoscalingv2beta2.PodsScalingPolicy
+	case autoscalingv2.PercentScalingPolicy:
+		v2beta2Policy.Type = autoscalingv2beta2.PercentScalingPolicy
+	}
+
+	return *v2beta2Policy
+}
+
+func convertToV2Beta2SelectPolicy(rules autoscalingv2.HPAScalingRules) autoscalingv2beta2.ScalingPolicySelect {
+	max := autoscalingv2beta2.MaxPolicySelect
+	min := autoscalingv2beta2.MinPolicySelect
+	disabled := autoscalingv2beta2.DisabledPolicySelect
+
+	switch *rules.SelectPolicy {
+	case autoscalingv2.MaxChangePolicySelect:
+		return max
+	case autoscalingv2.MinChangePolicySelect:
+		return min
+	case autoscalingv2.DisabledPolicySelect:
+		return disabled
+	}
+
+	return disabled
 }
