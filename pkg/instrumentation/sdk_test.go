@@ -731,12 +731,28 @@ func TestInjectDotNet(t *testing.T) {
 					},
 					Env: []corev1.EnvVar{
 						{
+							Name:  envDotNetCoreClrEnableProfiling,
+							Value: dotNetCoreClrEnableProfilingEnabled,
+						},
+						{
+							Name:  envDotNetCoreClrProfiler,
+							Value: dotNetCoreClrProfilerId,
+						},
+						{
+							Name:  envDotNetCoreClrProfilerPath,
+							Value: dotNetCoreClrProfilerPath,
+						},
+						{
 							Name:  envDotNetStartupHook,
 							Value: dotNetStartupHookPath,
 						},
 						{
 							Name:  envDotNetAdditionalDeps,
 							Value: dotNetAdditionalDepsPath,
+						},
+						{
+							Name:  envDotNetOTelAutoHome,
+							Value: dotNetOTelAutoHomePath,
 						},
 						{
 							Name:  envDotNetSharedStore,
