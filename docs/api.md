@@ -1692,6 +1692,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscaler">autoscaler</a></b></td>
+        <td>object</td>
+        <td>
+          Autoscaler specifies the pod autoscaling configuration to use for the OpenTelemetryCollector workload.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>config</b></td>
         <td>string</td>
         <td>
@@ -1862,6 +1869,243 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
           Volumes represents which volumes to use in the underlying collector deployment(s).<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+Autoscaler specifies the pod autoscaling configuration to use for the OpenTelemetryCollector workload.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalerbehavior">behavior</a></b></td>
+        <td>object</td>
+        <td>
+          HorizontalPodAutoscalerBehavior configures the scaling behavior of the target in both Up and Down directions (scaleUp and scaleDown fields respectively).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.behavior
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscaler)</sup></sup>
+
+
+
+HorizontalPodAutoscalerBehavior configures the scaling behavior of the target in both Up and Down directions (scaleUp and scaleDown fields respectively).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalerbehaviorscaledown">scaleDown</a></b></td>
+        <td>object</td>
+        <td>
+          scaleDown is scaling policy for scaling Down. If not set, the default value is to allow to scale down to minReplicas pods, with a 300 second stabilization window (i.e., the highest recommendation for the last 300sec is used).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalerbehaviorscaleup">scaleUp</a></b></td>
+        <td>object</td>
+        <td>
+          scaleUp is scaling policy for scaling Up. If not set, the default value is the higher of: * increase no more than 4 pods per 60 seconds * double the number of pods per 60 seconds No stabilization is used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.behavior.scaleDown
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalerbehavior)</sup></sup>
+
+
+
+scaleDown is scaling policy for scaling Down. If not set, the default value is to allow to scale down to minReplicas pods, with a 300 second stabilization window (i.e., the highest recommendation for the last 300sec is used).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalerbehaviorscaledownpoliciesindex">policies</a></b></td>
+        <td>[]object</td>
+        <td>
+          policies is a list of potential scaling polices which can be used during scaling. At least one policy must be specified, otherwise the HPAScalingRules will be discarded as invalid<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>selectPolicy</b></td>
+        <td>string</td>
+        <td>
+          selectPolicy is used to specify which policy should be used. If not set, the default value Max is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stabilizationWindowSeconds</b></td>
+        <td>integer</td>
+        <td>
+          StabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down. StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour). If not set, use the default values: - For scale up: 0 (i.e. no stabilization is done). - For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.behavior.scaleDown.policies[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalerbehaviorscaledown)</sup></sup>
+
+
+
+HPAScalingPolicy is a single policy which must hold true for a specified past interval.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type is used to specify the scaling policy.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>integer</td>
+        <td>
+          Value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.behavior.scaleUp
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalerbehavior)</sup></sup>
+
+
+
+scaleUp is scaling policy for scaling Up. If not set, the default value is the higher of: * increase no more than 4 pods per 60 seconds * double the number of pods per 60 seconds No stabilization is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalerbehaviorscaleuppoliciesindex">policies</a></b></td>
+        <td>[]object</td>
+        <td>
+          policies is a list of potential scaling polices which can be used during scaling. At least one policy must be specified, otherwise the HPAScalingRules will be discarded as invalid<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>selectPolicy</b></td>
+        <td>string</td>
+        <td>
+          selectPolicy is used to specify which policy should be used. If not set, the default value Max is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stabilizationWindowSeconds</b></td>
+        <td>integer</td>
+        <td>
+          StabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down. StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour). If not set, use the default values: - For scale up: 0 (i.e. no stabilization is done). - For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.behavior.scaleUp.policies[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalerbehaviorscaleup)</sup></sup>
+
+
+
+HPAScalingPolicy is a single policy which must hold true for a specified past interval.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          PeriodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type is used to specify the scaling policy.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>integer</td>
+        <td>
+          Value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

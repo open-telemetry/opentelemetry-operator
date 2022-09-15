@@ -129,6 +129,15 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
 		}
 
+		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.Behavior != nil {
+			if r.Spec.Autoscaler.Behavior.ScaleDown != nil && *r.Spec.Autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(1) {
+				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown should be one or more")
+			}
+
+			if r.Spec.Autoscaler.Behavior.ScaleUp != nil && *r.Spec.Autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(1) {
+				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
+			}
+		}
 	}
 
 	return nil
