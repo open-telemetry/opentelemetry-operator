@@ -1,0 +1,8 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+
+metadata:
+  name: simplest
+status:
+  scale:
+    replicas: 1

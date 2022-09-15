@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -40,6 +41,13 @@ type OpenTelemetryCollectorSpec struct {
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+
+	// Autoscaler specifies the pod autoscaling configuration to use
+	// for the OpenTelemetryCollector workload.
+	//
+	// +optional
+	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
+
 	// SecurityContext will be set as the container security context.
 	// +optional
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
@@ -202,6 +210,12 @@ type OpenTelemetryCollectorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []OpenTelemetryCollector `json:"items"`
+}
+
+// AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
+type AutoscalerSpec struct {
+	// +optional
+	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
 }
 
 func init() {
