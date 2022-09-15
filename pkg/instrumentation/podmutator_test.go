@@ -651,12 +651,28 @@ func TestMutatePod(t *testing.T) {
 									Value: "http://localhost:4317",
 								},
 								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerId,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerPath,
+								},
+								{
 									Name:  envDotNetStartupHook,
 									Value: dotNetStartupHookPath,
 								},
 								{
 									Name:  envDotNetAdditionalDeps,
 									Value: dotNetAdditionalDepsPath,
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
 								},
 								{
 									Name:  envDotNetSharedStore,
