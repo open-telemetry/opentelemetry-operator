@@ -59,7 +59,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			},
 		}
 		metrics := []autoscalingv2beta2.MetricSpec{targetCPUUtilization}
-		behavior := convertToV2beta2Behavior(*otelcol.Spec.Autoscaler.Behavior)
 
 		autoscaler := autoscalingv2beta2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
@@ -72,8 +71,12 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				MinReplicas: otelcol.Spec.Replicas,
 				MaxReplicas: *otelcol.Spec.MaxReplicas,
 				Metrics:     metrics,
-				Behavior:    &behavior,
 			},
+		}
+
+		if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.Behavior != nil {
+			behavior := convertToV2beta2Behavior(*otelcol.Spec.Autoscaler.Behavior)
+			autoscaler.Spec.Behavior = &behavior
 		}
 
 		result = &autoscaler
@@ -101,8 +104,10 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				MinReplicas: otelcol.Spec.Replicas,
 				MaxReplicas: *otelcol.Spec.MaxReplicas,
 				Metrics:     metrics,
-				Behavior:    otelcol.Spec.Autoscaler.Behavior,
 			},
+		}
+		if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.Behavior != nil {
+			autoscaler.Spec.Behavior = otelcol.Spec.Autoscaler.Behavior
 		}
 		result = &autoscaler
 	}
