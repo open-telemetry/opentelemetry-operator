@@ -91,6 +91,58 @@ func TestHPA(t *testing.T) {
 	}
 }
 
+func TestConvertToV2beta2Behavior(t *testing.T) {
+	ten := int32(10)
+	thirty := int32(30)
+	max := autoscalingv2.MaxChangePolicySelect
+	min := autoscalingv2.MinChangePolicySelect
+
+	v2ScaleUp := &autoscalingv2.HPAScalingRules{
+		StabilizationWindowSeconds: &thirty,
+		SelectPolicy:               &max,
+	}
+
+	v2ScaleDown := &autoscalingv2.HPAScalingRules{
+		StabilizationWindowSeconds: &ten,
+		SelectPolicy:               &min,
+	}
+
+	v2Behavior := &autoscalingv2.HorizontalPodAutoscalerBehavior{
+		ScaleUp:   v2ScaleUp,
+		ScaleDown: v2ScaleDown,
+	}
+
+	v2Beta2Behavior := ConvertToV2beta2Behavior(*v2Behavior)
+	assert.Equal(t, thirty, *v2Beta2Behavior.ScaleUp.StabilizationWindowSeconds)
+	assert.Equal(t, ten, *v2Beta2Behavior.ScaleDown.StabilizationWindowSeconds)
+	assert.Equal(t, autoscalingv2beta2.MaxPolicySelect, *v2Beta2Behavior.ScaleUp.SelectPolicy)
+	assert.EqualValues(t, autoscalingv2beta2.MinPolicySelect, *v2Beta2Behavior.ScaleDown.SelectPolicy)
+}
+
+func TestConvertToV2Beta2HPAScalingPolicy(t *testing.T) {
+	v2Policy := autoscalingv2.HPAScalingPolicy{
+		Type:          autoscalingv2.PodsScalingPolicy,
+		Value:         5,
+		PeriodSeconds: 10,
+	}
+
+	v2Beta2Policy := ConvertToV2Beta2HPAScalingPolicy(v2Policy)
+	assert.Equal(t, autoscalingv2beta2.PodsScalingPolicy, v2Beta2Policy.Type)
+	assert.Equal(t, int32(5), v2Beta2Policy.Value)
+	assert.Equal(t, int32(10), v2Beta2Policy.PeriodSeconds)
+
+}
+
+func TestConvertToV2Beta2SelectPolicy(t *testing.T) {
+	min := autoscalingv2.MinChangePolicySelect
+	max := autoscalingv2.MaxChangePolicySelect
+	disabled := autoscalingv2.DisabledPolicySelect
+
+	assert.Equal(t, autoscalingv2beta2.MinPolicySelect, ConvertToV2Beta2SelectPolicy(min))
+	assert.Equal(t, autoscalingv2beta2.MaxPolicySelect, ConvertToV2Beta2SelectPolicy(max))
+	assert.Equal(t, autoscalingv2beta2.DisabledPolicySelect, ConvertToV2Beta2SelectPolicy(disabled))
+}
+
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
