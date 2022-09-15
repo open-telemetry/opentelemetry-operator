@@ -3113,6 +3113,13 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>allocationStrategy</b></td>
+        <td>string</td>
+        <td>
+          AllocationStrategy determines which strategy the target allocator should use for allocation<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>

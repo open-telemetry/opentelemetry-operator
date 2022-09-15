@@ -12,15 +12,17 @@ import (
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
@@ -41,13 +43,22 @@ func main() {
 		setupLog.Error(err, "Failed to parse parameters")
 		os.Exit(1)
 	}
+	cfg, err := config.Load(*cliConf.ConfigFilePath)
+	if err != nil {
+		setupLog.Error(err, "Unable to load configuration")
+	}
 
 	cliConf.RootLogger.Info("Starting the Target Allocator")
 
 	ctx := context.Background()
 
 	log := ctrl.Log.WithName("allocator")
-	allocator := allocation.NewAllocator(log)
+
+	allocator, err := allocation.New(cfg.GetAllocationStrategy(), log)
+	if err != nil {
+		setupLog.Error(err, "Unable to initialize allocation strategy")
+		os.Exit(1)
+	}
 	watcher, err := allocatorWatcher.NewWatcher(setupLog, cliConf, allocator)
 	if err != nil {
 		setupLog.Error(err, "Can't start the watchers")
@@ -60,7 +71,13 @@ func main() {
 	defer discoveryManager.Close()
 	discoveryManager.Watch(allocator.SetTargets)
 
-	srv, err := newServer(log, allocator, discoveryManager, cliConf)
+	k8sclient, err := configureFileDiscovery(log, allocator, discoveryManager, context.Background(), cliConf)
+	if err != nil {
+		setupLog.Error(err, "Can't start the k8s client")
+		os.Exit(1)
+	}
+
+	srv, err := newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 	if err != nil {
 		setupLog.Error(err, "Can't start the server")
 	}
@@ -91,7 +108,7 @@ func main() {
 				if err := srv.Shutdown(ctx); err != nil {
 					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv, err = newServer(log, allocator, discoveryManager, cliConf)
+				srv, err = newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 				if err != nil {
 					setupLog.Error(err, "Error restarting the server with new config")
 				}
@@ -120,17 +137,13 @@ func main() {
 
 type server struct {
 	logger           logr.Logger
-	allocator        *allocation.Allocator
+	allocator        allocation.Allocator
 	discoveryManager *lbdiscovery.Manager
 	k8sClient        *collector.Client
 	server           *http.Server
 }
 
-func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, cliConf config.CLIConfig) (*server, error) {
-	k8sclient, err := configureFileDiscovery(log, allocator, discoveryManager, context.Background(), cliConf)
-	if err != nil {
-		return nil, err
-	}
+func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, k8sclient *collector.Client, listenAddr *string) (*server, error) {
 	s := &server{
 		logger:           log,
 		allocator:        allocator,
@@ -142,11 +155,11 @@ func newServer(log logr.Logger, allocator *allocation.Allocator, discoveryManage
 	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
 	router.Path("/metrics").Handler(promhttp.Handler())
-	s.server = &http.Server{Addr: *cliConf.ListenAddr, Handler: router}
+	s.server = &http.Server{Addr: *listenAddr, Handler: router}
 	return s, nil
 }
 
-func configureFileDiscovery(log logr.Logger, allocator *allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
+func configureFileDiscovery(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
 	cfg, err := config.Load(*cliConfig.ConfigFilePath)
 	if err != nil {
 		return nil, err
@@ -180,7 +193,7 @@ func (s *server) Shutdown(ctx context.Context) error {
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
 	displayData := make(map[string]allocation.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
-		displayData[v.JobName] = allocation.LinkJSON{v.Link.Link}
+		displayData[v.JobName] = allocation.LinkJSON{Link: v.Link.Link}
 	}
 	jsonHandler(w, r, displayData)
 }
@@ -201,7 +214,7 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var compareMap = make(map[string][]allocation.TargetItem) // CollectorName+jobName -> TargetItem
 	for _, v := range s.allocator.TargetItems() {
-		compareMap[v.Collector.Name+v.JobName] = append(compareMap[v.Collector.Name+v.JobName], *v)
+		compareMap[v.CollectorName+v.JobName] = append(compareMap[v.CollectorName+v.JobName], *v)
 	}
 	params := mux.Vars(r)
 	jobId, err := url.QueryUnescape(params["job_id"])

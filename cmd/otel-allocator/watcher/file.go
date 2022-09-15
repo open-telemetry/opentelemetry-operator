@@ -5,6 +5,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
+
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 

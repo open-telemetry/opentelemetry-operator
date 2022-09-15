@@ -21,12 +21,12 @@ type targetGroupJSON struct {
 	Labels  model.LabelSet `json:"labels"`
 }
 
-func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator *Allocator) map[string]collectorJSON {
+func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator Allocator) map[string]collectorJSON {
 	displayData := make(map[string]collectorJSON)
 	for _, j := range allocator.TargetItems() {
 		if j.JobName == job {
 			var targetList []TargetItem
-			targetList = append(targetList, cMap[j.Collector.Name+j.JobName]...)
+			targetList = append(targetList, cMap[j.CollectorName+j.JobName]...)
 
 			var targetGroupList []targetGroupJSON
 
@@ -37,32 +37,29 @@ func GetAllTargetsByJob(job string, cMap map[string][]TargetItem, allocator *All
 				})
 			}
 
-			displayData[j.Collector.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.Collector.Name), Jobs: targetGroupList}
+			displayData[j.CollectorName] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.CollectorName), Jobs: targetGroupList}
 
 		}
 	}
 	return displayData
 }
 
-func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]TargetItem, allocator *Allocator) []targetGroupJSON {
+func GetAllTargetsByCollectorAndJob(collector string, job string, cMap map[string][]TargetItem, allocator Allocator) []targetGroupJSON {
 	var tgs []targetGroupJSON
-	group := make(map[string]string)
+	group := make(map[string]TargetItem)
 	labelSet := make(map[string]model.LabelSet)
-	for _, col := range allocator.Collectors() {
-		if col.Name == collector {
-			for _, targetItemArr := range cMap {
-				for _, targetItem := range targetItemArr {
-					if targetItem.Collector.Name == collector && targetItem.JobName == job {
-						group[targetItem.Label.String()] = targetItem.TargetURL
-						labelSet[targetItem.TargetURL] = targetItem.Label
-					}
+	if _, ok := allocator.Collectors()[collector]; ok {
+		for _, targetItemArr := range cMap {
+			for _, targetItem := range targetItemArr {
+				if targetItem.CollectorName == collector && targetItem.JobName == job {
+					group[targetItem.Label.String()] = targetItem
+					labelSet[targetItem.Hash()] = targetItem.Label
 				}
 			}
 		}
 	}
-
 	for _, v := range group {
-		tgs = append(tgs, targetGroupJSON{Targets: []string{v}, Labels: labelSet[v]})
+		tgs = append(tgs, targetGroupJSON{Targets: []string{v.TargetURL}, Labels: labelSet[v.Hash()]})
 	}
 
 	return tgs

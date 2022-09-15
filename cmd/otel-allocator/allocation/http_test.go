@@ -9,15 +9,15 @@ import (
 )
 
 func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
-	baseAllocator := NewAllocator(logger)
-	baseAllocator.SetCollectors([]string{"test-collector"})
-	statefulAllocator := NewAllocator(logger)
-	statefulAllocator.SetCollectors([]string{"test-collector-0"})
+	baseAllocator, _ := New("least-weighted", logger)
+	baseAllocator.SetCollectors(map[string]*Collector{"test-collector": {Name: "test-collector"}})
+	statefulAllocator, _ := New("least-weighted", logger)
+	statefulAllocator.SetCollectors(map[string]*Collector{"test-collector-0": {Name: "test-collector-0"}})
 	type args struct {
 		collector string
 		job       string
 		cMap      map[string][]TargetItem
-		allocator *Allocator
+		allocator Allocator
 	}
 	var tests = []struct {
 		name string
@@ -46,11 +46,8 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 							Label: model.LabelSet{
 								"test-label": "test-value",
 							},
-							TargetURL: "test-url",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 1,
-							},
+							TargetURL:     "test-url",
+							CollectorName: "test-collector",
 						},
 					},
 				},
@@ -77,11 +74,8 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 							Label: model.LabelSet{
 								"test-label": "test-value",
 							},
-							TargetURL: "test-url",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 1,
-							},
+							TargetURL:     "test-url",
+							CollectorName: "test-collector",
 						},
 					},
 					"test-collectortest-job2": {
@@ -90,11 +84,8 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 							Label: model.LabelSet{
 								"test-label": "test-value",
 							},
-							TargetURL: "test-url",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 1,
-							},
+							TargetURL:     "test-url",
+							CollectorName: "test-collector",
 						},
 					},
 				},
@@ -122,11 +113,8 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 								"test-label": "test-value",
 								"foo":        "bar",
 							},
-							TargetURL: "test-url1",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 2,
-							},
+							TargetURL:     "test-url1",
+							CollectorName: "test-collector",
 						},
 					},
 					"test-collectortest-job2": {
@@ -135,11 +123,8 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 							Label: model.LabelSet{
 								"test-label": "test-value",
 							},
-							TargetURL: "test-url2",
-							Collector: &collector{
-								Name:       "test-collector",
-								NumTargets: 2,
-							},
+							TargetURL:     "test-url2",
+							CollectorName: "test-collector",
 						},
 					},
 				},
@@ -161,12 +146,57 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Multiple entry target map with same target address",
+			args: args{
+				collector: "test-collector",
+				job:       "test-job",
+				cMap: map[string][]TargetItem{
+					"test-collectortest-job": {
+						TargetItem{
+							JobName: "test-job",
+							Label: model.LabelSet{
+								"test-label": "test-value",
+								"foo":        "bar",
+							},
+							TargetURL: "test-url",
+							CollectorName: "test-collector",
+						},
+						TargetItem{
+							JobName: "test-job",
+							Label: model.LabelSet{
+								"test-label": "test-value",
+							},
+							TargetURL: "test-url",
+							CollectorName: "test-collector",
+						},
+					},
+				},
+				allocator: baseAllocator,
+			},
+			want: []targetGroupJSON{
+				{
+					Targets: []string{"test-url"},
+					Labels: map[model.LabelName]model.LabelValue{
+						"test-label": "test-value",
+						"foo":        "bar",
+					},
+				},
+				{
+					Targets: []string{"test-url"},
+					Labels: map[model.LabelName]model.LabelValue{
+						"test-label": "test-value",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for _, groupJSON := range GetAllTargetsByCollectorAndJob(tt.args.collector, tt.args.job, tt.args.cMap, tt.args.allocator) {
+			targetGroups := GetAllTargetsByCollectorAndJob(tt.args.collector, tt.args.job, tt.args.cMap, tt.args.allocator)
+			for _, wantGroupJson := range tt.want {
 				exist := false
-				for _, wantGroupJson := range tt.want {
+				for _, groupJSON := range targetGroups {
 					if groupJSON.Labels.String() == wantGroupJson.Labels.String() {
 						exist = reflect.DeepEqual(groupJSON, wantGroupJson)
 					}
