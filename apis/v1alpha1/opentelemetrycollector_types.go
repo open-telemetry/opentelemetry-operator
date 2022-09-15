@@ -116,12 +116,12 @@ type OpenTelemetryCollectorSpec struct {
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
 type OpenTelemetryTargetAllocator struct {
-	// Replicas is the number of pod instances for the underlying TargetAllocator, this should only be set to a value
+	// Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
 	// other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
 	// that can be run in a high availability mode is consistent-hashing.
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
-	// AllocationStrategy determines which strategy the target allocator should use for allocation
+	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted and consistent-hashing. The default option is least-weighted
 	// +optional
 	AllocationStrategy string `json:"allocationStrategy,omitempty"`
