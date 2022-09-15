@@ -113,6 +113,7 @@ func TestConvertToV2beta2Behavior(t *testing.T) {
 	}
 
 	v2Beta2Behavior := ConvertToV2beta2Behavior(*v2Behavior)
+
 	assert.Equal(t, thirty, *v2Beta2Behavior.ScaleUp.StabilizationWindowSeconds)
 	assert.Equal(t, ten, *v2Beta2Behavior.ScaleDown.StabilizationWindowSeconds)
 	assert.Equal(t, autoscalingv2beta2.MaxPolicySelect, *v2Beta2Behavior.ScaleUp.SelectPolicy)
