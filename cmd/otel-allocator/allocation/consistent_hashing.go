@@ -2,13 +2,15 @@ package allocation
 
 import (
 	"fmt"
+	"net/url"
+	"sync"
+
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash/v2"
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/diff"
 	"github.com/prometheus/client_golang/prometheus"
-	"net/url"
-	"sync"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/diff"
 )
 
 var _ Allocator = &consistentHashingAllocator{}

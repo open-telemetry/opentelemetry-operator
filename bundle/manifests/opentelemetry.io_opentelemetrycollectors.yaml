@@ -685,7 +685,9 @@ spec:
                 properties:
                   allocationStrategy:
                     description: AllocationStrategy determines which strategy the
-                      target allocator should use for allocation
+                      target allocator should use for allocation The current options
+                      are least-weighted and consistent-hashing. The default option
+                      is least-weighted
                     type: string
                   enabled:
                     description: Enabled indicates whether to use a target allocation
@@ -709,8 +711,10 @@ spec:
                     type: object
                   replicas:
                     description: Replicas is the number of pod instances for the underlying
-                      TargetAllocator, this can only be set to values other than 1
-                      if a strategy that allows for high availability is chosen.
+                      TargetAllocator, this should only be set to a value other than
+                      1 if a strategy that allows for high availability is chosen.
+                      Currently, the only allocation strategy that can be run in a
+                      high availability mode is consistent-hashing.
                     format: int32
                     type: integer
                   serviceAccount:

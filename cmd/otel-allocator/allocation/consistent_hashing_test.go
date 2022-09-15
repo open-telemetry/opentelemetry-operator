@@ -1,8 +1,9 @@
 package allocation
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCanSetSingleTarget(t *testing.T) {

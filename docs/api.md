@@ -2872,7 +2872,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>allocationStrategy</b></td>
         <td>string</td>
         <td>
-          AllocationStrategy determines which strategy the target allocator should use for allocation<br/>
+          AllocationStrategy determines which strategy the target allocator should use for allocation The current options are least-weighted and consistent-hashing. The default option is least-weighted<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2900,7 +2900,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
-          Replicas is the number of pod instances for the underlying TargetAllocator, this can only be set to values other than 1 if a strategy that allows for high availability is chosen.<br/>
+          Replicas is the number of pod instances for the underlying TargetAllocator, this should only be set to a value other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy that can be run in a high availability mode is consistent-hashing.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>

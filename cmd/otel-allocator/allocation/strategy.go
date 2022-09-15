@@ -3,9 +3,9 @@ package allocation
 import (
 	"errors"
 	"fmt"
-	"github.com/buraksezer/consistent"
 	"net/url"
 
+	"github.com/buraksezer/consistent"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
