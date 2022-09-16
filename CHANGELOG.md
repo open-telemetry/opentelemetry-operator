@@ -1,5 +1,23 @@
 Changes by Version
 ==================
+0.60.0
+-------------------
+### 🚀 New components 🚀
+* .NET - enable bytecode instrumentation ([#1081](https://github.com/open-telemetry/opentelemetry-operator/pull/1081), [@Kielek](https://github.com/Kielek))
+* Introduce ability to specify strategies for target allocation ([#1079](https://github.com/open-telemetry/opentelemetry-operator/pull/1079), [@jaronoff97](https://github.com/jaronoff97))
+### 💡 Enhancements 💡
+* Expose Horizontal Pod Autoscaler Behavior and add hpa scaledown test ([#1077](https://github.com/open-telemetry/opentelemetry-operator/pull/1077), [@kevinearls](https://github.com/kevinearls))
+* Utilize .NET AutoInstrumentation docker image v.0.3.1-beta.1 ([#1091](https://github.com/open-telemetry/opentelemetry-operator/pull/1091), [@Kielek](https://github.com/Kielek))
+* Update the javaagent version to 1.18.0 ([#1096](https://github.com/open-telemetry/opentelemetry-operator/pull/1096), [@opentelemetrybot](https://github.com/opentelemetrybot))
+* Update GetAllTargetsByCollectorAndJob to use TargetItem hash ([#1086](https://github.com/open-telemetry/opentelemetry-operator/pull/1086), [@kelseyma](https://github.com/kelseyma))
+* Upgrade kind images and add testing for Kubernetes 1.25 ([#1078](https://github.com/open-telemetry/opentelemetry-operator/pull/1078), [@iblancasa](https://github.com/iblancasa))
+* Bump .NET OTel AutoInstrumentation to 0.3.1-beta.1 ([#1085](https://github.com/open-telemetry/opentelemetry-operator/pull/1085), [@Kielek](https://github.com/Kielek))
+* Make sure we return the right version when autoscaling v2 is found ([#1075](https://github.com/open-telemetry/opentelemetry-operator/pull/1075), [@kevinearls](https://github.com/kevinearls))
+* Add retry loop for client.get of replicaset as that sometimes fails ([#1072](https://github.com/open-telemetry/opentelemetry-operator/pull/1072), [@kevinearls](https://github.com/kevinearls))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.60.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.60.0)
+* [OpenTelemetry Contrib - v0.60.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.60.0)
+
 
 0.59.0
 -------------------
