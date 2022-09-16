@@ -4,6 +4,7 @@ Changes by Version
 -------------------
 ### 🚀 New components 🚀
 * .NET - enable bytecode instrumentation ([#1081](https://github.com/open-telemetry/opentelemetry-operator/pull/1081), [@Kielek](https://github.com/Kielek))
+* Added consistent hashing strategy for target allocation ([#1087](https://github.com/open-telemetry/opentelemetry-operator/pull/1087), [@jaronoff97](https://github.com/jaronoff97))
 * Introduce ability to specify strategies for target allocation ([#1079](https://github.com/open-telemetry/opentelemetry-operator/pull/1079), [@jaronoff97](https://github.com/jaronoff97))
 ### 💡 Enhancements 💡
 * Expose Horizontal Pod Autoscaler Behavior and add hpa scaledown test ([#1077](https://github.com/open-telemetry/opentelemetry-operator/pull/1077), [@kevinearls](https://github.com/kevinearls))
