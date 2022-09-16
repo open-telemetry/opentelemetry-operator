@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 	"testing"
 
 	"github.com/prometheus/common/model"
@@ -13,19 +14,31 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
+func colIndex(index, numCols int) int {
+	if numCols == 0 {
+		return -1
+	}
+	return index % numCols
+}
+
 func makeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*TargetItem {
 	toReturn := map[string]*TargetItem{}
 	for i := startingIndex; i < n+startingIndex; i++ {
-		collector := fmt.Sprintf("collector-%d", i%numCollectors)
-		newTarget := NewTargetItem(fmt.Sprintf("test-job-%d", i), "test-url", nil, collector)
+		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
+		label := model.LabelSet{
+			"collector": model.LabelValue(collector),
+			"i":         model.LabelValue(strconv.Itoa(i)),
+			"total":     model.LabelValue(strconv.Itoa(n + startingIndex)),
+		}
+		newTarget := NewTargetItem(fmt.Sprintf("test-job-%d", i), "test-url", label, collector)
 		toReturn[newTarget.Hash()] = newTarget
 	}
 	return toReturn
 }
 
-func makeNCollectors(n int, targetsForEach int) map[string]*Collector {
+func makeNCollectors(n int, targetsForEach int, startingIndex int) map[string]*Collector {
 	toReturn := map[string]*Collector{}
-	for i := 0; i < n; i++ {
+	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", i)
 		toReturn[collector] = &Collector{
 			Name:       collector,
@@ -38,7 +51,7 @@ func makeNCollectors(n int, targetsForEach int) map[string]*Collector {
 func TestSetCollectors(t *testing.T) {
 	s, _ := New("least-weighted", logger)
 
-	cols := makeNCollectors(3, 0)
+	cols := makeNCollectors(3, 0, 0)
 	s.SetCollectors(cols)
 
 	expectedColLen := len(cols)
@@ -54,7 +67,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	// prepare allocator with initial targets and collectors
 	s, _ := New("least-weighted", logger)
 
-	cols := makeNCollectors(3, 0)
+	cols := makeNCollectors(3, 0, 0)
 	s.SetCollectors(cols)
 
 	initTargets := makeNNewTargets(6, 3, 0)
@@ -89,7 +102,7 @@ func TestAllocationCollision(t *testing.T) {
 	// prepare allocator with initial targets and collectors
 	s, _ := New("least-weighted", logger)
 
-	cols := makeNCollectors(3, 0)
+	cols := makeNCollectors(3, 0, 0)
 	s.SetCollectors(cols)
 	firstLabels := model.LabelSet{
 		"test": "test1",
@@ -123,7 +136,7 @@ func TestAllocationCollision(t *testing.T) {
 func TestNoCollectorReassignment(t *testing.T) {
 	s, _ := New("least-weighted", logger)
 
-	cols := makeNCollectors(3, 0)
+	cols := makeNCollectors(3, 0, 0)
 	s.SetCollectors(cols)
 
 	expectedColLen := len(cols)
@@ -143,7 +156,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 	assert.Len(t, targetItems, expectedTargetLen)
 
 	// assign new set of collectors with the same names
-	newCols := makeNCollectors(3, 0)
+	newCols := makeNCollectors(3, 0, 0)
 	s.SetCollectors(newCols)
 
 	newTargetItems := s.TargetItems()
@@ -154,7 +167,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 func TestSmartCollectorReassignment(t *testing.T) {
 	s, _ := New("least-weighted", logger)
 
-	cols := makeNCollectors(4, 0)
+	cols := makeNCollectors(4, 0, 0)
 	s.SetCollectors(cols)
 
 	expectedColLen := len(cols)
@@ -163,7 +176,7 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	for _, i := range cols {
 		assert.NotNil(t, s.Collectors()[i.Name])
 	}
-	initTargets := makeNNewTargets(6, 4, 0)
+	initTargets := makeNNewTargets(6, 0, 0)
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
 
@@ -205,7 +218,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	// prepare allocator with 3 collectors and 'random' amount of targets
 	s, _ := New("least-weighted", logger)
 
-	cols := makeNCollectors(3, 0)
+	cols := makeNCollectors(3, 0, 0)
 	s.SetCollectors(cols)
 
 	targets := makeNNewTargets(27, 3, 0)

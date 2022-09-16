@@ -159,7 +159,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 								"test-label": "test-value",
 								"foo":        "bar",
 							},
-							TargetURL: "test-url",
+							TargetURL:     "test-url",
 							CollectorName: "test-collector",
 						},
 						TargetItem{
@@ -167,7 +167,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 							Label: model.LabelSet{
 								"test-label": "test-value",
 							},
-							TargetURL: "test-url",
+							TargetURL:     "test-url",
 							CollectorName: "test-collector",
 						},
 					},

@@ -56,11 +56,14 @@ func (r *OpenTelemetryCollector) Default() {
 		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 	}
 
+	// We can default to one because dependent objects Deployment and HorizontalPodAutoScaler
+	// default to 1 as well.
+	one := int32(1)
 	if r.Spec.Replicas == nil {
-		// We can default to one because dependent objects Deployment and HorizontalPodAutoScaler
-		// default to 1 as well.
-		one := int32(1)
 		r.Spec.Replicas = &one
+	}
+	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Replicas == nil {
+		r.Spec.TargetAllocator.Replicas = &one
 	}
 }
 

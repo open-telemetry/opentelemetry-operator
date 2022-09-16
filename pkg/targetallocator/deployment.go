@@ -30,8 +30,6 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 	labels := Labels(otelcol)
 	labels["app.kubernetes.io/name"] = naming.TargetAllocator(otelcol)
 
-	var replicas int32 = 1
-
 	return appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      naming.TargetAllocator(otelcol),
@@ -39,7 +37,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
+			Replicas: otelcol.Spec.TargetAllocator.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
