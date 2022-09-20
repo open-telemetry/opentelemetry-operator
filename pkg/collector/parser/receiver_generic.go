@@ -68,25 +68,6 @@ func (g *GenericReceiver) Ports() ([]corev1.ServicePort, error) {
 	return []corev1.ServicePort{}, nil
 }
 
-// ContainerPorts returns all the container ports for all protocols in this parser.
-func (g *GenericReceiver) ContainerPorts() ([]corev1.ContainerPort, error) {
-	port := singleContainerPortFromConfigEndpoint(g.logger, g.name, g.config)
-	if port != nil {
-		port.Protocol = g.defaultProtocol
-		return []corev1.ContainerPort{*port}, nil
-	}
-
-	if g.defaultPort > 0 {
-		return []corev1.ContainerPort{{
-			ContainerPort: g.defaultPort,
-			Name:          portName(g.name, g.defaultPort),
-			Protocol:      g.defaultProtocol,
-		}}, nil
-	}
-
-	return []corev1.ContainerPort{}, nil
-}
-
 // ParserName returns the name of this parser.
 func (g *GenericReceiver) ParserName() string {
 	return g.parserName

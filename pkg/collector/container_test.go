@@ -78,7 +78,7 @@ service:
 	tests := []struct {
 		description   string
 		specConfig    string
-		specPorts     []corev1.ContainerPort
+		specPorts     []corev1.ServicePort
 		expectedPorts []corev1.ContainerPort
 	}{
 		{
@@ -107,10 +107,10 @@ service:
 		},
 		{
 			description: "ports in spec ContainerPorts",
-			specPorts: []corev1.ContainerPort{
+			specPorts: []corev1.ServicePort{
 				{
-					Name:          "testport1",
-					ContainerPort: 12345,
+					Name: "testport1",
+					Port: 12345,
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -124,15 +124,15 @@ service:
 		{
 			description: "ports in spec Config and ContainerPorts",
 			specConfig:  goodConfig,
-			specPorts: []corev1.ContainerPort{
+			specPorts: []corev1.ServicePort{
 				{
-					Name:          "testport1",
-					ContainerPort: 12345,
+					Name: "testport1",
+					Port: 12345,
 				},
 				{
-					Name:          "testport2",
-					ContainerPort: 54321,
-					Protocol:      corev1.ProtocolUDP,
+					Name:     "testport2",
+					Port:     54321,
+					Protocol: corev1.ProtocolUDP,
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -155,12 +155,12 @@ service:
 		{
 			description: "invalid port name",
 			specConfig:  goodConfig,
-			specPorts: []corev1.ContainerPort{
+			specPorts: []corev1.ServicePort{
 				{
 					// this port name contains a non alphanumeric character, which is invalid.
-					Name:          "-test🦄port",
-					ContainerPort: 12345,
-					Protocol:      corev1.ProtocolTCP,
+					Name:     "-test🦄port",
+					Port:     12345,
+					Protocol: corev1.ProtocolTCP,
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -174,12 +174,12 @@ service:
 		{
 			description: "long port name",
 			specConfig:  goodConfig,
-			specPorts: []corev1.ContainerPort{
+			specPorts: []corev1.ServicePort{
 				{
 					// this port name is longer than 15 characters, which is invalid.
-					Name:          "testportaaaabbbb",
-					ContainerPort: 5,
-					Protocol:      corev1.ProtocolTCP,
+					Name:     "testportaaaabbbb",
+					Port:     5,
+					Protocol: corev1.ProtocolTCP,
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -198,14 +198,14 @@ service:
 		{
 			description: "duplicate port name",
 			specConfig:  goodConfig,
-			specPorts: []corev1.ContainerPort{
+			specPorts: []corev1.ServicePort{
 				{
-					Name:          "testport1",
-					ContainerPort: 12345,
+					Name: "testport1",
+					Port: 12345,
 				},
 				{
-					Name:          "testport1",
-					ContainerPort: 11111,
+					Name: "testport1",
+					Port: 11111,
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -227,8 +227,8 @@ service:
 			// prepare
 			otelcol := v1alpha1.OpenTelemetryCollector{
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Config:         testCase.specConfig,
-					ContainerPorts: testCase.specPorts,
+					Config: testCase.specConfig,
+					Ports:  testCase.specPorts,
 				},
 			}
 			cfg := config.New(config.WithCollectorImage("default-image"))

@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -117,6 +118,16 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		_, err := ta.ConfigToPromConfig(r.Spec.Config)
 		if err != nil {
 			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %s", err)
+		}
+	}
+
+	// validator port config
+	for _, p := range r.Spec.Ports {
+		nameErrs := validation.IsValidPortName(p.Name)
+		numErrs := validation.IsValidPortNum(int(p.Port))
+		if len(nameErrs) > 0 || len(numErrs) > 0 {
+			return fmt.Errorf("the OpenTelemetry Spec Ports configuration is incorrect, port name '%s' errors: %s, num '%d' errors: %s",
+				p.Name, nameErrs, p.Port, numErrs)
 		}
 	}
 

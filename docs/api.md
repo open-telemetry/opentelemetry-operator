@@ -1706,13 +1706,6 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspeccontainerportsindex">containerPorts</a></b></td>
-        <td>[]object</td>
-        <td>
-          ContainerPorts allows a set of ports to be exposed by the underlying v1.Container. By default, the operator will attempt to infer the required ports by parsing the .Spec.Config property but this property can be used to open additional ports that can't be inferred by the operator, like for custom receivers.  Any ports specified here will overwrite inferred ports if they have the same name.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -1799,7 +1792,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecportsindex">ports</a></b></td>
         <td>[]object</td>
         <td>
-          Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator will attempt to infer the required ports by parsing the .Spec.Config property but this property can be used to open aditional ports that can't be inferred by the operator, like for custom receivers.<br/>
+          Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator will attempt to infer the required ports by parsing the .Spec.Config property but this property can be used to open additional ports that can't be inferred by the operator, like for custom receivers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2122,67 +2115,6 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
             <i>Format</i>: int32<br/>
         </td>
         <td>true</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.containerPorts[index]
-<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
-
-
-
-ContainerPort represents a network port in a single container.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>containerPort</b></td>
-        <td>integer</td>
-        <td>
-          Number of port to expose on the pod's IP address. This must be a valid port number, 0 < x < 65536.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>hostIP</b></td>
-        <td>string</td>
-        <td>
-          What host IP to bind the external port to.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>hostPort</b></td>
-        <td>integer</td>
-        <td>
-          Number of port to expose on the host. If specified, this must be a valid port number, 0 < x < 65536. If HostNetwork is specified, this must match ContainerPort. Most containers do not need this.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          If specified, this must be an IANA_SVC_NAME and unique within the pod. Each named port in a pod must have a unique name. Name for the port that can be referred to by services.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>protocol</b></td>
-        <td>string</td>
-        <td>
-          Protocol for port. Must be UDP, TCP, or SCTP. Defaults to "TCP".<br/>
-          <br/>
-            <i>Default</i>: TCP<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 

@@ -32,6 +32,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
+// maxPortLen allows us to truncate a port name according to what is considered valid port syntax:
+// https://pkg.go.dev/k8s.io/apimachinery/pkg/util/validation#IsValidPortName
 const maxPortLen = 15
 
 var errInvalidPort = errors.New("invalid port name/num")
@@ -43,23 +45,14 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		image = cfg.CollectorImage()
 	}
 
-	// build port map
+	// build container ports from service ports
 	ports := getConfigContainerPorts(logger, otelcol.Spec.Config)
-	for _, p := range otelcol.Spec.ContainerPorts {
-		truncName := naming.Truncate(p.Name, maxPortLen)
-		if p.Name != truncName {
-			logger.Info("truncating container port name",
-				"port.name.prev", p.Name, "port.name.new", truncName)
-			p.Name = truncName
+	for _, p := range otelcol.Spec.Ports {
+		ports[p.Name] = corev1.ContainerPort{
+			Name:          p.Name,
+			ContainerPort: p.Port,
+			Protocol:      p.Protocol,
 		}
-		nameErrs := validation.IsValidPortName(p.Name)
-		numErrs := validation.IsValidPortNum(int(p.ContainerPort))
-		if len(nameErrs) > 0 || len(numErrs) > 0 {
-			logger.Error(errInvalidPort, "dropping container port", "port.name", p.Name, "port.num", p.ContainerPort,
-				"port.name.errs", nameErrs, "num.errs", numErrs)
-			continue
-		}
-		ports[p.Name] = p
 	}
 
 	argsMap := otelcol.Spec.Args
@@ -136,7 +129,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		logger.Error(err, "couldn't extract the configuration")
 		return ports
 	}
-	ps, err := adapters.ConfigToContainerPorts(logger, c)
+	ps, err := adapters.ConfigToReceiverPorts(logger, c)
 	if err != nil {
 		logger.Error(err, "couldn't build container ports from configuration")
 	} else {
@@ -145,16 +138,19 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 			if p.Name != truncName {
 				logger.Info("truncating container port name",
 					"port.name.prev", p.Name, "port.name.new", truncName)
-				p.Name = truncName
 			}
-			nameErrs := validation.IsValidPortName(p.Name)
-			numErrs := validation.IsValidPortNum(int(p.ContainerPort))
+			nameErrs := validation.IsValidPortName(truncName)
+			numErrs := validation.IsValidPortNum(int(p.Port))
 			if len(nameErrs) > 0 || len(numErrs) > 0 {
-				logger.Error(errInvalidPort, "dropping container port", "port.name", p.Name, "port.num", p.ContainerPort,
+				logger.Error(errInvalidPort, "dropping container port", "port.name", truncName, "port.num", p.Port,
 					"port.name.errs", nameErrs, "num.errs", numErrs)
 				continue
 			}
-			ports[p.Name] = p
+			ports[truncName] = corev1.ContainerPort{
+				Name:          truncName,
+				ContainerPort: p.Port,
+				Protocol:      p.Protocol,
+			}
 		}
 	}
 
@@ -171,6 +167,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 	return ports
 }
 
+// getMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
 func getMetricsPort(c map[interface{}]interface{}) (int32, error) {
 	// we don't need to unmarshal the whole config, just follow the keys down to
 	// the metrics address.

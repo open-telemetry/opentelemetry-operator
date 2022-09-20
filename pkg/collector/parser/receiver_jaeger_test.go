@@ -42,27 +42,14 @@ func TestJaegerMinimalConfiguration(t *testing.T) {
 		},
 	})
 
-	t.Run("service port exists", func(t *testing.T) {
-		// test
-		ports, err := builder.Ports()
+	// test
+	ports, err := builder.Ports()
 
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 1)
-		assert.EqualValues(t, 14250, ports[0].Port)
-		assert.EqualValues(t, corev1.ProtocolTCP, ports[0].Protocol)
-	})
-
-	t.Run("container port exists", func(t *testing.T) {
-		// test
-		ports, err := builder.ContainerPorts()
-
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 1)
-		assert.EqualValues(t, 14250, ports[0].ContainerPort)
-		assert.EqualValues(t, corev1.ProtocolTCP, ports[0].Protocol)
-	})
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 1)
+	assert.EqualValues(t, 14250, ports[0].Port)
+	assert.EqualValues(t, corev1.ProtocolTCP, ports[0].Protocol)
 }
 
 func TestJaegerPortsOverridden(t *testing.T) {
@@ -75,27 +62,14 @@ func TestJaegerPortsOverridden(t *testing.T) {
 		},
 	})
 
-	t.Run("service ports overridden", func(t *testing.T) {
-		// test
-		ports, err := builder.Ports()
+	// test
+	ports, err := builder.Ports()
 
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 1)
-		assert.EqualValues(t, 1234, ports[0].Port)
-		assert.EqualValues(t, corev1.ProtocolTCP, ports[0].Protocol)
-	})
-
-	t.Run("container ports overridden", func(t *testing.T) {
-		// test
-		ports, err := builder.ContainerPorts()
-
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 1)
-		assert.EqualValues(t, 1234, ports[0].ContainerPort)
-		assert.EqualValues(t, corev1.ProtocolTCP, ports[0].Protocol)
-	})
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 1)
+	assert.EqualValues(t, 1234, ports[0].Port)
+	assert.EqualValues(t, corev1.ProtocolTCP, ports[0].Protocol)
 }
 
 func TestJaegerExposeDefaultPorts(t *testing.T) {
@@ -112,6 +86,7 @@ func TestJaegerExposeDefaultPorts(t *testing.T) {
 	expectedResults := map[string]struct {
 		transportProtocol corev1.Protocol
 		portNumber        int32
+		seen              bool
 	}{
 		"jaeger-grpc":           {portNumber: 14250, transportProtocol: corev1.ProtocolTCP},
 		"jaeger-thrift-http":    {portNumber: 14268, transportProtocol: corev1.ProtocolTCP},
@@ -119,45 +94,21 @@ func TestJaegerExposeDefaultPorts(t *testing.T) {
 		"jaeger-thrift-binary":  {portNumber: 6832, transportProtocol: corev1.ProtocolUDP},
 	}
 
-	t.Run("service ports exposed", func(t *testing.T) {
-		// test
-		ports, err := builder.Ports()
+	// test
+	ports, err := builder.Ports()
 
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 4)
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 4)
 
-		seen := map[string]bool{}
-		for _, port := range ports {
-			r, ok := expectedResults[port.Name]
-			seen[port.Name] = true
-			assert.True(t, ok, "unexpected service port %s", port.Name)
-			assert.EqualValues(t, r.portNumber, port.Port)
-			assert.EqualValues(t, r.transportProtocol, port.Protocol)
-		}
-		for k := range expectedResults {
-			assert.True(t, seen[k], "the port %s wasn't included in the service ports", k)
-		}
-	})
-
-	t.Run("container ports exposed", func(t *testing.T) {
-		// test
-		ports, err := builder.ContainerPorts()
-
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 4)
-
-		seen := map[string]bool{}
-		for _, port := range ports {
-			r, ok := expectedResults[port.Name]
-			seen[port.Name] = true
-			assert.True(t, ok, "unexpected container port %s", port.Name)
-			assert.EqualValues(t, r.portNumber, port.ContainerPort)
-			assert.EqualValues(t, r.transportProtocol, port.Protocol)
-		}
-		for k := range expectedResults {
-			assert.True(t, seen[k], "the port %s wasn't included in the container ports", k)
-		}
-	})
+	for _, port := range ports {
+		r := expectedResults[port.Name]
+		r.seen = true
+		expectedResults[port.Name] = r
+		assert.EqualValues(t, r.portNumber, port.Port)
+		assert.EqualValues(t, r.transportProtocol, port.Protocol)
+	}
+	for k, v := range expectedResults {
+		assert.True(t, v.seen, "the port %s wasn't included in the service ports", k)
+	}
 }

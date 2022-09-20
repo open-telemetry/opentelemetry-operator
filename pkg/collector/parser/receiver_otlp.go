@@ -130,66 +130,6 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 	return ports, nil
 }
 
-// ContainerPorts returns all the container ports for all protocols in this parser.
-func (o *OTLPReceiverParser) ContainerPorts() ([]corev1.ContainerPort, error) {
-	ports := []corev1.ContainerPort{}
-
-	for _, protocol := range []struct {
-		name         string
-		defaultPorts []corev1.ContainerPort
-	}{
-		{
-			name: grpc,
-			defaultPorts: []corev1.ContainerPort{
-				{
-					Name:          portName(fmt.Sprintf("%s-grpc", o.name), defaultOTLPGRPCPort),
-					ContainerPort: defaultOTLPGRPCPort,
-					Protocol:      corev1.ProtocolTCP,
-				},
-			},
-		},
-		{
-			name: http,
-			defaultPorts: []corev1.ContainerPort{
-				{
-					Name:          portName(fmt.Sprintf("%s-http", o.name), defaultOTLPHTTPPort),
-					ContainerPort: defaultOTLPHTTPPort,
-					Protocol:      corev1.ProtocolTCP,
-				},
-				{
-					Name:          portName(fmt.Sprintf("%s-http-legacy", o.name), defaultOTLPHTTPLegacyPort),
-					ContainerPort: defaultOTLPHTTPLegacyPort,
-					Protocol:      corev1.ProtocolTCP,
-				},
-			},
-		},
-	} {
-		// do we have the protocol specified at all?
-		if receiverProtocol, ok := o.config[protocol.name]; ok {
-			// we have the specified protocol, we definitely need a container port
-			nameWithProtocol := fmt.Sprintf("%s-%s", o.name, protocol.name)
-			var protocolPort *corev1.ContainerPort
-
-			// do we have a configuration block for the protocol?
-			settings, ok := receiverProtocol.(map[interface{}]interface{})
-			if ok {
-				protocolPort = singleContainerPortFromConfigEndpoint(o.logger, nameWithProtocol, settings)
-			}
-
-			// have we parsed a port based on the configuration block?
-			// if not, we use the default port
-			if protocolPort == nil {
-				ports = append(ports, protocol.defaultPorts...)
-			} else {
-				protocolPort.Protocol = corev1.ProtocolTCP
-				ports = append(ports, *protocolPort)
-			}
-		}
-	}
-
-	return ports, nil
-}
-
 // ParserName returns the name of this parser.
 func (o *OTLPReceiverParser) ParserName() string {
 	return parserNameOTLP

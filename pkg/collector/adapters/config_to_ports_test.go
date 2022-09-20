@@ -110,34 +110,6 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	assert.ElementsMatch(t, expectedPorts, ports)
 }
 
-func TestExtractContainerPortsFromConfig(t *testing.T) {
-	// prepare
-	config, err := adapters.ConfigFromString(portConfigStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
-
-	// test
-	ports, err := adapters.ConfigToContainerPorts(logger, config)
-	assert.NoError(t, err)
-	assert.Len(t, ports, 11)
-
-	// verify
-	expectedPorts := []corev1.ContainerPort{
-		{Name: "examplereceiver", ContainerPort: 12345},
-		{Name: "examplereceiver-settings", ContainerPort: 12346},
-		{Name: "jaeger-custom-thrift-http", Protocol: "TCP", ContainerPort: 15268},
-		{Name: "jaeger-grpc", Protocol: "TCP", ContainerPort: 14250},
-		{Name: "jaeger-thrift-binary", Protocol: "UDP", ContainerPort: 6833},
-		{Name: "jaeger-thrift-compact", Protocol: "UDP", ContainerPort: 6831},
-		{Name: "otlp-2-grpc", Protocol: "TCP", ContainerPort: 55555},
-		{Name: "otlp-grpc", Protocol: "TCP", ContainerPort: 4317},
-		{Name: "otlp-http", Protocol: "TCP", ContainerPort: 4318},
-		{Name: "otlp-http-legacy", Protocol: "TCP", ContainerPort: 55681},
-		{Name: "zipkin", Protocol: "TCP", ContainerPort: 9411},
-	}
-	assert.ElementsMatch(t, expectedPorts, ports)
-}
-
 func TestNoPortsParsed(t *testing.T) {
 	for _, tt := range []struct {
 		expected  error
@@ -162,13 +134,10 @@ func TestNoPortsParsed(t *testing.T) {
 
 			// test
 			ports, err := adapters.ConfigToReceiverPorts(logger, config)
-			cPorts, cErr := adapters.ConfigToContainerPorts(logger, config)
 
 			// verify
 			assert.Nil(t, ports)
 			assert.Equal(t, tt.expected, err)
-			assert.Nil(t, cPorts)
-			assert.Equal(t, tt.expected, cErr)
 		})
 	}
 }
@@ -238,21 +207,12 @@ func TestParserFailed(t *testing.T) {
 }
 
 type mockParser struct {
-	portsFunc          func() ([]corev1.ServicePort, error)
-	containerPortsFunc func() ([]corev1.ContainerPort, error)
+	portsFunc func() ([]corev1.ServicePort, error)
 }
 
 func (m *mockParser) Ports() ([]corev1.ServicePort, error) {
 	if m.portsFunc != nil {
 		return m.portsFunc()
-	}
-
-	return nil, nil
-}
-
-func (m *mockParser) ContainerPorts() ([]corev1.ContainerPort, error) {
-	if m.containerPortsFunc != nil {
-		return m.containerPortsFunc()
 	}
 
 	return nil, nil

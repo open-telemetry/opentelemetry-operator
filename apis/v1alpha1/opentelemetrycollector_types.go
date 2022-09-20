@@ -83,17 +83,10 @@ type OpenTelemetryCollectorSpec struct {
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 	// Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator
 	// will attempt to infer the required ports by parsing the .Spec.Config property but this property can be
-	// used to open aditional ports that can't be inferred by the operator, like for custom receivers.
+	// used to open additional ports that can't be inferred by the operator, like for custom receivers.
 	// +optional
 	// +listType=atomic
 	Ports []v1.ServicePort `json:"ports,omitempty"`
-	// ContainerPorts allows a set of ports to be exposed by the underlying v1.Container. By default, the operator
-	// will attempt to infer the required ports by parsing the .Spec.Config property but this property can be
-	// used to open additional ports that can't be inferred by the operator, like for custom receivers.  Any ports
-	// specified here will overwrite inferred ports if they have the same name.
-	// +optional
-	// +listType=atomic
-	ContainerPorts []v1.ContainerPort `json:"containerPorts,omitempty"`
 	// ENV vars to set on the OpenTelemetry Collector's Pods. These can then in certain cases be
 	// consumed in the config file for the Collector.
 	// +optional

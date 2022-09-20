@@ -33,25 +33,13 @@ func TestParseEndpoint(t *testing.T) {
 		"endpoint": "0.0.0.0:1234",
 	})
 
-	t.Run("service port parsed", func(t *testing.T) {
-		// test
-		ports, err := builder.Ports()
+	// test
+	ports, err := builder.Ports()
 
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 1)
-		assert.EqualValues(t, 1234, ports[0].Port)
-	})
-
-	t.Run("container port parsed", func(t *testing.T) {
-		// test
-		ports, err := builder.ContainerPorts()
-
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 1)
-		assert.EqualValues(t, 1234, ports[0].ContainerPort)
-	})
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 1)
+	assert.EqualValues(t, 1234, ports[0].Port)
 }
 
 func TestFailedToParseEndpoint(t *testing.T) {
@@ -61,23 +49,12 @@ func TestFailedToParseEndpoint(t *testing.T) {
 		"endpoint": "0.0.0.0",
 	})
 
-	t.Run("no service ports", func(t *testing.T) {
-		// test
-		ports, err := builder.Ports()
+	// test
+	ports, err := builder.Ports()
 
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 0)
-	})
-
-	t.Run("no container ports", func(t *testing.T) {
-		// test
-		ports, err := builder.ContainerPorts()
-
-		// verify
-		assert.NoError(t, err)
-		assert.Len(t, ports, 0)
-	})
+	// verify
+	assert.NoError(t, err)
+	assert.Len(t, ports, 0)
 }
 
 func TestDownstreamParsers(t *testing.T) {
@@ -113,7 +90,7 @@ func TestDownstreamParsers(t *testing.T) {
 				assert.Equal(t, tt.parserName, builder.ParserName())
 			})
 
-			t.Run("assigns the expected service port", func(t *testing.T) {
+			t.Run("assigns the expected port", func(t *testing.T) {
 				// prepare
 				builder := tt.builder(logger, tt.receiverName, map[interface{}]interface{}{})
 
@@ -127,21 +104,7 @@ func TestDownstreamParsers(t *testing.T) {
 				assert.Equal(t, tt.receiverName, ports[0].Name)
 			})
 
-			t.Run("assigns the expected container port", func(t *testing.T) {
-				// prepare
-				builder := tt.builder(logger, tt.receiverName, map[interface{}]interface{}{})
-
-				// test
-				ports, err := builder.ContainerPorts()
-
-				// verify
-				assert.NoError(t, err)
-				assert.Len(t, ports, 1)
-				assert.EqualValues(t, tt.defaultPort, ports[0].ContainerPort)
-				assert.Equal(t, tt.receiverName, ports[0].Name)
-			})
-
-			t.Run("allows service port to be overridden", func(t *testing.T) {
+			t.Run("allows port to be overridden", func(t *testing.T) {
 				// prepare
 				builder := tt.builder(logger, tt.receiverName, map[interface{}]interface{}{
 					"endpoint": "0.0.0.0:65535",
@@ -154,22 +117,6 @@ func TestDownstreamParsers(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, ports, 1)
 				assert.EqualValues(t, 65535, ports[0].Port)
-				assert.Equal(t, tt.receiverName, ports[0].Name)
-			})
-
-			t.Run("allows container port to be overridden", func(t *testing.T) {
-				// prepare
-				builder := tt.builder(logger, tt.receiverName, map[interface{}]interface{}{
-					"endpoint": "0.0.0.0:65535",
-				})
-
-				// test
-				ports, err := builder.ContainerPorts()
-
-				// verify
-				assert.NoError(t, err)
-				assert.Len(t, ports, 1)
-				assert.EqualValues(t, 65535, ports[0].ContainerPort)
 				assert.Equal(t, tt.receiverName, ports[0].Name)
 			})
 		})
