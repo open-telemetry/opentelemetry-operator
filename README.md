@@ -35,6 +35,13 @@ spec:
           grpc:
           http:
     processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 500
+        spike_limit_mib: 100
+      batch:
+        send_batch_size: 1000
+        timeout: 2s
 
     exporters:
       logging:
