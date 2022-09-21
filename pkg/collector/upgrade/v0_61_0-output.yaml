@@ -1,0 +1,33 @@
+---
+extensions:
+  jaegerremotesampling:
+    source:
+      remote:
+        endpoint: jaeger-collector1:14250
+      reload_interval: 10s
+      file: /etc/strategy.json
+  jaegerremotesampling/2:
+    source:
+      remote:
+        endpoint: jaeger-collector2:14251
+        tls:
+          insecure: true
+receivers:
+  jaeger:
+    protocols:
+      grpc: null
+  jaeger/2:
+    protocols:
+      grpc: null
+
+service:
+  extensions:
+  - jaegerremotesampling
+  - jaegerremotesampling/2
+  pipelines:
+    traces:
+      exporters:
+      - nop
+      receivers:
+      - jaeger
+      - jaeger/2
