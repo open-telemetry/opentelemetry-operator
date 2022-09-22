@@ -37,11 +37,11 @@ spec:
     processors:
       memory_limiter:
         check_interval: 1s
-        limit_mib: 500
-        spike_limit_mib: 100
+        limit_percentage: 75
+        spike_limit_percentage: 15
       batch:
-        send_batch_size: 1000
-        timeout: 2s
+        send_batch_size: 10000
+        timeout: 10s
 
     exporters:
       logging:
