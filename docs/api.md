@@ -1896,6 +1896,15 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
           HorizontalPodAutoscalerBehavior configures the scaling behavior of the target in both Up and Down directions (scaleUp and scaleDown fields respectively).<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>targetCPUUtilization</b></td>
+        <td>integer</td>
+        <td>
+          TargetCPUUtilization sets the target average CPU used across all replicas. If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

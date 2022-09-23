@@ -36,3 +36,38 @@ spec:
           receivers: [otlp]
           processors: []
           exporters: [logging]
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest-set-utilization
+spec:
+  minReplicas: 1
+  maxReplicas: 2
+  autoscaler:
+    targetCPUUtilization: 50
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
+
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [logging]
