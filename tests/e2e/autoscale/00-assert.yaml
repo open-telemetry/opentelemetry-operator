@@ -4,7 +4,6 @@ metadata:
   name: simplest-collector
 status:
   readyReplicas: 1
-
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -16,4 +15,18 @@ spec:
 # This is not neccesarily exact.  We really just want to wait until this is no longer <unknown>
 status:
   currentCPUUtilizationPercentage: 20
-
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: simplest-set-utilization-collector
+spec:
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50

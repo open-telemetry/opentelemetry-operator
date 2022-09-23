@@ -119,6 +119,7 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 			} else {
 				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}
+			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics[0].Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
 		} else {
 			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
 			if params.Instance.Spec.MinReplicas != nil {
@@ -126,6 +127,7 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 			} else {
 				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}
+			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics[0].Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
 		}
 	}
 }
