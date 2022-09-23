@@ -47,6 +47,16 @@ func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, options
 	}
 }
 
+func (m *Manager) GetScrapeConfigs() map[string]*config.ScrapeConfig {
+	jobToScrapeConfig := map[string]*config.ScrapeConfig{}
+	for _, c := range m.configsMap {
+		for _, scrapeConfig := range c.ScrapeConfigs {
+			jobToScrapeConfig[scrapeConfig.JobName] = scrapeConfig
+		}
+	}
+	return jobToScrapeConfig
+}
+
 func (m *Manager) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.Config) error {
 	m.configsMap[source] = cfg
 

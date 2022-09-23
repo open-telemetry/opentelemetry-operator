@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/ghodss/yaml"
+	yaml2 "gopkg.in/yaml.v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -152,6 +154,7 @@ func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager
 	}
 	router := mux.NewRouter().UseEncodedPath()
 	router.Use(s.PrometheusMiddleware)
+	router.HandleFunc("/scrape_configs", s.ScrapeConfigsHandler).Methods("GET")
 	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
 	router.Path("/metrics").Handler(promhttp.Handler())
@@ -188,6 +191,23 @@ func (s *server) Shutdown(ctx context.Context) error {
 	s.logger.Info("Shutting down server...")
 	s.k8sClient.Close()
 	return s.server.Shutdown(ctx)
+}
+
+func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
+	configs := s.discoveryManager.GetScrapeConfigs()
+	configBytes, err := yaml2.Marshal(configs)
+	if err != nil {
+		errorHandler(err, w, r)
+	}
+	jsonConfig, err := yaml.YAMLToJSON(configBytes)
+	if err != nil {
+		errorHandler(err, w, r)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonConfig)
+	if err != nil {
+		errorHandler(err, w, r)
+	}
 }
 
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
