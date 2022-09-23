@@ -49,9 +49,11 @@ type consistentHashingAllocator struct {
 	targetItems map[string]*target.Item
 
 	log logr.Logger
+
+	filterFunction prehook.Hook
 }
 
-func newConsistentHashingAllocator(log logr.Logger) Allocator {
+func newConsistentHashingAllocator(log logr.Logger, opts ...AllocOption) Allocator {
 	config := consistent.Config{
 		PartitionCount:    1061,
 		ReplicationFactor: 5,
@@ -59,12 +61,22 @@ func newConsistentHashingAllocator(log logr.Logger) Allocator {
 		Hasher:            hasher{},
 	}
 	consistentHasher := consistent.New(nil, config)
-	return &consistentHashingAllocator{
+	chAllocator := &consistentHashingAllocator{
 		consistentHasher: consistentHasher,
 		collectors:       make(map[string]*Collector),
 		targetItems:      make(map[string]*target.Item),
 		log:              log,
 	}
+	for _, opt := range opts {
+		opt(chAllocator)
+	}
+
+	return chAllocator
+}
+
+// SetHook sets the filtering hook to use.
+func (c *consistentHashingAllocator) SetHook(hook prehook.Hook) {
+	c.filterFunction = hook
 }
 
 // addTargetToTargetItems assigns a target to the collector based on its hash and adds it to the allocator's targetItems
@@ -139,6 +151,10 @@ func (c *consistentHashingAllocator) handleCollectors(diff diff.Changes[*Collect
 func (c *consistentHashingAllocator) SetTargets(targets map[string]*target.Item) {
 	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", consistentHashingStrategyName))
 	defer timer.ObserveDuration()
+
+	if c.filterFunction != nil {
+		targets = c.filterFunction.Apply(targets)
+	}
 
 	c.m.Lock()
 	defer c.m.Unlock()

@@ -26,7 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
-type AllocatorProvider func(log logr.Logger) Allocator
+type AllocatorProvider func(log logr.Logger, opts ...AllocOption) Allocator
 
 var (
 	registry = map[string]AllocatorProvider{}
@@ -47,9 +47,17 @@ var (
 	}, []string{"method", "strategy"})
 )
 
-func New(name string, log logr.Logger) (Allocator, error) {
+type AllocOption func(Allocator)
+
+func WithFilter(hook prehook.Hook) AllocOption {
+	return func(allocator Allocator) {
+		allocator.SetHook(hook)
+	}
+}
+
+func New(name string, log logr.Logger, opts ...AllocOption) (Allocator, error) {
 	if p, ok := registry[name]; ok {
-		return p(log), nil
+		return p(log, opts...), nil
 	}
 	return nil, fmt.Errorf("unregistered strategy: %s", name)
 }
@@ -67,6 +75,7 @@ type Allocator interface {
 	SetTargets(targets map[string]*target.Item)
 	TargetItems() map[string]*target.Item
 	Collectors() map[string]*Collector
+	SetHook(hook prehook.Hook)
 }
 
 var _ consistent.Member = Collector{}

@@ -48,6 +48,13 @@ type leastWeightedAllocator struct {
 	targetItems map[string]*target.Item
 
 	log logr.Logger
+
+	filterFunction prehook.Hook
+}
+
+// SetHook sets the filtering hook to use.
+func (allocator *leastWeightedAllocator) SetHook(hook prehook.Hook) {
+	allocator.filterFunction = hook
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
@@ -157,6 +164,10 @@ func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*target.I
 	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", leastWeightedStrategyName))
 	defer timer.ObserveDuration()
 
+	if allocator.filterFunction != nil {
+		targets = allocator.filterFunction.Apply(targets)
+	}
+
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 
@@ -195,10 +206,16 @@ func (allocator *leastWeightedAllocator) SetCollectors(collectors map[string]*Co
 	}
 }
 
-func newLeastWeightedAllocator(log logr.Logger) Allocator {
-	return &leastWeightedAllocator{
+func newLeastWeightedAllocator(log logr.Logger, opts ...AllocOption) Allocator {
+	lwAllocator := &leastWeightedAllocator{
 		log:         log,
 		collectors:  make(map[string]*Collector),
 		targetItems: make(map[string]*target.Item),
 	}
+
+	for _, opt := range opts {
+		opt(lwAllocator)
+	}
+
+	return lwAllocator
 }

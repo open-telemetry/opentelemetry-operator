@@ -4543,6 +4543,13 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>filterStrategy</b></td>
+        <td>string</td>
+        <td>
+          FilterStrategy determines how to filter targets before allocating them among the collectors. The current options are no-op (no filtering) and relabel-config (drops targets based on prom relabel_config) The default is no-op<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>

@@ -24,6 +24,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
+	"github.com/prometheus/prometheus/model/relabel"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
@@ -42,9 +43,10 @@ type Manager struct {
 	logger     log.Logger
 	close      chan struct{}
 	configsMap map[allocatorWatcher.EventSource]*config.Config
+	hook       prehook.Hook
 }
 
-func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, options ...func(*discovery.Manager)) *Manager {
+func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, hook prehook.Hook, options ...func(*discovery.Manager)) *Manager {
 	manager := discovery.NewManager(ctx, logger, options...)
 
 	go func() {
@@ -58,6 +60,7 @@ func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, options
 		logger:     logger,
 		close:      make(chan struct{}),
 		configsMap: make(map[allocatorWatcher.EventSource]*config.Config),
+		hook:       hook,
 	}
 }
 
@@ -75,11 +78,17 @@ func (m *Manager) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.C
 	m.configsMap[source] = cfg
 
 	discoveryCfg := make(map[string]discovery.Configs)
+	relabelCfg := make(map[string][]*relabel.Config)
 
 	for _, value := range m.configsMap {
 		for _, scrapeConfig := range value.ScrapeConfigs {
 			discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
+			relabelCfg[scrapeConfig.JobName] = scrapeConfig.RelabelConfigs
 		}
+	}
+
+	if m.hook != nil {
+		m.hook.SetConfig(relabelCfg)
 	}
 	return m.manager.ApplyConfig(discoveryCfg)
 }

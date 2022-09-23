@@ -1699,6 +1699,12 @@ spec:
                     description: Enabled indicates whether to use a target allocation
                       mechanism for Prometheus targets or not.
                     type: boolean
+                  filterStrategy:
+                    description: FilterStrategy determines how to filter targets before
+                      allocating them among the collectors. The current options are
+                      no-op (no filtering) and relabel-config (drops targets based
+                      on prom relabel_config) The default is no-op
+                    type: string
                   image:
                     description: Image indicates the container image to use for the
                       OpenTelemetry TargetAllocator.

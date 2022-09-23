@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to load config file: %v", err)
 		os.Exit(1)
 	}
-	manager = NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger())
+	manager = NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger(), nil)
 
 	results = make(chan []string)
 	manager.Watch(func(targets map[string]*target.Item) {
