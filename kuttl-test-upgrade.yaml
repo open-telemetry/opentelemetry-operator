@@ -1,0 +1,13 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+artifactsDir: ./tests/_build/artifacts/
+kindContainers:
+  - local/opentelemetry-operator:e2e
+  - ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:v0.49.0
+commands:
+  - command: make cert-manager
+  - command: kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/download/v0.49.0/opentelemetry-operator.yaml
+  - command: kubectl rollout status -w deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system
+testDirs:
+  - ./tests/e2e-upgrade/
+timeout: 150
