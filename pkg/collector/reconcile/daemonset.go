@@ -17,15 +17,19 @@ package reconcile
 import (
 	"context"
 	"fmt"
-
 	appsv1 "k8s.io/api/apps/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"time"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
+
+const DeleteDaemonSetWaitTimeOutInSeconds = 300
 
 // +kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 
@@ -70,6 +74,24 @@ func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.Da
 			return fmt.Errorf("failed to get: %w", err)
 		}
 
+		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
+		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+			params.Log.V(2).Info("Spec.Selector change detected, trying to delete and re-create", "daemonset.name", existing.Name, "daemonset.namespace", existing.Namespace)
+
+			do := &client.DeleteOptions{}
+			client.PropagationPolicy(metav1.DeletePropagationForeground).ApplyToDelete(do)
+			if err := params.Client.Delete(ctx, existing, do); err != nil {
+				return fmt.Errorf("failed to request deleting daemonset: %w", err)
+			}
+			if err := waitDaemonSetDeleted(ctx, params, nns); err != nil {
+				return fmt.Errorf("failed to delete daemonset: %w", err)
+			}
+			if err := params.Client.Create(ctx, &desired); err != nil {
+				return fmt.Errorf("failed to create new daemonset: %w", err)
+			}
+			continue
+		}
+
 		// it exists already, merge the two if the end result isn't identical to the existing one
 		updated := existing.DeepCopy()
 		if updated.Annotations == nil {
@@ -88,9 +110,6 @@ func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.Da
 		for k, v := range desired.ObjectMeta.Labels {
 			updated.ObjectMeta.Labels[k] = v
 		}
-
-		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
-		updated.Spec.Selector = existing.Spec.Selector.DeepCopy()
 
 		patch := client.MergeFrom(existing)
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
@@ -135,4 +154,22 @@ func deleteDaemonSets(ctx context.Context, params Params, expected []appsv1.Daem
 	}
 
 	return nil
+}
+
+func waitDaemonSetDeleted(ctx context.Context, params Params, nns types.NamespacedName) error {
+	for i := 0; i < DeleteDaemonSetWaitTimeOutInSeconds; i++ {
+		existing := &appsv1.DaemonSet{}
+		err := params.Client.Get(ctx, nns, existing)
+		if err != nil && k8serrors.IsNotFound(err) {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("wait Interrupted for updating daemonset.name %s, daemonset.namespace %s", nns.Name, nns.Namespace)
+		case <-time.After(time.Second):
+		}
+	}
+	return fmt.Errorf("wait timeout for updating daemonset.name %s, daemonset.namespace %s", nns.Name, nns.Namespace)
 }

@@ -17,6 +17,9 @@ package reconcile
 import (
 	"context"
 	"fmt"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +33,8 @@ import (
 )
 
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
+
+const DeleteDeploymentWaitTimeOutInSeconds = 300
 
 // Deployments reconciles the deployment(s) required for the instance in the current context.
 func Deployments(ctx context.Context, params Params) error {
@@ -76,6 +81,24 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			return fmt.Errorf("failed to get: %w", err)
 		}
 
+		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
+		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+			params.Log.V(2).Info("Spec.Selector change detected, trying to delete and re-create", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)
+
+			do := &client.DeleteOptions{}
+			client.PropagationPolicy(metav1.DeletePropagationForeground).ApplyToDelete(do)
+			if err := params.Client.Delete(ctx, existing); err != nil {
+				return fmt.Errorf("failed to delete deployment: %w", err)
+			}
+			if err := waitDeploymentDeleted(ctx, params, nns); err != nil {
+				return fmt.Errorf("failed to delete deployment: %w", err)
+			}
+			if err := params.Client.Create(ctx, &desired); err != nil {
+				return fmt.Errorf("failed to create new deployment: %w", err)
+			}
+			continue
+		}
+
 		// it exists already, merge the two if the end result isn't identical to the existing one
 		updated := existing.DeepCopy()
 		if updated.Annotations == nil {
@@ -94,9 +117,6 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 		for k, v := range desired.ObjectMeta.Labels {
 			updated.ObjectMeta.Labels[k] = v
 		}
-
-		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
-		updated.Spec.Selector = existing.Spec.Selector.DeepCopy()
 
 		patch := client.MergeFrom(existing)
 
@@ -155,4 +175,22 @@ func currentReplicasWithHPA(spec v1alpha1.OpenTelemetryCollectorSpec, curr int32
 	}
 
 	return curr
+}
+
+func waitDeploymentDeleted(ctx context.Context, params Params, nns types.NamespacedName) error {
+	for i := 0; i < DeleteDeploymentWaitTimeOutInSeconds; i++ {
+		existing := &appsv1.Deployment{}
+		err := params.Client.Get(ctx, nns, existing)
+		if err != nil && k8serrors.IsNotFound(err) {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("wait Interrupted for updating deployment.name %s, deployment.namespace %s", nns.Name, nns.Namespace)
+		case <-time.After(time.Second):
+		}
+	}
+	return fmt.Errorf("wait timeout for updating deployment.name %s, deployment.namespace %s", nns.Name, nns.Namespace)
 }
