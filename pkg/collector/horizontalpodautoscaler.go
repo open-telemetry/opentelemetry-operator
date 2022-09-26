@@ -28,8 +28,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-const defaultCPUTarget int32 = 90
-
 func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
 	autoscalingVersion := cfg.AutoscalingVersion()
 
@@ -37,7 +35,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
 
 	annotations := Annotations(otelcol)
-	cpuTarget := defaultCPUTarget
+
 	var result client.Object
 
 	objectMeta := metav1.ObjectMeta{
@@ -54,7 +52,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				Name: corev1.ResourceCPU,
 				Target: autoscalingv2beta2.MetricTarget{
 					Type:               autoscalingv2beta2.UtilizationMetricType,
-					AverageUtilization: &cpuTarget,
+					AverageUtilization: otelcol.Spec.Autoscaler.TargetCPUUtilization,
 				},
 			},
 		}
@@ -87,7 +85,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				Name: corev1.ResourceCPU,
 				Target: autoscalingv2.MetricTarget{
 					Type:               autoscalingv2.UtilizationMetricType,
-					AverageUtilization: &cpuTarget,
+					AverageUtilization: otelcol.Spec.Autoscaler.TargetCPUUtilization,
 				},
 			},
 		}

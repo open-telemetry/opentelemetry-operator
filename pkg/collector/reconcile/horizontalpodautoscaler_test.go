@@ -109,6 +109,7 @@ func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
 
 	minReplicas := int32(3)
 	maxReplicas := int32(5)
+	cpuUtilization := int32(90)
 
 	mockAutoDetector := &mockAutoDetect{
 		HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
@@ -147,6 +148,9 @@ func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
 				Config:      string(configYAML),
 				Replicas:    &minReplicas,
 				MaxReplicas: &maxReplicas,
+				Autoscaler: &v1alpha1.AutoscalerSpec{
+					TargetCPUUtilization: &cpuUtilization,
+				},
 			},
 		},
 		Scheme:   testScheme,

@@ -41,6 +41,7 @@ func TestHPA(t *testing.T) {
 
 	var minReplicas int32 = 3
 	var maxReplicas int32 = 5
+	var cpuUtilization int32 = 90
 
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -49,6 +50,9 @@ func TestHPA(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Replicas:    &minReplicas,
 			MaxReplicas: &maxReplicas,
+			Autoscaler: &v1alpha1.AutoscalerSpec{
+				TargetCPUUtilization: &cpuUtilization,
+			},
 		},
 	}
 
