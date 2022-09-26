@@ -89,6 +89,11 @@ func Service(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol.Name))
 }
 
+// Ingress builds the ingress name based on the instance.
+func Ingress(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return DNSName(Truncate("%s-ingress", 63, otelcol.Name))
+}
+
 // TAService returns the name to use for the TargetAllocator service.
 func TAService(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol.Name))
