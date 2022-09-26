@@ -103,6 +103,11 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 				true,
 			},
 			{
+				reconcile.Ingresses,
+				"ingresses",
+				true,
+			},
+			{
 				reconcile.Self,
 				"opentelemetry",
 				true,
