@@ -17,8 +17,30 @@ package v1alpha1
 import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// Ingress is used to specify how OpenTelemetry Collector is exposed. This
+// functionality is only available if one of the valid modes is set.
+// Valid modes are: deployment, daemonset and statefulset.
+type Ingress struct {
+	// Type default value is: none
+	// Supported types are: ingress
+	Type string `json:"type,omitempty"`
+
+	// Hostname by which the ingress proxy can be reached.
+	Hostname string `json:"hostname,omitempty"`
+
+	// Annotations to add to ingress.
+	// e.g. 'cert-manager.io/cluster-issuer: "letsencrypt"'
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// TLS configuration.
+	// +optional
+	TLS []networkingv1.IngressTLS `json:"tls,omitempty"`
+}
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
@@ -107,6 +129,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +listType=atomic
 	Volumes []v1.Volume `json:"volumes,omitempty"`
+	// Ingress is used to specify how OpenTelemetry Collector is exposed. This
+	// functionality is only available if one of the valid modes is set.
+	// Valid modes are: deployment, daemonset and statefulset.
+	// +optional
+	Ingress Ingress `json:"ingress,omitempty"`
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
