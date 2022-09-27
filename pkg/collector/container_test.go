@@ -153,49 +153,6 @@ service:
 			},
 		},
 		{
-			description: "invalid port name",
-			specConfig:  goodConfig,
-			specPorts: []corev1.ServicePort{
-				{
-					// this port name contains a non alphanumeric character, which is invalid.
-					Name:     "-test🦄port",
-					Port:     12345,
-					Protocol: corev1.ProtocolTCP,
-				},
-			},
-			expectedPorts: []corev1.ContainerPort{
-				{
-					Name:          "examplereceiver",
-					ContainerPort: 12345,
-				},
-				metricContainerPort,
-			},
-		},
-		{
-			description: "long port name",
-			specConfig:  goodConfig,
-			specPorts: []corev1.ServicePort{
-				{
-					// this port name is longer than 15 characters, which is invalid.
-					Name:     "testportaaaabbbb",
-					Port:     5,
-					Protocol: corev1.ProtocolTCP,
-				},
-			},
-			expectedPorts: []corev1.ContainerPort{
-				{
-					Name:          "examplereceiver",
-					ContainerPort: 12345,
-				},
-				metricContainerPort,
-				{
-					Name:          "testportaaaabbb",
-					ContainerPort: 5,
-					Protocol:      corev1.ProtocolTCP,
-				},
-			},
-		},
-		{
 			description: "duplicate port name",
 			specConfig:  goodConfig,
 			specPorts: []corev1.ServicePort{
