@@ -184,7 +184,7 @@ container-push:
 
 .PHONY: container-target-allocator
 container-target-allocator:
-	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
+	docker buildx build --platform linux/amd64 -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
 .PHONY: start-kind
 start-kind:

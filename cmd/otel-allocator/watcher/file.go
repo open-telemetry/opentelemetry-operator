@@ -12,6 +12,7 @@ import (
 type FileWatcher struct {
 	configFilePath string
 	watcher        *fsnotify.Watcher
+	closer         chan bool
 }
 
 func newConfigMapWatcher(logger logr.Logger, config config.CLIConfig) (FileWatcher, error) {
@@ -24,6 +25,7 @@ func newConfigMapWatcher(logger logr.Logger, config config.CLIConfig) (FileWatch
 	return FileWatcher{
 		configFilePath: *config.ConfigFilePath,
 		watcher:        fileWatcher,
+		closer:         make(chan bool),
 	}, nil
 }
 
@@ -37,6 +39,8 @@ func (f *FileWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error
 	go func() {
 		for {
 			select {
+			case _ = <-f.closer:
+				return
 			case fileEvent := <-f.watcher.Events:
 				if fileEvent.Op == fsnotify.Create {
 					upstreamEvents <- Event{
@@ -52,5 +56,6 @@ func (f *FileWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error
 }
 
 func (f *FileWatcher) Close() error {
+	f.closer <- true
 	return f.watcher.Close()
 }
