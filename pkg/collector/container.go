@@ -79,7 +79,8 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	})
 
 	if otelcol.Spec.TargetAllocator.Enabled {
-		// We need to add a SHARD here so the collector is able to keep after the hashmod operation
+		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
+		// added by default by the operator generator.
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "SHARD",
 			Value: "0",

@@ -66,6 +66,7 @@ func Load(file string) (Config, error) {
 }
 
 func unmarshal(cfg *Config, configFile string) error {
+
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err

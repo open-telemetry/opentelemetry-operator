@@ -193,6 +193,9 @@ func (s *server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
+// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
+// The target allocator first marshals these configurations such that the underlying prometheus marshalling is used.
+// After that, the YAML is converted in to a JSON format for consumers to use.
 func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 	configs := s.discoveryManager.GetScrapeConfigs()
 	configBytes, err := yaml2.Marshal(configs)
@@ -203,6 +206,7 @@ func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errorHandler(err, w, r)
 	}
+	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(jsonConfig)
 	if err != nil {
