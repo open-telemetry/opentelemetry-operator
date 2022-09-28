@@ -83,7 +83,7 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 
 			do := &client.DeleteOptions{}
 			client.PropagationPolicy(metav1.DeletePropagationForeground).ApplyToDelete(do)
-			if err := params.Client.Delete(ctx, existing); err != nil {
+			if err := params.Client.Delete(ctx, existing, do); err != nil {
 				return fmt.Errorf("failed to delete statefulset: %w", err)
 			}
 			if err := waitStatefulSetDeleted(ctx, params, nns); err != nil {

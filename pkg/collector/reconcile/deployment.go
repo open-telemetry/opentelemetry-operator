@@ -88,7 +88,7 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 
 			do := &client.DeleteOptions{}
 			client.PropagationPolicy(metav1.DeletePropagationForeground).ApplyToDelete(do)
-			if err := params.Client.Delete(ctx, existing); err != nil {
+			if err := params.Client.Delete(ctx, existing, do); err != nil {
 				return fmt.Errorf("failed to delete deployment: %w", err)
 			}
 			if err := waitDeploymentDeleted(ctx, params, nns); err != nil {
