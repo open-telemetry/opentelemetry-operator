@@ -1,5 +1,16 @@
 Changes by Version
 ==================
+0.61.0
+-------------------
+### 🚀 New components 🚀
+* [HPA] Add targetCPUUtilization field to collector config ([#1066](https://github.com/open-telemetry/opentelemetry-operator/pull/1066), [@moh-osman3](https://github.com/moh-osman3))
+### 💡 Enhancements 💡
+* Add default settings to README ([#1114](https://github.com/open-telemetry/opentelemetry-operator/pull/1114), [@timbuchwaldt](https://github.com/timbuchwaldt))
+
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.61.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.61.0)
+* [OpenTelemetry Contrib - v0.61.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.61.0)
+
 0.60.0
 -------------------
 ### 🚀 New components 🚀
