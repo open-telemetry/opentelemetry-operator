@@ -3,20 +3,20 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/ghodss/yaml"
-	yaml2 "gopkg.in/yaml.v2"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/ghodss/yaml"
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	yaml2 "gopkg.in/yaml.v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
