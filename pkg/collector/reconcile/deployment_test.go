@@ -342,6 +342,25 @@ func TestExpectedDeployments(t *testing.T) {
 		assert.True(t, exists)
 
 	})
+
+	t.Run("change Spec.Selector should recreate deployment", func(t *testing.T) {
+
+		oldDeploy := collector.Deployment(param.Config, logger, param.Instance)
+		oldDeploy.Spec.Selector.MatchLabels["app.kubernetes.io/version"] = "latest"
+		oldDeploy.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
+		err := expectedDeployments(context.Background(), param, []v1.Deployment{oldDeploy})
+		assert.NoError(t, err)
+
+		err = expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		assert.NoError(t, err)
+
+		actual := v1.Deployment{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, expectedDeploy.Spec.Selector.MatchLabels, actual.Spec.Selector.MatchLabels)
+	})
 }
 
 func TestCurrentReplicasWithHPA(t *testing.T) {

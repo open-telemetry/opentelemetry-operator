@@ -132,4 +132,23 @@ func TestExpectedStatefulsets(t *testing.T) {
 		assert.True(t, exists)
 
 	})
+
+	t.Run("change Spec.Selector should recreate statefulset", func(t *testing.T) {
+
+		oldSs := collector.StatefulSet(param.Config, logger, param.Instance)
+		oldSs.Spec.Selector.MatchLabels["app.kubernetes.io/version"] = "latest"
+		oldSs.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
+		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{oldSs})
+		assert.NoError(t, err)
+
+		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		assert.NoError(t, err)
+
+		actual := v1.StatefulSet{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, expectedSs.Spec.Selector.MatchLabels, actual.Spec.Selector.MatchLabels)
+	})
 }
