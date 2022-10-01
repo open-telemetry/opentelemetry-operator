@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -167,6 +168,14 @@ func main() {
 	if strings.Contains(watchNamespace, ",") {
 		mgrOptions.Namespace = ""
 		mgrOptions.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(watchNamespace, ","))
+	}
+
+	leaseTime, found := os.LookupEnv("LEASE_TIME")
+	if found {
+		leaseTime, _ := strconv.Atoi(leaseTime)
+		leaseDuration = time.Second * time.Duration(leaseTime)
+		mgrOptions.LeaseDuration = &leaseDuration
+		setupLog.Info("Using custom lease time", "leaseDuration", leaseDuration)
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
