@@ -22,7 +22,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -79,9 +78,7 @@ func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.Da
 		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
 			params.Log.V(2).Info("Spec.Selector change detected, trying to delete and re-create", "daemonset.name", existing.Name, "daemonset.namespace", existing.Namespace)
 
-			do := &client.DeleteOptions{}
-			client.PropagationPolicy(metav1.DeletePropagationForeground).ApplyToDelete(do)
-			if err := params.Client.Delete(ctx, existing, do); err != nil {
+			if err := params.Client.Delete(ctx, existing); err != nil {
 				return fmt.Errorf("failed to request deleting daemonset: %w", err)
 			}
 			if err := waitDaemonSetDeleted(ctx, params, nns); err != nil {

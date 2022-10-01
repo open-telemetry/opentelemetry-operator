@@ -19,10 +19,8 @@ import (
 	"fmt"
 	"time"
 
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	appsv1 "k8s.io/api/apps/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -81,9 +79,7 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
 			params.Log.V(2).Info("Spec.Selector change detected, trying to delete and re-create", "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
 
-			do := &client.DeleteOptions{}
-			client.PropagationPolicy(metav1.DeletePropagationForeground).ApplyToDelete(do)
-			if err := params.Client.Delete(ctx, existing, do); err != nil {
+			if err := params.Client.Delete(ctx, existing); err != nil {
 				return fmt.Errorf("failed to delete statefulset: %w", err)
 			}
 			if err := waitStatefulSetDeleted(ctx, params, nns); err != nil {
