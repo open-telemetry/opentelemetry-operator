@@ -15,11 +15,11 @@
 package v1alpha1
 
 import (
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	v1 "k8s.io/api/core/v1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -241,7 +241,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					MaxReplicas: &zero,
 				},
 			},
-			expectedErr: "maxReplicas should be defined and more than one",
+			expectedErr: "maxReplicas should be defined and one or more",
 		},
 		{
 			name: "invalid replicas, greater than max",
