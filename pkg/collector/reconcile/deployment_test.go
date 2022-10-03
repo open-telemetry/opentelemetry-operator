@@ -348,24 +348,29 @@ func TestExpectedDeployments(t *testing.T) {
 		oldDeploy := collector.Deployment(param.Config, logger, param.Instance)
 		oldDeploy.Spec.Selector.MatchLabels["app.kubernetes.io/version"] = "latest"
 		oldDeploy.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
+		oldDeploy.Name = "update-deploy"
+
 		err := expectedDeployments(context.Background(), param, []v1.Deployment{oldDeploy})
 		assert.NoError(t, err)
-
-		err = expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: oldDeploy.Name})
 		assert.NoError(t, err)
-		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+		assert.True(t, exists)
+
+		newDeploy := collector.Deployment(param.Config, logger, param.Instance)
+		newDeploy.Name = oldDeploy.Name
+		err = expectedDeployments(context.Background(), param, []v1.Deployment{newDeploy})
+		assert.NoError(t, err)
+		exists, err = populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: oldDeploy.Name})
 		assert.NoError(t, err)
 		assert.False(t, exists)
 
-		err = expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		err = expectedDeployments(context.Background(), param, []v1.Deployment{newDeploy})
 		assert.NoError(t, err)
-
 		actual := v1.Deployment{}
-		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
-
+		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldDeploy.Name})
 		assert.NoError(t, err)
 		assert.True(t, exists)
-		assert.Equal(t, expectedDeploy.Spec.Selector.MatchLabels, actual.Spec.Selector.MatchLabels)
+		assert.Equal(t, newDeploy.Spec.Selector.MatchLabels, actual.Spec.Selector.MatchLabels)
 	})
 }
 

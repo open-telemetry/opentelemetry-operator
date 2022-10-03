@@ -136,24 +136,28 @@ func TestExpectedDaemonsets(t *testing.T) {
 		oldDs := collector.DaemonSet(param.Config, logger, param.Instance)
 		oldDs.Spec.Selector.MatchLabels["app.kubernetes.io/version"] = "latest"
 		oldDs.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
+		oldDs.Name = "update-ds"
+
 		err := expectedDaemonSets(context.Background(), param, []v1.DaemonSet{oldDs})
 		assert.NoError(t, err)
-
-		err = expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		exists, err := populateObjectIfExists(t, &v1.DaemonSet{}, types.NamespacedName{Namespace: "default", Name: oldDs.Name})
 		assert.NoError(t, err)
+		assert.True(t, exists)
 
-		exists, err := populateObjectIfExists(t, &v1.DaemonSet{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+		newDs := collector.DaemonSet(param.Config, logger, param.Instance)
+		newDs.Name = oldDs.Name
+		err = expectedDaemonSets(context.Background(), param, []v1.DaemonSet{newDs})
+		assert.NoError(t, err)
+		exists, err = populateObjectIfExists(t, &v1.DaemonSet{}, types.NamespacedName{Namespace: "default", Name: oldDs.Name})
 		assert.NoError(t, err)
 		assert.False(t, exists)
 
-		err = expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		err = expectedDaemonSets(context.Background(), param, []v1.DaemonSet{newDs})
 		assert.NoError(t, err)
-
 		actual := v1.DaemonSet{}
-		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
-
+		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldDs.Name})
 		assert.NoError(t, err)
 		assert.True(t, exists)
-		assert.Equal(t, expectedDs.Spec.Selector.MatchLabels, actual.Spec.Selector.MatchLabels)
+		assert.Equal(t, newDs.Spec.Selector.MatchLabels, actual.Spec.Selector.MatchLabels)
 	})
 }
