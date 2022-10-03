@@ -28,8 +28,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
-const DeleteDaemonSetWaitTimeOutInSeconds = 300
-
 // +kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 
 // DaemonSets reconciles the daemon set(s) required for the instance in the current context.

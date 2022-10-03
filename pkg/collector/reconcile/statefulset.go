@@ -30,8 +30,6 @@ import (
 
 // +kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 
-const DeleteStatefulSetWaitTimeOutInSeconds = 300
-
 // StatefulSets reconciles the stateful set(s) required for the instance in the current context.
 func StatefulSets(ctx context.Context, params Params) error {
 
