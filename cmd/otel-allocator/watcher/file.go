@@ -53,7 +53,7 @@ func (f *FileWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error
 	go func() {
 		for {
 			select {
-			case _ = <-f.closer:
+			case <-f.closer:
 				return
 			case fileEvent := <-f.watcher.Events:
 				if fileEvent.Op == fsnotify.Create {

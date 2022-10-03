@@ -208,23 +208,23 @@ func (s *server) Shutdown(ctx context.Context) error {
 }
 
 // ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
-// The target allocator first marshals these configurations such that the underlying prometheus marshalling is used.
+// The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
 // After that, the YAML is converted in to a JSON format for consumers to use.
 func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 	configs := s.discoveryManager.GetScrapeConfigs()
 	configBytes, err := yaml2.Marshal(configs)
 	if err != nil {
-		errorHandler(err, w, r)
+		s.errorHandler(err, w)
 	}
 	jsonConfig, err := yaml.YAMLToJSON(configBytes)
 	if err != nil {
-		errorHandler(err, w, r)
+		s.errorHandler(err, w)
 	}
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(jsonConfig)
 	if err != nil {
-		errorHandler(err, w, r)
+		s.errorHandler(err, w)
 	}
 }
 
@@ -233,7 +233,7 @@ func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
 	for _, v := range s.allocator.TargetItems() {
 		displayData[v.JobName] = allocation.LinkJSON{Link: v.Link.Link}
 	}
-	jsonHandler(s.logger, w, displayData)
+	s.jsonHandler(w, displayData)
 }
 
 // PrometheusMiddleware implements mux.MiddlewareFunc.
@@ -257,33 +257,37 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	jobId, err := url.QueryUnescape(params["job_id"])
 	if err != nil {
-		errorHandler(w)
+		s.errorHandler(err, w)
 		return
 	}
 
 	if len(q) == 0 {
 		displayData := allocation.GetAllTargetsByJob(jobId, compareMap, s.allocator)
-		jsonHandler(s.logger, w, displayData)
+		s.jsonHandler(w, displayData)
 
 	} else {
 		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], jobId, compareMap, s.allocator)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
-			jsonHandler(s.logger, w, []interface{}{})
+			s.jsonHandler(w, []interface{}{})
 			return
 		}
-		jsonHandler(s.logger, w, tgs)
+		s.jsonHandler(w, tgs)
 	}
 }
 
-func errorHandler(w http.ResponseWriter) {
+func (s *server) errorHandler(err error, w http.ResponseWriter) {
 	w.WriteHeader(500)
+	jsonErr := json.NewEncoder(w).Encode(err)
+	if jsonErr != nil {
+		s.logger.Error(jsonErr, "failed to encode error message")
+	}
 }
 
-func jsonHandler(logger logr.Logger, w http.ResponseWriter, data interface{}) {
+func (s *server) jsonHandler(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
-		logger.Error(err, "failed to encode data for http response")
+		s.logger.Error(err, "failed to encode data for http response")
 	}
 }
