@@ -238,7 +238,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid max replicas",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					MaxReplicas: &one,
+					MaxReplicas: &zero,
 				},
 			},
 			expectedErr: "maxReplicas should be defined and more than one",

@@ -133,7 +133,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 
 	// validate autoscale with horizontal pod autoscaler
 	if r.Spec.MaxReplicas != nil {
-		if *r.Spec.MaxReplicas <= int32(1) {
+		if *r.Spec.MaxReplicas < int32(1) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, maxReplicas should be defined and more than one")
 		}
 
@@ -150,13 +150,11 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		}
 
 		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.Behavior != nil {
-			if r.Spec.Autoscaler.Behavior.ScaleDown != nil && r.Spec.Autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds != nil &&
-				*r.Spec.Autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(1) {
+			if r.Spec.Autoscaler.Behavior.ScaleDown != nil && *r.Spec.Autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(1) {
 				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown should be one or more")
 			}
 
-			if r.Spec.Autoscaler.Behavior.ScaleUp != nil && r.Spec.Autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds != nil &&
-				*r.Spec.Autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(1) {
+			if r.Spec.Autoscaler.Behavior.ScaleUp != nil && *r.Spec.Autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(1) {
 				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
 			}
 		}
