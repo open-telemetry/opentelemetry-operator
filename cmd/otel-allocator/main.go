@@ -214,17 +214,17 @@ func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 	configs := s.discoveryManager.GetScrapeConfigs()
 	configBytes, err := yaml2.Marshal(configs)
 	if err != nil {
-		s.errorHandler(err, w)
+		s.errorHandler(w, err)
 	}
 	jsonConfig, err := yaml.YAMLToJSON(configBytes)
 	if err != nil {
-		s.errorHandler(err, w)
+		s.errorHandler(w, err)
 	}
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(jsonConfig)
 	if err != nil {
-		s.errorHandler(err, w)
+		s.errorHandler(w, err)
 	}
 }
 
@@ -257,7 +257,7 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	jobId, err := url.QueryUnescape(params["job_id"])
 	if err != nil {
-		s.errorHandler(err, w)
+		s.errorHandler(w, err)
 		return
 	}
 
@@ -276,12 +276,9 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *server) errorHandler(err error, w http.ResponseWriter) {
+func (s *server) errorHandler(w http.ResponseWriter, err error) {
 	w.WriteHeader(500)
-	jsonErr := json.NewEncoder(w).Encode(err)
-	if jsonErr != nil {
-		s.logger.Error(jsonErr, "failed to encode error message")
-	}
+	s.jsonHandler(w, err)
 }
 
 func (s *server) jsonHandler(w http.ResponseWriter, data interface{}) {
