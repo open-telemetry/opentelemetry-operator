@@ -76,16 +76,10 @@ func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.Da
 
 		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
 		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-			params.Log.V(2).Info("Spec.Selector change detected, trying to delete and re-create", "daemonset.name", existing.Name, "daemonset.namespace", existing.Namespace)
+			params.Log.V(2).Info("Spec.Selector change detected, trying to delete, the new collector daemonset will be created in the next reconcile cycle", "daemonset.name", existing.Name, "daemonset.namespace", existing.Namespace)
 
 			if err := params.Client.Delete(ctx, existing); err != nil {
 				return fmt.Errorf("failed to request deleting daemonset: %w", err)
-			}
-			if err := waitDaemonSetDeleted(ctx, params, nns); err != nil {
-				return fmt.Errorf("failed to delete daemonset: %w", err)
-			}
-			if err := params.Client.Create(ctx, &desired); err != nil {
-				return fmt.Errorf("failed to create new daemonset: %w", err)
 			}
 			continue
 		}

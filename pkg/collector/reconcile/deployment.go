@@ -17,8 +17,6 @@ package reconcile
 import (
 	"context"
 	"fmt"
-	"time"
-
 	appsv1 "k8s.io/api/apps/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -82,16 +80,10 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 
 		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
 		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-			params.Log.V(2).Info("Spec.Selector change detected, trying to delete and re-create", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)
+			params.Log.V(2).Info("Spec.Selector change detected, trying to delete, the new collector deployment will be created in the next reconcile cycle ", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)
 
 			if err := params.Client.Delete(ctx, existing); err != nil {
 				return fmt.Errorf("failed to delete deployment: %w", err)
-			}
-			if err := waitDeploymentDeleted(ctx, params, nns); err != nil {
-				return fmt.Errorf("failed to delete deployment: %w", err)
-			}
-			if err := params.Client.Create(ctx, &desired); err != nil {
-				return fmt.Errorf("failed to create new deployment: %w", err)
 			}
 			continue
 		}
@@ -172,22 +164,4 @@ func currentReplicasWithHPA(spec v1alpha1.OpenTelemetryCollectorSpec, curr int32
 	}
 
 	return curr
-}
-
-func waitDeploymentDeleted(ctx context.Context, params Params, nns types.NamespacedName) error {
-	for i := 0; i < DeleteDeploymentWaitTimeOutInSeconds; i++ {
-		existing := &appsv1.Deployment{}
-		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && k8serrors.IsNotFound(err) {
-			return nil
-		} else if err != nil {
-			return err
-		}
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("wait Interrupted for updating deployment.name %s, deployment.namespace %s", nns.Name, nns.Namespace)
-		case <-time.After(time.Second):
-		}
-	}
-	return fmt.Errorf("wait timeout for updating deployment.name %s, deployment.namespace %s", nns.Name, nns.Namespace)
 }

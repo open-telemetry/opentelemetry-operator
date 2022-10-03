@@ -353,9 +353,15 @@ func TestExpectedDeployments(t *testing.T) {
 
 		err = expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
+		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+		err = expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
-		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 
 		assert.NoError(t, err)
 		assert.True(t, exists)

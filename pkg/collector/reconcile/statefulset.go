@@ -77,16 +77,10 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 
 		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
 		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-			params.Log.V(2).Info("Spec.Selector change detected, trying to delete and re-create", "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
+			params.Log.V(2).Info("Spec.Selector change detected, trying to delete, the new collector statfulset will be created in the next reconcile cycle", "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
 
 			if err := params.Client.Delete(ctx, existing); err != nil {
 				return fmt.Errorf("failed to delete statefulset: %w", err)
-			}
-			if err := waitStatefulSetDeleted(ctx, params, nns); err != nil {
-				return fmt.Errorf("failed to delete statefulset: %w", err)
-			}
-			if err := params.Client.Create(ctx, &desired); err != nil {
-				return fmt.Errorf("failed to create new statefulset: %w", err)
 			}
 			continue
 		}
