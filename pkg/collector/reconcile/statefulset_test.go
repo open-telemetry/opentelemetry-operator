@@ -142,6 +142,8 @@ func TestExpectedStatefulsets(t *testing.T) {
 		assert.NoError(t, err)
 
 		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		assert.NoError(t, err)
+
 		exists, err := populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		assert.NoError(t, err)
 		assert.False(t, exists)

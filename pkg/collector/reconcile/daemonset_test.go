@@ -140,6 +140,8 @@ func TestExpectedDaemonsets(t *testing.T) {
 		assert.NoError(t, err)
 
 		err = expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		assert.NoError(t, err)
+
 		exists, err := populateObjectIfExists(t, &v1.DaemonSet{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		assert.NoError(t, err)
 		assert.False(t, exists)

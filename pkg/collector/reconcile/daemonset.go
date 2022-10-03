@@ -17,7 +17,6 @@ package reconcile
 import (
 	"context"
 	"fmt"
-	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -146,22 +145,4 @@ func deleteDaemonSets(ctx context.Context, params Params, expected []appsv1.Daem
 	}
 
 	return nil
-}
-
-func waitDaemonSetDeleted(ctx context.Context, params Params, nns types.NamespacedName) error {
-	for i := 0; i < DeleteDaemonSetWaitTimeOutInSeconds; i++ {
-		existing := &appsv1.DaemonSet{}
-		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && k8serrors.IsNotFound(err) {
-			return nil
-		} else if err != nil {
-			return err
-		}
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("wait Interrupted for updating daemonset.name %s, daemonset.namespace %s", nns.Name, nns.Namespace)
-		case <-time.After(time.Second):
-		}
-	}
-	return fmt.Errorf("wait timeout for updating daemonset.name %s, daemonset.namespace %s", nns.Name, nns.Namespace)
 }
