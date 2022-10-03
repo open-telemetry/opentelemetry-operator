@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package allocation
 
 import (
@@ -17,7 +31,7 @@ type AllocatorProvider func(log logr.Logger) Allocator
 var (
 	registry = map[string]AllocatorProvider{}
 
-	// TargetsPerCollector records how many targets have been assigned to each collector
+	// TargetsPerCollector records how many targets have been assigned to each collector.
 	// It is currently the responsibility of the strategy to track this information.
 	TargetsPerCollector = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "opentelemetry_allocator_targets_per_collector",
@@ -37,7 +51,7 @@ func New(name string, log logr.Logger) (Allocator, error) {
 	if p, ok := registry[name]; ok {
 		return p(log), nil
 	}
-	return nil, errors.New(fmt.Sprintf("unregistered strategy: %s", name))
+	return nil, fmt.Errorf("unregistered strategy: %s", name)
 }
 
 func Register(name string, provider AllocatorProvider) error {
@@ -79,9 +93,9 @@ func (t TargetItem) Hash() string {
 
 var _ consistent.Member = Collector{}
 
-// Collector Creates a struct that holds Collector information
-// This struct will be parsed into endpoint with Collector and jobs info
-// This struct can be extended with information like annotations and labels in the future
+// Collector Creates a struct that holds Collector information.
+// This struct will be parsed into endpoint with Collector and jobs info.
+// This struct can be extended with information like annotations and labels in the future.
 type Collector struct {
 	Name       string
 	NumTargets int

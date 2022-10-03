@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package allocation
 
 import (
@@ -7,7 +21,7 @@ import (
 )
 
 func TestCanSetSingleTarget(t *testing.T) {
-	cols := makeNCollectors(3, 0, 0)
+	cols := makeNCollectors(3, 0)
 	c := newConsistentHashingAllocator(logger)
 	c.SetCollectors(cols)
 	c.SetTargets(makeNNewTargets(1, 3, 0))
@@ -21,7 +35,7 @@ func TestCanSetSingleTarget(t *testing.T) {
 func TestRelativelyEvenDistribution(t *testing.T) {
 	numCols := 15
 	numItems := 10000
-	cols := makeNCollectors(numCols, 0, 0)
+	cols := makeNCollectors(numCols, 0)
 	var expectedPerCollector = float64(numItems / numCols)
 	expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
 	c := newConsistentHashingAllocator(logger)
@@ -38,7 +52,7 @@ func TestRelativelyEvenDistribution(t *testing.T) {
 }
 
 func TestFullReallocation(t *testing.T) {
-	cols := makeNCollectors(10, 0, 0)
+	cols := makeNCollectors(10, 0)
 	c := newConsistentHashingAllocator(logger)
 	c.SetCollectors(cols)
 	c.SetTargets(makeNNewTargets(10000, 10, 0))
@@ -46,7 +60,7 @@ func TestFullReallocation(t *testing.T) {
 	assert.Len(t, actualTargetItems, 10000)
 	actualCollectors := c.Collectors()
 	assert.Len(t, actualCollectors, 10)
-	newCols := makeNCollectors(10, 0, 10)
+	newCols := makeNCollectors(10, 10)
 	c.SetCollectors(newCols)
 	updatedTargetItems := c.TargetItems()
 	assert.Len(t, updatedTargetItems, 10000)
@@ -63,7 +77,7 @@ func TestNumRemapped(t *testing.T) {
 	numInitialCols := 15
 	numFinalCols := 16
 	expectedDelta := float64((numFinalCols - numInitialCols) * (numItems / numFinalCols))
-	cols := makeNCollectors(numInitialCols, 0, 0)
+	cols := makeNCollectors(numInitialCols, 0)
 	c := newConsistentHashingAllocator(logger)
 	c.SetCollectors(cols)
 	c.SetTargets(makeNNewTargets(numItems, numInitialCols, 0))
@@ -71,7 +85,7 @@ func TestNumRemapped(t *testing.T) {
 	assert.Len(t, actualTargetItems, numItems)
 	actualCollectors := c.Collectors()
 	assert.Len(t, actualCollectors, numInitialCols)
-	newCols := makeNCollectors(numFinalCols, 0, 0)
+	newCols := makeNCollectors(numFinalCols, 0)
 	c.SetCollectors(newCols)
 	updatedTargetItems := c.TargetItems()
 	assert.Len(t, updatedTargetItems, numItems)

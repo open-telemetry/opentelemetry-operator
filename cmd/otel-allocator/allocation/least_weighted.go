@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package allocation
 
 import (
@@ -61,8 +75,8 @@ func (allocator *leastWeightedAllocator) Collectors() map[string]*Collector {
 
 // findNextCollector finds the next collector with fewer number of targets.
 // This method is called from within SetTargets and SetCollectors, whose caller
-// acquires the needed lock. This method assumes there are is at least 1 collector set
-// INVARIANT: allocator.collectors must have at least 1 collector set
+// acquires the needed lock. This method assumes there are is at least 1 collector set.
+// INVARIANT: allocator.collectors must have at least 1 collector set.
 func (allocator *leastWeightedAllocator) findNextCollector() *Collector {
 	var col *Collector
 	for _, v := range allocator.collectors {
@@ -78,8 +92,8 @@ func (allocator *leastWeightedAllocator) findNextCollector() *Collector {
 
 // addTargetToTargetItems assigns a target to the next available collector and adds it to the allocator's targetItems
 // This method is called from within SetTargets and SetCollectors, which acquire the needed lock.
-// This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap
-// INVARIANT: allocator.collectors must have at least 1 collector set
+// This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap.
+// INVARIANT: allocator.collectors must have at least 1 collector set.
 func (allocator *leastWeightedAllocator) addTargetToTargetItems(target *TargetItem) {
 	chosenCollector := allocator.findNextCollector()
 	targetItem := &TargetItem{
@@ -95,8 +109,8 @@ func (allocator *leastWeightedAllocator) addTargetToTargetItems(target *TargetIt
 }
 
 // handleTargets receives the new and removed targets and reconciles the current state.
-// Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector
-// Any net-new additions are assigned to the next available collector
+// Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector.
+// Any net-new additions are assigned to the next available collector.
 func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*TargetItem]) {
 	// Check for removals
 	for k, target := range allocator.targetItems {
@@ -122,7 +136,7 @@ func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*Target
 }
 
 // handleCollectors receives the new and removed collectors and reconciles the current state.
-// Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map
+// Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map.
 // Finally, any targets of removed collectors are reallocated to the next available collector.
 func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Clear removed collectors
@@ -163,7 +177,6 @@ func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*TargetIt
 	if len(targetsDiff.Additions()) != 0 || len(targetsDiff.Removals()) != 0 {
 		allocator.handleTargets(targetsDiff)
 	}
-	return
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
@@ -187,7 +200,6 @@ func (allocator *leastWeightedAllocator) SetCollectors(collectors map[string]*Co
 	if len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0 {
 		allocator.handleCollectors(collectorsDiff)
 	}
-	return
 }
 
 func newLeastWeightedAllocator(log logr.Logger) Allocator {

@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package allocation
 
 import (
@@ -56,8 +70,8 @@ func newConsistentHashingAllocator(log logr.Logger) Allocator {
 
 // addTargetToTargetItems assigns a target to the collector based on its hash and adds it to the allocator's targetItems
 // This method is called from within SetTargets and SetCollectors, which acquire the needed lock.
-// This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap
-// INVARIANT: c.collectors must have at least 1 collector set
+// This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap.
+// INVARIANT: c.collectors must have at least 1 collector set.
 func (c *consistentHashingAllocator) addTargetToTargetItems(target *TargetItem) {
 	// Check if this is a reassignment, if so, decrement the previous collector's NumTargets
 	if previousColName, ok := c.collectors[target.CollectorName]; ok {
@@ -78,8 +92,8 @@ func (c *consistentHashingAllocator) addTargetToTargetItems(target *TargetItem) 
 }
 
 // handleTargets receives the new and removed targets and reconciles the current state.
-// Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector
-// Any net-new additions are assigned to the next available collector
+// Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector.
+// Any net-new additions are assigned to the next available collector.
 func (c *consistentHashingAllocator) handleTargets(diff diff.Changes[*TargetItem]) {
 	// Check for removals
 	for k, target := range c.targetItems {
@@ -105,7 +119,7 @@ func (c *consistentHashingAllocator) handleTargets(diff diff.Changes[*TargetItem
 }
 
 // handleCollectors receives the new and removed collectors and reconciles the current state.
-// Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map
+// Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map.
 // Finally, update all targets' collectors to match the consistent hashing.
 func (c *consistentHashingAllocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Clear removed collectors
@@ -146,7 +160,6 @@ func (c *consistentHashingAllocator) SetTargets(targets map[string]*TargetItem) 
 	if len(targetsDiff.Additions()) != 0 || len(targetsDiff.Removals()) != 0 {
 		c.handleTargets(targetsDiff)
 	}
-	return
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
@@ -170,7 +183,6 @@ func (c *consistentHashingAllocator) SetCollectors(collectors map[string]*Collec
 	if len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0 {
 		c.handleCollectors(collectorsDiff)
 	}
-	return
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
