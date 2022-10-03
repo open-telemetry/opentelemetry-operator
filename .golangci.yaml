@@ -13,8 +13,6 @@ linters-settings:
     locale: US
   govet:
     disable-all: true
-    enable:
-      - fieldalignment
 
 linters:
   enable:
