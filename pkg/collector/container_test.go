@@ -29,6 +29,12 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
+var metricContainerPort = corev1.ContainerPort{
+	Name:          "metrics",
+	ContainerPort: 8888,
+	Protocol:      corev1.ProtocolTCP,
+}
+
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{}
@@ -39,6 +45,7 @@ func TestContainerNewDefault(t *testing.T) {
 
 	// verify
 	assert.Equal(t, "default-image", c.Image)
+	assert.Equal(t, []corev1.ContainerPort{metricContainerPort}, c.Ports)
 }
 
 func TestContainerWithImageOverridden(t *testing.T) {
@@ -55,6 +62,141 @@ func TestContainerWithImageOverridden(t *testing.T) {
 
 	// verify
 	assert.Equal(t, "overridden-image", c.Image)
+}
+
+func TestContainerPorts(t *testing.T) {
+	var goodConfig = `receivers:
+  examplereceiver:
+    endpoint: "0.0.0.0:12345"
+service:
+  pipelines:
+    metrics:
+      receivers: [examplereceiver]
+      exporters: [logging]
+`
+
+	tests := []struct {
+		description   string
+		specConfig    string
+		specPorts     []corev1.ServicePort
+		expectedPorts []corev1.ContainerPort
+	}{
+		{
+			description:   "bad spec config",
+			specConfig:    "🦄",
+			specPorts:     nil,
+			expectedPorts: []corev1.ContainerPort{},
+		},
+		{
+			description:   "couldn't build ports from spec config",
+			specConfig:    "",
+			specPorts:     nil,
+			expectedPorts: []corev1.ContainerPort{metricContainerPort},
+		},
+		{
+			description: "ports in spec Config",
+			specConfig:  goodConfig,
+			specPorts:   nil,
+			expectedPorts: []corev1.ContainerPort{
+				{
+					Name:          "examplereceiver",
+					ContainerPort: 12345,
+				},
+				metricContainerPort,
+			},
+		},
+		{
+			description: "ports in spec ContainerPorts",
+			specPorts: []corev1.ServicePort{
+				{
+					Name: "testport1",
+					Port: 12345,
+				},
+			},
+			expectedPorts: []corev1.ContainerPort{
+				metricContainerPort,
+				{
+					Name:          "testport1",
+					ContainerPort: 12345,
+				},
+			},
+		},
+		{
+			description: "ports in spec Config and ContainerPorts",
+			specConfig:  goodConfig,
+			specPorts: []corev1.ServicePort{
+				{
+					Name: "testport1",
+					Port: 12345,
+				},
+				{
+					Name:     "testport2",
+					Port:     54321,
+					Protocol: corev1.ProtocolUDP,
+				},
+			},
+			expectedPorts: []corev1.ContainerPort{
+				{
+					Name:          "examplereceiver",
+					ContainerPort: 12345,
+				},
+				metricContainerPort,
+				{
+					Name:          "testport1",
+					ContainerPort: 12345,
+				},
+				{
+					Name:          "testport2",
+					ContainerPort: 54321,
+					Protocol:      corev1.ProtocolUDP,
+				},
+			},
+		},
+		{
+			description: "duplicate port name",
+			specConfig:  goodConfig,
+			specPorts: []corev1.ServicePort{
+				{
+					Name: "testport1",
+					Port: 12345,
+				},
+				{
+					Name: "testport1",
+					Port: 11111,
+				},
+			},
+			expectedPorts: []corev1.ContainerPort{
+				{
+					Name:          "examplereceiver",
+					ContainerPort: 12345,
+				},
+				metricContainerPort,
+				{
+					Name:          "testport1",
+					ContainerPort: 11111,
+				},
+			},
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.description, func(t *testing.T) {
+			// prepare
+			otelcol := v1alpha1.OpenTelemetryCollector{
+				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+					Config: testCase.specConfig,
+					Ports:  testCase.specPorts,
+				},
+			}
+			cfg := config.New(config.WithCollectorImage("default-image"))
+
+			// test
+			c := Container(cfg, logger, otelcol)
+
+			// verify
+			assert.ElementsMatch(t, testCase.expectedPorts, c.Ports)
+		})
+	}
 }
 
 func TestContainerConfigFlagIsIgnored(t *testing.T) {
