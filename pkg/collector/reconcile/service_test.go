@@ -165,7 +165,23 @@ func TestExpectedServices(t *testing.T) {
 		assert.True(t, exists)
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
 		assert.Contains(t, actual.Spec.Ports, extraPorts)
+	})
+	t.Run("should update service on version change", func(t *testing.T) {
+		serviceInstance := service("test-collector", params().Instance.Spec.Ports)
+		createObjectIfNotExists(t, "test-collector", &serviceInstance)
 
+		newService := service("test-collector", params().Instance.Spec.Ports)
+		newService.Spec.Selector["app.kubernetes.io/version"] = "Newest"
+		err := expectedServices(context.Background(), params(), []v1.Service{newService})
+		assert.NoError(t, err)
+
+		actual := v1.Service{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
+		assert.Equal(t, "Newest", actual.Spec.Selector["app.kubernetes.io/version"])
 	})
 }
 
