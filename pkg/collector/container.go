@@ -78,6 +78,18 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		},
 	})
 
+	if otelcol.Spec.TargetAllocator.Enabled {
+		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
+		// added by default by the Prometheus operator's config generator.
+		// All collector instances use SHARD == 0 as they only receive targets
+		// allocated to them and should not use the Prometheus hashmod-based
+		// allocation.
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "SHARD",
+			Value: "0",
+		})
+	}
+
 	var livenessProbe *corev1.Probe
 	if config, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
 		if probe, err := adapters.ConfigToContainerProbe(config); err == nil {

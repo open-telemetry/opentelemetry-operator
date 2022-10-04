@@ -24,12 +24,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ghodss/yaml"
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	yaml2 "gopkg.in/yaml.v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -166,6 +168,7 @@ func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager
 	}
 	router := mux.NewRouter().UseEncodedPath()
 	router.Use(s.PrometheusMiddleware)
+	router.HandleFunc("/scrape_configs", s.ScrapeConfigsHandler).Methods("GET")
 	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
 	router.Path("/metrics").Handler(promhttp.Handler())
@@ -204,12 +207,33 @@ func (s *server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
+// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
+// The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
+// After that, the YAML is converted in to a JSON format for consumers to use.
+func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
+	configs := s.discoveryManager.GetScrapeConfigs()
+	configBytes, err := yaml2.Marshal(configs)
+	if err != nil {
+		s.errorHandler(w, err)
+	}
+	jsonConfig, err := yaml.YAMLToJSON(configBytes)
+	if err != nil {
+		s.errorHandler(w, err)
+	}
+	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonConfig)
+	if err != nil {
+		s.errorHandler(w, err)
+	}
+}
+
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
 	displayData := make(map[string]allocation.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
 		displayData[v.JobName] = allocation.LinkJSON{Link: v.Link.Link}
 	}
-	jsonHandler(s.logger, w, displayData)
+	s.jsonHandler(w, displayData)
 }
 
 // PrometheusMiddleware implements mux.MiddlewareFunc.
@@ -233,33 +257,34 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	jobId, err := url.QueryUnescape(params["job_id"])
 	if err != nil {
-		errorHandler(w)
+		s.errorHandler(w, err)
 		return
 	}
 
 	if len(q) == 0 {
 		displayData := allocation.GetAllTargetsByJob(jobId, compareMap, s.allocator)
-		jsonHandler(s.logger, w, displayData)
+		s.jsonHandler(w, displayData)
 
 	} else {
 		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], jobId, compareMap, s.allocator)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
-			jsonHandler(s.logger, w, []interface{}{})
+			s.jsonHandler(w, []interface{}{})
 			return
 		}
-		jsonHandler(s.logger, w, tgs)
+		s.jsonHandler(w, tgs)
 	}
 }
 
-func errorHandler(w http.ResponseWriter) {
+func (s *server) errorHandler(w http.ResponseWriter, err error) {
 	w.WriteHeader(500)
+	s.jsonHandler(w, err)
 }
 
-func jsonHandler(logger logr.Logger, w http.ResponseWriter, data interface{}) {
+func (s *server) jsonHandler(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
-		logger.Error(err, "failed to encode data for http response")
+		s.logger.Error(err, "failed to encode data for http response")
 	}
 }
