@@ -19,7 +19,6 @@ import (
 	_ "embed"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 
@@ -29,13 +28,14 @@ import (
 )
 
 var (
-	//go:embed v0_61_0-input.yaml
-	input string
-	//go:embed v0_61_0-output.yaml
-	output string
+	//go:embed v0_61_0-valid.yaml
+	valid string
+	//go:embed v0_61_0-invalid.yaml
+	invalid string
 )
 
 func Test0_61_0Upgrade(t *testing.T) {
+
 	collectorInstance := v1alpha1.OpenTelemetryCollector{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "OpenTelemetryCollector",
@@ -45,21 +45,42 @@ func Test0_61_0Upgrade(t *testing.T) {
 			Name:      "otel-my-instance",
 			Namespace: "somewhere",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: input,
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	}
+
+	tt := []struct {
+		name      string
+		config    string
+		expectErr bool
+	}{
+		{
+			name:      "no remote sampling config", // valid
+			config:    valid,
+			expectErr: false,
+		},
+		{
+			name:      "has remote sampling config", // invalid
+			config:    invalid,
+			expectErr: true,
 		},
 	}
 
-	collectorInstance.Status.Version = "0.60.0"
-	//Test to remove port and change endpoint value.
-	versionUpgrade := &upgrade.VersionUpgrade{
-		Log:      logger,
-		Version:  version.Get(),
-		Client:   k8sClient,
-		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
-	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			collectorInstance.Spec.Config = tc.config
+			collectorInstance.Status.Version = "0.60.0"
 
-	upgradedInstance, err := versionUpgrade.ManagedInstance(context.Background(), collectorInstance)
-	assert.NoError(t, err)
-	assert.Equal(t, output, upgradedInstance.Spec.Config)
+			versionUpgrade := &upgrade.VersionUpgrade{
+				Log:      logger,
+				Version:  version.Get(),
+				Client:   k8sClient,
+				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+			}
+
+			_, err := versionUpgrade.ManagedInstance(context.Background(), collectorInstance)
+			if (err != nil) != tc.expectErr {
+				t.Errorf("expect err: %t but got: %v", tc.expectErr, err)
+			}
+		})
+	}
 }
