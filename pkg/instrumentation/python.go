@@ -30,7 +30,7 @@ const (
 	pythonPathSuffix      = "/otel-auto-instrumentation"
 )
 
-func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod, index int) corev1.Pod {
+func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, bool) {
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[index]
 
@@ -52,7 +52,7 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 		if container.Env[idx].ValueFrom != nil {
 			// TODO add to status object or submit it as an event
 			logger.Info("Skipping Python SDK injection, the container defines PYTHONPATH env var value via ValueFrom", "container", container.Name)
-			return pod
+			return pod, true
 		}
 
 		container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
@@ -92,5 +92,5 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 		})
 	}
 
-	return pod
+	return pod, false
 }

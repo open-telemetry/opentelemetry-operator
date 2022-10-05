@@ -26,7 +26,7 @@ const (
 	javaJVMArgument     = " -javaagent:/otel-auto-instrumentation/javaagent.jar"
 )
 
-func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod, index int) corev1.Pod {
+func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, bool) {
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[index]
 
@@ -48,7 +48,7 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 		if container.Env[idx].ValueFrom != nil {
 			// TODO add to status object or submit it as an event
 			logger.Info("Skipping javaagent injection, the container defines JAVA_TOOL_OPTIONS env var value via ValueFrom", "container", container.Name)
-			return pod
+			return pod, true
 		}
 
 		container.Env[idx].Value = container.Env[idx].Value + javaJVMArgument
@@ -79,5 +79,5 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 		})
 	}
 
-	return pod
+	return pod, false
 }

@@ -26,7 +26,7 @@ const (
 	nodeRequireArgument = " --require /otel-auto-instrumentation/autoinstrumentation.js"
 )
 
-func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) corev1.Pod {
+func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, bool) {
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[index]
 
@@ -48,7 +48,7 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 		if container.Env[idx].ValueFrom != nil {
 			// TODO add to status object or submit it as an event
 			logger.Info("Skipping NodeJS SDK injection, the container defines NODE_OPTIONS env var value via ValueFrom", "container", container.Name)
-			return pod
+			return pod, true
 		}
 
 		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
@@ -79,5 +79,5 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 		})
 	}
 
-	return pod
+	return pod, false
 }

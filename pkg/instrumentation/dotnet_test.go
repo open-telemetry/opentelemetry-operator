@@ -29,8 +29,9 @@ func TestInjectDotNetSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.DotNet
-		pod      corev1.Pod
-		expected corev1.Pod
+		pod                 corev1.Pod
+		expected            corev1.Pod
+		sdkInjectionSkipped bool
 	}{
 		{
 			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS, OTEL_DOTNET_AUTO_HOME not defined",
@@ -105,6 +106,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: false,
 		},
 		{
 			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE, OTEL_DOTNET_AUTO_HOME defined",
@@ -210,6 +212,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: false,
 		},
 		{
 			name:   "CORECLR_ENABLE_PROFILING defined as ValueFrom",
@@ -242,6 +245,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: true,
 		},
 		{
 			name:   "CORECLR_PROFILER defined as ValueFrom",
@@ -274,6 +278,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: true,
 		},
 		{
 			name:   "CORECLR_PROFILER_PATH defined as ValueFrom",
@@ -306,6 +311,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: true,
 		},
 		{
 			name:   "DOTNET_STARTUP_HOOKS defined as ValueFrom",
@@ -338,6 +344,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: true,
 		},
 		{
 			name:   "DOTNET_ADDITIONAL_DEPS defined as ValueFrom",
@@ -370,6 +377,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: true,
 		},
 		{
 			name:   "DOTNET_SHARED_STORE defined as ValueFrom",
@@ -402,6 +410,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: true,
 		},
 		{
 			name:   "OTEL_DOTNET_AUTO_HOME defined as ValueFrom",
@@ -434,13 +443,15 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectDotNetSDK(logr.Discard(), test.DotNet, test.pod, 0)
+			pod, sdkInjectionSkipped := injectDotNetSDK(logr.Discard(), test.DotNet, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.sdkInjectionSkipped, sdkInjectionSkipped)
 		})
 	}
 }

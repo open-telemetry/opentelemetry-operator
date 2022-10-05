@@ -28,8 +28,9 @@ func TestInjectNodeJSSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.NodeJS
-		pod      corev1.Pod
-		expected corev1.Pod
+		pod                 corev1.Pod
+		expected            corev1.Pod
+		sdkInjectionSkipped bool
 	}{
 		{
 			name:   "NODE_OPTIONS not defined",
@@ -80,6 +81,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: false,
 		},
 		{
 			name:   "NODE_OPTIONS defined",
@@ -137,6 +139,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: false,
 		},
 		{
 			name:   "NODE_OPTIONS defined as ValueFrom",
@@ -169,13 +172,15 @@ func TestInjectNodeJSSDK(t *testing.T) {
 					},
 				},
 			},
+			sdkInjectionSkipped: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectNodeJSSDK(logr.Discard(), test.NodeJS, test.pod, 0)
+			pod, sdkInjectionSkipped := injectNodeJSSDK(logr.Discard(), test.NodeJS, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.sdkInjectionSkipped, sdkInjectionSkipped)
 		})
 	}
 }

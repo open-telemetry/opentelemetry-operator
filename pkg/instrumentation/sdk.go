@@ -68,31 +68,43 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	// in the future we can define an annotation to configure this
 	if insts.Java != nil {
 		otelinst := *insts.Java
+		sdkInjectionSkipped := false
 		i.logger.V(1).Info("injecting java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectJavaagent(i.logger, otelinst.Spec.Java, pod, index)
-		pod = i.injectCommonEnvVar(otelinst, pod, index)
-		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		pod, sdkInjectionSkipped = injectJavaagent(i.logger, otelinst.Spec.Java, pod, index)
+		if !sdkInjectionSkipped {
+			pod = i.injectCommonEnvVar(otelinst, pod, index)
+			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		}
 	}
 	if insts.NodeJS != nil {
 		otelinst := *insts.NodeJS
+		sdkInjectionSkipped := false
 		i.logger.V(1).Info("injecting nodejs instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectNodeJSSDK(i.logger, otelinst.Spec.NodeJS, pod, index)
-		pod = i.injectCommonEnvVar(otelinst, pod, index)
-		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		pod, sdkInjectionSkipped = injectNodeJSSDK(i.logger, otelinst.Spec.NodeJS, pod, index)
+		if !sdkInjectionSkipped {
+			pod = i.injectCommonEnvVar(otelinst, pod, index)
+			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		}
 	}
 	if insts.Python != nil {
 		otelinst := *insts.Python
+		sdkInjectionSkipped := false
 		i.logger.V(1).Info("injecting python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectPythonSDK(i.logger, otelinst.Spec.Python, pod, index)
-		pod = i.injectCommonEnvVar(otelinst, pod, index)
-		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		pod, sdkInjectionSkipped = injectPythonSDK(i.logger, otelinst.Spec.Python, pod, index)
+		if !sdkInjectionSkipped {
+			pod = i.injectCommonEnvVar(otelinst, pod, index)
+			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		}
 	}
 	if insts.DotNet != nil {
 		otelinst := *insts.DotNet
+		sdkInjectionSkipped := false
 		i.logger.V(1).Info("injecting dotnet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod = injectDotNetSDK(i.logger, otelinst.Spec.DotNet, pod, index)
-		pod = i.injectCommonEnvVar(otelinst, pod, index)
-		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		pod, sdkInjectionSkipped = injectDotNetSDK(i.logger, otelinst.Spec.DotNet, pod, index)
+		if !sdkInjectionSkipped {
+			pod = i.injectCommonEnvVar(otelinst, pod, index)
+			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		}
 	}
 	if insts.Sdk != nil {
 		otelinst := *insts.Sdk

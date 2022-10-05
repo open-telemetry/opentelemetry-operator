@@ -40,7 +40,8 @@ const (
 	dotNetStartupHookPath               = "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 )
 
-func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) corev1.Pod {
+func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, bool) {
+
 	// caller checks if there is at least one container
 	container := pod.Spec.Containers[index]
 
@@ -58,31 +59,31 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 	)
 
 	if !trySetEnvVar(logger, &container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues) {
-		return pod
+		return pod, true
 	}
 
 	if !trySetEnvVar(logger, &container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerId, doNotConcatEnvValues) {
-		return pod
+		return pod, true
 	}
 
 	if !trySetEnvVar(logger, &container, envDotNetCoreClrProfilerPath, dotNetCoreClrProfilerPath, doNotConcatEnvValues) {
-		return pod
+		return pod, true
 	}
 
 	if !trySetEnvVar(logger, &container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues) {
-		return pod
+		return pod, true
 	}
 
 	if !trySetEnvVar(logger, &container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues) {
-		return pod
+		return pod, true
 	}
 
 	if !trySetEnvVar(logger, &container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues) {
-		return pod
+		return pod, true
 	}
 
 	if !trySetEnvVar(logger, &container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues) {
-		return pod
+		return pod, true
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
@@ -110,7 +111,7 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 	}
 
 	pod.Spec.Containers[index] = container
-	return pod
+	return pod, false
 }
 
 func trySetEnvVar(logger logr.Logger, container *corev1.Container, envVarName string, envVarValue string, concatValues bool) bool {
