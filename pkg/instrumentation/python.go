@@ -32,7 +32,7 @@ const (
 
 func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, bool) {
 	// caller checks if there is at least one container
-	container := &pod.Spec.Containers[index]
+	container := pod.Spec.Containers[index]
 
 	// inject env vars
 	for _, env := range pythonSpec.Env {
@@ -91,6 +91,6 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 			}},
 		})
 	}
-
+	pod.Spec.Containers[index] = container
 	return pod, false
 }

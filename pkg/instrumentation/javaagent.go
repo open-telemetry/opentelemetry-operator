@@ -28,7 +28,7 @@ const (
 
 func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, bool) {
 	// caller checks if there is at least one container
-	container := &pod.Spec.Containers[index]
+	container := pod.Spec.Containers[index]
 
 	// inject env vars
 	for _, env := range javaSpec.Env {
@@ -52,7 +52,6 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 		}
 
 		container.Env[idx].Value = container.Env[idx].Value + javaJVMArgument
-
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
@@ -78,6 +77,6 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 			}},
 		})
 	}
-
+	pod.Spec.Containers[index] = container
 	return pod, false
 }
