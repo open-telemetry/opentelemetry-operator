@@ -15,6 +15,7 @@
 package upgrade
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -56,11 +57,13 @@ func upgrade0_61_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		}
 
 		const issueID = "https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/14707"
-		return nil, fmt.Errorf(
+		errStr := fmt.Sprintf(
 			"jaegerremotesampling is no longer available as receiver configuration. "+
-				"Please use the extension instead. See: %s",
+				"Please use the extension instead with a different remote sampling port. See: %s",
 			issueID,
 		)
+		u.Recorder.Event(otelcol, "Error", "Upgrade", errStr)
+		return nil, errors.New(errStr)
 	}
 	return otelcol, nil
 }
