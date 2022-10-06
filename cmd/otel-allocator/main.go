@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -8,13 +22,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/ghodss/yaml"
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	yaml2 "gopkg.in/yaml.v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -64,7 +81,12 @@ func main() {
 		setupLog.Error(err, "Can't start the watchers")
 		os.Exit(1)
 	}
-	defer watcher.Close()
+	defer func() {
+		err := watcher.Close()
+		if err != nil {
+			log.Error(err, "failed to close watcher")
+		}
+	}()
 
 	// creates a new discovery manager
 	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger())
@@ -77,10 +99,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	srv, err := newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
-	if err != nil {
-		setupLog.Error(err, "Can't start the server")
-	}
+	srv := newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 
 	interrupts := make(chan os.Signal, 1)
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGTERM)
@@ -108,10 +127,7 @@ func main() {
 				if err := srv.Shutdown(ctx); err != nil {
 					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv, err = newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
-				if err != nil {
-					setupLog.Error(err, "Error restarting the server with new config")
-				}
+				srv = newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 				go func() {
 					if err := srv.Start(); err != http.ErrServerClosed {
 						setupLog.Error(err, "Can't restart the server")
@@ -143,7 +159,7 @@ type server struct {
 	server           *http.Server
 }
 
-func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, k8sclient *collector.Client, listenAddr *string) (*server, error) {
+func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, k8sclient *collector.Client, listenAddr *string) *server {
 	s := &server{
 		logger:           log,
 		allocator:        allocator,
@@ -152,11 +168,12 @@ func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager
 	}
 	router := mux.NewRouter().UseEncodedPath()
 	router.Use(s.PrometheusMiddleware)
+	router.HandleFunc("/scrape_configs", s.ScrapeConfigsHandler).Methods("GET")
 	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
 	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
 	router.Path("/metrics").Handler(promhttp.Handler())
-	s.server = &http.Server{Addr: *listenAddr, Handler: router}
-	return s, nil
+	s.server = &http.Server{Addr: *listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
+	return s
 }
 
 func configureFileDiscovery(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
@@ -190,12 +207,33 @@ func (s *server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
+// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
+// The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
+// After that, the YAML is converted in to a JSON format for consumers to use.
+func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
+	configs := s.discoveryManager.GetScrapeConfigs()
+	configBytes, err := yaml2.Marshal(configs)
+	if err != nil {
+		s.errorHandler(w, err)
+	}
+	jsonConfig, err := yaml.YAMLToJSON(configBytes)
+	if err != nil {
+		s.errorHandler(w, err)
+	}
+	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonConfig)
+	if err != nil {
+		s.errorHandler(w, err)
+	}
+}
+
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
 	displayData := make(map[string]allocation.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
 		displayData[v.JobName] = allocation.LinkJSON{Link: v.Link.Link}
 	}
-	jsonHandler(w, r, displayData)
+	s.jsonHandler(w, displayData)
 }
 
 // PrometheusMiddleware implements mux.MiddlewareFunc.
@@ -219,30 +257,34 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	jobId, err := url.QueryUnescape(params["job_id"])
 	if err != nil {
-		errorHandler(err, w, r)
+		s.errorHandler(w, err)
 		return
 	}
 
 	if len(q) == 0 {
 		displayData := allocation.GetAllTargetsByJob(jobId, compareMap, s.allocator)
-		jsonHandler(w, r, displayData)
+		s.jsonHandler(w, displayData)
 
 	} else {
 		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], jobId, compareMap, s.allocator)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
-			jsonHandler(w, r, []interface{}{})
+			s.jsonHandler(w, []interface{}{})
 			return
 		}
-		jsonHandler(w, r, tgs)
+		s.jsonHandler(w, tgs)
 	}
 }
 
-func errorHandler(err error, w http.ResponseWriter, r *http.Request) {
+func (s *server) errorHandler(w http.ResponseWriter, err error) {
 	w.WriteHeader(500)
+	s.jsonHandler(w, err)
 }
 
-func jsonHandler(w http.ResponseWriter, r *http.Request, data interface{}) {
+func (s *server) jsonHandler(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		s.logger.Error(err, "failed to encode data for http response")
+	}
 }
