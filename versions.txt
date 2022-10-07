@@ -8,7 +8,7 @@ opentelemetry-collector=0.60.0
 operator=0.60.0
 
 # Represents the current release of the Target Allocator.
-targetallocator=0.1.0
+targetallocator=0.60.0
 
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
