@@ -127,8 +127,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
-func (r *OpenTelemetryCollectorReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("opentelemetrycollector", req.NamespacedName)
 
 	var instance v1alpha1.OpenTelemetryCollector
