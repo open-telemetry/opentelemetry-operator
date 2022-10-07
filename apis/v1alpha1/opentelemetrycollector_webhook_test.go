@@ -241,7 +241,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					MaxReplicas: &zero,
 				},
 			},
-			expectedErr: "maxReplicas should be defined and more than one",
+			expectedErr: "maxReplicas should be defined and one or more",
 		},
 		{
 			name: "invalid replicas, greater than max",
