@@ -1,7 +1,8 @@
 # Target Allocator
 
 The TargetAllocator is an optional separately deployed component of an OpenTelemetry Collector setup, which is used to
-distribute targets of the PrometheusReceiver on all deployed Collector instances.
+distribute targets of the PrometheusReceiver on all deployed Collector instances. The release version matches the
+operator's most recent release as well.
 
 # Design
 
