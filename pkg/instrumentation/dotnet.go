@@ -42,17 +42,17 @@ const (
 
 func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, bool) {
 
-	// caller checks if there is at least one container
+	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
-	// validate container environment variables
+	// validate container environment variables.
 	err := validateContainerEnv(container.Env, envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore)
 	if err != nil {
 		logger.Info("Skipping DotNet SDK injection", "reason:", err.Error(), "container Name", container.Name)
 		return pod, false
 	}
 
-	// inject .Net instrumentation spec env vars
+	// inject .Net instrumentation spec env vars.
 	for _, env := range dotNetSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -65,26 +65,26 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 		concatEnvValues      = true
 	)
 
-	setDotNetEnvVar(logger, container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues)
+	setDotNetEnvVar(container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues)
 
-	setDotNetEnvVar(logger, container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerId, doNotConcatEnvValues)
+	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerId, doNotConcatEnvValues)
 
-	setDotNetEnvVar(logger, container, envDotNetCoreClrProfilerPath, dotNetCoreClrProfilerPath, doNotConcatEnvValues)
+	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, dotNetCoreClrProfilerPath, doNotConcatEnvValues)
 
-	setDotNetEnvVar(logger, container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues)
+	setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues)
 
-	setDotNetEnvVar(logger, container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues)
+	setDotNetEnvVar(container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues)
 
-	setDotNetEnvVar(logger, container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues)
+	setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues)
 
-	setDotNetEnvVar(logger, container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
+	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volumeName,
 		MountPath: "/otel-auto-instrumentation",
 	})
 
-	// We just inject Volumes and init containers for the first processed container
+	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: volumeName,
@@ -105,8 +105,8 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 	return pod, true
 }
 
-// set env var to the container
-func setDotNetEnvVar(logger logr.Logger, container *corev1.Container, envVarName string, envVarValue string, concatValues bool) {
+// set env var to the container.
+func setDotNetEnvVar(container *corev1.Container, envVarName string, envVarValue string, concatValues bool) {
 	idx := getIndexOfEnv(container.Env, envVarName)
 	if idx < 0 {
 		container.Env = append(container.Env, corev1.EnvVar{

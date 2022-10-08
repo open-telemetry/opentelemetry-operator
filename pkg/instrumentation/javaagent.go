@@ -27,17 +27,17 @@ const (
 )
 
 func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, bool) {
-	// caller checks if there is at least one container
+	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
-	// validate container environment variables
+	// validate container environment variables.
 	err := validateContainerEnv(container.Env, envJavaToolsOptions)
 	if err != nil {
 		logger.Info("Skipping javaagent injection", "reason:", err.Error(), "container Name", container.Name)
 		return pod, false
 	}
 
-	// inject Java instrumentation spec env vars
+	// inject Java instrumentation spec env vars.
 	for _, env := range javaSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -60,7 +60,7 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 		MountPath: "/otel-auto-instrumentation",
 	})
 
-	// We just inject Volumes and init containers for the first processed container
+	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: volumeName,

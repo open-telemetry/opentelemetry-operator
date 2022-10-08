@@ -31,7 +31,7 @@ const (
 )
 
 func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, bool) {
-	// caller checks if there is at least one container
+	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
 	// validate container environment variables
@@ -41,7 +41,7 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 		return pod, false
 	}
 
-	// inject Python instrumentation spec env vars
+	// inject Python instrumentation spec env vars.
 	for _, env := range pythonSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -73,7 +73,7 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 		MountPath: "/otel-auto-instrumentation",
 	})
 
-	// We just inject Volumes and init containers for the first processed container
+	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: volumeName,
