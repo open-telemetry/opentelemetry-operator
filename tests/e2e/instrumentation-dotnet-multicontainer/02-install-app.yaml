@@ -18,6 +18,6 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: docker.io/adib070/mvc
+        image: docker.io/avadhutp123/aspnetapp:latest
       - name: myrabbit
         image: rabbitmq
