@@ -29,9 +29,9 @@ func TestInjectPythonSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.Python
-		pod                 corev1.Pod
-		expected            corev1.Pod
-		sdkInjectionSkipped bool
+		pod         corev1.Pod
+		expected    corev1.Pod
+		sdkInjected bool
 	}{
 		{
 			name:   "PYTHONPATH not defined",
@@ -86,7 +86,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjectionSkipped: false,
+			sdkInjected: true,
 		},
 		{
 			name:   "PYTHONPATH defined",
@@ -148,7 +148,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjectionSkipped: false,
+			sdkInjected: true,
 		},
 		{
 			name:   "OTEL_TRACES_EXPORTER defined",
@@ -210,7 +210,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjectionSkipped: false,
+			sdkInjected: true,
 		},
 		{
 			name:   "PYTHONPATH defined as ValueFrom",
@@ -243,15 +243,15 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjectionSkipped: true,
+			sdkInjected: false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, sdkInjectionSkipped := injectPythonSDK(logr.Discard(), test.Python, test.pod, 0)
+			pod, sdkInjected := injectPythonSDK(logr.Discard(), test.Python, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
-			assert.Equal(t, test.sdkInjectionSkipped, sdkInjectionSkipped)
+			assert.Equal(t, test.sdkInjected, sdkInjected)
 		})
 	}
 }

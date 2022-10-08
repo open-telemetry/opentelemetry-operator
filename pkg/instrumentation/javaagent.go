@@ -28,9 +28,16 @@ const (
 
 func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, bool) {
 	// caller checks if there is at least one container
-	container := pod.Spec.Containers[index]
+	container := &pod.Spec.Containers[index]
 
-	// inject env vars
+	// validate container environment variables
+	err := validateContainerEnv(container.Env, envJavaToolsOptions)
+	if err != nil {
+		logger.Info("Skipping javaagent injection", "reason:", err.Error(), "container Name", container.Name)
+		return pod, false
+	}
+
+	// inject Java instrumentation spec env vars
 	for _, env := range javaSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -45,12 +52,6 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 			Value: javaJVMArgument,
 		})
 	} else {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping javaagent injection, the container defines JAVA_TOOL_OPTIONS env var value via ValueFrom", "container", container.Name)
-			return pod, true
-		}
-
 		container.Env[idx].Value = container.Env[idx].Value + javaJVMArgument
 	}
 
@@ -77,6 +78,5 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 			}},
 		})
 	}
-	pod.Spec.Containers[index] = container
-	return pod, false
+	return pod, true
 }

@@ -28,9 +28,16 @@ const (
 
 func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, bool) {
 	// caller checks if there is at least one container
-	container := pod.Spec.Containers[index]
+	container := &pod.Spec.Containers[index]
 
-	// inject env vars
+	// validate container environment variables
+	err := validateContainerEnv(container.Env, envNodeOptions)
+	if err != nil {
+		logger.Info("Skipping NodeJS SDK injection", "reason:", err.Error(), "container Name", container.Name)
+		return pod, false
+	}
+
+	// inject NodeJS instrumentation spec env vars
 	for _, env := range nodeJSSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -45,14 +52,7 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 			Value: nodeRequireArgument,
 		})
 	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping NodeJS SDK injection, the container defines NODE_OPTIONS env var value via ValueFrom", "container", container.Name)
-			return pod, true
-		}
-
 		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
-
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
@@ -78,6 +78,5 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 			}},
 		})
 	}
-	pod.Spec.Containers[index] = container
-	return pod, false
+	return pod, true
 }

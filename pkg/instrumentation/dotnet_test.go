@@ -29,9 +29,9 @@ func TestInjectDotNetSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.DotNet
-		pod                 corev1.Pod
-		expected            corev1.Pod
-		sdkInjectionSkipped bool
+		pod         corev1.Pod
+		expected    corev1.Pod
+		sdkInjected bool
 	}{
 		{
 			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS, OTEL_DOTNET_AUTO_HOME not defined",
@@ -106,7 +106,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjectionSkipped: false,
+			sdkInjected: true,
 		},
 		{
 			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE, OTEL_DOTNET_AUTO_HOME defined",
@@ -212,106 +212,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjectionSkipped: false,
-		},
-		{
-			name:   "CORECLR_ENABLE_PROFILING defined as ValueFrom",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
-			pod: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Env: []corev1.EnvVar{
-								{
-									Name:      envDotNetCoreClrEnableProfiling,
-									ValueFrom: &corev1.EnvVarSource{},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Env: []corev1.EnvVar{
-								{
-									Name:      envDotNetCoreClrEnableProfiling,
-									ValueFrom: &corev1.EnvVarSource{},
-								},
-							},
-						},
-					},
-				},
-			},
-			sdkInjectionSkipped: true,
-		},
-		{
-			name:   "CORECLR_PROFILER defined as ValueFrom",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
-			pod: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Env: []corev1.EnvVar{
-								{
-									Name:      envDotNetCoreClrProfiler,
-									ValueFrom: &corev1.EnvVarSource{},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Env: []corev1.EnvVar{
-								{
-									Name:      envDotNetCoreClrProfiler,
-									ValueFrom: &corev1.EnvVarSource{},
-								},
-							},
-						},
-					},
-				},
-			},
-			sdkInjectionSkipped: true,
-		},
-		{
-			name:   "CORECLR_PROFILER_PATH defined as ValueFrom",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
-			pod: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Env: []corev1.EnvVar{
-								{
-									Name:      envDotNetCoreClrProfilerPath,
-									ValueFrom: &corev1.EnvVarSource{},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Env: []corev1.EnvVar{
-								{
-									Name:      envDotNetCoreClrProfilerPath,
-									ValueFrom: &corev1.EnvVarSource{},
-								},
-							},
-						},
-					},
-				},
-			},
-			sdkInjectionSkipped: true,
+			sdkInjected: true,
 		},
 		{
 			name:   "DOTNET_STARTUP_HOOKS defined as ValueFrom",
@@ -344,7 +245,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjectionSkipped: true,
+			sdkInjected: false,
 		},
 		{
 			name:   "DOTNET_ADDITIONAL_DEPS defined as ValueFrom",
@@ -377,7 +278,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjectionSkipped: true,
+			sdkInjected: false,
 		},
 		{
 			name:   "DOTNET_SHARED_STORE defined as ValueFrom",
@@ -410,48 +311,15 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjectionSkipped: true,
-		},
-		{
-			name:   "OTEL_DOTNET_AUTO_HOME defined as ValueFrom",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
-			pod: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Env: []corev1.EnvVar{
-								{
-									Name:      envDotNetOTelAutoHome,
-									ValueFrom: &corev1.EnvVarSource{},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: corev1.Pod{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Env: []corev1.EnvVar{
-								{
-									Name:      envDotNetOTelAutoHome,
-									ValueFrom: &corev1.EnvVarSource{},
-								},
-							},
-						},
-					},
-				},
-			},
-			sdkInjectionSkipped: true,
+			sdkInjected: false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, sdkInjectionSkipped := injectDotNetSDK(logr.Discard(), test.DotNet, test.pod, 0)
+			pod, sdkInjected := injectDotNetSDK(logr.Discard(), test.DotNet, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
-			assert.Equal(t, test.sdkInjectionSkipped, sdkInjectionSkipped)
+			assert.Equal(t, test.sdkInjected, sdkInjected)
 		})
 	}
 }

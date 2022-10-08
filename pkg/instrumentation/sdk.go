@@ -68,40 +68,40 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	// in the future we can define an annotation to configure this
 	if insts.Java != nil {
 		otelinst := *insts.Java
-		sdkInjectionSkipped := false
+		sdkInjected := false
 		i.logger.V(1).Info("injecting java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod, sdkInjectionSkipped = injectJavaagent(i.logger, otelinst.Spec.Java, pod, index)
-		if !sdkInjectionSkipped {
+		pod, sdkInjected = injectJavaagent(i.logger, otelinst.Spec.Java, pod, index)
+		if sdkInjected {
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 		}
 	}
 	if insts.NodeJS != nil {
 		otelinst := *insts.NodeJS
-		sdkInjectionSkipped := false
+		sdkInjected := false
 		i.logger.V(1).Info("injecting nodejs instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod, sdkInjectionSkipped = injectNodeJSSDK(i.logger, otelinst.Spec.NodeJS, pod, index)
-		if !sdkInjectionSkipped {
+		pod, sdkInjected = injectNodeJSSDK(i.logger, otelinst.Spec.NodeJS, pod, index)
+		if sdkInjected {
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 		}
 	}
 	if insts.Python != nil {
 		otelinst := *insts.Python
-		sdkInjectionSkipped := false
+		sdkInjected := false
 		i.logger.V(1).Info("injecting python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod, sdkInjectionSkipped = injectPythonSDK(i.logger, otelinst.Spec.Python, pod, index)
-		if !sdkInjectionSkipped {
+		pod, sdkInjected = injectPythonSDK(i.logger, otelinst.Spec.Python, pod, index)
+		if sdkInjected {
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 		}
 	}
 	if insts.DotNet != nil {
 		otelinst := *insts.DotNet
-		sdkInjectionSkipped := false
+		sdkInjected := false
 		i.logger.V(1).Info("injecting dotnet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod, sdkInjectionSkipped = injectDotNetSDK(i.logger, otelinst.Spec.DotNet, pod, index)
-		if !sdkInjectionSkipped {
+		pod, sdkInjected = injectDotNetSDK(i.logger, otelinst.Spec.DotNet, pod, index)
+		if sdkInjected {
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 		}
@@ -388,4 +388,18 @@ func moveEnvToListEnd(envs []corev1.EnvVar, idx int) []corev1.EnvVar {
 	}
 
 	return envs
+}
+
+func validateContainerEnv(envs []corev1.EnvVar, envsToBeValidated ...string) error {
+	for _, envToBeValidated := range envsToBeValidated {
+		for _, containerEnv := range envs {
+			if containerEnv.Name == envToBeValidated {
+				if containerEnv.ValueFrom != nil {
+					return fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", containerEnv.Name)
+				}
+				break
+			}
+		}
+	}
+	return nil
 }

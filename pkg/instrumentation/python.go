@@ -32,9 +32,16 @@ const (
 
 func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, bool) {
 	// caller checks if there is at least one container
-	container := pod.Spec.Containers[index]
+	container := &pod.Spec.Containers[index]
 
-	// inject env vars
+	// validate container environment variables
+	err := validateContainerEnv(container.Env, envPythonPath)
+	if err != nil {
+		logger.Info("Skipping Python SDK injection", "reason:", err.Error(), "container Name", container.Name)
+		return pod, false
+	}
+
+	// inject Python instrumentation spec env vars
 	for _, env := range pythonSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -49,14 +56,7 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 			Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 		})
 	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping Python SDK injection, the container defines PYTHONPATH env var value via ValueFrom", "container", container.Name)
-			return pod, true
-		}
-
 		container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
-
 	}
 
 	// Set OTEL_TRACES_EXPORTER to HTTP exporter if not set by user because it is what our autoinstrumentation supports.
@@ -91,6 +91,5 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 			}},
 		})
 	}
-	pod.Spec.Containers[index] = container
-	return pod, false
+	return pod, true
 }
