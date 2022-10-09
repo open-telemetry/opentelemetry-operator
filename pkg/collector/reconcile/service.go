@@ -71,9 +71,8 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 	labels := collector.Labels(params.Instance, []string{})
 	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
-	// by coincidence, the selector is the same as the label, but note that the selector points to the deployment
-	// whereas 'labels' refers to the service
-	selector := labels
+	selector := collector.SelectorLabels(params.Instance)
+	selector["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
 	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
 	if err != nil {
@@ -176,7 +175,7 @@ func monitoringService(ctx context.Context, params Params) *corev1.Service {
 	labels := collector.Labels(params.Instance, []string{})
 	labels["app.kubernetes.io/name"] = naming.MonitoringService(params.Instance)
 
-	selector := collector.Labels(params.Instance, []string{})
+	selector := collector.SelectorLabels(params.Instance)
 	selector["app.kubernetes.io/name"] = fmt.Sprintf("%s-collector", params.Instance.Name)
 
 	return &corev1.Service{
