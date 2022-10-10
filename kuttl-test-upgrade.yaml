@@ -1,3 +1,5 @@
+# Make sure that the OT operator after upgrading itself, can upgrade the OT collectors without error.
+# See issues 840 and 1117 for the bugs on upgrading OT operator.
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 crdDir: ./tests/_build/crds/
