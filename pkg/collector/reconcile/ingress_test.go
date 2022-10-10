@@ -43,7 +43,7 @@ func TestDesiredIngresses(t *testing.T) {
 			Instance: v1alpha1.OpenTelemetryCollector{
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Ingress: v1alpha1.Ingress{
-						Type: "unknown",
+						Type: v1alpha1.IngressType("unknown"),
 					},
 				},
 			},
@@ -62,7 +62,7 @@ func TestDesiredIngresses(t *testing.T) {
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Config: "!!!",
 					Ingress: v1alpha1.Ingress{
-						Type: "ingress",
+						Type: v1alpha1.IngressTypeNginx,
 					},
 				},
 			},
@@ -81,7 +81,7 @@ func TestDesiredIngresses(t *testing.T) {
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Config: "---",
 					Ingress: v1alpha1.Ingress{
-						Type: "ingress",
+						Type: v1alpha1.IngressTypeNginx,
 					},
 				},
 			},
@@ -104,7 +104,7 @@ func TestDesiredIngresses(t *testing.T) {
 
 		params.Instance.Namespace = ns
 		params.Instance.Spec.Ingress = v1alpha1.Ingress{
-			Type:        "ingress",
+			Type:        v1alpha1.IngressTypeNginx,
 			Hostname:    hostname,
 			Annotations: map[string]string{"some.key": "some.value"},
 		}

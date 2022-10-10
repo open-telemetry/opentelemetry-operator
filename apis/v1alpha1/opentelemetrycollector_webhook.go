@@ -16,7 +16,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -167,10 +166,9 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 
 	}
 
-	mode := strings.ToLower(string(r.Spec.Mode))
-	if r.Spec.Ingress.Type != "" && (mode == "deployment" || mode == "daemonset" || mode == "statefulset") {
+	if r.Spec.Ingress.Type == IngressTypeNginx && (r.Spec.Mode != ModeDeployment || r.Spec.Mode == ModeDaemonSet || r.Spec.Mode == ModeStatefulSet) {
 		return fmt.Errorf("the OptenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
-			"deployment", "daemenset", "statefulset",
+			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
 	}
 

@@ -32,7 +32,7 @@ import (
 )
 
 func desiredIngresses(_ context.Context, params Params) *networkingv1.Ingress {
-	if params.Instance.Spec.Ingress.Type != "ingress" {
+	if params.Instance.Spec.Ingress.Type != v1alpha1.IngressTypeNginx {
 		return nil
 	}
 	svcTarget := naming.Service(params.Instance)

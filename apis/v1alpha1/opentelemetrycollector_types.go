@@ -27,9 +27,10 @@ import (
 type Ingress struct {
 	// Type default value is: none
 	// Supported types are: ingress
-	Type string `json:"type,omitempty"`
+	Type IngressType `json:"type,omitempty"`
 
 	// Hostname by which the ingress proxy can be reached.
+	// +optional
 	Hostname string `json:"hostname,omitempty"`
 
 	// Annotations to add to ingress.
