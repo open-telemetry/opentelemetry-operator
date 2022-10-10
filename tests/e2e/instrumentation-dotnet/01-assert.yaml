@@ -41,7 +41,7 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
     - name: OTEL_PROPAGATORS
-      value: jaeger,b3
+      value: jaeger,b3multi
     - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
