@@ -17,7 +17,6 @@ package instrumentation
 import (
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -40,19 +39,17 @@ const (
 	dotNetStartupHookPath               = "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 )
 
-func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, bool) {
+func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, error) {
 
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
-	// validate container environment variables.
 	err := validateContainerEnv(container.Env, envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore)
 	if err != nil {
-		logger.Info("Skipping DotNet SDK injection", "reason:", err.Error(), "container Name", container.Name)
-		return pod, false
+		return pod, err
 	}
 
-	// inject .Net instrumentation spec env vars.
+	// inject .NET instrumentation spec env vars.
 	for _, env := range dotNetSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -102,10 +99,12 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 			}},
 		})
 	}
-	return pod, true
+	return pod, nil
 }
 
-// set env var to the container.
+// setDotNetEnvVar function sets env var to the container if not exist already.
+// value of concatValues should be set to true if the env var supports multiple values separated by :.
+// If it is set to false, the original container's env var value has priority.
 func setDotNetEnvVar(container *corev1.Container, envVarName string, envVarValue string, concatValues bool) {
 	idx := getIndexOfEnv(container.Env, envVarName)
 	if idx < 0 {

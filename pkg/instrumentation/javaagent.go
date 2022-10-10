@@ -15,7 +15,6 @@
 package instrumentation
 
 import (
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -26,15 +25,13 @@ const (
 	javaJVMArgument     = " -javaagent:/otel-auto-instrumentation/javaagent.jar"
 )
 
-func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, bool) {
+func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
-	// validate container environment variables.
 	err := validateContainerEnv(container.Env, envJavaToolsOptions)
 	if err != nil {
-		logger.Info("Skipping javaagent injection", "reason:", err.Error(), "container Name", container.Name)
-		return pod, false
+		return pod, err
 	}
 
 	// inject Java instrumentation spec env vars.
@@ -78,5 +75,5 @@ func injectJavaagent(logger logr.Logger, javaSpec v1alpha1.Java, pod corev1.Pod,
 			}},
 		})
 	}
-	return pod, true
+	return pod, err
 }

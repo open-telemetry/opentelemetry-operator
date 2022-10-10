@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -29,9 +28,9 @@ func TestInjectDotNetSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.DotNet
-		pod         corev1.Pod
-		expected    corev1.Pod
-		sdkInjected bool
+		pod      corev1.Pod
+		expected corev1.Pod
+		err      error
 	}{
 		{
 			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS, OTEL_DOTNET_AUTO_HOME not defined",
@@ -106,7 +105,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: true,
+			err: nil,
 		},
 		{
 			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE, OTEL_DOTNET_AUTO_HOME defined",
@@ -212,7 +211,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: true,
+			err: nil,
 		},
 		{
 			name:   "DOTNET_STARTUP_HOOKS defined as ValueFrom",
@@ -245,7 +244,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: false,
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetStartupHook),
 		},
 		{
 			name:   "DOTNET_ADDITIONAL_DEPS defined as ValueFrom",
@@ -278,7 +277,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: false,
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetAdditionalDeps),
 		},
 		{
 			name:   "DOTNET_SHARED_STORE defined as ValueFrom",
@@ -311,15 +310,15 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: false,
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetSharedStore),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, sdkInjected := injectDotNetSDK(logr.Discard(), test.DotNet, test.pod, 0)
+			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
-			assert.Equal(t, test.sdkInjected, sdkInjected)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

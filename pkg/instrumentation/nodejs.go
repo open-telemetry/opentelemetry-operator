@@ -15,7 +15,6 @@
 package instrumentation
 
 import (
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -26,15 +25,13 @@ const (
 	nodeRequireArgument = " --require /otel-auto-instrumentation/autoinstrumentation.js"
 )
 
-func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, bool) {
+func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
-	// validate container environment variables
 	err := validateContainerEnv(container.Env, envNodeOptions)
 	if err != nil {
-		logger.Info("Skipping NodeJS SDK injection", "reason:", err.Error(), "container Name", container.Name)
-		return pod, false
+		return pod, err
 	}
 
 	// inject NodeJS instrumentation spec env vars.
@@ -78,5 +75,5 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 			}},
 		})
 	}
-	return pod, true
+	return pod, nil
 }

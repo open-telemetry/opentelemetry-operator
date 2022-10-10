@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -29,9 +28,9 @@ func TestInjectPythonSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.Python
-		pod         corev1.Pod
-		expected    corev1.Pod
-		sdkInjected bool
+		pod      corev1.Pod
+		expected corev1.Pod
+		err      error
 	}{
 		{
 			name:   "PYTHONPATH not defined",
@@ -86,7 +85,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: true,
+			err: nil,
 		},
 		{
 			name:   "PYTHONPATH defined",
@@ -148,7 +147,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: true,
+			err: nil,
 		},
 		{
 			name:   "OTEL_TRACES_EXPORTER defined",
@@ -210,7 +209,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: true,
+			err: nil,
 		},
 		{
 			name:   "PYTHONPATH defined as ValueFrom",
@@ -243,15 +242,15 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: false,
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envPythonPath),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, sdkInjected := injectPythonSDK(logr.Discard(), test.Python, test.pod, 0)
+			pod, err := injectPythonSDK(test.Python, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
-			assert.Equal(t, test.sdkInjected, sdkInjected)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

@@ -15,9 +15,9 @@
 package instrumentation
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -28,9 +28,9 @@ func TestInjectJavaagent(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.Java
-		pod         corev1.Pod
-		expected    corev1.Pod
-		sdkInjected bool
+		pod      corev1.Pod
+		expected corev1.Pod
+		err      error
 	}{
 		{
 			name: "JAVA_TOOL_OPTIONS not defined",
@@ -81,7 +81,7 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: true,
+			err: nil,
 		},
 		{
 			name: "JAVA_TOOL_OPTIONS defined",
@@ -139,7 +139,7 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: true,
+			err: nil,
 		},
 		{
 			name: "JAVA_TOOL_OPTIONS defined as ValueFrom",
@@ -172,15 +172,15 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 				},
 			},
-			sdkInjected: false,
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envJavaToolsOptions),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, sdkInjected := injectJavaagent(logr.Discard(), test.Java, test.pod, 0)
+			pod, err := injectJavaagent(test.Java, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
-			assert.Equal(t, test.sdkInjected, sdkInjected)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

@@ -17,10 +17,8 @@ package instrumentation
 import (
 	"fmt"
 
-	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -30,15 +28,13 @@ const (
 	pythonPathSuffix      = "/otel-auto-instrumentation"
 )
 
-func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, bool) {
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
-	// validate container environment variables
 	err := validateContainerEnv(container.Env, envPythonPath)
 	if err != nil {
-		logger.Info("Skipping Python SDK injection", "reason:", err.Error(), "container Name", container.Name)
-		return pod, false
+		return pod, err
 	}
 
 	// inject Python instrumentation spec env vars.
@@ -91,5 +87,5 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 			}},
 		})
 	}
-	return pod, true
+	return pod, nil
 }

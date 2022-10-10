@@ -64,47 +64,54 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		}
 	}
 
-	// inject only to the first container for now
-	// in the future we can define an annotation to configure this
 	if insts.Java != nil {
 		otelinst := *insts.Java
-		sdkInjected := false
-		i.logger.V(1).Info("injecting java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod, sdkInjected = injectJavaagent(i.logger, otelinst.Spec.Java, pod, index)
-		if sdkInjected {
-			pod = i.injectCommonEnvVar(otelinst, pod, index)
-			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		var err error
+		i.logger.V(1).Info("injecting Java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod, err = injectJavaagent(otelinst.Spec.Java, pod, index)
+		if err != nil {
+			i.logger.Info("Skipping javaagent injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			return pod
 		}
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 	}
 	if insts.NodeJS != nil {
 		otelinst := *insts.NodeJS
-		sdkInjected := false
-		i.logger.V(1).Info("injecting nodejs instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod, sdkInjected = injectNodeJSSDK(i.logger, otelinst.Spec.NodeJS, pod, index)
-		if sdkInjected {
-			pod = i.injectCommonEnvVar(otelinst, pod, index)
-			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		var err error
+		i.logger.V(1).Info("injecting NodeJS instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index)
+		if err != nil {
+			i.logger.Info("Skipping NodeJS SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			return pod
 		}
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 	}
 	if insts.Python != nil {
 		otelinst := *insts.Python
-		sdkInjected := false
-		i.logger.V(1).Info("injecting python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod, sdkInjected = injectPythonSDK(i.logger, otelinst.Spec.Python, pod, index)
-		if sdkInjected {
-			pod = i.injectCommonEnvVar(otelinst, pod, index)
-			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		var err error
+		i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index)
+		if err != nil {
+			i.logger.Info("Skipping Python SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			return pod
 		}
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 	}
 	if insts.DotNet != nil {
 		otelinst := *insts.DotNet
-		sdkInjected := false
-		i.logger.V(1).Info("injecting dotnet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod, sdkInjected = injectDotNetSDK(i.logger, otelinst.Spec.DotNet, pod, index)
-		if sdkInjected {
-			pod = i.injectCommonEnvVar(otelinst, pod, index)
-			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		var err error
+		i.logger.V(1).Info("injecting Dotnet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index)
+		if err != nil {
+			i.logger.Info("Skipping DotNet SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			return pod
 		}
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+
 	}
 	if insts.Sdk != nil {
 		otelinst := *insts.Sdk
