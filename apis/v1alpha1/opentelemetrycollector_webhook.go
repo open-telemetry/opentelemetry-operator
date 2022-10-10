@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -164,6 +165,13 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
 		}
 
+	}
+
+	mode := strings.ToLower(string(r.Spec.Mode))
+	if r.Spec.Ingress.Type != "" && (mode == "deployment" || mode == "daemonset" || mode == "statefulset") {
+		return fmt.Errorf("the OptenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+			"deployment", "daemenset", "statefulset",
+		)
 	}
 
 	return nil
