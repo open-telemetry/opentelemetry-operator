@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simplest-collector
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    something.com: "true"
+  labels:
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-ingress
+  name: simplest-ingress
+  ownerReferences:
+  - apiVersion: opentelemetry.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: OpenTelemetryCollector
+    name: simplest
+spec:
+  rules:
+  - host: example.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: simplest-collector
+            port:
+              name: otlp-grpc
+        path: /otlp-grpc
+        pathType: Prefix
+      - backend:
+          service:
+            name: simplest-collector
+            port:
+              name: otlp-http
+        path: /otlp-http
+        pathType: Prefix
+      - backend:
+          service:
+            name: simplest-collector
+            port:
+              name: otlp-http-legac
+        path: /otlp-http-legacy
+        pathType: Prefix
