@@ -21,4 +21,4 @@ spec:
         fsGroup: 2000
       containers:
       - name: myapp
-        image: docker.io/avadhutp123/aspnetapp:latest
+        image: docker.io/avadhutp123/aspnetapp:latest  # source code of the application: https://github.com/dotnet/dotnet-docker/tree/main/samples/aspnetapp
