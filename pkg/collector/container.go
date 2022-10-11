@@ -15,7 +15,6 @@
 package collector
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"sort"
@@ -35,8 +34,6 @@ import (
 // maxPortLen allows us to truncate a port name according to what is considered valid port syntax:
 // https://pkg.go.dev/k8s.io/apimachinery/pkg/util/validation#IsValidPortName
 const maxPortLen = 15
-
-var errInvalidPort = errors.New("invalid port name/num")
 
 // Container builds a container for the given collector.
 func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
@@ -154,7 +151,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 			nameErrs := validation.IsValidPortName(truncName)
 			numErrs := validation.IsValidPortNum(int(p.Port))
 			if len(nameErrs) > 0 || len(numErrs) > 0 {
-				logger.Error(errInvalidPort, "dropping container port", "port.name", truncName, "port.num", p.Port,
+				logger.Info("dropping invalid container port", "port.name", truncName, "port.num", p.Port,
 					"port.name.errs", nameErrs, "num.errs", numErrs)
 				continue
 			}
@@ -168,7 +165,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 
 	metricsPort, err := getMetricsPort(c)
 	if err != nil {
-		logger.Error(err, "couldn't determine metrics port from configuration, using 8888 default value")
+		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888
 	}
 	ports["metrics"] = corev1.ContainerPort{
