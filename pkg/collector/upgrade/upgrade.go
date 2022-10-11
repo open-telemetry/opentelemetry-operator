@@ -61,7 +61,9 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 		}
 		upgraded, err := u.ManagedInstance(ctx, original)
 		if err != nil {
-			// nothing to do at this level, just go to the next instance
+			const msg = "automated update not possible. Configuration must be checked manually and recreated."
+			itemLogger.Info(msg)
+			u.Recorder.Event(&original, "Error", "Upgrade", msg)
 			continue
 		}
 
