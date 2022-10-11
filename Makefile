@@ -188,7 +188,7 @@ container-arm-build:
 container-push:
 	docker push ${IMG}
 
-.PH`ONY: container-target-allocator
+.PHONY: container-target-allocator
 container-target-allocator:
 	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
