@@ -1741,6 +1741,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecingress">ingress</a></b></td>
+        <td>object</td>
+        <td>
+          Ingress is used to specify how OpenTelemetry Collector is exposed. This functionality is only available if one of the valid modes is set. Valid modes are: deployment, daemonset and statefulset.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>maxReplicas</b></td>
         <td>integer</td>
         <td>
@@ -2468,6 +2475,90 @@ The Secret to select from
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.ingress
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+Ingress is used to specify how OpenTelemetry Collector is exposed. This functionality is only available if one of the valid modes is set. Valid modes are: deployment, daemonset and statefulset.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          Annotations to add to ingress. e.g. 'cert-manager.io/cluster-issuer: "letsencrypt"'<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostname</b></td>
+        <td>string</td>
+        <td>
+          Hostname by which the ingress proxy can be reached.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecingresstlsindex">tls</a></b></td>
+        <td>[]object</td>
+        <td>
+          TLS configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>enum</td>
+        <td>
+          Type default value is: "" Supported types are: ingress<br/>
+          <br/>
+            <i>Enum</i>: ingress<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.ingress.tls[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecingress)</sup></sup>
+
+
+
+IngressTLS describes the transport layer security associated with an Ingress.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>hosts</b></td>
+        <td>[]string</td>
+        <td>
+          Hosts are a list of hosts included in the TLS certificate. The values in this list must match the name/s used in the tlsSecret. Defaults to the wildcard host setting for the loadbalancer controller fulfilling this Ingress, if left unspecified.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName is the name of the secret used to terminate TLS traffic on port 443. Field is left optional to allow TLS routing based on SNI hostname alone. If the SNI host in a listener conflicts with the "Host" header field used by an IngressRule, the SNI host is used for termination and value of the Host header is used for routing.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
