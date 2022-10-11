@@ -409,6 +409,10 @@ func TestMutatePod(t *testing.T) {
 								Value: "otlp_proto_http",
 							},
 							{
+								Name:  "OTEL_METRICS_EXPORTER",
+								Value: "none",
+							},
+							{
 								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
 								Value: "http://localhost:4317",
 							},
@@ -488,6 +492,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp_proto_http",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "none",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
