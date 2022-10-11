@@ -25,7 +25,7 @@ import (
 // functionality is only available if one of the valid modes is set.
 // Valid modes are: deployment, daemonset and statefulset.
 type Ingress struct {
-	// Type default value is: none
+	// Type default value is: ""
 	// Supported types are: ingress
 	Type IngressType `json:"type,omitempty"`
 
