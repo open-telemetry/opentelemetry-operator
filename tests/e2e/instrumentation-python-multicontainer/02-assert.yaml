@@ -18,6 +18,8 @@ spec:
       value: /otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation
     - name: OTEL_TRACES_EXPORTER
       value: otlp_proto_http
+    - name: OTEL_METRICS_EXPORTER
+      value: none
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
