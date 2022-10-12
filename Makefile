@@ -175,10 +175,10 @@ set-test-image-vars:
 	$(eval TARGETALLOCATOR_IMG=local/opentelemetry-operator-targetallocator:e2e)
 
 # Build the container image, used only for local dev purposes
-# Use buildx for amd based systems
+# Use buildx for arm based systems (m1/2 chips)
 .PHONY: container
 container:
-ifeq ($(shell uname -m),amd)
+ifeq ($(shell uname -m),arm64)
 	docker buildx build --platform linux/amd64 ${DOCKER_BUILD_FLAGS}
 else
 	docker build ${DOCKER_BUILD_FLAGS}
