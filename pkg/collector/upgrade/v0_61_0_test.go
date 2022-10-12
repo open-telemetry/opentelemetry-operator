@@ -28,9 +28,9 @@ import (
 )
 
 var (
-	//go:embed v0_61_0-valid.yaml
+	//go:embed testdata/v0_61_0-valid.yaml
 	valid string
-	//go:embed v0_61_0-invalid.yaml
+	//go:embed testdata/v0_61_0-invalid.yaml
 	invalid string
 )
 
