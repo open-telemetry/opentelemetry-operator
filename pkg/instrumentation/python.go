@@ -17,7 +17,6 @@ package instrumentation
 import (
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -31,11 +30,16 @@ const (
 	pythonPathSuffix       = "/otel-auto-instrumentation"
 )
 
-func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.Pod, index int) corev1.Pod {
-	// caller checks if there is at least one container
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
+	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
-	// inject env vars
+	err := validateContainerEnv(container.Env, envPythonPath)
+	if err != nil {
+		return pod, err
+	}
+
+	// inject Python instrumentation spec env vars.
 	for _, env := range pythonSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -50,14 +54,7 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 			Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 		})
 	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping Python SDK injection, the container defines PYTHONPATH env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-
 		container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
-
 	}
 
 	// Set OTEL_TRACES_EXPORTER to HTTP exporter if not set by user because it is what our autoinstrumentation supports.
@@ -86,7 +83,7 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 		MountPath: "/otel-auto-instrumentation",
 	})
 
-	// We just inject Volumes and init containers for the first processed container
+	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: volumeName,
@@ -104,6 +101,5 @@ func injectPythonSDK(logger logr.Logger, pythonSpec v1alpha1.Python, pod corev1.
 			}},
 		})
 	}
-
-	return pod
+	return pod, nil
 }
