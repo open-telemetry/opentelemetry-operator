@@ -132,4 +132,34 @@ func TestExpectedStatefulsets(t *testing.T) {
 		assert.True(t, exists)
 
 	})
+
+	t.Run("change Spec.Selector should recreate statefulset", func(t *testing.T) {
+
+		oldSs := collector.StatefulSet(param.Config, logger, param.Instance)
+		oldSs.Spec.Selector.MatchLabels["app.kubernetes.io/version"] = "latest"
+		oldSs.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
+		oldSs.Name = "update-ss"
+
+		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{oldSs})
+		assert.NoError(t, err)
+		exists, err := populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		newSs := collector.StatefulSet(param.Config, logger, param.Instance)
+		newSs.Name = oldSs.Name
+		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{newSs})
+		assert.NoError(t, err)
+		exists, err = populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{newSs})
+		assert.NoError(t, err)
+		actual := v1.StatefulSet{}
+		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, newSs.Spec.Selector.MatchLabels, actual.Spec.Selector.MatchLabels)
+	})
 }
