@@ -10,7 +10,6 @@ AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep
 AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-python | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-dotnet | awk -F= '{print $$2}')"
 LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION}"
-DOCKER_BUILD_FLAGS ?=-t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION}  --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} .
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= ghcr.io/${USER}/opentelemetry-operator
@@ -178,11 +177,7 @@ set-test-image-vars:
 # Use buildx for arm based systems (m1/2 chips)
 .PHONY: container
 container:
-ifeq ($(shell uname -m),arm64)
-	docker buildx build --platform linux/amd64 ${DOCKER_BUILD_FLAGS}
-else
-	docker build ${DOCKER_BUILD_FLAGS}
-endif
+	docker buildx build --platform linux/$(go env GOARCH) -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION}  --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} .
 
 # Push the container image, used only for local dev purposes
 .PHONY: container-push
