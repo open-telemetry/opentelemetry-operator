@@ -1,0 +1,8 @@
+---
+receivers:
+  jaeger:
+    protocols:
+      grpc:
+    remote_sampling:
+      strategy_file: "/etc/strategy.json"
+      strategy_file_reload_interval: 10s
