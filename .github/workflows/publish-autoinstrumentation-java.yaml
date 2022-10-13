@@ -25,7 +25,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v4.0.1
+        uses: docker/metadata-action@v4.1.0
         with:
           images: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java
           tags: |
