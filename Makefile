@@ -179,7 +179,7 @@ set-test-image-vars:
 	$(eval TARGETALLOCATOR_IMG=local/opentelemetry-operator-targetallocator:e2e)
 
 # Build the container image, used only for local dev purposes
-# Use buildx for arm based systems (m1/2 chips)
+# buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
 container:
 	docker buildx build --platform linux/$(go env GOARCH) -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION}  --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} .
@@ -191,7 +191,7 @@ container-push:
 
 .PHONY: container-target-allocator
 container-target-allocator:
-	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
+	docker buildx build --platform linux/$(go env GOARCH) -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
 .PHONY: start-kind
 start-kind:
