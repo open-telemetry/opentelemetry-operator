@@ -342,9 +342,6 @@ bundle-build:
 bundle-push:
 	docker push $(BUNDLE_IMG)
 
-.PHONY: tools
-tools: ginkgo kustomize controller-gen operator-sdk
-
 .PHONY: api-docs
 api-docs: crdoc kustomize
 	@{ \
