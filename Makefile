@@ -158,6 +158,11 @@ generate: controller-gen api-docs
 e2e:
 	$(KUTTL) test
 
+# end-to-end-test for testing upgrading
+.PHONY: e2e-upgrade
+e2e-upgrade:
+	$(KUTTL) test --config kuttl-test-upgrade.yaml
+
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind install-metrics-server load-image-all
 	mkdir -p tests/_build/crds tests/_build/manifests

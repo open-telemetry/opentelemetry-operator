@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,6 +71,16 @@ func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.Da
 			return fmt.Errorf("failed to get: %w", err)
 		}
 
+		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
+		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+			params.Log.V(2).Info("Spec.Selector change detected, trying to delete, the new collector daemonset will be created in the next reconcile cycle", "daemonset.name", existing.Name, "daemonset.namespace", existing.Namespace)
+
+			if err := params.Client.Delete(ctx, existing); err != nil {
+				return fmt.Errorf("failed to request deleting daemonset: %w", err)
+			}
+			continue
+		}
+
 		// it exists already, merge the two if the end result isn't identical to the existing one
 		updated := existing.DeepCopy()
 		if updated.Annotations == nil {
@@ -88,9 +99,6 @@ func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.Da
 		for k, v := range desired.ObjectMeta.Labels {
 			updated.ObjectMeta.Labels[k] = v
 		}
-
-		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
-		updated.Spec.Selector = existing.Spec.Selector.DeepCopy()
 
 		patch := client.MergeFrom(existing)
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {

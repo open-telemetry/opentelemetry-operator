@@ -15,9 +15,9 @@
 package instrumentation
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -30,6 +30,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		v1alpha1.NodeJS
 		pod      corev1.Pod
 		expected corev1.Pod
+		err      error
 	}{
 		{
 			name:   "NODE_OPTIONS not defined",
@@ -80,6 +81,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name:   "NODE_OPTIONS defined",
@@ -137,6 +139,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name:   "NODE_OPTIONS defined as ValueFrom",
@@ -169,13 +172,15 @@ func TestInjectNodeJSSDK(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envNodeOptions),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectNodeJSSDK(logr.Discard(), test.NodeJS, test.pod, 0)
+			pod, err := injectNodeJSSDK(test.NodeJS, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }
