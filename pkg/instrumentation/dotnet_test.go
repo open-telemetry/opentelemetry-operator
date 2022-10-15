@@ -108,7 +108,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 			err: nil,
 		},
 		{
-			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE, OTEL_DOTNET_AUTO_HOME defined",
+			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE defined",
 			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -137,10 +137,6 @@ func TestInjectDotNetSDK(t *testing.T) {
 								},
 								{
 									Name:  envDotNetSharedStore,
-									Value: "/foo:/bar",
-								},
-								{
-									Name:  envDotNetOTelAutoHome,
 									Value: "/foo:/bar",
 								},
 							},
@@ -204,7 +200,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 								},
 								{
 									Name:  envDotNetOTelAutoHome,
-									Value: "/foo:/bar",
+									Value: dotNetOTelAutoHomePath,
 								},
 							},
 						},
@@ -311,6 +307,58 @@ func TestInjectDotNetSDK(t *testing.T) {
 				},
 			},
 			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetSharedStore),
+		},
+		{
+			name:   "OTEL_DOTNET_AUTO_HOME already set in the container",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: "/otel-dotnet-auto",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: "/otel-dotnet-auto",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the container"),
+		},
+		{
+			name:   "OTEL_DOTNET_AUTO_HOME already set in the .NET instrumentation spec",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{{Name: envDotNetOTelAutoHome, Value: dotNetOTelAutoHomePath}}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec"),
 		},
 	}
 
