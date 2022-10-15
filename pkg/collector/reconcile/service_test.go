@@ -233,8 +233,6 @@ func service(name string, ports []v1.ServicePort) v1.Service {
 	labels := collector.Labels(params().Instance, []string{})
 	labels["app.kubernetes.io/name"] = name
 
-	selector := collector.SelectorLabels(params().Instance)
-	selector["app.kubernetes.io/name"] = name
 	return v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -243,7 +241,7 @@ func service(name string, ports []v1.ServicePort) v1.Service {
 			Annotations: params().Instance.Annotations,
 		},
 		Spec: v1.ServiceSpec{
-			Selector:  selector,
+			Selector:  collector.SelectorLabels(params().Instance),
 			ClusterIP: "",
 			Ports:     ports,
 		},
