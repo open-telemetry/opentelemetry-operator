@@ -354,6 +354,52 @@ spec:
                 description: ImagePullPolicy indicates the pull policy to be used
                   for retrieving the container image (Always, Never, IfNotPresent)
                 type: string
+              ingress:
+                description: 'Ingress is used to specify how OpenTelemetry Collector
+                  is exposed. This functionality is only available if one of the valid
+                  modes is set. Valid modes are: deployment, daemonset and statefulset.'
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Annotations to add to ingress. e.g. ''cert-manager.io/cluster-issuer:
+                      "letsencrypt"'''
+                    type: object
+                  hostname:
+                    description: Hostname by which the ingress proxy can be reached.
+                    type: string
+                  tls:
+                    description: TLS configuration.
+                    items:
+                      description: IngressTLS describes the transport layer security
+                        associated with an Ingress.
+                      properties:
+                        hosts:
+                          description: Hosts are a list of hosts included in the TLS
+                            certificate. The values in this list must match the name/s
+                            used in the tlsSecret. Defaults to the wildcard host setting
+                            for the loadbalancer controller fulfilling this Ingress,
+                            if left unspecified.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        secretName:
+                          description: SecretName is the name of the secret used to
+                            terminate TLS traffic on port 443. Field is left optional
+                            to allow TLS routing based on SNI hostname alone. If the
+                            SNI host in a listener conflicts with the "Host" header
+                            field used by an IngressRule, the SNI host is used for
+                            termination and value of the Host header is used for routing.
+                          type: string
+                      type: object
+                    type: array
+                  type:
+                    description: 'Type default value is: "" Supported types are: ingress'
+                    enum:
+                    - ingress
+                    type: string
+                type: object
               maxReplicas:
                 description: MaxReplicas sets an upper bound to the autoscaling feature.
                   If MaxReplicas is set autoscaling is enabled.

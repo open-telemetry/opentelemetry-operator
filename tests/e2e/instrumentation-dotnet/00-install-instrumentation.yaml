@@ -20,7 +20,7 @@ spec:
     endpoint: http://localhost:4317
   propagators:
     - jaeger
-    - b3
+    - b3multi
   sampler:
     type: parentbased_traceidratio
     argument: "0.25"

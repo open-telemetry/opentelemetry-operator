@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -316,6 +317,20 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "targetCPUUtilization should be greater than 0 and less than 100",
+		},
+		{
+			name: "invalid deployment mode incompabible with ingress settings",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeSidecar,
+					Ingress: Ingress{
+						Type: IngressTypeNginx,
+					},
+				},
+			},
+			expectedErr: fmt.Sprintf("Ingress can only be used in combination with the modes: %s, %s, %s",
+				ModeDeployment, ModeDaemonSet, ModeStatefulSet,
+			),
 		},
 	}
 

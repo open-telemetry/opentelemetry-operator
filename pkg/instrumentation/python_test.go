@@ -80,6 +80,10 @@ func TestInjectPythonSDK(t *testing.T) {
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp_proto_http",
 								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "none",
+								},
 							},
 						},
 					},
@@ -142,6 +146,10 @@ func TestInjectPythonSDK(t *testing.T) {
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp_proto_http",
 								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "none",
+								},
 							},
 						},
 					},
@@ -203,6 +211,76 @@ func TestInjectPythonSDK(t *testing.T) {
 								{
 									Name:  "PYTHONPATH",
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "none",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "OTEL_METRICS_EXPORTER defined",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "somebackend",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: volumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    initContainerName,
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      volumeName,
+								MountPath: "/otel-auto-instrumentation",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      volumeName,
+									MountPath: "/otel-auto-instrumentation",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "somebackend",
+								},
+								{
+									Name:  "PYTHONPATH",
+									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp_proto_http",
 								},
 							},
 						},

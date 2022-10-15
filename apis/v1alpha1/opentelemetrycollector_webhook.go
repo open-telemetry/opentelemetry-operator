@@ -166,5 +166,11 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 
 	}
 
+	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
+		return fmt.Errorf("the OptenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
+		)
+	}
+
 	return nil
 }

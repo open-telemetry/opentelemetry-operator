@@ -210,6 +210,18 @@ spec:
           - list
           - update
         - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - opentelemetry.io
           resources:
           - instrumentations
