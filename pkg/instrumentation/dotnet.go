@@ -58,7 +58,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 	// check if OTEL_DOTNET_AUTO_HOME env var is already set in the .NET instrumentatiom spec
 	// if it is already set, then we assume that .NET Auto-instrumentation is already configured for this container
 	if getIndexOfEnv(dotNetSpec.Env, envDotNetOTelAutoHome) > -1 {
-		return pod, fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec")
+		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec")
 	}
 
 	// inject .NET instrumentation spec env vars.
