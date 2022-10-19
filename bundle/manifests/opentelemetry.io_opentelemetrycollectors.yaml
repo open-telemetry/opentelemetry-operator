@@ -660,6 +660,10 @@ spec:
                   type: object
                 type: array
                 x-kubernetes-list-type: atomic
+              priorityClassName:
+                description: If specified, indicates the pod's priority. If not specified,
+                  the pod priority will be default or zero if there is no default.
+                type: string
               replicas:
                 description: Replicas is the number of pod instances for the underlying
                   OpenTelemetry Collector. Set this if your are not using autoscaling
