@@ -1,5 +1,37 @@
 Changes by Version
 ==================
+0.61.0
+-------------------
+#### :x: Breaking Changes :x:
+* Jaeger receiver no longer supports remote sampling. To be able to perform an update, it must be deactivated or replaced by a configuration of the [jaegerremotesampling](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.61.0/extension/jaegerremotesampling) extension. To increase the collector version afterwards, the update must be triggered again by restarting the operator. Alternatively, the `OpenTelemetryCollector` CRD can be re-created. ([otel-contrib#14707](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/14707)
+### 🚀 New components 🚀
+* [HPA] Add targetCPUUtilization field to collector config ([#1066](https://github.com/open-telemetry/opentelemetry-operator/pull/1066), [@moh-osman3](https://github.com/moh-osman3))
+* Extend otelcol crd with minimalistic ingress options ([#1128](https://github.com/open-telemetry/opentelemetry-operator/pull/1128), [@frzifus](https://github.com/frzifus))
+* Reconcile otel collector on given context ([#1144](https://github.com/open-telemetry/opentelemetry-operator/pull/1144), [@frzifus](https://github.com/frzifus))
+* Expose container ports on the collector pod ([#1070](https://github.com/open-telemetry/opentelemetry-operator/pull/1070), [@kristinapathak](https://github.com/kristinapathak))
+* Add scrape configs endpoint ([#1124](https://github.com/open-telemetry/opentelemetry-operator/pull/1124), [@jaronoff97](https://github.com/jaronoff97))
+* Add local arm build ([#1157](https://github.com/open-telemetry/opentelemetry-operator/pull/1157), [@Efrat19](https://github.com/Efrat19))
+* [HPA] Add targetCPUUtilization field to collector config ([#1066](https://github.com/open-telemetry/opentelemetry-operator/pull/1066), [@moh-osman3](https://github.com/moh-osman3))
+### 💡 Enhancements 💡
+* Validate all env. vars. before starting injecting env. vars ([#1141](https://github.com/open-telemetry/opentelemetry-operator/pull/1141), [@avadhut123pisal](https://github.com/avadhut123pisal))
+* Update routine for migration of jaeger remote sampling in version 0.61.0 ([#1116](https://github.com/open-telemetry/opentelemetry-operator/pull/1116), [@frzifus](https://github.com/frzifus))
+* Allow version before 0.52 to upgrade ([#1126](https://github.com/open-telemetry/opentelemetry-operator/pull/1126), [@pureklkl](https://github.com/pureklkl))
+* Set OTEL_METRICS_EXPORTER to none to prevent using the default value ([#1149](https://github.com/open-telemetry/opentelemetry-operator/pull/1149), [@aabmass](https://github.com/aabmass))
+* Change app image and context propagator b3 to b3multi in .Net e2e test case  ([#1151](https://github.com/open-telemetry/opentelemetry-operator/pull/1151), [@avadhut123pisal](https://github.com/avadhut123pisal))
+* Adds deepcopy missing implementation for TargetCPUUtilization field of AutoscalerSpec ([#1138](https://github.com/open-telemetry/opentelemetry-operator/pull/1138), [@avadhut123pisal](https://github.com/avadhut123pisal))
+* Bump default python image version ([#1150](https://github.com/open-telemetry/opentelemetry-operator/pull/1150), [@aabmass](https://github.com/aabmass))
+* Bump OTel python versions to 1.13.0 and 0.34b0 ([#1147](https://github.com/open-telemetry/opentelemetry-operator/pull/1147), [@aabmass](https://github.com/aabmass)
+* Change error logs to info for building container ([#1146](https://github.com/open-telemetry/opentelemetry-operator/pull/1146), [@kristinapathak](https://github.com/kristinapathak))
+* Add missing nil checks in collector validating webhook ([#1136](https://github.com/open-telemetry/opentelemetry-operator/pull/1136), [@kristinapathak](https://github.com/kristinapathak))
+* Fix lint issues in target allocator ([#1090](https://github.com/open-telemetry/opentelemetry-operator/pull/1090), [@kristinapathak](https://github.com/kristinapathak))
+### 🧰 Bug fixes 🧰
+* Fix generated deepcopy file changes check ([#1154](https://github.com/open-telemetry/opentelemetry-operator/pull/1154), [@pavolloffay](https://github.com/pavolloffay))
+* Fix Target Allocator builds by using versions.txt ([#1140](https://github.com/open-telemetry/opentelemetry-operator/pull/1140), [@jaronoff97](https://github.com/jaronoff97))
+* Add missing entry to 0.60.0 changelog ([#1102](https://github.com/open-telemetry/opentelemetry-operator/pull/1102), [@pavolloffay](https://github.com/pavolloffay))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.61.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.61.0)
+* [OpenTelemetry Contrib - v0.61.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.61.0)
+
 0.60.0
 -------------------
 ### 🚀 New components 🚀
