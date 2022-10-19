@@ -59,6 +59,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 					Tolerations:        otelcol.Spec.Tolerations,
 					NodeSelector:       otelcol.Spec.NodeSelector,
 					SecurityContext:    otelcol.Spec.PodSecurityContext,
+					PriorityClassName:  otelcol.Spec.PriorityClassName,
 				},
 			},
 			Replicas:             otelcol.Spec.Replicas,

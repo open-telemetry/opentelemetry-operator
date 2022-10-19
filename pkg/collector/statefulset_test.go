@@ -288,3 +288,32 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 	d2 := StatefulSet(cfg, logger, otelcol_2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
+
+func TestStatefulSetPriorityClassName(t *testing.T) {
+	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	sts1 := StatefulSet(cfg, logger, otelcol_1)
+	assert.Empty(t, sts1.Spec.Template.Spec.PriorityClassName)
+
+	priorityClassName := "test-class"
+
+	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-priortyClassName",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			PriorityClassName: priorityClassName,
+		},
+	}
+
+	cfg = config.New()
+
+	sts2 := StatefulSet(cfg, logger, otelcol_2)
+	assert.Equal(t, priorityClassName, sts2.Spec.Template.Spec.PriorityClassName)
+}
