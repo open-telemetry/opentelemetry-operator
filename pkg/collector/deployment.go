@@ -59,6 +59,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 					Tolerations:        otelcol.Spec.Tolerations,
 					NodeSelector:       otelcol.Spec.NodeSelector,
 					SecurityContext:    otelcol.Spec.PodSecurityContext,
+					PriorityClassName:  otelcol.Spec.PriorityClassName,
 				},
 			},
 		},

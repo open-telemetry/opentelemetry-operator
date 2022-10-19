@@ -332,6 +332,16 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 			),
 		},
+		{
+			name: "invalid mode with priorityClassName",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:              ModeSidecar,
+					PriorityClassName: "test-class",
+				},
+			},
+			expectedErr: "does not support the attribute 'priorityClassName'",
+		},
 	}
 
 	for _, test := range tests {

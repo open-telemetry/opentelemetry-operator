@@ -1803,6 +1803,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>priorityClassName</b></td>
+        <td>string</td>
+        <td>
+          If specified, indicates the pod's priority. If not specified, the pod priority will be default or zero if there is no default.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
