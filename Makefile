@@ -167,6 +167,7 @@ e2e-upgrade:
 .PHONY: e2e-log-operator
 e2e-log-operator:
 	kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
+	kubectl get deploy -A
 
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind install-metrics-server load-image-all
