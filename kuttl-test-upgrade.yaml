@@ -23,4 +23,4 @@ commands:
   - command: sleep 60s
 testDirs:
   - ./tests/e2e-upgrade/
-timeout: 150
+timeout: 300
