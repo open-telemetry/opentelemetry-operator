@@ -2,6 +2,8 @@ Changes by Version
 ==================
 0.61.0
 -------------------
+#### :x: Breaking Changes :x:
+* Jaeger receiver no longer supports remote sampling. To be able to perform an update, it must be deactivated or replaced by a configuration of the [jaegerremotesampling](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.61.0/extension/jaegerremotesampling) extension. To increase the collector version afterwards, the update must be triggered again by restarting the operator. Alternatively, the `OpenTelemetryCollector` CRD can be re-created. ([otel-contrib#14707](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/14707)
 ### 🚀 New components 🚀
 * [HPA] Add targetCPUUtilization field to collector config ([#1066](https://github.com/open-telemetry/opentelemetry-operator/pull/1066), [@moh-osman3](https://github.com/moh-osman3))
 * Extend otelcol crd with minimalistic ingress options ([#1128](https://github.com/open-telemetry/opentelemetry-operator/pull/1128), [@frzifus](https://github.com/frzifus))
@@ -26,8 +28,6 @@ Changes by Version
 * Fix generated deepcopy file changes check ([#1154](https://github.com/open-telemetry/opentelemetry-operator/pull/1154), [@pavolloffay](https://github.com/pavolloffay))
 * Fix Target Allocator builds by using versions.txt ([#1140](https://github.com/open-telemetry/opentelemetry-operator/pull/1140), [@jaronoff97](https://github.com/jaronoff97))
 * Add missing entry to 0.60.0 changelog ([#1102](https://github.com/open-telemetry/opentelemetry-operator/pull/1102), [@pavolloffay](https://github.com/pavolloffay))
-#### :x: Breaking Changes :x:
-* Jaeger receiver no longer supports remote sampling. To be able to perform an update, it must be deactivated or replaced by a configuration of the [jaegerremotesampling](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.61.0/extension/jaegerremotesampling) extension. To increase the collector version afterwards, the update must be triggered again by restarting the operator. Alternatively, the `OpenTelemetryCollector` CRD can be re-created. ([otel-contrib#14707](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/14707)
 #### OpenTelemetry Collector and Contrib
 * [OpenTelemetry Collector - v0.61.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.61.0)
 * [OpenTelemetry Contrib - v0.61.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.61.0)
