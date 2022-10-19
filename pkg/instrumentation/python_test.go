@@ -221,6 +221,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name:   "OTEL_METRICS_EXPORTER defined",
