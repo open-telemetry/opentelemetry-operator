@@ -18,7 +18,7 @@ kindContainers:
   - ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:v0.49.0
 commands:
   - command: make cert-manager
-  - command: kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.49.0.yaml
+  - command: kubectl replace -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.49.0.yaml
   - command: kubectl rollout status -w deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system
   - command: sleep 60s
 testDirs:
