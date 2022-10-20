@@ -12,4 +12,11 @@
 #  https://help.github.com/en/articles/about-code-owners
 #
 
+# Global owners, will be the owners for everything in the repo.
 * @open-telemetry/operator-approvers
+
+# AutoInstrumentation owners
+# TBD
+
+# Target Allocator owners
+cmd/otel-allocator @open-telemetry/operator-ta-maintainers
