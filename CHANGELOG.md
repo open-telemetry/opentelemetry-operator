@@ -3,7 +3,7 @@ Changes by Version
 0.61.0
 -------------------
 #### :x: Breaking Changes :x:
-* Jaeger receiver no longer supports remote sampling. To be able to perform an update, it must be deactivated or replaced by a configuration of the [jaegerremotesampling](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.61.0/extension/jaegerremotesampling) extension. To increase the collector version afterwards, the update must be triggered again by restarting the operator. Alternatively, the `OpenTelemetryCollector` CRD can be re-created. ([otel-contrib#14707](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/14707)
+* Jaeger receiver no longer supports remote sampling. To be able to perform an update, it must be deactivated or replaced by a configuration of the [jaegerremotesampling](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.61.0/extension/jaegerremotesampling) extension. It is **important** that the `jaegerremotesampling` extension and the `jaegerreceiver` do not use the same port. To increase the collector version afterwards, the update must be triggered again by restarting the operator. Alternatively, the `OpenTelemetryCollector` CRD can be re-created. ([otel-contrib#14707](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/14707))
 ### 🚀 New components 🚀
 * [HPA] Add targetCPUUtilization field to collector config ([#1066](https://github.com/open-telemetry/opentelemetry-operator/pull/1066), [@moh-osman3](https://github.com/moh-osman3))
 * Extend otelcol crd with minimalistic ingress options ([#1128](https://github.com/open-telemetry/opentelemetry-operator/pull/1128), [@frzifus](https://github.com/frzifus))
