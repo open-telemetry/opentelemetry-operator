@@ -71,10 +71,6 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 	labels := collector.Labels(params.Instance, []string{})
 	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
-	// by coincidence, the selector is the same as the label, but note that the selector points to the deployment
-	// whereas 'labels' refers to the service
-	selector := labels
-
 	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
@@ -120,7 +116,7 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 			Annotations: params.Instance.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:  selector,
+			Selector:  collector.SelectorLabels(params.Instance),
 			ClusterIP: "",
 			Ports:     ports,
 		},
@@ -176,9 +172,6 @@ func monitoringService(ctx context.Context, params Params) *corev1.Service {
 	labels := collector.Labels(params.Instance, []string{})
 	labels["app.kubernetes.io/name"] = naming.MonitoringService(params.Instance)
 
-	selector := collector.Labels(params.Instance, []string{})
-	selector["app.kubernetes.io/name"] = fmt.Sprintf("%s-collector", params.Instance.Name)
-
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.MonitoringService(params.Instance),
@@ -187,7 +180,7 @@ func monitoringService(ctx context.Context, params Params) *corev1.Service {
 			Annotations: params.Instance.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:  selector,
+			Selector:  collector.SelectorLabels(params.Instance),
 			ClusterIP: "",
 			Ports: []corev1.ServicePort{{
 				Name: "monitoring",
