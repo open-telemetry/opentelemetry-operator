@@ -27,6 +27,8 @@ import (
 func TestOTELColDefaultingWebhook(t *testing.T) {
 	one := int32(1)
 	five := int32(5)
+	defaultCPUTarget := int32(90)
+
 	tests := []struct {
 		name     string
 		otelcol  OpenTelemetryCollector
@@ -67,6 +69,30 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					Mode:            ModeSidecar,
 					Replicas:        &five,
 					UpgradeStrategy: "adhoc",
+				},
+			},
+		},
+		{
+			name: "MaxReplicas but no Autoscale",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &five,
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:            ModeDeployment,
+					Replicas:        &one,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					Autoscaler: &AutoscalerSpec{
+						TargetCPUUtilization: &defaultCPUTarget,
+					},
+					MaxReplicas: &five,
 				},
 			},
 		},
