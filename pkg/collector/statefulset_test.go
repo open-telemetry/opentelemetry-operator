@@ -317,3 +317,31 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 	sts2 := StatefulSet(cfg, logger, otelcol_2)
 	assert.Equal(t, priorityClassName, sts2.Spec.Template.Spec.PriorityClassName)
 }
+
+func TestStatefulSetAffinity(t *testing.T) {
+	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	sts1 := Deployment(cfg, logger, otelcol_1)
+	assert.Nil(t, sts1.Spec.Template.Spec.Affinity)
+
+	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-priortyClassName",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Affinity: testAffinityValue,
+		},
+	}
+
+	cfg = config.New()
+
+	sts2 := StatefulSet(cfg, logger, otelcol_2)
+	assert.NotNil(t, sts2.Spec.Template.Spec.Affinity)
+	assert.Equal(t, *testAffinityValue, *sts2.Spec.Template.Spec.Affinity)
+}

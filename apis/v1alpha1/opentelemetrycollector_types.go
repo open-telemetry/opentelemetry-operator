@@ -143,6 +143,9 @@ type OpenTelemetryCollectorSpec struct {
 	// default.
 	// +optional
 	PriorityClassName string `json:"priorityClassName,omitempty"`
+	// If specified, indicates the pod's scheduling constraints
+	// +optional
+	Affinity *v1.Affinity `json:"affinity,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.

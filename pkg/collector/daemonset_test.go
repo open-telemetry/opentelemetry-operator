@@ -236,3 +236,31 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 	d2 := DaemonSet(cfg, logger, otelcol_2)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
+
+func TestDaemonSetAffinity(t *testing.T) {
+	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	d1 := DaemonSet(cfg, logger, otelcol_1)
+	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
+
+	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-priortyClassName",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Affinity: testAffinityValue,
+		},
+	}
+
+	cfg = config.New()
+
+	d2 := DaemonSet(cfg, logger, otelcol_2)
+	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
+	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
+}
