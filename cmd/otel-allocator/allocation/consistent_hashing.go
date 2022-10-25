@@ -154,6 +154,15 @@ func (c *consistentHashingAllocator) SetTargets(targets map[string]*target.Item)
 
 	if c.filterFunction != nil {
 		targets = c.filterFunction.Apply(targets)
+	} else {
+		// If no filterFunction is set, then filtering will be a no-op.
+		// Add metrics for targets kept and dropped in the no-op case.
+		targetsPerJob := prehook.GetTargetsPerJob(targets)
+
+		for jName, numTargets := range targetsPerJob {
+			prehook.TargetsDropped.WithLabelValues(jName).Set(0)
+			prehook.TargetsKept.WithLabelValues(jName).Set(numTargets)
+		}
 	}
 
 	c.m.Lock()

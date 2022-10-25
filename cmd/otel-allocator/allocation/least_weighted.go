@@ -166,6 +166,15 @@ func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*target.I
 
 	if allocator.filterFunction != nil {
 		targets = allocator.filterFunction.Apply(targets)
+	} else {
+		// if no filterFunction is set, then filtering will be a no-op.
+		// add metrics for targets kept and dropped in the no-op case.
+		targetsPerJob := prehook.GetTargetsPerJob(targets)
+
+		for jName, numTargets := range targetsPerJob {
+			prehook.TargetsDropped.WithLabelValues(jName).Set(0)
+			prehook.TargetsKept.WithLabelValues(jName).Set(numTargets)
+		}
 	}
 
 	allocator.m.Lock()

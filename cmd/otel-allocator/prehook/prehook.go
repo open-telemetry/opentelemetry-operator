@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/prometheus/model/relabel"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
@@ -26,6 +28,17 @@ import (
 
 const (
 	relabelConfigTargetFilterName = "relabel-config"
+)
+
+var (
+	TargetsKept = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "opentelemetry_allocator_targets_kept",
+		Help: "Number of targets kept after filtering.",
+	}, []string{"job_name"})
+	TargetsDropped = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "opentelemetry_allocator_targets_dropped",
+		Help: "Number of targets dropped after filtering.",
+	}, []string{"job_name"})
 )
 
 type Hook interface {
@@ -39,6 +52,16 @@ type HookProvider func(log logr.Logger) Hook
 var (
 	registry = map[string]HookProvider{}
 )
+
+func GetTargetsPerJob(targets map[string]*target.TargetItem) map[string]float64 {
+	targetsPerJob := make(map[string]float64)
+
+	for _, tItem := range targets {
+		targetsPerJob[tItem.JobName] += 1
+	}
+
+	return targetsPerJob
+}
 
 func New(name string, log logr.Logger) (Hook, error) {
 	if p, ok := registry[name]; ok {

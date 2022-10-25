@@ -60,10 +60,6 @@ var (
 			isDrop: false,
 		},
 		{
-			// Note that usually a label not being present, with action=keep, would
-			// mean the target is dropped. However it is hard to tell what labels will
-			// never exist and which ones will exist after relabelling, so these targets
-			// are kept in this step (will later be dealt with in Prometheus' relabel_config step)
 			cfg: relabel.Config{
 				SourceLabels: model.LabelNames{"label_not_present"},
 				Regex:        relabel.MustNewRegexp("(.*)"),
