@@ -25,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	routev1 "github.com/openshift/api/route/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -61,6 +62,11 @@ func TestMain(m *testing.M) {
 	cfg, err = testEnv.Start()
 	if err != nil {
 		fmt.Printf("failed to start testEnv: %v", err)
+		os.Exit(1)
+	}
+
+	if err = routev1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}
 

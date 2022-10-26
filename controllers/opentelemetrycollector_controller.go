@@ -34,6 +34,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -107,12 +108,14 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 				"ingresses",
 				true,
 			},
-			{
-				reconcile.Self,
-				"opentelemetry",
-				true,
-			},
 		}
+
+		if p.Config.Platform() == platform.OpenShift {
+			p.Tasks = append(p.Tasks, Task{reconcile.Routes, "routes", true})
+		}
+
+		p.Tasks = append(p.Tasks, Task{reconcile.Self, "opentelemetry", true})
+
 	}
 
 	return &OpenTelemetryCollectorReconciler{
@@ -129,6 +132,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
