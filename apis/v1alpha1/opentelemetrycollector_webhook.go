@@ -68,8 +68,11 @@ func (r *OpenTelemetryCollector) Default() {
 	}
 
 	// Set default targetCPUUtilization for autoscaler
-	if r.Spec.MaxReplicas != nil && r.Spec.Autoscaler.TargetCPUUtilization == nil {
+	if r.Spec.MaxReplicas != nil && (r.Spec.Autoscaler == nil || r.Spec.Autoscaler.TargetCPUUtilization == nil) {
 		defaultCPUTarget := int32(90)
+		if r.Spec.Autoscaler == nil {
+			r.Spec.Autoscaler = &AutoscalerSpec{}
+		}
 		r.Spec.Autoscaler.TargetCPUUtilization = &defaultCPUTarget
 	}
 }
