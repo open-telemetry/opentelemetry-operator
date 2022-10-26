@@ -35,10 +35,6 @@ var (
 		Name: "opentelemetry_allocator_targets_kept",
 		Help: "Number of targets kept after filtering.",
 	}, []string{"job_name"})
-	TargetsDropped = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets_dropped",
-		Help: "Number of targets dropped after filtering.",
-	}, []string{"job_name"})
 )
 
 type Hook interface {
@@ -53,11 +49,15 @@ var (
 	registry = map[string]HookProvider{}
 )
 
-func GetTargetsPerJob(targets map[string]*target.TargetItem) map[string]float64 {
+func RecordTargetsKeptPerJob(targets map[string]*target.TargetItem) map[string]float64 {
 	targetsPerJob := make(map[string]float64)
 
 	for _, tItem := range targets {
 		targetsPerJob[tItem.JobName] += 1
+	}
+
+	for jName, numTargets := range targetsPerJob {
+		TargetsKept.WithLabelValues(jName).Set(numTargets)
 	}
 
 	return targetsPerJob

@@ -50,7 +50,7 @@ type consistentHashingAllocator struct {
 
 	log logr.Logger
 
-	filterFunction prehook.Hook
+	filterFunction Filter
 }
 
 func newConsistentHashingAllocator(log logr.Logger, opts ...AllocOption) Allocator {
@@ -75,8 +75,8 @@ func newConsistentHashingAllocator(log logr.Logger, opts ...AllocOption) Allocat
 }
 
 // SetHook sets the filtering hook to use.
-func (c *consistentHashingAllocator) SetHook(hook prehook.Hook) {
-	c.filterFunction = hook
+func (c *consistentHashingAllocator) SetFilter(filterFunction Filter) {
+	c.filterFunction = filterFunction
 }
 
 // addTargetToTargetItems assigns a target to the collector based on its hash and adds it to the allocator's targetItems
@@ -154,16 +154,8 @@ func (c *consistentHashingAllocator) SetTargets(targets map[string]*target.Item)
 
 	if c.filterFunction != nil {
 		targets = c.filterFunction.Apply(targets)
-	} else {
-		// If no filterFunction is set, then filtering will be a no-op.
-		// Add metrics for targets kept and dropped in the no-op case.
-		targetsPerJob := prehook.GetTargetsPerJob(targets)
-
-		for jName, numTargets := range targetsPerJob {
-			prehook.TargetsDropped.WithLabelValues(jName).Set(0)
-			prehook.TargetsKept.WithLabelValues(jName).Set(numTargets)
-		}
 	}
+	prehook.RecordTargetsKeptPerJob(targets)
 
 	c.m.Lock()
 	defer c.m.Unlock()

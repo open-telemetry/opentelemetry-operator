@@ -160,8 +160,8 @@ type OpenTelemetryTargetAllocator struct {
 	// +optional
 	AllocationStrategy string `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
-	// The current options are no-op (no filtering) and relabel-config (drops targets based on prom relabel_config)
-	// The default is no-op
+	// The only current option is relabel-config (drops targets based on prom relabel_config).
+	// Filtering is disabled by default.
 	// +optional
 	FilterStrategy string `json:"filterStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance.

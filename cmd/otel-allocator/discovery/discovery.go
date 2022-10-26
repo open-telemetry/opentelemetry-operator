@@ -43,10 +43,14 @@ type Manager struct {
 	logger     log.Logger
 	close      chan struct{}
 	configsMap map[allocatorWatcher.EventSource]*config.Config
-	hook       prehook.Hook
+	hook       discoveryHook
 }
 
-func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, hook prehook.Hook, options ...func(*discovery.Manager)) *Manager {
+type discoveryHook interface {
+	SetConfig(map[string][]*relabel.Config)
+}
+
+func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, hook discoveryHook, options ...func(*discovery.Manager)) *Manager {
 	manager := discovery.NewManager(ctx, logger, options...)
 
 	go func() {

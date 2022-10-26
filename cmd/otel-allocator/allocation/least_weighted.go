@@ -49,12 +49,12 @@ type leastWeightedAllocator struct {
 
 	log logr.Logger
 
-	filterFunction prehook.Hook
+	filterFunction Filter
 }
 
 // SetHook sets the filtering hook to use.
-func (allocator *leastWeightedAllocator) SetHook(hook prehook.Hook) {
-	allocator.filterFunction = hook
+func (allocator *leastWeightedAllocator) SetFilter(filterFunction Filter) {
+	allocator.filterFunction = filterFunction
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
@@ -166,16 +166,8 @@ func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*target.I
 
 	if allocator.filterFunction != nil {
 		targets = allocator.filterFunction.Apply(targets)
-	} else {
-		// if no filterFunction is set, then filtering will be a no-op.
-		// add metrics for targets kept and dropped in the no-op case.
-		targetsPerJob := prehook.GetTargetsPerJob(targets)
-
-		for jName, numTargets := range targetsPerJob {
-			prehook.TargetsDropped.WithLabelValues(jName).Set(0)
-			prehook.TargetsKept.WithLabelValues(jName).Set(numTargets)
-		}
 	}
+	prehook.RecordTargetsKeptPerJob(targets)
 
 	allocator.m.Lock()
 	defer allocator.m.Unlock()

@@ -194,7 +194,6 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
-filter_strategy: no-op
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.test
@@ -327,7 +326,6 @@ func TestExpectedConfigMap(t *testing.T) {
 		}
 		taConfig["config"] = parmConfig
 		taConfig["allocation_strategy"] = "least-weighted"
-		taConfig["filter_strategy"] = "no-op"
 		taConfigYAML, _ := yaml.Marshal(taConfig)
 
 		assert.Equal(t, string(taConfigYAML), actual.Data["targetallocator.yaml"])

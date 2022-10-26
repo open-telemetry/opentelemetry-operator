@@ -49,15 +49,11 @@ func convertLabelToPromLabelSet(lbls model.LabelSet) []labels.Label {
 
 func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.TargetItem) map[string]*target.TargetItem {
 	numTargets := len(targets)
-	var droppedTargetsPerJob, targetsPerJob map[string]float64
 
 	// need to wait until relabelCfg is set
 	if len(tf.relabelCfg) == 0 {
 		return targets
 	}
-
-	droppedTargetsPerJob = make(map[string]float64)
-	targetsPerJob = GetTargetsPerJob(targets)
 
 	// Note: jobNameKey != tItem.JobName (jobNameKey is hashed)
 	for jobNameKey, tItem := range targets {
@@ -74,16 +70,7 @@ func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.TargetItem
 
 		if !keepTarget {
 			delete(targets, jobNameKey)
-			droppedTargetsPerJob[tItem.JobName] += 1
 		}
-
-	}
-
-	// add metrics for number of targets kept and dropped per job.
-	for jName, numTargets := range targetsPerJob {
-		numDropped := droppedTargetsPerJob[jName]
-		TargetsDropped.WithLabelValues(jName).Set(numDropped)
-		TargetsKept.WithLabelValues(jName).Set(numTargets-numDropped)
 	}
 
 	tf.log.V(2).Info("Filtering complete", "seen", numTargets, "kept", len(targets))

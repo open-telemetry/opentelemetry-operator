@@ -49,9 +49,13 @@ var (
 
 type AllocOption func(Allocator)
 
-func WithFilter(hook prehook.Hook) AllocOption {
+type Filter interface {
+	Apply(map[string]*target.TargetItem) map[string]*target.TargetItem
+}
+
+func WithFilter(filterFunction Filter) AllocOption {
 	return func(allocator Allocator) {
-		allocator.SetHook(hook)
+		allocator.SetFilter(filterFunction)
 	}
 }
 
@@ -75,7 +79,7 @@ type Allocator interface {
 	SetTargets(targets map[string]*target.Item)
 	TargetItems() map[string]*target.Item
 	Collectors() map[string]*Collector
-	SetHook(hook prehook.Hook)
+	SetFilter(filterFunction Filter)
 }
 
 var _ consistent.Member = Collector{}

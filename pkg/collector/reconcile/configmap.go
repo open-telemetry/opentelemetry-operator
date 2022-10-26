@@ -122,9 +122,8 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 
 	if len(params.Instance.Spec.TargetAllocator.FilterStrategy) > 0 {
 		taConfig["filter_strategy"] = params.Instance.Spec.TargetAllocator.FilterStrategy
-	} else {
-		taConfig["filter_strategy"] = "no-op"
 	}
+
 	taConfigYAML, err := yaml.Marshal(taConfig)
 	if err != nil {
 		return corev1.ConfigMap{}, err
