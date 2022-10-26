@@ -223,7 +223,6 @@ func servicePortsFromCfg(params Params) []corev1.ServicePort {
 	ports, err := adapters.ConfigToReceiverPorts(params.Log, config)
 	if err != nil {
 		params.Log.Error(err, "couldn't build the ingress for this instance")
-		return nil
 	}
 
 	if len(params.Instance.Spec.Ports) > 0 {

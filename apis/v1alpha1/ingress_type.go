@@ -16,7 +16,7 @@ package v1alpha1
 
 type (
 	// IngressType represents how a collector should be exposed (ingress vs route).
-	// +kubebuilder:validation:Enum=ingress;openshift-route-v1
+	// +kubebuilder:validation:Enum=ingress;openshift-route-v1-insecure;openshift-route-v1-edge;openshift-route-v1-passthrough
 	IngressType string
 )
 
@@ -24,5 +24,7 @@ const (
 	// IngressTypeNginx specifies that an ingress entry should be created.
 	IngressTypeNginx IngressType = "ingress"
 	// IngressTypeOpenshiftRoute specifies that an route entry should be created.
-	IngressTypeRouteV1 IngressType = "openshift-route-v1"
+	IngressTypeRouteV1Insecure    IngressType = "openshift-route-v1-insecure"
+	IngressTypeRouteV1Edge        IngressType = "openshift-route-v1-edge"
+	IngressTypeRouteV1Passthrough IngressType = "openshift-route-v1-passthrough"
 )
