@@ -34,6 +34,24 @@ var testTolerationValues = []v1.Toleration{
 	},
 }
 
+var testAffinityValue = &v1.Affinity{
+	NodeAffinity: &v1.NodeAffinity{
+		RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+			NodeSelectorTerms: []v1.NodeSelectorTerm{
+				{
+					MatchExpressions: []v1.NodeSelectorRequirement{
+						{
+							Key:      "node",
+							Operator: v1.NodeSelectorOpIn,
+							Values:   []string{"test-node"},
+						},
+					},
+				},
+			},
+		},
+	},
+}
+
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
@@ -257,4 +275,32 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	d2 := Deployment(cfg, logger, otelcol_2)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
+}
+
+func TestDeploymentAffinity(t *testing.T) {
+	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	d1 := Deployment(cfg, logger, otelcol_1)
+	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
+
+	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-priortyClassName",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Affinity: testAffinityValue,
+		},
+	}
+
+	cfg = config.New()
+
+	d2 := Deployment(cfg, logger, otelcol_2)
+	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
+	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }

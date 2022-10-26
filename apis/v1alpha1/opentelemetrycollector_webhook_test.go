@@ -342,6 +342,32 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 			expectedErr: "does not support the attribute 'priorityClassName'",
 		},
+		{
+			name: "invalid mode with affinity",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeSidecar,
+					Affinity: &v1.Affinity{
+						NodeAffinity: &v1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+								NodeSelectorTerms: []v1.NodeSelectorTerm{
+									{
+										MatchExpressions: []v1.NodeSelectorRequirement{
+											{
+												Key:      "node",
+												Operator: v1.NodeSelectorOpIn,
+												Values:   []string{"test-node"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "does not support the attribute 'affinity'",
+		},
 	}
 
 	for _, test := range tests {
