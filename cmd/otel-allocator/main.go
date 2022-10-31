@@ -73,11 +73,8 @@ func main() {
 	log := ctrl.Log.WithName("allocator")
 
 	// allocatorPrehook will be nil if filterStrategy is not set or
-	// unrecognized. This means no filtering will be used.
-	allocatorPrehook, err := prehook.New(cfg.GetTargetsFilterStrategy(), log)
-	if err != nil {
-		log.Info("Unrecognized filter strategy; filtering disabled")
-	}
+	// unrecognized. No filtering will be used in this case.
+	allocatorPrehook := prehook.New(cfg.GetTargetsFilterStrategy(), log)
 
 	allocator, err := allocation.New(cfg.GetAllocationStrategy(), log, allocation.WithFilter(allocatorPrehook))
 	if err != nil {

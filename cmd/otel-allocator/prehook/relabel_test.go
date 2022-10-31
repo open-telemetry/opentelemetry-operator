@@ -156,8 +156,8 @@ func makeNNewTargets(n int, numCollectors int, startingIndex int) (map[string]*t
 }
 
 func TestApply(t *testing.T) {
-	allocatorPrehook, err := New("relabel-config", logger)
-	assert.Nil(t, err)
+	allocatorPrehook := New("relabel-config", logger)
+	assert.NotNil(t, allocatorPrehook)
 
 	targets, numRemaining, expectedTargetMap, relabelCfg := makeNNewTargets(numTargets, 3, 0)
 	allocatorPrehook.SetConfig(relabelCfg)
@@ -180,8 +180,8 @@ func TestApply(t *testing.T) {
 
 func TestApplyEmptyRelabelCfg(t *testing.T) {
 
-	allocatorPrehook, err := New("relabel-config", logger)
-	assert.Nil(t, err)
+	allocatorPrehook := New("relabel-config", logger)
+	assert.NotNil(t, allocatorPrehook)
 
 	targets, _, _, _ := makeNNewTargets(numTargets, 3, 0)
 
@@ -194,8 +194,8 @@ func TestApplyEmptyRelabelCfg(t *testing.T) {
 }
 
 func TestSetConfig(t *testing.T) {
-	allocatorPrehook, err := New("relabel-config", logger)
-	assert.Nil(t, err)
+	allocatorPrehook := New("relabel-config", logger)
+	assert.NotNil(t, allocatorPrehook)
 
 	_, _, _, relabelCfg := makeNNewTargets(numTargets, 3, 0)
 	allocatorPrehook.SetConfig(relabelCfg)

@@ -16,11 +16,8 @@ package prehook
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/prometheus/model/relabel"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
@@ -28,13 +25,6 @@ import (
 
 const (
 	relabelConfigTargetFilterName = "relabel-config"
-)
-
-var (
-	TargetsKept = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets_kept",
-		Help: "Number of targets kept after filtering.",
-	}, []string{"job_name"})
 )
 
 type Hook interface {
@@ -49,25 +39,13 @@ var (
 	registry = map[string]HookProvider{}
 )
 
-func RecordTargetsKeptPerJob(targets map[string]*target.TargetItem) map[string]float64 {
-	targetsPerJob := make(map[string]float64)
-
-	for _, tItem := range targets {
-		targetsPerJob[tItem.JobName] += 1
-	}
-
-	for jName, numTargets := range targetsPerJob {
-		TargetsKept.WithLabelValues(jName).Set(numTargets)
-	}
-
-	return targetsPerJob
-}
-
-func New(name string, log logr.Logger) (Hook, error) {
+func New(name string, log logr.Logger) Hook {
 	if p, ok := registry[name]; ok {
-		return p(log.WithName("Prehook").WithName(name)), nil
+		return p(log.WithName("Prehook").WithName(name))
 	}
-	return nil, fmt.Errorf("unregistered filtering strategy: %s", name)
+
+	log.Info("Unrecognized filter strategy; filtering disabled")
+	return nil
 }
 
 func Register(name string, provider HookProvider) error {
