@@ -1,5 +1,29 @@
 Changes by Version
 ==================
+0.62.1
+------------------
+### 🚀 New components 🚀
+* Adds support of affinity in collector spec ([#1204](https://github.com/open-telemetry/opentelemetry-operator/pull/1204), [@avadhut123pisal](https://github.com/avadhut123pisal))
+
+### 💡 Enhancements 💡
+
+* Make logging easier to configure ([#1193](https://github.com/open-telemetry/opentelemetry-operator/pull/1193), [@pavolloffay](https://github.com/pavolloffay))
+* Using immutable labels as service selectors ([#1152](https://github.com/open-telemetry/opentelemetry-operator/pull/1152), [@angelokurtis](https://github.com/angelokurtis))
+* Avoid OOM of the operator ([#1194](https://github.com/open-telemetry/opentelemetry-operator/pull/1194), [@pavolloffay](https://github.com/pavolloffay))
+* Update the javaagent version to 1.19.1 ([#1188](https://github.com/open-telemetry/opentelemetry-operator/pull/1188), [@opentelemetrybot](https://github.com/opentelemetrybot))
+* Bump OTel .NET AutoInstrumentation to 0.4.0-beta.1 ([#1209](https://github.com/open-telemetry/opentelemetry-operator/pull/1209), [@pellared](https://github.com/pellared))
+* Skip .NET auto-instrumentation if OTEL_DOTNET_AUTO_HOME env var is already set ([#1177](https://github.com/open-telemetry/opentelemetry-operator/pull/1177), [@avadhut123pisal](https://github.com/avadhut123pisal))
+
+### 🧰 Bug fixes 🧰
+* Fix panic if maxreplicas is set but autoscale is not defined in the CR ([#1201](https://github.com/open-telemetry/opentelemetry-operator/pull/1201), [@kevinearls](https://github.com/kevinearls))
+
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.62.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.62.1)
+* [OpenTelemetry Contrib - v0.62.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.62.1)
+* [OpenTelemetry Collector - v0.62.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.62.0)
+* [OpenTelemetry Contrib - v0.62.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.62.0)
+
+
 0.61.0
 -------------------
 #### :x: Breaking Changes :x:
@@ -437,18 +461,18 @@ _Note: The default port for the OTLP receiver has been changed from 55680 to 431
 
 0.15.0 (2020-11-27)
 -------------------
-* Bumped OpenTelemetry Collector to v0.15.0 ([#131](https://github.com/open-telemetry/opentelemetry-operator/pull/131), [@jpkrohling](https://github.com/jpkrohling)) 
+* Bumped OpenTelemetry Collector to v0.15.0 ([#131](https://github.com/open-telemetry/opentelemetry-operator/pull/131), [@jpkrohling](https://github.com/jpkrohling))
 
 0.14.0 (2020-11-09)
 -------------------
-* Bumped OpenTelemetry Collector to v0.14.0 ([#112](https://github.com/open-telemetry/opentelemetry-operator/pull/112), [@jpkrohling](https://github.com/jpkrohling)) 
+* Bumped OpenTelemetry Collector to v0.14.0 ([#112](https://github.com/open-telemetry/opentelemetry-operator/pull/112), [@jpkrohling](https://github.com/jpkrohling))
 
 _Note: The `tailsampling` processor was moved to the contrib repository, requiring a manual intervention in case this processor is being used: either replace the image with the contrib one (v0.14.0, which includes this processor), or remove the processor._
 
 0.13.0 (2020-10-22)
 -------------------
 
-* Bumped OpenTelemetry Collector to v0.13.0 ([#101](https://github.com/open-telemetry/opentelemetry-operator/pull/101), [@dengliming](https://github.com/dengliming)) 
+* Bumped OpenTelemetry Collector to v0.13.0 ([#101](https://github.com/open-telemetry/opentelemetry-operator/pull/101), [@dengliming](https://github.com/dengliming))
 * Allow for spec.Env to be set on the OTEL Collector Spec ([#94](https://github.com/open-telemetry/opentelemetry-operator/pull/94), [@ekarlso](https://github.com/ekarlso))
 
 _Note: The `groupbytrace` processor was moved to the contrib repository, requiring a manual intervention in case this processor is being used: either replace the image with the contrib one (v0.13.1, which includes this processor), or remove the processor._
