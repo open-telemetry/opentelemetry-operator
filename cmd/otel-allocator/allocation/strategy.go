@@ -17,13 +17,13 @@ package allocation
 import (
 	"errors"
 	"fmt"
-	"net/url"
 
 	"github.com/buraksezer/consistent"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/common/model"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
 type AllocatorProvider func(log logr.Logger) Allocator
@@ -64,31 +64,9 @@ func Register(name string, provider AllocatorProvider) error {
 
 type Allocator interface {
 	SetCollectors(collectors map[string]*Collector)
-	SetTargets(targets map[string]*TargetItem)
-	TargetItems() map[string]*TargetItem
+	SetTargets(targets map[string]*target.Item)
+	TargetItems() map[string]*target.Item
 	Collectors() map[string]*Collector
-}
-
-type TargetItem struct {
-	JobName       string
-	Link          LinkJSON
-	TargetURL     string
-	Label         model.LabelSet
-	CollectorName string
-}
-
-func NewTargetItem(jobName string, targetURL string, label model.LabelSet, collectorName string) *TargetItem {
-	return &TargetItem{
-		JobName:       jobName,
-		Link:          LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))},
-		TargetURL:     targetURL,
-		Label:         label,
-		CollectorName: collectorName,
-	}
-}
-
-func (t TargetItem) Hash() string {
-	return t.JobName + t.TargetURL + t.Label.Fingerprint().String()
 }
 
 var _ consistent.Member = Collector{}

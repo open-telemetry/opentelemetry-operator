@@ -39,6 +39,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
@@ -229,9 +230,9 @@ func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
-	displayData := make(map[string]allocation.LinkJSON)
+	displayData := make(map[string]target.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
-		displayData[v.JobName] = allocation.LinkJSON{Link: v.Link.Link}
+		displayData[v.JobName] = target.LinkJSON{Link: v.Link.Link}
 	}
 	s.jsonHandler(w, displayData)
 }
@@ -250,7 +251,7 @@ func (s *server) PrometheusMiddleware(next http.Handler) http.Handler {
 func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()["collector_id"]
 
-	var compareMap = make(map[string][]allocation.TargetItem) // CollectorName+jobName -> TargetItem
+	var compareMap = make(map[string][]target.Item) // CollectorName+jobName -> TargetItem
 	for _, v := range s.allocator.TargetItems() {
 		compareMap[v.CollectorName+v.JobName] = append(compareMap[v.CollectorName+v.JobName], *v)
 	}
