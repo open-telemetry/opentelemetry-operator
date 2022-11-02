@@ -54,7 +54,7 @@ var (
 type AllocationOption func(Allocator)
 
 type Filter interface {
-	Apply(map[string]*target.TargetItem) map[string]*target.TargetItem
+	Apply(map[string]*target.Item) map[string]*target.Item
 }
 
 func WithFilter(filter Filter) AllocationOption {
@@ -63,7 +63,7 @@ func WithFilter(filter Filter) AllocationOption {
 	}
 }
 
-func RecordTargetsKeptPerJob(targets map[string]*target.TargetItem) map[string]float64 {
+func RecordTargetsKeptPerJob(targets map[string]*target.Item) map[string]float64 {
 	targetsPerJob := make(map[string]float64)
 
 	for _, tItem := range targets {

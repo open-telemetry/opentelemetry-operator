@@ -47,7 +47,7 @@ func convertLabelToPromLabelSet(lbls model.LabelSet) []labels.Label {
 	return newLabels
 }
 
-func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.TargetItem) map[string]*target.TargetItem {
+func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[string]*target.Item {
 	numTargets := len(targets)
 
 	// need to wait until relabelCfg is set

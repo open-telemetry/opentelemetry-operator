@@ -120,9 +120,9 @@ func colIndex(index, numCols int) int {
 	return index % numCols
 }
 
-func makeNNewTargets(n int, numCollectors int, startingIndex int) (map[string]*target.TargetItem, int, map[string]*target.TargetItem, map[string][]*relabel.Config) {
-	toReturn := map[string]*target.TargetItem{}
-	expectedMap := make(map[string]*target.TargetItem)
+func makeNNewTargets(n int, numCollectors int, startingIndex int) (map[string]*target.Item, int, map[string]*target.Item, map[string][]*relabel.Config) {
+	toReturn := map[string]*target.Item{}
+	expectedMap := make(map[string]*target.Item)
 	numItemsRemaining := n
 	relabelConfig := make(map[string][]*relabel.Config)
 	for i := startingIndex; i < n+startingIndex; i++ {
@@ -133,7 +133,7 @@ func makeNNewTargets(n int, numCollectors int, startingIndex int) (map[string]*t
 			"total":     model.LabelValue(strconv.Itoa(n + startingIndex)),
 		}
 		jobName := fmt.Sprintf("test-job-%d", i)
-		newTarget := target.NewTargetItem(jobName, "test-url", label, collector)
+		newTarget := target.NewItem(jobName, "test-url", label, collector)
 		// add a single replace, drop, or keep action as relabel_config for targets
 		var index int
 		ind, _ := rand.Int(rand.Reader, big.NewInt(int64(len(relabelConfigs))))
