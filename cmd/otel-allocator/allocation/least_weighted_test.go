@@ -24,6 +24,8 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -35,8 +37,8 @@ func colIndex(index, numCols int) int {
 	return index % numCols
 }
 
-func makeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*TargetItem {
-	toReturn := map[string]*TargetItem{}
+func makeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*target.Item {
+	toReturn := map[string]*target.Item{}
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
 		label := model.LabelSet{
@@ -44,7 +46,7 @@ func makeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*Ta
 			"i":         model.LabelValue(strconv.Itoa(i)),
 			"total":     model.LabelValue(strconv.Itoa(n + startingIndex)),
 		}
-		newTarget := NewTargetItem(fmt.Sprintf("test-job-%d", i), "test-url", label, collector)
+		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), "test-url", label, collector)
 		toReturn[newTarget.Hash()] = newTarget
 	}
 	return toReturn
@@ -124,10 +126,10 @@ func TestAllocationCollision(t *testing.T) {
 	secondLabels := model.LabelSet{
 		"test": "test2",
 	}
-	firstTarget := NewTargetItem("sample-name", "0.0.0.0:8000", firstLabels, "")
-	secondTarget := NewTargetItem("sample-name", "0.0.0.0:8000", secondLabels, "")
+	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
+	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
 
-	targetList := map[string]*TargetItem{
+	targetList := map[string]*target.Item{
 		firstTarget.Hash():  firstTarget,
 		secondTarget.Hash(): secondTarget,
 	}
