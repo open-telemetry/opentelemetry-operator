@@ -3,6 +3,23 @@ Changes by Version
 0.63.1
 ------------------
 ### 🚀 New components 🚀
+* None
+
+### 💡 Enhancements 💡
+* None
+
+### 🧰 Bug fixes 🧰
+* None
+
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.63.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.63.1)
+* [OpenTelemetry Contrib - v0.63.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.63.1)
+* [OpenTelemetry Collector - v0.63.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.63.0)
+* [OpenTelemetry Contrib - v0.63.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.63.0)
+
+0.62.1
+------------------
+### 🚀 New components 🚀
 * Adds support of affinity in collector spec ([#1204](https://github.com/open-telemetry/opentelemetry-operator/pull/1204), [@avadhut123pisal](https://github.com/avadhut123pisal))
 
 ### 💡 Enhancements 💡
@@ -18,10 +35,6 @@ Changes by Version
 * Fix panic if maxreplicas is set but autoscale is not defined in the CR ([#1201](https://github.com/open-telemetry/opentelemetry-operator/pull/1201), [@kevinearls](https://github.com/kevinearls))
 
 #### OpenTelemetry Collector and Contrib
-* [OpenTelemetry Collector - v0.63.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.63.1)
-* [OpenTelemetry Contrib - v0.63.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.63.1)
-* [OpenTelemetry Collector - v0.63.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.63.0)
-* [OpenTelemetry Contrib - v0.63.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.63.0)
 * [OpenTelemetry Collector - v0.62.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.62.1)
 * [OpenTelemetry Contrib - v0.62.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.62.1)
 * [OpenTelemetry Collector - v0.62.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.62.0)
