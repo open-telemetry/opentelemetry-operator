@@ -158,7 +158,7 @@ type OpenTelemetryTargetAllocator struct {
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted and consistent-hashing. The default option is least-weighted
 	// +optional
-	AllocationStrategy string `json:"allocationStrategy,omitempty"`
+	AllocationStrategy OpenTelemetryTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance.
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
