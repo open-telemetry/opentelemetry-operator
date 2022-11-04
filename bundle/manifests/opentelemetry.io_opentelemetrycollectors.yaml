@@ -1016,6 +1016,12 @@ spec:
                       the HPA will scale up. Defaults to 90 percent.
                     format: int32
                     type: integer
+                  targetMemoryUtilization:
+                    description: Metrics []autoscalingv2.MetricSpec `json:"metrics,omitempty"`
+                      TargetMemoryUtilization sets the target average memory utilization
+                      across all replicas
+                    format: int32
+                    type: integer
                 type: object
               config:
                 description: Config is the raw JSON to be used as the collector's

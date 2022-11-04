@@ -254,6 +254,10 @@ type AutoscalerSpec struct {
 	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
 	// +optional
 	TargetCPUUtilization *int32 `json:"targetCPUUtilization,omitempty"`
+	// +optional
+	// Metrics []autoscalingv2.MetricSpec `json:"metrics,omitempty"`
+	// TargetMemoryUtilization sets the target average memory utilization across all replicas
+	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
 }
 
 func init() {

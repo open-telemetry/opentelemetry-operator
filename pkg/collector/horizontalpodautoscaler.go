@@ -79,6 +79,22 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 
 		result = &autoscaler
 	} else {
+		metrics := []autoscalingv2.MetricSpec{}
+
+		if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.TargetMemoryUtilization != nil {
+			utilizationTarget := autoscalingv2.MetricSpec{
+				Type: autoscalingv2.ResourceMetricSourceType,
+				Resource: &autoscalingv2.ResourceMetricSource{
+					Name: corev1.ResourceMemory,
+					Target: autoscalingv2.MetricTarget{
+						Type:               autoscalingv2.UtilizationMetricType,
+						AverageUtilization: otelcol.Spec.Autoscaler.TargetMemoryUtilization,
+					},
+				},
+			}
+			metrics = append(metrics, utilizationTarget)
+		}
+
 		targetCPUUtilization := autoscalingv2.MetricSpec{
 			Type: autoscalingv2.ResourceMetricSourceType,
 			Resource: &autoscalingv2.ResourceMetricSource{
@@ -89,7 +105,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				},
 			},
 		}
-		metrics := []autoscalingv2.MetricSpec{targetCPUUtilization}
+		metrics = append(metrics, targetCPUUtilization)
 
 		autoscaler := autoscalingv2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
