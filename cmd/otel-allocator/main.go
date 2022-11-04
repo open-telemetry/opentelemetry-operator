@@ -39,6 +39,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/prehook"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
@@ -72,11 +73,16 @@ func main() {
 
 	log := ctrl.Log.WithName("allocator")
 
-	allocator, err := allocation.New(cfg.GetAllocationStrategy(), log)
+	// allocatorPrehook will be nil if filterStrategy is not set or
+	// unrecognized. No filtering will be used in this case.
+	allocatorPrehook := prehook.New(cfg.GetTargetsFilterStrategy(), log)
+
+	allocator, err := allocation.New(cfg.GetAllocationStrategy(), log, allocation.WithFilter(allocatorPrehook))
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
+
 	watcher, err := allocatorWatcher.NewWatcher(setupLog, cliConf, allocator)
 	if err != nil {
 		setupLog.Error(err, "Can't start the watchers")
@@ -90,8 +96,9 @@ func main() {
 	}()
 
 	// creates a new discovery manager
-	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger())
+	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger(), allocatorPrehook)
 	defer discoveryManager.Close()
+
 	discoveryManager.Watch(allocator.SetTargets)
 
 	k8sclient, err := configureFileDiscovery(log, allocator, discoveryManager, context.Background(), cliConf)
