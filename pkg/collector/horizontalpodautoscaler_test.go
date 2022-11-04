@@ -52,7 +52,8 @@ func TestHPA(t *testing.T) {
 			Replicas:    &minReplicas,
 			MaxReplicas: &maxReplicas,
 			Autoscaler: &v1alpha1.AutoscalerSpec{
-				TargetCPUUtilization: &cpuUtilization,
+				TargetCPUUtilization:    &cpuUtilization,
+				TargetMemoryUtilization: &memoryUtilization,
 			},
 		},
 	}
@@ -67,9 +68,6 @@ func TestHPA(t *testing.T) {
 			configuration := config.New(config.WithAutoDetect(mockAutoDetector))
 			err := configuration.AutoDetect()
 			assert.NoError(t, err)
-			if configuration.AutoscalingVersion() == autodetect.AutoscalingVersionV2 {
-				otelcol.Spec.Autoscaler.TargetMemoryUtilization = &memoryUtilization
-			}
 			raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
 
 			if configuration.AutoscalingVersion() == autodetect.AutoscalingVersionV2Beta2 {
@@ -80,9 +78,13 @@ func TestHPA(t *testing.T) {
 				assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
 				assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)
 				assert.Equal(t, int32(5), hpa.Spec.MaxReplicas)
-				assert.Equal(t, 1, len(hpa.Spec.Metrics))
-				assert.Equal(t, corev1.ResourceCPU, hpa.Spec.Metrics[0].Resource.Name)
-				assert.Equal(t, cpuUtilization, *hpa.Spec.Metrics[0].Resource.Target.AverageUtilization)
+				for _, metric := range hpa.Spec.Metrics {
+					if metric.Resource.Name == corev1.ResourceCPU {
+						assert.Equal(t, cpuUtilization, *metric.Resource.Target.AverageUtilization)
+					} else if metric.Resource.Name == corev1.ResourceMemory {
+						assert.Equal(t, memoryUtilization, *metric.Resource.Target.AverageUtilization)
+					}
+				}
 			} else {
 				hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
 
