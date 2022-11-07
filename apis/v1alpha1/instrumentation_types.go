@@ -145,8 +145,18 @@ type DotNet struct {
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
+const (
+	StatusTypeReady = "Ready"
+	ReasonJavaAgent = "JavaAgent"
+	ReasonNodeAgaint = "NodeAgent"
+	ReasonPythonAgent = "PythonAgent"
+	ReasonDotNetAgent = "DotNetAgent"
+)
+
 // InstrumentationStatus defines status of the instrumentation.
 type InstrumentationStatus struct {
+	// Conditions contains the latest status condition updates.
+	Conditions []metav1.Condition `json:"conditions"`
 }
 
 // +kubebuilder:object:root=true

@@ -28,6 +28,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -68,48 +69,108 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.Java
 		var err error
 		i.logger.V(1).Info("injecting Java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		condition := metav1.Condition{
+			Type:   v1alpha1.StatusTypeReady,
+			Status: metav1.ConditionFalse,
+			Reason: v1alpha1.ReasonJavaAgent,
+		}
 		pod, err = injectJavaagent(otelinst.Spec.Java, pod, index)
 		if err != nil {
 			i.logger.Info("Skipping javaagent injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			condition.Message = err.Error()
 		} else {
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+			condition.Status = metav1.ConditionTrue
+		}
+		meta.SetStatusCondition(
+			&otelinst.Status.Conditions,
+			condition,
+		)
+		err = i.client.Status().Update(ctx, &otelinst)
+		if err != nil {
+			i.logger.Info("error updating Instrumentation status", "err", err.Error())
 		}
 	}
 	if insts.NodeJS != nil {
 		otelinst := *insts.NodeJS
 		var err error
 		i.logger.V(1).Info("injecting NodeJS instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		condition := metav1.Condition{
+			Type:   v1alpha1.StatusTypeReady,
+			Status: metav1.ConditionFalse,
+			Reason: v1alpha1.ReasonNodeAgaint,
+		}
 		pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index)
 		if err != nil {
 			i.logger.Info("Skipping NodeJS SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			condition.Message = err.Error()
 		} else {
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+			condition.Status = metav1.ConditionTrue
+		}
+		meta.SetStatusCondition(
+			&otelinst.Status.Conditions,
+			condition,
+		)
+		err = i.client.Status().Update(ctx, &otelinst)
+		if err != nil {
+			i.logger.Info("error updating Instrumentation status", "err", err.Error())
 		}
 	}
 	if insts.Python != nil {
 		otelinst := *insts.Python
 		var err error
 		i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		condition := metav1.Condition{
+			Type:   v1alpha1.StatusTypeReady,
+			Status: metav1.ConditionFalse,
+			Reason: v1alpha1.ReasonPythonAgent,
+		}
 		pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index)
 		if err != nil {
 			i.logger.Info("Skipping Python SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			condition.Message = err.Error()
 		} else {
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+			condition.Status = metav1.ConditionTrue
+		}
+		meta.SetStatusCondition(
+			&otelinst.Status.Conditions,
+			condition,
+		)
+		err = i.client.Status().Update(ctx, &otelinst)
+		if err != nil {
+			i.logger.Info("error updating Instrumentation status", "err", err.Error())
 		}
 	}
 	if insts.DotNet != nil {
 		otelinst := *insts.DotNet
 		var err error
 		i.logger.V(1).Info("injecting DotNet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		condition := metav1.Condition{
+			Type:   v1alpha1.StatusTypeReady,
+			Status: metav1.ConditionFalse,
+			Reason: v1alpha1.ReasonDotNetAgent,
+		}
 		pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index)
 		if err != nil {
 			i.logger.Info("Skipping DotNet SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			condition.Message = err.Error()
 		} else {
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+			condition.Status = metav1.ConditionTrue
+		}
+		meta.SetStatusCondition(
+			&otelinst.Status.Conditions,
+			condition,
+		)
+		err = i.client.Status().Update(ctx, &otelinst)
+		if err != nil {
+			i.logger.Info("error updating Instrumentation status", "err", err.Error())
 		}
 	}
 	if insts.Sdk != nil {

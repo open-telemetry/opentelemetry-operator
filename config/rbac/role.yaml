@@ -145,6 +145,14 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
+  - instrumentations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - opentelemetry.io
+  resources:
   - opentelemetrycollectors
   verbs:
   - get
