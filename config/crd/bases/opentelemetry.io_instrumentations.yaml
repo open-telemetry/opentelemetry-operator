@@ -799,8 +799,26 @@ spec:
                   - type
                   type: object
                 type: array
+              failed:
+                additionalProperties:
+                  items:
+                    type: string
+                  type: array
+                description: Failed is a map of successful Pod auto-instrumentations
+                  by language
+                type: object
+              succeeded:
+                additionalProperties:
+                  items:
+                    type: string
+                  type: array
+                description: Succeeded is a map of successful Pod auto-instrumentations
+                  by language
+                type: object
             required:
             - conditions
+            - failed
+            - succeeded
             type: object
         type: object
     served: true

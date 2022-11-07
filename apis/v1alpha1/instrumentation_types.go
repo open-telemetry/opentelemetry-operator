@@ -155,6 +155,10 @@ const (
 
 // InstrumentationStatus defines status of the instrumentation.
 type InstrumentationStatus struct {
+	// Succeeded is a map of successful Pod auto-instrumentations by language
+	Succeeded map[string][]string `json:"succeeded"`
+	// Failed is a map of successful Pod auto-instrumentations by language
+	Failed map[string][]string `json:"failed"`
 	// Conditions contains the latest status condition updates.
 	Conditions []metav1.Condition `json:"conditions"`
 }

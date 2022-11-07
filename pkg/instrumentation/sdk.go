@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -83,6 +84,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 			condition.Status = metav1.ConditionTrue
 		}
+		otelinst.Status.Succeeded, otelinst.Status.Failed = updateStatus(
+			otelinst.Status.Succeeded,
+			otelinst.Status.Failed,
+			"java",
+			err,
+			fmt.Sprintf("%s/%s", ns.Name, pod.Spec.Containers[index].Name),
+		)
 		meta.SetStatusCondition(
 			&otelinst.Status.Conditions,
 			condition,
@@ -110,6 +118,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 			condition.Status = metav1.ConditionTrue
 		}
+		otelinst.Status.Succeeded, otelinst.Status.Failed = updateStatus(
+			otelinst.Status.Succeeded,
+			otelinst.Status.Failed,
+			"nodejs",
+			err,
+			fmt.Sprintf("%s/%s", ns.Name, pod.Spec.Containers[index].Name),
+		)
 		meta.SetStatusCondition(
 			&otelinst.Status.Conditions,
 			condition,
@@ -137,6 +152,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 			condition.Status = metav1.ConditionTrue
 		}
+		otelinst.Status.Succeeded, otelinst.Status.Failed = updateStatus(
+			otelinst.Status.Succeeded,
+			otelinst.Status.Failed,
+			"python",
+			err,
+			fmt.Sprintf("%s/%s", ns.Name, pod.Spec.Containers[index].Name),
+		)
 		meta.SetStatusCondition(
 			&otelinst.Status.Conditions,
 			condition,
@@ -164,6 +186,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 			condition.Status = metav1.ConditionTrue
 		}
+		otelinst.Status.Succeeded, otelinst.Status.Failed = updateStatus(
+			otelinst.Status.Succeeded,
+			otelinst.Status.Failed,
+			"dotnet",
+			err,
+			fmt.Sprintf("%s/%s", ns.Name, pod.Spec.Containers[index].Name),
+		)
 		meta.SetStatusCondition(
 			&otelinst.Status.Conditions,
 			condition,
@@ -468,4 +497,46 @@ func validateContainerEnv(envs []corev1.EnvVar, envsToBeValidated ...string) err
 		}
 	}
 	return nil
+}
+
+// updateStatus updates the list of successful and failed auto-instrumentation pods
+func updateStatus(succeeded, failed map[string][]string, inst string, err error, containerName string) (map[string][]string, map[string][]string) {
+	if succeeded == nil {
+		succeeded = make(map[string][]string)
+	}
+	if failed == nil {
+		failed = make(map[string][]string)
+	}
+
+	hasFailed := false
+	hasSucceeded := false
+	failedPods := sets.NewString(failed[inst]...)
+	if failedPods.Has(containerName) {
+		hasFailed = true
+	}
+	succeededPods := sets.NewString(succeeded[inst]...)
+	if succeededPods.Has(containerName) {
+		hasSucceeded = true
+	}
+
+	// if this update failed, make sure the pod is in the "failed" list and pop it from the succeeded list
+	if err != nil {
+		if !hasFailed {
+			failed[inst] = append(failed[inst], containerName)
+		}
+		if hasSucceeded {
+			succeeded[inst] = succeededPods.Delete(containerName).List()
+		}
+	}
+
+	// otherwise, do the opposite
+	if err == nil {
+		if !hasSucceeded {
+			succeeded[inst] = append(succeeded[inst], containerName)
+		}
+		if hasFailed {
+			failed[inst] = failedPods.Delete(containerName).List()
+		}
+	}
+	return succeeded, failed
 }
