@@ -16,6 +16,7 @@ package collector
 
 import (
 	"fmt"
+
 	"github.com/go-logr/logr"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
