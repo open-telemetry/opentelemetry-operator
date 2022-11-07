@@ -22,14 +22,13 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/diff"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
 var _ Allocator = &consistentHashingAllocator{}
 
-const consistentHashingStrategyName = string(v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing)
+const consistentHashingStrategyName = "consistent-hashing"
 
 type hasher struct{}
 

@@ -17,7 +17,6 @@ package allocation
 import (
 	"sync"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/diff"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 
@@ -27,7 +26,7 @@ import (
 
 var _ Allocator = &leastWeightedAllocator{}
 
-const leastWeightedStrategyName = string(v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted)
+const leastWeightedStrategyName = "least-weighted"
 
 /*
 	Load balancer will serve on an HTTP server exposing /jobs/<job_id>/targets

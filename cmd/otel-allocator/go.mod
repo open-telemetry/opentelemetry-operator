@@ -10,7 +10,6 @@ require (
 	github.com/go-kit/log v0.2.0
 	github.com/go-logr/logr v1.2.3
 	github.com/gorilla/mux v1.8.0
-	github.com/open-telemetry/opentelemetry-operator v0.63.1
 	github.com/prometheus-operator/prometheus-operator v0.53.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.53.1
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.53.1
@@ -171,5 +170,3 @@ require (
 // A exclude directive is needed for k8s.io/client-go because Cortex (which
 // is an indirect dependency through Thanos and PrometheusOperator) has a requirement on v12.0.0.
 exclude k8s.io/client-go v12.0.0+incompatible
-
-replace github.com/open-telemetry/opentelemetry-operator => ../../
