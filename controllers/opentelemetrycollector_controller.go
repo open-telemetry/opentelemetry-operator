@@ -18,7 +18,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -29,6 +28,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -168,9 +168,12 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
-			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
-			if task.BailOnError {
-				return err
+			// Ignore errors that occur because a pod is being terminated
+			if !apierrors.IsForbidden(err) || !strings.Contains(err.Error(), "because it is being terminated") {
+				r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
+				if task.BailOnError {
+					return err
+				}
 			}
 		}
 	}
