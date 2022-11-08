@@ -131,12 +131,9 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 
 			// This will update memory and CPU usage for now, and can be used to update other metrics in the future
 			for _, metric := range updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics {
-				fmt.Println(">>>>>>>>> In metrics for ", metric.Resource.Name)
 				if metric.Resource.Name == corev1.ResourceCPU {
-					fmt.Println(">>>>>>>>>> HPA Reconciler setting ", metric.Resource.Name, "to", *params.Instance.Spec.Autoscaler.TargetCPUUtilization)
 					metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
 				} else if metric.Resource.Name == corev1.ResourceMemory {
-					fmt.Println(">>>>>>>>>> HPA Reconciler setting ", metric.Resource.Name, "to", *params.Instance.Spec.Autoscaler.TargetMemoryUtilization)
 					metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetMemoryUtilization
 				}
 			}
