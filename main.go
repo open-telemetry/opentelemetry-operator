@@ -52,7 +52,7 @@ import (
 )
 
 // We should avoid that users unknowingly use a vulnerable TLS version.
-// The defaults should be a safe configuration
+// The defaults should be a safe configuration.
 const defaultMinTLSVersion = tls.VersionTLS12
 
 var (
