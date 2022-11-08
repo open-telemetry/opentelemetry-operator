@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"os"
@@ -49,6 +50,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 	// +kubebuilder:scaffold:imports
 )
+
+// We should avoid that users unknowingly use a vulnerable TLS version.
+// The defaults should be a safe configuration.
+const defaultMinTLSVersion = tls.VersionTLS12
 
 var (
 	scheme   = k8sruntime.NewScheme()
@@ -151,10 +156,16 @@ func main() {
 	leaseDuration := time.Second * 137
 	renewDeadline := time.Second * 107
 	retryPeriod := time.Second * 26
+
+	optionsTlSOptsFuncs := []func(*tls.Config){
+		func(config *tls.Config) { minTlsDefault(config) },
+	}
+
 	mgrOptions := ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   webhookPort,
+		TLSOpts:                optionsTlSOptsFuncs,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "9f7554c3.opentelemetry.io",
@@ -276,4 +287,8 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 		return fmt.Errorf("failed to upgrade Instrumentation instances: %w", err)
 	}
 	return nil
+}
+
+func minTlsDefault(cfg *tls.Config) {
+	cfg.MinVersion = defaultMinTLSVersion
 }
