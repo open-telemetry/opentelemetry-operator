@@ -16,7 +16,6 @@ package prehook
 
 import (
 	"bytes"
-	"os"
 
 	"github.com/go-logr/logr"
 
@@ -90,7 +89,7 @@ func (tf *RelabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config
 
 	out, err := yaml2.Marshal(relabelCfgCopy)
 	if err != nil {
-		tf.log.V(2).Info("Error Marshalling", "error", err)
+		tf.log.V(2).Info("Error Marshaling", "error", err)
 		return
 	}
 
@@ -112,10 +111,10 @@ func (tf *RelabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
 }
 
 func replaceShard(body []byte) []byte {
-	shard, ok := os.LookupEnv("SHARD")
-	if !ok {
-		shard = "0"
-	}
+	// See this thread [https://github.com/open-telemetry/opentelemetry-operator/pull/1124/files#r983145795]
+	// for why SHARD == 0 is a necessary substitution. Otherwise the keep action that uses this env variable,
+	// would not match the regex and all targets end up dropped.
+	shard := "0"
 	return bytes.ReplaceAll(body, []byte("$(SHARD)"), []byte(shard))
 }
 
