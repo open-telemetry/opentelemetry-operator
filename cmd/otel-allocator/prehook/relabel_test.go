@@ -35,70 +35,125 @@ var (
 
 	relabelConfigs = []relabelConfigObj{
 		{
-			cfg: relabel.Config{
-				Action:      "replace",
+			cfg: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{"i"},
+					Action:      "replace",
+					Separator:   ";",
+					Regex:       relabel.MustNewRegexp("(.*)"),
+					Replacement: "$1",
+					TargetLabel: "foo",
+				},
+			},
+			isDrop: false,
+		},
+		{
+			cfg: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{"i"},
+					Regex:        relabel.MustNewRegexp("(.*)"),
+					Separator:   ";",
+					Action:       "keep",
+					Replacement: "$1",
+				},
+			},
+			isDrop: false,
+		},
+		{
+			cfg: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{"i"},
+					Regex:        relabel.MustNewRegexp("bad.*match"),
+					Action:       "drop",
+					Separator:   ";",
+					Replacement: "$1",
+				},
+			},
+			isDrop: false,
+		},
+		{
+			cfg: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{"label_not_present"},
+					Regex:        relabel.MustNewRegexp("(.*)"),
+					Separator:   ";",
+					Action:       "keep",
+					Replacement: "$1",
+				},
+			},
+			isDrop: false,
+		},
+		{
+			cfg: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{"i"},
+					Regex:        relabel.MustNewRegexp("(.*)"),
+					Separator:   ";",
+					Action:       "drop",
+					Replacement: "$1",
+				},
+			},
+			isDrop: true,
+		},
+		{
+			cfg: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{"collector"},
+					Regex:        relabel.MustNewRegexp("(collector.*)"),
+					Separator:   ";",
+					Action:       "drop",
+					Replacement: "$1",
+				},
+			},
+			isDrop: true,
+		},
+		{
+			cfg: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{"i"},
+					Regex:        relabel.MustNewRegexp("bad.*match"),
+					Separator:   ";",
+					Action:       "keep",
+					Replacement: "$1",
+				},
+			},
+			isDrop: true,
+		},
+		{
+			cfg: []*relabel.Config{
+				{
+					SourceLabels: model.LabelNames{"collector"},
+					Regex:        relabel.MustNewRegexp("collectors-n"),
+					Separator:   ";",
+					Action:       "keep",
+					Replacement: "$1",
+				},
+			},
+			isDrop: true,
+		},
+	}
+
+	HashmodConfig =	relabelConfigObj{
+		cfg: []*relabel.Config{
+			{
+				SourceLabels: model.LabelNames{"i"},
+				Regex:        relabel.MustNewRegexp("(.*)"),
 				Separator:   ";",
-				Regex:       relabel.MustNewRegexp("(.*)"),
+				Modulus: 1,
+				TargetLabel: "tmp",
+				Action:       "hashmod",
 				Replacement: "$1",
 			},
-			isDrop: false,
-		},
-		{
-			cfg: relabel.Config{
-				SourceLabels: model.LabelNames{"i"},
-				Regex:        relabel.MustNewRegexp("(.*)"),
+
+			{
+				SourceLabels: model.LabelNames{"tmp"},
+				Regex:        relabel.MustNewRegexp("$(SHARD)"),
+				Separator:   ";",
 				Action:       "keep",
+				Replacement: "$1",
 			},
-			isDrop: false,
 		},
-		{
-			cfg: relabel.Config{
-				SourceLabels: model.LabelNames{"i"},
-				Regex:        relabel.MustNewRegexp("bad.*match"),
-				Action:       "drop",
-			},
-			isDrop: false,
-		},
-		{
-			cfg: relabel.Config{
-				SourceLabels: model.LabelNames{"label_not_present"},
-				Regex:        relabel.MustNewRegexp("(.*)"),
-				Action:       "keep",
-			},
-			isDrop: false,
-		},
-		{
-			cfg: relabel.Config{
-				SourceLabels: model.LabelNames{"i"},
-				Regex:        relabel.MustNewRegexp("(.*)"),
-				Action:       "drop",
-			},
-			isDrop: true,
-		},
-		{
-			cfg: relabel.Config{
-				SourceLabels: model.LabelNames{"collector"},
-				Regex:        relabel.MustNewRegexp("(collector.*)"),
-				Action:       "drop",
-			},
-			isDrop: true,
-		},
-		{
-			cfg: relabel.Config{
-				SourceLabels: model.LabelNames{"i"},
-				Regex:        relabel.MustNewRegexp("bad.*match"),
-				Action:       "keep",
-			},
-			isDrop: true,
-		},
-		{
-			cfg: relabel.Config{
-				SourceLabels: model.LabelNames{"collector"},
-				Regex:        relabel.MustNewRegexp("collectors-n"),
-				Action:       "keep",
-			},
-			isDrop: true,
-		},
+		isDrop: false,
 	}
 
 	DefaultDropRelabelConfig = relabel.Config{
@@ -109,7 +164,7 @@ var (
 )
 
 type relabelConfigObj struct {
-	cfg    relabel.Config
+	cfg    []*relabel.Config
 	isDrop bool
 }
 
@@ -120,7 +175,7 @@ func colIndex(index, numCols int) int {
 	return index % numCols
 }
 
-func makeNNewTargets(n int, numCollectors int, startingIndex int) (map[string]*target.Item, int, map[string]*target.Item, map[string][]*relabel.Config) {
+func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startingIndex int) (map[string]*target.Item, int, map[string]*target.Item, map[string][]*relabel.Config) {
 	toReturn := map[string]*target.Item{}
 	expectedMap := make(map[string]*target.Item)
 	numItemsRemaining := n
@@ -140,9 +195,7 @@ func makeNNewTargets(n int, numCollectors int, startingIndex int) (map[string]*t
 
 		index = int(ind.Int64())
 
-		relabelConfig[jobName] = []*relabel.Config{
-			&relabelConfigs[index].cfg,
-		}
+		relabelConfig[jobName] = rCfgs[index].cfg
 
 		targetKey := newTarget.Hash()
 		if relabelConfigs[index].isDrop {
@@ -159,7 +212,7 @@ func TestApply(t *testing.T) {
 	allocatorPrehook := New("relabel-config", logger)
 	assert.NotNil(t, allocatorPrehook)
 
-	targets, numRemaining, expectedTargetMap, relabelCfg := makeNNewTargets(numTargets, 3, 0)
+	targets, numRemaining, expectedTargetMap, relabelCfg := makeNNewTargets(relabelConfigs, numTargets, 3, 0)
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems := allocatorPrehook.Apply(targets)
 	assert.Len(t, remainingItems, numRemaining)
@@ -178,12 +231,24 @@ func TestApply(t *testing.T) {
 	assert.Equal(t, remainingItems, targets)
 }
 
+func TestApplyHashmodAction(t *testing.T) {
+	allocatorPrehook := New("relabel-config", logger)
+	assert.NotNil(t, allocatorPrehook)
+
+	hashRelabelConfigs := append(relabelConfigs, HashmodConfig)
+	targets, numRemaining, expectedTargetMap, relabelCfg := makeNNewTargets(hashRelabelConfigs, numTargets, 3, 0)
+	allocatorPrehook.SetConfig(relabelCfg)
+	remainingItems := allocatorPrehook.Apply(targets)
+	assert.Len(t, remainingItems, numRemaining)
+	assert.Equal(t, remainingItems, expectedTargetMap)
+}
+
 func TestApplyEmptyRelabelCfg(t *testing.T) {
 
 	allocatorPrehook := New("relabel-config", logger)
 	assert.NotNil(t, allocatorPrehook)
 
-	targets, _, _, _ := makeNNewTargets(numTargets, 3, 0)
+	targets, _, _, _ := makeNNewTargets(relabelConfigs, numTargets, 3, 0)
 
 	relabelCfg := map[string][]*relabel.Config{}
 	allocatorPrehook.SetConfig(relabelCfg)
@@ -197,7 +262,7 @@ func TestSetConfig(t *testing.T) {
 	allocatorPrehook := New("relabel-config", logger)
 	assert.NotNil(t, allocatorPrehook)
 
-	_, _, _, relabelCfg := makeNNewTargets(numTargets, 3, 0)
+	_, _, _, relabelCfg := makeNNewTargets(relabelConfigs, numTargets, 3, 0)
 	allocatorPrehook.SetConfig(relabelCfg)
 	assert.Equal(t, relabelCfg, allocatorPrehook.GetConfig())
 }

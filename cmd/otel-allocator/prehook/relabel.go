@@ -15,10 +15,15 @@
 package prehook
 
 import (
+	"bytes"
+	"os"
+
 	"github.com/go-logr/logr"
+
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
+	yaml2 "gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
@@ -82,6 +87,19 @@ func (tf *RelabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config
 	for key, val := range cfgs {
 		relabelCfgCopy[key] = val
 	}
+
+	out, err := yaml2.Marshal(relabelCfgCopy)
+	if err != nil {
+		tf.log.V(2).Info("Error Marshalling", "error", err)
+		return
+	}
+
+	byteArr := replaceShard([]byte(out))
+	err = yaml2.Unmarshal(byteArr, &relabelCfgCopy)
+	if err != nil {
+		tf.log.Info("Error Unmarshalling", "error", err)
+		return
+	}
 	tf.relabelCfg = relabelCfgCopy
 }
 
@@ -91,6 +109,14 @@ func (tf *RelabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
 		relabelCfgCopy[k] = v
 	}
 	return relabelCfgCopy
+}
+
+func replaceShard(body []byte) []byte {
+	shard, ok := os.LookupEnv("SHARD")
+	if !ok {
+		shard = "0"
+	}
+	return bytes.ReplaceAll(body, []byte("$(SHARD)"), []byte(shard))
 }
 
 func init() {
