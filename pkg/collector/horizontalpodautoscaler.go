@@ -15,8 +15,6 @@
 package collector
 
 import (
-	"fmt"
-
 	"github.com/go-logr/logr"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -100,7 +98,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		metrics := []autoscalingv2.MetricSpec{}
 
 		if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.TargetMemoryUtilization != nil {
-			fmt.Println(">>>>>>>>>> Setting memory utilization to ", *otelcol.Spec.Autoscaler.TargetMemoryUtilization)
 			utilizationTarget := autoscalingv2.MetricSpec{
 				Type: autoscalingv2.ResourceMetricSourceType,
 				Resource: &autoscalingv2.ResourceMetricSource{
@@ -114,7 +111,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			metrics = append(metrics, utilizationTarget)
 		}
 
-		fmt.Println(">>>>>>>>>> Setting CPU utilization to ", *otelcol.Spec.Autoscaler.TargetCPUUtilization)
 		targetCPUUtilization := autoscalingv2.MetricSpec{
 			Type: autoscalingv2.ResourceMetricSourceType,
 			Resource: &autoscalingv2.ResourceMetricSource{

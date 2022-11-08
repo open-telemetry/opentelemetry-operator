@@ -176,7 +176,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetCPUUtilization != nil && (*r.Spec.Autoscaler.TargetCPUUtilization < int32(1) || *r.Spec.Autoscaler.TargetCPUUtilization > int32(99)) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
 		}
-		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetMemoryUtilization != nil && (*r.Spec.Autoscaler.TargetMemoryUtilization < int32(1) || *r.Spec.Autoscaler.TargetMemoryUtilization > int32(99)) { // TODO add a test for this?
+		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetMemoryUtilization != nil && (*r.Spec.Autoscaler.TargetMemoryUtilization < int32(1) || *r.Spec.Autoscaler.TargetMemoryUtilization > int32(99)) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
 		}
 
