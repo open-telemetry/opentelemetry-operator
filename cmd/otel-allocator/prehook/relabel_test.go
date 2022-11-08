@@ -30,9 +30,10 @@ import (
 )
 
 var (
-	logger        = logf.Log.WithName("unit-tests")
-	numTargets    = 100
-	numCollectors = 3
+	logger               = logf.Log.WithName("unit-tests")
+	defaultNumTargets    = 100
+	defaultNumCollectors = 3
+	defaultStartIndex    = 0
 
 	relabelConfigs = []relabelConfigObj{
 		{
@@ -213,7 +214,7 @@ func TestApply(t *testing.T) {
 	allocatorPrehook := New("relabel-config", logger)
 	assert.NotNil(t, allocatorPrehook)
 
-	targets, numRemaining, expectedTargetMap, relabelCfg := makeNNewTargets(relabelConfigs, numTargets, numCollectors, 0)
+	targets, numRemaining, expectedTargetMap, relabelCfg := makeNNewTargets(relabelConfigs, defaultNumTargets, defaultNumCollectors, defaultStartIndex)
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems := allocatorPrehook.Apply(targets)
 	assert.Len(t, remainingItems, numRemaining)
@@ -237,7 +238,7 @@ func TestApplyHashmodAction(t *testing.T) {
 	assert.NotNil(t, allocatorPrehook)
 
 	hashRelabelConfigs := append(relabelConfigs, HashmodConfig)
-	targets, numRemaining, expectedTargetMap, relabelCfg := makeNNewTargets(hashRelabelConfigs, numTargets, numCollectors, 0)
+	targets, numRemaining, expectedTargetMap, relabelCfg := makeNNewTargets(hashRelabelConfigs, defaultNumTargets, defaultNumCollectors, defaultStartIndex)
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems := allocatorPrehook.Apply(targets)
 	assert.Len(t, remainingItems, numRemaining)
@@ -249,7 +250,7 @@ func TestApplyEmptyRelabelCfg(t *testing.T) {
 	allocatorPrehook := New("relabel-config", logger)
 	assert.NotNil(t, allocatorPrehook)
 
-	targets, _, _, _ := makeNNewTargets(relabelConfigs, numTargets, numCollectors, 0)
+	targets, _, _, _ := makeNNewTargets(relabelConfigs, defaultNumTargets, defaultNumCollectors, defaultStartIndex)
 
 	relabelCfg := map[string][]*relabel.Config{}
 	allocatorPrehook.SetConfig(relabelCfg)
@@ -263,7 +264,7 @@ func TestSetConfig(t *testing.T) {
 	allocatorPrehook := New("relabel-config", logger)
 	assert.NotNil(t, allocatorPrehook)
 
-	_, _, _, relabelCfg := makeNNewTargets(relabelConfigs, numTargets, numCollectors, 0)
+	_, _, _, relabelCfg := makeNNewTargets(relabelConfigs, defaultNumTargets, defaultNumCollectors, defaultStartIndex)
 	allocatorPrehook.SetConfig(relabelCfg)
 	assert.Equal(t, relabelCfg, allocatorPrehook.GetConfig())
 }
