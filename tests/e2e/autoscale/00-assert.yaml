@@ -12,7 +12,7 @@ metadata:
 spec:
   minReplicas: 1
   maxReplicas: 2
-# This is not necessarily exact.  We really just want to wait until this is no longer <unknown> before starting tracegen
+# This is not neccesarily exact.  We really just want to wait until this is no longer <unknown>
 status:
   currentCPUUtilizationPercentage: 20
 ---
@@ -30,24 +30,3 @@ spec:
       target:
         type: Utilization
         averageUtilization: 50
----
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: simplest-set-memory-utilization-collector
-spec:
-  minReplicas: 1
-  maxReplicas: 2
-  metrics:
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 42
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 90
