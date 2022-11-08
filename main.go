@@ -290,5 +290,5 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 }
 
 func minTlsDefault(cfg *tls.Config) {
-	cfg.MinVersion = tls.VersionTLS12
+	cfg.MinVersion = defaultMinTLSVersion
 }
