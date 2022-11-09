@@ -17,7 +17,6 @@ package collector
 import (
 	"context"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -110,14 +109,14 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 			return "context done"
 		case event, ok := <-c:
 			if !ok {
-				log.Info(strconv.FormatBool(ok))
-				return "no event"
+				log.Info("No event found. Restarting watch routine")
+				return ""
 			}
 
 			pod, ok := event.Object.(*v1.Pod)
 			if !ok {
-				log.Info(strconv.FormatBool(ok))
-				return "no event"
+				log.Info("No pod found in event Object. Restarting watch routine")
+				return ""
 			}
 
 			switch event.Type { //nolint:exhaustive
