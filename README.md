@@ -356,6 +356,7 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
+- [Benedikt Bongartz](https://github.com/frzifus), Red Hat
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
 
 Emeritus Approvers:
