@@ -26,7 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
-type AllocatorProvider func(log logr.Logger) Allocator
+type AllocatorProvider func(log logr.Logger, opts ...AllocationOption) Allocator
 
 var (
 	registry = map[string]AllocatorProvider{}
@@ -45,11 +45,41 @@ var (
 		Name: "opentelemetry_allocator_time_to_allocate",
 		Help: "The time it takes to allocate",
 	}, []string{"method", "strategy"})
+	targetsKeptPerJob = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "opentelemetry_allocator_targets_kept",
+		Help: "Number of targets kept after filtering.",
+	}, []string{"job_name"})
 )
 
-func New(name string, log logr.Logger) (Allocator, error) {
+type AllocationOption func(Allocator)
+
+type Filter interface {
+	Apply(map[string]*target.Item) map[string]*target.Item
+}
+
+func WithFilter(filter Filter) AllocationOption {
+	return func(allocator Allocator) {
+		allocator.SetFilter(filter)
+	}
+}
+
+func RecordTargetsKeptPerJob(targets map[string]*target.Item) map[string]float64 {
+	targetsPerJob := make(map[string]float64)
+
+	for _, tItem := range targets {
+		targetsPerJob[tItem.JobName] += 1
+	}
+
+	for jName, numTargets := range targetsPerJob {
+		targetsKeptPerJob.WithLabelValues(jName).Set(numTargets)
+	}
+
+	return targetsPerJob
+}
+
+func New(name string, log logr.Logger, opts ...AllocationOption) (Allocator, error) {
 	if p, ok := registry[name]; ok {
-		return p(log), nil
+		return p(log, opts...), nil
 	}
 	return nil, fmt.Errorf("unregistered strategy: %s", name)
 }
@@ -67,6 +97,7 @@ type Allocator interface {
 	SetTargets(targets map[string]*target.Item)
 	TargetItems() map[string]*target.Item
 	Collectors() map[string]*Collector
+	SetFilter(filter Filter)
 }
 
 var _ consistent.Member = Collector{}
