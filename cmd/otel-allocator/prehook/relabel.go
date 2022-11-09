@@ -18,7 +18,6 @@ import (
 	"bytes"
 
 	"github.com/go-logr/logr"
-
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
@@ -84,22 +83,28 @@ func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[
 func (tf *RelabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config) {
 	relabelCfgCopy := make(map[string][]*relabel.Config)
 	for key, val := range cfgs {
-		relabelCfgCopy[key] = val
+		relabelCfgCopy[key] = tf.replaceRelabelConfig(val)
 	}
 
-	out, err := yaml2.Marshal(relabelCfgCopy)
+	tf.relabelCfg = relabelCfgCopy
+}
+
+func (tf *RelabelConfigTargetFilter) replaceRelabelConfig(cfg []*relabel.Config) []*relabel.Config {
+	outCfg := make([]*relabel.Config, len(cfg))
+	out, err := yaml2.Marshal(cfg)
 	if err != nil {
 		tf.log.V(2).Info("Error Marshaling", "error", err)
-		return
+		return cfg
 	}
 
 	byteArr := replaceShard([]byte(out))
-	err = yaml2.Unmarshal(byteArr, &relabelCfgCopy)
+	err = yaml2.Unmarshal(byteArr, &outCfg)
 	if err != nil {
 		tf.log.Info("Error Unmarshalling", "error", err)
-		return
+		return cfg
 	}
-	tf.relabelCfg = relabelCfgCopy
+
+	return outCfg
 }
 
 func (tf *RelabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
