@@ -4,7 +4,7 @@ To build image for Apache auto instrumentation, use the following commands
 
 ```
 export REPO_NAME="<your-docker-image-repo-name>"
-export IMAGE_NAME_PREFIX="opentelemetry-apache-auto"
+export IMAGE_NAME_PREFIX="opentelemetry-apache-agent"
 export IMAGE_VERSION=`cat version.txt`
 export IMAGE_NAME=${REPO_NAME}/${IMAGE_NAME_PREFIX}:${IMAGE_VERSION}
 docker build --build-arg version=${IMAGE_VERSION} . -t ${IMAGE_NAME} -t ${REPO_NAME}/${IMAGE_NAME_PREFIX}:latest
