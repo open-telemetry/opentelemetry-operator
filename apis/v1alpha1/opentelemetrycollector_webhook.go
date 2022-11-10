@@ -127,7 +127,9 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	}
 
 	// validate Prometheus config for target allocation
-	if r.Spec.TargetAllocator.Enabled {
+	// we can only validate string-literal configs at admission. ConfigMap configs will be validated at runtime
+	// (when we have access to a client)
+	if r.Spec.TargetAllocator.Enabled && len(r.Spec.ConfigMap.Name) == 0 {
 		_, err := ta.ConfigToPromConfig(r.Spec.Config)
 		if err != nil {
 			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %s", err)
@@ -183,6 +185,10 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		return fmt.Errorf("the OptenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
+	}
+
+	if len(r.Spec.Config) > 0 && len(r.Spec.ConfigMap.Name) > 0 {
+		return fmt.Errorf("the OpenTelemetry Collector must have only one of spec.config or spec.configMap.name set")
 	}
 
 	return nil

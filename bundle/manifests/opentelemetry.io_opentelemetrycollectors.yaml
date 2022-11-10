@@ -1022,6 +1022,26 @@ spec:
                   configuration. Refer to the OpenTelemetry Collector documentation
                   for details.
                 type: string
+              configMap:
+                description: ConfigMap is a reference to a ConfigMap containing the
+                  collector's configuration. Refer to the OpenTelemetry Collector
+                  documentation for details.
+                properties:
+                  key:
+                    description: The key to select.
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                  optional:
+                    description: Specify whether the ConfigMap or its key must be
+                      defined
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
               env:
                 description: ENV vars to set on the OpenTelemetry Collector's Pods.
                   These can then in certain cases be consumed in the config file for
