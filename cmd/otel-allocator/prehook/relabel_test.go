@@ -142,13 +142,13 @@ var (
 				Regex:        relabel.MustNewRegexp("(.*)"),
 				Separator:    ";",
 				Modulus:      1,
-				TargetLabel:  "tmp",
+				TargetLabel:  "tmp-0",
 				Action:       "hashmod",
 				Replacement:  "$1",
 			},
 
 			{
-				SourceLabels: model.LabelNames{"tmp"},
+				SourceLabels: model.LabelNames{"tmp-$(SHARD)"},
 				Regex:        relabel.MustNewRegexp("$(SHARD)"),
 				Separator:    ";",
 				Action:       "keep",
