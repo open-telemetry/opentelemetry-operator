@@ -29,6 +29,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 )
 
 var (
@@ -88,6 +89,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 		// something else happened, better fail here
 		return pod, err
 	}
+	otelcol.Spec.Config = adapters.GetConfigString(p.client, logger, otelcol.Spec.Config, otelcol.Spec.ConfigMap, otelcol.Namespace)
 
 	// getting pod references, if any
 	references := p.podReferences(ctx, pod.OwnerReferences, ns)

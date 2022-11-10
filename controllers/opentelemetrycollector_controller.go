@@ -33,6 +33,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 )
 
@@ -148,6 +149,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	instance.Spec.Config = adapters.GetConfigString(r.Client, log, instance.Spec.Config, instance.Spec.ConfigMap, instance.Namespace)
 	params := reconcile.Params{
 		Config:   r.config,
 		Client:   r.Client,
