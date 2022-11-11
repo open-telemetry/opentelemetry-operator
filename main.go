@@ -159,6 +159,7 @@ func main() {
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
 		func(config *tls.Config) { minTlsDefault(config) },
+		func(config *tls.Config) { secureCipherSuite(config) },
 	}
 
 	mgrOptions := ctrl.Options{
@@ -291,4 +292,13 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 
 func minTlsDefault(cfg *tls.Config) {
 	cfg.MinVersion = defaultMinTLSVersion
+}
+
+func secureCipherSuite(cfg *tls.Config) {
+	var cipherSuites = tls.CipherSuites()
+	cipherIdList := []uint16{}
+	for _, item := range cipherSuites {
+		cipherIdList = append(cipherIdList, item.ID)
+	}
+	cfg.CipherSuites = cipherIdList
 }
