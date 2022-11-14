@@ -33,9 +33,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 
 	labels := Labels(otelcol, cfg.LabelsFilter())
 	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
-
 	annotations := Annotations(otelcol)
-
 	var result client.Object
 
 	objectMeta := metav1.ObjectMeta{
