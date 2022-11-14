@@ -169,12 +169,13 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
-			// Ignore errors that occur because a pod is being terminated
-			if !apierrors.IsForbidden(err) || !strings.Contains(err.Error(), "because it is being terminated") {
-				r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
-				if task.BailOnError {
-					return err
-				}
+			// If we get an error that occur because a pod is being terminated then exit this loop
+			if apierrors.IsForbidden(err) && strings.Contains(err.Error(), "because it is being terminated") {
+				return nil
+			}
+			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
+			if task.BailOnError {
+				return err
 			}
 		}
 	}
