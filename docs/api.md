@@ -3232,7 +3232,7 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
         <td><b>targetMemoryUtilization</b></td>
         <td>integer</td>
         <td>
-          Metrics []autoscalingv2.MetricSpec `json:"metrics,omitempty"` TargetMemoryUtilization sets the target average memory utilization across all replicas<br/>
+          TargetMemoryUtilization sets the target average memory utilization across all replicas<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>

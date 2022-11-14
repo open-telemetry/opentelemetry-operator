@@ -260,7 +260,6 @@ type AutoscalerSpec struct {
 	// +optional
 	TargetCPUUtilization *int32 `json:"targetCPUUtilization,omitempty"`
 	// +optional
-	// Metrics []autoscalingv2.MetricSpec `json:"metrics,omitempty"`
 	// TargetMemoryUtilization sets the target average memory utilization across all replicas
 	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
 }

@@ -1017,9 +1017,8 @@ spec:
                     format: int32
                     type: integer
                   targetMemoryUtilization:
-                    description: Metrics []autoscalingv2.MetricSpec `json:"metrics,omitempty"`
-                      TargetMemoryUtilization sets the target average memory utilization
-                      across all replicas
+                    description: TargetMemoryUtilization sets the target average memory
+                      utilization across all replicas
                     format: int32
                     type: integer
                 type: object
