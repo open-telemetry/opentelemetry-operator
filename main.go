@@ -103,6 +103,7 @@ func main() {
 	pflag.StringVar(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet), "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringArrayVar(&labelsFilter, "labels", []string{}, "Labels to filter away from propagating onto deploys")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
+
 	pflag.Parse()
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
@@ -294,6 +295,7 @@ func minTlsDefault(cfg *tls.Config) {
 	cfg.MinVersion = defaultMinTLSVersion
 }
 
+// This function return list of CipherSuite's ID without security issues.
 func secureCipherSuite(cfg *tls.Config) {
 	var cipherSuites = tls.CipherSuites()
 	cipherIdList := []uint16{}
