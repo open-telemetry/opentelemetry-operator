@@ -171,6 +171,7 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 		if err := task.Do(ctx, params); err != nil {
 			// If we get an error that occur because a pod is being terminated then exit this loop
 			if apierrors.IsForbidden(err) && strings.Contains(err.Error(), "because it is being terminated") {
+				r.log.V(2).Info("Exiting reconcile loop because namespace", params.Instance.Namespace, "is being terminated")
 				return nil
 			}
 			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
