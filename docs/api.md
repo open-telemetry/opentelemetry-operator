@@ -1843,7 +1843,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>serviceAccount</b></td>
         <td>string</td>
         <td>
-          ServiceAccount indicates the name of an existing service account to use with this instance.<br/>
+          ServiceAccount indicates the name of an existing service account to use with this instance. When set, the operator will not automatically create a ServiceAccount for the collector.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4576,7 +4576,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>serviceAccount</b></td>
         <td>string</td>
         <td>
-          ServiceAccount indicates the name of an existing service account to use with this instance.<br/>
+          ServiceAccount indicates the name of an existing service account to use with this instance. When set, the operator will not automatically create a ServiceAccount for the TargetAllocator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
