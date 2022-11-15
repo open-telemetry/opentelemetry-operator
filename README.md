@@ -328,6 +328,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
 |------------------------|----------------------|----------------------|
 | v0.63.1                | v1.19 to v1.25       | v1                   |
+| v0.62.1                | v1.19 to v1.25       | v1                   |
 | v0.61.0                | v1.19 to v1.25       | v1                   |
 | v0.60.0                | v1.19 to v1.25       | v1                   |
 | v0.59.0                | v1.19 to v1.24       | v1                   |
@@ -347,7 +348,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.45.0                | v1.21 to v1.23       | v1alpha2             |
 | v0.44.0                | v1.21 to v1.23       | v1alpha2             |
 | v0.43.0                | v1.21 to v1.23       | v1alpha2             |
-| v0.42.0                | v1.21 to v1.23       | v1alpha2             |
 
 
 ## Contributing and Developing
@@ -356,6 +356,7 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
+- [Benedikt Bongartz](https://github.com/frzifus), Red Hat
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
 
 Emeritus Approvers:
