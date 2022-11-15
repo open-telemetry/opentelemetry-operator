@@ -21,7 +21,6 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
-	yaml2 "gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
@@ -90,21 +89,17 @@ func (tf *RelabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config
 }
 
 func (tf *RelabelConfigTargetFilter) replaceRelabelConfig(cfg []*relabel.Config) []*relabel.Config {
-	outCfg := make([]*relabel.Config, len(cfg))
-	out, err := yaml2.Marshal(cfg)
-	if err != nil {
-		tf.log.V(2).Info("Error Marshaling", "error", err)
-		return cfg
+	for i := range cfg {
+		str := cfg[i].Regex.String()
+		// tf.log.Info("regex string is", "regex", str)
+		// tf.log.Info("trimmed regex string is", "regex trimmed", str[4 : len(str)-2])
+		// tf.log.Info("raw string is", "raw regexp regex", cfg[i].Regex.Regexp.String())
+        if str[4 : len(str)-2] == "$(SHARD)" {
+			cfg[i].Regex = relabel.MustNewRegexp("0")
+		}
 	}
 
-	byteArr := replaceShard([]byte(out))
-	err = yaml2.Unmarshal(byteArr, &outCfg)
-	if err != nil {
-		tf.log.Info("Error Unmarshalling", "error", err)
-		return cfg
-	}
-
-	return outCfg
+	return cfg
 }
 
 func (tf *RelabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
