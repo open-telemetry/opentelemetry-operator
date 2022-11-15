@@ -177,7 +177,7 @@ prepare-e2e: kuttl set-test-image-vars set-image-controller container container-
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
-	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
+	$(OPERATOR_SDK) scorecard --wait-time=5m bundle || (echo "scorecard test failed" && exit 1)
 
 .PHONY: set-test-image-vars
 set-test-image-vars:

@@ -3,48 +3,52 @@ kind: Configuration
 metadata:
   name: config
 stages:
-- parallel: true
-  tests:
-  - entrypoint:
-    - scorecard-test
-    - basic-check-spec
-    image: quay.io/operator-framework/scorecard-test:v1.23.0
-    labels:
-      suite: basic
-      test: basic-check-spec-test
-    storage:
-      spec:
-        mountPath: {}
-  - entrypoint:
-    - scorecard-test
-    - olm-bundle-validation
-    image: quay.io/operator-framework/scorecard-test:v1.23.0
-    labels:
-      suite: olm
-      test: olm-bundle-validation-test
-    storage:
-      spec:
-        mountPath: {}
-  - entrypoint:
-    - scorecard-test
-    - olm-crds-have-validation
-    image: quay.io/operator-framework/scorecard-test:v1.23.0
-    labels:
-      suite: olm
-      test: olm-crds-have-validation-test
-    storage:
-      spec:
-        mountPath: {}
-  - entrypoint:
-    - scorecard-test
-    - olm-crds-have-resources
-    image: quay.io/operator-framework/scorecard-test:v1.23.0
-    labels:
-      suite: olm
-      test: olm-crds-have-resources-test
-    storage:
-      spec:
-        mountPath: {}
+  - parallel: true
+    tests:
+      - entrypoint:
+          - scorecard-test
+          - basic-check-spec
+        image: quay.io/operator-framework/scorecard-test:v1.23.0
+        labels:
+          suite: basic
+          test: basic-check-spec-test
+        storage:
+          spec:
+            mountPath: {}
+      - entrypoint:
+          - scorecard-test
+          - olm-bundle-validation
+        image: quay.io/operator-framework/scorecard-test:v1.23.0
+        labels:
+          suite: olm
+          test: olm-bundle-validation-test
+        storage:
+          spec:
+            mountPath: {}
+      - entrypoint:
+          - scorecard-test
+          - olm-crds-have-validation
+        image: quay.io/operator-framework/scorecard-test:v1.23.0
+        labels:
+          suite: olm
+          test: olm-crds-have-validation-test
+        storage:
+          spec:
+            mountPath: {}
+      - entrypoint:
+          - scorecard-test
+          - olm-crds-have-resources
+        image: quay.io/operator-framework/scorecard-test:v1.23.0
+        labels:
+          suite: olm
+          test: olm-crds-have-resources-test
+        storage:
+          spec:
+            mountPath: {}
+      - image: quay.io/operator-framework/scorecard-test-kuttl:v2.0.0
+        labels:
+          suite: kuttlsuite
+          test: kuttltest1
 storage:
   spec:
     mountPath: {}
