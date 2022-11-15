@@ -401,7 +401,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.63.1-12-ge652e05
+  version: 0.63.1
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
