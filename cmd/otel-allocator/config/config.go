@@ -18,7 +18,6 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
 	"time"
@@ -40,12 +39,12 @@ const DefaultResyncTime = 5 * time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 
 type Config struct {
-	LabelSelector          map[string]string     `yaml:"label_selector,omitempty"`
-	Config                 *promconfig.Config    `yaml:"config"`
-	AllocationStrategy     *string               `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy         *string               `yaml:"filter_strategy,omitempty"`
-	PodMonitorSelector     *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
+	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
+	Config                 *promconfig.Config `yaml:"config"`
+	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
+	PodMonitorSelector     *map[string]string `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector *map[string]string `yaml:"service_monitor_selector,omitempty"`
 }
 
 func (c Config) GetAllocationStrategy() string {

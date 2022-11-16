@@ -209,6 +209,45 @@ label_selector:
 		assert.Equal(t, expectedData, actual.Data)
 
 	})
+	t.Run("should return expected target allocator config map with label selectors", func(t *testing.T) {
+		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
+		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
+
+		expectedData := map[string]string{
+			"targetallocator.yaml": `allocation_strategy: least-weighted
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+label_selector:
+  app.kubernetes.io/component: opentelemetry-collector
+  app.kubernetes.io/instance: default.test
+  app.kubernetes.io/managed-by: opentelemetry-operator
+pod_monitor_selector:
+  release: test
+service_monitor_selector:
+  release: test
+`,
+		}
+		p := params()
+		p.Instance.Spec.TargetAllocator.PodMonitorSelector = &map[string]string{
+			"release": "test",
+		}
+		p.Instance.Spec.TargetAllocator.ServiceMonitorSelector = &map[string]string{
+			"release": "test",
+		}
+		actual, err := desiredTAConfigMap(p)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "test-targetallocator", actual.Name)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+
+	})
 
 }
 

@@ -177,6 +177,10 @@ type OpenTelemetryTargetAllocator struct {
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// PodMonitors to be selected for target discovery.
+	PodMonitorSelector *map[string]string `json:"podMonitorSelector,omitempty"`
+	// ServiceMonitors to be selected for target discovery.
+	ServiceMonitorSelector *map[string]string `json:"serviceMonitorSelector,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {

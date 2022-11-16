@@ -16,7 +16,6 @@ package watcher
 
 import (
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 
@@ -62,15 +61,9 @@ func newCRDMonitorWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfig.
 		return nil, err
 	}
 
-	servMonSelector, err := getSelector(cfg.ServiceMonitorSelector)
-	if err != nil {
-		return nil, err
-	}
+	servMonSelector := getSelector(cfg.ServiceMonitorSelector)
 
-	podMonSelector, err := getSelector(cfg.PodMonitorSelector)
-	if err != nil {
-		return nil, err
-	}
+	podMonSelector := getSelector(cfg.PodMonitorSelector)
 
 	return &PrometheusCRWatcher{
 		kubeMonitoringClient:   mClient,
@@ -92,15 +85,12 @@ type PrometheusCRWatcher struct {
 	podMonitorSelector     labels.Selector
 }
 
-func getSelector(s *metav1.LabelSelector) (labels.Selector, error) {
+func getSelector(s *map[string]string) labels.Selector {
+	sel := labels.NewSelector()
 	if s == nil {
-		return labels.NewSelector(), nil
+		return sel
 	}
-	sel, err := metav1.LabelSelectorAsSelector(s)
-	if err != nil {
-		return nil, err
-	}
-	return sel, nil
+	return labels.SelectorFromSet(*s)
 }
 
 // Start wrapped informers and wait for an initial sync.
