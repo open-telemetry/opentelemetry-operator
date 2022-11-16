@@ -16,6 +16,7 @@ package watcher
 
 import (
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 
@@ -33,8 +34,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func newCRDMonitorWatcher(config allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
-	mClient, err := monitoringclient.NewForConfig(config.ClusterConfig)
+func newCRDMonitorWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
+	mClient, err := monitoringclient.NewForConfig(cliConfig.ClusterConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -61,11 +62,23 @@ func newCRDMonitorWatcher(config allocatorconfig.CLIConfig) (*PrometheusCRWatche
 		return nil, err
 	}
 
+	servMonSelector, err := getSelector(cfg.ServiceMonitorSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	podMonSelector, err := getSelector(cfg.PodMonitorSelector)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PrometheusCRWatcher{
-		kubeMonitoringClient: mClient,
-		informers:            monitoringInformers,
-		stopChannel:          make(chan struct{}),
-		configGenerator:      generator,
+		kubeMonitoringClient:   mClient,
+		informers:              monitoringInformers,
+		stopChannel:            make(chan struct{}),
+		configGenerator:        generator,
+		serviceMonitorSelector: servMonSelector,
+		podMonitorSelector:     podMonSelector,
 	}, nil
 }
 
@@ -74,6 +87,20 @@ type PrometheusCRWatcher struct {
 	informers            map[string]*informers.ForResource
 	stopChannel          chan struct{}
 	configGenerator      *prometheus.ConfigGenerator
+
+	serviceMonitorSelector labels.Selector
+	podMonitorSelector     labels.Selector
+}
+
+func getSelector(s *metav1.LabelSelector) (labels.Selector, error) {
+	if s == nil {
+		return labels.NewSelector(), nil
+	}
+	sel, err := metav1.LabelSelectorAsSelector(s)
+	if err != nil {
+		return nil, err
+	}
+	return sel, nil
 }
 
 // Start wrapped informers and wait for an initial sync.
@@ -118,7 +145,8 @@ func (w *PrometheusCRWatcher) Close() error {
 
 func (w *PrometheusCRWatcher) CreatePromConfig(kubeConfigPath string) (*promconfig.Config, error) {
 	serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
-	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(labels.NewSelector(), func(sm interface{}) {
+
+	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(w.serviceMonitorSelector, func(sm interface{}) {
 		monitor := sm.(*monitoringv1.ServiceMonitor)
 		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
 		serviceMonitorInstances[key] = monitor
@@ -128,7 +156,7 @@ func (w *PrometheusCRWatcher) CreatePromConfig(kubeConfigPath string) (*promconf
 	}
 
 	podMonitorInstances := make(map[string]*monitoringv1.PodMonitor)
-	pmRetrieveErr := w.informers[monitoringv1.PodMonitorName].ListAll(labels.NewSelector(), func(pm interface{}) {
+	pmRetrieveErr := w.informers[monitoringv1.PodMonitorName].ListAll(w.podMonitorSelector, func(pm interface{}) {
 		monitor := pm.(*monitoringv1.PodMonitor)
 		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
 		podMonitorInstances[key] = monitor
