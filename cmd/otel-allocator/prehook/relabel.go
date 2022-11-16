@@ -93,7 +93,7 @@ func (tf *RelabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config
 func (tf *RelabelConfigTargetFilter) replaceRelabelConfig(cfg []*relabel.Config) []*relabel.Config {
 	for i := range cfg {
 		str := cfg[i].Regex.String()
-        if str == "$(SHARD)" {
+		if str == "$(SHARD)" {
 			cfg[i].Regex = relabel.MustNewRegexp("0")
 		}
 	}
