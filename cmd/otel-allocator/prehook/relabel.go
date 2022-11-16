@@ -15,8 +15,6 @@
 package prehook
 
 import (
-	"bytes"
-
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
@@ -88,13 +86,14 @@ func (tf *RelabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config
 	tf.relabelCfg = relabelCfgCopy
 }
 
+// See this thread [https://github.com/open-telemetry/opentelemetry-operator/pull/1124/files#r983145795]
+// for why SHARD == 0 is a necessary substitution. Otherwise the keep action that uses this env variable,
+// would not match the regex and all targets end up dropped. Also note, $(SHARD) will always be 0 and it
+// does not make sense to read from the environment because it is never set in the allocator.
 func (tf *RelabelConfigTargetFilter) replaceRelabelConfig(cfg []*relabel.Config) []*relabel.Config {
 	for i := range cfg {
 		str := cfg[i].Regex.String()
-		// tf.log.Info("regex string is", "regex", str)
-		// tf.log.Info("trimmed regex string is", "regex trimmed", str[4 : len(str)-2])
-		// tf.log.Info("raw string is", "raw regexp regex", cfg[i].Regex.Regexp.String())
-        if str[4 : len(str)-2] == "$(SHARD)" {
+        if str == "$(SHARD)" {
 			cfg[i].Regex = relabel.MustNewRegexp("0")
 		}
 	}
@@ -108,14 +107,6 @@ func (tf *RelabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
 		relabelCfgCopy[k] = v
 	}
 	return relabelCfgCopy
-}
-
-func replaceShard(body []byte) []byte {
-	// See this thread [https://github.com/open-telemetry/opentelemetry-operator/pull/1124/files#r983145795]
-	// for why SHARD == 0 is a necessary substitution. Otherwise the keep action that uses this env variable,
-	// would not match the regex and all targets end up dropped.
-	shard := "0"
-	return bytes.ReplaceAll(body, []byte("$(SHARD)"), []byte(shard))
 }
 
 func init() {
