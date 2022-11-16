@@ -4557,8 +4557,8 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatorpodmonitorselector">podMonitorSelector</a></b></td>
-        <td>object</td>
+        <td><b>podMonitorSelector</b></td>
+        <td>map[string]string</td>
         <td>
           PodMonitors to be selected for target discovery.<br/>
         </td>
@@ -4587,85 +4587,10 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatorservicemonitorselector">serviceMonitorSelector</a></b></td>
-        <td>object</td>
-        <td>
-          ServiceMonitors to be selected for target discovery.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.targetAllocator.podMonitorSelector
-<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
-
-
-
-PodMonitors to be selected for target discovery.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatorpodmonitorselectormatchexpressionsindex">matchExpressions</a></b></td>
-        <td>[]object</td>
-        <td>
-          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>matchLabels</b></td>
+        <td><b>serviceMonitorSelector</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.targetAllocator.podMonitorSelector.matchExpressions[index]
-<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorpodmonitorselector)</sup></sup>
-
-
-
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>key</b></td>
-        <td>string</td>
-        <td>
-          key is the label key that the selector applies to.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>operator</b></td>
-        <td>string</td>
-        <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>values</b></td>
-        <td>[]string</td>
-        <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          ServiceMonitors to be selected for target discovery.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4693,81 +4618,6 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         <td>boolean</td>
         <td>
           Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.targetAllocator.serviceMonitorSelector
-<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
-
-
-
-ServiceMonitors to be selected for target discovery.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatorservicemonitorselectormatchexpressionsindex">matchExpressions</a></b></td>
-        <td>[]object</td>
-        <td>
-          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>matchLabels</b></td>
-        <td>map[string]string</td>
-        <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.targetAllocator.serviceMonitorSelector.matchExpressions[index]
-<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorservicemonitorselector)</sup></sup>
-
-
-
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>key</b></td>
-        <td>string</td>
-        <td>
-          key is the label key that the selector applies to.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>operator</b></td>
-        <td>string</td>
-        <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>values</b></td>
-        <td>[]string</td>
-        <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
