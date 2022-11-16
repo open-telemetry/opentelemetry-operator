@@ -296,6 +296,9 @@ func minTlsDefault(cfg *tls.Config) {
 }
 
 // This function return list of CipherSuite's ID without security issues.
+// tls.CipherSuites() providing safe list of Cipher suites where it
+// excluding RC4, CBC_SHA256, and 3DES cipher suites.
+// With thjs, stronger and recommended cipher suites will be used for the tls.
 func secureCipherSuite(cfg *tls.Config) {
 	var cipherSuites = tls.CipherSuites()
 	cipherIdList := []uint16{}
