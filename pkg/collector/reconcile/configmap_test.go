@@ -234,10 +234,10 @@ service_monitor_selector:
 `,
 		}
 		p := params()
-		p.Instance.Spec.TargetAllocator.PodMonitorSelector = &map[string]string{
+		p.Instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = map[string]string{
 			"release": "test",
 		}
-		p.Instance.Spec.TargetAllocator.ServiceMonitorSelector = &map[string]string{
+		p.Instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = map[string]string{
 			"release": "test",
 		}
 		actual, err := desiredTAConfigMap(p)

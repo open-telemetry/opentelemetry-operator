@@ -1711,11 +1711,6 @@ spec:
                     description: Image indicates the container image to use for the
                       OpenTelemetry TargetAllocator.
                     type: string
-                  podMonitorSelector:
-                    additionalProperties:
-                      type: string
-                    description: PodMonitors to be selected for target discovery.
-                    type: object
                   prometheusCR:
                     description: PrometheusCR defines the configuration for the retrieval
                       of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1
@@ -1727,6 +1722,22 @@ spec:
                         description: Enabled indicates whether to use a PrometheusOperator
                           custom resources as targets or not.
                         type: boolean
+                      podMonitorSelector:
+                        additionalProperties:
+                          type: string
+                        description: PodMonitors to be selected for target discovery.
+                          This is a map of {key,value} pairs. Each {key,value} in
+                          the map is going to exactly match a label in a PodMonitor's
+                          meta labels. The requirements are ANDed.
+                        type: object
+                      serviceMonitorSelector:
+                        additionalProperties:
+                          type: string
+                        description: ServiceMonitors to be selected for target discovery.
+                          This is a map of {key,value} pairs. Each {key,value} in
+                          the map is going to exactly match a label in a ServiceMonitor's
+                          meta labels. The requirements are ANDed.
+                        type: object
                     type: object
                   replicas:
                     description: Replicas is the number of pod instances for the underlying
@@ -1740,11 +1751,6 @@ spec:
                     description: ServiceAccount indicates the name of an existing
                       service account to use with this instance.
                     type: string
-                  serviceMonitorSelector:
-                    additionalProperties:
-                      type: string
-                    description: ServiceMonitors to be selected for target discovery.
-                    type: object
                 type: object
               tolerations:
                 description: Toleration to schedule OpenTelemetry Collector pods.

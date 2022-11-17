@@ -124,12 +124,12 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 		taConfig["filter_strategy"] = params.Instance.Spec.TargetAllocator.FilterStrategy
 	}
 
-	if params.Instance.Spec.TargetAllocator.ServiceMonitorSelector != nil {
-		taConfig["service_monitor_selector"] = &params.Instance.Spec.TargetAllocator.ServiceMonitorSelector
+	if params.Instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
+		taConfig["service_monitor_selector"] = &params.Instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
 	}
 
-	if params.Instance.Spec.TargetAllocator.PodMonitorSelector != nil {
-		taConfig["pod_monitor_selector"] = &params.Instance.Spec.TargetAllocator.PodMonitorSelector
+	if params.Instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
+		taConfig["pod_monitor_selector"] = &params.Instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
 	}
 
 	taConfigYAML, err := yaml.Marshal(taConfig)

@@ -43,8 +43,8 @@ type Config struct {
 	Config                 *promconfig.Config `yaml:"config"`
 	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
 	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
-	PodMonitorSelector     *map[string]string `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector *map[string]string `yaml:"service_monitor_selector,omitempty"`
+	PodMonitorSelector     map[string]string  `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector map[string]string  `yaml:"service_monitor_selector,omitempty"`
 }
 
 func (c Config) GetAllocationStrategy() string {

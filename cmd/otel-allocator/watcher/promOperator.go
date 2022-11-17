@@ -85,12 +85,12 @@ type PrometheusCRWatcher struct {
 	podMonitorSelector     labels.Selector
 }
 
-func getSelector(s *map[string]string) labels.Selector {
+func getSelector(s map[string]string) labels.Selector {
 	sel := labels.NewSelector()
 	if s == nil {
 		return sel
 	}
-	return labels.SelectorFromSet(*s)
+	return labels.SelectorFromSet(s)
 }
 
 // Start wrapped informers and wait for an initial sync.
