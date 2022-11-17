@@ -21,3 +21,10 @@ spec:
         image: ghcr.io/anuraaga/flask-hello-world:latest
       - name: myrabbit
         image: rabbitmq
+        securityContext:
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault

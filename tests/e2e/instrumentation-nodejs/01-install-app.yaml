@@ -22,3 +22,10 @@ spec:
       containers:
       - name: myapp
         image: ghcr.io/anuraaga/express-hello-world:latest
+        securityContext:
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault

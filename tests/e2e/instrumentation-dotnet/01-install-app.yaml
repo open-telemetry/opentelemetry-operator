@@ -22,3 +22,10 @@ spec:
       containers:
       - name: myapp
         image: docker.io/avadhutp123/aspnetapp:latest  # source code of the application: https://github.com/dotnet/dotnet-docker/tree/main/samples/aspnetapp
+        securityContext:
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
