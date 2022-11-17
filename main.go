@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
@@ -47,6 +48,7 @@ import (
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 	// +kubebuilder:scaffold:imports
 )
@@ -58,12 +60,20 @@ const defaultMinTLSVersion = tls.VersionTLS12
 var (
 	scheme   = k8sruntime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+
+	operatorPlatform = platform.Unknown
 )
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
+
+	if err := routev1.AddToScheme(scheme); err != nil {
+		operatorPlatform = platform.OpenShift
+	} else if cfg := ctrl.GetConfigOrDie(); cfg != nil {
+		operatorPlatform = platform.Kubernetes
+	}
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -142,6 +152,7 @@ func main() {
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
 		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
 		config.WithAutoDetect(ad),
+		config.WithPlatform(operatorPlatform),
 		config.WithLabelFilters(labelsFilter),
 	)
 
