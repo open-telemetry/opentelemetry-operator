@@ -135,10 +135,10 @@ func TestLoad(t *testing.T) {
 						},
 					},
 				},
-				PodMonitorSelector: &map[string]string{
+				PodMonitorSelector: map[string]string{
 					"release": "test",
 				},
-				ServiceMonitorSelector: &map[string]string{
+				ServiceMonitorSelector: map[string]string{
 					"release": "test",
 				},
 			},
