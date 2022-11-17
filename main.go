@@ -145,6 +145,10 @@ func main() {
 		config.WithLabelFilters(labelsFilter),
 	)
 
+	if err := cfg.AutoDetect(); err != nil {
+		setupLog.Error(err, "failed to determine operator platform")
+	}
+
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if found {
 		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
