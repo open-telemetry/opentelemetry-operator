@@ -83,7 +83,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	watcher, err := allocatorWatcher.NewWatcher(setupLog, cliConf, allocator)
+	watcher, err := allocatorWatcher.NewWatcher(setupLog, cfg, cliConf, allocator)
 	if err != nil {
 		setupLog.Error(err, "Can't start the watchers")
 		os.Exit(1)
