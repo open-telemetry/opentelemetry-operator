@@ -4606,6 +4606,20 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
           Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>podMonitorSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          PodMonitors to be selected for target discovery. This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a PodMonitor's meta labels. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceMonitorSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          ServiceMonitors to be selected for target discovery. This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a ServiceMonitor's meta labels. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
