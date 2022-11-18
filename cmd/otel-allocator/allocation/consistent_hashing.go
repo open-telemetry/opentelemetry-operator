@@ -43,10 +43,15 @@ type consistentHashingAllocator struct {
 	consistentHasher *consistent.Consistent
 
 	// collectors is a map from a Collector's name to a Collector instance
+	// collectorKey -> collector pointer
 	collectors map[string]*Collector
 
 	// targetItems is a map from a target item's hash to the target items allocated state
+	// targetItem hash -> target item pointer
 	targetItems map[string]*target.Item
+
+	// collectorKey -> job -> target item hash -> true
+	collectorsTargetItemsPerJob map[string]map[string]map[string]bool
 
 	log logr.Logger
 
@@ -62,10 +67,11 @@ func newConsistentHashingAllocator(log logr.Logger, opts ...AllocationOption) Al
 	}
 	consistentHasher := consistent.New(nil, config)
 	chAllocator := &consistentHashingAllocator{
-		consistentHasher: consistentHasher,
-		collectors:       make(map[string]*Collector),
-		targetItems:      make(map[string]*target.Item),
-		log:              log,
+		consistentHasher:            consistentHasher,
+		collectors:                  make(map[string]*Collector),
+		targetItems:                 make(map[string]*target.Item),
+		collectorsTargetItemsPerJob: make(map[string]map[string]map[string]bool),
+		log:                         log,
 	}
 	for _, opt := range opts {
 		opt(chAllocator)
@@ -79,6 +85,16 @@ func (c *consistentHashingAllocator) SetFilter(filter Filter) {
 	c.filter = filter
 }
 
+func (c *consistentHashingAllocator) addTargetToCollectorsTargetItemsPerJob(tg *target.Item) {
+	if c.collectorsTargetItemsPerJob[tg.CollectorName] == nil {
+		c.collectorsTargetItemsPerJob[tg.CollectorName] = make(map[string]map[string]bool)
+	}
+	if c.collectorsTargetItemsPerJob[tg.CollectorName][tg.JobName] == nil {
+		c.collectorsTargetItemsPerJob[tg.CollectorName][tg.JobName] = make(map[string]bool)
+	}
+	c.collectorsTargetItemsPerJob[tg.CollectorName][tg.JobName][tg.Hash()] = true
+}
+
 // addTargetToTargetItems assigns a target to the collector based on its hash and adds it to the allocator's targetItems
 // This method is called from within SetTargets and SetCollectors, which acquire the needed lock.
 // This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap.
@@ -87,11 +103,13 @@ func (c *consistentHashingAllocator) addTargetToTargetItems(tg *target.Item) {
 	// Check if this is a reassignment, if so, decrement the previous collector's NumTargets
 	if previousColName, ok := c.collectors[tg.CollectorName]; ok {
 		previousColName.NumTargets--
+		delete(c.collectorsTargetItemsPerJob[tg.CollectorName][tg.JobName], tg.Hash())
 		TargetsPerCollector.WithLabelValues(previousColName.String(), consistentHashingStrategyName).Set(float64(c.collectors[previousColName.String()].NumTargets))
 	}
 	colOwner := c.consistentHasher.LocateKey([]byte(tg.Hash()))
-	targetItem := target.NewItem(tg.JobName, tg.TargetURL, tg.Label, colOwner.String())
-	c.targetItems[targetItem.Hash()] = targetItem
+	tg.CollectorName = colOwner.String()
+	c.targetItems[tg.Hash()] = tg
+	c.addTargetToCollectorsTargetItemsPerJob(tg)
 	c.collectors[colOwner.String()].NumTargets++
 	TargetsPerCollector.WithLabelValues(colOwner.String(), consistentHashingStrategyName).Set(float64(c.collectors[colOwner.String()].NumTargets))
 }
@@ -107,6 +125,7 @@ func (c *consistentHashingAllocator) handleTargets(diff diff.Changes[*target.Ite
 			col := c.collectors[target.CollectorName]
 			col.NumTargets--
 			delete(c.targetItems, k)
+			delete(c.collectorsTargetItemsPerJob[target.CollectorName][target.JobName], target.Hash())
 			TargetsPerCollector.WithLabelValues(target.CollectorName, consistentHashingStrategyName).Set(float64(col.NumTargets))
 		}
 	}
@@ -130,6 +149,7 @@ func (c *consistentHashingAllocator) handleCollectors(diff diff.Changes[*Collect
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
 		delete(c.collectors, k.Name)
+		delete(c.collectorsTargetItemsPerJob, k.Name)
 		c.consistentHasher.Remove(k.Name)
 		TargetsPerCollector.WithLabelValues(k.Name, consistentHashingStrategyName).Set(0)
 	}
@@ -193,6 +213,16 @@ func (c *consistentHashingAllocator) SetCollectors(collectors map[string]*Collec
 	if len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0 {
 		c.handleCollectors(collectorsDiff)
 	}
+}
+
+func (c *consistentHashingAllocator) GetTargetsForCollectorAndJob(collector string, job string) []*target.Item {
+	c.m.RLock()
+	defer c.m.RUnlock()
+	targetItemsCopy := make([]*target.Item, len(c.collectorsTargetItemsPerJob[collector][job]))
+	for targetHash, _ := range c.collectorsTargetItemsPerJob[collector][job] {
+		targetItemsCopy = append(targetItemsCopy, c.targetItems[targetHash])
+	}
+	return targetItemsCopy
 }
 
 // TargetItems returns a shallow copy of the targetItems map.

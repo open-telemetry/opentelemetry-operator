@@ -58,7 +58,7 @@ func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[
 	// Note: jobNameKey != tItem.JobName (jobNameKey is hashed)
 	for jobNameKey, tItem := range targets {
 		keepTarget := true
-		lset := convertLabelToPromLabelSet(tItem.Label)
+		lset := convertLabelToPromLabelSet(tItem.Labels)
 		for _, cfg := range tf.relabelCfg[tItem.JobName] {
 			if new_lset := relabel.Process(lset, cfg); new_lset == nil {
 				keepTarget = false

@@ -274,7 +274,7 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 		s.jsonHandler(w, displayData)
 
 	} else {
-		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], jobId, compareMap, s.allocator)
+		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], jobId, s.allocator)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
 			s.jsonHandler(w, []interface{}{})
