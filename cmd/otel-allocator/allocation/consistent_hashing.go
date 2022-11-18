@@ -218,9 +218,17 @@ func (c *consistentHashingAllocator) SetCollectors(collectors map[string]*Collec
 func (c *consistentHashingAllocator) GetTargetsForCollectorAndJob(collector string, job string) []*target.Item {
 	c.m.RLock()
 	defer c.m.RUnlock()
+	if _, ok := c.collectorsTargetItemsPerJob[collector]; !ok {
+		return []*target.Item{}
+	}
+	if _, ok := c.collectorsTargetItemsPerJob[collector][job]; !ok {
+		return []*target.Item{}
+	}
 	targetItemsCopy := make([]*target.Item, len(c.collectorsTargetItemsPerJob[collector][job]))
+	index := 0
 	for targetHash, _ := range c.collectorsTargetItemsPerJob[collector][job] {
-		targetItemsCopy = append(targetItemsCopy, c.targetItems[targetHash])
+		targetItemsCopy[index] = c.targetItems[targetHash]
+		index++
 	}
 	return targetItemsCopy
 }

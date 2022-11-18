@@ -63,9 +63,17 @@ func (allocator *leastWeightedAllocator) SetFilter(filter Filter) {
 func (allocator *leastWeightedAllocator) GetTargetsForCollectorAndJob(collector string, job string) []*target.Item {
 	allocator.m.RLock()
 	defer allocator.m.RUnlock()
+	if _, ok := allocator.collectorsTargetItemsPerJob[collector]; !ok {
+		return []*target.Item{}
+	}
+	if _, ok := allocator.collectorsTargetItemsPerJob[collector][job]; !ok {
+		return []*target.Item{}
+	}
 	targetItemsCopy := make([]*target.Item, len(allocator.collectorsTargetItemsPerJob[collector][job]))
+	index := 0
 	for targetHash, _ := range allocator.collectorsTargetItemsPerJob[collector][job] {
-		targetItemsCopy = append(targetItemsCopy, allocator.targetItems[targetHash])
+		targetItemsCopy[index] = allocator.targetItems[targetHash]
+		index++
 	}
 	return targetItemsCopy
 }
