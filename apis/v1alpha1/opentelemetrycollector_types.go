@@ -183,6 +183,16 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
+	// PodMonitors to be selected for target discovery.
+	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+	// PodMonitor's meta labels. The requirements are ANDed.
+	// +optional
+	PodMonitorSelector map[string]string `json:"podMonitorSelector,omitempty"`
+	// ServiceMonitors to be selected for target discovery.
+	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+	// ServiceMonitor's meta labels. The requirements are ANDed.
+	// +optional
+	ServiceMonitorSelector map[string]string `json:"serviceMonitorSelector,omitempty"`
 }
 
 // ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's
