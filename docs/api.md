@@ -4530,9 +4530,11 @@ TargetAllocator indicates a value which determines whether to spawn a target all
     </thead>
     <tbody><tr>
         <td><b>allocationStrategy</b></td>
-        <td>string</td>
+        <td>enum</td>
         <td>
           AllocationStrategy determines which strategy the target allocator should use for allocation. The current options are least-weighted and consistent-hashing. The default option is least-weighted<br/>
+          <br/>
+            <i>Enum</i>: least-weighted, consistent-hashing<br/>
         </td>
         <td>false</td>
       </tr><tr>
