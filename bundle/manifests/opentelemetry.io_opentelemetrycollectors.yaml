@@ -1196,6 +1196,11 @@ spec:
                   hostname:
                     description: Hostname by which the ingress proxy can be reached.
                     type: string
+                  ingressClassName:
+                    description: IngressClassName is the name of an IngressClass cluster
+                      resource. Ingress controller implementations use this field
+                      to know whether they should be serving this Ingress resource.
+                    type: string
                   tls:
                     description: TLS configuration.
                     items:

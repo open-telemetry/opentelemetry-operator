@@ -118,6 +118,7 @@ func desiredIngresses(_ context.Context, params Params) *networkingv1.Ingress {
 					},
 				},
 			},
+			IngressClassName: params.Instance.Spec.Ingress.IngressClassName,
 		},
 	}
 }
