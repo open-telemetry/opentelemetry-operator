@@ -1694,6 +1694,9 @@ spec:
                       target allocator should use for allocation. The current options
                       are least-weighted and consistent-hashing. The default option
                       is least-weighted
+                    enum:
+                    - least-weighted
+                    - consistent-hashing
                     type: string
                   enabled:
                     description: Enabled indicates whether to use a target allocation
