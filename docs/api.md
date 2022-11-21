@@ -1843,7 +1843,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>serviceAccount</b></td>
         <td>string</td>
         <td>
-          ServiceAccount indicates the name of an existing service account to use with this instance.<br/>
+          ServiceAccount indicates the name of an existing service account to use with this instance. When set, the operator will not automatically create a ServiceAccount for the collector.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4530,9 +4530,11 @@ TargetAllocator indicates a value which determines whether to spawn a target all
     </thead>
     <tbody><tr>
         <td><b>allocationStrategy</b></td>
-        <td>string</td>
+        <td>enum</td>
         <td>
           AllocationStrategy determines which strategy the target allocator should use for allocation. The current options are least-weighted and consistent-hashing. The default option is least-weighted<br/>
+          <br/>
+            <i>Enum</i>: least-weighted, consistent-hashing<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4576,7 +4578,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>serviceAccount</b></td>
         <td>string</td>
         <td>
-          ServiceAccount indicates the name of an existing service account to use with this instance.<br/>
+          ServiceAccount indicates the name of an existing service account to use with this instance. When set, the operator will not automatically create a ServiceAccount for the TargetAllocator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4604,6 +4606,20 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         <td>boolean</td>
         <td>
           Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>podMonitorSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          PodMonitors to be selected for target discovery. This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a PodMonitor's meta labels. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceMonitorSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          ServiceMonitors to be selected for target discovery. This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a ServiceMonitor's meta labels. The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
