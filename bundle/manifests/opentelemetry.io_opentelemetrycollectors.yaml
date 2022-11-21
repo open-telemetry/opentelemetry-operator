@@ -1685,7 +1685,8 @@ spec:
                 type: object
               serviceAccount:
                 description: ServiceAccount indicates the name of an existing service
-                  account to use with this instance.
+                  account to use with this instance. When set, the operator will not
+                  automatically create a ServiceAccount for the collector.
                 type: string
               targetAllocator:
                 description: TargetAllocator indicates a value which determines whether
@@ -1752,7 +1753,8 @@ spec:
                     type: integer
                   serviceAccount:
                     description: ServiceAccount indicates the name of an existing
-                      service account to use with this instance.
+                      service account to use with this instance. When set, the operator
+                      will not automatically create a ServiceAccount for the TargetAllocator.
                     type: string
                 type: object
               tolerations:
