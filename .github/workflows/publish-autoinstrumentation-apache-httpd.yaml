@@ -1,4 +1,4 @@
-name: "Publish Java Auto-Instrumentation"
+name: "Publish Apache HTTPD Auto-Instrumentation"
 
 on:
   push:
