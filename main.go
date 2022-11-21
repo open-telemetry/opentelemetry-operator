@@ -294,13 +294,18 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 	return nil
 }
 
+// This function get the option from command argument (tlsConfig), check the validity through k8sapiflag
+// and set the config for webhook server.
+// refer to https://pkg.go.dev/k8s.io/component-base/cli/flag
 func tlsConfigSetting(cfg *tls.Config, tlsOpt tlsConfig) {
+	// TLSVersion helper function returns the TLS Version ID for the version name passed.
 	version, err := k8sapiflag.TLSVersion(tlsOpt.minVersion)
 	if err != nil {
 		setupLog.Error(err, "TLS version invalid")
 	}
 	cfg.MinVersion = version
 
+	// TLSCipherSuites helper function returns a list of cipher suite IDs from the cipher suite names passed.
 	cipherSuiteIDs, err := k8sapiflag.TLSCipherSuites(tlsOpt.cipherSuites)
 	if err != nil {
 		setupLog.Error(err, "Failed to convert TLS cipher suite name to ID")
