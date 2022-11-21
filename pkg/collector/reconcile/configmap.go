@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
@@ -117,8 +118,21 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 	if len(params.Instance.Spec.TargetAllocator.AllocationStrategy) > 0 {
 		taConfig["allocation_strategy"] = params.Instance.Spec.TargetAllocator.AllocationStrategy
 	} else {
-		taConfig["allocation_strategy"] = "least-weighted"
+		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
 	}
+
+	if len(params.Instance.Spec.TargetAllocator.FilterStrategy) > 0 {
+		taConfig["filter_strategy"] = params.Instance.Spec.TargetAllocator.FilterStrategy
+	}
+
+	if params.Instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
+		taConfig["service_monitor_selector"] = &params.Instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
+	}
+
+	if params.Instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
+		taConfig["pod_monitor_selector"] = &params.Instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
+	}
+
 	taConfigYAML, err := yaml.Marshal(taConfig)
 	if err != nil {
 		return corev1.ConfigMap{}, err

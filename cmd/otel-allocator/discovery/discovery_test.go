@@ -28,8 +28,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
@@ -44,10 +44,10 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to load config file: %v", err)
 		os.Exit(1)
 	}
-	manager = NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger())
+	manager = NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger(), nil)
 
 	results = make(chan []string)
-	manager.Watch(func(targets map[string]*allocation.TargetItem) {
+	manager.Watch(func(targets map[string]*target.Item) {
 		var result []string
 		for _, t := range targets {
 			result = append(result, t.TargetURL)

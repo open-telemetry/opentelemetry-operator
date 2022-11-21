@@ -15,11 +15,10 @@
 package allocation
 
 import (
-	"fmt"
-	"net/url"
 	"sync"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/diff"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
@@ -46,16 +45,23 @@ type leastWeightedAllocator struct {
 	// collectors is a map from a Collector's name to a Collector instance
 	collectors map[string]*Collector
 	// targetItems is a map from a target item's hash to the target items allocated state
-	targetItems map[string]*TargetItem
+	targetItems map[string]*target.Item
 
 	log logr.Logger
+
+	filter Filter
+}
+
+// SetFilter sets the filtering hook to use.
+func (allocator *leastWeightedAllocator) SetFilter(filter Filter) {
+	allocator.filter = filter
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
-func (allocator *leastWeightedAllocator) TargetItems() map[string]*TargetItem {
+func (allocator *leastWeightedAllocator) TargetItems() map[string]*target.Item {
 	allocator.m.RLock()
 	defer allocator.m.RUnlock()
-	targetItemsCopy := make(map[string]*TargetItem)
+	targetItemsCopy := make(map[string]*target.Item)
 	for k, v := range allocator.targetItems {
 		targetItemsCopy[k] = v
 	}
@@ -94,15 +100,9 @@ func (allocator *leastWeightedAllocator) findNextCollector() *Collector {
 // This method is called from within SetTargets and SetCollectors, which acquire the needed lock.
 // This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap.
 // INVARIANT: allocator.collectors must have at least 1 collector set.
-func (allocator *leastWeightedAllocator) addTargetToTargetItems(target *TargetItem) {
+func (allocator *leastWeightedAllocator) addTargetToTargetItems(tg *target.Item) {
 	chosenCollector := allocator.findNextCollector()
-	targetItem := &TargetItem{
-		JobName:       target.JobName,
-		Link:          LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(target.JobName))},
-		TargetURL:     target.TargetURL,
-		Label:         target.Label,
-		CollectorName: chosenCollector.Name,
-	}
+	targetItem := target.NewItem(tg.JobName, tg.TargetURL, tg.Label, chosenCollector.Name)
 	allocator.targetItems[targetItem.Hash()] = targetItem
 	chosenCollector.NumTargets++
 	TargetsPerCollector.WithLabelValues(chosenCollector.Name, leastWeightedStrategyName).Set(float64(chosenCollector.NumTargets))
@@ -111,7 +111,7 @@ func (allocator *leastWeightedAllocator) addTargetToTargetItems(target *TargetIt
 // handleTargets receives the new and removed targets and reconciles the current state.
 // Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector.
 // Any net-new additions are assigned to the next available collector.
-func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*TargetItem]) {
+func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*target.Item]) {
 	// Check for removals
 	for k, target := range allocator.targetItems {
 		// if the current target is in the removals list
@@ -160,9 +160,14 @@ func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Col
 // SetTargets accepts a list of targets that will be used to make
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
-func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*TargetItem) {
+func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*target.Item) {
 	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", leastWeightedStrategyName))
 	defer timer.ObserveDuration()
+
+	if allocator.filter != nil {
+		targets = allocator.filter.Apply(targets)
+	}
+	RecordTargetsKeptPerJob(targets)
 
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
@@ -202,10 +207,16 @@ func (allocator *leastWeightedAllocator) SetCollectors(collectors map[string]*Co
 	}
 }
 
-func newLeastWeightedAllocator(log logr.Logger) Allocator {
-	return &leastWeightedAllocator{
+func newLeastWeightedAllocator(log logr.Logger, opts ...AllocationOption) Allocator {
+	lwAllocator := &leastWeightedAllocator{
 		log:         log,
 		collectors:  make(map[string]*Collector),
-		targetItems: make(map[string]*TargetItem),
+		targetItems: make(map[string]*target.Item),
 	}
+
+	for _, opt := range opts {
+		opt(lwAllocator)
+	}
+
+	return lwAllocator
 }

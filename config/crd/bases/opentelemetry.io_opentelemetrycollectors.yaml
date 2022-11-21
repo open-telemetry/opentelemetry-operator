@@ -1683,7 +1683,8 @@ spec:
                 type: object
               serviceAccount:
                 description: ServiceAccount indicates the name of an existing service
-                  account to use with this instance.
+                  account to use with this instance. When set, the operator will not
+                  automatically create a ServiceAccount for the collector.
                 type: string
               targetAllocator:
                 description: TargetAllocator indicates a value which determines whether
@@ -1694,11 +1695,20 @@ spec:
                       target allocator should use for allocation. The current options
                       are least-weighted and consistent-hashing. The default option
                       is least-weighted
+                    enum:
+                    - least-weighted
+                    - consistent-hashing
                     type: string
                   enabled:
                     description: Enabled indicates whether to use a target allocation
                       mechanism for Prometheus targets or not.
                     type: boolean
+                  filterStrategy:
+                    description: FilterStrategy determines how to filter targets before
+                      allocating them among the collectors. The only current option
+                      is relabel-config (drops targets based on prom relabel_config).
+                      Filtering is disabled by default.
+                    type: string
                   image:
                     description: Image indicates the container image to use for the
                       OpenTelemetry TargetAllocator.
@@ -1714,6 +1724,22 @@ spec:
                         description: Enabled indicates whether to use a PrometheusOperator
                           custom resources as targets or not.
                         type: boolean
+                      podMonitorSelector:
+                        additionalProperties:
+                          type: string
+                        description: PodMonitors to be selected for target discovery.
+                          This is a map of {key,value} pairs. Each {key,value} in
+                          the map is going to exactly match a label in a PodMonitor's
+                          meta labels. The requirements are ANDed.
+                        type: object
+                      serviceMonitorSelector:
+                        additionalProperties:
+                          type: string
+                        description: ServiceMonitors to be selected for target discovery.
+                          This is a map of {key,value} pairs. Each {key,value} in
+                          the map is going to exactly match a label in a ServiceMonitor's
+                          meta labels. The requirements are ANDed.
+                        type: object
                     type: object
                   replicas:
                     description: Replicas is the number of pod instances for the underlying
@@ -1725,7 +1751,8 @@ spec:
                     type: integer
                   serviceAccount:
                     description: ServiceAccount indicates the name of an existing
-                      service account to use with this instance.
+                      service account to use with this instance. When set, the operator
+                      will not automatically create a ServiceAccount for the TargetAllocator.
                     type: string
                 type: object
               tolerations:

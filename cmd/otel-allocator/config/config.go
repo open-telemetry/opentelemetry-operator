@@ -39,9 +39,12 @@ const DefaultResyncTime = 5 * time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 
 type Config struct {
-	LabelSelector      map[string]string  `yaml:"label_selector,omitempty"`
-	Config             *promconfig.Config `yaml:"config"`
-	AllocationStrategy *string            `yaml:"allocation_strategy,omitempty"`
+	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
+	Config                 *promconfig.Config `yaml:"config"`
+	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
+	PodMonitorSelector     map[string]string  `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector map[string]string  `yaml:"service_monitor_selector,omitempty"`
 }
 
 func (c Config) GetAllocationStrategy() string {
@@ -49,6 +52,13 @@ func (c Config) GetAllocationStrategy() string {
 		return *c.AllocationStrategy
 	}
 	return "least-weighted"
+}
+
+func (c Config) GetTargetsFilterStrategy() string {
+	if c.FilterStrategy != nil {
+		return *c.FilterStrategy
+	}
+	return ""
 }
 
 type PrometheusCRWatcherConfig struct {
