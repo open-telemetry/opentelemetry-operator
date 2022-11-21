@@ -3828,6 +3828,13 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ingressClassName</b></td>
+        <td>string</td>
+        <td>
+          IngressClassName is the name of an IngressClass cluster resource. Ingress controller implementations use this field to know whether they should be serving this Ingress resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingresstlsindex">tls</a></b></td>
         <td>[]object</td>
         <td>
