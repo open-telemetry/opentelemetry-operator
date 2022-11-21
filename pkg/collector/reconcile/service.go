@@ -34,6 +34,12 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
+// headless label is to differentiate the headless service from the clusterIP service.
+const (
+	headlessLabel  = "operator.opentelemetry.io/collector-headless-service"
+	headlessExists = "Exists"
+)
+
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 
 // Services reconciles the service(s) required for the instance in the current context.
@@ -154,6 +160,7 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 	}
 
 	h.Name = naming.HeadlessService(params.Instance)
+	h.Labels[headlessLabel] = headlessExists
 
 	// copy to avoid modifying params.Instance.Annotations
 	annotations := map[string]string{

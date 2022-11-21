@@ -117,3 +117,30 @@ func TestDeleteServiceAccounts(t *testing.T) {
 	})
 
 }
+
+func TestDesiredServiceAccounts(t *testing.T) {
+	t.Run("should not create any service account", func(t *testing.T) {
+		params := params()
+		params.Instance.Spec.ServiceAccount = "existing-collector-sa"
+		params.Instance.Spec.TargetAllocator.Enabled = true
+		params.Instance.Spec.TargetAllocator.ServiceAccount = "existing-allocator-sa"
+		desired := desiredServiceAccounts(params)
+		assert.Len(t, desired, 0)
+	})
+
+	t.Run("should create collector service account", func(t *testing.T) {
+		params := params()
+		desired := desiredServiceAccounts(params)
+		assert.Len(t, desired, 1)
+		assert.Equal(t, collector.ServiceAccount(params.Instance), desired[0])
+	})
+
+	t.Run("should create targetallocator service account", func(t *testing.T) {
+		params := params()
+		params.Instance.Spec.ServiceAccount = "existing-collector-sa"
+		params.Instance.Spec.TargetAllocator.Enabled = true
+		desired := desiredServiceAccounts(params)
+		assert.Len(t, desired, 1)
+		assert.Equal(t, targetallocator.ServiceAccount(params.Instance), desired[0])
+	})
+}

@@ -33,13 +33,7 @@ import (
 
 // ServiceAccounts reconciles the service account(s) required for the instance in the current context.
 func ServiceAccounts(ctx context.Context, params Params) error {
-	desired := []corev1.ServiceAccount{}
-	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
-		desired = append(desired, collector.ServiceAccount(params.Instance))
-	}
-	if params.Instance.Spec.TargetAllocator.Enabled {
-		desired = append(desired, targetallocator.ServiceAccount(params.Instance))
-	}
+	desired := desiredServiceAccounts(params)
 
 	// first, handle the create/update parts
 	if err := expectedServiceAccounts(ctx, params, desired); err != nil {
@@ -52,6 +46,17 @@ func ServiceAccounts(ctx context.Context, params Params) error {
 	}
 
 	return nil
+}
+
+func desiredServiceAccounts(params Params) []corev1.ServiceAccount {
+	desired := []corev1.ServiceAccount{}
+	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar && len(params.Instance.Spec.ServiceAccount) == 0 {
+		desired = append(desired, collector.ServiceAccount(params.Instance))
+	}
+	if params.Instance.Spec.TargetAllocator.Enabled && len(params.Instance.Spec.TargetAllocator.ServiceAccount) == 0 {
+		desired = append(desired, targetallocator.ServiceAccount(params.Instance))
+	}
+	return desired
 }
 
 func expectedServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
