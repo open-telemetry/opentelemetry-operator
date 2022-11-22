@@ -1,5 +1,28 @@
 Changes by Version
 ==================
+0.64.1
+------------------
+### 🚀 New components 🚀
+* add headless label ([#1088](https://github.com/open-telemetry/opentelemetry-operator/pull/1088), [@kristinapathak](https://github.com/kristinapathak))
+* Add new selector for pod and service monitor ([#1256](https://github.com/open-telemetry/opentelemetry-operator/pull/1256), [@jaronoff97](https://github.com/jaronoff97))
+* [target-allocator] Add a pre-hook to the allocator to filter out dropped targets ([#1127](https://github.com/open-telemetry/opentelemetry-operator/pull/1127), [@moh-osman3](https://github.com/moh-osman3))
+* [target-allocator] create new target package ([#1214](https://github.com/open-telemetry/opentelemetry-operator/pull/1214), [@moh-osman3](https://github.com/moh-osman3))
+### 💡 Enhancements 💡
+* Only create ServiceAccounts if existing ServiceAccount is not specified ([#1246](https://github.com/open-telemetry/opentelemetry-operator/pull/1246), [@csquire](https://github.com/csquire))
+* feat(otel-allocator): use type for AllocationStrategy ([#1220](https://github.com/open-telemetry/opentelemetry-operator/pull/1220), [@secustor](https://github.com/secustor))
+* fix min tls setting for webhook server (#1225) ([#1230](https://github.com/open-telemetry/opentelemetry-operator/pull/1230), [@kangsheng89](https://github.com/kangsheng89))
+* Bump OTel python versions to 1.14.0 and 0.35b0 ([#1227](https://github.com/open-telemetry/opentelemetry-operator/pull/1227), [@vainikkaj](https://github.com/vainikkaj))
+* Trim unnecessary otelcol operator verbs ([#1222](https://github.com/open-telemetry/opentelemetry-operator/pull/1222), [@Allex1](https://github.com/Allex1))
+* decrease autoscaling version detection log verbosity ([#1212](https://github.com/open-telemetry/opentelemetry-operator/pull/1212), [@frzifus](https://github.com/frzifus))
+
+### 🧰 Bug fixes 🧰
+* None
+
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.64.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.64.1)
+* [OpenTelemetry Contrib - v0.64.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.64.0)
+* [OpenTelemetry Collector - v0.64.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.64.0)
+
 0.63.1
 ------------------
 ### 🚀 New components 🚀
