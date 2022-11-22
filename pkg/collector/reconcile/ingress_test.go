@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -93,8 +92,9 @@ func TestDesiredIngresses(t *testing.T) {
 
 	t.Run("should return nil unable to do something else", func(t *testing.T) {
 		var (
-			ns       = "test"
-			hostname = "example.com"
+			ns               = "test"
+			hostname         = "example.com"
+			ingressClassName = "nginx"
 		)
 
 		params, err := newParams("something:tag", test_file_ingress)
@@ -104,9 +104,10 @@ func TestDesiredIngresses(t *testing.T) {
 
 		params.Instance.Namespace = ns
 		params.Instance.Spec.Ingress = v1alpha1.Ingress{
-			Type:        v1alpha1.IngressTypeNginx,
-			Hostname:    hostname,
-			Annotations: map[string]string{"some.key": "some.value"},
+			Type:             v1alpha1.IngressTypeNginx,
+			Hostname:         hostname,
+			Annotations:      map[string]string{"some.key": "some.value"},
+			IngressClassName: &ingressClassName,
 		}
 
 		got := desiredIngresses(context.Background(), params)
@@ -124,6 +125,7 @@ func TestDesiredIngresses(t *testing.T) {
 				},
 			},
 			Spec: networkingv1.IngressSpec{
+				IngressClassName: &ingressClassName,
 				Rules: []networkingv1.IngressRule{
 					{
 						Host: hostname,
@@ -243,7 +245,7 @@ func TestDeleteIngresses(t *testing.T) {
 		}
 
 		// check
-		exists, err = populateObjectIfExists(t, &v1.Ingress{}, nns)
+		exists, err = populateObjectIfExists(t, &networkingv1.Ingress{}, nns)
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	})
