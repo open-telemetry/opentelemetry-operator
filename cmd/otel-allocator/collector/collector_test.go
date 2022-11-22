@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,11 +32,13 @@ import (
 
 var client Client
 var collectors = map[string]*allocation.Collector{}
+var logger = logf.Log.WithName("collector-unit-tests")
 
 func TestMain(m *testing.M) {
 	client = Client{
 		k8sClient: fake.NewSimpleClientset(),
 		close:     make(chan struct{}),
+		log:       logger,
 	}
 
 	labelMap := map[string]string{
@@ -82,7 +85,7 @@ func TestWatchPodAddition(t *testing.T) {
 	}
 
 	assert.Len(t, collectors, 3)
-	assert.Equal(t, collectors, expected)
+	assert.Equal(t, expected, collectors)
 }
 
 func TestWatchPodDeletion(t *testing.T) {
@@ -95,7 +98,7 @@ func TestWatchPodDeletion(t *testing.T) {
 
 	assert.Len(t, collectors, 1)
 
-	assert.Equal(t, collectors, expected)
+	assert.Equal(t, expected, collectors)
 }
 
 func getCollectors(c map[string]*allocation.Collector) {
