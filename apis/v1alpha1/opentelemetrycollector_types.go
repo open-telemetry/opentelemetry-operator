@@ -41,6 +41,12 @@ type Ingress struct {
 	// TLS configuration.
 	// +optional
 	TLS []networkingv1.IngressTLS `json:"tls,omitempty"`
+
+	// IngressClassName is the name of an IngressClass cluster resource. Ingress
+	// controller implementations use this field to know whether they should be
+	// serving this Ingress resource.
+	// +optional
+	IngressClassName *string `json:"ingressClassName,omitempty"`
 }
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
