@@ -1843,7 +1843,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>serviceAccount</b></td>
         <td>string</td>
         <td>
-          ServiceAccount indicates the name of an existing service account to use with this instance.<br/>
+          ServiceAccount indicates the name of an existing service account to use with this instance. When set, the operator will not automatically create a ServiceAccount for the collector.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3828,6 +3828,13 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ingressClassName</b></td>
+        <td>string</td>
+        <td>
+          IngressClassName is the name of an IngressClass cluster resource. Ingress controller implementations use this field to know whether they should be serving this Ingress resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingresstlsindex">tls</a></b></td>
         <td>[]object</td>
         <td>
@@ -4530,9 +4537,11 @@ TargetAllocator indicates a value which determines whether to spawn a target all
     </thead>
     <tbody><tr>
         <td><b>allocationStrategy</b></td>
-        <td>string</td>
+        <td>enum</td>
         <td>
           AllocationStrategy determines which strategy the target allocator should use for allocation. The current options are least-weighted and consistent-hashing. The default option is least-weighted<br/>
+          <br/>
+            <i>Enum</i>: least-weighted, consistent-hashing<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4576,7 +4585,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>serviceAccount</b></td>
         <td>string</td>
         <td>
-          ServiceAccount indicates the name of an existing service account to use with this instance.<br/>
+          ServiceAccount indicates the name of an existing service account to use with this instance. When set, the operator will not automatically create a ServiceAccount for the TargetAllocator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

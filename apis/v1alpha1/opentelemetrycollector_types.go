@@ -41,6 +41,12 @@ type Ingress struct {
 	// TLS configuration.
 	// +optional
 	TLS []networkingv1.IngressTLS `json:"tls,omitempty"`
+
+	// IngressClassName is the name of an IngressClass cluster resource. Ingress
+	// controller implementations use this field to know whether they should be
+	// serving this Ingress resource.
+	// +optional
+	IngressClassName *string `json:"ingressClassName,omitempty"`
 }
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
@@ -84,7 +90,8 @@ type OpenTelemetryCollectorSpec struct {
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	Mode Mode `json:"mode,omitempty"`
-	// ServiceAccount indicates the name of an existing service account to use with this instance.
+	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
+	// the operator will not automatically create a ServiceAccount for the collector.
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	// Image indicates the container image to use for the OpenTelemetry Collector.
@@ -158,13 +165,14 @@ type OpenTelemetryTargetAllocator struct {
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted and consistent-hashing. The default option is least-weighted
 	// +optional
-	AllocationStrategy string `json:"allocationStrategy,omitempty"`
+	AllocationStrategy OpenTelemetryTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
 	// Filtering is disabled by default.
 	// +optional
 	FilterStrategy string `json:"filterStrategy,omitempty"`
-	// ServiceAccount indicates the name of an existing service account to use with this instance.
+	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
+	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
