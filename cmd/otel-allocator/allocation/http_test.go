@@ -48,7 +48,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 	var tests = []struct {
 		name string
 		args args
-		want []targetGroupJSON
+		want []target.Item
 	}{
 		{
 			name: "Empty target map",
@@ -72,9 +72,9 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: leastWeighted,
 			},
-			want: []targetGroupJSON{
+			want: []target.Item{
 				{
-					Targets: []string{"test-url"},
+					TargetURL: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value",
 					},
@@ -96,9 +96,9 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: leastWeighted,
 			},
-			want: []targetGroupJSON{
+			want: []target.Item{
 				{
-					Targets: []string{"test-url"},
+					TargetURL: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value",
 					},
@@ -120,16 +120,16 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: leastWeighted,
 			},
-			want: []targetGroupJSON{
+			want: []target.Item{
 				{
-					Targets: []string{"test-url1"},
+					TargetURL: []string{"test-url1"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value-1",
 						"foo":        "bar",
 					},
 				},
 				{
-					Targets: []string{"test-url2"},
+					TargetURL: []string{"test-url2"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value-2",
 					},
@@ -149,16 +149,16 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				},
 				allocator: leastWeighted,
 			},
-			want: []targetGroupJSON{
+			want: []target.Item{
 				{
-					Targets: []string{"test-url"},
+					TargetURL: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value",
 						"foo":        "bar",
 					},
 				},
 				{
-					Targets: []string{"test-url"},
+					TargetURL: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value",
 					},
@@ -168,7 +168,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			targetGroups := GetAllTargetsByCollectorAndJob(tt.args.collector, tt.args.job, tt.args.allocator)
+			targetGroups := GetAllTargetsByCollectorAndJob(tt.args.allocator, tt.args.collector, tt.args.job)
 			for _, wantGroupJson := range tt.want {
 				for _, groupJSON := range targetGroups {
 					if groupJSON.Labels.String() == wantGroupJson.Labels.String() {
@@ -208,7 +208,7 @@ func BenchmarkGetAllTargetsByCollectorAndJob(b *testing.B) {
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", s, v.numCollectors, v.numJobs), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					GetAllTargetsByCollectorAndJob(fmt.Sprintf("collector-%d", v.numCollectors/2), fmt.Sprintf("test-job-%d", v.numJobs/2), a)
+					GetAllTargetsByCollectorAndJob(a, fmt.Sprintf("collector-%d", v.numCollectors/2), fmt.Sprintf("test-job-%d", v.numJobs/2))
 				}
 			})
 		}

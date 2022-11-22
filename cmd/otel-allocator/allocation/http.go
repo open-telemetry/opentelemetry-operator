@@ -18,44 +18,24 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/prometheus/common/model"
-
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
 type collectorJSON struct {
-	Link string            `json:"_link"`
-	Jobs []targetGroupJSON `json:"targets"`
+	Link string         `json:"_link"`
+	Jobs []*target.Item `json:"targets"`
 }
 
-type targetGroupJSON struct {
-	Targets []string       `json:"targets"`
-	Labels  model.LabelSet `json:"labels"`
-}
-
-func GetAllTargetsByJob(job string, cMap map[string][]target.Item, allocator Allocator) map[string]collectorJSON {
+// GetAllTargetsByJob is a relatively expensive call that is usually only used for debugging purposes
+func GetAllTargetsByJob(allocator Allocator, job string) map[string]collectorJSON {
 	displayData := make(map[string]collectorJSON)
-	for _, j := range allocator.TargetItems() {
-		if j.JobName == job {
-			var targetList []target.Item
-			targetList = append(targetList, cMap[j.CollectorName+j.JobName]...)
-
-			var targetGroupList []targetGroupJSON
-
-			for _, t := range targetList {
-				targetGroupList = append(targetGroupList, targetGroupJSON{
-					Targets: t.TargetURL,
-					Labels:  t.Labels,
-				})
-			}
-
-			displayData[j.CollectorName] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(j.JobName), j.CollectorName), Jobs: targetGroupList}
-
-		}
+	for _, col := range allocator.Collectors() {
+		items := allocator.GetTargetsForCollectorAndJob(col.Name, job)
+		displayData[col.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name), Jobs: items}
 	}
 	return displayData
 }
 
-func GetAllTargetsByCollectorAndJob(collector string, job string, allocator Allocator) []*target.Item {
+func GetAllTargetsByCollectorAndJob(allocator Allocator, collector string, job string) []*target.Item {
 	return allocator.GetTargetsForCollectorAndJob(collector, job)
 }

@@ -258,10 +258,6 @@ func (s *server) PrometheusMiddleware(next http.Handler) http.Handler {
 func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()["collector_id"]
 
-	var compareMap = make(map[string][]target.Item) // CollectorName+jobName -> TargetItem
-	for _, v := range s.allocator.TargetItems() {
-		compareMap[v.CollectorName+v.JobName] = append(compareMap[v.CollectorName+v.JobName], *v)
-	}
 	params := mux.Vars(r)
 	jobId, err := url.QueryUnescape(params["job_id"])
 	if err != nil {
@@ -270,11 +266,11 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(q) == 0 {
-		displayData := allocation.GetAllTargetsByJob(jobId, compareMap, s.allocator)
+		displayData := allocation.GetAllTargetsByJob(s.allocator, jobId)
 		s.jsonHandler(w, displayData)
 
 	} else {
-		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], jobId, s.allocator)
+		tgs := allocation.GetAllTargetsByCollectorAndJob(s.allocator, q[0], jobId)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
 			s.jsonHandler(w, []interface{}{})
