@@ -18,8 +18,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -169,8 +167,8 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
-			// If we get an error that occur because a pod is being terminated then exit this loop
-			if apierrors.IsForbidden(err) && strings.Contains(err.Error(), "because it is being terminated") {
+			// If we get an error that occurs because a pod is being terminated, then exit this loop
+			if apierrors.IsForbidden(err) && apierrors.HasStatusCause(err, corev1.NamespaceTerminatingCause) {
 				r.log.V(2).Info("Exiting reconcile loop because namespace", params.Instance.Namespace, "is being terminated")
 				return nil
 			}
