@@ -19,11 +19,6 @@ kind: ConfigMap
 metadata:
   name: stateful-targetallocator
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: stateful-targetallocator
----
 # Print TA pod logs if test fails
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert

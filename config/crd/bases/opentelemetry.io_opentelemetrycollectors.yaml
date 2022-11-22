@@ -1199,6 +1199,11 @@ spec:
                   hostname:
                     description: Hostname by which the ingress proxy can be reached.
                     type: string
+                  ingressClassName:
+                    description: IngressClassName is the name of an IngressClass cluster
+                      resource. Ingress controller implementations use this field
+                      to know whether they should be serving this Ingress resource.
+                    type: string
                   tls:
                     description: TLS configuration.
                     items:
@@ -1688,7 +1693,8 @@ spec:
                 type: object
               serviceAccount:
                 description: ServiceAccount indicates the name of an existing service
-                  account to use with this instance.
+                  account to use with this instance. When set, the operator will not
+                  automatically create a ServiceAccount for the collector.
                 type: string
               targetAllocator:
                 description: TargetAllocator indicates a value which determines whether
@@ -1699,6 +1705,9 @@ spec:
                       target allocator should use for allocation. The current options
                       are least-weighted and consistent-hashing. The default option
                       is least-weighted
+                    enum:
+                    - least-weighted
+                    - consistent-hashing
                     type: string
                   enabled:
                     description: Enabled indicates whether to use a target allocation
@@ -1752,7 +1761,8 @@ spec:
                     type: integer
                   serviceAccount:
                     description: ServiceAccount indicates the name of an existing
-                      service account to use with this instance.
+                      service account to use with this instance. When set, the operator
+                      will not automatically create a ServiceAccount for the TargetAllocator.
                     type: string
                 type: object
               tolerations:
