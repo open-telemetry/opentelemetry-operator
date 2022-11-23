@@ -16,40 +16,29 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/url"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/ghodss/yaml"
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
-	"github.com/gorilla/mux"
+	"github.com/oklog/run"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/server"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	yaml2 "gopkg.in/yaml.v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"net/http"
+	"os"
+	"os/signal"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"syscall"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	lbdiscovery "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/prehook"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
 var (
 	setupLog     = ctrl.Log.WithName("setup")
-	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "opentelemetry_allocator_http_duration_seconds",
-		Help: "Duration of received HTTP requests.",
-	}, []string{"path"})
 	eventsMetric = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "opentelemetry_allocator_events",
 		Help: "Number of events in the channel.",
@@ -68,26 +57,45 @@ func main() {
 	}
 
 	cliConf.RootLogger.Info("Starting the Target Allocator")
-
 	ctx := context.Background()
-
 	log := ctrl.Log.WithName("allocator")
 
-	// allocatorPrehook will be nil if filterStrategy is not set or
-	// unrecognized. No filtering will be used in this case.
-	allocatorPrehook := prehook.New(cfg.GetTargetsFilterStrategy(), log)
-
-	allocator, err := allocation.New(cfg.GetAllocationStrategy(), log, allocation.WithFilter(allocatorPrehook))
+	var (
+		// allocatorPrehook will be nil if filterStrategy is not set or
+		// unrecognized. No filtering will be used in this case.
+		allocatorPrehook prehook.Hook
+		allocator        allocation.Allocator
+		fileWatcher      allocatorWatcher.Watcher
+		promWatcher      allocatorWatcher.Watcher
+		discoveryManager *lbdiscovery.Manager
+		runGroup         run.Group
+	)
+	allocatorPrehook = prehook.New(cfg.GetTargetsFilterStrategy(), log)
+	allocator, err = allocation.New(cfg.GetAllocationStrategy(), log, allocation.WithFilter(allocatorPrehook))
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
-
-	watcher, err := allocatorWatcher.NewWatcher(setupLog, cfg, cliConf, allocator)
+	fileWatcher, err = allocatorWatcher.NewFileWatcher(setupLog.WithName("file-watcher"), cliConf)
 	if err != nil {
 		setupLog.Error(err, "Can't start the watchers")
 		os.Exit(1)
 	}
+	if *cliConf.PromCRWatcherConf.Enabled {
+		promWatcher, err = allocatorWatcher.NewFileWatcher(setupLog.WithName("file-watcher"), cliConf)
+		if err != nil {
+			setupLog.Error(err, "Can't start the watchers")
+			os.Exit(1)
+		}
+	}
+
+	runGroup.Add(
+		func() error {
+
+		},
+		func(err error) {
+
+		})
 	defer func() {
 		err := watcher.Close()
 		if err != nil {
@@ -96,7 +104,7 @@ func main() {
 	}()
 
 	// creates a new discovery manager
-	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger(), allocatorPrehook)
+	discoveryManager = lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger(), allocatorPrehook)
 	defer discoveryManager.Close()
 
 	discoveryManager.Watch(allocator.SetTargets)
@@ -107,7 +115,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	srv := newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
+	srv := server.NewServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 
 	interrupts := make(chan os.Signal, 1)
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGTERM)
@@ -135,7 +143,7 @@ func main() {
 				if err := srv.Shutdown(ctx); err != nil {
 					setupLog.Error(err, "Cannot shutdown the server")
 				}
-				srv = newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
+				srv = server.NewServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 				go func() {
 					if err := srv.Start(); err != http.ErrServerClosed {
 						setupLog.Error(err, "Can't restart the server")
@@ -159,31 +167,6 @@ func main() {
 	}
 }
 
-type server struct {
-	logger           logr.Logger
-	allocator        allocation.Allocator
-	discoveryManager *lbdiscovery.Manager
-	k8sClient        *collector.Client
-	server           *http.Server
-}
-
-func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, k8sclient *collector.Client, listenAddr *string) *server {
-	s := &server{
-		logger:           log,
-		allocator:        allocator,
-		discoveryManager: discoveryManager,
-		k8sClient:        k8sclient,
-	}
-	router := mux.NewRouter().UseEncodedPath()
-	router.Use(s.PrometheusMiddleware)
-	router.HandleFunc("/scrape_configs", s.ScrapeConfigsHandler).Methods("GET")
-	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
-	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
-	router.Path("/metrics").Handler(promhttp.Handler())
-	s.server = &http.Server{Addr: *listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
-	return s
-}
-
 func configureFileDiscovery(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
 	cfg, err := config.Load(*cliConfig.ConfigFilePath)
 	if err != nil {
@@ -202,93 +185,4 @@ func configureFileDiscovery(log logr.Logger, allocator allocation.Allocator, dis
 
 	k8sClient.Watch(ctx, cfg.LabelSelector, allocator.SetCollectors)
 	return k8sClient, nil
-}
-
-func (s *server) Start() error {
-	setupLog.Info("Starting server...")
-	return s.server.ListenAndServe()
-}
-
-func (s *server) Shutdown(ctx context.Context) error {
-	s.logger.Info("Shutting down server...")
-	s.k8sClient.Close()
-	return s.server.Shutdown(ctx)
-}
-
-// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
-// The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
-// After that, the YAML is converted in to a JSON format for consumers to use.
-func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
-	configs := s.discoveryManager.GetScrapeConfigs()
-	configBytes, err := yaml2.Marshal(configs)
-	if err != nil {
-		s.errorHandler(w, err)
-	}
-	jsonConfig, err := yaml.YAMLToJSON(configBytes)
-	if err != nil {
-		s.errorHandler(w, err)
-	}
-	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(jsonConfig)
-	if err != nil {
-		s.errorHandler(w, err)
-	}
-}
-
-func (s *server) JobHandler(w http.ResponseWriter, r *http.Request) {
-	displayData := make(map[string]target.LinkJSON)
-	for _, v := range s.allocator.TargetItems() {
-		displayData[v.JobName] = target.LinkJSON{Link: v.Link.Link}
-	}
-	s.jsonHandler(w, displayData)
-}
-
-// PrometheusMiddleware implements mux.MiddlewareFunc.
-func (s *server) PrometheusMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		route := mux.CurrentRoute(r)
-		path, _ := route.GetPathTemplate()
-		timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
-		next.ServeHTTP(w, r)
-		timer.ObserveDuration()
-	})
-}
-
-func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()["collector_id"]
-
-	params := mux.Vars(r)
-	jobId, err := url.QueryUnescape(params["job_id"])
-	if err != nil {
-		s.errorHandler(w, err)
-		return
-	}
-
-	if len(q) == 0 {
-		displayData := allocation.GetAllTargetsByJob(s.allocator, jobId)
-		s.jsonHandler(w, displayData)
-
-	} else {
-		tgs := allocation.GetAllTargetsByCollectorAndJob(s.allocator, q[0], jobId)
-		// Displays empty list if nothing matches
-		if len(tgs) == 0 {
-			s.jsonHandler(w, []interface{}{})
-			return
-		}
-		s.jsonHandler(w, tgs)
-	}
-}
-
-func (s *server) errorHandler(w http.ResponseWriter, err error) {
-	w.WriteHeader(500)
-	s.jsonHandler(w, err)
-}
-
-func (s *server) jsonHandler(w http.ResponseWriter, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(data)
-	if err != nil {
-		s.logger.Error(err, "failed to encode data for http response")
-	}
 }

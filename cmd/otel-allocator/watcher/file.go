@@ -29,14 +29,14 @@ type FileWatcher struct {
 	closer         chan bool
 }
 
-func newConfigMapWatcher(logger logr.Logger, config config.CLIConfig) (FileWatcher, error) {
+func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (Watcher, error) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		logger.Error(err, "Can't start the watcher")
-		return FileWatcher{}, err
+		return &FileWatcher{}, err
 	}
 
-	return FileWatcher{
+	return &FileWatcher{
 		configFilePath: *config.ConfigFilePath,
 		watcher:        fileWatcher,
 		closer:         make(chan bool),

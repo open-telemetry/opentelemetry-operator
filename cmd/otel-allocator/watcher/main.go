@@ -66,11 +66,11 @@ func NewWatcher(logger logr.Logger, cfg config.Config, cliConfig config.CLIConfi
 		Errors:    make(chan error),
 	}
 
-	fileWatcher, err := newConfigMapWatcher(logger, cliConfig)
+	fileWatcher, err := NewFileWatcher(logger, cliConfig)
 	if err != nil {
 		return nil, err
 	}
-	watcher.watchers = append(watcher.watchers, &fileWatcher)
+	watcher.watchers = append(watcher.watchers, fileWatcher)
 
 	if *cliConfig.PromCRWatcherConf.Enabled {
 		promWatcher, err := newCRDMonitorWatcher(cfg, cliConfig)
