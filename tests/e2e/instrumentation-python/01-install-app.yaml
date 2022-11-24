@@ -22,3 +22,7 @@ spec:
       containers:
       - name: myapp
         image: ghcr.io/anuraaga/flask-hello-world:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
