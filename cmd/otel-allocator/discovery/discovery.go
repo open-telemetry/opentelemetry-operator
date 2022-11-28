@@ -50,7 +50,7 @@ type discoveryHook interface {
 	SetConfig(map[string][]*relabel.Config)
 }
 
-func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, hook discoveryHook, options ...func(*discovery.Manager)) *Manager {
+func NewManager(ctx context.Context, log logr.Logger, logger log.Logger, hook discoveryHook, options ...func(*discovery.Manager)) *Manager {
 	manager := discovery.NewManager(ctx, logger, options...)
 
 	go func() {
@@ -110,7 +110,7 @@ func (m *Manager) Watch(fn func(targets map[string]*target.Item)) {
 				targets := map[string]*target.Item{}
 
 				for jobName, tgs := range tsets {
-					var count float64 = 0
+					var count float64
 					for _, tg := range tgs {
 						for _, t := range tg.Targets {
 							count++

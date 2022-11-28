@@ -45,7 +45,7 @@ type sidecarPodMutator struct {
 
 var _ webhookhandler.PodMutator = (*sidecarPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, config config.Config, client client.Client) *sidecarPodMutator {
+func NewMutator(logger logr.Logger, config config.Config, client client.Client) *sidecarPodMutator { //nolint:revive
 	return &sidecarPodMutator{
 		config: config,
 		logger: logger,

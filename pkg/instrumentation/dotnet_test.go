@@ -78,7 +78,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 								},
 								{
 									Name:  envDotNetCoreClrProfiler,
-									Value: dotNetCoreClrProfilerId,
+									Value: dotNetCoreClrProfilerID,
 								},
 								{
 									Name:  envDotNetCoreClrProfilerPath,

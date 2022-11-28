@@ -49,7 +49,7 @@ type languageInstrumentations struct {
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
+func NewMutator(logger logr.Logger, client client.Client) *instPodMutator { //nolint:revive
 	return &instPodMutator{
 		Logger: logger,
 		Client: client,

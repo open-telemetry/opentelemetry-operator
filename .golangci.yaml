@@ -24,3 +24,10 @@ linters:
     - exhaustive
     - godot
     - unparam
+    - gosimple
+    - unused
+    - staticcheck
+    - ineffassign
+    - typecheck
+    - unparam
+  #  - revive.
