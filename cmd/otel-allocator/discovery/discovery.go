@@ -52,7 +52,7 @@ type discoveryHook interface {
 
 func NewManager(log logr.Logger, ctx context.Context, logger log.Logger, hook discoveryHook, options ...func(*discovery.Manager)) *Manager {
 	manager := discovery.NewManager(ctx, logger, options...)
-
+	
 	go func() {
 		if err := manager.Run(); err != nil {
 			log.Error(err, "Discovery manager failed")
