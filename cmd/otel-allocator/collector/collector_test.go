@@ -17,11 +17,12 @@ package collector
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/watch"
 	"os"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sync"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/watch"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
