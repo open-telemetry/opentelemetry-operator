@@ -146,16 +146,16 @@ func Test_runWatch(t *testing.T) {
 			}()
 			var wg sync.WaitGroup
 			actual := make(map[string]*allocation.Collector)
-			go runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {
-				actual = colMap
-				wg.Done()
-			})
 			for _, k := range tt.args.collectorMap {
 				p := pod(k.Name)
 				_, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
 				wg.Add(1)
 				assert.NoError(t, err)
 			}
+			go runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {
+				actual = colMap
+				wg.Done()
+			})
 
 			tt.args.kubeFn(t, kubeClient, &wg)
 			wg.Wait()
