@@ -37,7 +37,7 @@ const (
 	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation/AdditionalDeps"
 	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation"
 	dotNetSharedStorePath               = "/otel-auto-instrumentation/store"
-	dotNetStartupHookPath               = "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	dotNetStartupHookPath               = "/otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 )
 
 func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, error) {
