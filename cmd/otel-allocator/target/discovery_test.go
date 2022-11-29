@@ -15,6 +15,9 @@
 package target
 
 import (
+	"context"
+	gokitlog "github.com/go-kit/log"
+	"github.com/prometheus/prometheus/discovery"
 	"sort"
 	"testing"
 
@@ -49,11 +52,18 @@ func TestDiscovery(t *testing.T) {
 			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
 		},
 	}
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), nil)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil)
 	defer close(manager.close)
+	defer cancelFunc()
 
 	results := make(chan []string)
-	manager.Watch(func(targets map[string]*Item) {
+	go func() {
+		err := d.Run()
+		assert.NoError(t, err)
+	}()
+	go manager.Watch(func(targets map[string]*Item) {
 		var result []string
 		for _, t := range targets {
 			result = append(result, t.TargetURL[0])

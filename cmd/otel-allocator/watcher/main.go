@@ -14,17 +14,6 @@
 
 package watcher
 
-import (
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-)
-
-type Manager struct {
-	Events    chan Event
-	Errors    chan error
-	allocator allocation.Allocator
-	watchers  []Watcher
-}
-
 type Watcher interface {
 	// Start watcher and supply channels which will receive change events
 	Start(upstreamEvents chan Event, upstreamErrors chan error) error
