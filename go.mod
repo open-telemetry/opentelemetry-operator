@@ -5,7 +5,7 @@ go 1.19
 retract v1.51.0
 
 require (
-	github.com/Masterminds/semver/v3 v3.1.1
+	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/go-logr/logr v1.2.3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/prometheus v1.8.2-0.20210621150501-ff58416a0b02
