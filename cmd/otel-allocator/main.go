@@ -112,7 +112,7 @@ func main() {
 	srv := server.NewServer(log, allocator, targetDiscoverer, cliConf.ListenAddr)
 	interrupts := make(chan os.Signal, 1)
 	closer := make(chan bool, 1)
-	signal.Notify(interrupts, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	signal.Notify(interrupts, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	runGroup.Add(
 		func() error {
@@ -144,6 +144,12 @@ func main() {
 		})
 	runGroup.Add(
 		func() error {
+			// Initial loading of the config file's scrape config
+			err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.Config)
+			if err != nil {
+				setupLog.Error(err, "Unable to apply initial configuration")
+				return err
+			}
 			err := targetDiscoverer.Watch(allocator.SetTargets)
 			setupLog.Info("Target discoverer exited")
 			return err

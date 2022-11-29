@@ -226,7 +226,7 @@ func (c *consistentHashingAllocator) GetTargetsForCollectorAndJob(collector stri
 	}
 	targetItemsCopy := make([]*target.Item, len(c.collectorsTargetItemsPerJob[collector][job]))
 	index := 0
-	for targetHash, _ := range c.collectorsTargetItemsPerJob[collector][job] {
+	for targetHash := range c.collectorsTargetItemsPerJob[collector][job] {
 		targetItemsCopy[index] = c.targetItems[targetHash]
 		index++
 	}

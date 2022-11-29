@@ -26,7 +26,7 @@ type collectorJSON struct {
 	Jobs []*target.Item `json:"targets"`
 }
 
-// GetAllTargetsByJob is a relatively expensive call that is usually only used for debugging purposes
+// GetAllTargetsByJob is a relatively expensive call that is usually only used for debugging purposes.
 func GetAllTargetsByJob(allocator Allocator, job string) map[string]collectorJSON {
 	displayData := make(map[string]collectorJSON)
 	for _, col := range allocator.Collectors() {

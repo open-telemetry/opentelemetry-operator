@@ -16,10 +16,11 @@ package target
 
 import (
 	"context"
-	gokitlog "github.com/go-kit/log"
-	"github.com/prometheus/prometheus/discovery"
 	"sort"
 	"testing"
+
+	gokitlog "github.com/go-kit/log"
+	"github.com/prometheus/prometheus/discovery"
 
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -63,13 +64,16 @@ func TestDiscovery(t *testing.T) {
 		err := d.Run()
 		assert.NoError(t, err)
 	}()
-	go manager.Watch(func(targets map[string]*Item) {
-		var result []string
-		for _, t := range targets {
-			result = append(result, t.TargetURL[0])
-		}
-		results <- result
-	})
+	go func() {
+		err := manager.Watch(func(targets map[string]*Item) {
+			var result []string
+			for _, t := range targets {
+				result = append(result, t.TargetURL[0])
+			}
+			results <- result
+		})
+		assert.NoError(t, err)
+	}()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

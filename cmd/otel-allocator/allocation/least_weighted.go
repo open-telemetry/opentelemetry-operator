@@ -71,7 +71,7 @@ func (allocator *leastWeightedAllocator) GetTargetsForCollectorAndJob(collector 
 	}
 	targetItemsCopy := make([]*target.Item, len(allocator.collectorsTargetItemsPerJob[collector][job]))
 	index := 0
-	for targetHash, _ := range allocator.collectorsTargetItemsPerJob[collector][job] {
+	for targetHash := range allocator.collectorsTargetItemsPerJob[collector][job] {
 		targetItemsCopy[index] = allocator.targetItems[targetHash]
 		index++
 	}

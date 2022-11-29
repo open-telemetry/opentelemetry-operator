@@ -94,7 +94,7 @@ func Register(name string, provider AllocatorProvider) error {
 
 func GetRegisteredAllocatorNames() []string {
 	var names []string
-	for s, _ := range registry {
+	for s := range registry {
 		if len(s) > 0 {
 			names = append(names, s)
 		}
