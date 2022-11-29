@@ -18,6 +18,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -43,8 +44,10 @@ type OpenTelemetryCollectorReconciler struct {
 	recorder record.EventRecorder
 	scheme   *runtime.Scheme
 	log      logr.Logger
-	tasks    []Task
 	config   config.Config
+
+	tasks   []Task
+	muTasks sync.RWMutex
 }
 
 // Task represents a reconciliation task to be executed by the reconciler.
@@ -64,10 +67,55 @@ type Params struct {
 	Config   config.Config
 }
 
+func (r *OpenTelemetryCollectorReconciler) onPlatformChange() error {
+	// NOTE: At the time the reconciler gets created, the platform type is still unknown.
+	r.muTasks.Lock()
+	defer r.muTasks.Unlock()
+	var (
+		routesPos = -1
+		otelPos   = -1
+	)
+	for i, t := range r.tasks {
+		// search for route reconciler
+		switch t.Name {
+		case "opentelemetry":
+			otelPos = i
+		case "routes":
+			routesPos = i
+		}
+	}
+	if otelPos == -1 {
+		return fmt.Errorf("missing reconciler task: opentelemetry")
+	}
+	plt := r.config.Platform()
+	// if exists and platform is openshift
+	if routesPos == -1 && plt == platform.OpenShift {
+		end := r.tasks[otelPos:]
+		r.tasks = append([]Task{}, r.tasks[:otelPos]...)
+		r.tasks = append(r.tasks, Task{reconcile.Routes, "routes", true})
+		r.tasks = append(r.tasks, end...)
+	}
+	// if exists and platform is not openshift
+	if routesPos != -1 && plt != platform.OpenShift {
+		r.tasks = append(r.tasks[:routesPos], r.tasks[routesPos+1:]...)
+	}
+
+	return nil
+}
+
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
 func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
-	if len(p.Tasks) == 0 {
-		p.Tasks = []Task{
+	r := &OpenTelemetryCollectorReconciler{
+		Client:   p.Client,
+		log:      p.Log,
+		scheme:   p.Scheme,
+		config:   p.Config,
+		tasks:    p.Tasks,
+		recorder: p.Recorder,
+	}
+
+	if len(r.tasks) == 0 {
+		r.tasks = []Task{
 			{
 				reconcile.ConfigMaps,
 				"config maps",
@@ -108,24 +156,15 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 				"ingresses",
 				true,
 			},
+			{
+				reconcile.Self,
+				"opentelemetry",
+				true,
+			},
 		}
-
-		if p.Config.Platform() == platform.OpenShift {
-			p.Tasks = append(p.Tasks, Task{reconcile.Routes, "routes", true})
-		}
-
-		p.Tasks = append(p.Tasks, Task{reconcile.Self, "opentelemetry", true})
-
+		r.config.RegisterPlatformChangeCallback(r.onPlatformChange)
 	}
-
-	return &OpenTelemetryCollectorReconciler{
-		Client:   p.Client,
-		log:      p.Log,
-		scheme:   p.Scheme,
-		config:   p.Config,
-		tasks:    p.Tasks,
-		recorder: p.Recorder,
-	}
+	return r
 }
 
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
@@ -170,6 +209,8 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 
 // RunTasks runs all the tasks associated with this reconciler.
 func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
+	r.muTasks.RLock()
+	defer r.muTasks.RUnlock()
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
 			// If we get an error that occurs because a pod is being terminated, then exit this loop
