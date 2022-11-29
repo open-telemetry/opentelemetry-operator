@@ -15,12 +15,7 @@
 package watcher
 
 import (
-	"fmt"
-
-	"github.com/go-logr/logr"
-
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
 type Manager struct {
@@ -57,62 +52,4 @@ var (
 
 func (e EventSource) String() string {
 	return eventSourceToString[e]
-}
-
-func NewWatcher(logger logr.Logger, cfg config.Config, cliConfig config.CLIConfig, allocator allocation.Allocator) (*Manager, error) {
-	watcher := Manager{
-		allocator: allocator,
-		Events:    make(chan Event),
-		Errors:    make(chan error),
-	}
-
-	fileWatcher, err := NewFileWatcher(logger, cliConfig)
-	if err != nil {
-		return nil, err
-	}
-	watcher.watchers = append(watcher.watchers, fileWatcher)
-
-	if *cliConfig.PromCRWatcherConf.Enabled {
-		promWatcher, err := newCRDMonitorWatcher(cfg, cliConfig)
-		if err != nil {
-			return nil, err
-		}
-		watcher.watchers = append(watcher.watchers, promWatcher)
-	}
-
-	startErr := watcher.Start()
-	return &watcher, startErr
-}
-
-func (manager *Manager) Close() error {
-	var errors []error
-	for _, watcher := range manager.watchers {
-		err := watcher.Close()
-		if err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	close(manager.Events)
-	close(manager.Errors)
-
-	if len(errors) > 0 {
-		return fmt.Errorf("closing errors: %+v", errors)
-	}
-	return nil
-}
-
-func (manager *Manager) Start() error {
-	var errors []error
-	for _, watcher := range manager.watchers {
-		err := watcher.Start(manager.Events, manager.Errors)
-		if err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	if len(errors) > 0 {
-		return fmt.Errorf("closing errors: %+v", errors)
-	}
-	return nil
 }

@@ -33,7 +33,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func newCRDMonitorWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
+func NewPrometheusCRWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
 	mClient, err := monitoringclient.NewForConfig(cliConfig.ClusterConfig)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,6 @@ func (w *PrometheusCRWatcher) Start(upstreamEvents chan Event, upstreamErrors ch
 		if ok := cache.WaitForNamedCacheSync(name, w.stopChannel, resource.HasSynced); !ok {
 			success = false
 		}
-
 		resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				upstreamEvents <- event

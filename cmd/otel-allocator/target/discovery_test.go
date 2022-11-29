@@ -12,19 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package discovery
+package target
 
 import (
-	"context"
 	"sort"
 	"testing"
 
-	gokitlog "github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
@@ -52,11 +49,11 @@ func TestDiscovery(t *testing.T) {
 			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
 		},
 	}
-	manager := NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger(), nil)
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), nil)
 	defer close(manager.close)
 
 	results := make(chan []string)
-	manager.Watch(func(targets map[string]*target.Item) {
+	manager.Watch(func(targets map[string]*Item) {
 		var result []string
 		for _, t := range targets {
 			result = append(result, t.TargetURL[0])

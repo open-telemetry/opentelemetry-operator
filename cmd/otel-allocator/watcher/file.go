@@ -49,24 +49,20 @@ func (f *FileWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error
 		return err
 	}
 
-	// translate and copy to central event channel
-	go func() {
-		for {
-			select {
-			case <-f.closer:
-				return
-			case fileEvent := <-f.watcher.Events:
-				if fileEvent.Op == fsnotify.Create {
-					upstreamEvents <- Event{
-						Source: EventSourceConfigMap,
-					}
+	for {
+		select {
+		case <-f.closer:
+			return nil
+		case fileEvent := <-f.watcher.Events:
+			if fileEvent.Op == fsnotify.Create {
+				upstreamEvents <- Event{
+					Source: EventSourceConfigMap,
 				}
-			case err := <-f.watcher.Errors:
-				upstreamErrors <- err
 			}
+		case err := <-f.watcher.Errors:
+			upstreamErrors <- err
 		}
-	}()
-	return nil
+	}
 }
 
 func (f *FileWatcher) Close() error {

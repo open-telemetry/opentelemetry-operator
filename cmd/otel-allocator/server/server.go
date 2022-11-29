@@ -6,9 +6,8 @@ import (
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
+	"github.com/mitchellh/hashstructure"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/discovery"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -29,17 +28,19 @@ var (
 type Server struct {
 	logger           logr.Logger
 	allocator        allocation.Allocator
-	discoveryManager *discovery.Manager
-	k8sClient        *collector.Client
+	discoveryManager *target.Discoverer
 	server           *http.Server
+
+	compareHash          uint64
+	scrapeConfigResponse []byte
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *discovery.Manager, k8sclient *collector.Client, listenAddr *string) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *target.Discoverer, listenAddr *string) *Server {
 	s := &Server{
 		logger:           log,
 		allocator:        allocator,
 		discoveryManager: discoveryManager,
-		k8sClient:        k8sclient,
+		compareHash:      uint64(0),
 	}
 	router := mux.NewRouter().UseEncodedPath()
 	router.Use(s.PrometheusMiddleware)
@@ -58,7 +59,6 @@ func (s *Server) Start() error {
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.logger.Info("Shutting down server...")
-	s.k8sClient.Close()
 	return s.server.Shutdown(ctx)
 }
 
@@ -67,17 +67,30 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // After that, the YAML is converted in to a JSON format for consumers to use.
 func (s *Server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 	configs := s.discoveryManager.GetScrapeConfigs()
-	configBytes, err := yaml.Marshal(configs)
+
+	hash, err := hashstructure.Hash(configs, nil)
 	if err != nil {
+		s.logger.Error(err, "failed to hash the config")
 		s.errorHandler(w, err)
+		return
 	}
-	jsonConfig, err := yaml2.YAMLToJSON(configBytes)
-	if err != nil {
-		s.errorHandler(w, err)
+	// if the hashes are different, we need to recompute the scrape config
+	if hash != s.compareHash {
+		configBytes, err := yaml.Marshal(configs)
+		if err != nil {
+			s.errorHandler(w, err)
+			return
+		}
+		jsonConfig, err := yaml2.YAMLToJSON(configBytes)
+		if err != nil {
+			s.errorHandler(w, err)
+			return
+		}
+		s.scrapeConfigResponse = jsonConfig
 	}
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(jsonConfig)
+	_, err = w.Write(s.scrapeConfigResponse)
 	if err != nil {
 		s.errorHandler(w, err)
 	}
