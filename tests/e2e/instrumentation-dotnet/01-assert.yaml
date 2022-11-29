@@ -17,7 +17,7 @@ spec:
     - name: CORECLR_PROFILER_PATH
       value: /otel-auto-instrumentation/OpenTelemetry.AutoInstrumentation.Native.so
     - name: DOTNET_STARTUP_HOOKS
-      value: /otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll
+      value: /otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
     - name: DOTNET_ADDITIONAL_DEPS
       value: /otel-auto-instrumentation/AdditionalDeps
     - name: OTEL_DOTNET_AUTO_HOME
