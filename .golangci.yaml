@@ -30,4 +30,3 @@ linters:
     - ineffassign
     - typecheck
     - unparam
-  #  - revive.
