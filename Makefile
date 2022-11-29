@@ -49,6 +49,8 @@ else
 GOTEST_OPTS=-race -v
 endif
 
+START_KIND_CLUSTER ?= true
+
 KUBE_VERSION ?= 1.24
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
@@ -115,8 +117,9 @@ set-image-controller: manifests kustomize
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
-deploy: set-image-controller
+deploy: set-image-controller cert-manager
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	kubectl wait --timeout=5m --for=condition=available deployment opentelemetry-operator-controller-manager -n opentelemetry-operator-system
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy
@@ -171,38 +174,40 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind install-metrics-server load-image-all
-	mkdir -p tests/_build/crds tests/_build/manifests
-	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
+prepare-e2e: kuttl set-image-controller container container-target-allocator start-kind install-metrics-server load-image-all deploy
+	mkdir -p tests/_build/crds
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
+	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) ./hack/modify-test-images.sh
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
 	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
 
-.PHONY: set-test-image-vars
-set-test-image-vars:
-	$(eval IMG=local/opentelemetry-operator:e2e)
-	$(eval TARGETALLOCATOR_IMG=local/opentelemetry-operator-targetallocator:e2e)
 
 # Build the container image, used only for local dev purposes
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
 container:
-	docker buildx build --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION}  --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} .
+	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION}  --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} .
 
 # Push the container image, used only for local dev purposes
 .PHONY: container-push
 container-push:
 	docker push ${IMG}
 
+.PHONY: container-target-allocator-push
+container-target-allocator-push:
+	docker push ${TARGETALLOCATOR_IMG}
+
 .PHONY: container-target-allocator
 container-target-allocator:
-	docker buildx build --platform linux/${ARCH} -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
+	docker buildx build  --load --platform linux/${ARCH} -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
 .PHONY: start-kind
 start-kind:
+ifeq (true,$(START_KIND_CLUSTER))
 	kind create cluster --config $(KIND_CONFIG)
+endif
 
 .PHONY: install-metrics-server
 install-metrics-server:
@@ -212,12 +217,22 @@ install-metrics-server:
 load-image-all: load-image-operator load-image-target-allocator
 
 .PHONY: load-image-operator
-load-image-operator:
-	kind load docker-image local/opentelemetry-operator:e2e
+load-image-operator: container
+ifeq (true,$(START_KIND_CLUSTER))
+	kind load docker-image $(IMG)
+else
+	$(MAKE) container-push
+endif
+
 
 .PHONY: load-image-target-allocator
-load-image-target-allocator:
-	kind load docker-image ${TARGETALLOCATOR_IMG}
+load-image-target-allocator: container-target-allocator
+ifeq (true,$(START_KIND_CLUSTER))
+	kind load docker-image $(TARGETALLOCATOR_IMG)
+else
+	$(MAKE) container-target-allocator-push
+endif
+
 
 .PHONY: cert-manager
 cert-manager: cmctl
