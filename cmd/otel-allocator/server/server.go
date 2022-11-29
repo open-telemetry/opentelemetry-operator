@@ -3,19 +3,21 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/url"
+	"time"
+
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/mitchellh/hashstructure"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gopkg.in/yaml.v2"
-	"net/http"
-	"net/url"
-	"time"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
 var (

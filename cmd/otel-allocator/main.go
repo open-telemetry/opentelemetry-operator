@@ -16,18 +16,20 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	gokitlog "github.com/go-kit/log"
 	"github.com/oklog/run"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/server"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/prometheus/discovery"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"os"
-	"os/signal"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"syscall"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/server"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
