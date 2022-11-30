@@ -68,7 +68,7 @@ func main() {
 		allocator        allocation.Allocator
 		discoveryManager *discovery.Manager
 		fileWatcher      allocatorWatcher.Watcher
-		promWatcher      *allocatorWatcher.PrometheusCRWatcher
+		promWatcher      allocatorWatcher.Watcher
 		targetDiscoverer *target.Discoverer
 
 		events          chan allocatorWatcher.Event
@@ -192,30 +192,15 @@ func main() {
 					return nil
 				case event := <-events:
 					eventsMetric.WithLabelValues(event.Source.String()).Inc()
-					switch event.Source {
-					case allocatorWatcher.EventSourceConfigMap:
-						setupLog.Info("Config map changes")
-						cfg, err := config.Load(*cliConf.ConfigFilePath)
-						if err != nil {
-							setupLog.Error(err, "Unable to load configuration")
-							return err
-						}
-						err = targetDiscoverer.ApplyConfig(event.Source, cfg.Config)
-						if err != nil {
-							setupLog.Error(err, "Unable to apply configuration")
-							continue
-						}
-					case allocatorWatcher.EventSourcePrometheusCR:
-						setupLog.Info("PrometheusCRs changed")
-						promConfig, err := promWatcher.CreatePromConfig(cliConf.KubeConfigFilePath)
-						if err != nil {
-							setupLog.Error(err, "failed to compile Prometheus config")
-							continue
-						}
-						err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, promConfig)
-						if err != nil {
-							setupLog.Error(err, "failed to apply Prometheus config")
-						}
+					loadConfig, err := event.Watcher.LoadConfig()
+					if err != nil {
+						setupLog.Error(err, "Unable to load configuration")
+						return err
+					}
+					err = targetDiscoverer.ApplyConfig(event.Source, loadConfig)
+					if err != nil {
+						setupLog.Error(err, "Unable to apply configuration")
+						continue
 					}
 				case err := <-errors:
 					setupLog.Error(err, "Watcher error")

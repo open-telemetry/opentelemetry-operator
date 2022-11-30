@@ -14,15 +14,18 @@
 
 package watcher
 
+import promconfig "github.com/prometheus/prometheus/config"
+
 type Watcher interface {
 	// Start watcher and supply channels which will receive change events
 	Start(upstreamEvents chan Event, upstreamErrors chan error) error
+	LoadConfig() (*promconfig.Config, error)
 	Close() error
 }
 
 type Event struct {
 	Source  EventSource
-	Watcher *Watcher
+	Watcher Watcher
 }
 
 type EventSource int

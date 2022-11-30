@@ -70,6 +70,7 @@ func NewPrometheusCRWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfi
 		informers:              monitoringInformers,
 		stopChannel:            make(chan struct{}),
 		configGenerator:        generator,
+		kubeConfigPath:         cliConfig.KubeConfigFilePath,
 		serviceMonitorSelector: servMonSelector,
 		podMonitorSelector:     podMonSelector,
 	}, nil
@@ -80,6 +81,7 @@ type PrometheusCRWatcher struct {
 	informers            map[string]*informers.ForResource
 	stopChannel          chan struct{}
 	configGenerator      *prometheus.ConfigGenerator
+	kubeConfigPath       string
 
 	serviceMonitorSelector labels.Selector
 	podMonitorSelector     labels.Selector
@@ -95,10 +97,9 @@ func getSelector(s map[string]string) labels.Selector {
 
 // Start wrapped informers and wait for an initial sync.
 func (w *PrometheusCRWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error) error {
-	watcher := Watcher(w)
 	event := Event{
 		Source:  EventSourcePrometheusCR,
-		Watcher: &watcher,
+		Watcher: Watcher(w),
 	}
 	success := true
 
@@ -132,7 +133,7 @@ func (w *PrometheusCRWatcher) Close() error {
 	return nil
 }
 
-func (w *PrometheusCRWatcher) CreatePromConfig(kubeConfigPath string) (*promconfig.Config, error) {
+func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
 	serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
 
 	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(w.serviceMonitorSelector, func(sm interface{}) {
@@ -178,7 +179,7 @@ func (w *PrometheusCRWatcher) CreatePromConfig(kubeConfigPath string) (*promconf
 		for _, serviceDiscoveryConfig := range scrapeConfig.ServiceDiscoveryConfigs {
 			if serviceDiscoveryConfig.Name() == "kubernetes" {
 				sdConfig := interface{}(serviceDiscoveryConfig).(*kubeDiscovery.SDConfig)
-				sdConfig.KubeConfig = kubeConfigPath
+				sdConfig.KubeConfig = w.kubeConfigPath
 			}
 		}
 	}

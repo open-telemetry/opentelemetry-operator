@@ -17,6 +17,8 @@ package watcher
 import (
 	"path/filepath"
 
+	promconfig "github.com/prometheus/prometheus/config"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
 
@@ -24,6 +26,7 @@ import (
 )
 
 type FileWatcher struct {
+	logger         logr.Logger
 	configFilePath string
 	watcher        *fsnotify.Watcher
 	closer         chan bool
@@ -37,10 +40,20 @@ func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (Watcher, error
 	}
 
 	return &FileWatcher{
+		logger:         logger,
 		configFilePath: *config.ConfigFilePath,
 		watcher:        fileWatcher,
 		closer:         make(chan bool),
 	}, nil
+}
+
+func (f *FileWatcher) LoadConfig() (*promconfig.Config, error) {
+	cfg, err := config.Load(f.configFilePath)
+	if err != nil {
+		f.logger.Error(err, "Unable to load configuration")
+		return nil, err
+	}
+	return cfg.Config, nil
 }
 
 func (f *FileWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error) error {
@@ -56,7 +69,8 @@ func (f *FileWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error
 		case fileEvent := <-f.watcher.Events:
 			if fileEvent.Op == fsnotify.Create {
 				upstreamEvents <- Event{
-					Source: EventSourceConfigMap,
+					Source:  EventSourceConfigMap,
+					Watcher: Watcher(f),
 				}
 			}
 		case err := <-f.watcher.Errors:
