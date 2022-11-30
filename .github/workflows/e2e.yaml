@@ -41,4 +41,4 @@ jobs:
       if: ${{ failure() }}
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
-      run: make e2e-log-operator KUBE_VERSION=$KUBE_VERSION VERSION=e2e
+      run: make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
