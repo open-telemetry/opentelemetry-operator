@@ -31,6 +31,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/record"
+	k8sapiflag "k8s.io/component-base/cli/flag"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -51,14 +52,15 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-// We should avoid that users unknowingly use a vulnerable TLS version.
-// The defaults should be a safe configuration.
-const defaultMinTLSVersion = tls.VersionTLS12
-
 var (
 	scheme   = k8sruntime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
+
+type tlsConfig struct {
+	minVersion   string
+	cipherSuites []string
+}
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -88,6 +90,7 @@ func main() {
 		autoInstrumentationDotNet string
 		labelsFilter              []string
 		webhookPort               int
+		tlsOpt                    tlsConfig
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -103,6 +106,8 @@ func main() {
 	pflag.StringVar(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet), "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringArrayVar(&labelsFilter, "labels", []string{}, "Labels to filter away from propagating onto deploys")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
+	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
+	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
 	pflag.Parse()
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
@@ -158,7 +163,7 @@ func main() {
 	retryPeriod := time.Second * 26
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
-		func(config *tls.Config) { minTlsDefault(config) },
+		func(config *tls.Config) { tlsConfigSetting(config, tlsOpt) },
 	}
 
 	mgrOptions := ctrl.Options{
@@ -289,6 +294,21 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 	return nil
 }
 
-func minTlsDefault(cfg *tls.Config) {
-	cfg.MinVersion = defaultMinTLSVersion
+// This function get the option from command argument (tlsConfig), check the validity through k8sapiflag
+// and set the config for webhook server.
+// refer to https://pkg.go.dev/k8s.io/component-base/cli/flag
+func tlsConfigSetting(cfg *tls.Config, tlsOpt tlsConfig) {
+	// TLSVersion helper function returns the TLS Version ID for the version name passed.
+	version, err := k8sapiflag.TLSVersion(tlsOpt.minVersion)
+	if err != nil {
+		setupLog.Error(err, "TLS version invalid")
+	}
+	cfg.MinVersion = version
+
+	// TLSCipherSuites helper function returns a list of cipher suite IDs from the cipher suite names passed.
+	cipherSuiteIDs, err := k8sapiflag.TLSCipherSuites(tlsOpt.cipherSuites)
+	if err != nil {
+		setupLog.Error(err, "Failed to convert TLS cipher suite name to ID")
+	}
+	cfg.CipherSuites = cipherSuiteIDs
 }
