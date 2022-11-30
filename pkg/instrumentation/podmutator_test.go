@@ -664,7 +664,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  envDotNetCoreClrProfiler,
-									Value: dotNetCoreClrProfilerId,
+									Value: dotNetCoreClrProfilerID,
 								},
 								{
 									Name:  envDotNetCoreClrProfilerPath,

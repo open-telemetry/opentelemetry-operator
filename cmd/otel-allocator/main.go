@@ -96,12 +96,12 @@ func main() {
 	}()
 
 	// creates a new discovery manager
-	discoveryManager := lbdiscovery.NewManager(log, ctx, gokitlog.NewNopLogger(), allocatorPrehook)
+	discoveryManager := lbdiscovery.NewManager(ctx, log, gokitlog.NewNopLogger(), allocatorPrehook)
 	defer discoveryManager.Close()
 
 	discoveryManager.Watch(allocator.SetTargets)
 
-	k8sclient, err := configureFileDiscovery(log, allocator, discoveryManager, context.Background(), cliConf)
+	k8sclient, err := configureFileDiscovery(context.Background(), log, allocator, discoveryManager, cliConf)
 	if err != nil {
 		setupLog.Error(err, "Can't start the k8s client")
 		os.Exit(1)
@@ -184,7 +184,7 @@ func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager
 	return s
 }
 
-func configureFileDiscovery(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, ctx context.Context, cliConfig config.CLIConfig) (*collector.Client, error) {
+func configureFileDiscovery(ctx context.Context, log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, cliConfig config.CLIConfig) (*collector.Client, error) {
 	cfg, err := config.Load(*cliConfig.ConfigFilePath)
 	if err != nil {
 		return nil, err

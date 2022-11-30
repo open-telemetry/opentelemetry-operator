@@ -177,7 +177,7 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 
 func TestDaemonSetNodeSelector(t *testing.T) {
 	// Test default
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -185,12 +185,12 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := DaemonSet(cfg, logger, otelcol_1)
+	d1 := DaemonSet(cfg, logger, otelcol1)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
@@ -204,12 +204,12 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := DaemonSet(cfg, logger, otelcol_2)
+	d2 := DaemonSet(cfg, logger, otelcol2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
 func TestDaemonSetPriorityClassName(t *testing.T) {
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -217,12 +217,12 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := DaemonSet(cfg, logger, otelcol_1)
+	d1 := DaemonSet(cfg, logger, otelcol1)
 	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
 
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
@@ -233,12 +233,12 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := DaemonSet(cfg, logger, otelcol_2)
+	d2 := DaemonSet(cfg, logger, otelcol2)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
 
 func TestDaemonSetAffinity(t *testing.T) {
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -246,10 +246,10 @@ func TestDaemonSetAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := DaemonSet(cfg, logger, otelcol_1)
+	d1 := DaemonSet(cfg, logger, otelcol1)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
@@ -260,7 +260,7 @@ func TestDaemonSetAffinity(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := DaemonSet(cfg, logger, otelcol_2)
+	d2 := DaemonSet(cfg, logger, otelcol2)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
