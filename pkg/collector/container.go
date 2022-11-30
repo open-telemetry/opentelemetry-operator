@@ -76,11 +76,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 
 	if len(otelcol.Spec.VolumeMounts) > 0 {
 		volumeMounts = append(volumeMounts, otelcol.Spec.VolumeMounts...)
-	} else if otelcol.Spec.Mode == "statefulset" {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "default-volume",
-			MountPath: "/usr/share/default-volume",
-		})
 	}
 
 	var envVars = otelcol.Spec.Env
