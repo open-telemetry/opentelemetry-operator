@@ -35,7 +35,6 @@ const (
 // Config holds the static configuration for this operator.
 type Config struct {
 	autoDetect                     autodetect.AutoDetect
-	OnChange                       func() error
 	logger                         logr.Logger
 	targetAllocatorImage           string
 	autoInstrumentationPythonImage string
