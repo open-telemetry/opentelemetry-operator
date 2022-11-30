@@ -32,7 +32,7 @@ const (
 	envDotNetStartupHook                = "DOTNET_STARTUP_HOOKS"
 	envDotNetOTelAutoHome               = "OTEL_DOTNET_AUTO_HOME"
 	dotNetCoreClrEnableProfilingEnabled = "1"
-	dotNetCoreClrProfilerId             = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
+	dotNetCoreClrProfilerID             = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
 	dotNetCoreClrProfilerPath           = "/otel-auto-instrumentation/OpenTelemetry.AutoInstrumentation.Native.so"
 	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation/AdditionalDeps"
 	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation"
@@ -77,7 +77,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 
 	setDotNetEnvVar(container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues)
 
-	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerId, doNotConcatEnvValues)
+	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, doNotConcatEnvValues)
 
 	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, dotNetCoreClrProfilerPath, doNotConcatEnvValues)
 

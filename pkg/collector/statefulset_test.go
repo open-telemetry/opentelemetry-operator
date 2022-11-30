@@ -202,7 +202,7 @@ func TestStatefulSetPodSecurityContext(t *testing.T) {
 
 func TestStatefulSetHostNetwork(t *testing.T) {
 	// Test default
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -210,13 +210,13 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := StatefulSet(cfg, logger, otelcol_1)
+	d1 := StatefulSet(cfg, logger, otelcol1)
 
 	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// Test hostNetwork=true
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-hostnetwork",
 		},
@@ -227,7 +227,7 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := StatefulSet(cfg, logger, otelcol_2)
+	d2 := StatefulSet(cfg, logger, otelcol2)
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -258,7 +258,7 @@ func TestStatefulSetFilterLabels(t *testing.T) {
 
 func TestStatefulSetNodeSelector(t *testing.T) {
 	// Test default
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -266,12 +266,12 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := StatefulSet(cfg, logger, otelcol_1)
+	d1 := StatefulSet(cfg, logger, otelcol1)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
@@ -285,12 +285,12 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := StatefulSet(cfg, logger, otelcol_2)
+	d2 := StatefulSet(cfg, logger, otelcol2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
 func TestStatefulSetPriorityClassName(t *testing.T) {
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -298,12 +298,12 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 
 	cfg := config.New()
 
-	sts1 := StatefulSet(cfg, logger, otelcol_1)
+	sts1 := StatefulSet(cfg, logger, otelcol1)
 	assert.Empty(t, sts1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
 
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
@@ -314,12 +314,12 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 
 	cfg = config.New()
 
-	sts2 := StatefulSet(cfg, logger, otelcol_2)
+	sts2 := StatefulSet(cfg, logger, otelcol2)
 	assert.Equal(t, priorityClassName, sts2.Spec.Template.Spec.PriorityClassName)
 }
 
 func TestStatefulSetAffinity(t *testing.T) {
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -327,10 +327,10 @@ func TestStatefulSetAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	sts1 := Deployment(cfg, logger, otelcol_1)
+	sts1 := Deployment(cfg, logger, otelcol1)
 	assert.Nil(t, sts1.Spec.Template.Spec.Affinity)
 
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
@@ -341,7 +341,7 @@ func TestStatefulSetAffinity(t *testing.T) {
 
 	cfg = config.New()
 
-	sts2 := StatefulSet(cfg, logger, otelcol_2)
+	sts2 := StatefulSet(cfg, logger, otelcol2)
 	assert.NotNil(t, sts2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *sts2.Spec.Template.Spec.Affinity)
 }
