@@ -85,6 +85,9 @@ func (c *consistentHashingAllocator) SetFilter(filter Filter) {
 	c.filter = filter
 }
 
+// addTargetToCollectorsTargetItemsPerJob keeps track of which collector has which jobs and targets
+// this allows the allocator to respond without any extra allocations to http calls. The caller of this method
+// has to acquire a lock.
 func (c *consistentHashingAllocator) addTargetToCollectorsTargetItemsPerJob(tg *target.Item) {
 	if c.collectorsTargetItemsPerJob[tg.CollectorName] == nil {
 		c.collectorsTargetItemsPerJob[tg.CollectorName] = make(map[string]map[string]bool)

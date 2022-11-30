@@ -117,6 +117,9 @@ func (allocator *leastWeightedAllocator) findNextCollector() *Collector {
 	return col
 }
 
+// addTargetToCollectorsTargetItemsPerJob keeps track of which collector has which jobs and targets
+// this allows the allocator to respond without any extra allocations to http calls. The caller of this method
+// has to acquire a lock.
 func (allocator *leastWeightedAllocator) addTargetToCollectorsTargetItemsPerJob(tg *target.Item) {
 	if allocator.collectorsTargetItemsPerJob[tg.CollectorName] == nil {
 		allocator.collectorsTargetItemsPerJob[tg.CollectorName] = make(map[string]map[string]bool)
