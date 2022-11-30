@@ -92,11 +92,22 @@ func Register(name string, provider AllocatorProvider) error {
 	return nil
 }
 
+func GetRegisteredAllocatorNames() []string {
+	var names []string
+	for s := range registry {
+		if len(s) > 0 {
+			names = append(names, s)
+		}
+	}
+	return names
+}
+
 type Allocator interface {
 	SetCollectors(collectors map[string]*Collector)
 	SetTargets(targets map[string]*target.Item)
 	TargetItems() map[string]*target.Item
 	Collectors() map[string]*Collector
+	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
 	SetFilter(filter Filter)
 }
 

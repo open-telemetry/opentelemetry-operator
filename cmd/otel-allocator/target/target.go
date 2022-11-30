@@ -27,23 +27,25 @@ type LinkJSON struct {
 }
 
 type Item struct {
-	JobName       string
-	Link          LinkJSON
-	TargetURL     string
-	Label         model.LabelSet
-	CollectorName string
+	JobName       string         `json:"-"`
+	Link          LinkJSON       `json:"-"`
+	TargetURL     []string       `json:"targets"`
+	Labels        model.LabelSet `json:"labels"`
+	CollectorName string         `json:"-"`
+	hash          string
 }
 
 func (t Item) Hash() string {
-	return t.JobName + t.TargetURL + t.Label.Fingerprint().String()
+	return t.hash
 }
 
 func NewItem(jobName string, targetURL string, label model.LabelSet, collectorName string) *Item {
 	return &Item{
 		JobName:       jobName,
 		Link:          LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))},
-		TargetURL:     targetURL,
-		Label:         label,
+		hash:          jobName + targetURL + label.Fingerprint().String(),
+		TargetURL:     []string{targetURL},
+		Labels:        label,
 		CollectorName: collectorName,
 	}
 }

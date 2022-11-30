@@ -47,6 +47,9 @@ type leastWeightedAllocator struct {
 	// targetItems is a map from a target item's hash to the target items allocated state
 	targetItems map[string]*target.Item
 
+	// collectorKey -> job -> target item hash -> true
+	collectorsTargetItemsPerJob map[string]map[string]map[string]bool
+
 	log logr.Logger
 
 	filter Filter
@@ -55,6 +58,24 @@ type leastWeightedAllocator struct {
 // SetFilter sets the filtering hook to use.
 func (allocator *leastWeightedAllocator) SetFilter(filter Filter) {
 	allocator.filter = filter
+}
+
+func (allocator *leastWeightedAllocator) GetTargetsForCollectorAndJob(collector string, job string) []*target.Item {
+	allocator.m.RLock()
+	defer allocator.m.RUnlock()
+	if _, ok := allocator.collectorsTargetItemsPerJob[collector]; !ok {
+		return []*target.Item{}
+	}
+	if _, ok := allocator.collectorsTargetItemsPerJob[collector][job]; !ok {
+		return []*target.Item{}
+	}
+	targetItemsCopy := make([]*target.Item, len(allocator.collectorsTargetItemsPerJob[collector][job]))
+	index := 0
+	for targetHash := range allocator.collectorsTargetItemsPerJob[collector][job] {
+		targetItemsCopy[index] = allocator.targetItems[targetHash]
+		index++
+	}
+	return targetItemsCopy
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
@@ -96,14 +117,25 @@ func (allocator *leastWeightedAllocator) findNextCollector() *Collector {
 	return col
 }
 
+func (allocator *leastWeightedAllocator) addTargetToCollectorsTargetItemsPerJob(tg *target.Item) {
+	if allocator.collectorsTargetItemsPerJob[tg.CollectorName] == nil {
+		allocator.collectorsTargetItemsPerJob[tg.CollectorName] = make(map[string]map[string]bool)
+	}
+	if allocator.collectorsTargetItemsPerJob[tg.CollectorName][tg.JobName] == nil {
+		allocator.collectorsTargetItemsPerJob[tg.CollectorName][tg.JobName] = make(map[string]bool)
+	}
+	allocator.collectorsTargetItemsPerJob[tg.CollectorName][tg.JobName][tg.Hash()] = true
+}
+
 // addTargetToTargetItems assigns a target to the next available collector and adds it to the allocator's targetItems
 // This method is called from within SetTargets and SetCollectors, which acquire the needed lock.
 // This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap.
 // INVARIANT: allocator.collectors must have at least 1 collector set.
 func (allocator *leastWeightedAllocator) addTargetToTargetItems(tg *target.Item) {
 	chosenCollector := allocator.findNextCollector()
-	targetItem := target.NewItem(tg.JobName, tg.TargetURL, tg.Label, chosenCollector.Name)
-	allocator.targetItems[targetItem.Hash()] = targetItem
+	tg.CollectorName = chosenCollector.Name
+	allocator.targetItems[tg.Hash()] = tg
+	allocator.addTargetToCollectorsTargetItemsPerJob(tg)
 	chosenCollector.NumTargets++
 	TargetsPerCollector.WithLabelValues(chosenCollector.Name, leastWeightedStrategyName).Set(float64(chosenCollector.NumTargets))
 }
@@ -119,6 +151,7 @@ func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*target
 			c := allocator.collectors[target.CollectorName]
 			c.NumTargets--
 			delete(allocator.targetItems, k)
+			delete(allocator.collectorsTargetItemsPerJob[target.CollectorName][target.JobName], target.Hash())
 			TargetsPerCollector.WithLabelValues(target.CollectorName, leastWeightedStrategyName).Set(float64(c.NumTargets))
 		}
 	}
@@ -142,6 +175,7 @@ func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Col
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
 		delete(allocator.collectors, k.Name)
+		delete(allocator.collectorsTargetItemsPerJob, k.Name)
 		TargetsPerCollector.WithLabelValues(k.Name, leastWeightedStrategyName).Set(0)
 	}
 	// Insert the new collectors
@@ -209,9 +243,10 @@ func (allocator *leastWeightedAllocator) SetCollectors(collectors map[string]*Co
 
 func newLeastWeightedAllocator(log logr.Logger, opts ...AllocationOption) Allocator {
 	lwAllocator := &leastWeightedAllocator{
-		log:         log,
-		collectors:  make(map[string]*Collector),
-		targetItems: make(map[string]*target.Item),
+		log:                         log,
+		collectors:                  make(map[string]*Collector),
+		targetItems:                 make(map[string]*target.Item),
+		collectorsTargetItemsPerJob: make(map[string]map[string]map[string]bool),
 	}
 
 	for _, opt := range opts {
