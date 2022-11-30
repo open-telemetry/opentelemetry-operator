@@ -229,7 +229,7 @@ func TestContinueOnRecoverableFailure(t *testing.T) {
 			{
 				Name: "should-fail",
 				Do: func(context.Context, reconcile.Params) error {
-					return errors.New("should fail!")
+					return errors.New("should fail")
 				},
 				BailOnError: false,
 			},
@@ -255,7 +255,7 @@ func TestBreakOnUnrecoverableError(t *testing.T) {
 	// prepare
 	cfg := config.New()
 	taskCalled := false
-	expectedErr := errors.New("should fail!")
+	expectedErr := errors.New("should fail")
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{
 		Client: k8sClient,
