@@ -161,7 +161,7 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 
 func TestDeploymentHostNetwork(t *testing.T) {
 	// Test default
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -169,13 +169,13 @@ func TestDeploymentHostNetwork(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol_1)
+	d1 := Deployment(cfg, logger, otelcol1)
 
 	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// Test hostNetwork=true
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-hostnetwork",
 		},
@@ -186,7 +186,7 @@ func TestDeploymentHostNetwork(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol_2)
+	d2 := Deployment(cfg, logger, otelcol2)
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -217,7 +217,7 @@ func TestDeploymentFilterLabels(t *testing.T) {
 
 func TestDeploymentNodeSelector(t *testing.T) {
 	// Test default
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -225,12 +225,12 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol_1)
+	d1 := Deployment(cfg, logger, otelcol1)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
@@ -244,12 +244,12 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol_2)
+	d2 := Deployment(cfg, logger, otelcol2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
 func TestDeploymentPriorityClassName(t *testing.T) {
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -257,12 +257,12 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol_1)
+	d1 := Deployment(cfg, logger, otelcol1)
 	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
 
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
@@ -273,12 +273,12 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol_2)
+	d2 := Deployment(cfg, logger, otelcol2)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
 
 func TestDeploymentAffinity(t *testing.T) {
-	otelcol_1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -286,10 +286,10 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol_1)
+	d1 := Deployment(cfg, logger, otelcol1)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
-	otelcol_2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
@@ -300,7 +300,7 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol_2)
+	d2 := Deployment(cfg, logger, otelcol2)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }

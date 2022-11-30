@@ -52,7 +52,7 @@ func TestDiscovery(t *testing.T) {
 			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
 		},
 	}
-	manager := NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger(), nil)
+	manager := NewManager(context.Background(), ctrl.Log.WithName("test"), gokitlog.NewNopLogger(), nil)
 	defer close(manager.close)
 
 	results := make(chan []string)

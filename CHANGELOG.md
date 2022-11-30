@@ -1,5 +1,22 @@
 Changes by Version
 ==================
+0.66.0
+------------------
+### 🚀 New components 🚀
+* Add ingressClassName field to collector spec ([#1269](https://github.com/open-telemetry/opentelemetry-operator/pull/1269), [@avadhut123pisal](https://github.com/avadhut123pisal))
+* Add secure ciphersuites for TLS config ([#1244](https://github.com/open-telemetry/opentelemetry-operator/pull/1244), [@kangsheng89](https://github.com/kangsheng89))
+* Add Apache-httpd instrumentation v1.0 (part-1) ([#1236](https://github.com/open-telemetry/opentelemetry-operator/pull/1236), [@chrlic](https://github.com/chrlic))
+### 💡 Enhancements 💡
+* Update the javaagent version to 1.20.2 ([#1212](https://github.com/open-telemetry/opentelemetry-operator/pull/1270))
+* Bump OTel .NET AutoInstrumentation to 0.5.0 ([#1276](https://github.com/open-telemetry/opentelemetry-operator/pull/1276), [@pellared](https://github.com/pellared))
+
+### 🧰 Bug fixes 🧰
+* Fix bug found when using relabel-config filterStrategy with serviceMonitors ([#1232](https://github.com/open-telemetry/opentelemetry-operator/pull/1232), [@moh-osman3](https://github.com/moh-osman3))
+
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.66.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.66.0)
+* [OpenTelemetry Contrib - v0.66.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.66.0)
+
 0.64.1
 ------------------
 ### 🚀 New components 🚀

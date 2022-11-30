@@ -31,7 +31,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-const test_file_ingress = "../testdata/ingress_testdata.yaml"
+const testFileIngress = "../testdata/ingress_testdata.yaml"
 
 func TestDesiredIngresses(t *testing.T) {
 	t.Run("should return nil invalid ingress type", func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestDesiredIngresses(t *testing.T) {
 			ingressClassName = "nginx"
 		)
 
-		params, err := newParams("something:tag", test_file_ingress)
+		params, err := newParams("something:tag", testFileIngress)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -183,7 +183,7 @@ func TestExpectedIngresses(t *testing.T) {
 	t.Run("should create and update ingress entry", func(t *testing.T) {
 		ctx := context.Background()
 
-		params, err := newParams("something:tag", test_file_ingress)
+		params, err := newParams("something:tag", testFileIngress)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -225,7 +225,7 @@ func TestDeleteIngresses(t *testing.T) {
 		// create
 		ctx := context.Background()
 
-		myParams, err := newParams("something:tag", test_file_ingress)
+		myParams, err := newParams("something:tag", testFileIngress)
 		if err != nil {
 			t.Fatal(err)
 		}
