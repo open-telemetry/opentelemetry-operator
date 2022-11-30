@@ -17,8 +17,6 @@ package collector
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -35,22 +33,8 @@ func VolumeClaimTemplates(cfg config.Config, otelcol v1alpha1.OpenTelemetryColle
 	}
 
 	// Add all user specified claims or use default.
-	if len(otelcol.Spec.VolumeClaimTemplates) > 0 {
-		volumeClaimTemplates = append(volumeClaimTemplates,
-			otelcol.Spec.VolumeClaimTemplates...)
-	} else {
-		volumeClaimTemplates = []corev1.PersistentVolumeClaim{{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "default-volume",
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{"storage": resource.MustParse("50Mi")},
-				},
-			},
-		}}
-	}
+	volumeClaimTemplates = append(volumeClaimTemplates,
+		otelcol.Spec.VolumeClaimTemplates...)
 
 	return volumeClaimTemplates
 }

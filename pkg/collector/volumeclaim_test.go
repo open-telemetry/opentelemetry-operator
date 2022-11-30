@@ -27,31 +27,6 @@ import (
 	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
-func TestVolumeClaimNewDefault(t *testing.T) {
-	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Mode: "statefulset",
-		},
-	}
-	cfg := config.New()
-
-	// test
-	volumeClaims := VolumeClaimTemplates(cfg, otelcol)
-
-	// verify
-	assert.Len(t, volumeClaims, 1)
-
-	// check that it's the initial-volume
-	assert.Equal(t, "default-volume", volumeClaims[0].Name)
-
-	// check the access mode is correct
-	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadWriteOnce"), volumeClaims[0].Spec.AccessModes[0])
-
-	//check the storage is correct
-	assert.Equal(t, resource.MustParse("50Mi"), volumeClaims[0].Spec.Resources.Requests["storage"])
-}
-
 func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
