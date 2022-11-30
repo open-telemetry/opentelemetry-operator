@@ -44,7 +44,7 @@ type Config struct {
 	targetAllocatorConfigMapEntry  string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationJavaImage   string
-	onChange                       []func() error
+	onChange                       ChangeHandler
 	labelsFilter                   []string
 	platform                       platform.Platform
 	autoDetectFrequency            time.Duration
@@ -62,6 +62,7 @@ func New(opts ...Option) Config {
 		platform:                      platform.Unknown,
 		version:                       version.Get(),
 		autoscalingVersion:            autodetect.DefaultAutoscalingVersion,
+		onChange:                      NewOnChange(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -125,12 +126,9 @@ func (c *Config) AutoDetect() error {
 	}
 
 	if changed {
-		for _, callback := range c.onChange {
-			if err := callback(); err != nil {
-				// we don't fail if the callback failed, as the auto-detection itself
-				// did work
-				c.logger.Error(err, "configuration change notification failed for callback")
-			}
+		if err := c.onChange.Change(); err != nil {
+			// Don't fail if the callback failed, as auto-detection itself worked.
+			c.logger.Error(err, "configuration change notification failed for callback")
 		}
 	}
 
@@ -197,4 +195,9 @@ func (c *Config) AutoInstrumentationDotNetImage() string {
 // Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
+}
+
+// ChangeHandler the internal used ChangeHandler.
+func (c *Config) ChangeHandler() ChangeHandler {
+	return c.onChange
 }
