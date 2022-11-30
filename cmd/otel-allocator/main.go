@@ -17,13 +17,14 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/mitchellh/hashstructure"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/mitchellh/hashstructure"
 
 	yaml2 "github.com/ghodss/yaml"
 	gokitlog "github.com/go-kit/log"
