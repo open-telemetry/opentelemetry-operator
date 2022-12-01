@@ -22,17 +22,17 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// ChangeHandler is implemented by any structure that is able to register callbacks
+// changeHandler is implemented by any structure that is able to register callbacks
 // and call them using one single method.
-type ChangeHandler interface {
+type changeHandler interface {
 	// Change will call every registered callback.
 	Change() error
 	// Register this function as a callback that will be executed when Change() is called.
 	Register(f func() error)
 }
 
-// NewOnChange returns a thread-safe ChangeHandler.
-func NewOnChange() ChangeHandler {
+// newOnChange returns a thread-safe ChangeHandler.
+func newOnChange() changeHandler {
 	return &onChange{
 		logger: logf.Log.WithName("change-handler"),
 	}

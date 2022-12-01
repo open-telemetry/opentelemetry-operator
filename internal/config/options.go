@@ -41,7 +41,7 @@ type options struct {
 	collectorConfigMapEntry        string
 	targetAllocatorConfigMapEntry  string
 	targetAllocatorImage           string
-	onChange                       ChangeHandler
+	onChange                       changeHandler
 	labelsFilter                   []string
 	platform                       platform.Platform
 	autoDetectFrequency            time.Duration
@@ -84,15 +84,10 @@ func WithLogger(logger logr.Logger) Option {
 		o.logger = logger
 	}
 }
-func WithOnChangeHandler(h ChangeHandler) Option {
-	return func(o *options) {
-		o.onChange = h
-	}
-}
 func WithOnChange(f func() error) Option {
 	return func(o *options) {
 		if o.onChange == nil {
-			o.onChange = NewOnChange()
+			o.onChange = newOnChange()
 		}
 		o.onChange.Register(f)
 	}

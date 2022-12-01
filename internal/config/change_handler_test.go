@@ -13,15 +13,13 @@
 // limitations under the License.
 
 // Package config contains the operator's runtime configuration.
-package config_test
+package config
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 func TestChangeHandler(t *testing.T) {
@@ -31,7 +29,7 @@ func TestChangeHandler(t *testing.T) {
 		internal += 1
 		return nil
 	}
-	h := config.NewOnChange()
+	h := newOnChange()
 
 	h.Register(callback)
 
