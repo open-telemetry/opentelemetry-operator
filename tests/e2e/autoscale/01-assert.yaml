@@ -1,3 +1,4 @@
+# Wait until tracegen has completed and the simplest deployment has scaled up to 2
 apiVersion: batch/v1
 kind: Job
 metadata:

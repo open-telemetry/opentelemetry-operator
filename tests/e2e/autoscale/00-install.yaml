@@ -1,3 +1,6 @@
+# This creates two different deployments. The first one will be used to see if we scale properly.  (Note that we are
+# only scaling up to 2 because of limitations of KUTTL). The second is to check the targetCPUUtilization option.
+#
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
