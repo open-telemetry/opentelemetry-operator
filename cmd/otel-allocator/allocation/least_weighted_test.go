@@ -181,6 +181,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 }
 
 func TestSmartCollectorReassignment(t *testing.T) {
+	t.Skip("This test is flaky and fails frequently, see issue 1291")
 	s, _ := New("least-weighted", logger)
 
 	cols := makeNCollectors(4, 0)
