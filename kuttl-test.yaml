@@ -1,6 +1,5 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
-crdDir: ./tests/_build/crds/
 artifactsDir: ./tests/_build/artifacts/
 testDirs:
   - ./tests/e2e/

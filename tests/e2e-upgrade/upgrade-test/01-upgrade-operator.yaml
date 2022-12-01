@@ -1,5 +1,5 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - script: cd ../../../ && make deploy
+  - script: cd ../../../ && make deploy VERSION=e2e
   - command: kubectl rollout status -w deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system

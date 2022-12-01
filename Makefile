@@ -175,8 +175,6 @@ e2e-log-operator:
 
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-image-controller container container-target-allocator start-kind install-metrics-server load-image-all deploy
-	mkdir -p tests/_build/crds
-	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) ./hack/modify-test-images.sh
 
 .PHONY: scorecard-tests
