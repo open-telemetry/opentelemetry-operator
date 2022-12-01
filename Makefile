@@ -165,7 +165,7 @@ e2e:
 
 # end-to-end-test for testing upgrading
 .PHONY: e2e-upgrade
-e2e-upgrade:
+e2e-upgrade: undeploy
 	$(KUTTL) test --config kuttl-test-upgrade.yaml
 
 .PHONY: e2e-log-operator
