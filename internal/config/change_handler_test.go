@@ -35,7 +35,7 @@ func TestChangeHandler(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		assert.Equal(t, i, internal)
-		require.NoError(t, h.Change())
+		require.NoError(t, h.Do())
 		assert.Equal(t, i+1, internal)
 	}
 }

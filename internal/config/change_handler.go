@@ -25,9 +25,9 @@ import (
 // changeHandler is implemented by any structure that is able to register callbacks
 // and call them using one single method.
 type changeHandler interface {
-	// Change will call every registered callback.
-	Change() error
-	// Register this function as a callback that will be executed when Change() is called.
+	// Do will call every registered callback.
+	Do() error
+	// Register this function as a callback that will be executed when Do() is called.
 	Register(f func() error)
 }
 
@@ -45,7 +45,7 @@ type onChange struct {
 	muCallbacks sync.Mutex
 }
 
-func (o *onChange) Change() error {
+func (o *onChange) Do() error {
 	o.muCallbacks.Lock()
 	defer o.muCallbacks.Unlock()
 	for _, fn := range o.callbacks {
