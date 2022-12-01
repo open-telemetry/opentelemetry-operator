@@ -20,6 +20,7 @@ import (
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
@@ -127,7 +128,15 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 			} else {
 				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}
-			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics[0].Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
+
+			// This will update memory and CPU usage for now, and can be used to update other metrics in the future
+			for _, metric := range updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics {
+				if metric.Resource.Name == corev1.ResourceCPU {
+					metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
+				} else if metric.Resource.Name == corev1.ResourceMemory {
+					metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetMemoryUtilization
+				}
+			}
 		}
 	}
 }
