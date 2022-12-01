@@ -47,6 +47,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/testdata"
 )
 
 var (
@@ -75,7 +76,7 @@ func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		CRDInstallOptions: envtest.CRDInstallOptions{
-			CRDs: []*apiextensionsv1.CustomResourceDefinition{routeCRD},
+			CRDs: []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD},
 		},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
