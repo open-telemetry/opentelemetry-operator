@@ -67,13 +67,15 @@ func (r *OpenTelemetryCollector) Default() {
 		r.Spec.TargetAllocator.Replicas = &one
 	}
 
-	// Set default targetCPUUtilization for autoscaler
-	if r.Spec.MaxReplicas != nil && (r.Spec.Autoscaler == nil || r.Spec.Autoscaler.TargetCPUUtilization == nil) {
-		defaultCPUTarget := int32(90)
+	if r.Spec.MaxReplicas != nil {
 		if r.Spec.Autoscaler == nil {
 			r.Spec.Autoscaler = &AutoscalerSpec{}
 		}
-		r.Spec.Autoscaler.TargetCPUUtilization = &defaultCPUTarget
+
+		if r.Spec.Autoscaler.TargetMemoryUtilization == nil && r.Spec.Autoscaler.TargetCPUUtilization == nil {
+			defaultCPUTarget := int32(90)
+			r.Spec.Autoscaler.TargetCPUUtilization = &defaultCPUTarget
+		}
 	}
 }
 
@@ -176,7 +178,9 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetCPUUtilization != nil && (*r.Spec.Autoscaler.TargetCPUUtilization < int32(1) || *r.Spec.Autoscaler.TargetCPUUtilization > int32(99)) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
 		}
-
+		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetMemoryUtilization != nil && (*r.Spec.Autoscaler.TargetMemoryUtilization < int32(1) || *r.Spec.Autoscaler.TargetMemoryUtilization > int32(99)) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
+		}
 	}
 
 	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
