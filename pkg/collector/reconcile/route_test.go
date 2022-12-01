@@ -61,7 +61,7 @@ func TestDesiredRoutes(t *testing.T) {
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Config: "!!!",
 					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeRouteV1Insecure,
+						Type: v1alpha1.IngressTypeRoute,
 					},
 				},
 			},
@@ -80,7 +80,7 @@ func TestDesiredRoutes(t *testing.T) {
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Config: "---",
 					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeRouteV1Insecure,
+						Type: v1alpha1.IngressTypeRoute,
 					},
 				},
 			},
@@ -103,9 +103,12 @@ func TestDesiredRoutes(t *testing.T) {
 
 		params.Instance.Namespace = ns
 		params.Instance.Spec.Ingress = v1alpha1.Ingress{
-			Type:        v1alpha1.IngressTypeRouteV1Insecure,
+			Type:        v1alpha1.IngressTypeRoute,
 			Hostname:    hostname,
 			Annotations: map[string]string{"some.key": "some.value"},
+			Route: v1alpha1.OpenShiftRoute{
+				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			},
 		}
 
 		got := desiredRoutes(context.Background(), params)[0]
@@ -149,7 +152,8 @@ func TestExpectedRoutes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRouteV1Insecure
+		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+		params.Instance.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 
 		err = expectedRoutes(ctx, params, desiredRoutes(ctx, params))
 		assert.NoError(t, err)
@@ -191,7 +195,7 @@ func TestDeleteRoutes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		myParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRouteV1Insecure
+		myParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 
 		err = expectedRoutes(ctx, myParams, desiredRoutes(ctx, myParams))
 		assert.NoError(t, err)
@@ -202,7 +206,7 @@ func TestDeleteRoutes(t *testing.T) {
 		assert.True(t, exists)
 
 		// delete
-		if err := deleteRoutes(ctx, params(), []routev1.Route{}); err != nil {
+		if err = deleteRoutes(ctx, params(), []routev1.Route{}); err != nil {
 			t.Error(err)
 		}
 

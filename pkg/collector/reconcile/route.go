@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	routev1 "github.com/openshift/api/route/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,13 +32,15 @@ import (
 
 func desiredRoutes(_ context.Context, params Params) []routev1.Route {
 	var tlsCfg *routev1.TLSConfig
-	switch params.Instance.Spec.Ingress.Type {
-	case v1alpha1.IngressTypeRouteV1Insecure:
+	switch params.Instance.Spec.Ingress.Route.Termination {
+	case v1alpha1.TLSRouteTerminationTypeInsecure:
 		// NOTE: insecure, no tls cfg.
-	case v1alpha1.IngressTypeRouteV1Edge:
+	case v1alpha1.TLSRouteTerminationTypeEdge:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationEdge}
-	case v1alpha1.IngressTypeRouteV1Passthrough:
+	case v1alpha1.TLSRouteTerminationTypePassthrough:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationPassthrough}
+	case v1alpha1.TLSRouteTerminationTypeReencrypt:
+		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationReencrypt}
 	default: // NOTE: if unsupported, end here.
 		return nil
 	}
@@ -90,18 +91,18 @@ func desiredRoutes(_ context.Context, params Params) []routev1.Route {
 
 // Routes reconciles the route(s) required for the instance in the current context.
 func Routes(ctx context.Context, params Params) error {
+	if params.Instance.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
+		return nil
+	}
+
 	isSupportedMode := true
 	if params.Instance.Spec.Mode == v1alpha1.ModeSidecar {
 		params.Log.V(3).Info("ingress settings are not supported in sidecar mode")
 		isSupportedMode = false
 	}
 
-	nns := types.NamespacedName{Namespace: params.Instance.Namespace, Name: params.Instance.Name}
-	err := params.Client.Get(ctx, nns, &corev1.Service{}) // NOTE: check if service exists.
-	serviceExists := err != nil
-
 	var desired []routev1.Route
-	if isSupportedMode && serviceExists {
+	if isSupportedMode {
 		if r := desiredRoutes(ctx, params); r != nil {
 			desired = append(desired, r...)
 		}
@@ -132,7 +133,7 @@ func expectedRoutes(ctx context.Context, params Params, expected []routev1.Route
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if err := params.Client.Create(ctx, &desired); err != nil {
+			if err = params.Client.Create(ctx, &desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
 			params.Log.V(2).Info("created", "route.name", desired.Name, "route.namespace", desired.Namespace)

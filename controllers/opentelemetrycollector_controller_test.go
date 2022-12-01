@@ -81,7 +81,10 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 				},
 			},
 			Ingress: v1alpha1.Ingress{
-				Type: v1alpha1.IngressTypeRouteV1Insecure,
+				Type: v1alpha1.IngressTypeRoute,
+				Route: v1alpha1.OpenShiftRoute{
+					Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+				},
 			},
 		},
 	}
