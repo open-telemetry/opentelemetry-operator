@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -32,7 +31,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-const test_file_ingress = "../testdata/ingress_testdata.yaml"
+const testFileIngress = "../testdata/ingress_testdata.yaml"
 
 func TestDesiredIngresses(t *testing.T) {
 	t.Run("should return nil invalid ingress type", func(t *testing.T) {
@@ -93,20 +92,22 @@ func TestDesiredIngresses(t *testing.T) {
 
 	t.Run("should return nil unable to do something else", func(t *testing.T) {
 		var (
-			ns       = "test"
-			hostname = "example.com"
+			ns               = "test"
+			hostname         = "example.com"
+			ingressClassName = "nginx"
 		)
 
-		params, err := newParams("something:tag", test_file_ingress)
+		params, err := newParams("something:tag", testFileIngress)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		params.Instance.Namespace = ns
 		params.Instance.Spec.Ingress = v1alpha1.Ingress{
-			Type:        v1alpha1.IngressTypeNginx,
-			Hostname:    hostname,
-			Annotations: map[string]string{"some.key": "some.value"},
+			Type:             v1alpha1.IngressTypeNginx,
+			Hostname:         hostname,
+			Annotations:      map[string]string{"some.key": "some.value"},
+			IngressClassName: &ingressClassName,
 		}
 
 		got := desiredIngresses(context.Background(), params)
@@ -124,6 +125,7 @@ func TestDesiredIngresses(t *testing.T) {
 				},
 			},
 			Spec: networkingv1.IngressSpec{
+				IngressClassName: &ingressClassName,
 				Rules: []networkingv1.IngressRule{
 					{
 						Host: hostname,
@@ -181,7 +183,7 @@ func TestExpectedIngresses(t *testing.T) {
 	t.Run("should create and update ingress entry", func(t *testing.T) {
 		ctx := context.Background()
 
-		params, err := newParams("something:tag", test_file_ingress)
+		params, err := newParams("something:tag", testFileIngress)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -223,7 +225,7 @@ func TestDeleteIngresses(t *testing.T) {
 		// create
 		ctx := context.Background()
 
-		myParams, err := newParams("something:tag", test_file_ingress)
+		myParams, err := newParams("something:tag", testFileIngress)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -243,7 +245,7 @@ func TestDeleteIngresses(t *testing.T) {
 		}
 
 		// check
-		exists, err = populateObjectIfExists(t, &v1.Ingress{}, nns)
+		exists, err = populateObjectIfExists(t, &networkingv1.Ingress{}, nns)
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	})

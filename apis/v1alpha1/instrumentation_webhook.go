@@ -86,59 +86,59 @@ func (r *Instrumentation) Default() {
 var _ webhook.Validator = &Instrumentation{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Instrumentation) ValidateCreate() error {
-	instrumentationlog.Info("validate create", "name", in.Name)
-	return in.validate()
+func (r *Instrumentation) ValidateCreate() error {
+	instrumentationlog.Info("validate create", "name", r.Name)
+	return r.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Instrumentation) ValidateUpdate(old runtime.Object) error {
-	instrumentationlog.Info("validate update", "name", in.Name)
-	return in.validate()
+func (r *Instrumentation) ValidateUpdate(old runtime.Object) error {
+	instrumentationlog.Info("validate update", "name", r.Name)
+	return r.validate()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *Instrumentation) ValidateDelete() error {
-	instrumentationlog.Info("validate delete", "name", in.Name)
+func (r *Instrumentation) ValidateDelete() error {
+	instrumentationlog.Info("validate delete", "name", r.Name)
 	return nil
 }
 
-func (in *Instrumentation) validate() error {
-	switch in.Spec.Sampler.Type {
+func (r *Instrumentation) validate() error {
+	switch r.Spec.Sampler.Type {
 	case TraceIDRatio, ParentBasedTraceIDRatio:
-		if in.Spec.Sampler.Argument != "" {
-			rate, err := strconv.ParseFloat(in.Spec.Sampler.Argument, 64)
+		if r.Spec.Sampler.Argument != "" {
+			rate, err := strconv.ParseFloat(r.Spec.Sampler.Argument, 64)
 			if err != nil {
-				return fmt.Errorf("spec.sampler.argument is not a number: %s", in.Spec.Sampler.Argument)
+				return fmt.Errorf("spec.sampler.argument is not a number: %s", r.Spec.Sampler.Argument)
 			}
 			if rate < 0 || rate > 1 {
-				return fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", in.Spec.Sampler.Argument)
+				return fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Sampler.Argument)
 			}
 		}
 	case AlwaysOn, AlwaysOff, JaegerRemote, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
 	}
 
 	// validate env vars
-	if err := in.validateEnv(in.Spec.Env); err != nil {
+	if err := r.validateEnv(r.Spec.Env); err != nil {
 		return err
 	}
-	if err := in.validateEnv(in.Spec.Java.Env); err != nil {
+	if err := r.validateEnv(r.Spec.Java.Env); err != nil {
 		return err
 	}
-	if err := in.validateEnv(in.Spec.NodeJS.Env); err != nil {
+	if err := r.validateEnv(r.Spec.NodeJS.Env); err != nil {
 		return err
 	}
-	if err := in.validateEnv(in.Spec.Python.Env); err != nil {
+	if err := r.validateEnv(r.Spec.Python.Env); err != nil {
 		return err
 	}
-	if err := in.validateEnv(in.Spec.DotNet.Env); err != nil {
+	if err := r.validateEnv(r.Spec.DotNet.Env); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (in *Instrumentation) validateEnv(envs []corev1.EnvVar) error {
+func (r *Instrumentation) validateEnv(envs []corev1.EnvVar) error {
 	for _, env := range envs {
 		if !strings.HasPrefix(env.Name, envPrefix) && !strings.HasPrefix(env.Name, envSplunkPrefix) {
 			return fmt.Errorf("env name should start with \"OTEL_\" or \"SPLUNK_\": %s", env.Name)

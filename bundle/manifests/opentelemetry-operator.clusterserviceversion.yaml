@@ -37,7 +37,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.63.1
+  name: opentelemetry-operator.v0.66.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -294,7 +294,7 @@ spec:
                 - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.63.1
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.66.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -401,7 +401,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.63.1
+  version: 0.66.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

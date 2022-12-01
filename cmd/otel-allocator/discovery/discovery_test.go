@@ -16,15 +16,10 @@ package discovery
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"sort"
 	"testing"
 
 	gokitlog "github.com/go-kit/log"
-	"github.com/prometheus/common/model"
-	promconfig "github.com/prometheus/prometheus/config"
-	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -33,20 +28,34 @@ import (
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
-var cfg config.Config
-var manager *Manager
-var results chan []string
-
-func TestMain(m *testing.M) {
-	var err error
-	cfg, err = config.Load("./testdata/test.yaml")
-	if err != nil {
-		fmt.Printf("failed to load config file: %v", err)
-		os.Exit(1)
+func TestDiscovery(t *testing.T) {
+	type args struct {
+		file string
 	}
-	manager = NewManager(ctrl.Log.WithName("test"), context.Background(), gokitlog.NewNopLogger(), nil)
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "base case",
+			args: args{
+				file: "./testdata/test.yaml",
+			},
+			want: []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "promfile.domain:1001", "promfile.domain:3000"},
+		},
+		{
+			name: "update",
+			args: args{
+				file: "./testdata/test_update.yaml",
+			},
+			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
+		},
+	}
+	manager := NewManager(context.Background(), ctrl.Log.WithName("test"), gokitlog.NewNopLogger(), nil)
+	defer close(manager.close)
 
-	results = make(chan []string)
+	results := make(chan []string)
 	manager.Watch(func(targets map[string]*target.Item) {
 		var result []string
 		for _, t := range targets {
@@ -55,46 +64,18 @@ func TestMain(m *testing.M) {
 		results <- result
 	})
 
-	code := m.Run()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := config.Load(tt.args.file)
+			assert.NoError(t, err)
+			assert.True(t, len(cfg.Config.ScrapeConfigs) > 0)
+			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.Config)
+			assert.NoError(t, err)
 
-	close(manager.close)
-
-	os.Exit(code)
-}
-
-func TestTargetDiscovery(t *testing.T) {
-	err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, &promconfig.Config{})
-	assert.NoError(t, err)
-
-	gotTargets := <-results
-	wantTargets := []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "promfile.domain:1001", "promfile.domain:3000"}
-
-	sort.Strings(gotTargets)
-	sort.Strings(wantTargets)
-	assert.Equal(t, gotTargets, wantTargets)
-}
-
-func TestTargetUpdate(t *testing.T) {
-	cfg.Config.ScrapeConfigs[0].ServiceDiscoveryConfigs[1] = discovery.StaticConfig{
-		{
-			Targets: []model.LabelSet{
-				{model.AddressLabel: "prom.domain:9004"},
-				{model.AddressLabel: "prom.domain:9005"},
-			},
-			Labels: model.LabelSet{
-				"my": "label",
-			},
-			Source: "0",
-		},
+			gotTargets := <-results
+			sort.Strings(gotTargets)
+			sort.Strings(tt.want)
+			assert.Equal(t, tt.want, gotTargets)
+		})
 	}
-
-	err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, &promconfig.Config{})
-	assert.NoError(t, err)
-
-	gotTargets := <-results
-	wantTargets := []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"}
-
-	sort.Strings(gotTargets)
-	sort.Strings(wantTargets)
-	assert.Equal(t, gotTargets, wantTargets)
 }

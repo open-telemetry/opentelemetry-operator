@@ -8,7 +8,7 @@
 #    CORECLR_PROFILER_PATH=%InstallationLocation%/OpenTelemetry.AutoInstrumentation.Native.so
 #    DOTNET_ADDITIONAL_DEPS=%InstallationLocation%/AdditionalDeps
 #    DOTNET_SHARED_STORE=%InstallationLocation%/store
-#    DOTNET_STARTUP_HOOKS=%InstallationLocation%/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll 
+#    DOTNET_STARTUP_HOOKS=%InstallationLocation%/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll 
 #    OTEL_DOTNET_AUTO_HOME=%InstallationLocation% 
 
 FROM busybox

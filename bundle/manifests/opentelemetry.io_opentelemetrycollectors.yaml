@@ -1016,6 +1016,11 @@ spec:
                       the HPA will scale up. Defaults to 90 percent.
                     format: int32
                     type: integer
+                  targetMemoryUtilization:
+                    description: TargetMemoryUtilization sets the target average memory
+                      utilization across all replicas
+                    format: int32
+                    type: integer
                 type: object
               config:
                 description: Config is the raw JSON to be used as the collector's
@@ -1195,6 +1200,11 @@ spec:
                     type: object
                   hostname:
                     description: Hostname by which the ingress proxy can be reached.
+                    type: string
+                  ingressClassName:
+                    description: IngressClassName is the name of an IngressClass cluster
+                      resource. Ingress controller implementations use this field
+                      to know whether they should be serving this Ingress resource.
                     type: string
                   tls:
                     description: TLS configuration.
@@ -1685,7 +1695,8 @@ spec:
                 type: object
               serviceAccount:
                 description: ServiceAccount indicates the name of an existing service
-                  account to use with this instance.
+                  account to use with this instance. When set, the operator will not
+                  automatically create a ServiceAccount for the collector.
                 type: string
               targetAllocator:
                 description: TargetAllocator indicates a value which determines whether
@@ -1696,6 +1707,9 @@ spec:
                       target allocator should use for allocation. The current options
                       are least-weighted and consistent-hashing. The default option
                       is least-weighted
+                    enum:
+                    - least-weighted
+                    - consistent-hashing
                     type: string
                   enabled:
                     description: Enabled indicates whether to use a target allocation
@@ -1722,6 +1736,22 @@ spec:
                         description: Enabled indicates whether to use a PrometheusOperator
                           custom resources as targets or not.
                         type: boolean
+                      podMonitorSelector:
+                        additionalProperties:
+                          type: string
+                        description: PodMonitors to be selected for target discovery.
+                          This is a map of {key,value} pairs. Each {key,value} in
+                          the map is going to exactly match a label in a PodMonitor's
+                          meta labels. The requirements are ANDed.
+                        type: object
+                      serviceMonitorSelector:
+                        additionalProperties:
+                          type: string
+                        description: ServiceMonitors to be selected for target discovery.
+                          This is a map of {key,value} pairs. Each {key,value} in
+                          the map is going to exactly match a label in a ServiceMonitor's
+                          meta labels. The requirements are ANDed.
+                        type: object
                     type: object
                   replicas:
                     description: Replicas is the number of pod instances for the underlying
@@ -1733,7 +1763,8 @@ spec:
                     type: integer
                   serviceAccount:
                     description: ServiceAccount indicates the name of an existing
-                      service account to use with this instance.
+                      service account to use with this instance. When set, the operator
+                      will not automatically create a ServiceAccount for the TargetAllocator.
                     type: string
                 type: object
               tolerations:

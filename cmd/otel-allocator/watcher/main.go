@@ -59,21 +59,21 @@ func (e EventSource) String() string {
 	return eventSourceToString[e]
 }
 
-func NewWatcher(logger logr.Logger, config config.CLIConfig, allocator allocation.Allocator) (*Manager, error) {
+func NewWatcher(logger logr.Logger, cfg config.Config, cliConfig config.CLIConfig, allocator allocation.Allocator) (*Manager, error) {
 	watcher := Manager{
 		allocator: allocator,
 		Events:    make(chan Event),
 		Errors:    make(chan error),
 	}
 
-	fileWatcher, err := newConfigMapWatcher(logger, config)
+	fileWatcher, err := newConfigMapWatcher(logger, cliConfig)
 	if err != nil {
 		return nil, err
 	}
 	watcher.watchers = append(watcher.watchers, &fileWatcher)
 
-	if *config.PromCRWatcherConf.Enabled {
-		promWatcher, err := newCRDMonitorWatcher(config)
+	if *cliConfig.PromCRWatcherConf.Enabled {
+		promWatcher, err := newCRDMonitorWatcher(cfg, cliConfig)
 		if err != nil {
 			return nil, err
 		}
