@@ -41,8 +41,8 @@ func (t *Item) Hash() string {
 
 // NewItem Creates a new target item.
 // INVARIANTS:
-// * Item fields must not be modified after creation
-// * Item should only be made via its constructor, never directly
+// * Item fields must not be modified after creation.
+// * Item should only be made via its constructor, never directly.
 func NewItem(jobName string, targetURL string, label model.LabelSet, collectorName string) *Item {
 	return &Item{
 		JobName:       jobName,
