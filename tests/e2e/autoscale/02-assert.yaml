@@ -1,3 +1,4 @@
+# Wait for the collector to scale back down to 1
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 

@@ -41,7 +41,8 @@ func TestHPA(t *testing.T) {
 
 	var minReplicas int32 = 3
 	var maxReplicas int32 = 5
-	var cpuUtilization int32 = 90
+	var cpuUtilization int32 = 66
+	var memoryUtilization int32 = 77
 
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -51,7 +52,8 @@ func TestHPA(t *testing.T) {
 			Replicas:    &minReplicas,
 			MaxReplicas: &maxReplicas,
 			Autoscaler: &v1alpha1.AutoscalerSpec{
-				TargetCPUUtilization: &cpuUtilization,
+				TargetCPUUtilization:    &cpuUtilization,
+				TargetMemoryUtilization: &memoryUtilization,
 			},
 		},
 	}
@@ -76,9 +78,13 @@ func TestHPA(t *testing.T) {
 				assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
 				assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)
 				assert.Equal(t, int32(5), hpa.Spec.MaxReplicas)
-				assert.Equal(t, 1, len(hpa.Spec.Metrics))
-				assert.Equal(t, corev1.ResourceCPU, hpa.Spec.Metrics[0].Resource.Name)
-				assert.Equal(t, int32(90), *hpa.Spec.Metrics[0].Resource.Target.AverageUtilization)
+				for _, metric := range hpa.Spec.Metrics {
+					if metric.Resource.Name == corev1.ResourceCPU {
+						assert.Equal(t, cpuUtilization, *metric.Resource.Target.AverageUtilization)
+					} else if metric.Resource.Name == corev1.ResourceMemory {
+						assert.Equal(t, memoryUtilization, *metric.Resource.Target.AverageUtilization)
+					}
+				}
 			} else {
 				hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
 
@@ -87,9 +93,15 @@ func TestHPA(t *testing.T) {
 				assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
 				assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)
 				assert.Equal(t, int32(5), hpa.Spec.MaxReplicas)
-				assert.Equal(t, 1, len(hpa.Spec.Metrics))
-				assert.Equal(t, corev1.ResourceCPU, hpa.Spec.Metrics[0].Resource.Name)
-				assert.Equal(t, int32(90), *hpa.Spec.Metrics[0].Resource.Target.AverageUtilization)
+				assert.Equal(t, 2, len(hpa.Spec.Metrics))
+
+				for _, metric := range hpa.Spec.Metrics {
+					if metric.Resource.Name == corev1.ResourceCPU {
+						assert.Equal(t, cpuUtilization, *metric.Resource.Target.AverageUtilization)
+					} else if metric.Resource.Name == corev1.ResourceMemory {
+						assert.Equal(t, memoryUtilization, *metric.Resource.Target.AverageUtilization)
+					}
+				}
 			}
 		})
 	}
