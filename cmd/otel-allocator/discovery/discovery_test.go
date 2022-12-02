@@ -63,7 +63,6 @@ func TestDiscovery(t *testing.T) {
 		}
 		results <- result
 	})
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.Load(tt.args.file)
