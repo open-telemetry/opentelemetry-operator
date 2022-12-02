@@ -69,37 +69,47 @@ type Params struct {
 
 func (r *OpenTelemetryCollectorReconciler) onPlatformChange() error {
 	// NOTE: At the time the reconciler gets created, the platform type is still unknown.
-	r.muTasks.Lock()
-	defer r.muTasks.Unlock()
+	plt := r.config.Platform()
 	var (
-		routesPos = -1
-		otelPos   = -1
+		routesIdx = -1
 	)
+	r.muTasks.Lock()
 	for i, t := range r.tasks {
 		// search for route reconciler
 		switch t.Name {
-		case "opentelemetry":
-			otelPos = i
 		case "routes":
-			routesPos = i
+			routesIdx = i
 		}
 	}
-	if otelPos == -1 {
-		return fmt.Errorf("missing reconciler task: opentelemetry")
-	}
-	plt := r.config.Platform()
-	// if exists and platform is openshift
-	if routesPos == -1 && plt == platform.OpenShift {
-		end := r.tasks[otelPos:]
-		r.tasks = append([]Task{}, r.tasks[:otelPos]...)
-		r.tasks = append(r.tasks, Task{reconcile.Routes, "routes", true})
-		r.tasks = append(r.tasks, end...)
-	}
-	// if exists and platform is not openshift
-	if routesPos != -1 && plt != platform.OpenShift {
-		r.tasks = append(r.tasks[:routesPos], r.tasks[routesPos+1:]...)
+	r.muTasks.Unlock()
+
+	if err := r.addRouteTask(plt, routesIdx); err != nil {
+		return err
 	}
 
+	return r.removeRouteTask(plt, routesIdx)
+}
+
+func (r *OpenTelemetryCollectorReconciler) addRouteTask(plt platform.Platform, routesIdx int) error {
+	r.muTasks.Lock()
+	defer r.muTasks.Unlock()
+	// if exists and platform is openshift
+	if routesIdx == -1 && plt == platform.OpenShift {
+		r.tasks = append([]Task{{reconcile.Routes, "routes", true}}, r.tasks...)
+	}
+	return nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) removeRouteTask(plt platform.Platform, routesIdx int) error {
+	r.muTasks.Lock()
+	defer r.muTasks.Unlock()
+	if len(r.tasks) < routesIdx {
+		return fmt.Errorf("can not remove route task from reconciler")
+	}
+	// if exists and platform is not openshift
+	if routesIdx != -1 && plt != platform.OpenShift {
+		r.tasks = append(r.tasks[:routesIdx], r.tasks[routesIdx+1:]...)
+	}
 	return nil
 }
 
