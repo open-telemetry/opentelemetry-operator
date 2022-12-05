@@ -39,9 +39,9 @@ var logger = logf.Log.WithName("collector-unit-tests")
 func getTestClient() (Client, watch.Interface) {
 	interval := int64(10)
 	kubeClient := Client{
-		k8sClient: fake.NewSimpleClientset(),
-		close:     make(chan struct{}),
-		log:       logger,
+		k8sClient:      fake.NewSimpleClientset(),
+		close:          make(chan struct{}),
+		log:            logger,
 		timeoutSeconds: interval,
 	}
 
@@ -56,9 +56,7 @@ func getTestClient() (Client, watch.Interface) {
 		// i.e. no event is triggered after this duration
 		TimeoutSeconds: &kubeClient.timeoutSeconds,
 	}
-	ctx := context.Background()
-	kubeClient.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
-	watcher, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Watch(ctx, opts)
+	watcher, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Watch(context.Background(), opts)
 	if err != nil {
 		fmt.Printf("failed to setup a Collector Pod watcher: %v", err)
 		os.Exit(1)
@@ -173,7 +171,6 @@ func Test_runWatch(t *testing.T) {
 	}
 }
 
-
 // this tests runWatch in the case of watcher channel closing and watcher timing out
 func Test_closeChannel(t *testing.T) {
 	tests := []struct {
@@ -182,12 +179,12 @@ func Test_closeChannel(t *testing.T) {
 	}{
 		{
 			// event is triggered by channel closing
-			description: "close_channel",
+			description:    "close_channel",
 			isCloseChannel: true,
 		},
 		{
 			// event triggered by timeout
-			description: "watcher_timeout",
+			description:    "watcher_timeout",
 			isCloseChannel: false,
 		},
 	}
@@ -206,7 +203,7 @@ func Test_closeChannel(t *testing.T) {
 
 			go func(watcher watch.Interface) {
 				defer wg.Done()
-				if msg := runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {time.Sleep(20)}); msg != "" {
+				if msg := runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) { time.Sleep(20) }); msg != "" {
 					terminated = true
 					return
 				}
