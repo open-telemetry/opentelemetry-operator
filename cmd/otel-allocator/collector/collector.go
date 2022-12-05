@@ -48,6 +48,7 @@ type Client struct {
 	log       logr.Logger
 	k8sClient kubernetes.Interface
 	close     chan struct{}
+	timeoutSeconds int64
 }
 
 func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
@@ -60,6 +61,7 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 		log:       logger,
 		k8sClient: clientset,
 		close:     make(chan struct{}),
+		timeoutSeconds: int64(watcherTimeout / time.Second),
 	}, nil
 }
 
@@ -67,8 +69,11 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	collectorMap := map[string]*allocation.Collector{}
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
+	// convert watcherTimeout to an integer in seconds
+	interval := int64(watcherTimeout / time.Second)
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
+		TimeoutSeconds: &interval,
 	}
 	pods, err := k.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
 	if err != nil {
@@ -126,7 +131,7 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 				delete(collectorMap, pod.Name)
 			}
 			fn(collectorMap)
-		case <-time.After(watcherTimeout):
+		case <-time.After(time.Duration(k.timeoutSeconds) * time.Second):
 			log.Info("Restarting watch routine")
 			return ""
 		}

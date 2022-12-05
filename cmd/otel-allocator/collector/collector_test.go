@@ -20,6 +20,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"k8s.io/apimachinery/pkg/watch"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -36,10 +37,12 @@ import (
 var logger = logf.Log.WithName("collector-unit-tests")
 
 func getTestClient() (Client, watch.Interface) {
+	interval := int64(10)
 	kubeClient := Client{
 		k8sClient: fake.NewSimpleClientset(),
 		close:     make(chan struct{}),
 		log:       logger,
+		timeoutSeconds: interval,
 	}
 
 	labelMap := map[string]string{
@@ -49,9 +52,13 @@ func getTestClient() (Client, watch.Interface) {
 
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
+		// this timeout doesn't seem to be having an effect
+		// i.e. no event is triggered after this duration
+		TimeoutSeconds: &kubeClient.timeoutSeconds,
 	}
-
-	watcher, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Watch(context.Background(), opts)
+	ctx := context.Background()
+	kubeClient.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
+	watcher, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Watch(ctx, opts)
 	if err != nil {
 		fmt.Printf("failed to setup a Collector Pod watcher: %v", err)
 		os.Exit(1)
@@ -166,26 +173,51 @@ func Test_runWatch(t *testing.T) {
 	}
 }
 
+
+// this tests runWatch in the case of watcher channel closing and watcher timing out
 func Test_closeChannel(t *testing.T) {
-	kubeClient, watcher := getTestClient()
+	tests := []struct {
+		description    string
+		isCloseChannel bool
+	}{
+		{
+			// event is triggered by channel closing
+			description: "close_channel",
+			isCloseChannel: true,
+		},
+		{
+			// event triggered by timeout
+			description: "watcher_timeout",
+			isCloseChannel: false,
+		},
+	}
 
-	defer func() {
-		close(kubeClient.close)
-		watcher.Stop()
-	}()
-	var wg sync.WaitGroup
-	wg.Add(1)
-	isRestarted := 0
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			kubeClient, watcher := getTestClient()
 
-	go func(watcher watch.Interface) {
-		defer wg.Done()
-		if msg := runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {}); msg != "" {
-			isRestarted = 1
-			return
-		}
-	}(watcher)
+			defer func() {
+				close(kubeClient.close)
+				watcher.Stop()
+			}()
+			var wg sync.WaitGroup
+			wg.Add(1)
+			terminated := false
 
-	watcher.Stop()
-	wg.Wait()
-	assert.Equal(t, 0, isRestarted)
+			go func(watcher watch.Interface) {
+				defer wg.Done()
+				if msg := runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {time.Sleep(20)}); msg != "" {
+					terminated = true
+					return
+				}
+			}(watcher)
+
+			if tc.isCloseChannel {
+				// stop pod watcher to trigger event
+				watcher.Stop()
+			}
+			wg.Wait()
+			assert.False(t, terminated)
+		})
+	}
 }
