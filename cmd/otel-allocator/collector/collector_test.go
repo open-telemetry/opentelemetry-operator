@@ -170,7 +170,7 @@ func Test_runWatch(t *testing.T) {
 	}
 }
 
-// this tests runWatch in the case of watcher channel closing and watcher timing out
+// this tests runWatch in the case of watcher channel closing and watcher timing out.
 func Test_closeChannel(t *testing.T) {
 	tests := []struct {
 		description    string
