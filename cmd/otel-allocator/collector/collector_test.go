@@ -165,3 +165,27 @@ func Test_runWatch(t *testing.T) {
 		})
 	}
 }
+
+func Test_closeChannel(t *testing.T) {
+	kubeClient, watcher := getTestClient()
+
+	defer func() {
+		close(kubeClient.close)
+		watcher.Stop()
+	}()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	isRestarted := 0
+
+	go func(watcher watch.Interface) {
+		defer wg.Done()
+		if msg := runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {}); msg != "" {
+			isRestarted = 1
+			return
+		}
+	}(watcher)
+
+	watcher.Stop()
+	wg.Wait()
+	assert.Equal(t, 0, isRestarted)
+}
