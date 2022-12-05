@@ -20,7 +20,6 @@ import (
 	"os"
 	"sync"
 	"testing"
-	"time"
 
 	"k8s.io/apimachinery/pkg/watch"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -52,8 +51,8 @@ func getTestClient() (Client, watch.Interface) {
 
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
-		// this timeout doesn't seem to be having an effect
-		// i.e. no event is triggered after this duration
+		// this timeout doesn't seem to be having an effect.
+		// i.e. no event is triggered after this duration.
 		TimeoutSeconds: &kubeClient.timeoutSeconds,
 	}
 	watcher, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Watch(context.Background(), opts)
@@ -178,12 +177,12 @@ func Test_closeChannel(t *testing.T) {
 		isCloseChannel bool
 	}{
 		{
-			// event is triggered by channel closing
+			// event is triggered by channel closing.
 			description:    "close_channel",
 			isCloseChannel: true,
 		},
 		{
-			// event triggered by timeout
+			// event triggered by timeout.
 			description:    "watcher_timeout",
 			isCloseChannel: false,
 		},
@@ -203,14 +202,14 @@ func Test_closeChannel(t *testing.T) {
 
 			go func(watcher watch.Interface) {
 				defer wg.Done()
-				if msg := runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) { time.Sleep(20) }); msg != "" {
+				if msg := runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {}); msg != "" {
 					terminated = true
 					return
 				}
 			}(watcher)
 
 			if tc.isCloseChannel {
-				// stop pod watcher to trigger event
+				// stop pod watcher to trigger event.
 				watcher.Stop()
 			}
 			wg.Wait()

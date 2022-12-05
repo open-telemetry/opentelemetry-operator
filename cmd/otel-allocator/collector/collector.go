@@ -69,7 +69,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	collectorMap := map[string]*allocation.Collector{}
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
-	// convert watcherTimeout to an integer in seconds
+	// convert watcherTimeout to an integer in seconds.
 	interval := int64(watcherTimeout / time.Second)
 	opts := metav1.ListOptions{
 		LabelSelector:  labels.SelectorFromSet(labelMap).String(),
