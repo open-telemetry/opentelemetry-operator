@@ -103,6 +103,7 @@ func (s *Server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.scrapeConfigResponse = jsonConfig
+		s.compareHash = hash
 	}
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
 	w.Header().Set("Content-Type", "application/json")

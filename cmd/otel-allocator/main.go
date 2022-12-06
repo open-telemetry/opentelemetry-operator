@@ -20,11 +20,17 @@ import (
 	"os/signal"
 	"syscall"
 
+	
+
+	yaml2 "github.com/ghodss/yaml"
 	gokitlog "github.com/go-kit/log"
 	"github.com/oklog/run"
+	"github.com/mitchellh/hashstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/prometheus/discovery"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	yaml "gopkg.in/yaml.v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -214,7 +220,6 @@ func main() {
 
 	if err := runGroup.Run(); err != nil {
 		setupLog.Error(err, "run group exited")
-		os.Exit(1)
 	}
 	setupLog.Info("Target allocator exited.")
 }

@@ -195,12 +195,12 @@ func BenchmarkGetAllTargetsByCollectorAndJob(b *testing.B) {
 		{numCollectors: 1000, numJobs: 100000},
 	}
 	for _, s := range GetRegisteredAllocatorNames() {
-		a, err := New(s, logger)
-		if err != nil {
-			b.Log(err)
-			b.Fail()
-		}
 		for _, v := range table {
+			a, err := New(s, logger)
+			if err != nil {
+				b.Log(err)
+				b.Fail()
+			}
 			cols := makeNCollectors(v.numCollectors, 0)
 			jobs := makeNNewTargets(v.numJobs, v.numCollectors, 0)
 			a.SetCollectors(cols)

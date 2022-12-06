@@ -181,6 +181,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 }
 
 func TestSmartCollectorReassignment(t *testing.T) {
+	t.Skip("This test is flaky and fails frequently, see issue 1291")
 	s, _ := New("least-weighted", logger)
 
 	cols := makeNCollectors(4, 0)
@@ -289,18 +290,5 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	// test
 	for _, i := range collectors {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
-	}
-}
-
-func Benchmark_leastWeightedAllocator_SetTargets(b *testing.B) {
-	// prepare allocator with 3 collectors and 'random' amount of targets
-	s, _ := New("least-weighted", logger)
-
-	cols := makeNCollectors(3, 0)
-	s.SetCollectors(cols)
-
-	for i := 0; i < b.N; i++ {
-		targets := makeNNewTargets(i, 3, 0)
-		s.SetTargets(targets)
 	}
 }

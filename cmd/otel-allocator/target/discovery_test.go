@@ -74,7 +74,6 @@ func TestDiscovery(t *testing.T) {
 		})
 		assert.NoError(t, err)
 	}()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.Load(tt.args.file)
