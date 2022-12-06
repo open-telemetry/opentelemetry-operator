@@ -240,8 +240,8 @@ func TestDeleteIngresses(t *testing.T) {
 		assert.True(t, exists)
 
 		// delete
-		if err := deleteIngresses(ctx, params(), []networkingv1.Ingress{}); err != nil {
-			t.Error(err)
+		if delIngressErr := deleteIngresses(ctx, params(), []networkingv1.Ingress{}); delIngressErr != nil {
+			t.Error(delIngressErr)
 		}
 
 		// check

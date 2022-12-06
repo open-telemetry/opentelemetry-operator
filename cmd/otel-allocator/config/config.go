@@ -15,6 +15,7 @@
 package config
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -115,7 +116,8 @@ func ParseCLI() (CLIConfig, error) {
 	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
 	cLIConf.KubeConfigFilePath = *kubeconfigPath
 	if err != nil {
-		if _, ok := err.(*fs.PathError); !ok {
+		pathError := &fs.PathError{}
+		if ok := errors.As(err, &pathError); !ok {
 			return CLIConfig{}, err
 		}
 		clusterConfig, err = rest.InClusterConfig()

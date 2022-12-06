@@ -131,8 +131,8 @@ func TestShouldInjectSidecar(t *testing.T) {
 			}()
 
 			for i := range tt.otelcols {
-				err := k8sClient.Create(context.Background(), &tt.otelcols[i])
-				require.NoError(t, err)
+				clientErr := k8sClient.Create(context.Background(), &tt.otelcols[i])
+				require.NoError(t, clientErr)
 			}
 
 			encoded, err := json.Marshal(tt.pod)
@@ -154,8 +154,8 @@ func TestShouldInjectSidecar(t *testing.T) {
 			require.NoError(t, err)
 
 			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
-			err = injector.InjectDecoder(decoder)
-			require.NoError(t, err)
+			injectErr := injector.InjectDecoder(decoder)
+			require.NoError(t, injectErr)
 
 			// test
 			res := injector.Handle(context.Background(), req)
@@ -354,8 +354,8 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 			}()
 
 			for i := range tt.otelcols {
-				err := k8sClient.Create(context.Background(), &tt.otelcols[i])
-				require.NoError(t, err)
+				clientErr := k8sClient.Create(context.Background(), &tt.otelcols[i])
+				require.NoError(t, clientErr)
 			}
 
 			encoded, err := json.Marshal(tt.pod)

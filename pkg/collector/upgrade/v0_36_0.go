@@ -49,24 +49,24 @@ func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 		// Change tls config key from tls_settings to tls in otlp.protocols.grpc
 		if strings.HasPrefix(k1.(string), "otlp") {
-			otlpConfig, ok := v1.(map[interface{}]interface{})
-			if !ok {
+			otlpConfig, withOTLP := v1.(map[interface{}]interface{})
+			if !withOTLP {
 				// no otlpConfig? no need to fail because of that
 				return otelcol, nil
 			}
 			for k2, v2 := range otlpConfig {
 				// protocols config
 				if k2 == "protocols" {
-					protocConfig, ok := v2.(map[interface{}]interface{})
-					if !ok {
+					protocConfig, withProtocConfig := v2.(map[interface{}]interface{})
+					if !withProtocConfig {
 						// no protocolConfig? no need to fail because of that
 						return otelcol, nil
 					}
 					for k3, v3 := range protocConfig {
 						// grpc config
 						if k3 == "grpc" || k3 == "http" {
-							grpcHTTPConfig, ok := v3.(map[interface{}]interface{})
-							if !ok {
+							grpcHTTPConfig, withHTTPConfig := v3.(map[interface{}]interface{})
+							if !withHTTPConfig {
 								// no grpcHTTPConfig? no need to fail because of that
 								return otelcol, nil
 							}

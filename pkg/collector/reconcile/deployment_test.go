@@ -29,8 +29,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
+var param Params
+
 func TestExpectedDeployments(t *testing.T) {
-	param := params()
+	param = params()
 	expectedDeploy := collector.Deployment(param.Config, logger, param.Instance)
 	expectedTADeploy := targetallocator.Deployment(param.Config, logger, param.Instance)
 
@@ -57,8 +59,7 @@ func TestExpectedDeployments(t *testing.T) {
 	})
 
 	t.Run("should not create target allocator deployment when targetallocator is not enabled", func(t *testing.T) {
-		param := Params{
-			Client: k8sClient,
+		param = Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -91,8 +92,7 @@ func TestExpectedDeployments(t *testing.T) {
 			`,
 				},
 			},
-			Scheme: testScheme,
-			Log:    logger,
+			Log: logger,
 		}
 		expected := []v1.Deployment{}
 		if param.Instance.Spec.TargetAllocator.Enabled {
@@ -128,8 +128,7 @@ func TestExpectedDeployments(t *testing.T) {
 	t.Run("should not update target allocator deployment replicas when collector max replicas is set", func(t *testing.T) {
 		replicas, maxReplicas := int32(2), int32(10)
 		oneReplica := int32(1)
-		param := Params{
-			Client: k8sClient,
+		param = Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -168,8 +167,7 @@ func TestExpectedDeployments(t *testing.T) {
 			`,
 				},
 			},
-			Scheme: testScheme,
-			Log:    logger,
+			Log: logger,
 		}
 		expected := []v1.Deployment{}
 		allocator := targetallocator.Deployment(param.Config, param.Log, param.Instance)
@@ -181,8 +179,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should update target allocator deployment replicas when changed", func(t *testing.T) {
 		initialReplicas, nextReplicas := int32(1), int32(2)
-		param := Params{
-			Client: k8sClient,
+		param = Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -220,8 +217,7 @@ func TestExpectedDeployments(t *testing.T) {
 			`,
 				},
 			},
-			Scheme: testScheme,
-			Log:    logger,
+			Log: logger,
 		}
 		expected := []v1.Deployment{}
 		allocator := targetallocator.Deployment(param.Config, param.Log, param.Instance)

@@ -1,5 +1,8 @@
 run:
+  concurrency: 4
   timeout: 5m
+  issues-exit-code: 1
+  tests: true
 
 # all available settings of specific linters
 linters-settings:
@@ -11,8 +14,42 @@ linters-settings:
     suggest-new: true
   misspell:
     locale: US
+    ignore-words:
+      - cancelled
+      - metre
+      - meter
+      - metres
+      - kilometre
+      - kilometres
   govet:
-    disable-all: true
+    # report about shadowed variables
+    check-shadowing: true
+
+    # settings per analyzer
+    settings:
+      printf: # analyzer name, run `go tool vet help` to see all analyzers
+        funcs: # run `go tool vet help printf` to see available settings for `printf` analyzer
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+
+    enable-all: true
+    # TODO: Enable this and fix the alignment issues.
+    disable:
+      - fieldalignment
+  gofmt:
+    simplify: true
+  revive:
+    min-confidence: 0.8
+  
+  depguard:
+    list-type: denylist
+    include-go-root: true
+    packages-with-error-message:
+      # See https://github.com/open-telemetry/opentelemetry-collector/issues/5200 for rationale
+      - sync/atomic: "Use go.uber.org/atomic instead of sync/atomic"
+      - github.com/pkg/errors: "Use 'errors' or 'fmt' instead of github.com/pkg/errors"
 
 linters:
   enable:
@@ -30,3 +67,6 @@ linters:
     - ineffassign
     - typecheck
     - unparam
+    - depguard
+    - errcheck
+    - errorlint
