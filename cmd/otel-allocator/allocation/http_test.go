@@ -15,7 +15,7 @@
 package allocation
 
 import (
-	"reflect"
+	"fmt"
 	"testing"
 
 	"github.com/prometheus/common/model"
@@ -24,11 +24,21 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
+var (
+	baseLabelSet = model.LabelSet{
+		"test-label": "test-value",
+	}
+	testJobLabelSetTwo = model.LabelSet{
+		"test-label": "test-value2",
+	}
+	baseTargetItem       = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
+	testJobTargetItemTwo = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
+	secondTargetItem     = target.NewItem("test-job2", "test-url", baseLabelSet, "test-collector")
+)
+
 func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
-	baseAllocator, _ := New("least-weighted", logger)
-	baseAllocator.SetCollectors(map[string]*Collector{"test-collector": {Name: "test-collector"}})
-	statefulAllocator, _ := New("least-weighted", logger)
-	statefulAllocator.SetCollectors(map[string]*Collector{"test-collector-0": {Name: "test-collector-0"}})
+	leastWeighted, _ := New(leastWeightedStrategyName, logger)
+	leastWeighted.SetCollectors(map[string]*Collector{"test-collector": {Name: "test-collector"}})
 	type args struct {
 		collector string
 		job       string
@@ -38,7 +48,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 	var tests = []struct {
 		name string
 		args args
-		want []targetGroupJSON
+		want []target.Item
 	}{
 		{
 			name: "Empty target map",
@@ -46,7 +56,7 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				collector: "test-collector",
 				job:       "test-job",
 				cMap:      map[string][]target.Item{},
-				allocator: baseAllocator,
+				allocator: leastWeighted,
 			},
 			want: nil,
 		},
@@ -57,21 +67,14 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				job:       "test-job",
 				cMap: map[string][]target.Item{
 					"test-collectortest-job": {
-						target.Item{
-							JobName: "test-job",
-							Label: model.LabelSet{
-								"test-label": "test-value",
-							},
-							TargetURL:     "test-url",
-							CollectorName: "test-collector",
-						},
+						*baseTargetItem,
 					},
 				},
-				allocator: baseAllocator,
+				allocator: leastWeighted,
 			},
-			want: []targetGroupJSON{
+			want: []target.Item{
 				{
-					Targets: []string{"test-url"},
+					TargetURL: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value",
 					},
@@ -85,31 +88,17 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				job:       "test-job",
 				cMap: map[string][]target.Item{
 					"test-collectortest-job": {
-						target.Item{
-							JobName: "test-job",
-							Label: model.LabelSet{
-								"test-label": "test-value",
-							},
-							TargetURL:     "test-url",
-							CollectorName: "test-collector",
-						},
+						*baseTargetItem,
 					},
 					"test-collectortest-job2": {
-						target.Item{
-							JobName: "test-job2",
-							Label: model.LabelSet{
-								"test-label": "test-value",
-							},
-							TargetURL:     "test-url",
-							CollectorName: "test-collector",
-						},
+						*secondTargetItem,
 					},
 				},
-				allocator: baseAllocator,
+				allocator: leastWeighted,
 			},
-			want: []targetGroupJSON{
+			want: []target.Item{
 				{
-					Targets: []string{"test-url"},
+					TargetURL: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value",
 					},
@@ -123,41 +112,26 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				job:       "test-job",
 				cMap: map[string][]target.Item{
 					"test-collectortest-job": {
-						target.Item{
-							JobName: "test-job",
-							Label: model.LabelSet{
-								"test-label": "test-value",
-								"foo":        "bar",
-							},
-							TargetURL:     "test-url1",
-							CollectorName: "test-collector",
-						},
+						*baseTargetItem,
 					},
 					"test-collectortest-job2": {
-						target.Item{
-							JobName: "test-job",
-							Label: model.LabelSet{
-								"test-label": "test-value",
-							},
-							TargetURL:     "test-url2",
-							CollectorName: "test-collector",
-						},
+						*testJobTargetItemTwo,
 					},
 				},
-				allocator: baseAllocator,
+				allocator: leastWeighted,
 			},
-			want: []targetGroupJSON{
+			want: []target.Item{
 				{
-					Targets: []string{"test-url1"},
+					TargetURL: []string{"test-url1"},
 					Labels: map[model.LabelName]model.LabelValue{
-						"test-label": "test-value",
+						"test-label": "test-value-1",
 						"foo":        "bar",
 					},
 				},
 				{
-					Targets: []string{"test-url2"},
+					TargetURL: []string{"test-url2"},
 					Labels: map[model.LabelName]model.LabelValue{
-						"test-label": "test-value",
+						"test-label": "test-value-2",
 					},
 				},
 			},
@@ -169,37 +143,22 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 				job:       "test-job",
 				cMap: map[string][]target.Item{
 					"test-collectortest-job": {
-						target.Item{
-							JobName: "test-job",
-							Label: model.LabelSet{
-								"test-label": "test-value",
-								"foo":        "bar",
-							},
-							TargetURL:     "test-url",
-							CollectorName: "test-collector",
-						},
-						target.Item{
-							JobName: "test-job",
-							Label: model.LabelSet{
-								"test-label": "test-value",
-							},
-							TargetURL:     "test-url",
-							CollectorName: "test-collector",
-						},
+						*baseTargetItem,
+						*baseTargetItem,
 					},
 				},
-				allocator: baseAllocator,
+				allocator: leastWeighted,
 			},
-			want: []targetGroupJSON{
+			want: []target.Item{
 				{
-					Targets: []string{"test-url"},
+					TargetURL: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value",
 						"foo":        "bar",
 					},
 				},
 				{
-					Targets: []string{"test-url"},
+					TargetURL: []string{"test-url"},
 					Labels: map[model.LabelName]model.LabelValue{
 						"test-label": "test-value",
 					},
@@ -209,16 +168,49 @@ func TestGetAllTargetsByCollectorAndJob(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			targetGroups := GetAllTargetsByCollectorAndJob(tt.args.collector, tt.args.job, tt.args.cMap, tt.args.allocator)
+			targetGroups := GetAllTargetsByCollectorAndJob(tt.args.allocator, tt.args.collector, tt.args.job)
 			for _, wantGroupJson := range tt.want {
-				exist := false
 				for _, groupJSON := range targetGroups {
 					if groupJSON.Labels.String() == wantGroupJson.Labels.String() {
-						exist = reflect.DeepEqual(groupJSON, wantGroupJson)
+						assert.Equal(t, wantGroupJson, groupJSON)
 					}
 				}
-				assert.Equal(t, true, exist)
 			}
 		})
+	}
+}
+
+func BenchmarkGetAllTargetsByCollectorAndJob(b *testing.B) {
+	var table = []struct {
+		numCollectors int
+		numJobs       int
+	}{
+		{numCollectors: 100, numJobs: 100},
+		{numCollectors: 100, numJobs: 1000},
+		{numCollectors: 100, numJobs: 10000},
+		{numCollectors: 100, numJobs: 100000},
+		{numCollectors: 1000, numJobs: 100},
+		{numCollectors: 1000, numJobs: 1000},
+		{numCollectors: 1000, numJobs: 10000},
+		{numCollectors: 1000, numJobs: 100000},
+	}
+	for _, s := range GetRegisteredAllocatorNames() {
+		for _, v := range table {
+			a, err := New(s, logger)
+			if err != nil {
+				b.Log(err)
+				b.Fail()
+			}
+			cols := makeNCollectors(v.numCollectors, 0)
+			jobs := makeNNewTargets(v.numJobs, v.numCollectors, 0)
+			a.SetCollectors(cols)
+			a.SetTargets(jobs)
+			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", s, v.numCollectors, v.numJobs), func(b *testing.B) {
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					GetAllTargetsByCollectorAndJob(a, fmt.Sprintf("collector-%d", v.numCollectors/2), fmt.Sprintf("test-job-%d", v.numJobs/2))
+				}
+			})
+		}
 	}
 }
