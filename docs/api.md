@@ -1758,7 +1758,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>maxReplicas</b></td>
         <td>integer</td>
         <td>
-          MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.<br/>
+          MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.  Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -1767,7 +1767,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1.  Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -3217,6 +3217,24 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
         <td>object</td>
         <td>
           HorizontalPodAutoscalerBehavior configures the scaling behavior of the target in both Up and Down directions (scaleUp and scaleDown fields respectively).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxReplicas</b></td>
+        <td>integer</td>
+        <td>
+          MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minReplicas</b></td>
+        <td>integer</td>
+        <td>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>

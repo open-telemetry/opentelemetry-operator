@@ -1010,6 +1010,16 @@ spec:
                             type: integer
                         type: object
                     type: object
+                  maxReplicas:
+                    description: MaxReplicas sets an upper bound to the autoscaling feature.
+                      If MaxReplicas is set autoscaling is enabled.
+                    format: int32
+                    type: integer
+                  minReplicas:
+                    description: MinReplicas sets a lower bound to the autoscaling feature.  Set
+                      this if your are using autoscaling. It must be at least 1
+                    format: int32
+                    type: integer
                   targetCPUUtilization:
                     description: TargetCPUUtilization sets the target average CPU
                       used across all replicas. If average CPU exceeds this value,
@@ -1254,13 +1264,13 @@ spec:
                     type: string
                 type: object
               maxReplicas:
-                description: MaxReplicas sets an upper bound to the autoscaling feature.
-                  If MaxReplicas is set autoscaling is enabled.
+                description: 'MaxReplicas sets an upper bound to the autoscaling feature.
+                  If MaxReplicas is set autoscaling is enabled. Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.'
                 format: int32
                 type: integer
               minReplicas:
-                description: MinReplicas sets a lower bound to the autoscaling feature.  Set
-                  this if your are using autoscaling. It must be at least 1
+                description: 'MinReplicas sets a lower bound to the autoscaling feature.  Set
+                  this if your are using autoscaling. It must be at least 1. Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.'
                 format: int32
                 type: integer
               mode:

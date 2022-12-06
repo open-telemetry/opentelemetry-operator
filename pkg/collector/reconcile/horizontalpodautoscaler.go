@@ -38,7 +38,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	desired := []client.Object{}
 
 	// check if autoscale mode is on, e.g MaxReplicas is not nil
-	if params.Instance.Spec.MaxReplicas != nil {
+	if params.Instance.Spec.MaxReplicas != nil || params.Instance.Spec.Autoscaler.MaxReplicas != nil {
 		desired = append(desired, collector.HorizontalPodAutoscaler(params.Config, params.Log, params.Instance))
 	}
 
@@ -112,19 +112,32 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 
 func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object) {
 	one := int32(1)
-	if params.Instance.Spec.MaxReplicas != nil {
+	var maxReplicas, minReplicas *int32
+	if params.Instance.Spec.Autoscaler != nil {
+		if params.Instance.Spec.Autoscaler.MaxReplicas != nil {
+			maxReplicas = params.Instance.Spec.Autoscaler.MaxReplicas
+		}
+		if params.Instance.Spec.Autoscaler.MinReplicas != nil {
+			minReplicas = params.Instance.Spec.Autoscaler.MinReplicas
+		}
+	} else {
+		// this field is deprecated
+		maxReplicas = params.Instance.Spec.MaxReplicas
+		minReplicas = params.Instance.Spec.MinReplicas
+	}
+	if maxReplicas != nil {
 		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
-			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
-			if params.Instance.Spec.MinReplicas != nil {
-				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = params.Instance.Spec.MinReplicas
+			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MaxReplicas = *maxReplicas
+			if minReplicas != nil {
+				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = minReplicas
 			} else {
 				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}
 			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics[0].Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
 		} else {
-			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.MaxReplicas
-			if params.Instance.Spec.MinReplicas != nil {
-				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = params.Instance.Spec.MinReplicas
+			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *maxReplicas
+			if minReplicas != nil {
+				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = minReplicas
 			} else {
 				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}

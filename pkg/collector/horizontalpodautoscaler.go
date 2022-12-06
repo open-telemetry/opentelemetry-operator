@@ -72,6 +72,20 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		}
 		metrics = append(metrics, targetCPUUtilization)
 
+		var maxReplicas, minReplicas *int32
+		if otelcol.Spec.Autoscaler != nil {
+			if otelcol.Spec.Autoscaler.MaxReplicas != nil {
+				maxReplicas = otelcol.Spec.Autoscaler.MaxReplicas
+			}
+			if otelcol.Spec.Autoscaler.MinReplicas != nil {
+				minReplicas = otelcol.Spec.Autoscaler.MinReplicas
+			}
+		} else {
+			// this field is deprecated
+			maxReplicas = otelcol.Spec.MaxReplicas
+			minReplicas = otelcol.Spec.MinReplicas
+		}
+
 		autoscaler := autoscalingv2beta2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
 			Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
@@ -80,8 +94,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					Kind:       "OpenTelemetryCollector",
 					Name:       naming.OpenTelemetryCollector(otelcol),
 				},
-				MinReplicas: otelcol.Spec.Replicas,
-				MaxReplicas: *otelcol.Spec.MaxReplicas,
+				MinReplicas: minReplicas,
+				MaxReplicas: *maxReplicas,
 				Metrics:     metrics,
 			},
 		}
@@ -123,6 +137,20 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			metrics = append(metrics, targetCPUUtilization)
 		}
 
+		var maxReplicas, minReplicas *int32
+		if otelcol.Spec.Autoscaler != nil {
+			if otelcol.Spec.Autoscaler.MaxReplicas != nil {
+				maxReplicas = otelcol.Spec.Autoscaler.MaxReplicas
+			}
+			if otelcol.Spec.Autoscaler.MinReplicas != nil {
+				minReplicas = otelcol.Spec.Autoscaler.MinReplicas
+			}
+		} else {
+			// this field is deprecated
+			maxReplicas = otelcol.Spec.MaxReplicas
+			minReplicas = otelcol.Spec.MinReplicas
+		}
+
 		autoscaler := autoscalingv2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
 			Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
@@ -131,8 +159,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					Kind:       "OpenTelemetryCollector",
 					Name:       naming.OpenTelemetryCollector(otelcol),
 				},
-				MinReplicas: otelcol.Spec.Replicas,
-				MaxReplicas: *otelcol.Spec.MaxReplicas,
+				MinReplicas: minReplicas,
+				MaxReplicas: *maxReplicas,
 				Metrics:     metrics,
 			},
 		}

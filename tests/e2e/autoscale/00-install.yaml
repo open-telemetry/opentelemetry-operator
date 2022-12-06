@@ -6,9 +6,9 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  minReplicas: 1
-  maxReplicas: 2
   autoscaler:
+    minReplicas: 1
+    maxReplicas: 2
     behavior:
       scaleUp:
         stabilizationWindowSeconds: 10
@@ -45,9 +45,9 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest-set-utilization
 spec:
-  minReplicas: 1
-  maxReplicas: 2
   autoscaler:
+    minReplicas: 1
+    maxReplicas: 2
     targetCPUUtilization: 50
   resources:
     limits:
