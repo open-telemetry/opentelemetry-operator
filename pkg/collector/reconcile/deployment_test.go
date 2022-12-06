@@ -29,10 +29,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
-var param Params
-
 func TestExpectedDeployments(t *testing.T) {
-	param = params()
+	param := params()
 	expectedDeploy := collector.Deployment(param.Config, logger, param.Instance)
 	expectedTADeploy := targetallocator.Deployment(param.Config, logger, param.Instance)
 
@@ -59,7 +57,7 @@ func TestExpectedDeployments(t *testing.T) {
 	})
 
 	t.Run("should not create target allocator deployment when targetallocator is not enabled", func(t *testing.T) {
-		param = Params{
+		paramTargetAllocator := Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -95,8 +93,8 @@ func TestExpectedDeployments(t *testing.T) {
 			Log: logger,
 		}
 		expected := []v1.Deployment{}
-		if param.Instance.Spec.TargetAllocator.Enabled {
-			expected = append(expected, targetallocator.Deployment(param.Config, param.Log, param.Instance))
+		if paramTargetAllocator.Instance.Spec.TargetAllocator.Enabled {
+			expected = append(expected, targetallocator.Deployment(paramTargetAllocator.Config, paramTargetAllocator.Log, paramTargetAllocator.Instance))
 		}
 
 		assert.Len(t, expected, 0)
@@ -128,7 +126,7 @@ func TestExpectedDeployments(t *testing.T) {
 	t.Run("should not update target allocator deployment replicas when collector max replicas is set", func(t *testing.T) {
 		replicas, maxReplicas := int32(2), int32(10)
 		oneReplica := int32(1)
-		param = Params{
+		paramMaxReplicas := Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -170,7 +168,7 @@ func TestExpectedDeployments(t *testing.T) {
 			Log: logger,
 		}
 		expected := []v1.Deployment{}
-		allocator := targetallocator.Deployment(param.Config, param.Log, param.Instance)
+		allocator := targetallocator.Deployment(paramMaxReplicas.Config, paramMaxReplicas.Log, paramMaxReplicas.Instance)
 		expected = append(expected, allocator)
 
 		assert.Len(t, expected, 1)
@@ -179,7 +177,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should update target allocator deployment replicas when changed", func(t *testing.T) {
 		initialReplicas, nextReplicas := int32(1), int32(2)
-		param = Params{
+		paramReplicas := Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -220,7 +218,7 @@ func TestExpectedDeployments(t *testing.T) {
 			Log: logger,
 		}
 		expected := []v1.Deployment{}
-		allocator := targetallocator.Deployment(param.Config, param.Log, param.Instance)
+		allocator := targetallocator.Deployment(paramReplicas.Config, paramReplicas.Log, paramReplicas.Instance)
 		expected = append(expected, allocator)
 
 		assert.Len(t, expected, 1)
