@@ -91,6 +91,9 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					UpgradeStrategy: UpgradeStrategyAutomatic,
 					Autoscaler: &AutoscalerSpec{
 						TargetCPUUtilization: &defaultCPUTarget,
+						// webhook Default adds MaxReplicas to Autoscaler because
+						// OpenTelemetryCollector.Spec.MaxReplicas is deprecated.
+						MaxReplicas: &five,
 					},
 					MaxReplicas: &five,
 				},
