@@ -3,13 +3,14 @@ module github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator
 go 1.19
 
 require (
-	github.com/buraksezer/consistent v0.9.0
+	github.com/buraksezer/consistent v0.10.0
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-kit/log v0.2.1
 	github.com/go-logr/logr v1.2.3
 	github.com/gorilla/mux v1.8.0
+	github.com/mitchellh/hashstructure v1.1.0
 	github.com/prometheus-operator/prometheus-operator v0.53.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.53.1
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.53.1
@@ -118,7 +119,6 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/miekg/dns v1.1.50 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/mitchellh/hashstructure v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

@@ -46,7 +46,6 @@ func TestRelativelyEvenDistribution(t *testing.T) {
 	actualCollectors := c.Collectors()
 	assert.Len(t, actualCollectors, numCols)
 	for _, col := range actualCollectors {
-		t.Logf("col: %s \ttargets: %d", col.Name, col.NumTargets)
 		assert.InDelta(t, col.NumTargets, expectedPerCollector, expectedDelta)
 	}
 }
