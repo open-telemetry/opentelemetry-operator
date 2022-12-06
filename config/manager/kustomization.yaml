@@ -5,3 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/mdivis/opentelemetry-operator/opentelemetry-operator
+  newTag: 0.66.0
