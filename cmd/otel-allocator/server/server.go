@@ -17,6 +17,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -40,6 +41,11 @@ var (
 		Help: "Duration of received HTTP requests.",
 	}, []string{"path"})
 )
+
+type collectorJSON struct {
+	Link string         `json:"_link"`
+	Jobs []*target.Item `json:"targets"`
+}
 
 type Server struct {
 	logger           logr.Logger
@@ -143,11 +149,11 @@ func (s *Server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(q) == 0 {
-		displayData := allocation.GetAllTargetsByJob(s.allocator, jobId)
+		displayData := GetAllTargetsByJob(s.allocator, jobId)
 		s.jsonHandler(w, displayData)
 
 	} else {
-		tgs := allocation.GetAllTargetsByCollectorAndJob(s.allocator, q[0], jobId)
+		tgs := s.allocator.GetTargetsForCollectorAndJob(q[0], jobId)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
 			s.jsonHandler(w, []interface{}{})
@@ -168,4 +174,14 @@ func (s *Server) jsonHandler(w http.ResponseWriter, data interface{}) {
 	if err != nil {
 		s.logger.Error(err, "failed to encode data for http response")
 	}
+}
+
+// GetAllTargetsByJob is a relatively expensive call that is usually only used for debugging purposes.
+func GetAllTargetsByJob(allocator allocation.Allocator, job string) map[string]collectorJSON {
+	displayData := make(map[string]collectorJSON)
+	for _, col := range allocator.Collectors() {
+		items := allocator.GetTargetsForCollectorAndJob(col.Name, job)
+		displayData[col.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name), Jobs: items}
+	}
+	return displayData
 }

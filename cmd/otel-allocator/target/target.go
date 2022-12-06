@@ -35,7 +35,7 @@ type Item struct {
 	hash          string
 }
 
-func (t Item) Hash() string {
+func (t *Item) Hash() string {
 	return t.hash
 }
 
