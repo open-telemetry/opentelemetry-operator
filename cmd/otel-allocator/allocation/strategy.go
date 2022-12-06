@@ -45,10 +45,10 @@ var (
 		Name: "opentelemetry_allocator_time_to_allocate",
 		Help: "The time it takes to allocate",
 	}, []string{"method", "strategy"})
-	targetsKeptPerJob = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets_kept",
+	targetsRemaining = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "opentelemetry_allocator_targets_remaining",
 		Help: "Number of targets kept after filtering.",
-	}, []string{"job_name"})
+	})
 )
 
 type AllocationOption func(Allocator)
@@ -63,23 +63,13 @@ func WithFilter(filter Filter) AllocationOption {
 	}
 }
 
-func RecordTargetsKeptPerJob(targets map[string]*target.Item) map[string]float64 {
-	targetsPerJob := make(map[string]float64)
-
-	for _, tItem := range targets {
-		targetsPerJob[tItem.JobName] += 1
-	}
-
-	for jName, numTargets := range targetsPerJob {
-		targetsKeptPerJob.WithLabelValues(jName).Set(numTargets)
-	}
-
-	return targetsPerJob
+func RecordTargetsKept(targets map[string]*target.Item) {
+	targetsRemaining.Add(float64(len(targets)))
 }
 
 func New(name string, log logr.Logger, opts ...AllocationOption) (Allocator, error) {
 	if p, ok := registry[name]; ok {
-		return p(log, opts...), nil
+		return p(log.WithValues("allocator", name), opts...), nil
 	}
 	return nil, fmt.Errorf("unregistered strategy: %s", name)
 }
@@ -92,11 +82,20 @@ func Register(name string, provider AllocatorProvider) error {
 	return nil
 }
 
+func GetRegisteredAllocatorNames() []string {
+	var names []string
+	for s := range registry {
+		names = append(names, s)
+	}
+	return names
+}
+
 type Allocator interface {
 	SetCollectors(collectors map[string]*Collector)
 	SetTargets(targets map[string]*target.Item)
 	TargetItems() map[string]*target.Item
 	Collectors() map[string]*Collector
+	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
 	SetFilter(filter Filter)
 }
 
@@ -108,6 +107,10 @@ var _ consistent.Member = Collector{}
 type Collector struct {
 	Name       string
 	NumTargets int
+}
+
+func (c Collector) Hash() string {
+	return c.Name
 }
 
 func (c Collector) String() string {

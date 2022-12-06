@@ -16,9 +16,17 @@ package diff
 
 // Changes is the result of the difference between two maps – items that are added and items that are removed
 // This map is used to reconcile state differences.
-type Changes[T any] struct {
+type Changes[T Hasher] struct {
 	additions map[string]T
 	removals  map[string]T
+}
+
+type Hasher interface {
+	Hash() string
+}
+
+func NewChanges[T Hasher](additions map[string]T, removals map[string]T) Changes[T] {
+	return Changes[T]{additions: additions, removals: removals}
 }
 
 func (c Changes[T]) Additions() map[string]T {
@@ -31,19 +39,20 @@ func (c Changes[T]) Removals() map[string]T {
 
 // Maps generates Changes for two maps with the same type signature by checking for any removals and then checking for
 // additions.
-func Maps[T any](current, new map[string]T) Changes[T] {
+// TODO: This doesn't need to create maps, it can return slices only. This function doesn't need to insert the values.
+func Maps[T Hasher](current, new map[string]T) Changes[T] {
 	additions := map[string]T{}
 	removals := map[string]T{}
-	// Used as a set to check for removed items
-	newMembership := map[string]bool{}
-	for key, value := range new {
-		if _, found := current[key]; !found {
-			additions[key] = value
+	for key, newValue := range new {
+		if currentValue, found := current[key]; !found {
+			additions[key] = newValue
+		} else if currentValue.Hash() != newValue.Hash() {
+			additions[key] = newValue
+			removals[key] = currentValue
 		}
-		newMembership[key] = true
 	}
 	for key, value := range current {
-		if _, found := newMembership[key]; !found {
+		if _, found := new[key]; !found {
 			removals[key] = value
 		}
 	}

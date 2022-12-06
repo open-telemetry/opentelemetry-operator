@@ -114,11 +114,7 @@ func (m *Manager) Watch(fn func(targets map[string]*target.Item)) {
 					for _, tg := range tgs {
 						for _, t := range tg.Targets {
 							count++
-							item := &target.Item{
-								JobName:   jobName,
-								TargetURL: string(t[model.AddressLabel]),
-								Label:     t.Merge(tg.Labels),
-							}
+							item := target.NewItem(jobName, string(t[model.AddressLabel]), t.Merge(tg.Labels), "")
 							targets[item.Hash()] = item
 						}
 					}
