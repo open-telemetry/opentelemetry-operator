@@ -1263,7 +1263,7 @@ spec:
                 type: object
               maxReplicas:
                 description: 'MaxReplicas sets an upper bound to the autoscaling feature.
-                  If MaxReplicas is set autoscaling is enabled. Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.'
+                  If MaxReplicas is set autoscaling is enabled. Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.'
                 format: int32
                 type: integer
               minReplicas:
