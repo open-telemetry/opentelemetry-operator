@@ -45,9 +45,9 @@ var (
 )
 
 type Client struct {
-	log            logr.Logger
-	k8sClient      kubernetes.Interface
-	close          chan struct{}
+	log       logr.Logger
+	k8sClient kubernetes.Interface
+	close     chan struct{}
 }
 
 func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
@@ -57,9 +57,9 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 	}
 
 	return &Client{
-		log:            logger,
-		k8sClient:      clientset,
-		close:          make(chan struct{}),
+		log:       logger,
+		k8sClient: clientset,
+		close:     make(chan struct{}),
 	}, nil
 }
 
@@ -68,7 +68,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
 	opts := metav1.ListOptions{
-		LabelSelector:  labels.SelectorFromSet(labelMap).String(),
+		LabelSelector: labels.SelectorFromSet(labelMap).String(),
 	}
 	pods, err := k.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
 	if err != nil {

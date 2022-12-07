@@ -38,9 +38,9 @@ var logger = logf.Log.WithName("collector-unit-tests")
 
 func getTestClient() (Client, watch.Interface) {
 	kubeClient := Client{
-		k8sClient:      fake.NewSimpleClientset(),
-		close:          make(chan struct{}),
-		log:            logger,
+		k8sClient: fake.NewSimpleClientset(),
+		close:     make(chan struct{}),
+		log:       logger,
 	}
 
 	labelMap := map[string]string{
@@ -198,7 +198,7 @@ func Test_closeChannel(t *testing.T) {
 
 			go func(watcher watch.Interface) {
 				defer wg.Done()
-				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10 * time.Second))
+				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
 				defer cancel()
 				if msg := runWatch(ctx, &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {}); msg != "" {
 					terminated = true
