@@ -72,6 +72,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		}
 		metrics = append(metrics, targetCPUUtilization)
 
+		// check if fields are provided by .Spec.Autoscaler
+		// otherwise check deprecated fields
 		var maxReplicas, minReplicas *int32
 		if otelcol.Spec.Autoscaler != nil {
 			if otelcol.Spec.Autoscaler.MaxReplicas != nil {
@@ -81,9 +83,13 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				minReplicas = otelcol.Spec.Autoscaler.MinReplicas
 			}
 		} else {
-			// this field is deprecated
 			maxReplicas = otelcol.Spec.MaxReplicas
-			minReplicas = otelcol.Spec.MinReplicas
+			if otelcol.Spec.MinReplicas != nil {
+				// this field is optional so if it's not set then use .Spec.Replicas
+				minReplicas = otelcol.Spec.MinReplicas
+			} else {
+				minReplicas = otelcol.Spec.Replicas
+			}
 		}
 
 		autoscaler := autoscalingv2beta2.HorizontalPodAutoscaler{
@@ -137,6 +143,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			metrics = append(metrics, targetCPUUtilization)
 		}
 
+		// check if fields are provided by .Spec.Autoscaler
+		// otherwise check deprecated fields
 		var maxReplicas, minReplicas *int32
 		if otelcol.Spec.Autoscaler != nil {
 			if otelcol.Spec.Autoscaler.MaxReplicas != nil {
@@ -146,9 +154,13 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				minReplicas = otelcol.Spec.Autoscaler.MinReplicas
 			}
 		} else {
-			// this field is deprecated
 			maxReplicas = otelcol.Spec.MaxReplicas
-			minReplicas = otelcol.Spec.MinReplicas
+			if otelcol.Spec.MinReplicas != nil {
+				// this field is optional so if it's not set then use .Spec.Replicas
+				minReplicas = otelcol.Spec.MinReplicas
+			} else {
+				minReplicas = otelcol.Spec.Replicas
+			}
 		}
 
 		autoscaler := autoscalingv2.HorizontalPodAutoscaler{
