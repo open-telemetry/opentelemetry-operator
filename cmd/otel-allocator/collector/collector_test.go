@@ -20,6 +20,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"k8s.io/apimachinery/pkg/watch"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -36,12 +37,10 @@ import (
 var logger = logf.Log.WithName("collector-unit-tests")
 
 func getTestClient() (Client, watch.Interface) {
-	interval := int64(10)
 	kubeClient := Client{
 		k8sClient:      fake.NewSimpleClientset(),
 		close:          make(chan struct{}),
 		log:            logger,
-		timeoutSeconds: interval,
 	}
 
 	labelMap := map[string]string{
@@ -51,9 +50,6 @@ func getTestClient() (Client, watch.Interface) {
 
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
-		// this timeout doesn't seem to be having an effect.
-		// i.e. no event is triggered after this duration.
-		TimeoutSeconds: &kubeClient.timeoutSeconds,
 	}
 	watcher, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Watch(context.Background(), opts)
 	if err != nil {
@@ -202,7 +198,9 @@ func Test_closeChannel(t *testing.T) {
 
 			go func(watcher watch.Interface) {
 				defer wg.Done()
-				if msg := runWatch(context.Background(), &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {}); msg != "" {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10 * time.Second))
+				defer cancel()
+				if msg := runWatch(ctx, &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {}); msg != "" {
 					terminated = true
 					return
 				}

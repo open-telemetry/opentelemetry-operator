@@ -48,7 +48,6 @@ type Client struct {
 	log            logr.Logger
 	k8sClient      kubernetes.Interface
 	close          chan struct{}
-	timeoutSeconds int64
 }
 
 func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
@@ -61,7 +60,6 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 		log:            logger,
 		k8sClient:      clientset,
 		close:          make(chan struct{}),
-		timeoutSeconds: int64(watcherTimeout / time.Second),
 	}, nil
 }
 
@@ -69,11 +67,8 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	collectorMap := map[string]*allocation.Collector{}
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
-	// convert watcherTimeout to an integer in seconds.
-	interval := int64(watcherTimeout / time.Second)
 	opts := metav1.ListOptions{
 		LabelSelector:  labels.SelectorFromSet(labelMap).String(),
-		TimeoutSeconds: &interval,
 	}
 	pods, err := k.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
 	if err != nil {
@@ -90,15 +85,18 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	fn(collectorMap)
 
 	for {
+		// add timeout to the context before calling Watch
+		ctx, cancel := context.WithTimeout(ctx, watcherTimeout)
+		defer cancel()
 		watcher, err := k.k8sClient.CoreV1().Pods(ns).Watch(ctx, opts)
 		if err != nil {
 			log.Error(err, "unable to create collector pod watcher")
-			return err
+			return
 		}
 		log.Info("Successfully started a collector pod watcher")
-		if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" && msg != "no event" {
+		if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" {
 			log.Info("Collector pod watch event stopped " + msg)
-			return nil
+			return
 		}
 	}
 }
@@ -111,7 +109,7 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 		case <-k.close:
 			return "kubernetes client closed"
 		case <-ctx.Done():
-			return "context done"
+			return ""
 		case event, ok := <-c:
 			if !ok {
 				log.Info("No event found. Restarting watch routine")
@@ -131,9 +129,6 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 				delete(collectorMap, pod.Name)
 			}
 			fn(collectorMap)
-		case <-time.After(time.Duration(k.timeoutSeconds) * time.Second):
-			log.Info("Restarting watch routine")
-			return ""
 		}
 	}
 }
