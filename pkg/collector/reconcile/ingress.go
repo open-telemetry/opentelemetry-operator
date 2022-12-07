@@ -165,15 +165,15 @@ func expectedIngresses(ctx context.Context, params Params, expected []networking
 
 		existing := &networkingv1.Ingress{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
-		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && k8serrors.IsNotFound(err) {
+		clientGetErr := params.Client.Get(ctx, nns, existing)
+		if clientGetErr != nil && k8serrors.IsNotFound(clientGetErr) {
 			if err := params.Client.Create(ctx, &desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
 			params.Log.V(2).Info("created", "ingress.name", desired.Name, "ingress.namespace", desired.Namespace)
 			return nil
-		} else if err != nil {
-			return fmt.Errorf("failed to get: %w", err)
+		} else if clientGetErr != nil {
+			return fmt.Errorf("failed to get: %w", clientGetErr)
 		}
 
 		// it exists already, merge the two if the end result isn't identical to the existing one

@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"os"
@@ -91,9 +92,9 @@ func main() {
 		os.Exit(1)
 	}
 	defer func() {
-		err := watcher.Close()
-		if err != nil {
-			log.Error(err, "failed to close watcher")
+		watcherErr := watcher.Close()
+		if watcherErr != nil {
+			log.Error(watcherErr, "failed to close watcher")
 		}
 	}()
 
@@ -115,7 +116,7 @@ func main() {
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		if err := srv.Start(); err != http.ErrServerClosed {
+		if err := srv.Start(); !errors.Is(err, http.ErrServerClosed) {
 			setupLog.Error(err, "Can't start the server")
 		}
 	}()
@@ -139,7 +140,7 @@ func main() {
 				}
 				srv = newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 				go func() {
-					if err := srv.Start(); err != http.ErrServerClosed {
+					if err := srv.Start(); !errors.Is(err, http.ErrServerClosed) {
 						setupLog.Error(err, "Can't restart the server")
 					}
 				}()

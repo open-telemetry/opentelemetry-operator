@@ -132,7 +132,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	if r.Spec.TargetAllocator.Enabled {
 		_, err := ta.ConfigToPromConfig(r.Spec.Config)
 		if err != nil {
-			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %s", err)
+			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}
 	}
 

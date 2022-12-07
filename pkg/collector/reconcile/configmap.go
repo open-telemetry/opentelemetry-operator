@@ -161,10 +161,10 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 
 		existing := &corev1.ConfigMap{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
-		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && errors.IsNotFound(err) {
-			if err := params.Client.Create(ctx, &desired); err != nil {
-				if errors.IsAlreadyExists(err) && retry {
+		clientGetErr := params.Client.Get(ctx, nns, existing)
+		if clientGetErr != nil && errors.IsNotFound(clientGetErr) {
+			if clientCreateErr := params.Client.Create(ctx, &desired); clientCreateErr != nil {
+				if errors.IsAlreadyExists(clientCreateErr) && retry {
 					// let's try again? we probably had multiple updates at one, and now it exists already
 					if err := expectedConfigMaps(ctx, params, expected, false); err != nil {
 						// somethin else happened now...
@@ -174,12 +174,12 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 					// we succeeded in the retry, exit this attempt
 					return nil
 				}
-				return fmt.Errorf("failed to create: %w", err)
+				return fmt.Errorf("failed to create: %w", clientCreateErr)
 			}
 			params.Log.V(2).Info("created", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)
 			continue
-		} else if err != nil {
-			return fmt.Errorf("failed to get: %w", err)
+		} else if clientGetErr != nil {
+			return fmt.Errorf("failed to get: %w", clientGetErr)
 		}
 
 		// it exists already, merge the two if the end result isn't identical to the existing one
