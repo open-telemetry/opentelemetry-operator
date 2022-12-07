@@ -74,8 +74,8 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 		nns := types.NamespacedName{Namespace: desired.GetNamespace(), Name: desired.GetName()}
 		err := params.Client.Get(ctx, nns, existing)
 		if k8serrors.IsNotFound(err) {
-			if err := params.Client.Create(ctx, obj); err != nil {
-				return fmt.Errorf("failed to create: %w", err)
+			if clientErr := params.Client.Create(ctx, obj); clientErr != nil {
+				return fmt.Errorf("failed to create: %w", clientErr)
 			}
 			params.Log.V(2).Info("created", "hpa.name", desired.GetName(), "hpa.namespace", desired.GetNamespace())
 			continue

@@ -71,8 +71,8 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if err := params.Client.Create(ctx, &desired); err != nil {
-				return fmt.Errorf("failed to create: %w", err)
+			if clientErr := params.Client.Create(ctx, &desired); clientErr != nil {
+				return fmt.Errorf("failed to create: %w", clientErr)
 			}
 			params.Log.V(2).Info("created", "serviceaccount.name", desired.Name, "serviceaccount.namespace", desired.Namespace)
 			continue
