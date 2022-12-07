@@ -38,7 +38,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	desired := []client.Object{}
 
 	// check if autoscale mode is on, e.g MaxReplicas is not nil
-	if params.Instance.Spec.MaxReplicas != nil || params.Instance.Spec.Autoscaler.MaxReplicas != nil {
+	if params.Instance.Spec.MaxReplicas != nil || (params.Instance.Spec.Autoscaler != nil && params.Instance.Spec.Autoscaler.MaxReplicas != nil) {
 		desired = append(desired, collector.HorizontalPodAutoscaler(params.Config, params.Log, params.Instance))
 	}
 
