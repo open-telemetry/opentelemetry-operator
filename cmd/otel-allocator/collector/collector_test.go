@@ -198,7 +198,7 @@ func Test_closeChannel(t *testing.T) {
 
 			go func(watcher watch.Interface) {
 				defer wg.Done()
-				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
+				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5*time.Second))
 				defer cancel()
 				if msg := runWatch(ctx, &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {}); msg != "" {
 					terminated = true
