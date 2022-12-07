@@ -91,7 +91,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	}
 }
 
-func (k *Client) restartWatch(ctx context.Context, opts metav1.ListOptions, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) bool { 
+func (k *Client) restartWatch(ctx context.Context, opts metav1.ListOptions, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) bool {
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 	// add timeout to the context before calling Watch
 	ctx, cancel := context.WithTimeout(ctx, watcherTimeout)
@@ -109,7 +109,6 @@ func (k *Client) restartWatch(ctx context.Context, opts metav1.ListOptions, coll
 
 	return true
 }
-
 
 func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) string {
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
