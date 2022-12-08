@@ -26,7 +26,11 @@ import (
 // Valid modes are: deployment, daemonset and statefulset.
 // NOTE: If this feature is activated, all specified receivers are exposed.
 // Currently this has a few limitations. Depending on the ingress controller
-// there are problems with TLS and gRPC. For more information, see issue #1306.
+// there are problems with TLS and gRPC.
+// SEE: https://github.com/open-telemetry/opentelemetry-operator/issues/1306.
+// NOTE: As a workaround, port name and appProtocol could be specified directly
+// in the CR.
+// SEE: OpenTelemetryCollector.spec.ports[index].
 type Ingress struct {
 	// Type default value is: ""
 	// Supported types are: ingress
@@ -52,7 +56,7 @@ type Ingress struct {
 	IngressClassName *string `json:"ingressClassName,omitempty"`
 
 	// Route is an OpenShift specific section that is only considered when
-	// type "routev1" is used.
+	// type "route" is used.
 	// +optional
 	Route OpenShiftRoute `json:"route,omitempty"`
 }
