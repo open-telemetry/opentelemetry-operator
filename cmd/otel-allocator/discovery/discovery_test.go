@@ -59,11 +59,10 @@ func TestDiscovery(t *testing.T) {
 	manager.Watch(func(targets map[string]*target.Item) {
 		var result []string
 		for _, t := range targets {
-			result = append(result, t.TargetURL)
+			result = append(result, t.TargetURL[0])
 		}
 		results <- result
 	})
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.Load(tt.args.file)
