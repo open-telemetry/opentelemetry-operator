@@ -3844,6 +3844,13 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecingressroute">route</a></b></td>
+        <td>object</td>
+        <td>
+          Route is an OpenShift specific section that is only considered when type "route" is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingresstlsindex">tls</a></b></td>
         <td>[]object</td>
         <td>
@@ -3856,7 +3863,36 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         <td>
           Type default value is: "" Supported types are: ingress<br/>
           <br/>
-            <i>Enum</i>: ingress<br/>
+            <i>Enum</i>: ingress, route<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.ingress.route
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecingress)</sup></sup>
+
+
+
+Route is an OpenShift specific section that is only considered when type "route" is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>termination</b></td>
+        <td>enum</td>
+        <td>
+          Termination indicates termination type. By default "edge" is used.<br/>
+          <br/>
+            <i>Enum</i>: insecure, edge, passthrough, reencrypt<br/>
         </td>
         <td>false</td>
       </tr></tbody>

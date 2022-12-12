@@ -18,22 +18,22 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"strings"
 	"testing"
 
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-const testFileIngress = "../testdata/ingress_testdata.yaml"
-
-func TestDesiredIngresses(t *testing.T) {
+func TestDesiredRoutes(t *testing.T) {
 	t.Run("should return nil invalid ingress type", func(t *testing.T) {
 		params := Params{
 			Config: config.Config{},
@@ -48,7 +48,7 @@ func TestDesiredIngresses(t *testing.T) {
 			},
 		}
 
-		actual := desiredIngresses(context.Background(), params)
+		actual := desiredRoutes(context.Background(), params)
 		assert.Nil(t, actual)
 	})
 
@@ -61,13 +61,13 @@ func TestDesiredIngresses(t *testing.T) {
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Config: "!!!",
 					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeNginx,
+						Type: v1alpha1.IngressTypeRoute,
 					},
 				},
 			},
 		}
 
-		actual := desiredIngresses(context.Background(), params)
+		actual := desiredRoutes(context.Background(), params)
 		assert.Nil(t, actual)
 	})
 
@@ -80,21 +80,20 @@ func TestDesiredIngresses(t *testing.T) {
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Config: "---",
 					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeNginx,
+						Type: v1alpha1.IngressTypeRoute,
 					},
 				},
 			},
 		}
 
-		actual := desiredIngresses(context.Background(), params)
+		actual := desiredRoutes(context.Background(), params)
 		assert.Nil(t, actual)
 	})
 
 	t.Run("should return nil unable to do something else", func(t *testing.T) {
 		var (
-			ns               = "test"
-			hostname         = "example.com"
-			ingressClassName = "nginx"
+			ns       = "test"
+			hostname = "example.com"
 		)
 
 		params, err := newParams("something:tag", testFileIngress)
@@ -104,96 +103,63 @@ func TestDesiredIngresses(t *testing.T) {
 
 		params.Instance.Namespace = ns
 		params.Instance.Spec.Ingress = v1alpha1.Ingress{
-			Type:             v1alpha1.IngressTypeNginx,
-			Hostname:         hostname,
-			Annotations:      map[string]string{"some.key": "some.value"},
-			IngressClassName: &ingressClassName,
+			Type:        v1alpha1.IngressTypeRoute,
+			Hostname:    hostname,
+			Annotations: map[string]string{"some.key": "some.value"},
+			Route: v1alpha1.OpenShiftRoute{
+				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			},
 		}
 
-		got := desiredIngresses(context.Background(), params)
-		pathType := networkingv1.PathTypePrefix
+		got := desiredRoutes(context.Background(), params)[0]
 
-		assert.NotEqual(t, &networkingv1.Ingress{
+		assert.NotEqual(t, &routev1.Route{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.Ingress(params.Instance),
+				Name:        naming.Route(params.Instance, ""),
 				Namespace:   ns,
 				Annotations: params.Instance.Spec.Ingress.Annotations,
 				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.Ingress(params.Instance),
+					"app.kubernetes.io/name":       naming.Route(params.Instance, ""),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
 			},
-			Spec: networkingv1.IngressSpec{
-				IngressClassName: &ingressClassName,
-				Rules: []networkingv1.IngressRule{
-					{
-						Host: hostname,
-						IngressRuleValue: networkingv1.IngressRuleValue{
-							HTTP: &networkingv1.HTTPIngressRuleValue{
-								Paths: []networkingv1.HTTPIngressPath{
-									{
-										Path:     "/another-port",
-										PathType: &pathType,
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
-												Name: "test-collector",
-												Port: networkingv1.ServiceBackendPort{
-													Name: "another-port",
-												},
-											},
-										},
-									},
-									{
-										Path:     "/otlp-grpc",
-										PathType: &pathType,
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
-												Name: "test-collector",
-												Port: networkingv1.ServiceBackendPort{
-													Name: "otlp-grpc",
-												},
-											},
-										},
-									},
-									{
-										Path:     "/otlp-test-grpc",
-										PathType: &pathType,
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
-												Name: "test-collector",
-												Port: networkingv1.ServiceBackendPort{
-													Name: "otlp-test-grpc",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
+			Spec: routev1.RouteSpec{
+				Host: hostname,
+				Path: "/abc",
+				To: routev1.RouteTargetReference{
+					Kind: "service",
+					Name: "test-collector",
+				},
+				Port: &routev1.RoutePort{
+					TargetPort: intstr.FromString("another-port"),
+				},
+				WildcardPolicy: routev1.WildcardPolicyNone,
+				TLS: &routev1.TLSConfig{
+					Termination:                   routev1.TLSTerminationPassthrough,
+					InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyAllow,
 				},
 			},
 		}, got)
 	})
-
 }
 
-func TestExpectedIngresses(t *testing.T) {
-	t.Run("should create and update ingress entry", func(t *testing.T) {
+func TestExpectedRoutes(t *testing.T) {
+	t.Run("should create and update route entry", func(t *testing.T) {
 		ctx := context.Background()
 
 		params, err := newParams("something:tag", testFileIngress)
 		if err != nil {
 			t.Fatal(err)
 		}
-		params.Instance.Spec.Ingress.Type = "ingress"
+		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+		params.Instance.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 
-		err = expectedIngresses(ctx, params, []networkingv1.Ingress{*desiredIngresses(ctx, params)})
+		err = expectedRoutes(ctx, params, desiredRoutes(ctx, params))
 		assert.NoError(t, err)
 
-		nns := types.NamespacedName{Namespace: "default", Name: "test-ingress"}
-		exists, err := populateObjectIfExists(t, &networkingv1.Ingress{}, nns)
+		nns := types.NamespacedName{Namespace: params.Instance.Namespace, Name: "otlp-grpc-test-route"}
+		exists, err := populateObjectIfExists(t, &routev1.Route{}, nns)
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
@@ -202,15 +168,15 @@ func TestExpectedIngresses(t *testing.T) {
 		params.Instance.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
 		params.Instance.Spec.Ingress.Hostname = expectHostname
 
-		err = expectedIngresses(ctx, params, []networkingv1.Ingress{*desiredIngresses(ctx, params)})
+		err = expectedRoutes(ctx, params, desiredRoutes(ctx, params))
 		assert.NoError(t, err)
 
-		got := &networkingv1.Ingress{}
+		got := &routev1.Route{}
 		err = params.Client.Get(ctx, nns, got)
 		assert.NoError(t, err)
 
-		gotHostname := got.Spec.Rules[0].Host
-		if gotHostname != expectHostname {
+		gotHostname := got.Spec.Host
+		if !strings.Contains(gotHostname, got.Spec.Host) {
 			t.Errorf("host name is not up-to-date. expect: %s, got: %s", expectHostname, gotHostname)
 		}
 
@@ -220,8 +186,8 @@ func TestExpectedIngresses(t *testing.T) {
 	})
 }
 
-func TestDeleteIngresses(t *testing.T) {
-	t.Run("should delete excess ingress", func(t *testing.T) {
+func TestDeleteRoutes(t *testing.T) {
+	t.Run("should delete excess routes", func(t *testing.T) {
 		// create
 		ctx := context.Background()
 
@@ -229,32 +195,32 @@ func TestDeleteIngresses(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		myParams.Instance.Spec.Ingress.Type = "ingress"
+		myParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 
-		err = expectedIngresses(ctx, myParams, []networkingv1.Ingress{*desiredIngresses(ctx, myParams)})
+		err = expectedRoutes(ctx, myParams, desiredRoutes(ctx, myParams))
 		assert.NoError(t, err)
 
-		nns := types.NamespacedName{Namespace: "default", Name: "test-ingress"}
-		exists, err := populateObjectIfExists(t, &networkingv1.Ingress{}, nns)
+		nns := types.NamespacedName{Namespace: "default", Name: "otlp-grpc-test-route"}
+		exists, err := populateObjectIfExists(t, &routev1.Route{}, nns)
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
 		// delete
-		if delIngressErr := deleteIngresses(ctx, params(), []networkingv1.Ingress{}); delIngressErr != nil {
-			t.Error(delIngressErr)
+		if err = deleteRoutes(ctx, params(), []routev1.Route{}); err != nil {
+			t.Error(err)
 		}
 
 		// check
-		exists, err = populateObjectIfExists(t, &networkingv1.Ingress{}, nns)
+		exists, err = populateObjectIfExists(t, &routev1.Route{}, nns)
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	})
 }
 
-func TestIngresses(t *testing.T) {
+func TestRoutes(t *testing.T) {
 	t.Run("wrong mode", func(t *testing.T) {
 		ctx := context.Background()
-		err := Ingresses(ctx, params())
+		err := Routes(ctx, params())
 		assert.Nil(t, err)
 	})
 
@@ -264,7 +230,7 @@ func TestIngresses(t *testing.T) {
 		err := expectedServices(context.Background(), myParams, []corev1.Service{service("test-collector", params().Instance.Spec.Ports)})
 		assert.NoError(t, err)
 
-		assert.Nil(t, Ingresses(ctx, myParams))
+		assert.Nil(t, Routes(ctx, myParams))
 	})
 
 }

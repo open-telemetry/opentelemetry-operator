@@ -96,6 +96,35 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Missing route termination",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					Ingress: Ingress{
+						Type: IngressTypeRoute,
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					Ingress: Ingress{
+						Type: IngressTypeRoute,
+						Route: OpenShiftRoute{
+							Termination: TLSRouteTerminationTypeEdge,
+						},
+					},
+					Replicas:        &one,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

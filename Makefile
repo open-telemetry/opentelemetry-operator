@@ -174,8 +174,10 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator start-kind install-metrics-server load-image-all deploy
-	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) ./hack/modify-test-images.sh
+prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind install-metrics-server install-openshift-routes load-image-all
+	mkdir -p tests/_build/crds tests/_build/manifests
+	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
+	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -210,6 +212,10 @@ endif
 .PHONY: install-metrics-server
 install-metrics-server:
 	./hack/install-metrics-server.sh
+
+.PHONY: install-openshift-routes
+install-openshift-routes:
+	./hack/install-openshift-routes.sh
 
 .PHONY: load-image-all
 load-image-all: load-image-operator load-image-target-allocator

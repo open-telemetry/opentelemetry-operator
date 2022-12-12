@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"os"
@@ -24,14 +25,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ghodss/yaml"
+	"github.com/mitchellh/hashstructure"
+
+	yaml2 "github.com/ghodss/yaml"
 	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	yaml2 "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -89,9 +92,9 @@ func main() {
 		os.Exit(1)
 	}
 	defer func() {
-		err := watcher.Close()
-		if err != nil {
-			log.Error(err, "failed to close watcher")
+		watcherErr := watcher.Close()
+		if watcherErr != nil {
+			log.Error(watcherErr, "failed to close watcher")
 		}
 	}()
 
@@ -113,7 +116,7 @@ func main() {
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		if err := srv.Start(); err != http.ErrServerClosed {
+		if err := srv.Start(); !errors.Is(err, http.ErrServerClosed) {
 			setupLog.Error(err, "Can't start the server")
 		}
 	}()
@@ -137,7 +140,7 @@ func main() {
 				}
 				srv = newServer(log, allocator, discoveryManager, k8sclient, cliConf.ListenAddr)
 				go func() {
-					if err := srv.Start(); err != http.ErrServerClosed {
+					if err := srv.Start(); !errors.Is(err, http.ErrServerClosed) {
 						setupLog.Error(err, "Can't restart the server")
 					}
 				}()
@@ -160,11 +163,13 @@ func main() {
 }
 
 type server struct {
-	logger           logr.Logger
-	allocator        allocation.Allocator
-	discoveryManager *lbdiscovery.Manager
-	k8sClient        *collector.Client
-	server           *http.Server
+	logger               logr.Logger
+	allocator            allocation.Allocator
+	discoveryManager     *lbdiscovery.Manager
+	k8sClient            *collector.Client
+	server               *http.Server
+	compareHash          uint64
+	scrapeConfigResponse []byte
 }
 
 func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *lbdiscovery.Manager, k8sclient *collector.Client, listenAddr *string) *server {
@@ -173,6 +178,7 @@ func newServer(log logr.Logger, allocator allocation.Allocator, discoveryManager
 		allocator:        allocator,
 		discoveryManager: discoveryManager,
 		k8sClient:        k8sclient,
+		compareHash:      uint64(0),
 	}
 	router := mux.NewRouter().UseEncodedPath()
 	router.Use(s.PrometheusMiddleware)
@@ -220,17 +226,34 @@ func (s *server) Shutdown(ctx context.Context) error {
 // After that, the YAML is converted in to a JSON format for consumers to use.
 func (s *server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 	configs := s.discoveryManager.GetScrapeConfigs()
-	configBytes, err := yaml2.Marshal(configs)
+
+	hash, err := hashstructure.Hash(configs, nil)
 	if err != nil {
+		s.logger.Error(err, "failed to hash the config")
 		s.errorHandler(w, err)
+		return
 	}
-	jsonConfig, err := yaml.YAMLToJSON(configBytes)
-	if err != nil {
-		s.errorHandler(w, err)
+	// if the hashes are different, we need to recompute the scrape config
+	if hash != s.compareHash {
+		var configBytes []byte
+		configBytes, err = yaml.Marshal(configs)
+		if err != nil {
+			s.errorHandler(w, err)
+			return
+		}
+		var jsonConfig []byte
+		jsonConfig, err = yaml2.YAMLToJSON(configBytes)
+		if err != nil {
+			s.errorHandler(w, err)
+			return
+		}
+		// Update the response and the hash
+		s.scrapeConfigResponse = jsonConfig
+		s.compareHash = hash
 	}
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(jsonConfig)
+	_, err = w.Write(s.scrapeConfigResponse)
 	if err != nil {
 		s.errorHandler(w, err)
 	}
@@ -270,11 +293,11 @@ func (s *server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(q) == 0 {
-		displayData := allocation.GetAllTargetsByJob(jobId, compareMap, s.allocator)
+		displayData := allocation.GetAllTargetsByJob(s.allocator, jobId)
 		s.jsonHandler(w, displayData)
 
 	} else {
-		tgs := allocation.GetAllTargetsByCollectorAndJob(q[0], jobId, compareMap, s.allocator)
+		tgs := allocation.GetAllTargetsByCollectorAndJob(s.allocator, q[0], jobId)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
 			s.jsonHandler(w, []interface{}{})
