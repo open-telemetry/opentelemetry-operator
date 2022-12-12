@@ -57,7 +57,7 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 	}
 
 	return &Client{
-		log:       logger,
+		log:       logger.WithValues("component", "opentelemetry-targetallocator"),
 		k8sClient: clientset,
 		close:     make(chan struct{}),
 	}, nil
@@ -65,14 +65,13 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 
 func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) error {
 	collectorMap := map[string]*allocation.Collector{}
-	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
 	}
 	pods, err := k.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
 	if err != nil {
-		log.Error(err, "Pod failure")
+		k.log.Error(err, "Pod failure")
 		os.Exit(1)
 	}
 	for i := range pods.Items {
@@ -92,18 +91,17 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 }
 
 func (k *Client) restartWatch(ctx context.Context, opts metav1.ListOptions, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) bool {
-	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 	// add timeout to the context before calling Watch
 	ctx, cancel := context.WithTimeout(ctx, watcherTimeout)
 	defer cancel()
 	watcher, err := k.k8sClient.CoreV1().Pods(ns).Watch(ctx, opts)
 	if err != nil {
-		log.Error(err, "unable to create collector pod watcher")
+		k.log.Error(err, "unable to create collector pod watcher")
 		return false
 	}
-	log.Info("Successfully started a collector pod watcher")
+	k.log.Info("Successfully started a collector pod watcher")
 	if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" {
-		log.Info("Collector pod watch event stopped " + msg)
+		k.log.Info("Collector pod watch event stopped " + msg)
 		return false
 	}
 
@@ -111,7 +109,6 @@ func (k *Client) restartWatch(ctx context.Context, opts metav1.ListOptions, coll
 }
 
 func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) string {
-	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 	for {
 		collectorsDiscovered.Set(float64(len(collectorMap)))
 		select {
@@ -121,13 +118,13 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 			return ""
 		case event, ok := <-c:
 			if !ok {
-				log.Info("No event found. Restarting watch routine")
+				k.log.Info("No event found. Restarting watch routine")
 				return ""
 			}
 
 			pod, ok := event.Object.(*v1.Pod)
 			if !ok {
-				log.Info("No pod found in event Object. Restarting watch routine")
+				k.log.Info("No pod found in event Object. Restarting watch routine")
 				return ""
 			}
 
