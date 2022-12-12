@@ -112,7 +112,8 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 
 func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object) {
 	one := int32(1)
-	var maxReplicas, minReplicas *int32
+	maxReplicas := new(int32)
+	minReplicas := new(int32)
 	if params.Instance.Spec.Autoscaler != nil {
 		if params.Instance.Spec.Autoscaler.MaxReplicas != nil {
 			maxReplicas = params.Instance.Spec.Autoscaler.MaxReplicas

@@ -74,7 +74,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 
 		// check if fields are provided by .Spec.Autoscaler
 		// otherwise check deprecated fields
-		var maxReplicas, minReplicas *int32
+		maxReplicas := new(int32)
+		minReplicas := new(int32)
 		if otelcol.Spec.Autoscaler != nil {
 			if otelcol.Spec.Autoscaler.MaxReplicas != nil {
 				maxReplicas = otelcol.Spec.Autoscaler.MaxReplicas
@@ -82,10 +83,15 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			if otelcol.Spec.Autoscaler.MinReplicas != nil {
 				minReplicas = otelcol.Spec.Autoscaler.MinReplicas
 			}
-		} else {
+		}
+		// if maxReplicas not found in .Spec.Autoscaler
+		if *maxReplicas == 0 {
 			maxReplicas = otelcol.Spec.MaxReplicas
+		}
+
+		if *minReplicas == 0 {
+			// this field is optional so if it's not set then use .Spec.Replicas
 			if otelcol.Spec.MinReplicas != nil {
-				// this field is optional so if it's not set then use .Spec.Replicas
 				minReplicas = otelcol.Spec.MinReplicas
 			} else {
 				minReplicas = otelcol.Spec.Replicas
@@ -145,7 +151,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 
 		// check if fields are provided by .Spec.Autoscaler
 		// otherwise check deprecated fields
-		var maxReplicas, minReplicas *int32
+		maxReplicas := new(int32)
+		minReplicas := new(int32)
 		if otelcol.Spec.Autoscaler != nil {
 			if otelcol.Spec.Autoscaler.MaxReplicas != nil {
 				maxReplicas = otelcol.Spec.Autoscaler.MaxReplicas
@@ -153,10 +160,16 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			if otelcol.Spec.Autoscaler.MinReplicas != nil {
 				minReplicas = otelcol.Spec.Autoscaler.MinReplicas
 			}
-		} else {
+		}
+
+		// did not find the field in autoscaler
+		if *maxReplicas == 0 {
 			maxReplicas = otelcol.Spec.MaxReplicas
+		}
+
+		if *minReplicas == 0 {
+			// this field is optional so if it's not set then use .Spec.Replicas
 			if otelcol.Spec.MinReplicas != nil {
-				// this field is optional so if it's not set then use .Spec.Replicas
 				minReplicas = otelcol.Spec.MinReplicas
 			} else {
 				minReplicas = otelcol.Spec.Replicas

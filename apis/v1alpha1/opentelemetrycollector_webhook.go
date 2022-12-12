@@ -150,10 +150,13 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		}
 	}
 
-	var maxReplicas *int32
+	maxReplicas := new(int32)
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil {
 		maxReplicas = r.Spec.Autoscaler.MaxReplicas
-	} else {
+	}
+
+	// check deprecated .Spec.MaxReplicas if maxReplicas is not set
+	if *maxReplicas == 0 {
 		maxReplicas = r.Spec.MaxReplicas
 	}
 
