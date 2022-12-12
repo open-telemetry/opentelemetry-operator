@@ -77,6 +77,9 @@ func (r *OpenTelemetryCollector) Default() {
 			r.Spec.Autoscaler.TargetCPUUtilization = &defaultCPUTarget
 		}
 	}
+	if r.Spec.Ingress.Type == IngressTypeRoute && r.Spec.Ingress.Route.Termination == "" {
+		r.Spec.Ingress.Route.Termination = TLSRouteTerminationTypeEdge
+	}
 }
 
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
