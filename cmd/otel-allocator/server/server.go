@@ -18,6 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
+	promconfig "github.com/prometheus/prometheus/config"
 	"net/http"
 	"net/url"
 	"time"
@@ -42,27 +44,49 @@ var (
 	}, []string{"path"})
 )
 
+var (
+	yamlConfig = jsoniter.Config{
+		EscapeHTML:                    false,
+		MarshalFloatWith6Digits:       true,
+		ObjectFieldMustBeSimpleString: true,
+		TagKey:                        "yaml",
+	}.Froze()
+	jsonConfig = jsoniter.Config{
+		EscapeHTML:                    false,
+		MarshalFloatWith6Digits:       true,
+		ObjectFieldMustBeSimpleString: true,
+	}.Froze()
+)
+
 type collectorJSON struct {
 	Link string         `json:"_link"`
 	Jobs []*target.Item `json:"targets"`
 }
 
+type DiscoveryManager interface {
+	GetScrapeConfigs() map[string]*promconfig.ScrapeConfig
+}
+
 type Server struct {
 	logger           logr.Logger
 	allocator        allocation.Allocator
-	discoveryManager *target.Discoverer
+	discoveryManager DiscoveryManager
 	server           *http.Server
+	yamlMarshaller   jsoniter.API // TODO: for testing, it would make a lot of sense to have a simpler interface
+	jsonMarshaller   jsoniter.API // TODO: for testing, it would make a lot of sense to have a simpler interface
 
 	compareHash          uint64
 	scrapeConfigResponse []byte
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *target.Discoverer, listenAddr *string) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager DiscoveryManager, listenAddr *string) *Server {
 	s := &Server{
 		logger:           log,
 		allocator:        allocator,
 		discoveryManager: discoveryManager,
 		compareHash:      uint64(0),
+		yamlMarshaller:   yamlConfig,
+		jsonMarshaller:   jsonConfig,
 	}
 	router := mux.NewRouter().UseEncodedPath()
 	router.Use(s.PrometheusMiddleware)
@@ -87,7 +111,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
 // The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
 // After that, the YAML is converted in to a JSON format for consumers to use.
-func (s *Server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ScrapeConfigsHandler(w http.ResponseWriter, _ *http.Request) {
 	configs := s.discoveryManager.GetScrapeConfigs()
 
 	hash, err := hashstructure.Hash(configs, nil)
@@ -121,7 +145,38 @@ func (s *Server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) JobHandler(w http.ResponseWriter, r *http.Request) {
+// ScrapeConfigsIterHandler returns the available scrape configuration discovered by the target allocator.
+// The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
+// After that, the YAML is converted in to a JSON format for consumers to use.
+func (s *Server) ScrapeConfigsIterHandler(w http.ResponseWriter, _ *http.Request) {
+	configs := s.discoveryManager.GetScrapeConfigs()
+
+	hash, err := hashstructure.Hash(configs, nil)
+	if err != nil {
+		s.logger.Error(err, "failed to hash the config")
+		s.errorHandler(w, err)
+		return
+	}
+	// if the hashes are different, we need to recompute the scrape config
+	if hash != s.compareHash {
+		configBytes, err := s.yamlMarshaller.Marshal(configs)
+		if err != nil {
+			s.errorHandler(w, err)
+			return
+		}
+		// Update the response and the hash
+		s.scrapeConfigResponse = configBytes
+		s.compareHash = hash
+	}
+	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(s.scrapeConfigResponse)
+	if err != nil {
+		s.errorHandler(w, err)
+	}
+}
+
+func (s *Server) JobHandler(w http.ResponseWriter, _ *http.Request) {
 	displayData := make(map[string]target.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
 		displayData[v.JobName] = target.LinkJSON{Link: v.Link.Link}
@@ -173,6 +228,14 @@ func (s *Server) errorHandler(w http.ResponseWriter, err error) {
 func (s *Server) jsonHandler(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		s.logger.Error(err, "failed to encode data for http response")
+	}
+}
+
+func (s *Server) jsonIterHandler(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	err := s.jsonMarshaller.NewEncoder(w).Encode(data)
 	if err != nil {
 		s.logger.Error(err, "failed to encode data for http response")
 	}
