@@ -49,22 +49,22 @@ const (
 
 // ConfigToContainerProbe converts the incoming configuration object into a container probe or returns an error.
 func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, error) {
-	serviceProperty, ok := config["service"]
-	if !ok {
+	serviceProperty, withService := config["service"]
+	if !withService {
 		return nil, errNoService
 	}
-	service, ok := serviceProperty.(map[interface{}]interface{})
-	if !ok {
+	service, withSvcProperty := serviceProperty.(map[interface{}]interface{})
+	if !withSvcProperty {
 		return nil, errServiceNotAMap
 	}
 
-	serviceExtensionsProperty, ok := service["extensions"]
-	if !ok {
+	serviceExtensionsProperty, withExtension := service["extensions"]
+	if !withExtension {
 		return nil, errNoServiceExtensions
 	}
 
-	serviceExtensions, ok := serviceExtensionsProperty.([]interface{})
-	if !ok {
+	serviceExtensions, withExtProperty := serviceExtensionsProperty.([]interface{})
+	if !withExtProperty {
 		return nil, errServiceExtensionsNotSlice
 	}
 	healthCheckServiceExtensions := make([]string, 0)

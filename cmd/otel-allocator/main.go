@@ -116,9 +116,9 @@ func main() {
 
 	runGroup.Add(
 		func() error {
-			err := fileWatcher.Start(events, errors)
+			fileWatcherErr := fileWatcher.Start(events, errors)
 			setupLog.Info("File watcher exited")
-			return err
+			return fileWatcherErr
 		},
 		func(err error) {
 			setupLog.Info("Closing file watcher")

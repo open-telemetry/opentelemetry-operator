@@ -98,12 +98,14 @@ func (s *Server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// if the hashes are different, we need to recompute the scrape config
 	if hash != s.compareHash {
-		configBytes, err := yaml.Marshal(configs)
+		var configBytes []byte
+		configBytes, err = yaml.Marshal(configs)
 		if err != nil {
 			s.errorHandler(w, err)
 			return
 		}
-		jsonConfig, err := yaml2.YAMLToJSON(configBytes)
+		var jsonConfig []byte
+		jsonConfig, err = yaml2.YAMLToJSON(configBytes)
 		if err != nil {
 			s.errorHandler(w, err)
 			return
