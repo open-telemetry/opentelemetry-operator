@@ -47,20 +47,6 @@ var (
 )
 
 func main() {
-	cliConf, err := config.ParseCLI()
-	if err != nil {
-		setupLog.Error(err, "Failed to parse parameters")
-		os.Exit(1)
-	}
-	cfg, err := config.Load(*cliConf.ConfigFilePath)
-	if err != nil {
-		setupLog.Error(err, "Unable to load configuration")
-	}
-
-	cliConf.RootLogger.Info("Starting the Target Allocator")
-	ctx := context.Background()
-	log := ctrl.Log.WithName("allocator")
-
 	var (
 		// allocatorPrehook will be nil if filterStrategy is not set or
 		// unrecognized. No filtering will be used in this case.
@@ -76,6 +62,20 @@ func main() {
 		discoveryCancel context.CancelFunc
 		runGroup        run.Group
 	)
+	cliConf, err := config.ParseCLI()
+	if err != nil {
+		setupLog.Error(err, "Failed to parse parameters")
+		os.Exit(1)
+	}
+	cfg, err := config.Load(*cliConf.ConfigFilePath)
+	if err != nil {
+		setupLog.Error(err, "Unable to load configuration")
+	}
+
+	cliConf.RootLogger.Info("Starting the Target Allocator")
+	ctx := context.Background()
+	log := ctrl.Log.WithName("allocator")
+
 	events = make(chan allocatorWatcher.Event)
 	errors = make(chan error)
 	allocatorPrehook = prehook.New(cfg.GetTargetsFilterStrategy(), log)
@@ -195,7 +195,7 @@ func main() {
 					loadConfig, err := event.Watcher.LoadConfig()
 					if err != nil {
 						setupLog.Error(err, "Unable to load configuration")
-						return err
+						continue
 					}
 					err = targetDiscoverer.ApplyConfig(event.Source, loadConfig)
 					if err != nil {

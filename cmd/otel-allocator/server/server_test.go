@@ -1,19 +1,34 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package server
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	"io"
-	"math/rand"
+	"math/big"
 	"net/http/httptest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"strconv"
 	"testing"
-	"time"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
 var (
@@ -189,6 +204,11 @@ func TestServer_TargetsHandler(t *testing.T) {
 	}
 }
 
+func randInt(max int64) int64 {
+	nBig, _ := rand.Int(rand.Reader, big.NewInt(max))
+	return nBig.Int64()
+}
+
 func BenchmarkServerTargetsHandler(b *testing.B) {
 	var table = []struct {
 		numCollectors int
@@ -204,8 +224,6 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 		{numCollectors: 1000, numJobs: 100000},
 	}
 
-	rand.Seed(time.Now().UnixNano())
-
 	for _, allocatorName := range allocation.GetRegisteredAllocatorNames() {
 		for _, v := range table {
 			a, _ := allocation.New(allocatorName, logger)
@@ -218,8 +236,8 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", allocatorName, v.numCollectors, v.numJobs), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					randomJob := rand.Intn(v.numJobs)
-					randomCol := rand.Intn(v.numCollectors)
+					randomJob := randInt(int64(v.numJobs))
+					randomCol := randInt(int64(v.numCollectors))
 					request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/test-job-%d/targets?collector_id=collector-%d", randomJob, randomCol), nil)
 					w := httptest.NewRecorder()
 					s.server.Handler.ServeHTTP(w, request)
