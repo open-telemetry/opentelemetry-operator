@@ -117,7 +117,7 @@ set-image-controller: manifests kustomize
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
-deploy: set-image-controller cert-manager
+deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	kubectl wait --timeout=5m --for=condition=available deployment opentelemetry-operator-controller-manager -n opentelemetry-operator-system
 
@@ -174,7 +174,7 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator start-kind install-metrics-server install-openshift-routes load-image-all deploy
+prepare-e2e: kuttl set-image-controller container container-target-allocator start-kind cert-manager install-metrics-server install-openshift-routes load-image-all deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) ./hack/modify-test-images.sh
 
 .PHONY: scorecard-tests
