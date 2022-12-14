@@ -43,7 +43,7 @@ type options struct {
 	targetAllocatorImage           string
 	onPlatformChange               changeHandler
 	labelsFilter                   []string
-	platform                       platform.Platform
+	platform                       platformStore
 	autoDetectFrequency            time.Duration
 	autoscalingVersion             autodetect.AutoscalingVersion
 }
@@ -94,7 +94,7 @@ func WithOnPlatformChangeCallback(f func() error) Option {
 }
 func WithPlatform(plt platform.Platform) Option {
 	return func(o *options) {
-		o.platform = plt
+		o.platform.Set(plt)
 	}
 }
 func WithVersion(v version.Version) Option {

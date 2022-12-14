@@ -1204,6 +1204,20 @@ spec:
                       resource. Ingress controller implementations use this field
                       to know whether they should be serving this Ingress resource.
                     type: string
+                  route:
+                    description: Route is an OpenShift specific section that is only
+                      considered when type "route" is used.
+                    properties:
+                      termination:
+                        description: Termination indicates termination type. By default
+                          "edge" is used.
+                        enum:
+                        - insecure
+                        - edge
+                        - passthrough
+                        - reencrypt
+                        type: string
+                    type: object
                   tls:
                     description: TLS configuration.
                     items:
@@ -1234,6 +1248,7 @@ spec:
                     description: 'Type default value is: "" Supported types are: ingress'
                     enum:
                     - ingress
+                    - route
                     type: string
                 type: object
               maxReplicas:
