@@ -22,4 +22,4 @@ We now use the chloggen to generate the changelog, simply run the following to g
 make chlog-update
 ```
 
-This will delete all entries (other than the template) in the .chloggen directory and create a populated Changelog.md entry.
+This will delete all entries (other than the template) in the .chloggen directory and create a populated Changelog.md entry. Make sure that the PR you are generating for the release has the `[chore]` prefix, otherwise CI will not pass.
