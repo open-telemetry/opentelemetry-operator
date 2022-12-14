@@ -18,14 +18,15 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/prometheus/common/model"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"math/big"
 	"net/http/httptest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"strconv"
 	"testing"
+
+	"github.com/prometheus/common/model"
+	"github.com/stretchr/testify/assert"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"

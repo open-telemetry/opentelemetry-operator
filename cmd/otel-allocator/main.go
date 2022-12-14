@@ -67,9 +67,9 @@ func main() {
 		setupLog.Error(err, "Failed to parse parameters")
 		os.Exit(1)
 	}
-	cfg, err := config.Load(*cliConf.ConfigFilePath)
-	if err != nil {
-		setupLog.Error(err, "Unable to load configuration")
+	cfg, configLoadErr := config.Load(*cliConf.ConfigFilePath)
+	if configLoadErr != nil {
+		setupLog.Error(configLoadErr, "Unable to load configuration")
 	}
 
 	cliConf.RootLogger.Info("Starting the Target Allocator")
@@ -87,9 +87,9 @@ func main() {
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
 	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger())
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook)
-	collectorWatcher, err := collector.NewClient(log, cliConf.ClusterConfig)
-	if err != nil {
-		setupLog.Error(err, "Unable to initialize collector watcher")
+	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cliConf.ClusterConfig)
+	if collectorWatcherErr != nil {
+		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
 	}
 	fileWatcher, err = allocatorWatcher.NewFileWatcher(setupLog.WithName("file-watcher"), cliConf)
@@ -103,9 +103,9 @@ func main() {
 			setupLog.Error(err, "Can't start the prometheus watcher")
 			os.Exit(1)
 		}
-		err := promWatcher.Start(events, errors)
-		if err != nil {
-			setupLog.Error(err, "Failed to start prometheus watcher")
+		promWatcherErr := promWatcher.Start(events, errors)
+		if promWatcherErr != nil {
+			setupLog.Error(promWatcherErr, "Failed to start prometheus watcher")
 			os.Exit(1)
 		}
 	}
