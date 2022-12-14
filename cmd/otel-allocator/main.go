@@ -53,6 +53,7 @@ func main() {
 		allocatorPrehook prehook.Hook
 		allocator        allocation.Allocator
 		discoveryManager *discovery.Manager
+		collectorWatcher *collector.Client
 		fileWatcher      allocatorWatcher.Watcher
 		promWatcher      allocatorWatcher.Watcher
 		targetDiscoverer *target.Discoverer
@@ -134,9 +135,9 @@ func main() {
 		})
 	runGroup.Add(
 		func() error {
-			err := discoveryManager.Run()
+			discoveryManagerErr := discoveryManager.Run()
 			setupLog.Info("Discovery manager exited")
-			return err
+			return discoveryManagerErr
 		},
 		func(err error) {
 			setupLog.Info("Closing discovery manager")

@@ -97,7 +97,6 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 			return nil
 		}
 	}
-	return nil
 }
 
 func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) string {
