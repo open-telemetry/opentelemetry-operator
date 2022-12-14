@@ -71,7 +71,7 @@ func (a *autoDetect) Platform() (platform.Platform, error) {
 
 	apiGroups := apiList.Groups
 	for i := 0; i < len(apiGroups); i++ {
-		if apiGroups[i].Name == "route.openshift.io" {
+		if apiGroups[i].Name == "operator.openshift.io" {
 			return platform.OpenShift, nil
 		}
 	}
