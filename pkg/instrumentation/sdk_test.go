@@ -638,7 +638,7 @@ func TestInjectPython(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_METRICS_EXPORTER",
-							Value: "none",
+							Value: "otlp_proto_http",
 						},
 						{
 							Name:  "OTEL_SERVICE_NAME",
