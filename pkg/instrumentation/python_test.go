@@ -82,7 +82,7 @@ func TestInjectPythonSDK(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_METRICS_EXPORTER",
-									Value: "none",
+									Value: "otlp_proto_http",
 								},
 							},
 						},
@@ -148,7 +148,7 @@ func TestInjectPythonSDK(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_METRICS_EXPORTER",
-									Value: "none",
+									Value: "otlp_proto_http",
 								},
 							},
 						},
@@ -214,7 +214,7 @@ func TestInjectPythonSDK(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_METRICS_EXPORTER",
-									Value: "none",
+									Value: "otlp_proto_http",
 								},
 							},
 						},
