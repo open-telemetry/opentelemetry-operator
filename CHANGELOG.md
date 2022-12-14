@@ -1,5 +1,20 @@
 Changes by Version
 ==================
+0.67.0
+------------------
+### 🚀 New components 🚀
+* Support openshift routes ([#1206](https://github.com/open-telemetry/opentelemetry-operator/pull/1206), [@frzifus](https://github.com/frzifus))
+* Add TargetMemoryUtilization metric for AutoScaling ([#1223](https://github.com/open-telemetry/opentelemetry-operator/pull/1223), [@kevinearls](https://github.com/kevinearls))
+### 💡 Enhancements 💡
+* Memory improvements first pass ([#1293](https://github.com/open-telemetry/opentelemetry-operator/pull/1293), [@jaronoff97](https://github.com/jaronoff97))
+* Add change handler to register callbacks ([#1292](https://github.com/open-telemetry/opentelemetry-operator/pull/1292), [@frzifus](https://github.com/frzifus))
+* Ignore reconcile errors that occur because a pod is being terminated ([#1233](https://github.com/open-telemetry/opentelemetry-operator/pull/1233), [@kevinearls](https://github.com/kevinearls))
+* remove unused onChange function from config ([#1290](https://github.com/open-telemetry/opentelemetry-operator/pull/1290), [@frzifus](https://github.com/frzifus))
+* Remove default claims - fixes #1281 ([#1282](https://github.com/open-telemetry/opentelemetry-operator/pull/1282), [@ekarlso](https://github.com/ekarlso))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.67.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.67.0)
+* [OpenTelemetry Contrib - v0.67.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.67.0)
+
 0.66.0
 ------------------
 ### 🚀 New components 🚀
