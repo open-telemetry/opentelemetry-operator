@@ -43,8 +43,8 @@ func BenchmarkGetAllTargetsByCollectorAndJob(b *testing.B) {
 				b.Log(err)
 				b.Fail()
 			}
-			cols := makeNCollectors(v.numCollectors, 0)
-			jobs := makeNNewTargets(v.numJobs, v.numCollectors, 0)
+			cols := MakeNCollectors(v.numCollectors, 0)
+			jobs := MakeNNewTargets(v.numJobs, v.numCollectors, 0)
 			a.SetCollectors(cols)
 			a.SetTargets(jobs)
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", s, v.numCollectors, v.numJobs), func(b *testing.B) {
@@ -75,8 +75,8 @@ func Benchmark_Setting(b *testing.B) {
 	for _, s := range GetRegisteredAllocatorNames() {
 		for _, v := range table {
 			a, _ := New(s, logger)
-			cols := makeNCollectors(v.numCollectors, 0)
-			targets := makeNNewTargets(v.numTargets, v.numCollectors, 0)
+			cols := MakeNCollectors(v.numCollectors, 0)
+			targets := MakeNNewTargets(v.numTargets, v.numCollectors, 0)
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", s, v.numCollectors, v.numTargets), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {

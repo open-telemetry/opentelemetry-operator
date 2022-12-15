@@ -95,8 +95,8 @@ func getSelector(s map[string]string) labels.Selector {
 	return labels.SelectorFromSet(s)
 }
 
-// Start wrapped informers and wait for an initial sync.
-func (w *PrometheusCRWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error) error {
+// Watch wrapped informers and wait for an initial sync.
+func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
 	event := Event{
 		Source:  EventSourcePrometheusCR,
 		Watcher: Watcher(w),

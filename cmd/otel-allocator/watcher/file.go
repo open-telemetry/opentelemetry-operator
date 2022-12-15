@@ -25,6 +25,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
+var _ Watcher = &FileWatcher{}
+
 type FileWatcher struct {
 	logger         logr.Logger
 	configFilePath string
@@ -32,7 +34,7 @@ type FileWatcher struct {
 	closer         chan bool
 }
 
-func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (Watcher, error) {
+func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (*FileWatcher, error) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		logger.Error(err, "Can't start the watcher")
@@ -56,7 +58,7 @@ func (f *FileWatcher) LoadConfig() (*promconfig.Config, error) {
 	return cfg.Config, nil
 }
 
-func (f *FileWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error) error {
+func (f *FileWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
 	err := f.watcher.Add(filepath.Dir(f.configFilePath))
 	if err != nil {
 		return err

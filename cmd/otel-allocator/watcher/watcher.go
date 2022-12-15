@@ -17,8 +17,8 @@ package watcher
 import promconfig "github.com/prometheus/prometheus/config"
 
 type Watcher interface {
-	// Start watcher and supply channels which will receive change events
-	Start(upstreamEvents chan Event, upstreamErrors chan error) error
+	// Watch watcher and supply channels which will receive change events
+	Watch(upstreamEvents chan Event, upstreamErrors chan error) error
 	LoadConfig() (*promconfig.Config, error)
 	Close() error
 }

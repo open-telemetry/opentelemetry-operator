@@ -58,10 +58,12 @@ func main() {
 		promWatcher      allocatorWatcher.Watcher
 		targetDiscoverer *target.Discoverer
 
-		events          chan allocatorWatcher.Event
-		errors          chan error
 		discoveryCancel context.CancelFunc
 		runGroup        run.Group
+		eventChan       = make(chan allocatorWatcher.Event)
+		eventCloser     = make(chan bool, 1)
+		interrupts      = make(chan os.Signal, 1)
+		errChan         = make(chan error)
 	)
 	cliConf, err := config.ParseCLI()
 	if err != nil {
@@ -77,8 +79,6 @@ func main() {
 	ctx := context.Background()
 	log := ctrl.Log.WithName("allocator")
 
-	events = make(chan allocatorWatcher.Event)
-	errors = make(chan error)
 	allocatorPrehook = prehook.New(cfg.GetTargetsFilterStrategy(), log)
 	allocator, err = allocation.New(cfg.GetAllocationStrategy(), log, allocation.WithFilter(allocatorPrehook))
 	if err != nil {
@@ -104,33 +104,32 @@ func main() {
 			setupLog.Error(err, "Can't start the prometheus watcher")
 			os.Exit(1)
 		}
-		promWatcherErr := promWatcher.Start(events, errors)
+		promWatcherErr := promWatcher.Watch(eventChan, errChan)
 		if promWatcherErr != nil {
 			setupLog.Error(promWatcherErr, "Failed to start prometheus watcher")
 			os.Exit(1)
 		}
 	}
 	srv := server.NewServer(log, allocator, targetDiscoverer, cliConf.ListenAddr)
-	interrupts := make(chan os.Signal, 1)
-	closer := make(chan bool, 1)
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer close(interrupts)
 
 	runGroup.Add(
 		func() error {
-			fileWatcherErr := fileWatcher.Start(events, errors)
+			fileWatcherErr := fileWatcher.Watch(eventChan, errChan)
 			setupLog.Info("File watcher exited")
 			return fileWatcherErr
 		},
-		func(err error) {
+		func(_ error) {
 			setupLog.Info("Closing file watcher")
 			fileWatcherErr := fileWatcher.Close()
 			if fileWatcherErr != nil {
-				setupLog.Error(err, "file watcher failed to close")
+				setupLog.Error(fileWatcherErr, "file watcher failed to close")
 			}
 			setupLog.Info("Closing prometheus watcher")
 			promWatcherErr := promWatcher.Close()
 			if promWatcherErr != nil {
-				setupLog.Error(err, "prometheus watcher failed to close")
+				setupLog.Error(promWatcherErr, "prometheus watcher failed to close")
 			}
 		})
 	runGroup.Add(
@@ -139,7 +138,7 @@ func main() {
 			setupLog.Info("Discovery manager exited")
 			return discoveryManagerErr
 		},
-		func(err error) {
+		func(_ error) {
 			setupLog.Info("Closing discovery manager")
 			discoveryCancel()
 		})
@@ -155,7 +154,7 @@ func main() {
 			setupLog.Info("Target discoverer exited")
 			return err
 		},
-		func(err error) {
+		func(_ error) {
 			setupLog.Info("Closing target discoverer")
 			targetDiscoverer.Close()
 		})
@@ -165,7 +164,7 @@ func main() {
 			setupLog.Info("Collector watcher exited")
 			return err
 		},
-		func(err error) {
+		func(_ error) {
 			setupLog.Info("Closing collector watcher")
 			collectorWatcher.Close()
 		})
@@ -175,23 +174,17 @@ func main() {
 			setupLog.Info("Server failed to start")
 			return err
 		},
-		func(err error) {
+		func(_ error) {
 			setupLog.Info("Closing server")
-			if err := srv.Shutdown(ctx); err != nil {
-				setupLog.Error(err, "Error on server shutdown")
+			if shutdownErr := srv.Shutdown(ctx); shutdownErr != nil {
+				setupLog.Error(shutdownErr, "Error on server shutdown")
 			}
 		})
 	runGroup.Add(
 		func() error {
 			for {
 				select {
-				case <-interrupts:
-					setupLog.Info("Received interrupt")
-					return nil
-				case <-closer:
-					setupLog.Info("Closing run loop")
-					return nil
-				case event := <-events:
+				case event := <-eventChan:
 					eventsMetric.WithLabelValues(event.Source.String()).Inc()
 					loadConfig, err := event.Watcher.LoadConfig()
 					if err != nil {
@@ -203,18 +196,34 @@ func main() {
 						setupLog.Error(err, "Unable to apply configuration")
 						continue
 					}
-				case err := <-errors:
+				case err := <-errChan:
 					setupLog.Error(err, "Watcher error")
+				case <-eventCloser:
+					return nil
 				}
 			}
 		},
-		func(err error) {
-			setupLog.Info("Received error, shutting down")
-			close(closer)
+		func(_ error) {
+			setupLog.Info("Closing watcher loop")
+			close(eventCloser)
 		})
-
-	if err := runGroup.Run(); err != nil {
-		setupLog.Error(err, "run group exited")
+	runGroup.Add(
+		func() error {
+			for {
+				select {
+				case <-interrupts:
+					setupLog.Info("Received interrupt")
+					return nil
+				case <-eventCloser:
+					return nil
+				}
+			}
+		},
+		func(_ error) {
+			setupLog.Info("Closing interrupt loop")
+		})
+	if runErr := runGroup.Run(); runErr != nil {
+		setupLog.Error(runErr, "run group exited")
 	}
 	setupLog.Info("Target allocator exited.")
 }
