@@ -249,6 +249,7 @@ cmctl:
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+CHLOGGEN ?= $(LOCALBIN)/chloggen
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v4.5.5
@@ -360,3 +361,27 @@ api-docs: crdoc kustomize
 	$(KUSTOMIZE) build config/crd -o $$TMP_DIR/crd-output.yaml ;\
 	$(CRDOC) --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
 	}
+
+
+.PHONY: chlog-install
+chlog-install: $(CHLOGGEN)
+$(CHLOGGEN): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install go.opentelemetry.io/build-tools/chloggen@v0.3.0
+
+FILENAME?=$(shell git branch --show-current)
+.PHONY: chlog-new
+chlog-new: chlog-install
+	$(CHLOGGEN) new --filename $(FILENAME)
+
+.PHONY: chlog-validate
+chlog-validate: chlog-install
+	$(CHLOGGEN) validate
+
+.PHONY: chlog-preview
+chlog-preview: chlog-install
+	$(CHLOGGEN) update --dry
+
+.PHONY: chlog-update
+chlog-update: chlog-install
+	$(CHLOGGEN) update --version $(VERSION)
+
