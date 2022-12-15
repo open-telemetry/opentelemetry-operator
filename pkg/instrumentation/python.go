@@ -23,11 +23,13 @@ import (
 )
 
 const (
-	envPythonPath          = "PYTHONPATH"
-	envOtelTracesExporter  = "OTEL_TRACES_EXPORTER"
-	envOtelMetricsExporter = "OTEL_METRICS_EXPORTER"
-	pythonPathPrefix       = "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation"
-	pythonPathSuffix       = "/otel-auto-instrumentation"
+	envPythonPath                      = "PYTHONPATH"
+	envOtelTracesExporter              = "OTEL_TRACES_EXPORTER"
+	envOtelMetricsExporter             = "OTEL_METRICS_EXPORTER"
+	envOtelExporterOTLPTracesProtocol  = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
+	envOtelExporterOTLPMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"
+	pythonPathPrefix                   = "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation"
+	pythonPathSuffix                   = "/otel-auto-instrumentation"
 )
 
 func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
@@ -62,16 +64,35 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  envOtelTracesExporter,
-			Value: "otlp_proto_http",
+			Value: "otlp",
 		})
+
+		// Set OTEL_EXPORTER_OTLP_TRACES_PROTOCOL to http/protobuf if not set by user because it is what our autoinstrumentation supports.
+		idx = getIndexOfEnv(container.Env, envOtelExporterOTLPTracesProtocol)
+		if idx == -1 {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name:  envOtelExporterOTLPTracesProtocol,
+				Value: "http/protobuf",
+			})
+		}
 	}
 
+	// Set OTEL_METRICS_EXPORTER to HTTP exporter if not set by user because it is what our autoinstrumentation supports.
 	idx = getIndexOfEnv(container.Env, envOtelMetricsExporter)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  envOtelMetricsExporter,
-			Value: "otlp_proto_http",
+			Value: "otlp",
 		})
+
+		// Set OTEL_EXPORTER_OTLP_METRICS_PROTOCOL to http/protobuf if not set by user because it is what our autoinstrumentation supports.
+		idx = getIndexOfEnv(container.Env, envOtelExporterOTLPMetricsProtocol)
+		if idx == -1 {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name:  envOtelExporterOTLPMetricsProtocol,
+				Value: "http/protobuf",
+			})
+		}
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
