@@ -16,13 +16,10 @@ Steps to release a new version of the OpenTelemetry Operator:
 
 ## Generating the changelog
 
-Run this generator:
-```bash
-docker run --rm  -v "${PWD}:/app" pavolloffay/gch:latest --oauth-token ${GH_WRITE_TOKEN} --owner open-telemetry --repo opentelemetry-operator --branch main
-```
-* Note that you must generate a Personal Access Token (PAT) and set `GH_WRITE_TOKEN` as that.
+We now use the chloggen to generate the changelog, simply run the following to generate the Changelog:
 
-Remove the commits that are not relevant to users, like:
-* CI or testing-specific commits (e2e, unit test, ...)
-* bug fixes for problems that are not part of a release yet
-* version bumps for internal dependencies
+```bash
+make chlog-update
+```
+
+This will delete all entries (other than the template) in the `.chloggen` directory and create a populated Changelog.md entry. Make sure that the PR you are generating for the release has the `[chore]` prefix, otherwise CI will not pass.
