@@ -21,7 +21,6 @@ import (
 
 	gokitlog "github.com/go-kit/log"
 	"github.com/prometheus/prometheus/discovery"
-
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
 

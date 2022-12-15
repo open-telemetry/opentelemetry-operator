@@ -28,13 +28,12 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/server"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
-
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/prehook"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/server"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
@@ -98,22 +97,30 @@ func main() {
 		setupLog.Error(err, "Can't start the file watcher")
 		os.Exit(1)
 	}
+	srv := server.NewServer(log, allocator, targetDiscoverer, cliConf.ListenAddr)
+	signal.Notify(interrupts, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer close(interrupts)
+
 	if *cliConf.PromCRWatcherConf.Enabled {
 		promWatcher, err = allocatorWatcher.NewPrometheusCRWatcher(cfg, cliConf)
 		if err != nil {
 			setupLog.Error(err, "Can't start the prometheus watcher")
 			os.Exit(1)
 		}
-		promWatcherErr := promWatcher.Watch(eventChan, errChan)
-		if promWatcherErr != nil {
-			setupLog.Error(promWatcherErr, "Failed to start prometheus watcher")
-			os.Exit(1)
-		}
+		runGroup.Add(
+			func() error {
+				promWatcherErr := promWatcher.Watch(eventChan, errChan)
+				setupLog.Info("Prometheus watcher exited")
+				return promWatcherErr
+			},
+			func(_ error) {
+				setupLog.Info("Closing prometheus watcher")
+				promWatcherErr := promWatcher.Close()
+				if promWatcherErr != nil {
+					setupLog.Error(promWatcherErr, "prometheus watcher failed to close")
+				}
+			})
 	}
-	srv := server.NewServer(log, allocator, targetDiscoverer, cliConf.ListenAddr)
-	signal.Notify(interrupts, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-	defer close(interrupts)
-
 	runGroup.Add(
 		func() error {
 			fileWatcherErr := fileWatcher.Watch(eventChan, errChan)
@@ -125,11 +132,6 @@ func main() {
 			fileWatcherErr := fileWatcher.Close()
 			if fileWatcherErr != nil {
 				setupLog.Error(fileWatcherErr, "file watcher failed to close")
-			}
-			setupLog.Info("Closing prometheus watcher")
-			promWatcherErr := promWatcher.Close()
-			if promWatcherErr != nil {
-				setupLog.Error(promWatcherErr, "prometheus watcher failed to close")
 			}
 		})
 	runGroup.Add(

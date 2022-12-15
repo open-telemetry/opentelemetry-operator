@@ -21,7 +21,6 @@ import (
 	"io"
 	"math/big"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 
 	"github.com/prometheus/common/model"
@@ -44,40 +43,6 @@ var (
 	secondTargetItem     = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
 	testJobTargetItemTwo = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
 )
-
-func colIndex(index, numCols int) int {
-	if numCols == 0 {
-		return -1
-	}
-	return index % numCols
-}
-
-func makeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*target.Item {
-	toReturn := map[string]*target.Item{}
-	for i := startingIndex; i < n+startingIndex; i++ {
-		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
-		label := model.LabelSet{
-			"collector": model.LabelValue(collector),
-			"i":         model.LabelValue(strconv.Itoa(i)),
-			"total":     model.LabelValue(strconv.Itoa(n + startingIndex)),
-		}
-		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), "test-url", label, collector)
-		toReturn[newTarget.Hash()] = newTarget
-	}
-	return toReturn
-}
-
-func makeNCollectors(n int, startingIndex int) map[string]*allocation.Collector {
-	toReturn := map[string]*allocation.Collector{}
-	for i := startingIndex; i < n+startingIndex; i++ {
-		collector := fmt.Sprintf("collector-%d", i)
-		toReturn[collector] = &allocation.Collector{
-			Name:       collector,
-			NumTargets: 0,
-		}
-	}
-	return toReturn
-}
 
 func TestServer_TargetsHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
@@ -228,8 +193,8 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 	for _, allocatorName := range allocation.GetRegisteredAllocatorNames() {
 		for _, v := range table {
 			a, _ := allocation.New(allocatorName, logger)
-			cols := makeNCollectors(v.numCollectors, 0)
-			targets := makeNNewTargets(v.numJobs, v.numCollectors, 0)
+			cols := allocation.MakeNCollectors(v.numCollectors, 0)
+			targets := allocation.MakeNNewTargets(v.numJobs, v.numCollectors, 0)
 			listenAddr := ":8080"
 			a.SetCollectors(cols)
 			a.SetTargets(targets)

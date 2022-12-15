@@ -124,12 +124,12 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 	if !success {
 		return fmt.Errorf("failed to sync cache")
 	}
-
+	<-w.stopChannel
 	return nil
 }
 
 func (w *PrometheusCRWatcher) Close() error {
-	w.stopChannel <- struct{}{}
+	close(w.stopChannel)
 	return nil
 }
 
