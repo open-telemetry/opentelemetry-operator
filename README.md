@@ -196,6 +196,10 @@ spec:
   sampler:
     type: parentbased_traceidratio
     argument: "0.25"
+  python:
+    env:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://otel-collector:4318
 EOF
 ```
 
