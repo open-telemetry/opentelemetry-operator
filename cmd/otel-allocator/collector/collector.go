@@ -64,7 +64,7 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 	}, nil
 }
 
-func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) {
+func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) error {
 	collectorMap := map[string]*allocation.Collector{}
 	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
@@ -85,20 +85,18 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 
 	fn(collectorMap)
 
-	go func() {
-		for {
-			watcher, err := k.k8sClient.CoreV1().Pods(ns).Watch(ctx, opts)
-			if err != nil {
-				log.Error(err, "unable to create collector pod watcher")
-				return
-			}
-			log.Info("Successfully started a collector pod watcher")
-			if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" {
-				log.Info("Collector pod watch event stopped " + msg)
-				return
-			}
+	for {
+		watcher, err := k.k8sClient.CoreV1().Pods(ns).Watch(ctx, opts)
+		if err != nil {
+			log.Error(err, "unable to create collector pod watcher")
+			return err
 		}
-	}()
+		log.Info("Successfully started a collector pod watcher")
+		if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" && msg != "no event" {
+			log.Info("Collector pod watch event stopped " + msg)
+			return nil
+		}
+	}
 }
 
 func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) string {
