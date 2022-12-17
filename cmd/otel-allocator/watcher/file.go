@@ -19,54 +19,65 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
+	promconfig "github.com/prometheus/prometheus/config"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
+var _ Watcher = &FileWatcher{}
+
 type FileWatcher struct {
+	logger         logr.Logger
 	configFilePath string
 	watcher        *fsnotify.Watcher
 	closer         chan bool
 }
 
-func newConfigMapWatcher(logger logr.Logger, config config.CLIConfig) (FileWatcher, error) {
+func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (*FileWatcher, error) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		logger.Error(err, "Can't start the watcher")
-		return FileWatcher{}, err
+		return &FileWatcher{}, err
 	}
 
-	return FileWatcher{
+	return &FileWatcher{
+		logger:         logger,
 		configFilePath: *config.ConfigFilePath,
 		watcher:        fileWatcher,
 		closer:         make(chan bool),
 	}, nil
 }
 
-func (f *FileWatcher) Start(upstreamEvents chan Event, upstreamErrors chan error) error {
+func (f *FileWatcher) LoadConfig() (*promconfig.Config, error) {
+	cfg, err := config.Load(f.configFilePath)
+	if err != nil {
+		f.logger.Error(err, "Unable to load configuration")
+		return nil, err
+	}
+	return cfg.Config, nil
+}
+
+func (f *FileWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
 	err := f.watcher.Add(filepath.Dir(f.configFilePath))
 	if err != nil {
 		return err
 	}
 
-	// translate and copy to central event channel
-	go func() {
-		for {
-			select {
-			case <-f.closer:
-				return
-			case fileEvent := <-f.watcher.Events:
-				if fileEvent.Op == fsnotify.Create {
-					upstreamEvents <- Event{
-						Source: EventSourceConfigMap,
-					}
+	for {
+		select {
+		case <-f.closer:
+			return nil
+		case fileEvent := <-f.watcher.Events:
+			if fileEvent.Op == fsnotify.Create {
+				upstreamEvents <- Event{
+					Source:  EventSourceConfigMap,
+					Watcher: Watcher(f),
 				}
-			case err := <-f.watcher.Errors:
-				upstreamErrors <- err
 			}
+		case err := <-f.watcher.Errors:
+			upstreamErrors <- err
 		}
-	}()
-	return nil
+	}
 }
 
 func (f *FileWatcher) Close() error {
