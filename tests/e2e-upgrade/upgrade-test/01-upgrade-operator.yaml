@@ -2,4 +2,3 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
   - script: cd ../../../ && make deploy VERSION=e2e
-  - command: sleep 10
