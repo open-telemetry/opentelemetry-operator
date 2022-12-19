@@ -20,6 +20,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"k8s.io/apimachinery/pkg/watch"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -50,7 +51,6 @@ func getTestClient() (Client, watch.Interface) {
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
 	}
-
 	watcher, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Watch(context.Background(), opts)
 	if err != nil {
 		fmt.Printf("failed to setup a Collector Pod watcher: %v", err)
@@ -162,6 +162,60 @@ func Test_runWatch(t *testing.T) {
 
 			assert.Len(t, actual, len(tt.want))
 			assert.Equal(t, actual, tt.want)
+		})
+	}
+}
+
+// this tests runWatch in the case of watcher channel closing and watcher timing out.
+func Test_closeChannel(t *testing.T) {
+	tests := []struct {
+		description    string
+		isCloseChannel bool
+		timeoutSeconds time.Duration
+	}{
+		{
+			// event is triggered by channel closing.
+			description:    "close_channel",
+			isCloseChannel: true,
+			// channel should be closed before this timeout occurs
+			timeoutSeconds: 10 * time.Second,
+		},
+		{
+			// event triggered by timeout.
+			description:    "watcher_timeout",
+			isCloseChannel: false,
+			timeoutSeconds: 0 * time.Second,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			kubeClient, watcher := getTestClient()
+
+			defer func() {
+				close(kubeClient.close)
+				watcher.Stop()
+			}()
+			var wg sync.WaitGroup
+			wg.Add(1)
+			terminated := false
+
+			go func(watcher watch.Interface) {
+				defer wg.Done()
+				ctx, cancel := context.WithTimeout(context.Background(), tc.timeoutSeconds)
+				defer cancel()
+				if msg := runWatch(ctx, &kubeClient, watcher.ResultChan(), map[string]*allocation.Collector{}, func(colMap map[string]*allocation.Collector) {}); msg != "" {
+					terminated = true
+					return
+				}
+			}(watcher)
+
+			if tc.isCloseChannel {
+				// stop pod watcher to trigger event.
+				watcher.Stop()
+			}
+			wg.Wait()
+			assert.False(t, terminated)
 		})
 	}
 }
