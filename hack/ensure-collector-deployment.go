@@ -72,7 +72,7 @@ func main() {
 	defer clearEnvironment(manifestPath)
 
 	fmt.Println("Wait until the creation of OTEL Collectors is available")
-	pollInterval := time.Second
+	pollInterval := 500 * time.Millisecond
 	timeoutPoll := time.Duration(timeout) * time.Second
 	err = wait.Poll(pollInterval, timeoutPoll, func() (done bool, err error) {
 		cmd := exec.Command(
