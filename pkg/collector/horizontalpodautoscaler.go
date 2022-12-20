@@ -72,32 +72,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		}
 		metrics = append(metrics, targetCPUUtilization)
 
-		// check if fields are provided by .Spec.Autoscaler
-		// otherwise check deprecated fields
-		maxReplicas := new(int32)
-		minReplicas := new(int32)
-		if otelcol.Spec.Autoscaler != nil {
-			if otelcol.Spec.Autoscaler.MaxReplicas != nil {
-				maxReplicas = otelcol.Spec.Autoscaler.MaxReplicas
-			}
-			if otelcol.Spec.Autoscaler.MinReplicas != nil {
-				minReplicas = otelcol.Spec.Autoscaler.MinReplicas
-			}
-		}
-		// if maxReplicas not found in .Spec.Autoscaler
-		if *maxReplicas == 0 {
-			maxReplicas = otelcol.Spec.MaxReplicas
-		}
-
-		if *minReplicas == 0 {
-			// this field is optional so if it's not set then use .Spec.Replicas
-			if otelcol.Spec.MinReplicas != nil {
-				minReplicas = otelcol.Spec.MinReplicas
-			} else {
-				minReplicas = otelcol.Spec.Replicas
-			}
-		}
-
 		autoscaler := autoscalingv2beta2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
 			Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
@@ -106,8 +80,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					Kind:       "OpenTelemetryCollector",
 					Name:       naming.OpenTelemetryCollector(otelcol),
 				},
-				MinReplicas: minReplicas,
-				MaxReplicas: *maxReplicas,
+				MinReplicas: otelcol.Spec.Autoscaler.MinReplicas,
+				MaxReplicas: *otelcol.Spec.Autoscaler.MaxReplicas,
 				Metrics:     metrics,
 			},
 		}
@@ -149,33 +123,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			metrics = append(metrics, targetCPUUtilization)
 		}
 
-		// check if fields are provided by .Spec.Autoscaler
-		// otherwise check deprecated fields
-		maxReplicas := new(int32)
-		minReplicas := new(int32)
-		if otelcol.Spec.Autoscaler != nil {
-			if otelcol.Spec.Autoscaler.MaxReplicas != nil {
-				maxReplicas = otelcol.Spec.Autoscaler.MaxReplicas
-			}
-			if otelcol.Spec.Autoscaler.MinReplicas != nil {
-				minReplicas = otelcol.Spec.Autoscaler.MinReplicas
-			}
-		}
-
-		// did not find the field in autoscaler
-		if *maxReplicas == 0 {
-			maxReplicas = otelcol.Spec.MaxReplicas
-		}
-
-		if *minReplicas == 0 {
-			// this field is optional so if it's not set then use .Spec.Replicas
-			if otelcol.Spec.MinReplicas != nil {
-				minReplicas = otelcol.Spec.MinReplicas
-			} else {
-				minReplicas = otelcol.Spec.Replicas
-			}
-		}
-
 		autoscaler := autoscalingv2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
 			Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
@@ -184,8 +131,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					Kind:       "OpenTelemetryCollector",
 					Name:       naming.OpenTelemetryCollector(otelcol),
 				},
-				MinReplicas: minReplicas,
-				MaxReplicas: *maxReplicas,
+				MinReplicas: otelcol.Spec.Autoscaler.MinReplicas,
+				MaxReplicas: *otelcol.Spec.Autoscaler.MaxReplicas,
 				Metrics:     metrics,
 			},
 		}

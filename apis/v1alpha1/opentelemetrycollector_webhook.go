@@ -70,7 +70,17 @@ func (r *OpenTelemetryCollector) Default() {
 	if r.Spec.MaxReplicas != nil || (r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil) {
 		if r.Spec.Autoscaler == nil {
 			r.Spec.Autoscaler = &AutoscalerSpec{}
+		}
+
+		if r.Spec.Autoscaler.MaxReplicas == nil {
 			r.Spec.Autoscaler.MaxReplicas = r.Spec.MaxReplicas
+		}
+		if r.Spec.Autoscaler.MinReplicas == nil {
+			if r.Spec.MinReplicas != nil {
+				r.Spec.Autoscaler.MinReplicas = r.Spec.MinReplicas
+			} else {
+				r.Spec.Autoscaler.MinReplicas = r.Spec.Replicas
+			}
 		}
 
 		if r.Spec.Autoscaler.TargetMemoryUtilization == nil && r.Spec.Autoscaler.TargetCPUUtilization == nil {
