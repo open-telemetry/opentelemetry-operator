@@ -15,74 +15,107 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
-	"github.com/spf13/pflag"
+	appsv1 "k8s.io/api/apps/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-func clearEnvironment(manifestPath string) {
-	cmd := exec.Command(
-		"kubectl", "delete", "-f", manifestPath, "--ignore-not-found=true",
-	)
-	if err := cmd.Start(); err != nil {
-		fmt.Println("Something failed while cleaning the evironment. Ignoring")
-	}
+var scheme *k8sruntime.Scheme
+
+func init() {
+	scheme = k8sruntime.NewScheme()
+	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(appsv1.AddToScheme(scheme))
 }
 
 func main() {
 	var timeout int
+	var kubeconfigPath string
+
+	defaultKubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
+
 	pflag.IntVar(&timeout, "timeout", 300, "The timeout for the check.")
+	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", defaultKubeconfigPath, "Absolute path to the KubeconfigPath file")
 	pflag.Parse()
 
-	// Wait for the OpenTelemetry Operator
-	fmt.Println("Wait until the OTEL Operator deployment is ready")
-	timeoutParam := fmt.Sprintf("--timeout=%ds", timeout)
-	cmd := exec.Command(
-		"kubectl",
-		"wait",
-		"--for=condition=available",
-		"deployment", "opentelemetry-operator-controller-manager",
-		"-n", "opentelemetry-operator-system",
-		timeoutParam,
-	)
+	pollInterval := 500 * time.Millisecond
+	timeoutPoll := time.Duration(timeout) * time.Second
 
-	if err := cmd.Run(); err != nil {
-		fmt.Println("Error waiting to the OTEL Operator deployment: ", err)
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	if err != nil {
+		println("Error reading the kubeconfig:", err.Error())
 		os.Exit(1)
 	}
 
-	// Sometimes, the deployment of the OTEL Operator is ready but, when
-	// creating new instances of the OTEL Collector, the webhook is not reachable
-	// and kubectl apply fails. This code executes kubectl apply to deploy an
-	// OTEL Collector until success (or timeout)
-	cwd, err := os.Getwd()
+	clusterClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
-		log.Println(err)
+		println("Creating the Kubernetes client", err)
+		os.Exit(1)
 	}
-	manifestPath := filepath.Join(
-		cwd, "tests", "e2e", "smoke-simplest", "00-install.yaml",
-	)
 
-	defer clearEnvironment(manifestPath)
+	fmt.Println("Waiting until the OTEL Collector Operator is deployed")
+	operatorDeployment := &appsv1.Deployment{}
 
-	fmt.Println("Wait until the creation of OTEL Collectors is available")
-	pollInterval := 500 * time.Millisecond
-	timeoutPoll := time.Duration(timeout) * time.Second
 	err = wait.Poll(pollInterval, timeoutPoll, func() (done bool, err error) {
-		cmd := exec.Command(
-			"kubectl", "apply", "-f", manifestPath,
+		err = clusterClient.Get(
+			context.Background(),
+			client.ObjectKey{
+				Name:      "opentelemetry-operator-controller-manager",
+				Namespace: "opentelemetry-operator-system",
+			},
+			operatorDeployment,
 		)
-
-		if errRun := cmd.Run(); errRun != nil {
+		if err != nil {
+			fmt.Println(err)
 			return false, nil
 		}
+		return true, nil
+	})
 
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("OTEL Collector Operator is deployed properly!")
+
+	// Sometimes, the deployment of the OTEL Operator is ready but, when
+	// creating new instances of the OTEL Collector, the webhook is not reachable
+	// and kubectl apply fails. This code deployes an OTEL Collector instance
+	// until success (or timeout)
+	collectorInstance := otelv1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "operator-check",
+			Namespace: "default",
+		},
+	}
+
+	// Ensure the collector is not there before the check
+	_ = clusterClient.Delete(context.Background(), &collectorInstance)
+
+	fmt.Println("Ensure the creation of OTEL Collectors is available")
+	err = wait.Poll(pollInterval, timeoutPoll, func() (done bool, err error) {
+		err = clusterClient.Create(
+			context.Background(),
+			&collectorInstance,
+		)
+		if err != nil {
+			fmt.Println(err)
+			return false, nil
+		}
 		return true, nil
 	})
 
@@ -90,4 +123,6 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	_ = clusterClient.Delete(context.Background(), &collectorInstance)
 }
