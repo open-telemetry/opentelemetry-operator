@@ -26,16 +26,13 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
 
-      - name: "install kuttl and kind"
+      - name: "install kuttl"
         run: ./hack/install-kuttl.sh
 
-      - name: "start kind"
+      - name: "prepare cluster"
         env:
           KUBE_VERSION: ${{ matrix.kube-version }}
-        run: kind create cluster --config kind-$KUBE_VERSION.yaml
+        run: make prepare-scorecard-tests KUBE_VERSION=$KUBE_VERSION VERSION=e2e
 
-      - name: "wait until cluster is ready"
-        run:  kubectl wait --timeout=5m --for=condition=available deployment/coredns -n kube-system
-
-      - name: "run scorecard test"
+      - name: "run scorecard tests"
         run: make scorecard-tests

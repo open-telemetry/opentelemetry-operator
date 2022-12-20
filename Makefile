@@ -189,9 +189,13 @@ e2e-log-operator:
 prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-openshift-routes load-image-all deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
+.PHONY: prepare-scorecard-tests
+prepare-scorecard-tests: prepare-e2e
+	kubectl apply -f tests/scorecard/rbac.yaml
+
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
-	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
+	$(OPERATOR_SDK) scorecard --wait-time=5m --service-account=scorecard-admin bundle || (echo "scorecard test failed" && exit 1)
 
 
 # Build the container image, used only for local dev purposes
