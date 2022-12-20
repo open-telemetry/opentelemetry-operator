@@ -108,10 +108,3 @@ func (tf *RelabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
 	}
 	return relabelCfgCopy
 }
-
-func init() {
-	err := Register(relabelConfigTargetFilterName, NewRelabelConfigTargetFilter)
-	if err != nil {
-		panic(err)
-	}
-}

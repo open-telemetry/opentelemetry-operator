@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package discovery
+package target
 
 import (
 	"context"
@@ -20,11 +20,11 @@ import (
 	"testing"
 
 	gokitlog "github.com/go-kit/log"
+	"github.com/prometheus/prometheus/discovery"
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
 
@@ -52,17 +52,27 @@ func TestDiscovery(t *testing.T) {
 			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
 		},
 	}
-	manager := NewManager(context.Background(), ctrl.Log.WithName("test"), gokitlog.NewNopLogger(), nil)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil)
 	defer close(manager.close)
+	defer cancelFunc()
 
 	results := make(chan []string)
-	manager.Watch(func(targets map[string]*target.Item) {
-		var result []string
-		for _, t := range targets {
-			result = append(result, t.TargetURL[0])
-		}
-		results <- result
-	})
+	go func() {
+		err := d.Run()
+		assert.NoError(t, err)
+	}()
+	go func() {
+		err := manager.Watch(func(targets map[string]*Item) {
+			var result []string
+			for _, t := range targets {
+				result = append(result, t.TargetURL[0])
+			}
+			results <- result
+		})
+		assert.NoError(t, err)
+	}()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.Load(tt.args.file)

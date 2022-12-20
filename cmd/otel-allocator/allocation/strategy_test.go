@@ -22,6 +22,41 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/diff"
 )
 
+func BenchmarkGetAllTargetsByCollectorAndJob(b *testing.B) {
+	var table = []struct {
+		numCollectors int
+		numJobs       int
+	}{
+		{numCollectors: 100, numJobs: 100},
+		{numCollectors: 100, numJobs: 1000},
+		{numCollectors: 100, numJobs: 10000},
+		{numCollectors: 100, numJobs: 100000},
+		{numCollectors: 1000, numJobs: 100},
+		{numCollectors: 1000, numJobs: 1000},
+		{numCollectors: 1000, numJobs: 10000},
+		{numCollectors: 1000, numJobs: 100000},
+	}
+	for _, s := range GetRegisteredAllocatorNames() {
+		for _, v := range table {
+			a, err := New(s, logger)
+			if err != nil {
+				b.Log(err)
+				b.Fail()
+			}
+			cols := MakeNCollectors(v.numCollectors, 0)
+			jobs := MakeNNewTargets(v.numJobs, v.numCollectors, 0)
+			a.SetCollectors(cols)
+			a.SetTargets(jobs)
+			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", s, v.numCollectors, v.numJobs), func(b *testing.B) {
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					a.GetTargetsForCollectorAndJob(fmt.Sprintf("collector-%d", v.numCollectors/2), fmt.Sprintf("test-job-%d", v.numJobs/2))
+				}
+			})
+		}
+	}
+}
+
 func Benchmark_Setting(b *testing.B) {
 	var table = []struct {
 		numCollectors int
@@ -39,10 +74,9 @@ func Benchmark_Setting(b *testing.B) {
 
 	for _, s := range GetRegisteredAllocatorNames() {
 		for _, v := range table {
-			// prepare allocator with 3 collectors and 'random' amount of targets
 			a, _ := New(s, logger)
-			cols := makeNCollectors(v.numCollectors, 0)
-			targets := makeNNewTargets(v.numTargets, v.numCollectors, 0)
+			cols := MakeNCollectors(v.numCollectors, 0)
+			targets := MakeNNewTargets(v.numTargets, v.numCollectors, 0)
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", s, v.numCollectors, v.numTargets), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {

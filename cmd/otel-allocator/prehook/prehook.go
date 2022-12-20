@@ -55,3 +55,10 @@ func Register(name string, provider HookProvider) error {
 	registry[name] = provider
 	return nil
 }
+
+func init() {
+	err := Register(relabelConfigTargetFilterName, NewRelabelConfigTargetFilter)
+	if err != nil {
+		panic(err)
+	}
+}
