@@ -229,6 +229,10 @@ func TestInjectPythonSDK(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
 								},
@@ -304,6 +308,10 @@ func TestInjectPythonSDK(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
 									Value: "http/protobuf",
 								},
 							},
