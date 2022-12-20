@@ -150,25 +150,25 @@ func (allocator *leastWeightedAllocator) addTargetToTargetItems(tg *target.Item)
 // Any net-new additions are assigned to the next available collector.
 func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*target.Item]) {
 	// Check for removals
-	for k, target := range allocator.targetItems {
-		// if the current target is in the removals list
+	for k, item := range allocator.targetItems {
+		// if the current item is in the removals list
 		if _, ok := diff.Removals()[k]; ok {
-			c := allocator.collectors[target.CollectorName]
+			c := allocator.collectors[item.CollectorName]
 			c.NumTargets--
 			delete(allocator.targetItems, k)
-			delete(allocator.targetItemsPerJobPerCollector[target.CollectorName][target.JobName], target.Hash())
-			TargetsPerCollector.WithLabelValues(target.CollectorName, leastWeightedStrategyName).Set(float64(c.NumTargets))
+			delete(allocator.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
+			TargetsPerCollector.WithLabelValues(item.CollectorName, leastWeightedStrategyName).Set(float64(c.NumTargets))
 		}
 	}
 
 	// Check for additions
-	for k, target := range diff.Additions() {
+	for k, item := range diff.Additions() {
 		// Do nothing if the item is already there
 		if _, ok := allocator.targetItems[k]; ok {
 			continue
 		} else {
-			// Add target to target pool and assign a collector
-			allocator.addTargetToTargetItems(target)
+			// Add item to item pool and assign a collector
+			allocator.addTargetToTargetItems(item)
 		}
 	}
 }
