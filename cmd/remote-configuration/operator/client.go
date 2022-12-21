@@ -5,6 +5,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -15,7 +16,9 @@ import (
 )
 
 const (
-	CollectorResource = "OpenTelemetryCollector"
+	CollectorResource       = "OpenTelemetryCollector"
+	ResourceIdentifierKey   = "created-by"
+	ResourceIdentifierValue = "remote-configuration"
 )
 
 var (
@@ -68,10 +71,10 @@ func (c Client) create(ctx context.Context, name string, namespace string, colle
 	collector.ObjectMeta.Name = name
 	collector.ObjectMeta.Namespace = namespace
 
-	if collector.ObjectMeta.Annotations == nil {
-		collector.ObjectMeta.Annotations = map[string]string{}
+	if collector.ObjectMeta.Labels == nil {
+		collector.ObjectMeta.Labels = map[string]string{}
 	}
-	collector.ObjectMeta.Annotations["created-by"] = "remote-configuration"
+	collector.ObjectMeta.Labels[ResourceIdentifierKey] = ResourceIdentifierValue
 	err := collector.ValidateCreate()
 	if err != nil {
 		return err
@@ -125,7 +128,9 @@ func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentC
 func (c Client) ListInstances() ([]v1alpha1.OpenTelemetryCollector, error) {
 	ctx := context.Background()
 	result := v1alpha1.OpenTelemetryCollectorList{}
-	err := c.k8sClient.List(ctx, &result)
+	err := c.k8sClient.List(ctx, &result, client.MatchingLabels{
+		ResourceIdentifierKey: ResourceIdentifierValue,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +144,9 @@ func (c Client) GetInstance(name string, namespace string) (*v1alpha1.OpenTeleme
 		Namespace: namespace,
 		Name:      name,
 	}, &result)
+	if errors.IsNotFound(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
