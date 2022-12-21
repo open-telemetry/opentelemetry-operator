@@ -17,28 +17,31 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"strconv"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
+	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
-func parseId(namespace *corev1.Namespace, annotation string)(int64){
-	raw:=namespace.GetAnnotations()["openshift.io/sa.scc.supplemental-groups"]
+func parseId(namespace *corev1.Namespace, annotation string) int64 {
+	raw := namespace.GetAnnotations()["openshift.io/sa.scc.supplemental-groups"]
 	if raw == "" {
 		fmt.Println("The annotation ", annotation, " is not present")
 		os.Exit(1)
 	}
 
 	lowBound := strings.Split(raw, "/")[0]
-	id, err :=strconv.ParseInt(lowBound, 0, 64)
+	id, err := strconv.ParseInt(lowBound, 0, 64)
 	if err != nil {
 		fmt.Println("It was not possible to convert the number to int64: ", lowBound)
 		os.Exit(1)
@@ -47,26 +50,32 @@ func parseId(namespace *corev1.Namespace, annotation string)(int64){
 	return id
 }
 
-func getGroupID(namespace *v1.Namespace) (int64){
+func getGroupID(namespace *v1.Namespace) int64 {
 	return parseId(namespace, "openshift.io/sa.scc.supplemental-groups")
 }
 
-func getUserID(namespace *v1.Namespace) (int64){
+func getUserID(namespace *v1.Namespace) int64 {
 	return parseId(namespace, "openshift.io/sa.scc.uid-range")
 }
 
+func main() {
+	var deploymentName string
+	var kubeconfigPath string
 
-func main(){
+	defaultKubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
 
-	if len(os.Args) == 1 {
-		fmt.Println("You need to provide the name of the deployment")
+	pflag.StringVar(&deploymentName, "deployment", "", "Deployment name to patch")
+	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", defaultKubeconfigPath, "Absolute path to the KubeconfigPath file")
+	pflag.Parse()
+
+
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	if err != nil {
+		println("Error reading the kubeconfig:", err.Error())
 		os.Exit(1)
 	}
 
-	deploymentName := os.Args[1]
-
-	restConfig := ctrl.GetConfigOrDie()
-	ad, err := autodetect.New(restConfig)
+	ad, err := autodetect.New(config)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -85,20 +94,20 @@ func main(){
 		os.Exit(0)
 	}
 
-	client, err :=kubernetes.NewForConfig(restConfig)
+	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	namespace, err:= client.CoreV1().Namespaces().Get(context.Background(), os.Getenv("NAMESPACE"),  metav1.GetOptions{})
+	namespace, err := client.CoreV1().Namespaces().Get(context.Background(), os.Getenv("NAMESPACE"), metav1.GetOptions{})
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	deploymentsClient := client.AppsV1().Deployments(namespace.Name)
-	deployment,err := deploymentsClient.Get(
+	deployment, err := deploymentsClient.Get(
 		context.Background(),
 		deploymentName,
 		metav1.GetOptions{},
@@ -109,12 +118,11 @@ func main(){
 		os.Exit(1)
 	}
 
-
 	var userId *int64 = new(int64)
-	*userId=getUserID(namespace)
+	*userId = getUserID(namespace)
 
 	var groupdId *int64 = new(int64)
-	*groupdId=getGroupID(namespace)
+	*groupdId = getGroupID(namespace)
 
 	deployment.Spec.Template.Spec.SecurityContext.RunAsUser = userId
 	deployment.Spec.Template.Spec.SecurityContext.RunAsGroup = groupdId

@@ -125,4 +125,6 @@ func main() {
 	}
 
 	_ = clusterClient.Delete(context.Background(), &collectorInstance)
+
+	fmt.Println("OTEL Collector Operator is ready!")
 }

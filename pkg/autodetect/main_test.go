@@ -42,7 +42,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 			&metav1.APIGroupList{
 				Groups: []metav1.APIGroup{
 					{
-						Name: "route.openshift.io",
+						Name: "operator.openshift.io",
 					},
 				},
 			},
