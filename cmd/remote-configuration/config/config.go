@@ -4,17 +4,18 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
-	"io/fs"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 

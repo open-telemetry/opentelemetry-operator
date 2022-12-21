@@ -12,13 +12,14 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/shirou/gopsutil/process"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
-	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
-	processor "go.opentelemetry.io/otel/sdk/metric/processor/basic"
-	"go.opentelemetry.io/otel/sdk/metric/selector/simple"
+	"go.opentelemetry.io/otel/metric/instrument"
+	"go.opentelemetry.io/otel/metric/instrument/asyncfloat64"
+	"go.opentelemetry.io/otel/metric/instrument/asyncint64"
+	"go.opentelemetry.io/otel/metric/instrument/syncint64"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	otelresource "go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
@@ -39,9 +40,9 @@ type MetricReporter struct {
 	process *process.Process
 
 	// Some example metrics to report.
-	processMemoryPhysical metric.Int64GaugeObserver
-	counter               metric.Int64Counter
-	processCpuTime        metric.Float64CounterObserver
+	processMemoryPhysical asyncint64.Gauge
+	counter               syncint64.Counter
+	processCpuTime        asyncfloat64.Counter
 }
 
 func NewMetricReporter(
@@ -75,11 +76,9 @@ func NewMetricReporter(
 		opts = append(opts, otlpmetrichttp.WithInsecure())
 	}
 
-	client := otlpmetrichttp.NewClient(opts...)
-
-	metricExporter, err := otlpmetric.New(context.Background(), client)
+	client, err := otlpmetrichttp.New(context.Background(), opts...)
 	if err != nil {
-		err := fmt.Errorf("failed to initialize stdoutmetric export pipeline: %v", err)
+		err := fmt.Errorf("failed to initialize otlp metric http client: %v", err)
 		return nil, err
 	}
 
@@ -94,24 +93,11 @@ func NewMetricReporter(
 		),
 	)
 
-	// Wire up the Resource and the exporter together.
-	cont := controller.New(
-		processor.NewFactory(
-			simple.NewWithInexpensiveDistribution(),
-			metricExporter,
-		),
-		controller.WithExporter(metricExporter),
-		controller.WithCollectPeriod(5*time.Second),
-		controller.WithResource(resource),
-	)
+	provider := sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(resource),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(client)))
 
-	err = cont.Start(context.Background())
-	if err != nil {
-		err := fmt.Errorf("failed to initialize metric controller: %v", err)
-		return nil, err
-	}
-
-	global.SetMeterProvider(cont)
+	global.SetMeterProvider(provider)
 
 	reporter := &MetricReporter{
 		logger: logger,
@@ -129,38 +115,57 @@ func NewMetricReporter(
 
 	// Create some metrics that will be reported according to OpenTelemetry semantic
 	// conventions for process metrics (conventions are TBD for now).
-	reporter.processCpuTime = metric.Must(reporter.meter).NewFloat64CounterObserver(
+	reporter.processCpuTime, err = reporter.meter.AsyncFloat64().Counter(
 		"process.cpu.time",
-		reporter.processCpuTimeFunc,
 	)
-
-	reporter.processMemoryPhysical = metric.Must(reporter.meter).NewInt64GaugeObserver(
+	if err != nil {
+		err := fmt.Errorf("can't create process time metric: %v", err)
+		return nil, err
+	}
+	err = reporter.meter.RegisterCallback([]instrument.Asynchronous{reporter.processCpuTime}, reporter.processCpuTimeFunc)
+	if err != nil {
+		err := fmt.Errorf("can't create register callback: %v", err)
+		return nil, err
+	}
+	reporter.processMemoryPhysical, err = reporter.meter.AsyncInt64().Gauge(
 		"process.memory.physical_usage",
-		reporter.processMemoryPhysicalFunc,
 	)
+	if err != nil {
+		err := fmt.Errorf("can't create memory metric: %v", err)
+		return nil, err
+	}
+	err = reporter.meter.RegisterCallback([]instrument.Asynchronous{reporter.processMemoryPhysical}, reporter.processMemoryPhysicalFunc)
+	if err != nil {
+		err := fmt.Errorf("can't register callback: %v", err)
+		return nil, err
+	}
 
-	reporter.counter = metric.Must(reporter.meter).NewInt64Counter("custom_metric_ticks")
+	reporter.counter, err = reporter.meter.SyncInt64().Counter("custom_metric_ticks")
+	if err != nil {
+		err := fmt.Errorf("can't register counter metric: %v", err)
+		return nil, err
+	}
 
-	reporter.meterShutdowner = func() { _ = cont.Stop(context.Background()) }
+	reporter.meterShutdowner = func() { _ = provider.Shutdown(context.Background()) }
 
 	go reporter.sendMetrics()
 
 	return reporter, nil
 }
 
-func (reporter *MetricReporter) processCpuTimeFunc(_ context.Context, result metric.Float64ObserverResult) {
+func (reporter *MetricReporter) processCpuTimeFunc(c context.Context) {
 	times, err := reporter.process.Times()
 	if err != nil {
 		reporter.logger.Errorf("Cannot get process CPU times: %v", err)
 	}
 
 	// Report process CPU times, but also add some randomness to make it interesting for demo.
-	result.Observe(math.Min(times.User+rand.Float64(), 1), attribute.String("state", "user"))
-	result.Observe(math.Min(times.System+rand.Float64(), 1), attribute.String("state", "system"))
-	result.Observe(math.Min(times.Iowait+rand.Float64(), 1), attribute.String("state", "wait"))
+	reporter.processCpuTime.Observe(c, math.Min(times.User+rand.Float64(), 1), attribute.String("state", "user"))
+	reporter.processCpuTime.Observe(c, math.Min(times.System+rand.Float64(), 1), attribute.String("state", "system"))
+	reporter.processCpuTime.Observe(c, math.Min(times.Iowait+rand.Float64(), 1), attribute.String("state", "wait"))
 }
 
-func (reporter *MetricReporter) processMemoryPhysicalFunc(_ context.Context, result metric.Int64ObserverResult) {
+func (reporter *MetricReporter) processMemoryPhysicalFunc(ctx context.Context) {
 	memory, err := reporter.process.MemoryInfo()
 	if err != nil {
 		reporter.logger.Errorf("Cannot get process memory information: %v", err)
@@ -168,7 +173,7 @@ func (reporter *MetricReporter) processMemoryPhysicalFunc(_ context.Context, res
 	}
 
 	// Report the RSS, but also add some randomness to make it interesting for demo.
-	result.Observe(int64(memory.RSS) + rand.Int63n(10000000))
+	reporter.processMemoryPhysical.Observe(ctx, int64(memory.RSS)+rand.Int63n(10000000))
 }
 
 func (reporter *MetricReporter) sendMetrics() {
@@ -184,11 +189,7 @@ func (reporter *MetricReporter) sendMetrics() {
 
 		case <-t.C:
 			ctx := context.Background()
-			reporter.meter.RecordBatch(
-				ctx,
-				[]attribute.KeyValue{},
-				reporter.counter.Measurement(ticks),
-			)
+			reporter.counter.Add(ctx, ticks)
 			ticks++
 		}
 	}

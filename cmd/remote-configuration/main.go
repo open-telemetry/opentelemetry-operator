@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/agent"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
 	"os"
 	"os/signal"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/agent"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/config"
 )
 
 func main() {
@@ -20,7 +22,11 @@ func main() {
 	cliConf.RootLogger.Info("Starting the Remote Configuration service")
 	agentLogger := cliConf.RootLogger.WithName("agent")
 
-	opampAgent := agent.NewAgent(agent.NewLogger(&agentLogger), cfg, *cliConf.AgentType, *cliConf.AgentVersion)
+	operatorClient, operatorClientErr := operator.NewClient(cliConf.RootLogger.WithName("operator-client"), cliConf.ClusterConfig)
+	if operatorClientErr != nil {
+		cliConf.RootLogger.Error(operatorClientErr, "Couldn't create operator client")
+	}
+	opampAgent := agent.NewAgent(agent.NewLogger(&agentLogger), operatorClient, cfg, *cliConf.AgentType, *cliConf.AgentVersion)
 
 	if err := opampAgent.Start(); err != nil {
 		cliConf.RootLogger.Error(err, "Cannot start OpAMP client")

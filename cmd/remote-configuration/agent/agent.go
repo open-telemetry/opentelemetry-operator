@@ -1,14 +1,22 @@
 package agent
 
 import (
+	"bytes"
 	"context"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/config"
+	"errors"
+	"fmt"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
+	"gopkg.in/yaml.v3"
 	"math/rand"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/config"
+
 	"github.com/oklog/ulid/v2"
+	"go.uber.org/multierr"
 
 	"github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/client/types"
@@ -40,8 +48,9 @@ type Agent struct {
 	agentType    string
 	agentVersion string
 
-	effectiveConfig string
-	startTime       uint64
+	// A set of the applied object keys (name/namespace)
+	appliedKeys map[string]bool
+	startTime   uint64
 
 	instanceId ulid.ULID
 
@@ -53,14 +62,18 @@ type Agent struct {
 
 	metricReporter *MetricReporter
 	config         config.Config
+	applier        operator.ConfigApplier
+	lastHash       []byte
 }
 
-func NewAgent(logger types.Logger, config config.Config, agentType string, agentVersion string) *Agent {
+func NewAgent(logger types.Logger, applier operator.ConfigApplier, config config.Config, agentType string, agentVersion string) *Agent {
 	agent := &Agent{
 		config:       config,
+		applier:      applier,
 		logger:       logger,
 		agentType:    agentType,
 		agentVersion: agentVersion,
+		appliedKeys:  map[string]bool{},
 	}
 
 	agent.createAgentIdentity()
@@ -191,14 +204,45 @@ func (agent *Agent) updateAgentIdentity(instanceId ulid.ULID) {
 	}
 }
 
+func (agent *Agent) getNameAndNamespace(key string) (string, string, error) {
+	s := strings.Split(key, "/")
+	// We expect map keys to be of the form name/namespace
+	if len(s) != 2 {
+		return "", "", errors.New("invalid key")
+	}
+	return s[0], s[1], nil
+}
+
+func (agent *Agent) makeKeyFromNameNamespace(name string, namespace string) string {
+	return fmt.Sprintf("%s/%s", name, namespace)
+}
+
 func (agent *Agent) composeEffectiveConfig() *protobufs.EffectiveConfig {
-	return &protobufs.EffectiveConfig{
+	effectiveConfig := &protobufs.EffectiveConfig{
 		ConfigMap: &protobufs.AgentConfigMap{
-			ConfigMap: map[string]*protobufs.AgentConfigFile{
-				"": {Body: []byte(agent.effectiveConfig)},
-			},
+			ConfigMap: nil,
 		},
 	}
+	instances, err := agent.applier.ListInstances()
+	if err != nil {
+		agent.logger.Errorf("couldn't list instances", err)
+		return effectiveConfig
+	}
+	instanceMap := map[string]*protobufs.AgentConfigFile{}
+	for _, instance := range instances {
+		marshalled, err := yaml.Marshal(instance)
+		if err != nil {
+			agent.logger.Errorf("couldn't marshal collector configuration", err)
+			continue
+		}
+		mapKey := agent.makeKeyFromNameNamespace(instance.GetName(), instance.GetNamespace())
+		instanceMap[mapKey] = &protobufs.AgentConfigFile{
+			Body:        marshalled,
+			ContentType: "yaml",
+		}
+	}
+	effectiveConfig.ConfigMap.ConfigMap = instanceMap
+	return effectiveConfig
 }
 
 func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
@@ -219,11 +263,35 @@ func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
 }
 
 // Take the remote config, layer it over existing, done
-func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (configChanged bool, err error) {
+func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (bool, error) {
 	if config == nil {
 		return false, nil
 	}
-	return false, nil
+	if bytes.Equal(agent.lastHash, config.ConfigHash) {
+		return false, nil
+	}
+	var multiErr error
+	for key, file := range config.Config.GetConfigMap() {
+		if len(key) == 0 || len(file.Body) == 0 {
+			continue
+		}
+		name, namespace, err := agent.getNameAndNamespace(key)
+		if err != nil {
+			multiErr = multierr.Append(multiErr, err)
+			continue
+		}
+		err = agent.applier.Apply(name, namespace, file)
+		if err != nil {
+			multiErr = multierr.Append(multiErr, err)
+			continue
+		}
+		agent.appliedKeys[key] = true
+	}
+	if multiErr != nil {
+		return false, multiErr
+	}
+	agent.lastHash = config.ConfigHash
+	return true, nil
 }
 
 func (agent *Agent) Shutdown() {
@@ -239,22 +307,29 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 		var err error
 		configChanged, err = agent.applyRemoteConfig(msg.RemoteConfig)
 		if err != nil {
-			agent.opampClient.SetRemoteConfigStatus(&protobufs.RemoteConfigStatus{
+			setErr := agent.opampClient.SetRemoteConfigStatus(&protobufs.RemoteConfigStatus{
 				LastRemoteConfigHash: msg.RemoteConfig.ConfigHash,
 				Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 				ErrorMessage:         err.Error(),
 			})
+			if setErr != nil {
+				return
+			}
 		} else {
-			agent.opampClient.SetRemoteConfigStatus(&protobufs.RemoteConfigStatus{
+			setErr := agent.opampClient.SetRemoteConfigStatus(&protobufs.RemoteConfigStatus{
 				LastRemoteConfigHash: msg.RemoteConfig.ConfigHash,
 				Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 			})
+			if setErr != nil {
+				return
+			}
 		}
 	}
 
-	if msg.OwnMetricsConnSettings != nil {
-		agent.initMeter(msg.OwnMetricsConnSettings)
-	}
+	// TODO: figure out why metrics aren't working
+	//if msg.OwnMetricsConnSettings != nil {
+	//	agent.initMeter(msg.OwnMetricsConnSettings)
+	//}
 
 	if msg.AgentIdentification != nil {
 		newInstanceId, err := ulid.Parse(msg.AgentIdentification.NewInstanceUid)

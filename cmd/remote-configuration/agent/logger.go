@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/client/types"
 )
