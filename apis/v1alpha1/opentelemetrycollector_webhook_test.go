@@ -94,8 +94,8 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					UpgradeStrategy: UpgradeStrategyAutomatic,
 					Autoscaler: &AutoscalerSpec{
 						TargetCPUUtilization: &defaultCPUTarget,
-						MaxReplicas: &five,
-						MinReplicas: &one,
+						MaxReplicas:          &five,
+						MinReplicas:          &one,
 					},
 				},
 			},
