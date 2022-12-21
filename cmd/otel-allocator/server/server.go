@@ -159,9 +159,9 @@ func (s *Server) ScrapeConfigsIterHandler(w http.ResponseWriter, _ *http.Request
 	}
 	// if the hashes are different, we need to recompute the scrape config
 	if hash != s.compareHash {
-		configBytes, err := s.yamlMarshaller.Marshal(configs)
-		if err != nil {
-			s.errorHandler(w, err)
+		configBytes, mErr := s.yamlMarshaller.Marshal(configs)
+		if mErr != nil {
+			s.errorHandler(w, mErr)
 			return
 		}
 		// Update the response and the hash

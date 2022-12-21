@@ -207,8 +207,8 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", allocatorName, v.numCollectors, v.numJobs), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					randomJob := rand.Intn(v.numJobs)
-					randomCol := rand.Intn(v.numCollectors)
+					randomJob := rand.Intn(v.numJobs)       //nolint: gosec
+					randomCol := rand.Intn(v.numCollectors) //nolint: gosec
 					request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/test-job-%d/targets?collector_id=collector-%d", randomJob, randomCol), nil)
 					w := httptest.NewRecorder()
 					s.server.Handler.ServeHTTP(w, request)
