@@ -1,27 +1,26 @@
 package config
 
 import (
-	"errors"
-	"flag"
 	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
-
-	"github.com/go-logr/logr"
+	"github.com/oklog/ulid/v2"
+	"github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/protobufs"
-	"github.com/spf13/pflag"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
 	"gopkg.in/yaml.v2"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
-	"k8s.io/klog/v2"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"math/rand"
+	"os"
+	"runtime"
+	"time"
 )
 
 const (
 	agentType             = "io.opentelemetry.remote-configuration"
 	defaultConfigFilePath = "/conf/remoteconfiguration.yaml"
+)
+
+var (
+	agentVersion = os.Getenv("OPAMP_VERSION")
+	hostname, _  = os.Hostname()
 )
 
 type Config struct {
@@ -31,6 +30,13 @@ type Config struct {
 
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	ComponentsAllowed map[string][]string `yaml:"components_allowed,omitempty"`
+}
+
+func (c *Config) CreateClient(logger *logger.Logger) client.OpAMPClient {
+	if c.Protocol == "http" {
+		return client.NewHTTP(logger)
+	}
+	return client.NewWebSocket(logger)
 }
 
 func (c *Config) GetCapabilities() protobufs.AgentCapabilities {
@@ -45,16 +51,41 @@ func (c *Config) GetCapabilities() protobufs.AgentCapabilities {
 	return protobufs.AgentCapabilities(capabilities)
 }
 
-type CLIConfig struct {
-	ListenAddr     *string
-	ConfigFilePath *string
-	AgentType      *string
-	AgentVersion   *string
+func (c *Config) GetAgentType() string {
+	return agentType
+}
 
-	ClusterConfig *rest.Config
-	// KubeConfigFilePath empty if in cluster configuration is in use
-	KubeConfigFilePath string
-	RootLogger         logr.Logger
+func (c *Config) GetAgentVersion() string {
+	return agentVersion
+}
+
+func (c *Config) GetDescription() *protobufs.AgentDescription {
+	return &protobufs.AgentDescription{
+		IdentifyingAttributes: []*protobufs.KeyValue{
+			keyValuePair("service.name", c.GetAgentType()),
+			keyValuePair("service.version", c.GetAgentVersion()),
+		},
+		NonIdentifyingAttributes: []*protobufs.KeyValue{
+			keyValuePair("os.family", runtime.GOOS),
+			keyValuePair("host.name", hostname),
+		},
+	}
+}
+
+func keyValuePair(key string, value string) *protobufs.KeyValue {
+	return &protobufs.KeyValue{
+		Key: key,
+		Value: &protobufs.AnyValue{
+			Value: &protobufs.AnyValue_StringValue{
+				StringValue: value,
+			},
+		},
+	}
+}
+
+func (c *Config) GetNewInstanceId() ulid.ULID {
+	entropy := ulid.Monotonic(rand.New(rand.NewSource(10000)), 0)
+	return ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
 }
 
 func Load(file string) (Config, error) {
@@ -74,37 +105,4 @@ func unmarshal(cfg *Config, configFile string) error {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
 	return nil
-}
-
-func ParseCLI() (CLIConfig, error) {
-	opts := zap.Options{}
-	opts.BindFlags(flag.CommandLine)
-	agentVersion := os.Getenv("OPAMP_VERSION")
-	cLIConf := CLIConfig{
-		ListenAddr:     pflag.String("listen-addr", ":8080", "The address where this service serves."),
-		ConfigFilePath: pflag.String("config-file", defaultConfigFilePath, "The path to the config file."),
-		AgentType:      pflag.String("agent-type", agentType, "The type agent that is connecting."),
-		AgentVersion:   pflag.String("agent-version", agentVersion, "The version of the agent."),
-	}
-	kubeconfigPath := pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
-	pflag.Parse()
-
-	cLIConf.RootLogger = zap.New(zap.UseFlagOptions(&opts))
-	klog.SetLogger(cLIConf.RootLogger)
-
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
-	cLIConf.KubeConfigFilePath = *kubeconfigPath
-	if err != nil {
-		pathError := &fs.PathError{}
-		if ok := errors.As(err, &pathError); !ok {
-			return CLIConfig{}, err
-		}
-		clusterConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return CLIConfig{}, err
-		}
-		cLIConf.KubeConfigFilePath = "" // reset as we use in cluster configuration
-	}
-	cLIConf.ClusterConfig = clusterConfig
-	return cLIConf, nil
 }

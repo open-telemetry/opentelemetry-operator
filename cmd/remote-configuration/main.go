@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
 	"os"
 	"os/signal"
@@ -20,13 +21,18 @@ func main() {
 		return
 	}
 	cliConf.RootLogger.Info("Starting the Remote Configuration service")
-	agentLogger := cliConf.RootLogger.WithName("agent")
+	agentLogf := cliConf.RootLogger.WithName("agent")
+	agentLogger := logger.NewLogger(&agentLogf)
 
-	operatorClient, operatorClientErr := operator.NewClient(cliConf.RootLogger.WithName("operator-client"), cliConf.ClusterConfig)
-	if operatorClientErr != nil {
-		cliConf.RootLogger.Error(operatorClientErr, "Couldn't create operator client")
+	kubeClient, kubeErr := cliConf.GetKubernetesClient()
+	if kubeErr != nil {
+		cliConf.RootLogger.Error(kubeErr, "Couldn't create kubernetes client")
+		return
 	}
-	opampAgent := agent.NewAgent(agent.NewLogger(&agentLogger), operatorClient, cfg, *cliConf.AgentType, *cliConf.AgentVersion)
+	operatorClient := operator.NewClient(cliConf.RootLogger.WithName("operator-client"), kubeClient)
+
+	opampClient := cfg.CreateClient(agentLogger)
+	opampAgent := agent.NewAgent(agentLogger, operatorClient, cfg, opampClient)
 
 	if err := opampAgent.Start(); err != nil {
 		cliConf.RootLogger.Error(err, "Cannot start OpAMP client")

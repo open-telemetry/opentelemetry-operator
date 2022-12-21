@@ -6,10 +6,6 @@ import (
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -20,16 +16,6 @@ const (
 	ResourceIdentifierKey   = "created-by"
 	ResourceIdentifierValue = "remote-configuration"
 )
-
-var (
-	schemeBuilder = runtime.NewSchemeBuilder(registerKnownTypes)
-)
-
-func registerKnownTypes(s *runtime.Scheme) error {
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.OpenTelemetryCollector{}, &v1alpha1.OpenTelemetryCollectorList{})
-	metav1.AddToGroupVersion(s, v1alpha1.GroupVersion)
-	return nil
-}
 
 type ConfigApplier interface {
 	Apply(name string, namespace string, configmap *protobufs.AgentConfigFile) error
@@ -45,25 +31,15 @@ type Client struct {
 
 var _ ConfigApplier = &Client{}
 
-func NewClient(log logr.Logger, kubeConfig *rest.Config) (*Client, error) {
-	err := schemeBuilder.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, err
-	}
-	c, err := client.New(kubeConfig, client.Options{
-		Scheme: scheme.Scheme,
-	})
-	if err != nil {
-		return nil, err
-	}
+func NewClient(log logr.Logger, c client.Client) *Client {
 	return &Client{
 		log:       log,
 		k8sClient: c,
 		close:     make(chan bool, 1),
-	}, nil
+	}
 }
 
-func (c Client) create(ctx context.Context, name string, namespace string, collector v1alpha1.OpenTelemetryCollector) error {
+func (c Client) create(ctx context.Context, name string, namespace string, collector *v1alpha1.OpenTelemetryCollector) error {
 	// Set the defaults
 	collector.Default()
 	collector.TypeMeta.Kind = CollectorResource
@@ -79,50 +55,41 @@ func (c Client) create(ctx context.Context, name string, namespace string, colle
 	if err != nil {
 		return err
 	}
-	c.log.Info("Was given a valid configuration", "collector", collector)
-	err = c.k8sClient.Create(ctx, &collector)
+	c.log.Info("Creating collector")
+	return c.k8sClient.Create(ctx, collector)
+}
+
+func (c Client) update(ctx context.Context, old *v1alpha1.OpenTelemetryCollector, new *v1alpha1.OpenTelemetryCollector) error {
+	new.ObjectMeta = old.ObjectMeta
+	new.TypeMeta = old.TypeMeta
+	err := new.ValidateUpdate(old)
 	if err != nil {
-		c.log.Error(err, "unable to create collector")
 		return err
 	}
-	return nil
+	c.log.Info("Updating collector")
+	return c.k8sClient.Update(ctx, new)
 }
 
 func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentConfigFile) error {
-	c.log.Info("Received new config", name, len(configmap.String()))
+	c.log.Info("Received new config", "name", name, "namespace", namespace)
 	var collectorSpec v1alpha1.OpenTelemetryCollectorSpec
 	err := yaml.Unmarshal(configmap.Body, &collectorSpec)
 	if err != nil {
 		return err
 	}
-	collector := v1alpha1.OpenTelemetryCollector{Spec: collectorSpec}
+	if len(collectorSpec.Config) == 0 {
+		return errors.NewBadRequest("Must supply valid configuration")
+	}
+	collector := &v1alpha1.OpenTelemetryCollector{Spec: collectorSpec}
 	ctx := context.Background()
-	//created := false
 	instance, err := c.GetInstance(name, namespace)
 	if err != nil {
 		return err
 	}
 	if instance != nil {
-		collector.ObjectMeta = instance.ObjectMeta
-		collector.TypeMeta = instance.TypeMeta
-		err := collector.ValidateUpdate(instance)
-		if err != nil {
-			return err
-		}
-		err = c.k8sClient.Update(ctx, &collector)
-		if err != nil {
-			return err
-		}
-		c.log.Info("Updated collector")
-		return nil
+		return c.update(ctx, instance, collector)
 	}
-
-	err = c.create(ctx, name, namespace, collector)
-	if err != nil {
-		return err
-	}
-	c.log.Info("Created collector")
-	return nil
+	return c.create(ctx, name, namespace, collector)
 }
 
 func (c Client) ListInstances() ([]v1alpha1.OpenTelemetryCollector, error) {

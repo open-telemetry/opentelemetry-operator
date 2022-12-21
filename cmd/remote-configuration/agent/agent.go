@@ -5,11 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
 	"gopkg.in/yaml.v3"
-	"math/rand"
-	"os"
-	"runtime"
 	"strings"
 	"time"
 
@@ -23,72 +21,39 @@ import (
 	"github.com/open-telemetry/opamp-go/protobufs"
 )
 
-const localConfig = `
-exporters:
-  otlp:
-    endpoint: localhost:1111
-
-receivers:
-  otlp:
-    protocols:
-      grpc: {}
-      http: {}
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: []
-      exporters: [otlp]
-`
-
 type Agent struct {
 	logger types.Logger
-
-	agentType    string
-	agentVersion string
 
 	// A set of the applied object keys (name/namespace)
 	appliedKeys map[string]bool
 	startTime   uint64
+	lastHash    []byte
 
-	instanceId ulid.ULID
-
-	agentDescription *protobufs.AgentDescription
-
-	opampClient client.OpAMPClient
-
+	instanceId         ulid.ULID
+	agentDescription   *protobufs.AgentDescription
 	remoteConfigStatus *protobufs.RemoteConfigStatus
 
-	metricReporter *MetricReporter
+	opampClient    client.OpAMPClient
+	metricReporter *metrics.MetricReporter
 	config         config.Config
 	applier        operator.ConfigApplier
-	lastHash       []byte
 }
 
-func NewAgent(logger types.Logger, applier operator.ConfigApplier, config config.Config, agentType string, agentVersion string) *Agent {
+func NewAgent(logger types.Logger, applier operator.ConfigApplier, config config.Config, opampClient client.OpAMPClient) *Agent {
 	agent := &Agent{
-		config:       config,
-		applier:      applier,
-		logger:       logger,
-		agentType:    agentType,
-		agentVersion: agentVersion,
-		appliedKeys:  map[string]bool{},
+		config:           config,
+		applier:          applier,
+		logger:           logger,
+		appliedKeys:      map[string]bool{},
+		instanceId:       config.GetNewInstanceId(),
+		agentDescription: config.GetDescription(),
+		opampClient:      opampClient,
 	}
 
-	agent.createAgentIdentity()
 	agent.logger.Debugf("Agent starting, id=%v, type=%s, version=%s.",
-		agent.instanceId.String(), agentType, agentVersion)
-	agent.opampClient = agent.createClient()
+		agent.instanceId.String(), config.GetAgentType(), config.GetAgentVersion())
 
 	return agent
-}
-
-func (agent *Agent) createClient() client.OpAMPClient {
-	if agent.config.Protocol == "http" {
-		return client.NewHTTP(agent.logger)
-	}
-	return client.NewWebSocket(agent.logger)
 }
 
 func (agent *Agent) getHealth() *protobufs.AgentHealth {
@@ -99,29 +64,34 @@ func (agent *Agent) getHealth() *protobufs.AgentHealth {
 	}
 }
 
+func (agent *Agent) onConnect() {
+	agent.logger.Debugf("Connected to the server.")
+}
+
+func (agent *Agent) onConnectFailed(err error) {
+	agent.logger.Errorf("Failed to connect to the server: %v", err)
+}
+
+func (agent *Agent) onError(err *protobufs.ServerErrorResponse) {
+	agent.logger.Errorf("Server returned an error response: %v", err.ErrorMessage)
+}
+
+func (agent *Agent) saveRemoteConfigStatus(_ context.Context, status *protobufs.RemoteConfigStatus) {
+	agent.remoteConfigStatus = status
+}
+
 func (agent *Agent) Start() error {
 	agent.startTime = uint64(time.Now().UnixNano())
 	settings := types.StartSettings{
 		OpAMPServerURL: agent.config.Endpoint,
-		//TLSConfig:      &tls.Config{InsecureSkipVerify: true},
-		InstanceUid: agent.instanceId.String(),
+		InstanceUid:    agent.instanceId.String(),
 		Callbacks: types.CallbacksStruct{
-			OnConnectFunc: func() {
-				agent.logger.Debugf("Connected to the server.")
-			},
-			OnConnectFailedFunc: func(err error) {
-				agent.logger.Errorf("Failed to connect to the server: %v", err)
-			},
-			OnErrorFunc: func(err *protobufs.ServerErrorResponse) {
-				agent.logger.Errorf("Server returned an error response: %v", err.ErrorMessage)
-			},
-			SaveRemoteConfigStatusFunc: func(_ context.Context, status *protobufs.RemoteConfigStatus) {
-				agent.remoteConfigStatus = status
-			},
-			GetEffectiveConfigFunc: func(ctx context.Context) (*protobufs.EffectiveConfig, error) {
-				return agent.composeEffectiveConfig(), nil
-			},
-			OnMessageFunc: agent.onMessage,
+			OnConnectFunc:              agent.onConnect,
+			OnConnectFailedFunc:        agent.onConnectFailed,
+			OnErrorFunc:                agent.onError,
+			SaveRemoteConfigStatusFunc: agent.saveRemoteConfigStatus,
+			GetEffectiveConfigFunc:     agent.getEffectiveConfig,
+			OnMessageFunc:              agent.onMessage,
 		},
 		RemoteConfigStatus:    agent.remoteConfigStatus,
 		PackagesStateProvider: nil,
@@ -146,50 +116,6 @@ func (agent *Agent) Start() error {
 	agent.logger.Debugf("OpAMP Client started.")
 
 	return nil
-}
-
-func (agent *Agent) createAgentIdentity() {
-	// Generate instance id.
-	entropy := ulid.Monotonic(rand.New(rand.NewSource(0)), 0)
-	agent.instanceId = ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
-
-	hostname, _ := os.Hostname()
-
-	// Create Agent description.
-	agent.agentDescription = &protobufs.AgentDescription{
-		IdentifyingAttributes: []*protobufs.KeyValue{
-			{
-				Key: "service.name",
-				Value: &protobufs.AnyValue{
-					Value: &protobufs.AnyValue_StringValue{StringValue: agent.agentType},
-				},
-			},
-			{
-				Key: "service.version",
-				Value: &protobufs.AnyValue{
-					Value: &protobufs.AnyValue_StringValue{StringValue: agent.agentVersion},
-				},
-			},
-		},
-		NonIdentifyingAttributes: []*protobufs.KeyValue{
-			{
-				Key: "os.family",
-				Value: &protobufs.AnyValue{
-					Value: &protobufs.AnyValue_StringValue{
-						StringValue: runtime.GOOS,
-					},
-				},
-			},
-			{
-				Key: "host.name",
-				Value: &protobufs.AnyValue{
-					Value: &protobufs.AnyValue_StringValue{
-						StringValue: hostname,
-					},
-				},
-			},
-		},
-	}
 }
 
 func (agent *Agent) updateAgentIdentity(instanceId ulid.ULID) {
@@ -217,23 +143,18 @@ func (agent *Agent) makeKeyFromNameNamespace(name string, namespace string) stri
 	return fmt.Sprintf("%s/%s", name, namespace)
 }
 
-func (agent *Agent) composeEffectiveConfig() *protobufs.EffectiveConfig {
-	effectiveConfig := &protobufs.EffectiveConfig{
-		ConfigMap: &protobufs.AgentConfigMap{
-			ConfigMap: nil,
-		},
-	}
+func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.EffectiveConfig, error) {
 	instances, err := agent.applier.ListInstances()
 	if err != nil {
 		agent.logger.Errorf("couldn't list instances", err)
-		return effectiveConfig
+		return nil, err
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
 	for _, instance := range instances {
 		marshalled, err := yaml.Marshal(instance)
 		if err != nil {
 			agent.logger.Errorf("couldn't marshal collector configuration", err)
-			continue
+			return nil, err
 		}
 		mapKey := agent.makeKeyFromNameNamespace(instance.GetName(), instance.GetNamespace())
 		instanceMap[mapKey] = &protobufs.AgentConfigFile{
@@ -241,35 +162,29 @@ func (agent *Agent) composeEffectiveConfig() *protobufs.EffectiveConfig {
 			ContentType: "yaml",
 		}
 	}
-	effectiveConfig.ConfigMap.ConfigMap = instanceMap
-	return effectiveConfig
+	return &protobufs.EffectiveConfig{
+		ConfigMap: &protobufs.AgentConfigMap{
+			ConfigMap: instanceMap,
+		},
+	}, nil
 }
 
 func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
-	reporter, err := NewMetricReporter(agent.logger, settings, agent.agentType, agent.agentVersion, agent.instanceId)
+	reporter, err := metrics.NewMetricReporter(agent.logger, settings, agent.config.GetAgentType(), agent.config.GetAgentVersion(), agent.instanceId)
 	if err != nil {
 		agent.logger.Errorf("Cannot collect metrics: %v", err)
 		return
 	}
 
-	prevReporter := agent.metricReporter
-
-	agent.metricReporter = reporter
-
-	if prevReporter != nil {
-		prevReporter.Shutdown()
+	if agent.metricReporter != nil {
+		agent.metricReporter.Shutdown()
 	}
-	return
+	agent.metricReporter = reporter
 }
 
 // Take the remote config, layer it over existing, done
-func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (bool, error) {
-	if config == nil {
-		return false, nil
-	}
-	if bytes.Equal(agent.lastHash, config.ConfigHash) {
-		return false, nil
-	}
+// INVARIANT: The caller must verify that config isn't nil _and_ the configuration has changed between calls
+func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*protobufs.RemoteConfigStatus, error) {
 	var multiErr error
 	for key, file := range config.Config.GetConfigMap() {
 		if len(key) == 0 || len(file.Body) == 0 {
@@ -288,10 +203,17 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (bool
 		agent.appliedKeys[key] = true
 	}
 	if multiErr != nil {
-		return false, multiErr
+		return &protobufs.RemoteConfigStatus{
+			LastRemoteConfigHash: config.GetConfigHash(),
+			Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
+			ErrorMessage:         multiErr.Error(),
+		}, multiErr
 	}
 	agent.lastHash = config.ConfigHash
-	return true, nil
+	return &protobufs.RemoteConfigStatus{
+		LastRemoteConfigHash: config.ConfigHash,
+		Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
+	}, nil
 }
 
 func (agent *Agent) Shutdown() {
@@ -302,27 +224,18 @@ func (agent *Agent) Shutdown() {
 }
 
 func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
-	configChanged := false
-	if msg.RemoteConfig != nil {
+
+	// If we received remote configuration, and it's not the same as the previously applied one
+	if msg.RemoteConfig != nil && !bytes.Equal(agent.lastHash, msg.RemoteConfig.GetConfigHash()) {
 		var err error
-		configChanged, err = agent.applyRemoteConfig(msg.RemoteConfig)
+		status, err := agent.applyRemoteConfig(msg.RemoteConfig)
+		setErr := agent.opampClient.SetRemoteConfigStatus(status)
+		if setErr != nil {
+			return
+		}
+		err = agent.opampClient.UpdateEffectiveConfig(ctx)
 		if err != nil {
-			setErr := agent.opampClient.SetRemoteConfigStatus(&protobufs.RemoteConfigStatus{
-				LastRemoteConfigHash: msg.RemoteConfig.ConfigHash,
-				Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
-				ErrorMessage:         err.Error(),
-			})
-			if setErr != nil {
-				return
-			}
-		} else {
-			setErr := agent.opampClient.SetRemoteConfigStatus(&protobufs.RemoteConfigStatus{
-				LastRemoteConfigHash: msg.RemoteConfig.ConfigHash,
-				Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
-			})
-			if setErr != nil {
-				return
-			}
+			agent.logger.Errorf(err.Error())
 		}
 	}
 
@@ -337,12 +250,5 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 			agent.logger.Errorf(err.Error())
 		}
 		agent.updateAgentIdentity(newInstanceId)
-	}
-
-	if configChanged {
-		err := agent.opampClient.UpdateEffectiveConfig(ctx)
-		if err != nil {
-			agent.logger.Errorf(err.Error())
-		}
 	}
 }
