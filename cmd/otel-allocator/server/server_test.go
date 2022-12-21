@@ -180,6 +180,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 }
 
 func BenchmarkServerTargetsHandler(b *testing.B) {
+	rand.Seed(time.Now().UnixNano())
 	var table = []struct {
 		numCollectors int
 		numJobs       int
