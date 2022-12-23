@@ -64,6 +64,9 @@ func TestHPA(t *testing.T) {
 				HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
 					return test.autoscalingVersion, nil
 				},
+				OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
+					return autodetect.OpenShiftRoutesUnknown, nil
+				},
 			}
 			configuration := config.New(config.WithAutoDetect(mockAutoDetector))
 			err := configuration.AutoDetect()
@@ -163,8 +166,9 @@ func TestConvertToV2Beta2SelectPolicy(t *testing.T) {
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	PlatformFunc   func() (platform.Platform, error)
-	HPAVersionFunc func() (autodetect.AutoscalingVersion, error)
+	PlatformFunc                    func() (platform.Platform, error)
+	HPAVersionFunc                  func() (autodetect.AutoscalingVersion, error)
+	OpenShiftRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
@@ -176,4 +180,8 @@ func (m *mockAutoDetect) Platform() (platform.Platform, error) {
 		return m.PlatformFunc()
 	}
 	return platform.Unknown, nil
+}
+
+func (m *mockAutoDetect) OpenShiftRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {
+	return m.OpenShiftRoutesAvailabilityFunc()
 }

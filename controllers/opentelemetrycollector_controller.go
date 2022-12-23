@@ -68,8 +68,18 @@ type Params struct {
 }
 
 func (r *OpenTelemetryCollectorReconciler) onPlatformChange() error {
-	// NOTE: At the time the reconciler gets created, the platform type is still unknown.
 	plt := r.config.Platform()
+
+	if plt == platform.OpenShift {
+		if err := r.onOpenShiftRoutesAvailable(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) onOpenShiftRoutesAvailable() error {
+	routesAvailable := r.config.OpenShiftRoutesAvailability()
 	var (
 		routesIdx = -1
 	)
@@ -83,31 +93,31 @@ func (r *OpenTelemetryCollectorReconciler) onPlatformChange() error {
 	}
 	r.muTasks.Unlock()
 
-	if err := r.addRouteTask(plt, routesIdx); err != nil {
+	if err := r.addRouteTask(routesAvailable, routesIdx); err != nil {
 		return err
 	}
 
-	return r.removeRouteTask(plt, routesIdx)
+	return r.removeRouteTask(routesAvailable, routesIdx)
 }
 
-func (r *OpenTelemetryCollectorReconciler) addRouteTask(plt platform.Platform, routesIdx int) error {
+func (r *OpenTelemetryCollectorReconciler) addRouteTask(routesAvailable autodetect.OpenShiftRoutesAvailability, routesIdx int) error {
 	r.muTasks.Lock()
 	defer r.muTasks.Unlock()
-	// if exists and platform is openshift
-	if routesIdx == -1 && plt == platform.OpenShift {
+	// if not added and OpenShift routes are available
+	if routesIdx == -1 && routesAvailable == autodetect.OpenShiftRoutesAvailable {
 		r.tasks = append([]Task{{reconcile.Routes, "routes", true}}, r.tasks...)
 	}
 	return nil
 }
 
-func (r *OpenTelemetryCollectorReconciler) removeRouteTask(plt platform.Platform, routesIdx int) error {
+func (r *OpenTelemetryCollectorReconciler) removeRouteTask(routesAvailable autodetect.OpenShiftRoutesAvailability, routesIdx int) error {
 	r.muTasks.Lock()
 	defer r.muTasks.Unlock()
 	if len(r.tasks) < routesIdx {
 		return fmt.Errorf("can not remove route task from reconciler")
 	}
-	// if exists and platform is not openshift
-	if routesIdx != -1 && plt != platform.OpenShift {
+	// if added and OpenShift routes are not available
+	if routesIdx != -1 && routesAvailable == autodetect.OpenShiftRoutesNotAvailable {
 		r.tasks = append(r.tasks[:routesIdx], r.tasks[routesIdx+1:]...)
 	}
 	return nil
@@ -173,6 +183,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 			},
 		}
 		r.config.RegisterPlatformChangeCallback(r.onPlatformChange)
+		r.config.RegisterPlatformChangeCallback(r.onOpenShiftRoutesAvailable)
 	}
 	return r
 }
@@ -261,4 +272,8 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 	}
 
 	return builder.Complete(r)
+}
+
+func (r *OpenTelemetryCollectorReconciler) Config() *config.Config {
+	return &r.config
 }

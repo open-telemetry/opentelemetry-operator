@@ -46,6 +46,7 @@ type options struct {
 	platform                       platformStore
 	autoDetectFrequency            time.Duration
 	autoscalingVersion             autodetect.AutoscalingVersion
+	openShiftRoutesAvailable       autodetect.OpenShiftRoutesAvailability
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -84,7 +85,7 @@ func WithLogger(logger logr.Logger) Option {
 		o.logger = logger
 	}
 }
-func WithOnPlatformChangeCallback(f func() error) Option {
+func WithonPlatformChangeCallback(f func() error) Option {
 	return func(o *options) {
 		if o.onPlatformChange == nil {
 			o.onPlatformChange = newOnChange()

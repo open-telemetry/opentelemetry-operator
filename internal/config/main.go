@@ -50,6 +50,7 @@ type Config struct {
 	platform                       platformStore
 	autoDetectFrequency            time.Duration
 	autoscalingVersion             autodetect.AutoscalingVersion
+	openShiftRoutesAvailable       autodetect.OpenShiftRoutesAvailability
 }
 
 // New constructs a new configuration based on the given options.
@@ -64,6 +65,7 @@ func New(opts ...Option) Config {
 		version:                       version.Get(),
 		autoscalingVersion:            autodetect.DefaultAutoscalingVersion,
 		onPlatformChange:              newOnChange(),
+		openShiftRoutesAvailable:      autodetect.DefaultOpenShiftAvailability,
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -85,6 +87,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationDotNetImage: o.autoInstrumentationDotNetImage,
 		labelsFilter:                   o.labelsFilter,
 		autoscalingVersion:             o.autoscalingVersion,
+		openShiftRoutesAvailable:       o.openShiftRoutesAvailable,
 	}
 }
 
@@ -132,6 +135,19 @@ func (c *Config) AutoDetect() error {
 	c.autoscalingVersion = hpaVersion
 	c.logger.V(2).Info("autoscaling version detected", "autoscaling-version", c.autoscalingVersion.String())
 
+	openshiftRoutes, err := c.autoDetect.OpenShiftRoutesAvailability()
+	if err != nil {
+		return err
+	}
+	if c.openShiftRoutesAvailable != openshiftRoutes {
+		c.openShiftRoutesAvailable = openshiftRoutes
+		c.logger.V(2).Info("openshift routes availability detected", "openshift-routes-availability", c.openShiftRoutesAvailable.String())
+		if err = c.onPlatformChange.Do(); err != nil {
+			// Don't fail if the callback failed, as auto-detection itself worked.
+			c.logger.Error(err, "configuration change notification failed for callback")
+		}
+	}
+
 	return nil
 }
 
@@ -163,6 +179,11 @@ func (c *Config) Platform() platform.Platform {
 // AutoscalingVersion represents the preferred version of autoscaling.
 func (c *Config) AutoscalingVersion() autodetect.AutoscalingVersion {
 	return c.autoscalingVersion
+}
+
+// AutoscalingVersion represents the preferred version of autoscaling.
+func (c *Config) OpenShiftRoutesAvailability() autodetect.OpenShiftRoutesAvailability {
+	return c.openShiftRoutesAvailable
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.

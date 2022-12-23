@@ -31,6 +31,7 @@ var _ AutoDetect = (*autoDetect)(nil)
 type AutoDetect interface {
 	Platform() (platform.Platform, error)
 	HPAVersion() (AutoscalingVersion, error)
+	OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error)
 }
 
 type autoDetect struct {
@@ -46,6 +47,16 @@ const (
 )
 
 const DefaultAutoscalingVersion = AutoscalingVersionV2
+
+type OpenShiftRoutesAvailability int
+
+const (
+	OpenShiftRoutesAvailable OpenShiftRoutesAvailability = iota
+	OpenShiftRoutesNotAvailable
+	OpenShiftRoutesUnknown
+)
+
+const DefaultOpenShiftAvailability = OpenShiftRoutesUnknown
 
 // New creates a new auto-detection worker, using the given client when talking to the current cluster.
 func New(restConfig *rest.Config) (AutoDetect, error) {
@@ -105,6 +116,21 @@ func (a *autoDetect) HPAVersion() (AutoscalingVersion, error) {
 	return AutoscalingVersionUnknown, errors.New("Failed to find apiGroup autoscaling")
 }
 
+func (a *autoDetect) OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error) {
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return OpenShiftRoutesUnknown, err
+	}
+
+	for _, apiGroup := range apiList.Groups {
+		if apiGroup.Name == "route.openshift.io" {
+			return OpenShiftRoutesAvailable, nil
+		}
+	}
+
+	return OpenShiftRoutesNotAvailable, nil
+}
+
 func (v AutoscalingVersion) String() string {
 	switch v {
 	case AutoscalingVersionV2:
@@ -112,6 +138,18 @@ func (v AutoscalingVersion) String() string {
 	case AutoscalingVersionV2Beta2:
 		return "v2beta2"
 	case AutoscalingVersionUnknown:
+		return "unknown"
+	}
+	return "unknown"
+}
+
+func (v OpenShiftRoutesAvailability) String() string {
+	switch v {
+	case OpenShiftRoutesAvailable:
+		return "available"
+	case OpenShiftRoutesNotAvailable:
+		return "not available"
+	case OpenShiftRoutesUnknown:
 		return "unknown"
 	}
 	return "unknown"

@@ -50,6 +50,9 @@ var mockAutoDetector = &mockAutoDetect{
 	PlatformFunc: func() (platform.Platform, error) {
 		return platform.OpenShift, nil
 	},
+	OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
+		return autodetect.OpenShiftRoutesAvailable, nil
+	},
 }
 
 func TestNewObjectsOnReconciliation(t *testing.T) {
@@ -59,6 +62,7 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 		config.WithTargetAllocatorImage("default-ta-allocator"),
 		config.WithAutoDetect(mockAutoDetector),
 	)
+
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{
 		Client: k8sClient,
@@ -66,7 +70,9 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 		Scheme: testScheme,
 		Config: cfg,
 	})
-	require.NoError(t, cfg.AutoDetect())
+	// Don't call cfg.AutoDetect since the reconciler uses a copy. We get a pointer
+	// to the config of the reconciler and call AutoDetect
+	require.NoError(t, reconciler.Config().AutoDetect())
 	created := &v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
@@ -379,8 +385,9 @@ func TestRegisterWithManager(t *testing.T) {
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	PlatformFunc   func() (platform.Platform, error)
-	HPAVersionFunc func() (autodetect.AutoscalingVersion, error)
+	PlatformFunc                    func() (platform.Platform, error)
+	HPAVersionFunc                  func() (autodetect.AutoscalingVersion, error)
+	OpenShiftRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
@@ -392,4 +399,8 @@ func (m *mockAutoDetect) Platform() (platform.Platform, error) {
 		return m.PlatformFunc()
 	}
 	return platform.Unknown, nil
+}
+
+func (m *mockAutoDetect) OpenShiftRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {
+	return m.OpenShiftRoutesAvailabilityFunc()
 }

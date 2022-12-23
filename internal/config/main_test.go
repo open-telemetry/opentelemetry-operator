@@ -48,10 +48,13 @@ func TestOnPlatformChangeCallback(t *testing.T) {
 		PlatformFunc: func() (platform.Platform, error) {
 			return platform.OpenShift, nil
 		},
+		OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
+			return autodetect.OpenShiftRoutesAvailable, nil
+		},
 	}
 	cfg := config.New(
 		config.WithAutoDetect(mock),
-		config.WithOnPlatformChangeCallback(func() error {
+		config.WithonPlatformChangeCallback(func() error {
 			calledBack = true
 			return nil
 		}),
@@ -79,6 +82,9 @@ func TestAutoDetectInBackground(t *testing.T) {
 			// returning Unknown will cause the auto-detection to keep trying to detect the platform
 			return platform.Unknown, nil
 		},
+		OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
+			return autodetect.OpenShiftRoutesUnknown, nil
+		},
 	}
 	cfg := config.New(
 		config.WithAutoDetect(mock),
@@ -99,7 +105,8 @@ func TestAutoDetectInBackground(t *testing.T) {
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	PlatformFunc func() (platform.Platform, error)
+	PlatformFunc                    func() (platform.Platform, error)
+	OpenShiftRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
@@ -111,4 +118,8 @@ func (m *mockAutoDetect) Platform() (platform.Platform, error) {
 		return m.PlatformFunc()
 	}
 	return platform.Unknown, nil
+}
+
+func (m *mockAutoDetect) OpenShiftRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {
+	return m.OpenShiftRoutesAvailabilityFunc()
 }

@@ -4,13 +4,14 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package main
 
 import (
@@ -22,8 +23,6 @@ import (
 
 	"strconv"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -31,6 +30,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 func parseId(namespace *corev1.Namespace, annotation string) int64 {
@@ -67,7 +69,6 @@ func main() {
 	pflag.StringVar(&deploymentName, "deployment", "", "Deployment name to patch")
 	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", defaultKubeconfigPath, "Absolute path to the KubeconfigPath file")
 	pflag.Parse()
-
 
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
@@ -128,5 +129,5 @@ func main() {
 	deployment.Spec.Template.Spec.SecurityContext.RunAsGroup = groupdId
 	deployment.Spec.Template.Spec.SecurityContext.FSGroup = groupdId
 
-	deploymentsClient.Update(context.Background(), deployment, metav1.UpdateOptions{})
+	_, _ = deploymentsClient.Update(context.Background(), deployment, metav1.UpdateOptions{})
 }
