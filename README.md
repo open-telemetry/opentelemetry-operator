@@ -210,7 +210,7 @@ Java:
 instrumentation.opentelemetry.io/inject-java: "true"
 ```
 
-NodeJS:
+Node.js:
 ```bash
 instrumentation.opentelemetry.io/inject-nodejs: "true"
 ```
@@ -220,7 +220,7 @@ Python:
 instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
-DotNet:
+.NET ([docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v0.5.0/docs/README.md)):
 ```bash
 instrumentation.opentelemetry.io/inject-dotnet: "true"
 ```
