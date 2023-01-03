@@ -323,6 +323,40 @@ func TestAgent_onMessage(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Can delete existing collector",
+			fields: fields{
+				configFile: "testdata/agent.yaml",
+			},
+			args: args{
+				ctx: context.Background(),
+				configFile: map[string]string{
+					"good/testnamespace": "basic.yaml",
+				},
+				nextConfigFile: map[string]string{},
+			},
+			want: want{
+				contents: map[string][]string{
+					"good/testnamespace": {
+						"kind: OpenTelemetryCollector",
+						"name: good",
+						"namespace: testnamespace",
+						"send_batch_size: 10000",
+						"processors: []",
+						"status:",
+					},
+				},
+				status: &protobufs.RemoteConfigStatus{
+					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
+				},
+				nextContents: map[string][]string{},
+				nextStatus: &protobufs.RemoteConfigStatus{
+					LastRemoteConfigHash: []byte(""),
+					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

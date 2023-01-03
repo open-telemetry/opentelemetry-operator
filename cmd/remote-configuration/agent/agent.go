@@ -202,6 +202,19 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 		}
 		agent.appliedKeys[key] = true
 	}
+	for collectorKey := range agent.appliedKeys {
+		name, namespace, err := agent.getNameAndNamespace(collectorKey)
+		if err != nil {
+			multiErr = multierr.Append(multiErr, err)
+			continue
+		}
+		if _, ok := config.Config.GetConfigMap()[collectorKey]; !ok {
+			err = agent.applier.Delete(name, namespace)
+			if err != nil {
+				multiErr = multierr.Append(multiErr, err)
+			}
+		}
+	}
 	if multiErr != nil {
 		return &protobufs.RemoteConfigStatus{
 			LastRemoteConfigHash: config.GetConfigHash(),

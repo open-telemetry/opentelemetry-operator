@@ -21,6 +21,7 @@ type ConfigApplier interface {
 	Apply(name string, namespace string, configmap *protobufs.AgentConfigFile) error
 	GetInstance(name string, namespace string) (*v1alpha1.OpenTelemetryCollector, error)
 	ListInstances() ([]v1alpha1.OpenTelemetryCollector, error)
+	Delete(name string, namespace string) error
 }
 
 type Client struct {
@@ -90,6 +91,22 @@ func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentC
 		return c.update(ctx, instance, collector)
 	}
 	return c.create(ctx, name, namespace, collector)
+}
+
+func (c Client) Delete(name string, namespace string) error {
+	ctx := context.Background()
+	result := v1alpha1.OpenTelemetryCollector{}
+	err := c.k8sClient.Get(ctx, client.ObjectKey{
+		Namespace: namespace,
+		Name:      name,
+	}, &result)
+	if errors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return c.k8sClient.Delete(ctx, &result)
 }
 
 func (c Client) ListInstances() ([]v1alpha1.OpenTelemetryCollector, error) {

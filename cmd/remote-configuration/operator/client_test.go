@@ -137,7 +137,36 @@ func Test_collectorUpdate(t *testing.T) {
 	assert.NoError(t, err, "Should be able to list all collectors")
 	assert.Len(t, allInstances, 1)
 	assert.Equal(t, allInstances[0], *updatedInstance)
+}
 
+func Test_collectorDelete(t *testing.T) {
+	name := "test"
+	namespace := "testing"
+	fakeClient := getFakeClient(t)
+	c := NewClient(clientLogger, fakeClient)
+	colConfig, err := loadConfig("testdata/collector.yaml")
+	assert.NoError(t, err, "Should be no error on loading test configuration")
+	configmap := &protobufs.AgentConfigFile{
+		Body:        colConfig,
+		ContentType: "yaml",
+	}
+	// Apply a valid initial configuration
+	err = c.Apply(name, namespace, configmap)
+	assert.NoError(t, err, "Should apply base config")
+
+	// Get the newly created collector
+	instance, err := c.GetInstance(name, namespace)
+	assert.NoError(t, err, "Should be able to get the newly created instance")
+	assert.Contains(t, instance.Spec.Config, "processors: []")
+
+	// Delete it
+	err = c.Delete(name, namespace)
+	assert.NoError(t, err, "Should be able to delete a collector")
+
+	// Check there's nothing left
+	allInstances, err := c.ListInstances()
+	assert.NoError(t, err, "Should be able to list all collectors")
+	assert.Len(t, allInstances, 0)
 }
 
 func loadConfig(file string) ([]byte, error) {

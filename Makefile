@@ -21,6 +21,9 @@ BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 TARGETALLOCATOR_IMG_REPO ?= target-allocator
 TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,${VERSION})
 
+REMOTECONFIGURATION_IMG_REPO ?= remote-configuration
+REMOTECONFIGURATION_IMG ?= ${IMG_PREFIX}/${REMOTECONFIGURATION_IMG_REPO}:$(addprefix v,${VERSION})
+
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -171,7 +174,7 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind install-metrics-server install-openshift-routes load-image-all
+prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator container-remote-configuration start-kind install-metrics-server install-openshift-routes load-image-all
 	mkdir -p tests/_build/crds tests/_build/manifests
 	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
 	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
@@ -200,6 +203,10 @@ container-push:
 container-target-allocator:
 	docker buildx build --platform linux/${ARCH} -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
+.PHONY: container-remote-configuration
+container-remote-configuration:
+	docker buildx build --platform linux/${ARCH} -t ${REMOTECONFIGURATION_IMG} cmd/remote-configuration
+
 .PHONY: start-kind
 start-kind:
 	kind create cluster --config $(KIND_CONFIG)
@@ -213,7 +220,7 @@ install-openshift-routes:
 	./hack/install-openshift-routes.sh
 
 .PHONY: load-image-all
-load-image-all: load-image-operator load-image-target-allocator
+load-image-all: load-image-operator load-image-target-allocator load-image-remote-configuration
 
 .PHONY: load-image-operator
 load-image-operator:
@@ -222,6 +229,10 @@ load-image-operator:
 .PHONY: load-image-target-allocator
 load-image-target-allocator:
 	kind load docker-image ${TARGETALLOCATOR_IMG}
+
+.PHONY: load-image-remote-configuration
+load-image-remote-configuration:
+	kind load docker-image ${REMOTECONFIGURATION_IMG}
 
 .PHONY: cert-manager
 cert-manager: cmctl
