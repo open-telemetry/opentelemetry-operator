@@ -2,15 +2,17 @@ package config
 
 import (
 	"fmt"
-	"github.com/oklog/ulid/v2"
-	"github.com/open-telemetry/opamp-go/client"
-	"github.com/open-telemetry/opamp-go/protobufs"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
-	"gopkg.in/yaml.v2"
 	"math/rand"
 	"os"
 	"runtime"
 	"time"
+
+	"github.com/oklog/ulid/v2"
+	"github.com/open-telemetry/opamp-go/client"
+	"github.com/open-telemetry/opamp-go/protobufs"
+	"gopkg.in/yaml.v2"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
 )
 
 const (
@@ -37,6 +39,19 @@ func (c *Config) CreateClient(logger *logger.Logger) client.OpAMPClient {
 		return client.NewHTTP(logger)
 	}
 	return client.NewWebSocket(logger)
+}
+
+func (c *Config) GetComponentsAllowed() map[string]map[string]bool {
+	m := make(map[string]map[string]bool)
+	for component, componentSet := range c.ComponentsAllowed {
+		if _, ok := m[component]; !ok {
+			m[component] = make(map[string]bool)
+		}
+		for _, s := range componentSet {
+			m[component][s] = true
+		}
+	}
+	return m
 }
 
 func (c *Config) GetCapabilities() protobufs.AgentCapabilities {

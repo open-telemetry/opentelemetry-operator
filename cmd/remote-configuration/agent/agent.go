@@ -5,11 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/metrics"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
-	"gopkg.in/yaml.v3"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/metrics"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/config"
 

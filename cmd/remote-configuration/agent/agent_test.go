@@ -3,22 +3,25 @@ package agent
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"os"
+	"sort"
+	"testing"
+
 	"github.com/oklog/ulid/v2"
 	"github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
+	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"math/rand"
-	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 )
 
 var (
@@ -72,7 +75,7 @@ func (m *mockOpampClient) SetPackageStatuses(statuses *protobufs.PackageStatuses
 	return nil
 }
 
-func getFakeApplier(t *testing.T) *operator.Client {
+func getFakeApplier(t *testing.T, conf config.Config) *operator.Client {
 	schemeBuilder := runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
 		s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.OpenTelemetryCollector{}, &v1alpha1.OpenTelemetryCollectorList{})
 		metav1.AddToGroupVersion(s, v1alpha1.GroupVersion)
@@ -82,7 +85,7 @@ func getFakeApplier(t *testing.T) *operator.Client {
 	err := schemeBuilder.AddToScheme(scheme)
 	assert.NoError(t, err, "Should be able to add custom types")
 	c := fake.NewClientBuilder().WithScheme(scheme)
-	return operator.NewClient(l, c.Build())
+	return operator.NewClient(l, c.Build(), conf.GetComponentsAllowed())
 }
 
 func TestAgent_onMessage(t *testing.T) {
@@ -171,6 +174,74 @@ func TestAgent_onMessage(t *testing.T) {
 					LastRemoteConfigHash: []byte("bad/testnamespace408"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "yaml: line 16: could not find expected ':'",
+				},
+			},
+		},
+		{
+			name: "all components are allowed",
+			fields: fields{
+				configFile: "testdata/agentbasiccomponentsallowed.yaml",
+			},
+			args: args{
+				ctx: context.Background(),
+				configFile: map[string]string{
+					"good/testnamespace": "basic.yaml",
+				},
+			},
+			want: want{
+				contents: map[string][]string{
+					"good/testnamespace": {
+						"kind: OpenTelemetryCollector",
+						"name: good",
+						"namespace: testnamespace",
+						"send_batch_size: 10000",
+						"receivers: [otlp]",
+						"status:",
+					},
+				},
+				status: &protobufs.RemoteConfigStatus{
+					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
+				},
+			},
+		},
+		{
+			name: "batch not allowed",
+			fields: fields{
+				configFile: "testdata/agentbatchnotallowed.yaml",
+			},
+			args: args{
+				ctx: context.Background(),
+				configFile: map[string]string{
+					"good/testnamespace": "basic.yaml",
+				},
+			},
+			want: want{
+				contents: nil,
+				status: &protobufs.RemoteConfigStatus{
+					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
+					ErrorMessage:         "Items in config are not allowed: [processors.batch]",
+				},
+			},
+		},
+		{
+			name: "processors not allowed",
+			fields: fields{
+				configFile: "testdata/agentnoprocessorsallowed.yaml",
+			},
+			args: args{
+				ctx: context.Background(),
+				configFile: map[string]string{
+					"good/testnamespace": "basic.yaml",
+				},
+			},
+			want: want{
+				contents: nil,
+				status: &protobufs.RemoteConfigStatus{
+					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
+					ErrorMessage:         "Items in config are not allowed: [processors]",
 				},
 			},
 		},
@@ -360,10 +431,10 @@ func TestAgent_onMessage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			applier := getFakeApplier(t)
 			mockClient := &mockOpampClient{}
 			conf, err := config.Load(tt.fields.configFile)
 			assert.NoError(t, err, "should be able to load config")
+			applier := getFakeApplier(t, conf)
 			agent := NewAgent(clientLogger, applier, conf, mockClient)
 			err = agent.Start()
 			defer agent.Shutdown()
@@ -410,10 +481,10 @@ func TestAgent_onMessage(t *testing.T) {
 }
 
 func Test_CanUpdateIdentity(t *testing.T) {
-	applier := getFakeApplier(t)
 	mockClient := &mockOpampClient{}
 	conf, err := config.Load("testdata/agent.yaml")
 	assert.NoError(t, err, "should be able to load config")
+	applier := getFakeApplier(t, conf)
 	agent := NewAgent(clientLogger, applier, conf, mockClient)
 	err = agent.Start()
 	defer agent.Shutdown()
@@ -437,8 +508,17 @@ func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData
 	}
 	configs := map[string]*protobufs.AgentConfigFile{}
 	hash := ""
-	for key, filename := range filemap {
-		yamlFile, err := os.ReadFile(fmt.Sprintf("testdata/%s", filename))
+	fileNames := make([]string, len(filemap))
+	i := 0
+	for k := range filemap {
+		fileNames[i] = k
+		i++
+	}
+	// We sort the filenames so we get consistent results for multiple file loads
+	sort.Strings(fileNames)
+
+	for _, key := range fileNames {
+		yamlFile, err := os.ReadFile(fmt.Sprintf("testdata/%s", filemap[key]))
 		if err != nil {
 			return toReturn, err
 		}

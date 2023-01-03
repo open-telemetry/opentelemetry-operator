@@ -1,16 +1,18 @@
 package operator
 
 import (
+	"os"
+	"testing"
+
 	"github.com/open-telemetry/opamp-go/protobufs"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 var (
@@ -73,7 +75,7 @@ func TestClient_Apply(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeClient := getFakeClient(t)
-			c := NewClient(clientLogger, fakeClient)
+			c := NewClient(clientLogger, fakeClient, nil)
 			var colConfig []byte
 			var err error
 			if len(tt.args.file) > 0 {
@@ -97,7 +99,7 @@ func Test_collectorUpdate(t *testing.T) {
 	name := "test"
 	namespace := "testing"
 	fakeClient := getFakeClient(t)
-	c := NewClient(clientLogger, fakeClient)
+	c := NewClient(clientLogger, fakeClient, nil)
 	colConfig, err := loadConfig("testdata/collector.yaml")
 	assert.NoError(t, err, "Should be no error on loading test configuration")
 	configmap := &protobufs.AgentConfigFile{
@@ -143,7 +145,7 @@ func Test_collectorDelete(t *testing.T) {
 	name := "test"
 	namespace := "testing"
 	fakeClient := getFakeClient(t)
-	c := NewClient(clientLogger, fakeClient)
+	c := NewClient(clientLogger, fakeClient, nil)
 	colConfig, err := loadConfig("testdata/collector.yaml")
 	assert.NoError(t, err, "Should be no error on loading test configuration")
 	configmap := &protobufs.AgentConfigFile{

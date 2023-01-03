@@ -2,6 +2,8 @@ package operator
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"gopkg.in/yaml.v3"
@@ -25,18 +27,20 @@ type ConfigApplier interface {
 }
 
 type Client struct {
-	log       logr.Logger
-	k8sClient client.Client
-	close     chan bool
+	log               logr.Logger
+	componentsAllowed map[string]map[string]bool
+	k8sClient         client.Client
+	close             chan bool
 }
 
 var _ ConfigApplier = &Client{}
 
-func NewClient(log logr.Logger, c client.Client) *Client {
+func NewClient(log logr.Logger, c client.Client, componentsAllowed map[string]map[string]bool) *Client {
 	return &Client{
-		log:       log,
-		k8sClient: c,
-		close:     make(chan bool, 1),
+		log:               log,
+		componentsAllowed: componentsAllowed,
+		k8sClient:         c,
+		close:             make(chan bool, 1),
 	}
 }
 
@@ -80,6 +84,13 @@ func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentC
 	}
 	if len(collectorSpec.Config) == 0 {
 		return errors.NewBadRequest("Must supply valid configuration")
+	}
+	reasons, validateErr := c.validate(collectorSpec)
+	if validateErr != nil {
+		return validateErr
+	}
+	if len(reasons) > 0 {
+		return errors.NewBadRequest(fmt.Sprintf("Items in config are not allowed: %v", reasons))
 	}
 	collector := &v1alpha1.OpenTelemetryCollector{Spec: collectorSpec}
 	ctx := context.Background()
@@ -135,4 +146,34 @@ func (c Client) GetInstance(name string, namespace string) (*v1alpha1.OpenTeleme
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (c Client) validate(spec v1alpha1.OpenTelemetryCollectorSpec) ([]string, error) {
+	// Do not use this feature if it's not specified
+	if c.componentsAllowed == nil || len(c.componentsAllowed) == 0 {
+		return nil, nil
+	}
+	collectorConfig := make(map[string]map[string]interface{})
+	err := yaml.Unmarshal([]byte(spec.Config), &collectorConfig)
+	if err != nil {
+		return nil, err
+	}
+	var invalidComponents []string
+	for component, componentMap := range collectorConfig {
+		if component == "service" {
+			// We don't care about what's in the service pipelines
+			// Only components declared are able to be used there.
+			continue
+		}
+		if _, ok := c.componentsAllowed[component]; !ok {
+			invalidComponents = append(invalidComponents, component)
+			continue
+		}
+		for componentName, _ := range componentMap {
+			if _, ok := c.componentsAllowed[component][componentName]; !ok {
+				invalidComponents = append(invalidComponents, fmt.Sprintf("%s.%s", component, componentName))
+			}
+		}
+	}
+	return invalidComponents, nil
 }

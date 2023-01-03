@@ -3,10 +3,11 @@ package config
 import (
 	"errors"
 	"flag"
-	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/spf13/pflag"
 	"io/fs"
+	"path/filepath"
+
+	"github.com/go-logr/logr"
+	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -14,9 +15,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 var (

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
 	"os"
 	"os/signal"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/agent"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/config"
@@ -29,7 +30,7 @@ func main() {
 		cliConf.RootLogger.Error(kubeErr, "Couldn't create kubernetes client")
 		return
 	}
-	operatorClient := operator.NewClient(cliConf.RootLogger.WithName("operator-client"), kubeClient)
+	operatorClient := operator.NewClient(cliConf.RootLogger.WithName("operator-client"), kubeClient, cfg.GetComponentsAllowed())
 
 	opampClient := cfg.CreateClient(agentLogger)
 	opampAgent := agent.NewAgent(agentLogger, operatorClient, cfg, opampClient)
