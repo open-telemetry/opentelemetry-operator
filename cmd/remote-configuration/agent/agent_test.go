@@ -409,7 +409,7 @@ func TestAgent_onMessage(t *testing.T) {
 			},
 		},
 		{
-			name: "Can delete existing collector",
+			name: "can delete existing collector",
 			fields: fields{
 				configFile: "testdata/agent.yaml",
 			},

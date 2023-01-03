@@ -34,9 +34,16 @@ const (
 )
 
 type ConfigApplier interface {
+	// Apply receives a name and namespace to apply an OpenTelemetryCollector CRD that is contained in the configmap.
 	Apply(name string, namespace string, configmap *protobufs.AgentConfigFile) error
+
+	// GetInstance retrieves an OpenTelemetryCollector CRD given a name and namespace.
 	GetInstance(name string, namespace string) (*v1alpha1.OpenTelemetryCollector, error)
+
+	// ListInstances retrieves all OpenTelemetryCollector CRDs created by the remote-configuration agent.
 	ListInstances() ([]v1alpha1.OpenTelemetryCollector, error)
+
+	// Delete attempts to delete an OpenTelemetryCollector object given a name and namespace.
 	Delete(name string, namespace string) error
 }
 
@@ -175,8 +182,8 @@ func (c Client) validate(spec v1alpha1.OpenTelemetryCollectorSpec) ([]string, er
 	var invalidComponents []string
 	for component, componentMap := range collectorConfig {
 		if component == "service" {
-			// We don't care about what's in the service pipelines
-			// Only components declared are able to be used there.
+			// We don't care about what's in the service pipelines.
+			// Only components declared in the configuration can be used in the service pipeline.
 			continue
 		}
 		if _, ok := c.componentsAllowed[component]; !ok {
