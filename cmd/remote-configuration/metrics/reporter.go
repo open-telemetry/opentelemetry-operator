@@ -1,10 +1,22 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package metrics
 
 import (
 	"context"
 	"fmt"
-	"math"
-	"math/rand"
 	"net/url"
 	"os"
 	"time"
@@ -62,8 +74,7 @@ func NewMetricReporter(
 	}
 	u, err := url.Parse(dest.DestinationEndpoint)
 	if err != nil {
-		err := fmt.Errorf("invalid DestinationEndpoint: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("invalid DestinationEndpoint: %w", err)
 	}
 
 	// Create OTLP/HTTP metric exporter.
@@ -78,20 +89,22 @@ func NewMetricReporter(
 
 	client, err := otlpmetrichttp.New(context.Background(), opts...)
 	if err != nil {
-		err := fmt.Errorf("failed to initialize otlp metric http client: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize otlp metric http client: %w", err)
 	}
 
 	// Define the Resource to be exported with all metrics. Use OpenTelemetry semantic
 	// conventions as the OpAMP spec requires:
 	// https://github.com/open-telemetry/opamp-spec/blob/main/specification.md#own-telemetry-reporting
-	resource, err := otelresource.New(context.Background(),
+	resource, resourceErr := otelresource.New(context.Background(),
 		otelresource.WithAttributes(
 			semconv.ServiceNameKey.String(agentType),
 			semconv.ServiceVersionKey.String(agentVersion),
 			semconv.ServiceInstanceIDKey.String(instanceId.String()),
 		),
 	)
+	if resourceErr != nil {
+		return nil, resourceErr
+	}
 
 	provider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(resource),
@@ -109,8 +122,7 @@ func NewMetricReporter(
 
 	reporter.process, err = process.NewProcess(int32(os.Getpid()))
 	if err != nil {
-		err := fmt.Errorf("cannot query own process: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("cannot query own process: %w", err)
 	}
 
 	// Create some metrics that will be reported according to OpenTelemetry semantic
@@ -119,31 +131,26 @@ func NewMetricReporter(
 		"process.cpu.time",
 	)
 	if err != nil {
-		err := fmt.Errorf("can't create process time metric: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("can't create process time metric: %w", err)
 	}
 	err = reporter.meter.RegisterCallback([]instrument.Asynchronous{reporter.processCpuTime}, reporter.processCpuTimeFunc)
 	if err != nil {
-		err := fmt.Errorf("can't create register callback: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("can't create register callback: %w", err)
 	}
 	reporter.processMemoryPhysical, err = reporter.meter.AsyncInt64().Gauge(
 		"process.memory.physical_usage",
 	)
 	if err != nil {
-		err := fmt.Errorf("can't create memory metric: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("can't create memory metric: %w", err)
 	}
 	err = reporter.meter.RegisterCallback([]instrument.Asynchronous{reporter.processMemoryPhysical}, reporter.processMemoryPhysicalFunc)
 	if err != nil {
-		err := fmt.Errorf("can't register callback: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("can't register callback: %w", err)
 	}
 
 	reporter.counter, err = reporter.meter.SyncInt64().Counter("custom_metric_ticks")
 	if err != nil {
-		err := fmt.Errorf("can't register counter metric: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("can't register counter metric: %w", err)
 	}
 
 	reporter.meterShutdowner = func() { _ = provider.Shutdown(context.Background()) }
@@ -156,24 +163,20 @@ func NewMetricReporter(
 func (reporter *MetricReporter) processCpuTimeFunc(c context.Context) {
 	times, err := reporter.process.Times()
 	if err != nil {
-		reporter.logger.Errorf("Cannot get process CPU times: %v", err)
+		reporter.logger.Errorf("Cannot get process CPU times: %w", err)
 	}
-
-	// Report process CPU times, but also add some randomness to make it interesting for demo.
-	reporter.processCpuTime.Observe(c, math.Min(times.User+rand.Float64(), 1), attribute.String("state", "user"))
-	reporter.processCpuTime.Observe(c, math.Min(times.System+rand.Float64(), 1), attribute.String("state", "system"))
-	reporter.processCpuTime.Observe(c, math.Min(times.Iowait+rand.Float64(), 1), attribute.String("state", "wait"))
+	reporter.processCpuTime.Observe(c, times.User, attribute.String("state", "user"))
+	reporter.processCpuTime.Observe(c, times.System, attribute.String("state", "system"))
+	reporter.processCpuTime.Observe(c, times.Iowait, attribute.String("state", "wait"))
 }
 
 func (reporter *MetricReporter) processMemoryPhysicalFunc(ctx context.Context) {
 	memory, err := reporter.process.MemoryInfo()
 	if err != nil {
-		reporter.logger.Errorf("Cannot get process memory information: %v", err)
+		reporter.logger.Errorf("Cannot get process memory information: %w", err)
 		return
 	}
-
-	// Report the RSS, but also add some randomness to make it interesting for demo.
-	reporter.processMemoryPhysical.Observe(ctx, int64(memory.RSS)+rand.Int63n(10000000))
+	reporter.processMemoryPhysical.Observe(ctx, int64(memory.RSS))
 }
 
 func (reporter *MetricReporter) sendMetrics() {

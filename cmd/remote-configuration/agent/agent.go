@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package agent
 
 import (
@@ -126,10 +140,7 @@ func (agent *Agent) updateAgentIdentity(instanceId ulid.ULID) {
 		instanceId.String())
 	agent.instanceId = instanceId
 
-	if agent.metricReporter != nil {
-		// TODO: reinit or update meter (possibly using a single function to update all own connection settings
-		// or with having a common resource factory or so)
-	}
+	// TODO: reinit or update meter (possibly using a single function to update all own connection settings
 }
 
 func (agent *Agent) getNameAndNamespace(key string) (string, string, error) {
@@ -153,14 +164,14 @@ func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.Effectiv
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
 	for _, instance := range instances {
-		marshalled, err := yaml.Marshal(instance)
+		marshaled, err := yaml.Marshal(instance)
 		if err != nil {
 			agent.logger.Errorf("couldn't marshal collector configuration", err)
 			return nil, err
 		}
 		mapKey := agent.makeKeyFromNameNamespace(instance.GetName(), instance.GetNamespace())
 		instanceMap[mapKey] = &protobufs.AgentConfigFile{
-			Body:        marshalled,
+			Body:        marshaled,
 			ContentType: "yaml",
 		}
 	}
@@ -185,7 +196,7 @@ func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
 }
 
 // Take the remote config, layer it over existing, done
-// INVARIANT: The caller must verify that config isn't nil _and_ the configuration has changed between calls
+// INVARIANT: The caller must verify that config isn't nil _and_ the configuration has changed between calls.
 func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*protobufs.RemoteConfigStatus, error) {
 	var multiErr error
 	for key, file := range config.Config.GetConfigMap() {
@@ -244,8 +255,12 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 	if msg.RemoteConfig != nil && !bytes.Equal(agent.lastHash, msg.RemoteConfig.GetConfigHash()) {
 		var err error
 		status, err := agent.applyRemoteConfig(msg.RemoteConfig)
-		setErr := agent.opampClient.SetRemoteConfigStatus(status)
-		if setErr != nil {
+		if err != nil {
+			agent.logger.Errorf(err.Error())
+		}
+		err = agent.opampClient.SetRemoteConfigStatus(status)
+		if err != nil {
+			agent.logger.Errorf(err.Error())
 			return
 		}
 		err = agent.opampClient.UpdateEffectiveConfig(ctx)
@@ -254,10 +269,9 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 		}
 	}
 
-	// TODO: figure out why metrics aren't working
-	//if msg.OwnMetricsConnSettings != nil {
-	//	agent.initMeter(msg.OwnMetricsConnSettings)
-	//}
+	if msg.OwnMetricsConnSettings != nil {
+		agent.initMeter(msg.OwnMetricsConnSettings)
+	}
 
 	if msg.AgentIdentification != nil {
 		newInstanceId, err := ulid.Parse(msg.AgentIdentification.NewInstanceUid)

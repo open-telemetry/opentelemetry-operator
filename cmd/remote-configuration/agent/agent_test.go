@@ -1,9 +1,23 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package agent
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
 	"os"
 	"sort"
 	"testing"
@@ -490,7 +504,7 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	defer agent.Shutdown()
 	assert.NoError(t, err, "should be able to start agent")
 	previousInstanceId := agent.instanceId.String()
-	entropy := ulid.Monotonic(rand.New(rand.NewSource(10000)), 0)
+	entropy := ulid.Monotonic(rand.Reader, 0)
 	newId := ulid.MustNew(ulid.MaxTime(), entropy)
 	agent.onMessage(context.Background(), &types.MessageData{
 		AgentIdentification: &protobufs.AgentIdentification{
