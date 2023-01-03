@@ -90,6 +90,7 @@ ci: test
 test: generate fmt vet ensure-generate-is-noop envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
 	cd cmd/otel-allocator && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
+	cd cmd/remote-configuration && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
 
 # Build manager binary
 .PHONY: manager
@@ -152,6 +153,7 @@ vet:
 lint:
 	golangci-lint run
 	cd cmd/otel-allocator && golangci-lint run
+	cd cmd/remote-configuration && golangci-lint run
 
 # Generate code
 .PHONY: generate
