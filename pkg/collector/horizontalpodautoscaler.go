@@ -80,8 +80,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					Kind:       "OpenTelemetryCollector",
 					Name:       naming.OpenTelemetryCollector(otelcol),
 				},
-				MinReplicas: otelcol.Spec.Replicas,
-				MaxReplicas: *otelcol.Spec.MaxReplicas,
+				MinReplicas: otelcol.Spec.Autoscaler.MinReplicas,
+				MaxReplicas: *otelcol.Spec.Autoscaler.MaxReplicas,
 				Metrics:     metrics,
 			},
 		}
@@ -131,8 +131,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					Kind:       "OpenTelemetryCollector",
 					Name:       naming.OpenTelemetryCollector(otelcol),
 				},
-				MinReplicas: otelcol.Spec.Replicas,
-				MaxReplicas: *otelcol.Spec.MaxReplicas,
+				MinReplicas: otelcol.Spec.Autoscaler.MinReplicas,
+				MaxReplicas: *otelcol.Spec.Autoscaler.MaxReplicas,
 				Metrics:     metrics,
 			},
 		}

@@ -11,6 +11,7 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/gorilla/mux v1.8.0
 	github.com/mitchellh/hashstructure v1.1.0
+	github.com/oklog/run v1.1.0
 	github.com/prometheus-operator/prometheus-operator v0.53.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.53.1
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.53.1

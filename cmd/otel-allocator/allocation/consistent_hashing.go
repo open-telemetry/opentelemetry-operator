@@ -124,25 +124,25 @@ func (c *consistentHashingAllocator) addTargetToTargetItems(tg *target.Item) {
 // Any net-new additions are assigned to the next available collector.
 func (c *consistentHashingAllocator) handleTargets(diff diff.Changes[*target.Item]) {
 	// Check for removals
-	for k, target := range c.targetItems {
-		// if the current target is in the removals list
+	for k, item := range c.targetItems {
+		// if the current item is in the removals list
 		if _, ok := diff.Removals()[k]; ok {
-			col := c.collectors[target.CollectorName]
+			col := c.collectors[item.CollectorName]
 			col.NumTargets--
 			delete(c.targetItems, k)
-			delete(c.targetItemsPerJobPerCollector[target.CollectorName][target.JobName], target.Hash())
-			TargetsPerCollector.WithLabelValues(target.CollectorName, consistentHashingStrategyName).Set(float64(col.NumTargets))
+			delete(c.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
+			TargetsPerCollector.WithLabelValues(item.CollectorName, consistentHashingStrategyName).Set(float64(col.NumTargets))
 		}
 	}
 
 	// Check for additions
-	for k, target := range diff.Additions() {
+	for k, item := range diff.Additions() {
 		// Do nothing if the item is already there
 		if _, ok := c.targetItems[k]; ok {
 			continue
 		} else {
-			// Add target to target pool and assign a collector
-			c.addTargetToTargetItems(target)
+			// Add item to item pool and assign a collector
+			c.addTargetToTargetItems(item)
 		}
 	}
 }
