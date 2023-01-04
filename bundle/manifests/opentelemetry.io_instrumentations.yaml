@@ -59,7 +59,7 @@ spec:
                   attrs:
                     description: 'Attrs defines Apache HTTPD agent specific attributes.
                       The precedence is: `agent default attributes` > `instrument
-                      spec attributes`'
+                      spec attributes` . Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module'
                     items:
                       description: EnvVar represents an environment variable present
                         in a Container.
