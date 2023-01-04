@@ -179,9 +179,8 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator start-kind cert-manager install-metrics-server install-openshift-routes load-image-all deploy
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-remote-configuration start-kind cert-manager install-metrics-server install-openshift-routes load-image-all deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) ./hack/modify-test-images.sh
-	REMOTECONFIGURATION_IMG=$(REMOTECONFIGURATION_IMG) ./hack/modify-test-images.sh
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk

@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"os"
 	"sort"
 	"testing"
@@ -97,7 +98,7 @@ func getFakeApplier(t *testing.T, conf config.Config) *operator.Client {
 	})
 	scheme := runtime.NewScheme()
 	err := schemeBuilder.AddToScheme(scheme)
-	assert.NoError(t, err, "Should be able to add custom types")
+	require.NoError(t, err, "Should be able to add custom types")
 	c := fake.NewClientBuilder().WithScheme(scheme)
 	return operator.NewClient(l, c.Build(), conf.GetComponentsAllowed())
 }
@@ -447,17 +448,17 @@ func TestAgent_onMessage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockOpampClient{}
 			conf, err := config.Load(tt.fields.configFile)
-			assert.NoError(t, err, "should be able to load config")
+			require.NoError(t, err, "should be able to load config")
 			applier := getFakeApplier(t, conf)
 			agent := NewAgent(clientLogger, applier, conf, mockClient)
 			err = agent.Start()
 			defer agent.Shutdown()
-			assert.NoError(t, err, "should be able to start agent")
+			require.NoError(t, err, "should be able to start agent")
 			data, err := getMessageDataFromConfigFile(tt.args.configFile)
-			assert.NoError(t, err, "should be able to load data")
+			require.NoError(t, err, "should be able to load data")
 			agent.onMessage(tt.args.ctx, data)
 			effectiveConfig, err := agent.getEffectiveConfig(tt.args.ctx)
-			assert.NoError(t, err, "should be able to get effective config")
+			require.NoError(t, err, "should be able to get effective config")
 			if tt.args.configFile != nil {
 				// We should only expect this to happen if we supply configuration
 				assert.Equal(t, effectiveConfig, mockClient.lastEffectiveConfig, "client's config should be updated")
@@ -476,10 +477,10 @@ func TestAgent_onMessage(t *testing.T) {
 				return
 			}
 			nextData, err := getMessageDataFromConfigFile(tt.args.nextConfigFile)
-			assert.NoError(t, err, "should be able to load updated data")
+			require.NoError(t, err, "should be able to load updated data")
 			agent.onMessage(tt.args.ctx, nextData)
 			nextEffectiveConfig, err := agent.getEffectiveConfig(tt.args.ctx)
-			assert.NoError(t, err, "should be able to get updated effective config")
+			require.NoError(t, err, "should be able to get updated effective config")
 			assert.Equal(t, nextEffectiveConfig, mockClient.lastEffectiveConfig, "client's config should be updated")
 			assert.NotNilf(t, nextEffectiveConfig.ConfigMap.GetConfigMap(), "configmap should have updated data")
 			for colNameNamespace, expectedContents := range tt.want.nextContents {
@@ -497,12 +498,12 @@ func TestAgent_onMessage(t *testing.T) {
 func Test_CanUpdateIdentity(t *testing.T) {
 	mockClient := &mockOpampClient{}
 	conf, err := config.Load("testdata/agent.yaml")
-	assert.NoError(t, err, "should be able to load config")
+	require.NoError(t, err, "should be able to load config")
 	applier := getFakeApplier(t, conf)
 	agent := NewAgent(clientLogger, applier, conf, mockClient)
 	err = agent.Start()
 	defer agent.Shutdown()
-	assert.NoError(t, err, "should be able to start agent")
+	require.NoError(t, err, "should be able to start agent")
 	previousInstanceId := agent.instanceId.String()
 	entropy := ulid.Monotonic(rand.Reader, 0)
 	newId := ulid.MustNew(ulid.MaxTime(), entropy)

@@ -15,6 +15,7 @@
 package operator
 
 import (
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 
@@ -41,7 +42,7 @@ func getFakeClient(t *testing.T) client.WithWatch {
 	})
 	scheme := runtime.NewScheme()
 	err := schemeBuilder.AddToScheme(scheme)
-	assert.NoError(t, err, "Should be able to add custom types")
+	require.NoError(t, err, "Should be able to add custom types")
 	c := fake.NewClientBuilder().WithScheme(scheme)
 	return c.Build()
 }
@@ -94,7 +95,7 @@ func TestClient_Apply(t *testing.T) {
 			var err error
 			if len(tt.args.file) > 0 {
 				colConfig, err = loadConfig(tt.args.file)
-				assert.NoError(t, err, "Should be no error on loading test configuration")
+				require.NoError(t, err, "Should be no error on loading test configuration")
 			} else {
 				colConfig = []byte(tt.args.config)
 			}
@@ -115,18 +116,18 @@ func Test_collectorUpdate(t *testing.T) {
 	fakeClient := getFakeClient(t)
 	c := NewClient(clientLogger, fakeClient, nil)
 	colConfig, err := loadConfig("testdata/collector.yaml")
-	assert.NoError(t, err, "Should be no error on loading test configuration")
+	require.NoError(t, err, "Should be no error on loading test configuration")
 	configmap := &protobufs.AgentConfigFile{
 		Body:        colConfig,
 		ContentType: "yaml",
 	}
 	// Apply a valid initial configuration
 	err = c.Apply(name, namespace, configmap)
-	assert.NoError(t, err, "Should apply base config")
+	require.NoError(t, err, "Should apply base config")
 
 	// Get the newly created collector
 	instance, err := c.GetInstance(name, namespace)
-	assert.NoError(t, err, "Should be able to get the newly created instance")
+	require.NoError(t, err, "Should be able to get the newly created instance")
 	assert.Contains(t, instance.Spec.Config, "processors: []")
 
 	// Try updating with an invalid one
@@ -136,21 +137,21 @@ func Test_collectorUpdate(t *testing.T) {
 
 	// Update successfully with a valid configuration
 	newColConfig, err := loadConfig("testdata/updated-collector.yaml")
-	assert.NoError(t, err, "Should be no error on loading test configuration")
+	require.NoError(t, err, "Should be no error on loading test configuration")
 	newConfigMap := &protobufs.AgentConfigFile{
 		Body:        newColConfig,
 		ContentType: "yaml",
 	}
 	err = c.Apply(name, namespace, newConfigMap)
-	assert.NoError(t, err, "Should be able to update collector")
+	require.NoError(t, err, "Should be able to update collector")
 
 	// Get the updated collector
 	updatedInstance, err := c.GetInstance(name, namespace)
-	assert.NoError(t, err, "Should be able to get the updated instance")
+	require.NoError(t, err, "Should be able to get the updated instance")
 	assert.Contains(t, updatedInstance.Spec.Config, "processors: [memory_limiter, batch]")
 
 	allInstances, err := c.ListInstances()
-	assert.NoError(t, err, "Should be able to list all collectors")
+	require.NoError(t, err, "Should be able to list all collectors")
 	assert.Len(t, allInstances, 1)
 	assert.Equal(t, allInstances[0], *updatedInstance)
 }
@@ -161,27 +162,27 @@ func Test_collectorDelete(t *testing.T) {
 	fakeClient := getFakeClient(t)
 	c := NewClient(clientLogger, fakeClient, nil)
 	colConfig, err := loadConfig("testdata/collector.yaml")
-	assert.NoError(t, err, "Should be no error on loading test configuration")
+	require.NoError(t, err, "Should be no error on loading test configuration")
 	configmap := &protobufs.AgentConfigFile{
 		Body:        colConfig,
 		ContentType: "yaml",
 	}
 	// Apply a valid initial configuration
 	err = c.Apply(name, namespace, configmap)
-	assert.NoError(t, err, "Should apply base config")
+	require.NoError(t, err, "Should apply base config")
 
 	// Get the newly created collector
 	instance, err := c.GetInstance(name, namespace)
-	assert.NoError(t, err, "Should be able to get the newly created instance")
+	require.NoError(t, err, "Should be able to get the newly created instance")
 	assert.Contains(t, instance.Spec.Config, "processors: []")
 
 	// Delete it
 	err = c.Delete(name, namespace)
-	assert.NoError(t, err, "Should be able to delete a collector")
+	require.NoError(t, err, "Should be able to delete a collector")
 
 	// Check there's nothing left
 	allInstances, err := c.ListInstances()
-	assert.NoError(t, err, "Should be able to list all collectors")
+	require.NoError(t, err, "Should be able to list all collectors")
 	assert.Len(t, allInstances, 0)
 }
 
