@@ -161,7 +161,8 @@ type ApacheHttpd struct {
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Attrs defines Apache HTTPD agent specific attributes. The precedence is:
-	// `agent default attributes` > `instrument spec attributes`
+	// `agent default attributes` > `instrument spec attributes` .
+	// Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module
 	// +optional
 	Attrs []corev1.EnvVar `json:"attrs,omitempty"`
 

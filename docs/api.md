@@ -179,7 +179,7 @@ Apache defines configuration for Apache HTTPD auto-instrumentation.
         <td><b><a href="#instrumentationspecapachehttpdattrsindex">attrs</a></b></td>
         <td>[]object</td>
         <td>
-          Attrs defines Apache HTTPD agent specific attributes. The precedence is: `agent default attributes` > `instrument spec attributes`<br/>
+          Attrs defines Apache HTTPD agent specific attributes. The precedence is: `agent default attributes` > `instrument spec attributes` . Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module<br/>
         </td>
         <td>false</td>
       </tr><tr>
