@@ -84,9 +84,11 @@ type OpenTelemetryCollectorSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
 	// +optional
+	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
+	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// Autoscaler specifies the pod autoscaling configuration to use
 	// for the OpenTelemetryCollector workload.
@@ -289,6 +291,12 @@ type OpenTelemetryCollectorList struct {
 
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// +optional
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
+	// +optional
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// +optional
 	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
 	// TargetCPUUtilization sets the target average CPU used across all replicas.

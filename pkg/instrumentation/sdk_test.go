@@ -634,11 +634,19 @@ func TestInjectPython(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_TRACES_EXPORTER",
-							Value: "otlp_proto_http",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+							Value: "http/protobuf",
 						},
 						{
 							Name:  "OTEL_METRICS_EXPORTER",
-							Value: "none",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+							Value: "http/protobuf",
 						},
 						{
 							Name:  "OTEL_SERVICE_NAME",
