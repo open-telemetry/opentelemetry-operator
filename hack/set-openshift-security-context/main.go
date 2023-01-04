@@ -35,28 +35,26 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
-func parseId(namespace *corev1.Namespace, annotation string) int64 {
+func parseId(namespace *corev1.Namespace, annotation string) (int64, error) {
 	raw := namespace.GetAnnotations()["openshift.io/sa.scc.supplemental-groups"]
 	if raw == "" {
-		fmt.Println("The annotation ", annotation, " is not present")
-		os.Exit(1)
+		return -1, fmt.Errorf("The annotation %s is not present", annotation)
 	}
 
 	lowBound := strings.Split(raw, "/")[0]
 	id, err := strconv.ParseInt(lowBound, 0, 64)
 	if err != nil {
-		fmt.Println("It was not possible to convert the number to int64: ", lowBound)
-		os.Exit(1)
+		return -1, fmt.Errorf("It was not possible to convert the number to int64: %s", lowBound)
 	}
 
-	return id
+	return id, nil
 }
 
-func getGroupID(namespace *v1.Namespace) int64 {
+func getGroupID(namespace *v1.Namespace) (int64, error) {
 	return parseId(namespace, "openshift.io/sa.scc.supplemental-groups")
 }
 
-func getUserID(namespace *v1.Namespace) int64 {
+func getUserID(namespace *v1.Namespace) (int64, error) {
 	return parseId(namespace, "openshift.io/sa.scc.uid-range")
 }
 
@@ -91,7 +89,7 @@ func main() {
 	if runningPlatform == platform.OpenShift {
 		fmt.Println("Connected to an OpenShift cluster")
 	} else {
-		fmt.Println("Nothing extra needs to be done")
+		fmt.Println("Not running in an OpenShift cluster. Setting the SecurityContext is not needed")
 		os.Exit(0)
 	}
 
@@ -115,19 +113,30 @@ func main() {
 	)
 
 	if err != nil {
-		fmt.Println("Deployment was not found")
+		fmt.Println("Deployment", deploymentName, "was not found")
 		os.Exit(1)
 	}
 
 	var userId *int64 = new(int64)
-	*userId = getUserID(namespace)
+	*userId, err = getUserID(namespace)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	var groupdId *int64 = new(int64)
-	*groupdId = getGroupID(namespace)
+	*groupdId, err = getGroupID(namespace)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	deployment.Spec.Template.Spec.SecurityContext.RunAsUser = userId
 	deployment.Spec.Template.Spec.SecurityContext.RunAsGroup = groupdId
 	deployment.Spec.Template.Spec.SecurityContext.FSGroup = groupdId
 
-	_, _ = deploymentsClient.Update(context.Background(), deployment, metav1.UpdateOptions{})
+	_, err = deploymentsClient.Update(context.Background(), deployment, metav1.UpdateOptions{})
+	if err != nil {
+		fmt.Println("There was an error while updating the deployment", deploymentName, ":", err)
+	}
 }
