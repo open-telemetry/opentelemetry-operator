@@ -228,22 +228,13 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 	tests := []int{0, 5, 10, 50, 100, 500}
 	for _, n := range tests {
 		data := makeNScrapeConfigs(n)
-		b.Run(fmt.Sprintf("std_%d_targets", n), func(b *testing.B) {
+		b.Run(fmt.Sprintf("%d_targets", n), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
 				s.compareHash = 0
 				s.discoveryManager = &mockDiscoveryManager{m: data}
 				resp := httptest.NewRecorder()
 				s.ScrapeConfigsHandler(resp, nil)
-			}
-		})
-		b.Run(fmt.Sprintf("jsoniter_%d_targets", n), func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				s.compareHash = 0
-				s.discoveryManager = &mockDiscoveryManager{m: data}
-				resp := httptest.NewRecorder()
-				s.ScrapeConfigsIterHandler(resp, nil)
 			}
 		})
 	}
@@ -295,18 +286,11 @@ func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 	}
 	for _, tc := range tests {
 		data := makeNCollectorJSON(tc.numCollectors, tc.numTargets)
-		b.Run(fmt.Sprintf("std_%d_collectors_%d_targets", tc.numCollectors, tc.numTargets), func(b *testing.B) {
+		b.Run(fmt.Sprintf("%d_collectors_%d_targets", tc.numCollectors, tc.numTargets), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
 				resp := httptest.NewRecorder()
 				s.jsonHandler(resp, data)
-			}
-		})
-		b.Run(fmt.Sprintf("jsoniter_%d_collectors_%d_targets", tc.numCollectors, tc.numTargets), func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				resp := httptest.NewRecorder()
-				s.jsonIterHandler(resp, data)
 			}
 		})
 	}
@@ -362,18 +346,11 @@ func BenchmarkTargetItemsJSONHandler(b *testing.B) {
 	}
 	for _, tc := range tests {
 		data := makeNTargetItems(tc.numTargets, tc.numLabels)
-		b.Run(fmt.Sprintf("std_%d_targets_%d_labels", tc.numTargets, tc.numLabels), func(b *testing.B) {
+		b.Run(fmt.Sprintf("%d_targets_%d_labels", tc.numTargets, tc.numLabels), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
 				resp := httptest.NewRecorder()
 				s.jsonHandler(resp, data)
-			}
-		})
-		b.Run(fmt.Sprintf("jsoniter_%d_targets_%d_labels", tc.numTargets, tc.numLabels), func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				resp := httptest.NewRecorder()
-				s.jsonIterHandler(resp, data)
 			}
 		})
 	}

@@ -16,25 +16,21 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
-	yaml2 "github.com/ghodss/yaml"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mitchellh/hashstructure"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	promconfig "github.com/prometheus/prometheus/config"
-	"gopkg.in/yaml.v2"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
 var (
@@ -122,43 +118,6 @@ func (s *Server) ScrapeConfigsHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 	// if the hashes are different, we need to recompute the scrape config
 	if hash != s.compareHash {
-		var configBytes []byte
-		configBytes, err = yaml.Marshal(configs)
-		if err != nil {
-			s.errorHandler(w, err)
-			return
-		}
-		var jsonConfig []byte
-		jsonConfig, err = yaml2.YAMLToJSON(configBytes)
-		if err != nil {
-			s.errorHandler(w, err)
-			return
-		}
-		s.scrapeConfigResponse = jsonConfig
-		s.compareHash = hash
-	}
-	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(s.scrapeConfigResponse)
-	if err != nil {
-		s.errorHandler(w, err)
-	}
-}
-
-// ScrapeConfigsIterHandler returns the available scrape configuration discovered by the target allocator.
-// The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
-// After that, the YAML is converted in to a JSON format for consumers to use.
-func (s *Server) ScrapeConfigsIterHandler(w http.ResponseWriter, _ *http.Request) {
-	configs := s.discoveryManager.GetScrapeConfigs()
-
-	hash, err := hashstructure.Hash(configs, nil)
-	if err != nil {
-		s.logger.Error(err, "failed to hash the config")
-		s.errorHandler(w, err)
-		return
-	}
-	// if the hashes are different, we need to recompute the scrape config
-	if hash != s.compareHash {
 		configBytes, mErr := s.yamlMarshaller.Marshal(configs)
 		if mErr != nil {
 			s.errorHandler(w, mErr)
@@ -226,14 +185,6 @@ func (s *Server) errorHandler(w http.ResponseWriter, err error) {
 }
 
 func (s *Server) jsonHandler(w http.ResponseWriter, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(data)
-	if err != nil {
-		s.logger.Error(err, "failed to encode data for http response")
-	}
-}
-
-func (s *Server) jsonIterHandler(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	err := s.jsonMarshaller.NewEncoder(w).Encode(data)
 	if err != nil {
