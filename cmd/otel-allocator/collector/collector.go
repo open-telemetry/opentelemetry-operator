@@ -17,7 +17,6 @@ package collector
 import (
 	"context"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -58,22 +57,21 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 	}
 
 	return &Client{
-		log:       logger,
+		log:       logger.WithValues("component", "opentelemetry-targetallocator"),
 		k8sClient: clientset,
 		close:     make(chan struct{}),
 	}, nil
 }
 
-func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) {
+func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) error {
 	collectorMap := map[string]*allocation.Collector{}
-	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 
 	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labelMap).String(),
 	}
 	pods, err := k.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
 	if err != nil {
-		log.Error(err, "Pod failure")
+		k.log.Error(err, "Pod failure")
 		os.Exit(1)
 	}
 	for i := range pods.Items {
@@ -85,41 +83,49 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 
 	fn(collectorMap)
 
-	go func() {
-		for {
-			watcher, err := k.k8sClient.CoreV1().Pods(ns).Watch(ctx, opts)
-			if err != nil {
-				log.Error(err, "unable to create collector pod watcher")
-				return
-			}
-			log.Info("Successfully started a collector pod watcher")
-			if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" {
-				log.Info("Collector pod watch event stopped " + msg)
-				return
-			}
+	for {
+		if !k.restartWatch(ctx, opts, collectorMap, fn) {
+			return nil
 		}
-	}()
+	}
+}
+
+func (k *Client) restartWatch(ctx context.Context, opts metav1.ListOptions, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) bool {
+	// add timeout to the context before calling Watch
+	ctx, cancel := context.WithTimeout(ctx, watcherTimeout)
+	defer cancel()
+	watcher, err := k.k8sClient.CoreV1().Pods(ns).Watch(ctx, opts)
+	if err != nil {
+		k.log.Error(err, "unable to create collector pod watcher")
+		return false
+	}
+	k.log.Info("Successfully started a collector pod watcher")
+	if msg := runWatch(ctx, k, watcher.ResultChan(), collectorMap, fn); msg != "" {
+		k.log.Info("Collector pod watch event stopped " + msg)
+		return false
+	}
+
+	return true
 }
 
 func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap map[string]*allocation.Collector, fn func(collectors map[string]*allocation.Collector)) string {
-	log := k.log.WithValues("component", "opentelemetry-targetallocator")
 	for {
 		collectorsDiscovered.Set(float64(len(collectorMap)))
 		select {
 		case <-k.close:
 			return "kubernetes client closed"
 		case <-ctx.Done():
-			return "context done"
+			return ""
 		case event, ok := <-c:
 			if !ok {
-				log.Info(strconv.FormatBool(ok))
-				return "no event"
+				k.log.Info("No event found. Restarting watch routine")
+				return ""
 			}
 
 			pod, ok := event.Object.(*v1.Pod)
 			if !ok {
-				log.Info(strconv.FormatBool(ok))
-				return "no event"
+				k.log.Info("No pod found in event Object. Restarting watch routine")
+				return ""
 			}
 
 			switch event.Type { //nolint:exhaustive
@@ -129,9 +135,6 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 				delete(collectorMap, pod.Name)
 			}
 			fn(collectorMap)
-		case <-time.After(watcherTimeout):
-			log.Info("Restarting watch routine")
-			return ""
 		}
 	}
 }
