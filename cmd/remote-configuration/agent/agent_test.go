@@ -18,10 +18,11 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"os"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/open-telemetry/opamp-go/client"
