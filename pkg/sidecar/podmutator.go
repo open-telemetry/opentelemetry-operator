@@ -79,7 +79,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// which instance should it talk to?
 	otelcol, err := p.getCollectorInstance(ctx, ns, annValue)
 	if err != nil {
-		if err == errMultipleInstancesPossible || err == errNoInstancesAvailable || err == errInstanceNotSidecar {
+		if errors.Is(err, errMultipleInstancesPossible) || errors.Is(err, errNoInstancesAvailable) || errors.Is(err, errInstanceNotSidecar) {
 			// we still allow the pod to be created, but we log a message to the operator's logs
 			logger.Error(err, "failed to select an OpenTelemetry Collector instance for this pod's sidecar")
 			return pod, nil

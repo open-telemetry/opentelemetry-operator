@@ -18,6 +18,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -34,6 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -42,8 +44,10 @@ type OpenTelemetryCollectorReconciler struct {
 	recorder record.EventRecorder
 	scheme   *runtime.Scheme
 	log      logr.Logger
-	tasks    []Task
 	config   config.Config
+
+	tasks   []Task
+	muTasks sync.RWMutex
 }
 
 // Task represents a reconciliation task to be executed by the reconciler.
@@ -63,10 +67,65 @@ type Params struct {
 	Config   config.Config
 }
 
+func (r *OpenTelemetryCollectorReconciler) onPlatformChange() error {
+	// NOTE: At the time the reconciler gets created, the platform type is still unknown.
+	plt := r.config.Platform()
+	var (
+		routesIdx = -1
+	)
+	r.muTasks.Lock()
+	for i, t := range r.tasks {
+		// search for route reconciler
+		switch t.Name {
+		case "routes":
+			routesIdx = i
+		}
+	}
+	r.muTasks.Unlock()
+
+	if err := r.addRouteTask(plt, routesIdx); err != nil {
+		return err
+	}
+
+	return r.removeRouteTask(plt, routesIdx)
+}
+
+func (r *OpenTelemetryCollectorReconciler) addRouteTask(plt platform.Platform, routesIdx int) error {
+	r.muTasks.Lock()
+	defer r.muTasks.Unlock()
+	// if exists and platform is openshift
+	if routesIdx == -1 && plt == platform.OpenShift {
+		r.tasks = append([]Task{{reconcile.Routes, "routes", true}}, r.tasks...)
+	}
+	return nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) removeRouteTask(plt platform.Platform, routesIdx int) error {
+	r.muTasks.Lock()
+	defer r.muTasks.Unlock()
+	if len(r.tasks) < routesIdx {
+		return fmt.Errorf("can not remove route task from reconciler")
+	}
+	// if exists and platform is not openshift
+	if routesIdx != -1 && plt != platform.OpenShift {
+		r.tasks = append(r.tasks[:routesIdx], r.tasks[routesIdx+1:]...)
+	}
+	return nil
+}
+
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
 func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
-	if len(p.Tasks) == 0 {
-		p.Tasks = []Task{
+	r := &OpenTelemetryCollectorReconciler{
+		Client:   p.Client,
+		log:      p.Log,
+		scheme:   p.Scheme,
+		config:   p.Config,
+		tasks:    p.Tasks,
+		recorder: p.Recorder,
+	}
+
+	if len(r.tasks) == 0 {
+		r.tasks = []Task{
 			{
 				reconcile.ConfigMaps,
 				"config maps",
@@ -113,22 +172,16 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 				true,
 			},
 		}
+		r.config.RegisterPlatformChangeCallback(r.onPlatformChange)
 	}
-
-	return &OpenTelemetryCollectorReconciler{
-		Client:   p.Client,
-		log:      p.Log,
-		scheme:   p.Scheme,
-		config:   p.Config,
-		tasks:    p.Tasks,
-		recorder: p.Recorder,
-	}
+	return r
 }
 
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
@@ -166,6 +219,8 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 
 // RunTasks runs all the tasks associated with this reconciler.
 func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
+	r.muTasks.RLock()
+	defer r.muTasks.RUnlock()
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
 			// If we get an error that occurs because a pod is being terminated, then exit this loop
