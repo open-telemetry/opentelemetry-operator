@@ -6,6 +6,11 @@ Changes by Version
 * Support openshift routes ([#1206](https://github.com/open-telemetry/opentelemetry-operator/pull/1206), [@frzifus](https://github.com/frzifus))
 * Add TargetMemoryUtilization metric for AutoScaling ([#1223](https://github.com/open-telemetry/opentelemetry-operator/pull/1223), [@kevinearls](https://github.com/kevinearls))
 ### 💡 Enhancements 💡
+* Update the javaagent version to 1.21.0 ([#1324](https://github.com/open-telemetry/opentelemetry-operator/pull/1324))
+* Update default python exporters to use OTLP ([#1328](https://github.com/open-telemetry/opentelemetry-operator/pull/1328), [@TylerHelmuth](https://github.com/TylerHelmuth))
+* Update default Node.JS instrumentation to 0.34.0 ([#1334](https://github.com/open-telemetry/opentelemetry-operator/pull/1334), [@mat-rumian](https://github.com/mat-rumian))
+* Update default Python instrumentation to 0.36b0 ([#1333](https://github.com/open-telemetry/opentelemetry-operator/pull/1333), [@mat-rumian](https://github.com/mat-rumian))
+* [HPA] Move maxReplicas and minReplicas to AutoscalerSpec ([#1333](https://github.com/open-telemetry/opentelemetry-operator/pull/1302), [@moh-osman3](https://github.com/moh-osman3))
 * Memory improvements first pass ([#1293](https://github.com/open-telemetry/opentelemetry-operator/pull/1293), [@jaronoff97](https://github.com/jaronoff97))
 * Add change handler to register callbacks ([#1292](https://github.com/open-telemetry/opentelemetry-operator/pull/1292), [@frzifus](https://github.com/frzifus))
 * Ignore reconcile errors that occur because a pod is being terminated ([#1233](https://github.com/open-telemetry/opentelemetry-operator/pull/1233), [@kevinearls](https://github.com/kevinearls))
