@@ -15,15 +15,16 @@
 package server
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/big"
+	"math/rand"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/prometheus/common/model"
+	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -43,6 +44,14 @@ var (
 	secondTargetItem     = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
 	testJobTargetItemTwo = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
 )
+
+type mockDiscoveryManager struct {
+	m map[string]*promconfig.ScrapeConfig
+}
+
+func (m *mockDiscoveryManager) GetScrapeConfigs() map[string]*promconfig.ScrapeConfig {
+	return m.m
+}
 
 func TestServer_TargetsHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
@@ -170,12 +179,8 @@ func TestServer_TargetsHandler(t *testing.T) {
 	}
 }
 
-func randInt(max int64) int64 {
-	nBig, _ := rand.Int(rand.Reader, big.NewInt(max))
-	return nBig.Int64()
-}
-
 func BenchmarkServerTargetsHandler(b *testing.B) {
+	rand.Seed(time.Now().UnixNano())
 	var table = []struct {
 		numCollectors int
 		numJobs       int
@@ -202,8 +207,8 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", allocatorName, v.numCollectors, v.numJobs), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					randomJob := randInt(int64(v.numJobs))
-					randomCol := randInt(int64(v.numCollectors))
+					randomJob := rand.Intn(v.numJobs)       //nolint: gosec
+					randomCol := rand.Intn(v.numCollectors) //nolint: gosec
 					request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/test-job-%d/targets?collector_id=collector-%d", randomJob, randomCol), nil)
 					w := httptest.NewRecorder()
 					s.server.Handler.ServeHTTP(w, request)
@@ -211,4 +216,202 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 			})
 		}
 	}
+}
+
+func BenchmarkScrapeConfigsHandler(b *testing.B) {
+	rand.Seed(time.Now().UnixNano())
+	s := &Server{
+		logger:         logger,
+		yamlMarshaller: yamlConfig,
+	}
+
+	tests := []int{0, 5, 10, 50, 100, 500}
+	for _, n := range tests {
+		data := makeNScrapeConfigs(n)
+		b.Run(fmt.Sprintf("%d_targets", n), func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				s.compareHash = 0
+				s.discoveryManager = &mockDiscoveryManager{m: data}
+				resp := httptest.NewRecorder()
+				s.ScrapeConfigsHandler(resp, nil)
+			}
+		})
+	}
+}
+
+func BenchmarkCollectorMapJSONHandler(b *testing.B) {
+	rand.Seed(time.Now().UnixNano())
+	s := &Server{
+		logger:         logger,
+		jsonMarshaller: jsonConfig,
+	}
+
+	tests := []struct {
+		numCollectors int
+		numTargets    int
+	}{
+		{
+			numCollectors: 0,
+			numTargets:    0,
+		},
+		{
+			numCollectors: 5,
+			numTargets:    5,
+		},
+		{
+			numCollectors: 5,
+			numTargets:    50,
+		},
+		{
+			numCollectors: 5,
+			numTargets:    500,
+		},
+		{
+			numCollectors: 50,
+			numTargets:    5,
+		},
+		{
+			numCollectors: 50,
+			numTargets:    50,
+		},
+		{
+			numCollectors: 50,
+			numTargets:    500,
+		},
+		{
+			numCollectors: 50,
+			numTargets:    5000,
+		},
+	}
+	for _, tc := range tests {
+		data := makeNCollectorJSON(tc.numCollectors, tc.numTargets)
+		b.Run(fmt.Sprintf("%d_collectors_%d_targets", tc.numCollectors, tc.numTargets), func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				resp := httptest.NewRecorder()
+				s.jsonHandler(resp, data)
+			}
+		})
+	}
+}
+
+func BenchmarkTargetItemsJSONHandler(b *testing.B) {
+	rand.Seed(time.Now().UnixNano())
+	s := &Server{
+		logger:         logger,
+		jsonMarshaller: jsonConfig,
+	}
+
+	tests := []struct {
+		numTargets int
+		numLabels  int
+	}{
+		{
+			numTargets: 0,
+			numLabels:  0,
+		},
+		{
+			numTargets: 5,
+			numLabels:  5,
+		},
+		{
+			numTargets: 5,
+			numLabels:  50,
+		},
+		{
+			numTargets: 50,
+			numLabels:  5,
+		},
+		{
+			numTargets: 50,
+			numLabels:  50,
+		},
+		{
+			numTargets: 500,
+			numLabels:  50,
+		},
+		{
+			numTargets: 500,
+			numLabels:  500,
+		},
+		{
+			numTargets: 5000,
+			numLabels:  50,
+		},
+		{
+			numTargets: 5000,
+			numLabels:  500,
+		},
+	}
+	for _, tc := range tests {
+		data := makeNTargetItems(tc.numTargets, tc.numLabels)
+		b.Run(fmt.Sprintf("%d_targets_%d_labels", tc.numTargets, tc.numLabels), func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				resp := httptest.NewRecorder()
+				s.jsonHandler(resp, data)
+			}
+		})
+	}
+}
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_/")
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))] //nolint:gosec
+	}
+	return string(b)
+}
+
+func makeNScrapeConfigs(n int) map[string]*promconfig.ScrapeConfig {
+	items := make(map[string]*promconfig.ScrapeConfig, n)
+	for i := 0; i < n; i++ {
+		items[randSeq(20)] = &promconfig.ScrapeConfig{
+			JobName:               randSeq(20),
+			ScrapeInterval:        model.Duration(30 * time.Second),
+			ScrapeTimeout:         model.Duration(time.Minute),
+			MetricsPath:           randSeq(50),
+			SampleLimit:           5,
+			TargetLimit:           200,
+			LabelLimit:            20,
+			LabelNameLengthLimit:  50,
+			LabelValueLengthLimit: 100,
+		}
+	}
+	return items
+}
+
+func makeNCollectorJSON(numCollectors, numItems int) map[string]collectorJSON {
+	items := make(map[string]collectorJSON, numCollectors)
+	for i := 0; i < numCollectors; i++ {
+		items[randSeq(20)] = collectorJSON{
+			Link: randSeq(120),
+			Jobs: makeNTargetItems(numItems, 50),
+		}
+	}
+	return items
+}
+
+func makeNTargetItems(numItems, numLabels int) []*target.Item {
+	items := make([]*target.Item, 0, numItems)
+	for i := 0; i < numItems; i++ {
+		items = append(items, target.NewItem(
+			randSeq(80),
+			randSeq(150),
+			makeNNewLabels(numLabels),
+			randSeq(30),
+		))
+	}
+	return items
+}
+
+func makeNNewLabels(n int) model.LabelSet {
+	labels := make(map[model.LabelName]model.LabelValue, n)
+	for i := 0; i < n; i++ {
+		labels[model.LabelName(randSeq(20))] = model.LabelValue(randSeq(20))
+	}
+	return labels
 }
