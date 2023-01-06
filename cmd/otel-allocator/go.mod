@@ -10,7 +10,6 @@ require (
 	github.com/go-kit/log v0.2.1
 	github.com/go-logr/logr v1.2.3
 	github.com/gorilla/mux v1.8.0
-	github.com/json-iterator/go v1.1.12
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/oklog/run v1.1.0
 	github.com/prometheus-operator/prometheus-operator v0.53.1
@@ -112,6 +111,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kolo/xmlrpc v0.0.0-20201022064351-38db28db192b // indirect
 	github.com/linode/linodego v1.8.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
