@@ -1,7 +1,9 @@
 # Build the remote-configuration binary
-FROM golang:1.19 as builder
+FROM golang:1.19-alpine as builder
 
 WORKDIR /app
+
+RUN apk --no-cache add ca-certificates
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./
@@ -16,9 +18,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 ######## Start a new stage from scratch #######
 FROM scratch
 
-RUN apk --no-cache add ca-certificates
-
 WORKDIR /root/
+
+# Copy the certs from the builder
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy the pre-built binary file from the previous stage
 COPY --from=builder /app/main .

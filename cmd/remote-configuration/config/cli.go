@@ -55,18 +55,23 @@ type CLIConfig struct {
 	RootLogger         logr.Logger
 }
 
-func ParseCLI() (CLIConfig, error) {
+func GetLogger() logr.Logger {
 	opts := zap.Options{}
 	opts.BindFlags(flag.CommandLine)
+
+	return zap.New(zap.UseFlagOptions(&opts))
+}
+
+func ParseCLI(logger logr.Logger) (CLIConfig, error) {
 	cLIConf := CLIConfig{
+		RootLogger:     logger,
 		ListenAddr:     pflag.String("listen-addr", ":8080", "The address where this service serves."),
 		ConfigFilePath: pflag.String("config-file", defaultConfigFilePath, "The path to the config file."),
 	}
 	kubeconfigPath := pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
 	pflag.Parse()
 
-	cLIConf.RootLogger = zap.New(zap.UseFlagOptions(&opts))
-	klog.SetLogger(cLIConf.RootLogger)
+	klog.SetLogger(logger)
 
 	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
 	cLIConf.KubeConfigFilePath = *kubeconfigPath
