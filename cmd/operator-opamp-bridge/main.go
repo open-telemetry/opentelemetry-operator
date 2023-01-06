@@ -18,10 +18,10 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/agent"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/agent"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/logger"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
 )
 
 func main() {

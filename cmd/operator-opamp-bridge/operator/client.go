@@ -30,7 +30,7 @@ import (
 const (
 	CollectorResource       = "OpenTelemetryCollector"
 	ResourceIdentifierKey   = "created-by"
-	ResourceIdentifierValue = "remote-configuration"
+	ResourceIdentifierValue = "operator-opamp-bridge"
 )
 
 type ConfigApplier interface {
@@ -40,7 +40,7 @@ type ConfigApplier interface {
 	// GetInstance retrieves an OpenTelemetryCollector CRD given a name and namespace.
 	GetInstance(name string, namespace string) (*v1alpha1.OpenTelemetryCollector, error)
 
-	// ListInstances retrieves all OpenTelemetryCollector CRDs created by the remote-configuration agent.
+	// ListInstances retrieves all OpenTelemetryCollector CRDs created by the operator-opamp-bridge agent.
 	ListInstances() ([]v1alpha1.OpenTelemetryCollector, error)
 
 	// Delete attempts to delete an OpenTelemetryCollector object given a name and namespace.

@@ -35,9 +35,9 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/logger"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
 )
 
 var (

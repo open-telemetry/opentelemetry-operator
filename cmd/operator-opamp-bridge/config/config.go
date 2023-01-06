@@ -26,11 +26,11 @@ import (
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"gopkg.in/yaml.v2"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration/logger"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/logger"
 )
 
 const (
-	agentType             = "io.opentelemetry.remote-configuration"
+	agentType             = "io.opentelemetry.operator-opamp-bridge"
 	defaultConfigFilePath = "/conf/remoteconfiguration.yaml"
 )
 

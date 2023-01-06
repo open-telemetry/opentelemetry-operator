@@ -1,4 +1,4 @@
-module github.com/open-telemetry/opentelemetry-operator/cmd/remote-configuration
+module github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge
 
 go 1.19
 

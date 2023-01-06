@@ -21,8 +21,8 @@ BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 TARGETALLOCATOR_IMG_REPO ?= target-allocator
 TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,${VERSION})
 
-REMOTECONFIGURATION_IMG_REPO ?= remote-configuration
-REMOTECONFIGURATION_IMG ?= ${IMG_PREFIX}/${REMOTECONFIGURATION_IMG_REPO}:$(addprefix v,${VERSION})
+OPERATOROPAMPBRIDGE_IMG_REPO ?= operator-opamp-bridge
+OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addprefix v,${VERSION})
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -92,7 +92,7 @@ ci: test
 test: generate fmt vet ensure-generate-is-noop envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
 	cd cmd/otel-allocator && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
-	cd cmd/remote-configuration && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
+	cd cmd/operator-opamp-bridge && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
 
 # Build manager binary
 .PHONY: manager
@@ -156,7 +156,7 @@ vet:
 lint:
 	golangci-lint run
 	cd cmd/otel-allocator && golangci-lint run
-	cd cmd/remote-configuration && golangci-lint run
+	cd cmd/operator-opamp-bridge && golangci-lint run
 
 # Generate code
 .PHONY: generate
@@ -179,7 +179,7 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator container-remote-configuration start-kind cert-manager install-metrics-server install-openshift-routes load-image-all deploy
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-openshift-routes load-image-all deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) ./hack/modify-test-images.sh
 
 .PHONY: scorecard-tests
@@ -206,9 +206,9 @@ container-target-allocator-push:
 container-target-allocator:
 	docker buildx build  --load --platform linux/${ARCH} -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
-.PHONY: container-remote-configuration
-container-remote-configuration:
-	docker buildx build --platform linux/${ARCH} -t ${REMOTECONFIGURATION_IMG} cmd/remote-configuration
+.PHONY: container-operator-opamp-bridge
+container-operator-opamp-bridge:
+	docker buildx build --platform linux/${ARCH} -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
 .PHONY: start-kind
 start-kind:
@@ -225,7 +225,7 @@ install-openshift-routes:
 	./hack/install-openshift-routes.sh
 
 .PHONY: load-image-all
-load-image-all: load-image-operator load-image-target-allocator load-image-remote-configuration
+load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge
 
 .PHONY: load-image-operator
 load-image-operator: container
@@ -245,9 +245,9 @@ else
 endif
 
 
-.PHONY: load-image-remote-configuration
-load-image-remote-configuration:
-	kind load docker-image ${REMOTECONFIGURATION_IMG}
+.PHONY: load-image-operator-opamp-bridge
+load-image-operator-opamp-bridge:
+	kind load docker-image ${OPERATOROPAMPBRIDGE_IMG}
 
 .PHONY: cert-manager
 cert-manager: cmctl
