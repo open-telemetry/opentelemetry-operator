@@ -68,6 +68,7 @@ func NewAgent(logger types.Logger, applier operator.ConfigApplier, config config
 	return agent
 }
 
+// TODO: Something should run on a schedule to set the health of the OpAMP client.
 func (agent *Agent) getHealth() *protobufs.AgentHealth {
 	return &protobufs.AgentHealth{
 		Healthy:           true,
@@ -138,7 +139,7 @@ func (agent *Agent) Start() error {
 // updateAgentIdentity receives a new instanced Id from the remote server and updates the agent's instanceID field.
 // The meter will be reinitialized by the onMessage function.
 func (agent *Agent) updateAgentIdentity(instanceId ulid.ULID) {
-	agent.logger.Debugf("Agent identify is being changed from id=%v to id=%v",
+	agent.logger.Debugf("Agent identity is being changed from id=%v to id=%v",
 		agent.instanceId.String(),
 		instanceId.String())
 	agent.instanceId = instanceId
@@ -247,6 +248,9 @@ func (agent *Agent) Shutdown() {
 		if err != nil {
 			agent.logger.Errorf(err.Error())
 		}
+	}
+	if agent.metricReporter != nil {
+		agent.metricReporter.Shutdown()
 	}
 }
 

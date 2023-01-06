@@ -17,20 +17,17 @@ package metrics
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/shirou/gopsutil/process"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/metric/instrument/asyncfloat64"
 	"go.opentelemetry.io/otel/metric/instrument/asyncint64"
-	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	otelresource "go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
@@ -53,10 +50,12 @@ type MetricReporter struct {
 
 	// Some example metrics to report.
 	processMemoryPhysical asyncint64.Gauge
-	counter               syncint64.Counter
 	processCpuTime        asyncfloat64.Counter
 }
 
+// NewMetricReporter creates an OTLP gRPC client to the destination address supplied by the server.
+// TODO: do more validation on the endpoint, allow for http.
+// TODO: set global provider and add more metrics to be reported.
 func NewMetricReporter(
 	logger types.Logger,
 	dest *protobufs.TelemetryConnectionSettings,
@@ -65,31 +64,25 @@ func NewMetricReporter(
 	instanceId ulid.ULID,
 ) (*MetricReporter, error) {
 
-	// Check the destination credentials to make sure they look like a valid OTLP/HTTP
-	// destination.
-
 	if dest.DestinationEndpoint == "" {
 		err := fmt.Errorf("metric destination must specify DestinationEndpoint")
 		return nil, err
 	}
-	u, err := url.Parse(dest.DestinationEndpoint)
+
+	// Create OTLP/grpc metric exporter.
+	opts := []otlpmetricgrpc.Option{
+		otlpmetricgrpc.WithEndpoint(dest.DestinationEndpoint),
+	}
+
+	headers := map[string]string{}
+	for _, header := range dest.Headers.GetHeaders() {
+		headers[header.GetKey()] = header.GetValue()
+	}
+	opts = append(opts, otlpmetricgrpc.WithHeaders(headers))
+
+	client, err := otlpmetricgrpc.New(context.Background(), opts...)
 	if err != nil {
-		return nil, fmt.Errorf("invalid DestinationEndpoint: %w", err)
-	}
-
-	// Create OTLP/HTTP metric exporter.
-	opts := []otlpmetrichttp.Option{
-		otlpmetrichttp.WithEndpoint(u.Host),
-		otlpmetrichttp.WithURLPath(u.Path),
-	}
-
-	if u.Scheme == "http" {
-		opts = append(opts, otlpmetrichttp.WithInsecure())
-	}
-
-	client, err := otlpmetrichttp.New(context.Background(), opts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize otlp metric http client: %w", err)
+		return nil, fmt.Errorf("failed to initialize otlp metric grpc client: %w", err)
 	}
 
 	// Define the Resource to be exported with all metrics. Use OpenTelemetry semantic
@@ -108,9 +101,7 @@ func NewMetricReporter(
 
 	provider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(resource),
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(client)))
-
-	global.SetMeterProvider(provider)
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(client, sdkmetric.WithInterval(5*time.Second))))
 
 	reporter := &MetricReporter{
 		logger: logger,
@@ -118,7 +109,7 @@ func NewMetricReporter(
 
 	reporter.done = make(chan struct{})
 
-	reporter.meter = global.Meter("opamp")
+	reporter.meter = provider.Meter("opamp")
 
 	reporter.process, err = process.NewProcess(int32(os.Getpid()))
 	if err != nil {
@@ -148,14 +139,7 @@ func NewMetricReporter(
 		return nil, fmt.Errorf("can't register callback: %w", err)
 	}
 
-	reporter.counter, err = reporter.meter.SyncInt64().Counter("custom_metric_ticks")
-	if err != nil {
-		return nil, fmt.Errorf("can't register counter metric: %w", err)
-	}
-
 	reporter.meterShutdowner = func() { _ = provider.Shutdown(context.Background()) }
-
-	go reporter.sendMetrics()
 
 	return reporter, nil
 }
@@ -177,25 +161,6 @@ func (reporter *MetricReporter) processMemoryPhysicalFunc(ctx context.Context) {
 		return
 	}
 	reporter.processMemoryPhysical.Observe(ctx, int64(memory.RSS))
-}
-
-func (reporter *MetricReporter) sendMetrics() {
-
-	// Collect metrics every 5 seconds.
-	t := time.NewTicker(time.Second * 5)
-	ticks := int64(0)
-
-	for {
-		select {
-		case <-reporter.done:
-			return
-
-		case <-t.C:
-			ctx := context.Background()
-			reporter.counter.Add(ctx, ticks)
-			ticks++
-		}
-	}
 }
 
 func (reporter *MetricReporter) Shutdown() {

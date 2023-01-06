@@ -42,7 +42,7 @@ func main() {
 	kubeClient, kubeErr := cliConf.GetKubernetesClient()
 	if kubeErr != nil {
 		cliConf.RootLogger.Error(kubeErr, "Couldn't create kubernetes client")
-		return
+		os.Exit(1)
 	}
 	operatorClient := operator.NewClient(cliConf.RootLogger.WithName("operator-client"), kubeClient, cfg.GetComponentsAllowed())
 
@@ -51,7 +51,7 @@ func main() {
 
 	if err := opampAgent.Start(); err != nil {
 		cliConf.RootLogger.Error(err, "Cannot start OpAMP client")
-		return
+		os.Exit(1)
 	}
 
 	interrupt := make(chan os.Signal, 1)

@@ -132,10 +132,10 @@ func (c Client) Delete(name string, namespace string) error {
 		Namespace: namespace,
 		Name:      name,
 	}, &result)
-	if errors.IsNotFound(err) {
-		return nil
-	}
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 	return c.k8sClient.Delete(ctx, &result)
@@ -160,10 +160,10 @@ func (c Client) GetInstance(name string, namespace string) (*v1alpha1.OpenTeleme
 		Namespace: namespace,
 		Name:      name,
 	}, &result)
-	if errors.IsNotFound(err) {
-		return nil, nil
-	}
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &result, nil
