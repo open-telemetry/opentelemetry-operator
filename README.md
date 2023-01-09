@@ -196,6 +196,13 @@ spec:
   sampler:
     type: parentbased_traceidratio
     argument: "0.25"
+  python:
+    env:
+      # Required if endpoint is set to 4317.
+      # Python autoinstrumentation uses http/proto by default
+      # so data must be sent to 4318 instead of 4137.
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://otel-collector:4318
 EOF
 ```
 
