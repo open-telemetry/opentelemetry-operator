@@ -1,34 +1,29 @@
-# Build the target allocator binary
-FROM golang:1.19 as builder
+# Build the otel-allocator binary
+FROM golang:1.19-alpine as builder
 
-WORKDIR /workspace
-# Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
+WORKDIR /app
+
+RUN apk --no-cache add ca-certificates
+
+# Copy go mod and sum files
+COPY go.mod go.sum ./
+
 RUN go mod download
 
-# Copy the go source
-COPY main.go main.go
-COPY allocation/ allocation/
-COPY collector/ collector/
-COPY config/ config/
-COPY diff/ diff/
-COPY prehook/ prehook/
-COPY server/ server/
-COPY target/ target/
-COPY watcher/ watcher/
+COPY . .
 
 # Build the Go app
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
-# Copy the pre-built binary file from the previous stage
-COPY --from=builder /workspace/main .
-USER 65532:65532
+######## Start a new stage from scratch #######
+FROM scratch
 
-ENTRYPOINT ["/main"]
+WORKDIR /root/
+
+# Copy the certs from the builder
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy the pre-built binary file from the previous stage
+COPY --from=builder /app/main .
+
+ENTRYPOINT ["./main"]
