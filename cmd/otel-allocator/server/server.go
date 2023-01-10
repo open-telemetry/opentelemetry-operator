@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	promconfig "github.com/prometheus/prometheus/config"
 	"net/http"
 	"net/url"
 	"time"
@@ -47,17 +48,21 @@ type collectorJSON struct {
 	Jobs []*target.Item `json:"targets"`
 }
 
+type DiscoveryManager interface {
+	GetScrapeConfigs() map[string]*promconfig.ScrapeConfig
+}
+
 type Server struct {
 	logger           logr.Logger
 	allocator        allocation.Allocator
-	discoveryManager *target.Discoverer
+	discoveryManager DiscoveryManager
 	server           *http.Server
 
 	compareHash          uint64
 	scrapeConfigResponse []byte
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *target.Discoverer, listenAddr *string) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager DiscoveryManager, listenAddr *string) *Server {
 	s := &Server{
 		logger:           log,
 		allocator:        allocator,
@@ -166,7 +171,7 @@ func (s *Server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) errorHandler(w http.ResponseWriter, err error) {
-	w.WriteHeader(500)
+	w.WriteHeader(http.StatusInternalServerError)
 	s.jsonHandler(w, err)
 }
 

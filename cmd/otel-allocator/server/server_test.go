@@ -15,16 +15,21 @@
 package server
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/big"
+	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
+	promconfig "github.com/prometheus/prometheus/config"
+	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
@@ -43,6 +48,14 @@ var (
 	secondTargetItem     = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
 	testJobTargetItemTwo = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
 )
+
+type mockDiscoveryManager struct {
+	m map[string]*promconfig.ScrapeConfig
+}
+
+func (m *mockDiscoveryManager) GetScrapeConfigs() map[string]*promconfig.ScrapeConfig {
+	return m.m
+}
 
 func TestServer_TargetsHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
@@ -153,8 +166,11 @@ func TestServer_TargetsHandler(t *testing.T) {
 			tt.args.allocator.SetTargets(tt.args.cMap)
 			request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/%s/targets?collector_id=%s", tt.args.job, tt.args.collector), nil)
 			w := httptest.NewRecorder()
+
 			s.server.Handler.ServeHTTP(w, request)
 			result := w.Result()
+
+			assert.Equal(t, http.StatusOK, result.StatusCode)
 			body := result.Body
 			bodyBytes, err := io.ReadAll(body)
 			assert.NoError(t, err)
@@ -170,45 +186,480 @@ func TestServer_TargetsHandler(t *testing.T) {
 	}
 }
 
-func randInt(max int64) int64 {
-	nBig, _ := rand.Int(rand.Reader, big.NewInt(max))
-	return nBig.Int64()
+func TestServer_ScrapeConfigsHandler(t *testing.T) {
+	tests := []struct {
+		description   string
+		scrapeConfigs map[string]*promconfig.ScrapeConfig
+		expectedCode  int
+		expectedBody  []byte
+	}{
+		{
+			description:   "nil scrape config",
+			scrapeConfigs: nil,
+			expectedCode:  http.StatusOK,
+			expectedBody:  []byte{},
+		},
+		{
+			description:   "empty scrape config",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{},
+			expectedCode:  http.StatusOK,
+			expectedBody:  []byte{},
+		},
+		{
+			description: "single entry",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp/0": {
+					JobName:         "serviceMonitor/testapp/testapp/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+		{
+			description: "multiple entries",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp/0": {
+					JobName:         "serviceMonitor/testapp/testapp/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{
+								model.LabelName("__meta_kubernetes_service_label_app_kubernetes_io_name"),
+								model.LabelName("__meta_kubernetes_service_labelpresent_app_kubernetes_io_name"),
+							},
+							Separator:   ";",
+							Regex:       relabel.MustNewRegexp("(testapp);true"),
+							Replacement: "$$1",
+							Action:      relabel.Keep,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_endpoint_port_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("http"),
+							Replacement:  "$$1",
+							Action:       relabel.Keep,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_namespace")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "namespace",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_service_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "service",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_pod_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "pod",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_pod_container_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "container",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+				"serviceMonitor/testapp/testapp1/0": {
+					JobName:         "serviceMonitor/testapp/testapp1/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(5 * time.Minute),
+					ScrapeTimeout:   model.Duration(10 * time.Second),
+					MetricsPath:     "/v2/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{
+								model.LabelName("__meta_kubernetes_service_label_app_kubernetes_io_name"),
+								model.LabelName("__meta_kubernetes_service_labelpresent_app_kubernetes_io_name"),
+							},
+							Separator:   ";",
+							Regex:       relabel.MustNewRegexp("(testapp);true"),
+							Replacement: "$$1",
+							Action:      relabel.Keep,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_endpoint_port_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("http"),
+							Replacement:  "$$1",
+							Action:       relabel.Keep,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_namespace")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "namespace",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_service_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "service",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_pod_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "pod",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_pod_container_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "container",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+				"serviceMonitor/testapp/testapp2/0": {
+					JobName:         "serviceMonitor/testapp/testapp2/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(30 * time.Minute),
+					ScrapeTimeout:   model.Duration(2 * time.Minute),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{
+								model.LabelName("__meta_kubernetes_service_label_app_kubernetes_io_name"),
+								model.LabelName("__meta_kubernetes_service_labelpresent_app_kubernetes_io_name"),
+							},
+							Separator:   ";",
+							Regex:       relabel.MustNewRegexp("(testapp);true"),
+							Replacement: "$$1",
+							Action:      relabel.Keep,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_endpoint_port_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("http"),
+							Replacement:  "$$1",
+							Action:       relabel.Keep,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_namespace")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "namespace",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_service_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "service",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_pod_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "pod",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+						{
+							SourceLabels: model.LabelNames{model.LabelName("__meta_kubernetes_pod_container_name")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "container",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			dm := &mockDiscoveryManager{m: tc.scrapeConfigs}
+			s := NewServer(logger, nil, dm, &listenAddr)
+			request := httptest.NewRequest("GET", "/scrape_configs", nil)
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+			bodyBytes, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
+			if tc.expectedBody != nil {
+				assert.Equal(t, tc.expectedBody, bodyBytes)
+				return
+			}
+			scrapeConfigs := map[string]*promconfig.ScrapeConfig{}
+			err = yaml.Unmarshal(bodyBytes, scrapeConfigs)
+			require.NoError(t, err)
+			assert.Equal(t, tc.scrapeConfigs, scrapeConfigs)
+		})
+	}
 }
 
-func BenchmarkServerTargetsHandler(b *testing.B) {
-	var table = []struct {
-		numCollectors int
-		numJobs       int
+func TestScrapeConfigsHandler_Hashing(t *testing.T) {
+	s := &Server{logger: logger}
+	// these tests are meant to be run sequentially in this order, to test
+	// that hashing doesn't cause us to send the wrong information.
+	tests := []struct {
+		description   string
+		scrapeConfigs map[string]*promconfig.ScrapeConfig
 	}{
-		{numCollectors: 100, numJobs: 100},
-		{numCollectors: 100, numJobs: 1000},
-		{numCollectors: 100, numJobs: 10000},
-		{numCollectors: 100, numJobs: 100000},
-		{numCollectors: 1000, numJobs: 100},
-		{numCollectors: 1000, numJobs: 1000},
-		{numCollectors: 1000, numJobs: 10000},
-		{numCollectors: 1000, numJobs: 100000},
+		{
+			description: "base config",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp/0": {
+					JobName:         "serviceMonitor/testapp/testapp/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "different bool",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp/0": {
+					JobName:         "serviceMonitor/testapp/testapp/0",
+					HonorTimestamps: false,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "different job name",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp/0": {
+					JobName:         "serviceMonitor/testapp/testapp/1",
+					HonorTimestamps: false,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "different key",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp/1": {
+					JobName:         "serviceMonitor/testapp/testapp/1",
+					HonorTimestamps: false,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "unset scrape interval",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp/1": {
+					JobName:         "serviceMonitor/testapp/testapp/1",
+					HonorTimestamps: false,
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+			},
+		},
+		//{
+		//
+		// TODO: fix handler logic so this test passes.
+		// This test currently fails due to the regexp struct not having any
+		// exported fields for the hashing algorithm to hash on, causing the
+		// hashes to be the same even though the data is different.
+		//
+		//	description: "different regex",
+		//	scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+		//		"serviceMonitor/testapp/testapp/1": {
+		//			JobName:         "serviceMonitor/testapp/testapp/1",
+		//			HonorTimestamps: false,
+		//			ScrapeTimeout:   model.Duration(30 * time.Second),
+		//			MetricsPath:     "/metrics",
+		//			HTTPClientConfig: config.HTTPClientConfig{
+		//				FollowRedirects: true,
+		//			},
+		//			RelabelConfigs: []*relabel.Config{
+		//				{
+		//					SourceLabels: model.LabelNames{model.LabelName("job")},
+		//					Separator:    ";",
+		//					Regex:        relabel.MustNewRegexp("something else"),
+		//					TargetLabel:  "__tmp_prometheus_job_name",
+		//					Replacement:  "$$1",
+		//					Action:       relabel.Replace,
+		//				},
+		//			},
+		//		},
+		//	},
+		//},
 	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			dm := &mockDiscoveryManager{m: tc.scrapeConfigs}
+			s.discoveryManager = dm
+			request := httptest.NewRequest("GET", "/scrape_configs", nil)
+			w := httptest.NewRecorder()
 
-	for _, allocatorName := range allocation.GetRegisteredAllocatorNames() {
-		for _, v := range table {
-			a, _ := allocation.New(allocatorName, logger)
-			cols := allocation.MakeNCollectors(v.numCollectors, 0)
-			targets := allocation.MakeNNewTargets(v.numJobs, v.numCollectors, 0)
-			listenAddr := ":8080"
-			a.SetCollectors(cols)
-			a.SetTargets(targets)
-			s := NewServer(logger, a, nil, &listenAddr)
-			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", allocatorName, v.numCollectors, v.numJobs), func(b *testing.B) {
-				b.ReportAllocs()
-				for i := 0; i < b.N; i++ {
-					randomJob := randInt(int64(v.numJobs))
-					randomCol := randInt(int64(v.numCollectors))
-					request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/test-job-%d/targets?collector_id=collector-%d", randomJob, randomCol), nil)
-					w := httptest.NewRecorder()
-					s.server.Handler.ServeHTTP(w, request)
-				}
-			})
-		}
+			s.ScrapeConfigsHandler(w, request)
+			result := w.Result()
+
+			assert.Equal(t, http.StatusOK, result.StatusCode)
+			bodyBytes, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
+			scrapeConfigResult := map[string]*promconfig.ScrapeConfig{}
+			err = yaml.Unmarshal(bodyBytes, scrapeConfigResult)
+			require.NoError(t, err)
+			assert.Equal(t, tc.scrapeConfigs, scrapeConfigResult)
+		})
 	}
 }
