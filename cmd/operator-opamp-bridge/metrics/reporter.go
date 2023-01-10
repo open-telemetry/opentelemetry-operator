@@ -17,13 +17,14 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/shirou/gopsutil/process"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/metric/instrument/asyncfloat64"
@@ -53,8 +54,8 @@ type MetricReporter struct {
 	processCpuTime        asyncfloat64.Counter
 }
 
-// NewMetricReporter creates an OTLP gRPC client to the destination address supplied by the server.
-// TODO: do more validation on the endpoint, allow for http.
+// NewMetricReporter creates an OTLP/HTTP client to the destination address supplied by the server.
+// TODO: do more validation on the endpoint, allow for gRPC.
 // TODO: set global provider and add more metrics to be reported.
 func NewMetricReporter(
 	logger types.Logger,
@@ -65,24 +66,29 @@ func NewMetricReporter(
 ) (*MetricReporter, error) {
 
 	if dest.DestinationEndpoint == "" {
-		err := fmt.Errorf("metric destination must specify DestinationEndpoint")
-		return nil, err
+		return nil, fmt.Errorf("metric destination must specify DestinationEndpoint")
 	}
 
-	// Create OTLP/grpc metric exporter.
-	opts := []otlpmetricgrpc.Option{
-		otlpmetricgrpc.WithEndpoint(dest.DestinationEndpoint),
+	u, err := url.Parse(dest.DestinationEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("invalid DestinationEndpoint: %w", err)
+	}
+
+	// Create OTLP/HTTP metric exporter.
+	opts := []otlpmetrichttp.Option{
+		otlpmetrichttp.WithEndpoint(u.Host),
+		otlpmetrichttp.WithURLPath(u.Path),
 	}
 
 	headers := map[string]string{}
 	for _, header := range dest.Headers.GetHeaders() {
 		headers[header.GetKey()] = header.GetValue()
 	}
-	opts = append(opts, otlpmetricgrpc.WithHeaders(headers))
+	opts = append(opts, otlpmetrichttp.WithHeaders(headers))
 
-	client, err := otlpmetricgrpc.New(context.Background(), opts...)
+	client, err := otlpmetrichttp.New(context.Background(), opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize otlp metric grpc client: %w", err)
+		return nil, fmt.Errorf("failed to initialize otlp metric http client: %w", err)
 	}
 
 	// Define the Resource to be exported with all metrics. Use OpenTelemetry semantic

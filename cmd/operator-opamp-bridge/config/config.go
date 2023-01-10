@@ -117,6 +117,11 @@ func (c *Config) GetNewInstanceId() ulid.ULID {
 	return ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
 }
 
+func (c *Config) RemoteConfigEnabled() bool {
+	capabilities := c.GetCapabilities()
+	return capabilities&protobufs.AgentCapabilities_AgentCapabilities_AcceptsRemoteConfig != 0
+}
+
 func Load(file string) (Config, error) {
 	var cfg Config
 	if err := unmarshal(&cfg, file); err != nil {

@@ -45,21 +45,23 @@ type Agent struct {
 	agentDescription   *protobufs.AgentDescription
 	remoteConfigStatus *protobufs.RemoteConfigStatus
 
-	opampClient    client.OpAMPClient
-	metricReporter *metrics.MetricReporter
-	config         config.Config
-	applier        operator.ConfigApplier
+	opampClient         client.OpAMPClient
+	metricReporter      *metrics.MetricReporter
+	config              config.Config
+	applier             operator.ConfigApplier
+	remoteConfigEnabled bool
 }
 
 func NewAgent(logger types.Logger, applier operator.ConfigApplier, config config.Config, opampClient client.OpAMPClient) *Agent {
 	agent := &Agent{
-		config:           config,
-		applier:          applier,
-		logger:           logger,
-		appliedKeys:      map[collectorKey]bool{},
-		instanceId:       config.GetNewInstanceId(),
-		agentDescription: config.GetDescription(),
-		opampClient:      opampClient,
+		config:              config,
+		applier:             applier,
+		logger:              logger,
+		appliedKeys:         map[collectorKey]bool{},
+		instanceId:          config.GetNewInstanceId(),
+		agentDescription:    config.GetDescription(),
+		remoteConfigEnabled: config.RemoteConfigEnabled(),
+		opampClient:         opampClient,
 	}
 
 	agent.logger.Debugf("Agent created, id=%v, type=%s, version=%s.",
@@ -258,9 +260,8 @@ func (agent *Agent) Shutdown() {
 // for checking if it should apply a new remote configuration. The agent will also initialize metrics based on the
 // settings received from the server. The agent is also able to update its identifier if it needs to.
 func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
-
 	// If we received remote configuration, and it's not the same as the previously applied one
-	if msg.RemoteConfig != nil && !bytes.Equal(agent.lastHash, msg.RemoteConfig.GetConfigHash()) {
+	if agent.remoteConfigEnabled && msg.RemoteConfig != nil && !bytes.Equal(agent.lastHash, msg.RemoteConfig.GetConfigHash()) {
 		var err error
 		status, err := agent.applyRemoteConfig(msg.RemoteConfig)
 		if err != nil {
