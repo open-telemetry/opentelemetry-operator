@@ -15,6 +15,8 @@
 package target
 
 import (
+	"sync"
+
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -34,12 +36,14 @@ var (
 )
 
 type Discoverer struct {
-	log               logr.Logger
-	manager           *discovery.Manager
-	close             chan struct{}
-	configsMap        map[allocatorWatcher.EventSource]*config.Config
+	log        logr.Logger
+	manager    *discovery.Manager
+	close      chan struct{}
+	configsMap map[allocatorWatcher.EventSource]*config.Config
+	hook       discoveryHook
+
+	configMtx         sync.RWMutex
 	jobToScrapeConfig map[string]*config.ScrapeConfig
-	hook              discoveryHook
 }
 
 type discoveryHook interface {
@@ -57,8 +61,17 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 	}
 }
 
+// GetScrapeConfigs retrieves current jobs and return a new copy of a map
+// for use outside of discoverer.
 func (m *Discoverer) GetScrapeConfigs() map[string]*config.ScrapeConfig {
-	return m.jobToScrapeConfig
+	m.configMtx.RLock()
+	defer m.configMtx.RUnlock()
+
+	jobToScrapeConfigCopy := make(map[string]*config.ScrapeConfig, len(m.jobToScrapeConfig))
+	for jobName, config := range m.jobToScrapeConfig {
+		jobToScrapeConfigCopy[jobName] = config
+	}
+	return jobToScrapeConfigCopy
 }
 
 func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.Config) error {
@@ -69,7 +82,11 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *confi
 
 	for _, value := range m.configsMap {
 		for _, scrapeConfig := range value.ScrapeConfigs {
+
+			m.configMtx.Lock()
 			m.jobToScrapeConfig[scrapeConfig.JobName] = scrapeConfig
+			m.configMtx.Unlock()
+
 			discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
 			relabelCfg[scrapeConfig.JobName] = scrapeConfig.RelabelConfigs
 		}
