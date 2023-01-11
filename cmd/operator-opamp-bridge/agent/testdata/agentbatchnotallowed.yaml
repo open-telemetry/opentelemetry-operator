@@ -1,0 +1,22 @@
+endpoint: ws://127.0.0.1:4320/v1/opamp
+protocol: wss
+capabilities:
+  - AcceptsRemoteConfig
+  - ReportsEffectiveConfig
+  # - AcceptsPackages
+  # - ReportsPackageStatuses
+  - ReportsOwnTraces
+  - ReportsOwnMetrics
+  - ReportsOwnLogs
+  - AcceptsOpAMPConnectionSettings
+  - AcceptsOtherConnectionSettings
+  - AcceptsRestartCommand
+  - ReportsHealth
+  - ReportsRemoteConfig
+components_allowed:
+  receivers:
+    - otlp
+  processors:
+    - memory_limiter
+  exporters:
+    - logging
