@@ -1,14 +1,14 @@
 # One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
-change_type: enhancement
+change_type: new_component
 
 # The name of the component, or a single word describing the area of concern, (e.g. operator, target allocator, github action)
-component: operator
+component: Operator OpAMP Bridge
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: This PR updates Python auto-instrumentation image version (0.36b0)
+note: Introducing the Operator OpAMP Bridge service, which allows a user to manage OpenTelemetry Collector CRDs via OpAMP
 
 # One or more tracking issues related to the change
-issues: [1333]
+issues: [1318]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
