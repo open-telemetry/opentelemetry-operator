@@ -53,6 +53,7 @@ GOTEST_OPTS=-race -v
 endif
 
 START_KIND_CLUSTER ?= true
+SKIP_DEPLOYMENT ?= false
 
 KUBE_VERSION ?= 1.24
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
@@ -122,8 +123,12 @@ set-image-controller: manifests kustomize
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
+ifeq (true,$(SKIP_DEPLOYMENT))
+	echo "Skip operator deployment since SKIP_DEPLOYMENT is true"
+else
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	go run hack/check-operator-ready.go 300
+endif
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy
@@ -191,12 +196,20 @@ scorecard-tests: operator-sdk
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
 container:
+ifeq (true,$(SKIP_DEPLOYMENT))
+	echo "Skipping container operator build since SKIP_DEPLOYMENT is true"
+else
 	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION}  --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} .
+endif
 
 # Push the container image, used only for local dev purposes
 .PHONY: container-push
 container-push:
+ifeq (true,$(SKIP_DEPLOYMENT))
+	echo "Skipping container operator push since SKIP_DEPLOYMENT is true"
+else
 	docker push ${IMG}
+endif
 
 .PHONY: container-target-allocator-push
 container-target-allocator-push:
