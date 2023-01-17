@@ -1,5 +1,65 @@
 Changes by Version
 ==================
+0.67.0
+------------------
+### 🚀 New components 🚀
+* Support openshift routes ([#1206](https://github.com/open-telemetry/opentelemetry-operator/pull/1206), [@frzifus](https://github.com/frzifus))
+* Add TargetMemoryUtilization metric for AutoScaling ([#1223](https://github.com/open-telemetry/opentelemetry-operator/pull/1223), [@kevinearls](https://github.com/kevinearls))
+### 💡 Enhancements 💡
+* Update the javaagent version to 1.21.0 ([#1324](https://github.com/open-telemetry/opentelemetry-operator/pull/1324))
+* Update default python exporters to use OTLP ([#1328](https://github.com/open-telemetry/opentelemetry-operator/pull/1328), [@TylerHelmuth](https://github.com/TylerHelmuth))
+* Update default Node.JS instrumentation to 0.34.0 ([#1334](https://github.com/open-telemetry/opentelemetry-operator/pull/1334), [@mat-rumian](https://github.com/mat-rumian))
+* Update default Python instrumentation to 0.36b0 ([#1333](https://github.com/open-telemetry/opentelemetry-operator/pull/1333), [@mat-rumian](https://github.com/mat-rumian))
+* [HPA] Move maxReplicas and minReplicas to AutoscalerSpec ([#1333](https://github.com/open-telemetry/opentelemetry-operator/pull/1302), [@moh-osman3](https://github.com/moh-osman3))
+* Memory improvements first pass ([#1293](https://github.com/open-telemetry/opentelemetry-operator/pull/1293), [@jaronoff97](https://github.com/jaronoff97))
+* Add change handler to register callbacks ([#1292](https://github.com/open-telemetry/opentelemetry-operator/pull/1292), [@frzifus](https://github.com/frzifus))
+* Ignore reconcile errors that occur because a pod is being terminated ([#1233](https://github.com/open-telemetry/opentelemetry-operator/pull/1233), [@kevinearls](https://github.com/kevinearls))
+* remove unused onChange function from config ([#1290](https://github.com/open-telemetry/opentelemetry-operator/pull/1290), [@frzifus](https://github.com/frzifus))
+* Remove default claims - fixes #1281 ([#1282](https://github.com/open-telemetry/opentelemetry-operator/pull/1282), [@ekarlso](https://github.com/ekarlso))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.67.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.67.0)
+* [OpenTelemetry Contrib - v0.67.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.67.0)
+
+0.66.0
+------------------
+### 🚀 New components 🚀
+* Add ingressClassName field to collector spec ([#1269](https://github.com/open-telemetry/opentelemetry-operator/pull/1269), [@avadhut123pisal](https://github.com/avadhut123pisal))
+* Add secure ciphersuites for TLS config ([#1244](https://github.com/open-telemetry/opentelemetry-operator/pull/1244), [@kangsheng89](https://github.com/kangsheng89))
+* Add Apache-httpd instrumentation v1.0 (part-1) ([#1236](https://github.com/open-telemetry/opentelemetry-operator/pull/1236), [@chrlic](https://github.com/chrlic))
+### 💡 Enhancements 💡
+* Update the javaagent version to 1.20.2 ([#1212](https://github.com/open-telemetry/opentelemetry-operator/pull/1270))
+* Bump OTel .NET AutoInstrumentation to 0.5.0 ([#1276](https://github.com/open-telemetry/opentelemetry-operator/pull/1276), [@pellared](https://github.com/pellared))
+
+### 🧰 Bug fixes 🧰
+* Fix bug found when using relabel-config filterStrategy with serviceMonitors ([#1232](https://github.com/open-telemetry/opentelemetry-operator/pull/1232), [@moh-osman3](https://github.com/moh-osman3))
+
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.66.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.66.0)
+* [OpenTelemetry Contrib - v0.66.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.66.0)
+
+0.64.1
+------------------
+### 🚀 New components 🚀
+* add headless label ([#1088](https://github.com/open-telemetry/opentelemetry-operator/pull/1088), [@kristinapathak](https://github.com/kristinapathak))
+* Add new selector for pod and service monitor ([#1256](https://github.com/open-telemetry/opentelemetry-operator/pull/1256), [@jaronoff97](https://github.com/jaronoff97))
+* [target-allocator] Add a pre-hook to the allocator to filter out dropped targets ([#1127](https://github.com/open-telemetry/opentelemetry-operator/pull/1127), [@moh-osman3](https://github.com/moh-osman3))
+* [target-allocator] create new target package ([#1214](https://github.com/open-telemetry/opentelemetry-operator/pull/1214), [@moh-osman3](https://github.com/moh-osman3))
+### 💡 Enhancements 💡
+* Only create ServiceAccounts if existing ServiceAccount is not specified ([#1246](https://github.com/open-telemetry/opentelemetry-operator/pull/1246), [@csquire](https://github.com/csquire))
+* feat(otel-allocator): use type for AllocationStrategy ([#1220](https://github.com/open-telemetry/opentelemetry-operator/pull/1220), [@secustor](https://github.com/secustor))
+* fix min tls setting for webhook server (#1225) ([#1230](https://github.com/open-telemetry/opentelemetry-operator/pull/1230), [@kangsheng89](https://github.com/kangsheng89))
+* Bump OTel python versions to 1.14.0 and 0.35b0 ([#1227](https://github.com/open-telemetry/opentelemetry-operator/pull/1227), [@vainikkaj](https://github.com/vainikkaj))
+* Trim unnecessary otelcol operator verbs ([#1222](https://github.com/open-telemetry/opentelemetry-operator/pull/1222), [@Allex1](https://github.com/Allex1))
+* decrease autoscaling version detection log verbosity ([#1212](https://github.com/open-telemetry/opentelemetry-operator/pull/1212), [@frzifus](https://github.com/frzifus))
+
+### 🧰 Bug fixes 🧰
+* None
+
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.64.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.64.1)
+* [OpenTelemetry Contrib - v0.64.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.64.0)
+* [OpenTelemetry Collector - v0.64.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.64.0)
+
 0.63.1
 ------------------
 ### 🚀 New components 🚀

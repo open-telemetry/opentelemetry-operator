@@ -16,6 +16,7 @@
 package config
 
 import (
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -35,7 +36,6 @@ const (
 // Config holds the static configuration for this operator.
 type Config struct {
 	autoDetect                     autodetect.AutoDetect
-	OnChange                       func() error
 	logger                         logr.Logger
 	targetAllocatorImage           string
 	autoInstrumentationPythonImage string
@@ -45,9 +45,9 @@ type Config struct {
 	targetAllocatorConfigMapEntry  string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationJavaImage   string
-	onChange                       []func() error
+	onPlatformChange               changeHandler
 	labelsFilter                   []string
-	platform                       platform.Platform
+	platform                       platformStore
 	autoDetectFrequency            time.Duration
 	autoscalingVersion             autodetect.AutoscalingVersion
 }
@@ -60,9 +60,10 @@ func New(opts ...Option) Config {
 		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
 		logger:                        logf.Log.WithName("config"),
-		platform:                      platform.Unknown,
+		platform:                      newPlatformWrapper(),
 		version:                       version.Get(),
 		autoscalingVersion:            autodetect.DefaultAutoscalingVersion,
+		onPlatformChange:              newOnChange(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -76,7 +77,7 @@ func New(opts ...Option) Config {
 		targetAllocatorImage:           o.targetAllocatorImage,
 		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
 		logger:                         o.logger,
-		onChange:                       o.onChange,
+		onPlatformChange:               o.onPlatformChange,
 		platform:                       o.platform,
 		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
@@ -108,30 +109,19 @@ func (c *Config) periodicAutoDetect() {
 
 // AutoDetect attempts to automatically detect relevant information for this operator.
 func (c *Config) AutoDetect() error {
-	changed := false
 	c.logger.V(2).Info("auto-detecting the configuration based on the environment")
 
-	// TODO: once new things need to be detected, extract this into individual detection routines
-	if c.platform == platform.Unknown {
-		plt, err := c.autoDetect.Platform()
-		if err != nil {
-			return err
-		}
-
-		if c.platform != plt {
-			c.logger.V(1).Info("platform detected", "platform", plt)
-			c.platform = plt
-			changed = true
-		}
+	plt, err := c.autoDetect.Platform()
+	if err != nil {
+		return err
 	}
 
-	if changed {
-		for _, callback := range c.onChange {
-			if err := callback(); err != nil {
-				// we don't fail if the callback failed, as the auto-detection itself
-				// did work
-				c.logger.Error(err, "configuration change notification failed for callback")
-			}
+	if c.platform.Get() != plt {
+		c.logger.V(1).Info("platform detected", "platform", plt)
+		c.platform.Set(plt)
+		if err = c.onPlatformChange.Do(); err != nil {
+			// Don't fail if the callback failed, as auto-detection itself worked.
+			c.logger.Error(err, "configuration change notification failed for callback")
 		}
 	}
 
@@ -167,7 +157,7 @@ func (c *Config) TargetAllocatorConfigMapEntry() string {
 
 // Platform represents the type of the platform this operator is running.
 func (c *Config) Platform() platform.Platform {
-	return c.platform
+	return c.platform.Get()
 }
 
 // AutoscalingVersion represents the preferred version of autoscaling.
@@ -198,4 +188,37 @@ func (c *Config) AutoInstrumentationDotNetImage() string {
 // Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
+}
+
+// RegisterPlatformChangeCallback registers the given function as a callback that
+// is called when the platform detection detects a change.
+func (c *Config) RegisterPlatformChangeCallback(f func() error) {
+	c.onPlatformChange.Register(f)
+}
+
+type platformStore interface {
+	Set(plt platform.Platform)
+	Get() platform.Platform
+}
+
+func newPlatformWrapper() platformStore {
+	return &platformWrapper{}
+}
+
+type platformWrapper struct {
+	mu      sync.Mutex
+	current platform.Platform
+}
+
+func (p *platformWrapper) Set(plt platform.Platform) {
+	p.mu.Lock()
+	p.current = plt
+	p.mu.Unlock()
+}
+
+func (p *platformWrapper) Get() platform.Platform {
+	p.mu.Lock()
+	plt := p.current
+	p.mu.Unlock()
+	return plt
 }

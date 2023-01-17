@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        workdir: [".", "./cmd/otel-allocator"]
+        workdir: [".", "./cmd/otel-allocator", "./cmd/operator-opamp-bridge"]
     steps:
     - name: Set up Go
       uses: actions/setup-go@v3
@@ -45,7 +45,7 @@ jobs:
     - name: Lint
       uses: golangci/golangci-lint-action@v3
       with:
-        args: -v
+        args: -v --timeout 5m
         version: v1.48
         working-directory: ${{ matrix.workdir }}
 

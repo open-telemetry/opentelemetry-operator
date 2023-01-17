@@ -55,7 +55,7 @@ func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 					Tolerations:        otelcol.Spec.Tolerations,
 					NodeSelector:       otelcol.Spec.NodeSelector,
 					HostNetwork:        otelcol.Spec.HostNetwork,
-					DNSPolicy:          getDnsPolicy(otelcol),
+					DNSPolicy:          getDNSPolicy(otelcol),
 					SecurityContext:    otelcol.Spec.PodSecurityContext,
 					PriorityClassName:  otelcol.Spec.PriorityClassName,
 					Affinity:           otelcol.Spec.Affinity,

@@ -22,7 +22,7 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/http"
-	_ "github.com/prometheus/prometheus/discovery/install"
+	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
@@ -38,27 +38,27 @@ func ReplaceConfig(params Params) (string, error) {
 	if !params.Instance.Spec.TargetAllocator.Enabled {
 		return params.Instance.Spec.Config, nil
 	}
-	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
-	if err != nil {
-		return "", err
+	config, getStringErr := adapters.ConfigFromString(params.Instance.Spec.Config)
+	if getStringErr != nil {
+		return "", getStringErr
 	}
 
-	promCfgMap, err := ta.ConfigToPromConfig(params.Instance.Spec.Config)
-	if err != nil {
-		return "", err
+	promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(params.Instance.Spec.Config)
+	if getCfgPromErr != nil {
+		return "", getCfgPromErr
 	}
 
 	// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
-	promCfg, err := yaml.Marshal(map[string]interface{}{
+	promCfg, marshalErr := yaml.Marshal(map[string]interface{}{
 		"config": promCfgMap,
 	})
-	if err != nil {
-		return "", err
+	if marshalErr != nil {
+		return "", marshalErr
 	}
 
 	var cfg Config
-	if err = yaml.UnmarshalStrict(promCfg, &cfg); err != nil {
-		return "", fmt.Errorf("error unmarshaling YAML: %w", err)
+	if marshalErr = yaml.UnmarshalStrict(promCfg, &cfg); marshalErr != nil {
+		return "", fmt.Errorf("error unmarshaling YAML: %w", marshalErr)
 	}
 
 	for i := range cfg.PromConfig.ScrapeConfigs {

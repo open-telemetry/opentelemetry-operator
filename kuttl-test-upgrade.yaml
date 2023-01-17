@@ -11,16 +11,9 @@
 # create a new one when the selector changed.
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
-crdDir: ./tests/_build/crds/
-artifactsDir: ./tests/_build/artifacts/
-kindContainers:
-  - local/opentelemetry-operator:e2e
-  - ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:v0.49.0
 commands:
-  - command: make cert-manager
   - command: kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.49.0.yaml
-  - command: kubectl rollout status -w deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system
-  - command: sleep 60s
+  - command: go run hack/check-operator-ready.go
 testDirs:
   - ./tests/e2e-upgrade/
 timeout: 300

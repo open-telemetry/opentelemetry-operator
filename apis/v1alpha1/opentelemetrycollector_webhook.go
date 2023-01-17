@@ -67,13 +67,29 @@ func (r *OpenTelemetryCollector) Default() {
 		r.Spec.TargetAllocator.Replicas = &one
 	}
 
-	// Set default targetCPUUtilization for autoscaler
-	if r.Spec.MaxReplicas != nil && (r.Spec.Autoscaler == nil || r.Spec.Autoscaler.TargetCPUUtilization == nil) {
-		defaultCPUTarget := int32(90)
+	if r.Spec.MaxReplicas != nil || (r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil) {
 		if r.Spec.Autoscaler == nil {
 			r.Spec.Autoscaler = &AutoscalerSpec{}
 		}
-		r.Spec.Autoscaler.TargetCPUUtilization = &defaultCPUTarget
+
+		if r.Spec.Autoscaler.MaxReplicas == nil {
+			r.Spec.Autoscaler.MaxReplicas = r.Spec.MaxReplicas
+		}
+		if r.Spec.Autoscaler.MinReplicas == nil {
+			if r.Spec.MinReplicas != nil {
+				r.Spec.Autoscaler.MinReplicas = r.Spec.MinReplicas
+			} else {
+				r.Spec.Autoscaler.MinReplicas = r.Spec.Replicas
+			}
+		}
+
+		if r.Spec.Autoscaler.TargetMemoryUtilization == nil && r.Spec.Autoscaler.TargetCPUUtilization == nil {
+			defaultCPUTarget := int32(90)
+			r.Spec.Autoscaler.TargetCPUUtilization = &defaultCPUTarget
+		}
+	}
+	if r.Spec.Ingress.Type == IngressTypeRoute && r.Spec.Ingress.Route.Termination == "" {
+		r.Spec.Ingress.Route.Termination = TLSRouteTerminationTypeEdge
 	}
 }
 
@@ -130,7 +146,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	if r.Spec.TargetAllocator.Enabled {
 		_, err := ta.ConfigToPromConfig(r.Spec.Config)
 		if err != nil {
-			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %s", err)
+			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}
 	}
 
@@ -144,21 +160,45 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		}
 	}
 
+	maxReplicas := new(int32)
+	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil {
+		maxReplicas = r.Spec.Autoscaler.MaxReplicas
+	}
+
+	// check deprecated .Spec.MaxReplicas if maxReplicas is not set
+	if *maxReplicas == 0 {
+		maxReplicas = r.Spec.MaxReplicas
+	}
+
+	minReplicas := new(int32)
+	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil {
+		minReplicas = r.Spec.Autoscaler.MinReplicas
+	}
+
+	// check deprecated .Spec.MinReplicas if minReplicas is not set
+	if *minReplicas == 0 {
+		if r.Spec.MinReplicas != nil {
+			minReplicas = r.Spec.MinReplicas
+		} else {
+			minReplicas = r.Spec.Replicas
+		}
+	}
+
 	// validate autoscale with horizontal pod autoscaler
-	if r.Spec.MaxReplicas != nil {
-		if *r.Spec.MaxReplicas < int32(1) {
+	if maxReplicas != nil {
+		if *maxReplicas < int32(1) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, maxReplicas should be defined and one or more")
 		}
 
-		if r.Spec.Replicas != nil && *r.Spec.Replicas > *r.Spec.MaxReplicas {
+		if r.Spec.Replicas != nil && *r.Spec.Replicas > *maxReplicas {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
 		}
 
-		if r.Spec.MinReplicas != nil && *r.Spec.MinReplicas > *r.Spec.MaxReplicas {
+		if minReplicas != nil && *minReplicas > *maxReplicas {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
 		}
 
-		if r.Spec.MinReplicas != nil && *r.Spec.MinReplicas < int32(1) {
+		if minReplicas != nil && *minReplicas < int32(1) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
 		}
 
@@ -176,7 +216,9 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetCPUUtilization != nil && (*r.Spec.Autoscaler.TargetCPUUtilization < int32(1) || *r.Spec.Autoscaler.TargetCPUUtilization > int32(99)) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
 		}
-
+		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetMemoryUtilization != nil && (*r.Spec.Autoscaler.TargetMemoryUtilization < int32(1) || *r.Spec.Autoscaler.TargetMemoryUtilization > int32(99)) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
+		}
 	}
 
 	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {

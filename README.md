@@ -196,6 +196,13 @@ spec:
   sampler:
     type: parentbased_traceidratio
     argument: "0.25"
+  python:
+    env:
+      # Required if endpoint is set to 4317.
+      # Python autoinstrumentation uses http/proto by default
+      # so data must be sent to 4318 instead of 4137.
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://otel-collector:4318
 EOF
 ```
 
@@ -327,6 +334,9 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
 |------------------------|----------------------|----------------------|
+| v0.67.0                | v1.19 to v1.25       | v1                   |
+| v0.66.0                | v1.19 to v1.25       | v1                   |
+| v0.64.1                | v1.19 to v1.25       | v1                   |
 | v0.63.1                | v1.19 to v1.25       | v1                   |
 | v0.62.1                | v1.19 to v1.25       | v1                   |
 | v0.61.0                | v1.19 to v1.25       | v1                   |
@@ -345,9 +355,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.48.0                | v1.19 to v1.23       | v1alpha2             |
 | v0.47.0                | v1.19 to v1.23       | v1alpha2             |
 | v0.46.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.45.0                | v1.21 to v1.23       | v1alpha2             |
-| v0.44.0                | v1.21 to v1.23       | v1alpha2             |
-| v0.43.0                | v1.21 to v1.23       | v1alpha2             |
+
 
 
 ## Contributing and Developing

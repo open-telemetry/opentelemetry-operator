@@ -41,9 +41,9 @@ type options struct {
 	collectorConfigMapEntry        string
 	targetAllocatorConfigMapEntry  string
 	targetAllocatorImage           string
-	onChange                       []func() error
+	onPlatformChange               changeHandler
 	labelsFilter                   []string
-	platform                       platform.Platform
+	platform                       platformStore
 	autoDetectFrequency            time.Duration
 	autoscalingVersion             autodetect.AutoscalingVersion
 }
@@ -84,17 +84,17 @@ func WithLogger(logger logr.Logger) Option {
 		o.logger = logger
 	}
 }
-func WithOnChange(f func() error) Option {
+func WithOnPlatformChangeCallback(f func() error) Option {
 	return func(o *options) {
-		if o.onChange == nil {
-			o.onChange = []func() error{}
+		if o.onPlatformChange == nil {
+			o.onPlatformChange = newOnChange()
 		}
-		o.onChange = append(o.onChange, f)
+		o.onPlatformChange.Register(f)
 	}
 }
 func WithPlatform(plt platform.Platform) Option {
 	return func(o *options) {
-		o.platform = plt
+		o.platform.Set(plt)
 	}
 }
 func WithVersion(v version.Version) Option {

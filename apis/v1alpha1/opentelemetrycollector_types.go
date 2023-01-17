@@ -24,6 +24,13 @@ import (
 // Ingress is used to specify how OpenTelemetry Collector is exposed. This
 // functionality is only available if one of the valid modes is set.
 // Valid modes are: deployment, daemonset and statefulset.
+// NOTE: If this feature is activated, all specified receivers are exposed.
+// Currently this has a few limitations. Depending on the ingress controller
+// there are problems with TLS and gRPC.
+// SEE: https://github.com/open-telemetry/opentelemetry-operator/issues/1306.
+// NOTE: As a workaround, port name and appProtocol could be specified directly
+// in the CR.
+// SEE: OpenTelemetryCollector.spec.ports[index].
 type Ingress struct {
 	// Type default value is: ""
 	// Supported types are: ingress
@@ -41,6 +48,23 @@ type Ingress struct {
 	// TLS configuration.
 	// +optional
 	TLS []networkingv1.IngressTLS `json:"tls,omitempty"`
+
+	// IngressClassName is the name of an IngressClass cluster resource. Ingress
+	// controller implementations use this field to know whether they should be
+	// serving this Ingress resource.
+	// +optional
+	IngressClassName *string `json:"ingressClassName,omitempty"`
+
+	// Route is an OpenShift specific section that is only considered when
+	// type "route" is used.
+	// +optional
+	Route OpenShiftRoute `json:"route,omitempty"`
+}
+
+// OpenShiftRoute defines openshift route specific settings.
+type OpenShiftRoute struct {
+	// Termination indicates termination type. By default "edge" is used.
+	Termination TLSRouteTerminationType `json:"termination,omitempty"`
 }
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
@@ -60,9 +84,11 @@ type OpenTelemetryCollectorSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
 	// +optional
+	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
+	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// Autoscaler specifies the pod autoscaling configuration to use
 	// for the OpenTelemetryCollector workload.
@@ -265,12 +291,21 @@ type OpenTelemetryCollectorList struct {
 
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// +optional
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
+	// +optional
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// +optional
 	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
 	// TargetCPUUtilization sets the target average CPU used across all replicas.
 	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
 	// +optional
 	TargetCPUUtilization *int32 `json:"targetCPUUtilization,omitempty"`
+	// +optional
+	// TargetMemoryUtilization sets the target average memory utilization across all replicas
+	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
 }
 
 func init() {

@@ -64,6 +64,7 @@ func TestLoad(t *testing.T) {
 							Scheme:          "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
 								FollowRedirects: true,
+								EnableHTTP2:     true,
 							},
 							ServiceDiscoveryConfigs: []discovery.Config{
 								&file.SDConfig{
@@ -116,6 +117,7 @@ func TestLoad(t *testing.T) {
 							Scheme:          "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
 								FollowRedirects: true,
+								EnableHTTP2:     true,
 							},
 							ServiceDiscoveryConfigs: []discovery.Config{
 								discovery.StaticConfig{

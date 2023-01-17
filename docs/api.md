@@ -1758,7 +1758,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>maxReplicas</b></td>
         <td>integer</td>
         <td>
-          MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.<br/>
+          MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled. Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -1767,7 +1767,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1 Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -3220,10 +3220,37 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>maxReplicas</b></td>
+        <td>integer</td>
+        <td>
+          MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minReplicas</b></td>
+        <td>integer</td>
+        <td>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>targetCPUUtilization</b></td>
         <td>integer</td>
         <td>
           TargetCPUUtilization sets the target average CPU used across all replicas. If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>targetMemoryUtilization</b></td>
+        <td>integer</td>
+        <td>
+          TargetMemoryUtilization sets the target average memory utilization across all replicas<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -3828,6 +3855,20 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ingressClassName</b></td>
+        <td>string</td>
+        <td>
+          IngressClassName is the name of an IngressClass cluster resource. Ingress controller implementations use this field to know whether they should be serving this Ingress resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecingressroute">route</a></b></td>
+        <td>object</td>
+        <td>
+          Route is an OpenShift specific section that is only considered when type "route" is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingresstlsindex">tls</a></b></td>
         <td>[]object</td>
         <td>
@@ -3840,7 +3881,36 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         <td>
           Type default value is: "" Supported types are: ingress<br/>
           <br/>
-            <i>Enum</i>: ingress<br/>
+            <i>Enum</i>: ingress, route<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.ingress.route
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecingress)</sup></sup>
+
+
+
+Route is an OpenShift specific section that is only considered when type "route" is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>termination</b></td>
+        <td>enum</td>
+        <td>
+          Termination indicates termination type. By default "edge" is used.<br/>
+          <br/>
+            <i>Enum</i>: insecure, edge, passthrough, reencrypt<br/>
         </td>
         <td>false</td>
       </tr></tbody>

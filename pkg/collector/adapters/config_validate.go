@@ -34,29 +34,29 @@ func GetEnabledReceivers(_ logr.Logger, config map[interface{}]interface{}) map[
 	for recvID := range receivers {
 
 		//Safe Cast
-		receiverID, ok := recvID.(string)
-		if !ok {
+		receiverID, withReceiver := recvID.(string)
+		if !withReceiver {
 			return nil
 		}
 		//Getting all receivers present in the receivers section and setting them to false.
 		availableReceivers[receiverID] = false
 	}
 
-	cfgService, ok := config["service"].(map[interface{}]interface{})
-	if !ok {
+	cfgService, withService := config["service"].(map[interface{}]interface{})
+	if !withService {
 		return nil
 	}
 
-	pipeline, ok := cfgService["pipelines"].(map[interface{}]interface{})
-	if !ok {
+	pipeline, withPipeline := cfgService["pipelines"].(map[interface{}]interface{})
+	if !withPipeline {
 		return nil
 	}
 	availablePipelines := map[string]bool{}
 
 	for pipID := range pipeline {
 		//Safe Cast
-		pipelineID, ok := pipID.(string)
-		if !ok {
+		pipelineID, existsPipeline := pipID.(string)
+		if !existsPipeline {
 			return nil
 		}
 		//Getting all the available pipelines.
@@ -66,8 +66,8 @@ func GetEnabledReceivers(_ logr.Logger, config map[interface{}]interface{}) map[
 	if len(pipeline) > 0 {
 		for pipelineID, pipelineCfg := range pipeline {
 			//Safe Cast
-			pipelineV, ok := pipelineID.(string)
-			if !ok {
+			pipelineV, withPipelineCfg := pipelineID.(string)
+			if !withPipelineCfg {
 				continue
 			}
 			//Condition will get information if there are multiple configured pipelines.

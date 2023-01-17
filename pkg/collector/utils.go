@@ -20,7 +20,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-func getDnsPolicy(otelcol v1alpha1.OpenTelemetryCollector) corev1.DNSPolicy {
+func getDNSPolicy(otelcol v1alpha1.OpenTelemetryCollector) corev1.DNSPolicy {
 	dnsPolicy := corev1.DNSClusterFirst
 	if otelcol.Spec.HostNetwork {
 		dnsPolicy = corev1.DNSClusterFirstWithHostNet

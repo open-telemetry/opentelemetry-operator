@@ -94,6 +94,11 @@ func Ingress(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return DNSName(Truncate("%s-ingress", 63, otelcol.Name))
 }
 
+// Route builds the route name based on the instance.
+func Route(otelcol v1alpha1.OpenTelemetryCollector, prefix string) string {
+	return DNSName(Truncate("%s-%s-route", 63, prefix, otelcol.Name))
+}
+
 // TAService returns the name to use for the TargetAllocator service.
 func TAService(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol.Name))

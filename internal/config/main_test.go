@@ -41,7 +41,7 @@ func TestNewConfig(t *testing.T) {
 	assert.Equal(t, platform.Kubernetes, cfg.Platform())
 }
 
-func TestCallbackOnChanges(t *testing.T) {
+func TestOnPlatformChangeCallback(t *testing.T) {
 	// prepare
 	calledBack := false
 	mock := &mockAutoDetect{
@@ -51,7 +51,7 @@ func TestCallbackOnChanges(t *testing.T) {
 	}
 	cfg := config.New(
 		config.WithAutoDetect(mock),
-		config.WithOnChange(func() error {
+		config.WithOnPlatformChangeCallback(func() error {
 			calledBack = true
 			return nil
 		}),

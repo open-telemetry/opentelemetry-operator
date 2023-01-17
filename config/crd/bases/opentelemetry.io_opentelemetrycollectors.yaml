@@ -1008,10 +1008,26 @@ spec:
                             type: integer
                         type: object
                     type: object
+                  maxReplicas:
+                    description: MaxReplicas sets an upper bound to the autoscaling
+                      feature. If MaxReplicas is set autoscaling is enabled.
+                    format: int32
+                    type: integer
+                  minReplicas:
+                    description: MinReplicas sets a lower bound to the autoscaling
+                      feature.  Set this if your are using autoscaling. It must be
+                      at least 1
+                    format: int32
+                    type: integer
                   targetCPUUtilization:
                     description: TargetCPUUtilization sets the target average CPU
                       used across all replicas. If average CPU exceeds this value,
                       the HPA will scale up. Defaults to 90 percent.
+                    format: int32
+                    type: integer
+                  targetMemoryUtilization:
+                    description: TargetMemoryUtilization sets the target average memory
+                      utilization across all replicas
                     format: int32
                     type: integer
                 type: object
@@ -1194,6 +1210,25 @@ spec:
                   hostname:
                     description: Hostname by which the ingress proxy can be reached.
                     type: string
+                  ingressClassName:
+                    description: IngressClassName is the name of an IngressClass cluster
+                      resource. Ingress controller implementations use this field
+                      to know whether they should be serving this Ingress resource.
+                    type: string
+                  route:
+                    description: Route is an OpenShift specific section that is only
+                      considered when type "route" is used.
+                    properties:
+                      termination:
+                        description: Termination indicates termination type. By default
+                          "edge" is used.
+                        enum:
+                        - insecure
+                        - edge
+                        - passthrough
+                        - reencrypt
+                        type: string
+                    type: object
                   tls:
                     description: TLS configuration.
                     items:
@@ -1224,16 +1259,19 @@ spec:
                     description: 'Type default value is: "" Supported types are: ingress'
                     enum:
                     - ingress
+                    - route
                     type: string
                 type: object
               maxReplicas:
-                description: MaxReplicas sets an upper bound to the autoscaling feature.
-                  If MaxReplicas is set autoscaling is enabled.
+                description: 'MaxReplicas sets an upper bound to the autoscaling feature.
+                  If MaxReplicas is set autoscaling is enabled. Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas"
+                  instead.'
                 format: int32
                 type: integer
               minReplicas:
-                description: MinReplicas sets a lower bound to the autoscaling feature.  Set
-                  this if your are using autoscaling. It must be at least 1
+                description: 'MinReplicas sets a lower bound to the autoscaling feature.  Set
+                  this if your are using autoscaling. It must be at least 1 Deprecated:
+                  use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.'
                 format: int32
                 type: integer
               mode:

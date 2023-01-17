@@ -73,6 +73,34 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 			},
 		},
 		{
+			name: "Setting Autoscaler MaxReplicas",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &five,
+						MinReplicas: &one,
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:            ModeDeployment,
+					Replicas:        &one,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					Autoscaler: &AutoscalerSpec{
+						TargetCPUUtilization: &defaultCPUTarget,
+						MaxReplicas:          &five,
+						MinReplicas:          &one,
+					},
+				},
+			},
+		},
+		{
 			name: "MaxReplicas but no Autoscale",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
@@ -91,8 +119,41 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					UpgradeStrategy: UpgradeStrategyAutomatic,
 					Autoscaler: &AutoscalerSpec{
 						TargetCPUUtilization: &defaultCPUTarget,
+						// webhook Default adds MaxReplicas to Autoscaler because
+						// OpenTelemetryCollector.Spec.MaxReplicas is deprecated.
+						MaxReplicas: &five,
+						MinReplicas: &one,
 					},
 					MaxReplicas: &five,
+				},
+			},
+		},
+		{
+			name: "Missing route termination",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					Ingress: Ingress{
+						Type: IngressTypeRoute,
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					Ingress: Ingress{
+						Type: IngressTypeRoute,
+						Route: OpenShiftRoute{
+							Termination: TLSRouteTerminationTypeEdge,
+						},
+					},
+					Replicas:        &one,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
 				},
 			},
 		},
@@ -106,6 +167,9 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 	}
 }
 
+// TODO: a lot of these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
+// deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
+// still supported but should eventually be updated.
 func TestOTELColValidatingWebhook(t *testing.T) {
 	zero := int32(0)
 	one := int32(1)
@@ -343,6 +407,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "targetCPUUtilization should be greater than 0 and less than 100",
+		},
+		{
+			name: "autoscaler minReplicas is less than maxReplicas",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &one,
+						MinReplicas: &five,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas",
 		},
 		{
 			name: "invalid deployment mode incompabible with ingress settings",
