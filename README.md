@@ -313,6 +313,75 @@ You can configure the OpenTelemetry SDK for applications which can't currently b
 instrumentation.opentelemetry.io/inject-sdk: "true"
 ```
 
+### Target Allocator
+
+The OpenTelemetry Operator comes with an optional component, the Target Allocator (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also change the Prometheus receiver configuration in the CR, so that it uses the `http_sd_config` from the TA. The following example shows how to get started with the Target Allocator:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: collector-with-ta
+spec:
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+  config: |
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'otel-collector'
+            scrape_interval: 10s
+            static_configs:
+            - targets: [ '0.0.0.0:8888' ]
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [prometheus]
+          processors: []
+          exporters: [logging]
+```
+
+Behind the scenes, the OpenTelemetry Operator will convert the Collector’s configuration after the reconciliation into the following:
+
+```yaml
+    receivers:
+      prometheus:
+        config:
+          global:
+            scrape_interval: 1m
+            scrape_timeout: 10s
+            evaluation_interval: 1m
+          scrape_configs:
+          - job_name: otel-collector
+            honor_timestamps: true
+            scrape_interval: 10s
+            scrape_timeout: 10s
+            metrics_path: /metrics
+            scheme: http
+            follow_redirects: true
+            http_sd_configs:
+            - follow_redirects: false
+              url: http://collector-with-ta-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [prometheus]
+          processors: []
+          exporters: [logging]
+```
+
+Note how the Operator added a `global` section and a new `http_sd_configs` to the `otel-collector` scrape config, pointing to a Target Allocator instance it provisioned.
+
 ## Compatibility matrix
 
 ### OpenTelemetry Operator vs. OpenTelemetry Collector
