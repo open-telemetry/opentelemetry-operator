@@ -66,7 +66,7 @@ When deploying the operator into the cluster using `make deploy`, an image in th
 * `IMG`, to override the entire image specification
 
 ```bash
-IMG=docker.io/${USER}/opentelemetry-operator:dev-(git rev-parse --short HEAD)-$(date +%s) make generate bundle container container-push deploy
+IMG=docker.io/${USER}/opentelemetry-operator:dev-$(git rev-parse --short HEAD)-$(date +%s) make generate bundle container container-push deploy
 ```
 
 Your operator will be available in the `opentelemetry-operator-system` namespace.
