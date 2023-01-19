@@ -1,5 +1,21 @@
 Changes by Version
 ==================
+0.68.0
+------------------
+### 🚩 Deprecations 🚩
+* `HPA`: Move maxReplicas and minReplicas to AutoscalerSpec.([#1302](https://github.com/open-telemetry/opentelemetry-operator/pull/1302), [@moh-osman3](https://github.com/moh-osman3))
+### 🚀 New components 🚀
+* `Operator OpAMP Bridge`: Operator OpAMP Bridge Service. ([#1339](https://github.com/open-telemetry/opentelemetry-operator/pull/1339), [@jaronoff97](https://github.com/jaronoff97))
+### 💡 Enhancements 💡
+* `instrumentation/python`: Update default python exporters to use OTLP. ([#1328](https://github.com/open-telemetry/opentelemetry-operator/pull/1328), [@TylerHelmuth](https://github.com/TylerHelmuth))
+* `target-allocator`: Change the github action to match the operator ([#1347](https://github.com/open-telemetry/opentelemetry-operator/pull/1347), [@jaronoff97](https://github.com/jaronoff97))
+### 🧰 Bug fixes 🧰
+* `operator`: Missing resource from OpenShift Routes prevents them to be deployed in OpenShift clusters.([#1337](https://github.com/open-telemetry/opentelemetry-operator/pull/1337), [@iblancasa](https://github.com/iblancasa))
+* `target allocator`: Refactor the target allocator build to not run it as root. ([#1345](https://github.com/open-telemetry/opentelemetry-operator/pull/1345), [@iblancasa](https://github.com/iblancasa))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.68.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.68.0)
+* [OpenTelemetry Contrib - v0.68.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.68.0)
+
 0.67.0
 ------------------
 ### 🚀 New components 🚀
