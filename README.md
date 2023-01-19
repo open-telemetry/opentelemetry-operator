@@ -315,7 +315,7 @@ instrumentation.opentelemetry.io/inject-sdk: "true"
 
 ### Target Allocator
 
-The OpenTelemetry Operator comes with an optional component, the Target Allocator (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also change the Prometheus receiver configuration in the CR, so that it uses the `http_sd_config` from the TA. The following example shows how to get started with the Target Allocator:
+The OpenTelemetry Operator comes with an optional component, the Target Allocator (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also change the Prometheus receiver configuration in the CR, so that it uses the [http_sd_config](https://prometheus.io/docs/prometheus/latest/http_sd/) from the TA. The following example shows how to get started with the Target Allocator:
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
