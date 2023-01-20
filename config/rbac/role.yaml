@@ -112,6 +112,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - config.openshift.io
+  resources:
+  - infrastructures
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases

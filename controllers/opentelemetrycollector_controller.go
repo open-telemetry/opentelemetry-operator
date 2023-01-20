@@ -177,6 +177,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	return r
 }
 
+// +kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
