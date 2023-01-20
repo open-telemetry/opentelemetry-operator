@@ -8,7 +8,7 @@ Changes by Version
 * `Operator OpAMP Bridge`: Operator OpAMP Bridge Service. ([#1339](https://github.com/open-telemetry/opentelemetry-operator/pull/1339), [@jaronoff97](https://github.com/jaronoff97))
 ### 💡 Enhancements 💡
 * `instrumentation/python`: Update default python exporters to use OTLP. ([#1328](https://github.com/open-telemetry/opentelemetry-operator/pull/1328), [@TylerHelmuth](https://github.com/TylerHelmuth))
-* `target-allocator`: Change the github action to match the operator ([#1347](https://github.com/open-telemetry/opentelemetry-operator/pull/1347), [@jaronoff97](https://github.com/jaronoff97))
+* `target-allocator`: Change the github action to match the operator. ([#1347](https://github.com/open-telemetry/opentelemetry-operator/pull/1347), [@jaronoff97](https://github.com/jaronoff97))
 ### 🧰 Bug fixes 🧰
 * `operator`: Missing resource from OpenShift Routes prevents them to be deployed in OpenShift clusters.([#1337](https://github.com/open-telemetry/opentelemetry-operator/pull/1337), [@iblancasa](https://github.com/iblancasa))
 * `target allocator`: Refactor the target allocator build to not run it as root. ([#1345](https://github.com/open-telemetry/opentelemetry-operator/pull/1345), [@iblancasa](https://github.com/iblancasa))
