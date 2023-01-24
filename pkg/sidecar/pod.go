@@ -16,6 +16,7 @@
 package sidecar
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -24,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
@@ -33,8 +35,39 @@ const (
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
-	// add the container
 	volumes := collector.Volumes(cfg, otelcol)
+	volumes[0] = corev1.Volume{
+		Name: naming.ConfigMapVolume(),
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+	volumeMount := corev1.VolumeMount{
+		Name:      naming.ConfigMapVolume(),
+		MountPath: "/conf",
+	}
+
+	otelColCfg, err := reconcile.ReplaceConfig(otelcol)
+	if err != nil {
+		return pod, err
+	}
+	otelColCfgStr := base64.StdEncoding.EncodeToString([]byte(otelColCfg))
+
+	// add the container
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
+		Name:    "otc-container-config-prepper",
+		Image:   cfg.SidecarConfigPrepperImage(),
+		Command: []string{"/bin/sh"},
+		Args:    []string{"-c", "echo ${OTEL_CONFIG} | base64 -d > /conf/collector.yaml && cat /conf/collector.yaml"},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "OTEL_CONFIG",
+				Value: otelColCfgStr,
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{volumeMount},
+	})
+
 	container := collector.Container(cfg, logger, otelcol)
 	if !hasResourceAttributeEnvVar(container.Env) {
 		container.Env = append(container.Env, attributes...)

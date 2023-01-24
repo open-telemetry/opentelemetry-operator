@@ -15,9 +15,11 @@
 package sidecar
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -45,14 +47,41 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Name:      "otelcol-sample",
 			Namespace: "some-app",
 		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Config: `
+receivers:
+exporters:
+processors:
+`,
+		},
 	}
-	cfg := config.New(config.WithCollectorImage("some-default-image"))
+	cfg := config.New(config.WithCollectorImage("some-default-image"), config.WithSidecarConfigPrepperImage("alpine:latest"))
 
 	// test
 	changed, err := add(cfg, logger, otelcol, pod, nil)
 
 	// verify
 	assert.NoError(t, err)
+	require.Len(t, changed.Spec.InitContainers, 1)
+	cfgBase64 := base64.StdEncoding.EncodeToString([]byte(otelcol.Spec.Config))
+	assert.Equal(t, changed.Spec.InitContainers[0], corev1.Container{
+		Name:    "otc-container-config-prepper",
+		Image:   "alpine:latest",
+		Command: []string{"/bin/sh"},
+		Args:    []string{"-c", "echo ${OTEL_CONFIG} | base64 -d > /conf/collector.yaml && cat /conf/collector.yaml"},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "OTEL_CONFIG",
+				Value: cfgBase64,
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      "otc-internal",
+				MountPath: "/conf",
+			},
+		},
+	})
 	assert.Len(t, changed.Spec.Containers, 2)
 	assert.Len(t, changed.Spec.Volumes, 2)
 	assert.Equal(t, "some-app.otelcol-sample", changed.Labels["sidecar.opentelemetry.io/injected"])

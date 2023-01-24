@@ -49,6 +49,7 @@ spec:
       name: opentelemetry-auto-instrumentation
   - name: otc-container
   initContainers:
+  - name: otc-container-config-prepper
   - name: opentelemetry-auto-instrumentation
 status:
   phase: Running

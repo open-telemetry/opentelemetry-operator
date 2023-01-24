@@ -41,6 +41,7 @@ type Config struct {
 	autoInstrumentationPythonImage string
 	collectorImage                 string
 	collectorConfigMapEntry        string
+	sidecarConfigPrepperImage      string
 	autoInstrumentationDotNetImage string
 	targetAllocatorConfigMapEntry  string
 	autoInstrumentationNodeJSImage string
@@ -74,6 +75,7 @@ func New(opts ...Option) Config {
 		autoDetectFrequency:            o.autoDetectFrequency,
 		collectorImage:                 o.collectorImage,
 		collectorConfigMapEntry:        o.collectorConfigMapEntry,
+		sidecarConfigPrepperImage:      o.sidecarConfigPrepperImage,
 		targetAllocatorImage:           o.targetAllocatorImage,
 		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
 		logger:                         o.logger,
@@ -143,6 +145,11 @@ func (c *Config) CollectorImage() string {
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
 func (c *Config) CollectorConfigMapEntry() string {
 	return c.collectorConfigMapEntry
+}
+
+// SidecarConfigPrepperImage represents the flag to override the OpenTelemetry Collector sidecar config prepper container image.
+func (c *Config) SidecarConfigPrepperImage() string {
+	return c.sidecarConfigPrepperImage
 }
 
 // TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.

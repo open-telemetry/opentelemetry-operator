@@ -39,6 +39,7 @@ type options struct {
 	autoInstrumentationPythonImage string
 	collectorImage                 string
 	collectorConfigMapEntry        string
+	sidecarConfigPrepperImage      string
 	targetAllocatorConfigMapEntry  string
 	targetAllocatorImage           string
 	onPlatformChange               changeHandler
@@ -67,6 +68,11 @@ func WithTargetAllocatorImage(s string) Option {
 func WithCollectorImage(s string) Option {
 	return func(o *options) {
 		o.collectorImage = s
+	}
+}
+func WithSidecarConfigPrepperImage(s string) Option {
+	return func(o *options) {
+		o.sidecarConfigPrepperImage = s
 	}
 }
 func WithCollectorConfigMapEntry(s string) Option {
