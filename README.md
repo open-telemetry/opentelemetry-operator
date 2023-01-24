@@ -313,6 +313,75 @@ You can configure the OpenTelemetry SDK for applications which can't currently b
 instrumentation.opentelemetry.io/inject-sdk: "true"
 ```
 
+### Target Allocator
+
+The OpenTelemetry Operator comes with an optional component, the Target Allocator (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also change the Prometheus receiver configuration in the CR, so that it uses the [http_sd_config](https://prometheus.io/docs/prometheus/latest/http_sd/) from the TA. The following example shows how to get started with the Target Allocator:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: collector-with-ta
+spec:
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+  config: |
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'otel-collector'
+            scrape_interval: 10s
+            static_configs:
+            - targets: [ '0.0.0.0:8888' ]
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [prometheus]
+          processors: []
+          exporters: [logging]
+```
+
+Behind the scenes, the OpenTelemetry Operator will convert the Collector’s configuration after the reconciliation into the following:
+
+```yaml
+    receivers:
+      prometheus:
+        config:
+          global:
+            scrape_interval: 1m
+            scrape_timeout: 10s
+            evaluation_interval: 1m
+          scrape_configs:
+          - job_name: otel-collector
+            honor_timestamps: true
+            scrape_interval: 10s
+            scrape_timeout: 10s
+            metrics_path: /metrics
+            scheme: http
+            follow_redirects: true
+            http_sd_configs:
+            - follow_redirects: false
+              url: http://collector-with-ta-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [prometheus]
+          processors: []
+          exporters: [logging]
+```
+
+Note how the Operator added a `global` section and a new `http_sd_configs` to the `otel-collector` scrape config, pointing to a Target Allocator instance it provisioned.
+
 ## Compatibility matrix
 
 ### OpenTelemetry Operator vs. OpenTelemetry Collector
@@ -332,29 +401,30 @@ We use `cert-manager` for some features of this operator and the third column sh
 
 The OpenTelemetry Operator *might* work on versions outside of the given range, but when opening new issues, please make sure to test your scenario on a supported version.
 
-| OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
-|------------------------|----------------------|----------------------|
-| v0.67.0                | v1.19 to v1.25       | v1                   |
-| v0.66.0                | v1.19 to v1.25       | v1                   |
-| v0.64.1                | v1.19 to v1.25       | v1                   |
-| v0.63.1                | v1.19 to v1.25       | v1                   |
-| v0.62.1                | v1.19 to v1.25       | v1                   |
-| v0.61.0                | v1.19 to v1.25       | v1                   |
-| v0.60.0                | v1.19 to v1.25       | v1                   |
-| v0.59.0                | v1.19 to v1.24       | v1                   |
-| v0.58.0                | v1.19 to v1.24       | v1                   |
-| v0.57.2                | v1.19 to v1.24       | v1                   |
-| v0.56.0                | v1.19 to v1.24       | v1                   |
-| v0.55.0                | v1.19 to v1.24       | v1                   |
-| v0.54.0                | v1.19 to v1.24       | v1                   |
-| v0.53.0                | v1.19 to v1.24       | v1                   |
-| v0.52.0                | v1.19 to v1.23       | v1                   |
-| v0.51.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.50.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.49.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.48.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.47.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.46.0                | v1.19 to v1.23       | v1alpha2             |
+| OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
+|------------------------|----------------------|---------------------|
+| v0.68.0                | v1.19 to v1.25       | v1                  |
+| v0.67.0                | v1.19 to v1.25       | v1                  |
+| v0.66.0                | v1.19 to v1.25       | v1                  |
+| v0.64.1                | v1.19 to v1.25       | v1                  |
+| v0.63.1                | v1.19 to v1.25       | v1                  |
+| v0.62.1                | v1.19 to v1.25       | v1                  |
+| v0.61.0                | v1.19 to v1.25       | v1                  |
+| v0.60.0                | v1.19 to v1.25       | v1                  |
+| v0.59.0                | v1.19 to v1.24       | v1                  |
+| v0.58.0                | v1.19 to v1.24       | v1                  |
+| v0.57.2                | v1.19 to v1.24       | v1                  |
+| v0.56.0                | v1.19 to v1.24       | v1                  |
+| v0.55.0                | v1.19 to v1.24       | v1                  |
+| v0.54.0                | v1.19 to v1.24       | v1                  |
+| v0.53.0                | v1.19 to v1.24       | v1                  |
+| v0.52.0                | v1.19 to v1.23       | v1                  |
+| v0.51.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.50.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.49.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.48.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.47.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.46.0                | v1.19 to v1.23       | v1alpha2            |
 
 
 
