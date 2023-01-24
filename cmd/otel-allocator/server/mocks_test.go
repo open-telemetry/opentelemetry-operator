@@ -49,5 +49,3 @@ func (m *mockAllocator) SetFilter(_ allocation.Filter)                          
 func (m *mockAllocator) TargetItems() map[string]*target.Item {
 	return m.targetItems
 }
-
-
