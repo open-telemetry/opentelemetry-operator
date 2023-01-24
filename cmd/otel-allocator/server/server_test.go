@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -48,14 +49,6 @@ var (
 	secondTargetItem     = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
 	testJobTargetItemTwo = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
 )
-
-type mockDiscoveryManager struct {
-	m map[string]*promconfig.ScrapeConfig
-}
-
-func (m *mockDiscoveryManager) GetScrapeConfigs() map[string]*promconfig.ScrapeConfig {
-	return m.m
-}
 
 func TestServer_TargetsHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
@@ -662,4 +655,75 @@ func TestScrapeConfigsHandler_Hashing(t *testing.T) {
 			assert.Equal(t, tc.scrapeConfigs, scrapeConfigResult)
 		})
 	}
+}
+
+func TestServer_JobHandler(t *testing.T) {
+	tests := []struct {
+		description  string
+		targetItems  map[string]*target.Item
+		expectedCode int
+		expectedJobs map[string]target.LinkJSON
+	}{
+		{
+			description:  "nil jobs",
+			targetItems:  nil,
+			expectedCode: http.StatusOK,
+			expectedJobs: make(map[string]target.LinkJSON),
+		},
+		{
+			description:  "empty jobs",
+			targetItems:  map[string]*target.Item{},
+			expectedCode: http.StatusOK,
+			expectedJobs: make(map[string]target.LinkJSON),
+		},
+		{
+			description: "one job",
+			targetItems: map[string]*target.Item{
+				"targetitem": target.NewItem("job1", "", model.LabelSet{}, ""),
+			},
+			expectedCode: http.StatusOK,
+			expectedJobs: map[string]target.LinkJSON{
+				"job1": newLink("job1"),
+			},
+		},
+		{
+			description: "multiple jobs",
+			targetItems: map[string]*target.Item{
+				"a": target.NewItem("job1", "", model.LabelSet{}, ""),
+				"b": target.NewItem("job2", "", model.LabelSet{}, ""),
+				"c": target.NewItem("job3", "", model.LabelSet{}, ""),
+				"d": target.NewItem("job3", "", model.LabelSet{}, ""),
+				"e": target.NewItem("job3", "", model.LabelSet{}, "")},
+			expectedCode: http.StatusOK,
+			expectedJobs: map[string]target.LinkJSON{
+				"job1": newLink("job1"),
+				"job2": newLink("job2"),
+				"job3": newLink("job3"),
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			a := &mockAllocator{targetItems: tc.targetItems}
+			s := NewServer(logger, a, nil, &listenAddr)
+			request := httptest.NewRequest("GET", "/jobs", nil)
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+			bodyBytes, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
+			jobs := map[string]target.LinkJSON{}
+			err = json.Unmarshal(bodyBytes, &jobs)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedJobs, jobs)
+		})
+	}
+}
+
+func newLink(jobName string) target.LinkJSON {
+	return target.LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
 }
