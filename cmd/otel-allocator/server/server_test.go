@@ -725,5 +725,5 @@ func TestServer_JobHandler(t *testing.T) {
 }
 
 func newLink(jobName string) target.LinkJSON {
-	return target.LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
+	return target.LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
 }

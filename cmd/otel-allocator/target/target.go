@@ -46,7 +46,7 @@ func (t *Item) Hash() string {
 func NewItem(jobName string, targetURL string, label model.LabelSet, collectorName string) *Item {
 	return &Item{
 		JobName:       jobName,
-		Link:          LinkJSON{fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))},
+		Link:          LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))},
 		hash:          jobName + targetURL + label.Fingerprint().String(),
 		TargetURL:     []string{targetURL},
 		Labels:        label,
