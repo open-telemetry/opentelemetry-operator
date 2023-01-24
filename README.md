@@ -401,29 +401,30 @@ We use `cert-manager` for some features of this operator and the third column sh
 
 The OpenTelemetry Operator *might* work on versions outside of the given range, but when opening new issues, please make sure to test your scenario on a supported version.
 
-| OpenTelemetry Operator | Kubernetes           | Cert-Manager         |
-|------------------------|----------------------|----------------------|
-| v0.67.0                | v1.19 to v1.25       | v1                   |
-| v0.66.0                | v1.19 to v1.25       | v1                   |
-| v0.64.1                | v1.19 to v1.25       | v1                   |
-| v0.63.1                | v1.19 to v1.25       | v1                   |
-| v0.62.1                | v1.19 to v1.25       | v1                   |
-| v0.61.0                | v1.19 to v1.25       | v1                   |
-| v0.60.0                | v1.19 to v1.25       | v1                   |
-| v0.59.0                | v1.19 to v1.24       | v1                   |
-| v0.58.0                | v1.19 to v1.24       | v1                   |
-| v0.57.2                | v1.19 to v1.24       | v1                   |
-| v0.56.0                | v1.19 to v1.24       | v1                   |
-| v0.55.0                | v1.19 to v1.24       | v1                   |
-| v0.54.0                | v1.19 to v1.24       | v1                   |
-| v0.53.0                | v1.19 to v1.24       | v1                   |
-| v0.52.0                | v1.19 to v1.23       | v1                   |
-| v0.51.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.50.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.49.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.48.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.47.0                | v1.19 to v1.23       | v1alpha2             |
-| v0.46.0                | v1.19 to v1.23       | v1alpha2             |
+| OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
+|------------------------|----------------------|---------------------|
+| v0.68.0                | v1.19 to v1.25       | v1                  |
+| v0.67.0                | v1.19 to v1.25       | v1                  |
+| v0.66.0                | v1.19 to v1.25       | v1                  |
+| v0.64.1                | v1.19 to v1.25       | v1                  |
+| v0.63.1                | v1.19 to v1.25       | v1                  |
+| v0.62.1                | v1.19 to v1.25       | v1                  |
+| v0.61.0                | v1.19 to v1.25       | v1                  |
+| v0.60.0                | v1.19 to v1.25       | v1                  |
+| v0.59.0                | v1.19 to v1.24       | v1                  |
+| v0.58.0                | v1.19 to v1.24       | v1                  |
+| v0.57.2                | v1.19 to v1.24       | v1                  |
+| v0.56.0                | v1.19 to v1.24       | v1                  |
+| v0.55.0                | v1.19 to v1.24       | v1                  |
+| v0.54.0                | v1.19 to v1.24       | v1                  |
+| v0.53.0                | v1.19 to v1.24       | v1                  |
+| v0.52.0                | v1.19 to v1.23       | v1                  |
+| v0.51.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.50.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.49.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.48.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.47.0                | v1.19 to v1.23       | v1alpha2            |
+| v0.46.0                | v1.19 to v1.23       | v1alpha2            |
 
 
 
