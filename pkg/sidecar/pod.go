@@ -51,6 +51,7 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCo
 	if err != nil {
 		return pod, err
 	}
+	// use base64 encoding to preserve newline symbols in the config
 	otelColCfgStr := base64.StdEncoding.EncodeToString([]byte(otelColCfg))
 
 	// add the container
