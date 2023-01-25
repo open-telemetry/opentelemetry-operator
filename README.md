@@ -2,7 +2,7 @@
 
 # OpenTelemetry Operator for Kubernetes
 
-The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](https://coreos.com/operators/).
+The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](http://web.archive.org/web/20201201093158/https://coreos.com/operators/).
 
 The operator manages:
 * [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector)
