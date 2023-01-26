@@ -23,12 +23,13 @@ import (
 	"time"
 
 	yaml2 "github.com/ghodss/yaml"
+	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
-	"github.com/gorilla/mux"
 	"github.com/mitchellh/hashstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	promconfig "github.com/prometheus/prometheus/config"
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
@@ -47,29 +48,37 @@ type collectorJSON struct {
 	Jobs []*target.Item `json:"targets"`
 }
 
+type DiscoveryManager interface {
+	GetScrapeConfigs() map[string]*promconfig.ScrapeConfig
+}
+
 type Server struct {
 	logger           logr.Logger
 	allocator        allocation.Allocator
-	discoveryManager *target.Discoverer
+	discoveryManager DiscoveryManager
 	server           *http.Server
 
 	compareHash          uint64
 	scrapeConfigResponse []byte
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager *target.Discoverer, listenAddr *string) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager DiscoveryManager, listenAddr *string) *Server {
 	s := &Server{
 		logger:           log,
 		allocator:        allocator,
 		discoveryManager: discoveryManager,
 		compareHash:      uint64(0),
 	}
-	router := mux.NewRouter().UseEncodedPath()
+
+	router := gin.Default()
+	router.UseRawPath = true
+	router.UnescapePathValues = false
 	router.Use(s.PrometheusMiddleware)
-	router.HandleFunc("/scrape_configs", s.ScrapeConfigsHandler).Methods("GET")
-	router.HandleFunc("/jobs", s.JobHandler).Methods("GET")
-	router.HandleFunc("/jobs/{job_id}/targets", s.TargetsHandler).Methods("GET")
-	router.Path("/metrics").Handler(promhttp.Handler())
+	router.GET("/scrape_configs", s.ScrapeConfigsHandler)
+	router.GET("/jobs", s.JobHandler)
+	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
 	s.server = &http.Server{Addr: *listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
 	return s
 }
@@ -87,13 +96,13 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
 // The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
 // After that, the YAML is converted in to a JSON format for consumers to use.
-func (s *Server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
 	configs := s.discoveryManager.GetScrapeConfigs()
 
 	hash, err := hashstructure.Hash(configs, nil)
 	if err != nil {
 		s.logger.Error(err, "failed to hash the config")
-		s.errorHandler(w, err)
+		s.errorHandler(c.Writer, err)
 		return
 	}
 	// if the hashes are different, we need to recompute the scrape config
@@ -101,72 +110,68 @@ func (s *Server) ScrapeConfigsHandler(w http.ResponseWriter, r *http.Request) {
 		var configBytes []byte
 		configBytes, err = yaml.Marshal(configs)
 		if err != nil {
-			s.errorHandler(w, err)
+			s.errorHandler(c.Writer, err)
 			return
 		}
 		var jsonConfig []byte
 		jsonConfig, err = yaml2.YAMLToJSON(configBytes)
 		if err != nil {
-			s.errorHandler(w, err)
+			s.errorHandler(c.Writer, err)
 			return
 		}
 		s.scrapeConfigResponse = jsonConfig
 		s.compareHash = hash
 	}
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(s.scrapeConfigResponse)
+	c.Writer.Header().Set("Content-Type", "application/json")
+	_, err = c.Writer.Write(s.scrapeConfigResponse)
 	if err != nil {
-		s.errorHandler(w, err)
+		s.errorHandler(c.Writer, err)
 	}
 }
 
-func (s *Server) JobHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) JobHandler(c *gin.Context) {
 	displayData := make(map[string]target.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
 		displayData[v.JobName] = target.LinkJSON{Link: v.Link.Link}
 	}
-	s.jsonHandler(w, displayData)
+	s.jsonHandler(c.Writer, displayData)
 }
 
-// PrometheusMiddleware implements mux.MiddlewareFunc.
-func (s *Server) PrometheusMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		route := mux.CurrentRoute(r)
-		path, _ := route.GetPathTemplate()
-		timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
-		next.ServeHTTP(w, r)
-		timer.ObserveDuration()
-	})
+func (s *Server) PrometheusMiddleware(c *gin.Context) {
+	path := c.FullPath()
+	timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
+	c.Next()
+	timer.ObserveDuration()
 }
 
-func (s *Server) TargetsHandler(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()["collector_id"]
+func (s *Server) TargetsHandler(c *gin.Context) {
+	q := c.Request.URL.Query()["collector_id"]
 
-	params := mux.Vars(r)
-	jobId, err := url.QueryUnescape(params["job_id"])
+	jobIdParam := c.Params.ByName("job_id")
+	jobId, err := url.QueryUnescape(jobIdParam)
 	if err != nil {
-		s.errorHandler(w, err)
+		s.errorHandler(c.Writer, err)
 		return
 	}
 
 	if len(q) == 0 {
 		displayData := GetAllTargetsByJob(s.allocator, jobId)
-		s.jsonHandler(w, displayData)
+		s.jsonHandler(c.Writer, displayData)
 
 	} else {
 		tgs := s.allocator.GetTargetsForCollectorAndJob(q[0], jobId)
 		// Displays empty list if nothing matches
 		if len(tgs) == 0 {
-			s.jsonHandler(w, []interface{}{})
+			s.jsonHandler(c.Writer, []interface{}{})
 			return
 		}
-		s.jsonHandler(w, tgs)
+		s.jsonHandler(c.Writer, tgs)
 	}
 }
 
 func (s *Server) errorHandler(w http.ResponseWriter, err error) {
-	w.WriteHeader(500)
+	w.WriteHeader(http.StatusInternalServerError)
 	s.jsonHandler(w, err)
 }
 

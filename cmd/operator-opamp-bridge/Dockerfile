@@ -1,4 +1,4 @@
-# Build the otel-allocator binary
+# Build the operator-opamp-bridge binary
 FROM golang:1.19-alpine as builder
 
 WORKDIR /app
