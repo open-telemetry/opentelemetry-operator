@@ -16,12 +16,12 @@ package server
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"math/rand"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 
