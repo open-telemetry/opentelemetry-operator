@@ -15,7 +15,6 @@
 package sidecar
 
 import (
-	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,16 +62,15 @@ processors:
 	// verify
 	assert.NoError(t, err)
 	require.Len(t, changed.Spec.InitContainers, 1)
-	cfgBase64 := base64.StdEncoding.EncodeToString([]byte(otelcol.Spec.Config))
 	assert.Equal(t, changed.Spec.InitContainers[0], corev1.Container{
 		Name:    "otc-container-config-prepper",
 		Image:   "alpine:latest",
 		Command: []string{"/bin/sh"},
-		Args:    []string{"-c", "echo ${OTEL_CONFIG} | base64 -d > /conf/collector.yaml && cat /conf/collector.yaml"},
+		Args:    []string{"-c", "echo \"${OTEL_CONFIG}\" > /conf/collector.yaml && cat /conf/collector.yaml"},
 		Env: []corev1.EnvVar{
 			{
 				Name:  "OTEL_CONFIG",
-				Value: cfgBase64,
+				Value: otelcol.Spec.Config,
 			},
 		},
 		VolumeMounts: []corev1.VolumeMount{

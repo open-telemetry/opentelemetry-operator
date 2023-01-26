@@ -16,7 +16,6 @@
 package sidecar
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -51,19 +50,17 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCo
 	if err != nil {
 		return pod, err
 	}
-	// use base64 encoding to preserve newline symbols in the config
-	otelColCfgStr := base64.StdEncoding.EncodeToString([]byte(otelColCfg))
 
 	// add the container
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 		Name:    "otc-container-config-prepper",
 		Image:   cfg.SidecarConfigPrepperImage(),
 		Command: []string{"/bin/sh"},
-		Args:    []string{"-c", "echo ${OTEL_CONFIG} | base64 -d > /conf/collector.yaml && cat /conf/collector.yaml"},
+		Args:    []string{"-c", "echo \"${OTEL_CONFIG}\" > /conf/collector.yaml && cat /conf/collector.yaml"},
 		Env: []corev1.EnvVar{
 			{
 				Name:  "OTEL_CONFIG",
-				Value: otelColCfgStr,
+				Value: otelColCfg,
 			},
 		},
 		VolumeMounts: []corev1.VolumeMount{volumeMount},
