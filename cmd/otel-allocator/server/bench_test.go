@@ -16,6 +16,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"math/rand"
 	"net/http/httptest"
 	"testing"
@@ -81,8 +82,12 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				s.compareHash = 0
 				s.discoveryManager = &mockDiscoveryManager{m: data}
-				resp := httptest.NewRecorder()
-				s.ScrapeConfigsHandler(resp, nil)
+
+				c, _ := gin.CreateTestContext(httptest.NewRecorder())
+				gin.SetMode(gin.ReleaseMode)
+				c.Request = httptest.NewRequest("GET", "/scrape_configs", nil)
+
+				s.ScrapeConfigsHandler(c)
 			}
 		})
 	}
