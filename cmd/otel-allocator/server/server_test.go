@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -640,10 +641,12 @@ func TestScrapeConfigsHandler_Hashing(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			dm := &mockDiscoveryManager{m: tc.scrapeConfigs}
 			s.discoveryManager = dm
-			request := httptest.NewRequest("GET", "/scrape_configs", nil)
 			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			gin.SetMode(gin.ReleaseMode)
+			c.Request = httptest.NewRequest("GET", "/scrape_configs", nil)
 
-			s.ScrapeConfigsHandler(w, request)
+			s.ScrapeConfigsHandler(c)
 			result := w.Result()
 
 			assert.Equal(t, http.StatusOK, result.StatusCode)

@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 
@@ -81,8 +82,12 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				s.compareHash = 0
 				s.discoveryManager = &mockDiscoveryManager{m: data}
-				resp := httptest.NewRecorder()
-				s.ScrapeConfigsHandler(resp, nil)
+
+				c, _ := gin.CreateTestContext(httptest.NewRecorder())
+				gin.SetMode(gin.ReleaseMode)
+				c.Request = httptest.NewRequest("GET", "/scrape_configs", nil)
+
+				s.ScrapeConfigsHandler(c)
 			}
 		})
 	}
