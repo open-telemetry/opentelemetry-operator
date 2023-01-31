@@ -18,9 +18,14 @@ import (
 	"context"
 	"sort"
 	"testing"
+	"time"
 
 	gokitlog "github.com/go-kit/log"
+	commonconfig "github.com/prometheus/common/config"
+	"github.com/prometheus/common/model"
+	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
+	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -54,7 +59,7 @@ func TestDiscovery(t *testing.T) {
 	}
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil)
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, nil)
 	defer close(manager.close)
 	defer cancelFunc()
 
@@ -87,4 +92,208 @@ func TestDiscovery(t *testing.T) {
 			assert.Equal(t, tt.want, gotTargets)
 		})
 	}
+}
+
+func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
+	// these tests are meant to be run sequentially in this order, to test
+	// that hashing doesn't cause us to send the wrong information.
+	tests := []struct {
+		description string
+		cfg         *promconfig.Config
+	}{
+		{
+			description: "base config",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "serviceMonitor/testapp/testapp/0",
+						HonorTimestamps: true,
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics",
+						Scheme:          "http",
+						HTTPClientConfig: commonconfig.HTTPClientConfig{
+							FollowRedirects: true,
+						},
+						RelabelConfigs: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{model.LabelName("job")},
+								Separator:    ";",
+								Regex:        relabel.MustNewRegexp("(.*)"),
+								TargetLabel:  "__tmp_prometheus_job_name",
+								Replacement:  "$$1",
+								Action:       relabel.Replace,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "different bool",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "serviceMonitor/testapp/testapp/0",
+						HonorTimestamps: false,
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics",
+						Scheme:          "http",
+						HTTPClientConfig: commonconfig.HTTPClientConfig{
+							FollowRedirects: true,
+						},
+						RelabelConfigs: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{model.LabelName("job")},
+								Separator:    ";",
+								Regex:        relabel.MustNewRegexp("(.*)"),
+								TargetLabel:  "__tmp_prometheus_job_name",
+								Replacement:  "$$1",
+								Action:       relabel.Replace,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "different job name",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "serviceMonitor/testapp/testapp/1",
+						HonorTimestamps: false,
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics",
+						Scheme:          "http",
+						HTTPClientConfig: commonconfig.HTTPClientConfig{
+							FollowRedirects: true,
+						},
+						RelabelConfigs: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{model.LabelName("job")},
+								Separator:    ";",
+								Regex:        relabel.MustNewRegexp("(.*)"),
+								TargetLabel:  "__tmp_prometheus_job_name",
+								Replacement:  "$$1",
+								Action:       relabel.Replace,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "different key",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "serviceMonitor/testapp/testapp/1",
+						HonorTimestamps: false,
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics",
+						Scheme:          "http",
+						HTTPClientConfig: commonconfig.HTTPClientConfig{
+							FollowRedirects: true,
+						},
+						RelabelConfigs: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{model.LabelName("job")},
+								Separator:    ";",
+								Regex:        relabel.MustNewRegexp("(.*)"),
+								TargetLabel:  "__tmp_prometheus_job_name",
+								Replacement:  "$$1",
+								Action:       relabel.Replace,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "unset scrape interval",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "serviceMonitor/testapp/testapp/1",
+						HonorTimestamps: false,
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics",
+						Scheme:          "http",
+						HTTPClientConfig: commonconfig.HTTPClientConfig{
+							FollowRedirects: true,
+						},
+						RelabelConfigs: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{model.LabelName("job")},
+								Separator:    ";",
+								Regex:        relabel.MustNewRegexp("(.*)"),
+								TargetLabel:  "__tmp_prometheus_job_name",
+								Replacement:  "$$1",
+								Action:       relabel.Replace,
+							},
+						},
+					},
+				},
+			},
+		},
+		// {
+		// TODO: fix handler logic so this test passes.
+		// This test currently fails due to the regexp struct not having any
+		// exported fields for the hashing algorithm to hash on, causing the
+		// hashes to be the same even though the data is different.
+		// 	description: "different regex",
+		// 	cfg: &promconfig.Config{
+		// 		ScrapeConfigs: []*promconfig.ScrapeConfig{
+		// 			{
+		// 				JobName:         "serviceMonitor/testapp/testapp/1",
+		// 				HonorTimestamps: false,
+		// 				ScrapeTimeout:   model.Duration(30 * time.Second),
+		// 				MetricsPath:     "/metrics",
+		// 				HTTPClientConfig: commonconfig.HTTPClientConfig{
+		// 					FollowRedirects: true,
+		// 				},
+		// 				RelabelConfigs: []*relabel.Config{
+		// 					{
+		// 						SourceLabels: model.LabelNames{model.LabelName("job")},
+		// 						Separator:    ";",
+		// 						Regex:        relabel.MustNewRegexp("something else"),
+		// 						TargetLabel:  "__tmp_prometheus_job_name",
+		// 						Replacement:  "$$1",
+		// 						Action:       relabel.Replace,
+		// 					},
+		// 				},
+		// 			},
+		// 		},
+		// 	},
+		// },
+	}
+	scu := &mockScrapeConfigUpdater{}
+	ctx := context.Background()
+	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, tc.cfg)
+			assert.NoError(t, err)
+			assert.NotZero(t, manager.scrapeConfigsHash)
+			// Assert that scrape configs in manager are correctly
+			// reflected in the scrape job updater.
+			assert.Equal(t, manager.jobToScrapeConfig, scu.mockCfg)
+		})
+	}
+}
+
+var _ scrapeConfigsUpdater = &mockScrapeConfigUpdater{}
+
+type mockScrapeConfigUpdater struct {
+	mockCfg map[string]*promconfig.ScrapeConfig
+}
+
+func (m *mockScrapeConfigUpdater) UpdateScrapeConfigResponse(cfg map[string]*promconfig.ScrapeConfig) {
+	m.mockCfg = cfg
 }

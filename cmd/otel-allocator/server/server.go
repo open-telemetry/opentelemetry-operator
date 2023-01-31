@@ -25,7 +25,6 @@ import (
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
-	"github.com/mitchellh/hashstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -48,26 +47,19 @@ type collectorJSON struct {
 	Jobs []*target.Item `json:"targets"`
 }
 
-type DiscoveryManager interface {
-	GetScrapeConfigs() map[string]*promconfig.ScrapeConfig
-}
-
 type Server struct {
-	logger           logr.Logger
-	allocator        allocation.Allocator
-	discoveryManager DiscoveryManager
-	server           *http.Server
+	logger    logr.Logger
+	allocator allocation.Allocator
+	server    *http.Server
 
-	compareHash          uint64
 	scrapeConfigResponse []byte
+	scrapeConfigErr      error
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager DiscoveryManager, listenAddr *string) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr *string) *Server {
 	s := &Server{
-		logger:           log,
-		allocator:        allocator,
-		discoveryManager: discoveryManager,
-		compareHash:      uint64(0),
+		logger:    log,
+		allocator: allocator,
 	}
 
 	router := gin.Default()
@@ -93,38 +85,36 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
+// UpdateScrapeConfigResponse updates the scrape config response and potential error resulting from an update.
 // The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
 // After that, the YAML is converted in to a JSON format for consumers to use.
-func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
-	configs := s.discoveryManager.GetScrapeConfigs()
-
-	hash, err := hashstructure.Hash(configs, nil)
+func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) {
+	var configBytes []byte
+	configBytes, err := yaml.Marshal(configs)
 	if err != nil {
-		s.logger.Error(err, "failed to hash the config")
-		s.errorHandler(c.Writer, err)
+		s.scrapeConfigErr = err
 		return
 	}
-	// if the hashes are different, we need to recompute the scrape config
-	if hash != s.compareHash {
-		var configBytes []byte
-		configBytes, err = yaml.Marshal(configs)
-		if err != nil {
-			s.errorHandler(c.Writer, err)
-			return
-		}
-		var jsonConfig []byte
-		jsonConfig, err = yaml2.YAMLToJSON(configBytes)
-		if err != nil {
-			s.errorHandler(c.Writer, err)
-			return
-		}
-		s.scrapeConfigResponse = jsonConfig
-		s.compareHash = hash
+	var jsonConfig []byte
+	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
+	if err != nil {
+		s.scrapeConfigErr = err
+		return
+	}
+	s.scrapeConfigErr = nil
+	s.scrapeConfigResponse = jsonConfig
+}
+
+// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
+func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
+	response, err := s.scrapeConfigResponse, s.scrapeConfigErr
+	if err != nil {
+		s.errorHandler(c.Writer, s.scrapeConfigErr)
+		return
 	}
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
 	c.Writer.Header().Set("Content-Type", "application/json")
-	_, err = c.Writer.Write(s.scrapeConfigResponse)
+	_, err = c.Writer.Write(response)
 	if err != nil {
 		s.errorHandler(c.Writer, err)
 	}
