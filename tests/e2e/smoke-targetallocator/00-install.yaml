@@ -27,7 +27,7 @@ spec:
   targetAllocator:
     enabled: true
     serviceAccount: ta
-    image: "local/opentelemetry-operator-targetallocator:e2e"
+    image: "ghcr.io/iblancasa/opentelemetry-operator/target-allocator:v0.37.1-422-g0a3a882"
   config: |
     receivers:
       jaeger:
