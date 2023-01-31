@@ -96,7 +96,8 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
 	s := &Server{
-		logger: logger,
+		logger:         logger,
+		jsonMarshaller: jsonConfig,
 	}
 
 	tests := []struct {
@@ -138,11 +139,18 @@ func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 	}
 	for _, tc := range tests {
 		data := makeNCollectorJSON(*random, tc.numCollectors, tc.numTargets)
-		b.Run(fmt.Sprintf("%d_collectors_%d_targets", tc.numCollectors, tc.numTargets), func(b *testing.B) {
+		b.Run(fmt.Sprintf("jsoniter_%d_collectors_%d_targets", tc.numCollectors, tc.numTargets), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
 				resp := httptest.NewRecorder()
 				s.jsonHandler(resp, data)
+			}
+		})
+		b.Run(fmt.Sprintf("std_%d_collectors_%d_targets", tc.numCollectors, tc.numTargets), func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				resp := httptest.NewRecorder()
+				s.oldJsonHandler(resp, data)
 			}
 		})
 	}
@@ -151,7 +159,8 @@ func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 func BenchmarkTargetItemsJSONHandler(b *testing.B) {
 	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
 	s := &Server{
-		logger: logger,
+		logger:         logger,
+		jsonMarshaller: jsonConfig,
 	}
 
 	tests := []struct {
@@ -197,11 +206,18 @@ func BenchmarkTargetItemsJSONHandler(b *testing.B) {
 	}
 	for _, tc := range tests {
 		data := makeNTargetItems(*random, tc.numTargets, tc.numLabels)
-		b.Run(fmt.Sprintf("%d_targets_%d_labels", tc.numTargets, tc.numLabels), func(b *testing.B) {
+		b.Run(fmt.Sprintf("jsoniter_%d_targets_%d_labels", tc.numTargets, tc.numLabels), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
 				resp := httptest.NewRecorder()
 				s.jsonHandler(resp, data)
+			}
+		})
+		b.Run(fmt.Sprintf("std_%d_targets_%d_labels", tc.numTargets, tc.numLabels), func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				resp := httptest.NewRecorder()
+				s.oldJsonHandler(resp, data)
 			}
 		})
 	}

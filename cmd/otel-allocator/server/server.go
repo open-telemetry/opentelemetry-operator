@@ -28,6 +28,7 @@ import (
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -45,15 +46,24 @@ var (
 	}, []string{"path"})
 )
 
+var (
+	jsonConfig = jsoniter.Config{
+		EscapeHTML:                    false,
+		MarshalFloatWith6Digits:       true,
+		ObjectFieldMustBeSimpleString: true,
+	}.Froze()
+)
+
 type collectorJSON struct {
 	Link string         `json:"_link"`
 	Jobs []*target.Item `json:"targets"`
 }
 
 type Server struct {
-	logger    logr.Logger
-	allocator allocation.Allocator
-	server    *http.Server
+	logger         logr.Logger
+	allocator      allocation.Allocator
+	server         *http.Server
+	jsonMarshaller jsoniter.API
 
 	// Use RWMutex to protect scrapeConfigResponse, since it
 	// will be predominantly read and only written when config
@@ -64,8 +74,9 @@ type Server struct {
 
 func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr *string) *Server {
 	s := &Server{
-		logger:    log,
-		allocator: allocator,
+		logger:         log,
+		allocator:      allocator,
+		jsonMarshaller: jsonConfig,
 	}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -174,6 +185,14 @@ func (s *Server) errorHandler(w http.ResponseWriter, err error) {
 }
 
 func (s *Server) jsonHandler(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	err := s.jsonMarshaller.NewEncoder(w).Encode(data)
+	if err != nil {
+		s.logger.Error(err, "failed to encode data for http response")
+	}
+}
+
+func (s *Server) oldJsonHandler(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
