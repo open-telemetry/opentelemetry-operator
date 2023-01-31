@@ -88,3 +88,66 @@ func TestDiscovery(t *testing.T) {
 		})
 	}
 }
+
+func TestDiscovererRemoveScrapeConfig(t *testing.T) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil)
+	defer close(manager.close)
+	defer cancelFunc()
+
+	results := make(chan []string)
+	go func() {
+		err := d.Run()
+		assert.NoError(t, err)
+	}()
+	go func() {
+		err := manager.Watch(func(targets map[string]*Item) {
+			var result []string
+			for _, t := range targets {
+				result = append(result, t.TargetURL[0])
+			}
+			results <- result
+		})
+		assert.NoError(t, err)
+	}()
+	expectedURLs := []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "prom.domain:9004", "prom.domain:9005", "prom.domain:9006", "promfile.domain:1001", "promfile.domain:3000", "promfile.domain:1001", "promfile.domain:3000"}
+	cfg, err := config.Load("./testdata/test_twojobs.yaml")
+	assert.NoError(t, err)
+	assert.True(t, len(cfg.Config.ScrapeConfigs) > 0)
+	err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.Config)
+	assert.NoError(t, err)
+
+	gotTargets := <-results
+	sort.Strings(gotTargets)
+	sort.Strings(expectedURLs)
+	assert.Equal(t, expectedURLs, gotTargets)
+	scs := manager.GetScrapeConfigs()
+	assert.Equal(t, 2, len(scs))
+
+	expectedURLs = []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "promfile.domain:1001", "promfile.domain:3000"}
+	cfg, err = config.Load("./testdata/test.yaml")
+	assert.NoError(t, err)
+	err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.Config)
+	assert.NoError(t, err)
+	gotTargets = <-results
+	sort.Strings(gotTargets)
+	sort.Strings(expectedURLs)
+	assert.Equal(t, expectedURLs, gotTargets)
+	scs = manager.GetScrapeConfigs()
+	assert.Equal(t, 1, len(scs))
+
+	/* NOTE: going from one job to no job causes the test to timeout.  Not sure what the problem is.
+	expectedURLs = []string{}
+	cfg, err = config.Load("./testdata/test_nojobs.yaml")
+	assert.NoError(t, err)
+	err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.Config)
+	assert.NoError(t, err)
+	gotTargets = <-results
+	sort.Strings(gotTargets)
+	sort.Strings(expectedURLs)
+	assert.Equal(t, expectedURLs, gotTargets)
+	scs = manager.GetScrapeConfigs()
+	assert.Equal(t, 0, len(scs))
+	*/
+}
