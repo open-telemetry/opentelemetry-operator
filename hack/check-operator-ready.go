@@ -58,17 +58,17 @@ func main() {
 
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
-		println("Error reading the kubeconfig:", err.Error())
+		fmt.Printf("Error reading the kubeconfig: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	clusterClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
-		println("Creating the Kubernetes client", err)
+		fmt.Printf("Creating the Kubernetes client: %s\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Waiting until the OTEL Collector Operator is deployed")
+	fmt.Println("Waiting until the OpenTelemetry Operator deployment is created")
 	operatorDeployment := &appsv1.Deployment{}
 
 	err = wait.Poll(pollInterval, timeoutPoll, func() (done bool, err error) {
@@ -81,7 +81,7 @@ func main() {
 			operatorDeployment,
 		)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Failed to get OpenTelemetry operator deployment: %s\n", err)
 			return false, nil
 		}
 		return true, nil
@@ -90,7 +90,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("OTEL Collector Operator is deployed properly!")
+	fmt.Println("OpenTelemetry Operator deployment is created. Now checking if it if fully operational.")
 
 	// Sometimes, the deployment of the OTEL Operator is ready but, when
 	// creating new instances of the OTEL Collector, the webhook is not reachable
@@ -106,14 +106,14 @@ func main() {
 	// Ensure the collector is not there before the check
 	_ = clusterClient.Delete(context.Background(), &collectorInstance)
 
-	fmt.Println("Ensure the creation of OTEL Collectors is available")
+	fmt.Println("Check if the OpenTelemetry collector CR can be created.")
 	err = wait.Poll(pollInterval, timeoutPoll, func() (done bool, err error) {
 		err = clusterClient.Create(
 			context.Background(),
 			&collectorInstance,
 		)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("failed: to create OpenTelemetry collector CR %s\n", err)
 			return false, nil
 		}
 		return true, nil
@@ -124,5 +124,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	_ = clusterClient.Delete(context.Background(), &collectorInstance)
+	if err := clusterClient.Delete(context.Background(), &collectorInstance); err != nil {
+		fmt.Printf("Failed to delete OpenTelemetry collector CR: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("OpenTelemetry operator is ready.")
 }
