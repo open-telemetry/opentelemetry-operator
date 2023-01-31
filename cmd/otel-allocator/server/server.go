@@ -22,7 +22,6 @@ import (
 	"net/url"
 	"time"
 
-	yaml2 "github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/hashstructure"
@@ -113,13 +112,7 @@ func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
 			s.errorHandler(c.Writer, err)
 			return
 		}
-		var jsonConfig []byte
-		jsonConfig, err = yaml2.YAMLToJSON(configBytes)
-		if err != nil {
-			s.errorHandler(c.Writer, err)
-			return
-		}
-		s.scrapeConfigResponse = jsonConfig
+		s.scrapeConfigResponse = configBytes
 		s.compareHash = hash
 	}
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
