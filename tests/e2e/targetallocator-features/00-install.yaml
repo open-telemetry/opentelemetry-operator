@@ -39,7 +39,7 @@ spec:
             storage: 1Gi
   targetAllocator:
     enabled: true
-    image: "ghcr.io/iblancasa/opentelemetry-operator/target-allocator:v0.37.1-422-g0a3a882"
+    image: "local/opentelemetry-operator-targetallocator:e2e"
     serviceAccount: ta
     prometheusCR:
       enabled: true
