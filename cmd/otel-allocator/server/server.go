@@ -70,7 +70,9 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager
 		compareHash:      uint64(0),
 	}
 
-	router := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router.Use(gin.Recovery())
 	router.UseRawPath = true
 	router.UnescapePathValues = false
 	router.Use(s.PrometheusMiddleware)
