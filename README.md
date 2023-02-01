@@ -437,6 +437,12 @@ Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-tel
 - [Benedikt Bongartz](https://github.com/frzifus), Red Hat
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
 
+Target Allocator Approvers ([@open-telemetry/operator-ta-maintainers](https://github.com/orgs/open-telemetry/teams/operator-ta-maintainers)):
+
+- [Anthony Mirabella](https://github.com/Aneurysm9), AWS
+- [Kristina Pathak](https://github.com/kristinapathak), Lightstep
+- [Sebastian Poxhofer](https://github.com/secustor)
+
 Emeritus Approvers:
 
 - [Anthony Mirabella](https://github.com/Aneurysm9), AWS
@@ -451,6 +457,7 @@ Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open
 - [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 - [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
+- [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
 
 Emeritus Maintainers
 
