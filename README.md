@@ -94,7 +94,7 @@ kubectl apply -f - <<EOF
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: simplest
+  name: sidecar-for-my-app
 spec:
   mode: sidecar
   config: |
