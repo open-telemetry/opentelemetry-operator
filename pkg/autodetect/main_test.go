@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	openshift_routes "github.com/open-telemetry/opentelemetry-operator/pkg/openshift-routes"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
@@ -42,7 +43,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 			&metav1.APIGroupList{
 				Groups: []metav1.APIGroup{
 					{
-						Name: "route.openshift.io",
+						Name: "operator.openshift.io",
 					},
 				},
 			},
@@ -87,6 +88,66 @@ func TestUnknownPlatformOnError(t *testing.T) {
 	// verify
 	assert.Error(t, err)
 	assert.Equal(t, platform.Unknown, plt)
+}
+
+func TestDetectOpenShiftRoutes(t *testing.T) {
+	for _, tt := range []struct {
+		apiGroupList *metav1.APIGroupList
+		expected     openshift_routes.OpenShiftRoutesAvailability
+	}{
+		{
+			&metav1.APIGroupList{},
+			openshift_routes.NotAvailable,
+		},
+		{
+			&metav1.APIGroupList{
+				Groups: []metav1.APIGroup{
+					{
+						Name: "route.openshift.io",
+					},
+				},
+			},
+			openshift_routes.Available,
+		},
+	} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			output, err := json.Marshal(tt.apiGroupList)
+			require.NoError(t, err)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, err = w.Write(output)
+			require.NoError(t, err)
+		}))
+		defer server.Close()
+
+		autoDetect, err := autodetect.New(&rest.Config{Host: server.URL})
+		require.NoError(t, err)
+
+		// test
+		routes, err := autoDetect.OpenShiftRoutesAvailability()
+
+		// verify
+		assert.NoError(t, err)
+		assert.Equal(t, tt.expected, routes)
+	}
+}
+
+func TestUnknownOpenShiftRoutesOnError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	autoDetect, err := autodetect.New(&rest.Config{Host: server.URL})
+	require.NoError(t, err)
+
+	// test
+	routes, err := autoDetect.OpenShiftRoutesAvailability()
+
+	// verify
+	assert.Error(t, err)
+	assert.Equal(t, openshift_routes.Unknown, routes)
 }
 
 func TestAutoscalingVersionToString(t *testing.T) {

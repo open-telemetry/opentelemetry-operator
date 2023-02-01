@@ -23,6 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	openshift_routes "github.com/open-telemetry/opentelemetry-operator/pkg/openshift-routes"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
@@ -30,22 +31,24 @@ import (
 type Option func(c *options)
 
 type options struct {
-	autoDetect                     autodetect.AutoDetect
-	version                        version.Version
-	logger                         logr.Logger
-	autoInstrumentationDotNetImage string
-	autoInstrumentationJavaImage   string
-	autoInstrumentationNodeJSImage string
-	autoInstrumentationPythonImage string
-	collectorImage                 string
-	collectorConfigMapEntry        string
-	targetAllocatorConfigMapEntry  string
-	targetAllocatorImage           string
-	onPlatformChange               changeHandler
-	labelsFilter                   []string
-	platform                       platformStore
-	autoDetectFrequency            time.Duration
-	autoscalingVersion             autodetect.AutoscalingVersion
+	autoDetect                          autodetect.AutoDetect
+	version                             version.Version
+	logger                              logr.Logger
+	autoInstrumentationDotNetImage      string
+	autoInstrumentationJavaImage        string
+	autoInstrumentationNodeJSImage      string
+	autoInstrumentationPythonImage      string
+	collectorImage                      string
+	collectorConfigMapEntry             string
+	targetAllocatorConfigMapEntry       string
+	targetAllocatorImage                string
+	onPlatformChange                    changeHandler
+	onOpenShiftRoutesAvailabilityChange changeHandler
+	labelsFilter                        []string
+	platform                            platformStore
+	openShiftRoutesAvailability         openshiftRoutesStore
+	autoDetectFrequency                 time.Duration
+	autoscalingVersion                  autodetect.AutoscalingVersion
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -92,9 +95,22 @@ func WithOnPlatformChangeCallback(f func() error) Option {
 		o.onPlatformChange.Register(f)
 	}
 }
+func WithOnOpenShiftRoutesAvailabilityChangeCallback(f func() error) Option {
+	return func(o *options) {
+		if o.onOpenShiftRoutesAvailabilityChange == nil {
+			o.onOpenShiftRoutesAvailabilityChange = newOnChange()
+		}
+		o.onOpenShiftRoutesAvailabilityChange.Register(f)
+	}
+}
 func WithPlatform(plt platform.Platform) Option {
 	return func(o *options) {
 		o.platform.Set(plt)
+	}
+}
+func WithOpenShiftRoutesAvailability(routes openshift_routes.OpenShiftRoutesAvailability) Option {
+	return func(o *options) {
+		o.openShiftRoutesAvailability.Set(routes)
 	}
 }
 func WithVersion(v version.Version) Option {

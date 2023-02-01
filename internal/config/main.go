@@ -24,6 +24,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	openshift_routes "github.com/open-telemetry/opentelemetry-operator/pkg/openshift-routes"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
@@ -35,56 +36,62 @@ const (
 
 // Config holds the static configuration for this operator.
 type Config struct {
-	autoDetect                     autodetect.AutoDetect
-	logger                         logr.Logger
-	targetAllocatorImage           string
-	autoInstrumentationPythonImage string
-	collectorImage                 string
-	collectorConfigMapEntry        string
-	autoInstrumentationDotNetImage string
-	targetAllocatorConfigMapEntry  string
-	autoInstrumentationNodeJSImage string
-	autoInstrumentationJavaImage   string
-	onPlatformChange               changeHandler
-	labelsFilter                   []string
-	platform                       platformStore
-	autoDetectFrequency            time.Duration
-	autoscalingVersion             autodetect.AutoscalingVersion
+	autoDetect                          autodetect.AutoDetect
+	logger                              logr.Logger
+	targetAllocatorImage                string
+	autoInstrumentationPythonImage      string
+	collectorImage                      string
+	collectorConfigMapEntry             string
+	autoInstrumentationDotNetImage      string
+	targetAllocatorConfigMapEntry       string
+	autoInstrumentationNodeJSImage      string
+	autoInstrumentationJavaImage        string
+	onPlatformChange                    changeHandler
+	onOpenShiftRoutesAvailabilityChange changeHandler
+	labelsFilter                        []string
+	platform                            platformStore
+	openshiftAvailability               openshiftRoutesStore
+	autoDetectFrequency                 time.Duration
+	autoscalingVersion                  autodetect.AutoscalingVersion
 }
 
 // New constructs a new configuration based on the given options.
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		autoDetectFrequency:           defaultAutoDetectFrequency,
-		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
-		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
-		logger:                        logf.Log.WithName("config"),
-		platform:                      newPlatformWrapper(),
-		version:                       version.Get(),
-		autoscalingVersion:            autodetect.DefaultAutoscalingVersion,
-		onPlatformChange:              newOnChange(),
+		autoDetectFrequency:                 defaultAutoDetectFrequency,
+		collectorConfigMapEntry:             defaultCollectorConfigMapEntry,
+		targetAllocatorConfigMapEntry:       defaultTargetAllocatorConfigMapEntry,
+		logger:                              logf.Log.WithName("config"),
+		platform:                            newPlatformWrapper(),
+		openShiftRoutesAvailability:         newOpenShiftRoutesWrapper(),
+		version:                             version.Get(),
+		autoscalingVersion:                  autodetect.DefaultAutoscalingVersion,
+		onPlatformChange:                    newOnChange(),
+		onOpenShiftRoutesAvailabilityChange: newOnChange(),
 	}
 	for _, opt := range opts {
 		opt(&o)
 	}
 
 	return Config{
-		autoDetect:                     o.autoDetect,
-		autoDetectFrequency:            o.autoDetectFrequency,
-		collectorImage:                 o.collectorImage,
-		collectorConfigMapEntry:        o.collectorConfigMapEntry,
-		targetAllocatorImage:           o.targetAllocatorImage,
-		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
-		logger:                         o.logger,
-		onPlatformChange:               o.onPlatformChange,
-		platform:                       o.platform,
-		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
-		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
-		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
-		autoInstrumentationDotNetImage: o.autoInstrumentationDotNetImage,
-		labelsFilter:                   o.labelsFilter,
-		autoscalingVersion:             o.autoscalingVersion,
+		autoDetect:                          o.autoDetect,
+		autoDetectFrequency:                 o.autoDetectFrequency,
+		collectorImage:                      o.collectorImage,
+		collectorConfigMapEntry:             o.collectorConfigMapEntry,
+		targetAllocatorImage:                o.targetAllocatorImage,
+		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
+		logger:                              o.logger,
+		onPlatformChange:                    o.onPlatformChange,
+		onOpenShiftRoutesAvailabilityChange: o.onOpenShiftRoutesAvailabilityChange,
+		platform:                            o.platform,
+		openshiftAvailability:               o.openShiftRoutesAvailability,
+		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
+		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
+		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
+		autoInstrumentationDotNetImage:      o.autoInstrumentationDotNetImage,
+		labelsFilter:                        o.labelsFilter,
+		autoscalingVersion:                  o.autoscalingVersion,
 	}
 }
 
@@ -121,7 +128,21 @@ func (c *Config) AutoDetect() error {
 		c.platform.Set(plt)
 		if err = c.onPlatformChange.Do(); err != nil {
 			// Don't fail if the callback failed, as auto-detection itself worked.
-			c.logger.Error(err, "configuration change notification failed for callback")
+			c.logger.Error(err, "configuration change notification failed for onPlatformChange callback")
+		}
+	}
+
+	routes, err := c.autoDetect.OpenShiftRoutesAvailability()
+	if err != nil {
+		return err
+	}
+
+	if c.openshiftAvailability.Get() != routes {
+		c.logger.V(1).Info("openshift routes detected", "available", routes)
+		c.openshiftAvailability.Set(routes)
+		if err = c.onOpenShiftRoutesAvailabilityChange.Do(); err != nil {
+			// Don't fail if the callback failed, as auto-detection itself worked.
+			c.logger.Error(err, "configuration change notification failed for onOpenShiftRoutesAvailabilityChange callback")
 		}
 	}
 
@@ -221,4 +242,37 @@ func (p *platformWrapper) Get() platform.Platform {
 	plt := p.current
 	p.mu.Unlock()
 	return plt
+}
+
+// RegisterOpenShiftRoutesChangeCallback registers the given function as a callback that
+// is called when the platform detection detects a change.
+func (c *Config) RegisterOpenShiftRoutesChangeCallback(f func() error) {
+	c.onOpenShiftRoutesAvailabilityChange.Register(f)
+}
+
+type openshiftRoutesStore interface {
+	Set(routes openshift_routes.OpenShiftRoutesAvailability)
+	Get() openshift_routes.OpenShiftRoutesAvailability
+}
+
+func newOpenShiftRoutesWrapper() openshiftRoutesStore {
+	return &openshiftRoutesWrapper{}
+}
+
+type openshiftRoutesWrapper struct {
+	mu      sync.Mutex
+	current openshift_routes.OpenShiftRoutesAvailability
+}
+
+func (o *openshiftRoutesWrapper) Set(routes openshift_routes.OpenShiftRoutesAvailability) {
+	o.mu.Lock()
+	o.current = routes
+	o.mu.Unlock()
+}
+
+func (o *openshiftRoutesWrapper) Get() openshift_routes.OpenShiftRoutesAvailability {
+	o.mu.Lock()
+	current := o.current
+	o.mu.Unlock()
+	return current
 }
