@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/buraksezer/consistent v0.10.0
-	github.com/cespare/xxhash/v2 v2.1.2
+	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/ghodss/yaml v1.0.0
 	github.com/gin-gonic/gin v1.5.0
