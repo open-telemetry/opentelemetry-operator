@@ -181,6 +181,11 @@ func (c *Config) Platform() platform.Platform {
 	return c.platform.Get()
 }
 
+// OpenShiftRoutesAvailability represents if the OpenShift Routes is available.
+func (c *Config) OpenShiftRoutesAvailability() openshift_routes.OpenShiftRoutesAvailability {
+	return c.openshiftAvailability.Get()
+}
+
 // AutoscalingVersion represents the preferred version of autoscaling.
 func (c *Config) AutoscalingVersion() autodetect.AutoscalingVersion {
 	return c.autoscalingVersion

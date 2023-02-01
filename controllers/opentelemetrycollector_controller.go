@@ -35,7 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
+	openshift_routes "github.com/open-telemetry/opentelemetry-operator/pkg/openshift-routes"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -67,9 +67,9 @@ type Params struct {
 	Config   config.Config
 }
 
-func (r *OpenTelemetryCollectorReconciler) onPlatformChange() error {
+func (r *OpenTelemetryCollectorReconciler) onOpenShiftRoutesAvailabilityChange() error {
 	// NOTE: At the time the reconciler gets created, the platform type is still unknown.
-	plt := r.config.Platform()
+	openshiftRoutesAvailable := r.config.OpenShiftRoutesAvailability()
 	var (
 		routesIdx = -1
 	)
@@ -83,31 +83,31 @@ func (r *OpenTelemetryCollectorReconciler) onPlatformChange() error {
 	}
 	r.muTasks.Unlock()
 
-	if err := r.addRouteTask(plt, routesIdx); err != nil {
+	if err := r.addRouteTask(openshiftRoutesAvailable, routesIdx); err != nil {
 		return err
 	}
 
-	return r.removeRouteTask(plt, routesIdx)
+	return r.removeRouteTask(openshiftRoutesAvailable, routesIdx)
 }
 
-func (r *OpenTelemetryCollectorReconciler) addRouteTask(plt platform.Platform, routesIdx int) error {
+func (r *OpenTelemetryCollectorReconciler) addRouteTask(openshiftRoutesAvailable openshift_routes.OpenShiftRoutesAvailability, routesIdx int) error {
 	r.muTasks.Lock()
 	defer r.muTasks.Unlock()
 	// if exists and platform is openshift
-	if routesIdx == -1 && plt == platform.OpenShift {
+	if routesIdx == -1 && openshiftRoutesAvailable {
 		r.tasks = append([]Task{{reconcile.Routes, "routes", true}}, r.tasks...)
 	}
 	return nil
 }
 
-func (r *OpenTelemetryCollectorReconciler) removeRouteTask(plt platform.Platform, routesIdx int) error {
+func (r *OpenTelemetryCollectorReconciler) removeRouteTask(openshiftRoutesAvailable openshift_routes.OpenShiftRoutesAvailability, routesIdx int) error {
 	r.muTasks.Lock()
 	defer r.muTasks.Unlock()
 	if len(r.tasks) < routesIdx {
 		return fmt.Errorf("can not remove route task from reconciler")
 	}
 	// if exists and platform is not openshift
-	if routesIdx != -1 && plt != platform.OpenShift {
+	if routesIdx != -1 && openshiftRoutesAvailable {
 		r.tasks = append(r.tasks[:routesIdx], r.tasks[routesIdx+1:]...)
 	}
 	return nil
@@ -172,7 +172,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 				true,
 			},
 		}
-		r.config.RegisterPlatformChangeCallback(r.onPlatformChange)
+		r.config.RegisterOpenShiftRoutesChangeCallback(r.onOpenShiftRoutesAvailabilityChange)
 	}
 	return r
 }
