@@ -163,13 +163,11 @@ func TestShouldInjectSidecar(t *testing.T) {
 			// verify
 			assert.True(t, res.Allowed)
 			assert.Nil(t, res.AdmissionResponse.Result)
-			assert.Len(t, res.Patches, 4)
+			assert.Len(t, res.Patches, 2)
 
 			expectedMap := map[string]bool{
-				"/metadata/labels":     false, // add a new label
-				"/spec/volumes":        false, // add a new volume with the configmap
-				"/spec/containers":     false, // replace the containers, adding one new container
-				"/spec/initContainers": false, // replace the containers, adding one new container
+				"/metadata/labels": false, // add a new label
+				"/spec/containers": false, // replace the containers, adding one new container
 			}
 			for _, patch := range res.Patches {
 				// quick and dirty solution

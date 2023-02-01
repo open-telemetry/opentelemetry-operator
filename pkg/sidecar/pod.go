@@ -17,7 +17,6 @@ package sidecar
 
 import (
 	"fmt"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
@@ -34,44 +33,20 @@ const (
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
-	volumes := collector.Volumes(cfg, otelcol)
-	volumes[0] = corev1.Volume{
-		Name: naming.ConfigMapVolume(),
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		},
-	}
-	volumeMount := corev1.VolumeMount{
-		Name:      naming.ConfigMapVolume(),
-		MountPath: "/conf",
-	}
-
 	otelColCfg, err := reconcile.ReplaceConfig(otelcol)
 	if err != nil {
 		return pod, err
 	}
 
-	// add the container
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-		Name:    "otc-container-config-prepper",
-		Image:   cfg.SidecarConfigPrepperImage(),
-		Command: []string{"/bin/sh"},
-		Args:    []string{"-c", "echo \"${OTEL_CONFIG}\" > /conf/collector.yaml && cat /conf/collector.yaml"},
-		Env: []corev1.EnvVar{
-			{
-				Name:  "OTEL_CONFIG",
-				Value: otelColCfg,
-			},
-		},
-		VolumeMounts: []corev1.VolumeMount{volumeMount},
-	})
+	container := collector.Container(cfg, logger, otelcol, false)
+	container.Args = append(container.Args, fmt.Sprintf("--config=env:OTEL_CONFIG"))
 
-	container := collector.Container(cfg, logger, otelcol)
+	container.Env = append(container.Env, corev1.EnvVar{Name: "OTEL_CONFIG", Value: otelColCfg})
 	if !hasResourceAttributeEnvVar(container.Env) {
 		container.Env = append(container.Env, attributes...)
 	}
 	pod.Spec.Containers = append(pod.Spec.Containers, container)
-	pod.Spec.Volumes = append(pod.Spec.Volumes, volumes...)
+	pod.Spec.Volumes = append(pod.Spec.Volumes, otelcol.Spec.Volumes...)
 
 	if pod.Labels == nil {
 		pod.Labels = map[string]string{}

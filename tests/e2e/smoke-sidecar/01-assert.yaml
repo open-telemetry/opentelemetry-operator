@@ -10,14 +10,11 @@ spec:
   - name: myapp
   - name: otc-container
     env:
+    - name: OTEL_CONFIG
     - name: POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_UID
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES
-  initContainers:
-  - name: otc-container-config-prepper
-    env:
-      - name: OTEL_CONFIG
 status:
   phase: Running
