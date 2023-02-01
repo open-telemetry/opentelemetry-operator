@@ -32,14 +32,12 @@ func TestNewConfig(t *testing.T) {
 	cfg := config.New(
 		config.WithCollectorImage("some-image"),
 		config.WithCollectorConfigMapEntry("some-config.yaml"),
-		config.WithSidecarConfigPrepperImage("prepperimage"),
 		config.WithPlatform(platform.Kubernetes),
 	)
 
 	// test
 	assert.Equal(t, "some-image", cfg.CollectorImage())
 	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry())
-	assert.Equal(t, "prepperimage", cfg.SidecarConfigPrepperImage())
 	assert.Equal(t, platform.Kubernetes, cfg.Platform())
 }
 

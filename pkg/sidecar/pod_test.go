@@ -54,7 +54,7 @@ processors:
 `,
 		},
 	}
-	cfg := config.New(config.WithCollectorImage("some-default-image"), config.WithSidecarConfigPrepperImage("alpine:latest"))
+	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
 	changed, err := add(cfg, logger, otelcol, pod, nil)

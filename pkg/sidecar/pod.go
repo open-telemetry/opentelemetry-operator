@@ -41,7 +41,7 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCo
 	}
 
 	container := collector.Container(cfg, logger, otelcol, false)
-	container.Args = append(container.Args, fmt.Sprintf("--config=env:%s", otelColCfg))
+	container.Args = append(container.Args, fmt.Sprintf("--config=env:%s", confEnvVar))
 
 	container.Env = append(container.Env, corev1.EnvVar{Name: confEnvVar, Value: otelColCfg})
 	if !hasResourceAttributeEnvVar(container.Env) {
