@@ -29,7 +29,7 @@ func TestPrometheusParser(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("should update config with http_sd_config", func(t *testing.T) {
-		actualConfig, err := ReplaceConfig(param)
+		actualConfig, err := ReplaceConfig(param.Instance)
 		assert.NoError(t, err)
 
 		// prepare
@@ -63,7 +63,7 @@ func TestPrometheusParser(t *testing.T) {
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
 		param.Instance.Spec.TargetAllocator.Enabled = false
-		actualConfig, err := ReplaceConfig(param)
+		actualConfig, err := ReplaceConfig(param.Instance)
 		assert.NoError(t, err)
 
 		// prepare
