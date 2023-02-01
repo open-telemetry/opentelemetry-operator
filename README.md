@@ -454,10 +454,10 @@ Target Allocator Maintainers ([@open-telemetry/operator-ta-maintainers](https://
 
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
+- [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
 - [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 - [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
-- [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
 
 Emeritus Maintainers
 
