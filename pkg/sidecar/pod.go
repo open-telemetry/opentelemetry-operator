@@ -17,6 +17,7 @@ package sidecar
 
 import (
 	"fmt"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
@@ -28,7 +29,8 @@ import (
 )
 
 const (
-	label = "sidecar.opentelemetry.io/injected"
+	label      = "sidecar.opentelemetry.io/injected"
+	confEnvVar = "OTEL_CONFIG"
 )
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
@@ -39,9 +41,9 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCo
 	}
 
 	container := collector.Container(cfg, logger, otelcol, false)
-	container.Args = append(container.Args, fmt.Sprintf("--config=env:OTEL_CONFIG"))
+	container.Args = append(container.Args, fmt.Sprintf("--config=env:%s", otelColCfg))
 
-	container.Env = append(container.Env, corev1.EnvVar{Name: "OTEL_CONFIG", Value: otelColCfg})
+	container.Env = append(container.Env, corev1.EnvVar{Name: confEnvVar, Value: otelColCfg})
 	if !hasResourceAttributeEnvVar(container.Env) {
 		container.Env = append(container.Env, attributes...)
 	}
