@@ -106,7 +106,14 @@ func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.
 	}
 
 	otelcol := v1alpha1.OpenTelemetryCollector{}
-	err := p.client.Get(ctx, types.NamespacedName{Name: ann, Namespace: ns.Name}, &otelcol)
+	var nsnOtelcol types.NamespacedName
+	instNamespace, instName, namespaced := strings.Cut(ann, "/")
+	if namespaced {
+		nsnOtelcol = types.NamespacedName{Name: instName, Namespace: instNamespace}
+	} else {
+		nsnOtelcol = types.NamespacedName{Name: ann, Namespace: ns.Name}
+	}
+	err := p.client.Get(ctx, nsnOtelcol, &otelcol)
 	if err != nil {
 		return otelcol, err
 	}
