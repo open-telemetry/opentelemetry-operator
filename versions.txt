@@ -25,3 +25,7 @@ autoinstrumentation-python=0.36b0
 # Represents the current release of DotNet instrumentation.
 # Should match autoinstrumentation/dotnet/version.txt
 autoinstrumentation-dotnet=0.5.0
+
+# Represents the current release of Apache HTTPD instrumentation.
+# Should match autoinstrumentation/apache-httpd/version.txt
+autoinstrumentation-apache-httpd=1.0.2
