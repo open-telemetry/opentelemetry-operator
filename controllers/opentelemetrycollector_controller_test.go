@@ -51,6 +51,9 @@ var mockAutoDetector = &mockAutoDetect{
 	PlatformFunc: func() (platform.Platform, error) {
 		return platform.OpenShift, nil
 	},
+	OpenshiftRoutesFunc: func() (openshift_routes.OpenShiftRoutesAvailability, error) {
+		return openshift_routes.Available, nil
+	},
 }
 
 func TestNewObjectsOnReconciliation(t *testing.T) {
