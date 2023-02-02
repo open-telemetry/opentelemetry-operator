@@ -1,9 +1,9 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: daemonset 
+  name: daemonset
 spec:
-  mode: daemonset 
+  mode: daemonset
   hostNetwork: true
   config: |
     receivers:
