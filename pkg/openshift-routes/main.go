@@ -16,15 +16,15 @@
 package openshift_routes
 
 // Platform holds the auto-detected platform type.
-type OpenShiftRoutesAvailability bool
+type OpenShiftRoutesAvailability int
 
 const (
 	// Is not clear if OpenShift Routes are available.
-	Unknown OpenShiftRoutesAvailability = false
+	Unknown OpenShiftRoutesAvailability = iota
 
 	// OpenShift Routes are available.
-	Available OpenShiftRoutesAvailability = true
+	Available OpenShiftRoutesAvailability = iota
 
 	// OpenShift Routes are not available.
-	NotAvailable = false
+	NotAvailable OpenShiftRoutesAvailability  = iota
 )
