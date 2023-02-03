@@ -23,3 +23,24 @@ make chlog-update
 ```
 
 This will delete all entries (other than the template) in the `.chloggen` directory and create a populated Changelog.md entry. Make sure that the PR you are generating for the release has the `[chore]` prefix, otherwise CI will not pass.
+
+
+## Release managers
+
+A release manager is the person responsible for a specific release. While the manager might request help from other folks, they are ultimately responsible for the success of a release.
+
+In order to have more people comfortable with the release process, and in order to decrease the burden on a small number of volunteers, all approvers and maintainers are release managers from time to time, listed under the Release Schedule section. That table is updated at every release, with the current manager adding themselves to the bottom of the table, removing themselves from the top of the table.
+
+## Release schedule
+
+The operator should be released within a week after the [OpenTelementry collector releas](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/release.md#release-schedule).
+
+| Version | Release manager |
+|---------------------------|
+| v0.69.0 | @pavolloffay    |
+| v0.70.0 | @jpkrohling     |
+| v0.71.0 | @VineethReddy02 |
+| v0.72.0 | @frzifus        |
+| v0.73.0 | @yuriolisa      |
+
+
