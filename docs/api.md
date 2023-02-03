@@ -131,7 +131,9 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b>propagators</b></td>
         <td>[]enum</td>
         <td>
-          Propagators defines inter-process context propagation configuration.<br/>
+          Propagators defines inter-process context propagation configuration. Values in this list will be set in the OTEL_PROPAGATORS env var.
+          <br/><br/>
+          <i>Enum</i>: tracecontext, baggage, b3, b3multi, jaeger, xray, ottrace, none.
         </td>
         <td>false</td>
       </tr><tr>
@@ -2154,13 +2156,14 @@ Sampler defines sampling configuration.
         <td>string</td>
         <td>
           Argument defines sampler argument. The value depends on the sampler type. For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25.<br/>
+          The value will be set in the OTEL_TRACES_SAMPLER_ARG env var.
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>type</b></td>
         <td>enum</td>
         <td>
-          Type defines sampler type. The value can be for instance parentbased_always_on, parentbased_always_off, parentbased_traceidratio...<br/>
+          Type defines sampler type.  The value will be set in the OTEL_TRACES_SAMPLER env var.          
           <br/>
             <i>Enum</i>: always_on, always_off, traceidratio, parentbased_always_on, parentbased_always_off, parentbased_traceidratio, jaeger_remote, xray<br/>
         </td>
