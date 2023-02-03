@@ -26,5 +26,5 @@ const (
 	Available OpenShiftRoutesAvailability = iota
 
 	// OpenShift Routes are not available.
-	NotAvailable OpenShiftRoutesAvailability  = iota
+	NotAvailable OpenShiftRoutesAvailability = iota
 )
