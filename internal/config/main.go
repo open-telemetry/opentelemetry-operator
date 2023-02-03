@@ -35,21 +35,22 @@ const (
 
 // Config holds the static configuration for this operator.
 type Config struct {
-	autoDetect                     autodetect.AutoDetect
-	logger                         logr.Logger
-	targetAllocatorImage           string
-	autoInstrumentationPythonImage string
-	collectorImage                 string
-	collectorConfigMapEntry        string
-	autoInstrumentationDotNetImage string
-	targetAllocatorConfigMapEntry  string
-	autoInstrumentationNodeJSImage string
-	autoInstrumentationJavaImage   string
-	onPlatformChange               changeHandler
-	labelsFilter                   []string
-	platform                       platformStore
-	autoDetectFrequency            time.Duration
-	autoscalingVersion             autodetect.AutoscalingVersion
+	autoDetect                          autodetect.AutoDetect
+	logger                              logr.Logger
+	targetAllocatorImage                string
+	autoInstrumentationPythonImage      string
+	collectorImage                      string
+	collectorConfigMapEntry             string
+	autoInstrumentationDotNetImage      string
+	targetAllocatorConfigMapEntry       string
+	autoInstrumentationNodeJSImage      string
+	autoInstrumentationJavaImage        string
+	autoInstrumentationApacheHttpdImage string
+	onPlatformChange                    changeHandler
+	labelsFilter                        []string
+	platform                            platformStore
+	autoDetectFrequency                 time.Duration
+	autoscalingVersion                  autodetect.AutoscalingVersion
 }
 
 // New constructs a new configuration based on the given options.
@@ -183,6 +184,11 @@ func (c *Config) AutoInstrumentationPythonImage() string {
 // AutoInstrumentationDotNetImage returns OpenTelemetry DotNet auto-instrumentation container image.
 func (c *Config) AutoInstrumentationDotNetImage() string {
 	return c.autoInstrumentationDotNetImage
+}
+
+// AutoInstrumentationApacheHttpdImage returns OpenTelemetry Apache HTTPD auto-instrumentation container image.
+func (c *Config) AutoInstrumentationApacheHttpdImage() string {
+	return c.autoInstrumentationApacheHttpdImage
 }
 
 // Returns the filters converted to regex strings used to filter out unwanted labels from propagations.

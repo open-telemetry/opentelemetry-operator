@@ -26,12 +26,13 @@ import (
 )
 
 type InstrumentationUpgrade struct {
-	Client                client.Client
-	Logger                logr.Logger
-	DefaultAutoInstJava   string
-	DefaultAutoInstNodeJS string
-	DefaultAutoInstPython string
-	DefaultAutoInstDotNet string
+	Client                     client.Client
+	Logger                     logr.Logger
+	DefaultAutoInstJava        string
+	DefaultAutoInstNodeJS      string
+	DefaultAutoInstPython      string
+	DefaultAutoInstDotNet      string
+	DefaultAutoInstApacheHttpd string
 }
 
 //+kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
@@ -99,6 +100,14 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		if inst.Spec.DotNet.Image == autoInstDotnet {
 			inst.Spec.DotNet.Image = u.DefaultAutoInstDotNet
 			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet] = u.DefaultAutoInstDotNet
+		}
+	}
+	autoInstApacheHttpd := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd]
+	if autoInstApacheHttpd != "" {
+		// upgrade the image only if the image matches the annotation
+		if inst.Spec.ApacheHttpd.Image == autoInstApacheHttpd {
+			inst.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
+			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd] = u.DefaultAutoInstApacheHttpd
 		}
 	}
 	return inst

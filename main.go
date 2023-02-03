@@ -81,18 +81,19 @@ func main() {
 
 	// add flags related to this operator
 	var (
-		metricsAddr               string
-		probeAddr                 string
-		enableLeaderElection      bool
-		collectorImage            string
-		targetAllocatorImage      string
-		autoInstrumentationJava   string
-		autoInstrumentationNodeJS string
-		autoInstrumentationPython string
-		autoInstrumentationDotNet string
-		labelsFilter              []string
-		webhookPort               int
-		tlsOpt                    tlsConfig
+		metricsAddr                    string
+		probeAddr                      string
+		enableLeaderElection           bool
+		collectorImage                 string
+		targetAllocatorImage           string
+		autoInstrumentationJava        string
+		autoInstrumentationNodeJS      string
+		autoInstrumentationPython      string
+		autoInstrumentationDotNet      string
+		autoInstrumentationApacheHttpd string
+		labelsFilter                   []string
+		webhookPort                    int
+		tlsOpt                         tlsConfig
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -106,6 +107,7 @@ func main() {
 	pflag.StringVar(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationPython, "auto-instrumentation-python-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet), "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationApacheHttpd, "auto-instrumentation-apache-httpd-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd), "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringArrayVar(&labelsFilter, "labels", []string{}, "Labels to filter away from propagating onto deploys")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
 	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
@@ -148,6 +150,7 @@ func main() {
 		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
 		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
+		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 	)
@@ -219,10 +222,11 @@ func main() {
 		if err = (&otelv1alpha1.Instrumentation{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationJava:   autoInstrumentationJava,
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationNodeJS: autoInstrumentationNodeJS,
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationPython: autoInstrumentationPython,
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationDotNet: autoInstrumentationDotNet,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationJava:        autoInstrumentationJava,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationNodeJS:      autoInstrumentationNodeJS,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationPython:      autoInstrumentationPython,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationDotNet:      autoInstrumentationDotNet,
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd: autoInstrumentationApacheHttpd,
 				},
 			},
 		}).SetupWebhookWithManager(mgr); err != nil {
@@ -281,12 +285,13 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
 		u := &instrumentationupgrade.InstrumentationUpgrade{
-			Logger:                ctrl.Log.WithName("instrumentation-upgrade"),
-			DefaultAutoInstJava:   cfg.AutoInstrumentationJavaImage(),
-			DefaultAutoInstNodeJS: cfg.AutoInstrumentationNodeJSImage(),
-			DefaultAutoInstPython: cfg.AutoInstrumentationPythonImage(),
-			DefaultAutoInstDotNet: cfg.AutoInstrumentationDotNetImage(),
-			Client:                mgr.GetClient(),
+			Logger:                     ctrl.Log.WithName("instrumentation-upgrade"),
+			DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
+			DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
+			DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
+			DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
+			DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
+			Client:                     mgr.GetClient(),
 		}
 		return u.ManagedInstances(c)
 	}))

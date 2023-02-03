@@ -21,48 +21,50 @@ import (
 )
 
 var (
-	version                   string
-	buildDate                 string
-	otelCol                   string
-	targetAllocator           string
-	autoInstrumentationJava   string
-	autoInstrumentationNodeJS string
-	autoInstrumentationPython string
-	autoInstrumentationDotNet string
+	version                        string
+	buildDate                      string
+	otelCol                        string
+	targetAllocator                string
+	autoInstrumentationJava        string
+	autoInstrumentationNodeJS      string
+	autoInstrumentationPython      string
+	autoInstrumentationDotNet      string
+	autoInstrumentationApacheHttpd string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
 type Version struct {
-	Operator                  string `json:"opentelemetry-operator"`
-	BuildDate                 string `json:"build-date"`
-	OpenTelemetryCollector    string `json:"opentelemetry-collector-version"`
-	Go                        string `json:"go-version"`
-	TargetAllocator           string `json:"target-allocator-version"`
-	AutoInstrumentationJava   string `json:"auto-instrumentation-java"`
-	AutoInstrumentationNodeJS string `json:"auto-instrumentation-nodejs"`
-	AutoInstrumentationPython string `json:"auto-instrumentation-python"`
-	AutoInstrumentationDotNet string `json:"auto-instrumentation-dotnet"`
+	Operator                       string `json:"opentelemetry-operator"`
+	BuildDate                      string `json:"build-date"`
+	OpenTelemetryCollector         string `json:"opentelemetry-collector-version"`
+	Go                             string `json:"go-version"`
+	TargetAllocator                string `json:"target-allocator-version"`
+	AutoInstrumentationJava        string `json:"auto-instrumentation-java"`
+	AutoInstrumentationNodeJS      string `json:"auto-instrumentation-nodejs"`
+	AutoInstrumentationPython      string `json:"auto-instrumentation-python"`
+	AutoInstrumentationDotNet      string `json:"auto-instrumentation-dotnet"`
+	AutoInstrumentationApacheHttpd string `json:"auto-instrumentation-apache-httpd"`
 }
 
 // Get returns the Version object with the relevant information.
 func Get() Version {
 	return Version{
-		Operator:                  version,
-		BuildDate:                 buildDate,
-		OpenTelemetryCollector:    OpenTelemetryCollector(),
-		Go:                        runtime.Version(),
-		TargetAllocator:           TargetAllocator(),
-		AutoInstrumentationJava:   AutoInstrumentationJava(),
-		AutoInstrumentationNodeJS: AutoInstrumentationNodeJS(),
-		AutoInstrumentationPython: AutoInstrumentationPython(),
-		AutoInstrumentationDotNet: AutoInstrumentationDotNet(),
+		Operator:                       version,
+		BuildDate:                      buildDate,
+		OpenTelemetryCollector:         OpenTelemetryCollector(),
+		Go:                             runtime.Version(),
+		TargetAllocator:                TargetAllocator(),
+		AutoInstrumentationJava:        AutoInstrumentationJava(),
+		AutoInstrumentationNodeJS:      AutoInstrumentationNodeJS(),
+		AutoInstrumentationPython:      AutoInstrumentationPython(),
+		AutoInstrumentationDotNet:      AutoInstrumentationDotNet(),
+		AutoInstrumentationApacheHttpd: AutoInstrumentationApacheHttpd(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v')",
-		v.Operator,
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationApacheHttpd='%v')", v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
 		v.Go,
@@ -71,6 +73,7 @@ func (v Version) String() string {
 		v.AutoInstrumentationNodeJS,
 		v.AutoInstrumentationPython,
 		v.AutoInstrumentationDotNet,
+		v.AutoInstrumentationApacheHttpd,
 	)
 }
 
@@ -120,6 +123,13 @@ func AutoInstrumentationPython() string {
 func AutoInstrumentationDotNet() string {
 	if len(autoInstrumentationDotNet) > 0 {
 		return autoInstrumentationDotNet
+	}
+	return "0.0.0"
+}
+
+func AutoInstrumentationApacheHttpd() string {
+	if len(autoInstrumentationApacheHttpd) > 0 {
+		return autoInstrumentationApacheHttpd
 	}
 	return "0.0.0"
 }

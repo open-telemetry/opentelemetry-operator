@@ -30,22 +30,23 @@ import (
 type Option func(c *options)
 
 type options struct {
-	autoDetect                     autodetect.AutoDetect
-	version                        version.Version
-	logger                         logr.Logger
-	autoInstrumentationDotNetImage string
-	autoInstrumentationJavaImage   string
-	autoInstrumentationNodeJSImage string
-	autoInstrumentationPythonImage string
-	collectorImage                 string
-	collectorConfigMapEntry        string
-	targetAllocatorConfigMapEntry  string
-	targetAllocatorImage           string
-	onPlatformChange               changeHandler
-	labelsFilter                   []string
-	platform                       platformStore
-	autoDetectFrequency            time.Duration
-	autoscalingVersion             autodetect.AutoscalingVersion
+	autoDetect                          autodetect.AutoDetect
+	version                             version.Version
+	logger                              logr.Logger
+	autoInstrumentationDotNetImage      string
+	autoInstrumentationJavaImage        string
+	autoInstrumentationNodeJSImage      string
+	autoInstrumentationPythonImage      string
+	autoInstrumentationApacheHttpdImage string
+	collectorImage                      string
+	collectorConfigMapEntry             string
+	targetAllocatorConfigMapEntry       string
+	targetAllocatorImage                string
+	onPlatformChange                    changeHandler
+	labelsFilter                        []string
+	platform                            platformStore
+	autoDetectFrequency                 time.Duration
+	autoscalingVersion                  autodetect.AutoscalingVersion
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -124,6 +125,12 @@ func WithAutoInstrumentationPythonImage(s string) Option {
 func WithAutoInstrumentationDotNetImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationDotNetImage = s
+	}
+}
+
+func WithAutoInstrumentationApacheHttpdImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationApacheHttpdImage = s
 	}
 }
 

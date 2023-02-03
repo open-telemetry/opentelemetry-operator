@@ -112,6 +112,15 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
 		}
 	}
+	if insts.ApacheHttpd != nil {
+		otelinst := *insts.ApacheHttpd
+		i.logger.V(1).Info("injecting Apache Httpd instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		// Apache agent is configured via config files rather than env vars.
+		// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
+		pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+		pod = i.injectCommonEnvVar(otelinst, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+	}
 	if insts.Sdk != nil {
 		otelinst := *insts.Sdk
 		i.logger.V(1).Info("injecting sdk-only instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
