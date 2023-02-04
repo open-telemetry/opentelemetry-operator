@@ -12,7 +12,7 @@ spec:
     type: parentbased_traceidratio
     argument: "0.25"
   apacheHttpd:
-    image: chrlic/opentelemetry-webserver-agent:latest
+    image: docker.io/chrlic/opentelemetry-webserver-agent:latest
     attrs:
     - name: ApacheModuleOtelMaxQueueSize
       value: "4096"
