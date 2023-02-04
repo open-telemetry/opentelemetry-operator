@@ -3,10 +3,11 @@ kind: Pod
 metadata:
   annotations:
     sidecar.opentelemetry.io/inject: "true"
-    instrumentation.opentelemetry.io/container-names: myapp,myrabbit
-    instrumentation.opentelemetry.io/inject-dotnet: "true"
+      instrumentation.opentelemetry.io/inject-apache-httpd: "true"
+      instrumentation.opentelemetry.io/otel-namespace: "my-app-apache-services"
+      instrumentation.opentelemetry.io/container-names: "myapp,myrabbit"
   labels:
-    app: my-pod-with-sidecar
+    app: my-apache
 spec:
   containers:
   - env:
@@ -35,7 +36,7 @@ spec:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
     - mountPath: /opt/opentelemetry-webserver/agent
       name: otel-apache-agent
-    - mountPath: /usr/local/apache2/conf
+    - mountPath: /opt/opentelemetry-webserver/source-conf
       name: otel-apache-conf-dir
   - env:
     - name: OTEL_SERVICE_NAME
