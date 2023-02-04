@@ -33,6 +33,7 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
     volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
     - name: otel-apache-agent
       mountPath: /opt/opentelemetry-webserver/agent
     - name: otel-apache-conf-dir
