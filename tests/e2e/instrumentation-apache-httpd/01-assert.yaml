@@ -43,7 +43,5 @@ spec:
   - args:
     - cp -r /usr/local/apache2/conf/* /opt/opentelemetry-webserver/source-conf
     name: otel-agent-source-container-clone
-  - args:
-    name: otel-agent-attach-apache
 status:
   phase: Running
