@@ -9,6 +9,7 @@ metadata:
     app: my-apache
 spec:
   containers:
+  - name: myapp
   - env:
     - name: OTEL_SERVICE_NAME
       value: my-apache
