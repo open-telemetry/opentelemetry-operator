@@ -26,10 +26,9 @@ import (
 )
 
 const (
-	apacheConfigDirectory = "/usr/local/apache2/conf"
-	apacheConfigFile      = "httpd.conf"
-	apacheAgentConfigFile = "opentemetry_agent.conf"
-	// apacheAgentDirectory          = "/otel-auto-instrumentation"
+	apacheConfigDirectory         = "/usr/local/apache2/conf"
+	apacheConfigFile              = "httpd.conf"
+	apacheAgentConfigFile         = "opentemetry_agent.conf"
 	apacheAgentDirectory          = "/opt/opentelemetry-webserver"
 	apacheAgentSubDirectory       = "/agent"
 	apacheAgentDirFull            = apacheAgentDirectory + apacheAgentSubDirectory
@@ -171,7 +170,7 @@ func isApacheInitContainerMissing(pod corev1.Pod, containerName string) bool {
 }
 
 // Calculate Apache HTTPD agent configuration file based on attributes provided by the injection rules
-// and by the pod values
+// and by the pod values.
 func getApacheOtelConfig(pod corev1.Pod, apacheSpec v1alpha1.ApacheHttpd, index int, otelEndpoint string, resourceMap map[string]string) string {
 	template := `
 #Load the Otel Webserver SDK
