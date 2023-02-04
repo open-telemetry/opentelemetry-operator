@@ -64,10 +64,6 @@ spec:
     name: myrabbit
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-    - mountPath: /opt/opentelemetry-webserver/agent
-      name: otel-apache-agent
-    - mountPath: /opt/opentelemetry-webserver/source-conf
-      name: otel-apache-conf-dir
   - args:
     - --config=env:OTEL_CONFIG
     name: otc-container
