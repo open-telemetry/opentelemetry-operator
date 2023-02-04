@@ -31,7 +31,7 @@ spec:
     - name: OTEL_TRACES_SAMPLER_ARG
       value: "0.25"
     - name: OTEL_RESOURCE_ATTRIBUTES
-    name: myrabbit
+    name: myapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
     - mountPath: /opt/opentelemetry-webserver/agent
