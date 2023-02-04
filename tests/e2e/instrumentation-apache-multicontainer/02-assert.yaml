@@ -30,6 +30,7 @@ spec:
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
       value: "0.25"
+    - name: OTEL_RESOURCE_ATTRIBUTES
     name: myrabbit
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
