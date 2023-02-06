@@ -50,7 +50,7 @@ type discoveryHook interface {
 }
 
 type scrapeConfigsUpdater interface {
-	UpdateScrapeConfigResponse(map[string]*config.ScrapeConfig)
+	UpdateScrapeConfigResponse(map[string]*config.ScrapeConfig) error
 }
 
 func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater) *Discoverer {
@@ -86,8 +86,12 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *confi
 	// If the hash has changed, updated stored hash and send the new config.
 	// Otherwise skip updating scrape configs.
 	if m.scrapeConfigsUpdater != nil && m.scrapeConfigsHash != hash {
+		err := m.scrapeConfigsUpdater.UpdateScrapeConfigResponse(m.jobToScrapeConfig)
+		if err != nil {
+			return err
+		}
+
 		m.scrapeConfigsHash = hash
-		m.scrapeConfigsUpdater.UpdateScrapeConfigResponse(m.jobToScrapeConfig)
 	}
 
 	if m.hook != nil {

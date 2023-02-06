@@ -294,6 +294,7 @@ type mockScrapeConfigUpdater struct {
 	mockCfg map[string]*promconfig.ScrapeConfig
 }
 
-func (m *mockScrapeConfigUpdater) UpdateScrapeConfigResponse(cfg map[string]*promconfig.ScrapeConfig) {
+func (m *mockScrapeConfigUpdater) UpdateScrapeConfigResponse(cfg map[string]*promconfig.ScrapeConfig) error {
 	m.mockCfg = cfg
+	return nil
 }

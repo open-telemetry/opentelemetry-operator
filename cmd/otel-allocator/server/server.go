@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	yaml2 "github.com/ghodss/yaml"
@@ -52,8 +53,11 @@ type Server struct {
 	allocator allocation.Allocator
 	server    *http.Server
 
+	// Use RWMutex to protect scrapeConfigResponse, since it
+	// will be predominantely read and only written when config
+	// is applied.
+	mtx                  sync.RWMutex
 	scrapeConfigResponse []byte
-	scrapeConfigErr      error
 }
 
 func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr *string) *Server {
@@ -88,33 +92,32 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // UpdateScrapeConfigResponse updates the scrape config response and potential error resulting from an update.
 // The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
 // After that, the YAML is converted in to a JSON format for consumers to use.
-func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) {
+func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
 	var configBytes []byte
 	configBytes, err := yaml.Marshal(configs)
 	if err != nil {
-		s.scrapeConfigErr = err
-		return
+		return err
 	}
 	var jsonConfig []byte
 	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
 	if err != nil {
-		s.scrapeConfigErr = err
-		return
+		return err
 	}
-	s.scrapeConfigErr = nil
+	s.mtx.Lock()
 	s.scrapeConfigResponse = jsonConfig
+	s.mtx.Unlock()
+	return nil
 }
 
 // ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
 func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
-	response, err := s.scrapeConfigResponse, s.scrapeConfigErr
-	if err != nil {
-		s.errorHandler(c.Writer, s.scrapeConfigErr)
-		return
-	}
+	s.mtx.RLock()
+	result := s.scrapeConfigResponse
+	s.mtx.RUnlock()
+
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
 	c.Writer.Header().Set("Content-Type", "application/json")
-	_, err = c.Writer.Write(response)
+	_, err := c.Writer.Write(result)
 	if err != nil {
 		s.errorHandler(c.Writer, err)
 	}
