@@ -35,7 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
-	openshift_routes "github.com/open-telemetry/opentelemetry-operator/pkg/openshift-routes"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -90,24 +90,24 @@ func (r *OpenTelemetryCollectorReconciler) onOpenShiftRoutesAvailabilityChange()
 	return r.removeRouteTask(openshiftRoutesAvailable, routesIdx)
 }
 
-func (r *OpenTelemetryCollectorReconciler) addRouteTask(ora openshift_routes.OpenShiftRoutesAvailability, routesIdx int) error {
+func (r *OpenTelemetryCollectorReconciler) addRouteTask(ora openshiftroutes.OpenShiftRoutesAvailability, routesIdx int) error {
 	r.muTasks.Lock()
 	defer r.muTasks.Unlock()
 	// if exists and OpenShift Route API is available
-	if routesIdx == -1 && ora == openshift_routes.Available {
+	if routesIdx == -1 && ora == openshiftroutes.Available {
 		r.tasks = append([]Task{{reconcile.Routes, "routes", true}}, r.tasks...)
 	}
 	return nil
 }
 
-func (r *OpenTelemetryCollectorReconciler) removeRouteTask(ora openshift_routes.OpenShiftRoutesAvailability, routesIdx int) error {
+func (r *OpenTelemetryCollectorReconciler) removeRouteTask(ora openshiftroutes.OpenShiftRoutesAvailability, routesIdx int) error {
 	r.muTasks.Lock()
 	defer r.muTasks.Unlock()
 	if len(r.tasks) < routesIdx {
 		return fmt.Errorf("can not remove route task from reconciler")
 	}
 	// if exists and OpenShift Route API is available
-	if routesIdx != -1 && ora == openshift_routes.NotAvailable {
+	if routesIdx != -1 && ora == openshiftroutes.NotAvailable {
 		r.tasks = append(r.tasks[:routesIdx], r.tasks[routesIdx+1:]...)
 	}
 	return nil

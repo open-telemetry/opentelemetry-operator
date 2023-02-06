@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	openshift_routes "github.com/open-telemetry/opentelemetry-operator/pkg/openshift-routes"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
@@ -93,11 +93,11 @@ func TestUnknownPlatformOnError(t *testing.T) {
 func TestDetectOpenShiftRoutes(t *testing.T) {
 	for _, tt := range []struct {
 		apiGroupList *metav1.APIGroupList
-		expected     openshift_routes.OpenShiftRoutesAvailability
+		expected     openshiftroutes.OpenShiftRoutesAvailability
 	}{
 		{
 			&metav1.APIGroupList{},
-			openshift_routes.NotAvailable,
+			openshiftroutes.NotAvailable,
 		},
 		{
 			&metav1.APIGroupList{
@@ -107,7 +107,7 @@ func TestDetectOpenShiftRoutes(t *testing.T) {
 					},
 				},
 			},
-			openshift_routes.Available,
+			openshiftroutes.Available,
 		},
 	} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -147,7 +147,7 @@ func TestUnknownOpenShiftRoutesOnError(t *testing.T) {
 
 	// verify
 	assert.Error(t, err)
-	assert.Equal(t, openshift_routes.Unknown, routes)
+	assert.Equal(t, openshiftroutes.Unknown, routes)
 }
 
 func TestAutoscalingVersionToString(t *testing.T) {

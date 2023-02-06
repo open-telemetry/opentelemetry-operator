@@ -23,7 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	openshift_routes "github.com/open-telemetry/opentelemetry-operator/pkg/openshift-routes"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
@@ -108,7 +108,7 @@ func WithPlatform(plt platform.Platform) Option {
 		o.platform.Set(plt)
 	}
 }
-func WithOpenShiftRoutesAvailability(routes openshift_routes.OpenShiftRoutesAvailability) Option {
+func WithOpenShiftRoutesAvailability(routes openshiftroutes.OpenShiftRoutesAvailability) Option {
 	return func(o *options) {
 		o.openShiftRoutesAvailability.Set(routes)
 	}

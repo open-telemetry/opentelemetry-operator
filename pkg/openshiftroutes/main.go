@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package platform contains the availability of the OpenShift Routes API.
-package openshift_routes
+package openshiftroutes
 
 // Platform holds the auto-detected platform type.
 type OpenShiftRoutesAvailability int

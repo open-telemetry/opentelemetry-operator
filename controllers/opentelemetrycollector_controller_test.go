@@ -39,7 +39,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
-	openshift_routes "github.com/open-telemetry/opentelemetry-operator/pkg/openshift-routes"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
@@ -51,8 +51,8 @@ var mockAutoDetector = &mockAutoDetect{
 	PlatformFunc: func() (platform.Platform, error) {
 		return platform.OpenShift, nil
 	},
-	OpenshiftRoutesFunc: func() (openshift_routes.OpenShiftRoutesAvailability, error) {
-		return openshift_routes.Available, nil
+	OpenshiftRoutesFunc: func() (openshiftroutes.OpenShiftRoutesAvailability, error) {
+		return openshiftroutes.Available, nil
 	},
 }
 
@@ -385,7 +385,7 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 type mockAutoDetect struct {
 	PlatformFunc        func() (platform.Platform, error)
 	HPAVersionFunc      func() (autodetect.AutoscalingVersion, error)
-	OpenshiftRoutesFunc func() (openshift_routes.OpenShiftRoutesAvailability, error)
+	OpenshiftRoutesFunc func() (openshiftroutes.OpenShiftRoutesAvailability, error)
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
@@ -399,9 +399,9 @@ func (m *mockAutoDetect) Platform() (platform.Platform, error) {
 	return platform.Unknown, nil
 }
 
-func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift_routes.OpenShiftRoutesAvailability, error) {
+func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshiftroutes.OpenShiftRoutesAvailability, error) {
 	if m.OpenshiftRoutesFunc != nil {
 		return m.OpenshiftRoutesFunc()
 	}
-	return openshift_routes.Unknown, nil
+	return openshiftroutes.Unknown, nil
 }
