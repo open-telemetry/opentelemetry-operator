@@ -133,7 +133,7 @@ func ToAutoScalingVersion(version string) AutoscalingVersion {
 func (a *autoDetect) OpenShiftRoutesAvailability() (openshiftroutes.OpenShiftRoutesAvailability, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
-		return openshiftroutes.Unknown, err
+		return openshiftroutes.NotAvailable, err
 	}
 
 	apiGroups := apiList.Groups

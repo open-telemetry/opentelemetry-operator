@@ -19,9 +19,6 @@ package openshiftroutes
 type OpenShiftRoutesAvailability int
 
 const (
-	// Is not clear if OpenShift Routes are available.
-	Unknown OpenShiftRoutesAvailability = iota
-
 	// OpenShift Routes are available.
 	Available OpenShiftRoutesAvailability = iota
 

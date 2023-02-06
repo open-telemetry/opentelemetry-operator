@@ -147,7 +147,7 @@ func TestUnknownOpenShiftRoutesOnError(t *testing.T) {
 
 	// verify
 	assert.Error(t, err)
-	assert.Equal(t, openshiftroutes.Unknown, routes)
+	assert.Equal(t, openshiftroutes.NotAvailable, routes)
 }
 
 func TestAutoscalingVersionToString(t *testing.T) {
