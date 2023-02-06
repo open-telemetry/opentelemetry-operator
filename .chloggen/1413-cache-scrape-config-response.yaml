@@ -5,7 +5,7 @@ change_type: enhancement
 component: "target allocator"
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: "Save the scrape config response in the HTTP server upon relevant confif change, instead of building it on every handler call. At the same time, this avoids data race when accessing the scrape configs map."
+note: "Save the scrape config response in the HTTP server upon relevant config change, instead of building it on every handler call. At the same time, this avoids data race when accessing the scrape configs map."
 
 # One or more tracking issues related to the change
 issues: [1359]

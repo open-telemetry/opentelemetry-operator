@@ -54,7 +54,7 @@ type Server struct {
 	server    *http.Server
 
 	// Use RWMutex to protect scrapeConfigResponse, since it
-	// will be predominantely read and only written when config
+	// will be predominantly read and only written when config
 	// is applied.
 	mtx                  sync.RWMutex
 	scrapeConfigResponse []byte
@@ -89,9 +89,9 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-// UpdateScrapeConfigResponse updates the scrape config response and potential error resulting from an update.
-// The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
-// After that, the YAML is converted in to a JSON format for consumers to use.
+// UpdateScrapeConfigResponse updates the scrape config response. The target allocator first marshals these
+// configurations such that the underlying prometheus marshaling is used. After that, the YAML is converted
+// in to a JSON format for consumers to use.
 func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
 	var configBytes []byte
 	configBytes, err := yaml.Marshal(configs)

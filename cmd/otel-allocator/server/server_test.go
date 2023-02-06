@@ -446,7 +446,7 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
 			s := NewServer(logger, nil, &listenAddr)
-			s.UpdateScrapeConfigResponse(tc.scrapeConfigs)
+			assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 
 			request := httptest.NewRequest("GET", "/scrape_configs", nil)
 			w := httptest.NewRecorder()

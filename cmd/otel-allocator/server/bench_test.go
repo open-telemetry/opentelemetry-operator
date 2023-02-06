@@ -24,6 +24,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
@@ -77,7 +78,7 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 	tests := []int{0, 5, 10, 50, 100, 500}
 	for _, n := range tests {
 		data := makeNScrapeConfigs(n)
-		s.UpdateScrapeConfigResponse(data)
+		assert.NoError(b, s.UpdateScrapeConfigResponse(data))
 
 		b.Run(fmt.Sprintf("%d_targets", n), func(b *testing.B) {
 			b.ReportAllocs()
