@@ -24,8 +24,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 )
 
 const (
@@ -177,12 +175,12 @@ func (c *Config) TargetAllocatorConfigMapEntry() string {
 }
 
 // Platform represents the type of the platform this operator is running.
-func (c *Config) Platform() platform.Platform {
+func (c *Config) Platform() autodetect.Platform {
 	return c.platform.Get()
 }
 
 // OpenShiftRoutesAvailability represents if the OpenShift Routes is available.
-func (c *Config) OpenShiftRoutesAvailability() openshiftroutes.OpenShiftRoutesAvailability {
+func (c *Config) OpenShiftRoutesAvailability() autodetect.OpenShiftRoutesAvailability {
 	return c.openshiftAvailability.Get()
 }
 
@@ -223,8 +221,8 @@ func (c *Config) RegisterPlatformChangeCallback(f func() error) {
 }
 
 type platformStore interface {
-	Set(plt platform.Platform)
-	Get() platform.Platform
+	Set(plt autodetect.Platform)
+	Get() autodetect.Platform
 }
 
 func newPlatformWrapper() platformStore {
@@ -233,16 +231,16 @@ func newPlatformWrapper() platformStore {
 
 type platformWrapper struct {
 	mu      sync.Mutex
-	current platform.Platform
+	current autodetect.Platform
 }
 
-func (p *platformWrapper) Set(plt platform.Platform) {
+func (p *platformWrapper) Set(plt autodetect.Platform) {
 	p.mu.Lock()
 	p.current = plt
 	p.mu.Unlock()
 }
 
-func (p *platformWrapper) Get() platform.Platform {
+func (p *platformWrapper) Get() autodetect.Platform {
 	p.mu.Lock()
 	plt := p.current
 	p.mu.Unlock()
@@ -256,28 +254,28 @@ func (c *Config) RegisterOpenShiftRoutesChangeCallback(f func() error) {
 }
 
 type openshiftRoutesStore interface {
-	Set(routes openshiftroutes.OpenShiftRoutesAvailability)
-	Get() openshiftroutes.OpenShiftRoutesAvailability
+	Set(routes autodetect.OpenShiftRoutesAvailability)
+	Get() autodetect.OpenShiftRoutesAvailability
 }
 
 func newOpenShiftRoutesWrapper() openshiftRoutesStore {
 	return &openshiftRoutesWrapper{
-		current: openshiftroutes.NotAvailable,
+		current: autodetect.OpenShiftRoutesNotAvailable,
 	}
 }
 
 type openshiftRoutesWrapper struct {
 	mu      sync.Mutex
-	current openshiftroutes.OpenShiftRoutesAvailability
+	current autodetect.OpenShiftRoutesAvailability
 }
 
-func (o *openshiftRoutesWrapper) Set(routes openshiftroutes.OpenShiftRoutesAvailability) {
+func (o *openshiftRoutesWrapper) Set(routes autodetect.OpenShiftRoutesAvailability) {
 	o.mu.Lock()
 	o.current = routes
 	o.mu.Unlock()
 }
 
-func (o *openshiftRoutesWrapper) Get() openshiftroutes.OpenShiftRoutesAvailability {
+func (o *openshiftRoutesWrapper) Get() autodetect.OpenShiftRoutesAvailability {
 	o.mu.Lock()
 	current := o.current
 	o.mu.Unlock()

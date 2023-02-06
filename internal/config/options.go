@@ -23,8 +23,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 )
 
 // Option represents one specific configuration option.
@@ -103,12 +101,12 @@ func WithOnOpenShiftRoutesAvailabilityChangeCallback(f func() error) Option {
 		o.onOpenShiftRoutesAvailabilityChange.Register(f)
 	}
 }
-func WithPlatform(plt platform.Platform) Option {
+func WithPlatform(plt autodetect.Platform) Option {
 	return func(o *options) {
 		o.platform.Set(plt)
 	}
 }
-func WithOpenShiftRoutesAvailability(routes openshiftroutes.OpenShiftRoutesAvailability) Option {
+func WithOpenShiftRoutesAvailability(routes autodetect.OpenShiftRoutesAvailability) Option {
 	return func(o *options) {
 		o.openShiftRoutesAvailability.Set(routes)
 	}

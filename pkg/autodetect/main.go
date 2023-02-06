@@ -21,18 +21,44 @@ import (
 
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
-
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 )
+
+// Platform holds the auto-detected platform type.
+type Platform int
+
+const (
+	// Unknown is used when the current platform can't be determined.
+	UnknownPlatform Platform = iota
+
+	// OpenShift represents a platform of type OpenShift.
+	OpenShiftPlatform Platform = iota
+
+	// Kubernetes represents a platform of type Kubernetes.
+	KubernetesPlatform Platform = iota
+)
+
+// Platform holds the auto-detected platform type.
+type OpenShiftRoutesAvailability int
+
+const (
+	// OpenShift Routes are available.
+	OpenShiftRoutesAvailable OpenShiftRoutesAvailability = iota
+
+	// OpenShift Routes are not available.
+	OpenShiftRoutesNotAvailable OpenShiftRoutesAvailability = iota
+)
+
+func (p Platform) String() string {
+	return [...]string{"Unknown", "OpenShift", "Kubernetes"}[p]
+}
 
 var _ AutoDetect = (*autoDetect)(nil)
 
 // AutoDetect provides an assortment of routines that auto-detect traits based on the runtime.
 type AutoDetect interface {
-	Platform() (platform.Platform, error)
+	Platform() (Platform, error)
 	HPAVersion() (AutoscalingVersion, error)
-	OpenShiftRoutesAvailability() (openshiftroutes.OpenShiftRoutesAvailability, error)
+	OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error)
 }
 
 type autoDetect struct {
@@ -65,20 +91,20 @@ func New(restConfig *rest.Config) (AutoDetect, error) {
 }
 
 // Platform returns the detected platform this operator is running on. Possible values: Kubernetes, OpenShift.
-func (a *autoDetect) Platform() (platform.Platform, error) {
+func (a *autoDetect) Platform() (Platform, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
-		return platform.Unknown, err
+		return UnknownPlatform, err
 	}
 
 	apiGroups := apiList.Groups
 	for i := 0; i < len(apiGroups); i++ {
 		if apiGroups[i].Name == "operator.openshift.io" {
-			return platform.OpenShift, nil
+			return OpenShiftPlatform, nil
 		}
 	}
 
-	return platform.Kubernetes, nil
+	return KubernetesPlatform, nil
 }
 
 func (a *autoDetect) HPAVersion() (AutoscalingVersion, error) {
@@ -130,18 +156,18 @@ func ToAutoScalingVersion(version string) AutoscalingVersion {
 }
 
 // Platform returns the detected platform this operator is running on. Possible values: Kubernetes, OpenShift.
-func (a *autoDetect) OpenShiftRoutesAvailability() (openshiftroutes.OpenShiftRoutesAvailability, error) {
+func (a *autoDetect) OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
-		return openshiftroutes.NotAvailable, err
+		return OpenShiftRoutesNotAvailable, err
 	}
 
 	apiGroups := apiList.Groups
 	for i := 0; i < len(apiGroups); i++ {
 		if apiGroups[i].Name == "route.openshift.io" {
-			return openshiftroutes.Available, nil
+			return OpenShiftRoutesAvailable, nil
 		}
 	}
 
-	return openshiftroutes.NotAvailable, nil
+	return OpenShiftRoutesNotAvailable, nil
 }

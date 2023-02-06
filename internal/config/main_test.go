@@ -24,8 +24,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 )
 
 func TestNewConfig(t *testing.T) {
@@ -33,21 +31,21 @@ func TestNewConfig(t *testing.T) {
 	cfg := config.New(
 		config.WithCollectorImage("some-image"),
 		config.WithCollectorConfigMapEntry("some-config.yaml"),
-		config.WithPlatform(platform.Kubernetes),
+		config.WithPlatform(autodetect.KubernetesPlatform),
 	)
 
 	// test
 	assert.Equal(t, "some-image", cfg.CollectorImage())
 	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry())
-	assert.Equal(t, platform.Kubernetes, cfg.Platform())
+	assert.Equal(t, autodetect.KubernetesPlatform, cfg.Platform())
 }
 
 func TestOnPlatformChangeCallback(t *testing.T) {
 	// prepare
 	calledBack := false
 	mock := &mockAutoDetect{
-		PlatformFunc: func() (platform.Platform, error) {
-			return platform.OpenShift, nil
+		PlatformFunc: func() (autodetect.Platform, error) {
+			return autodetect.OpenShiftPlatform, nil
 		},
 	}
 	cfg := config.New(
@@ -59,14 +57,14 @@ func TestOnPlatformChangeCallback(t *testing.T) {
 	)
 
 	// sanity check
-	require.Equal(t, platform.Unknown, cfg.Platform())
+	require.Equal(t, autodetect.UnknownPlatform, cfg.Platform())
 
 	// test
 	err := cfg.AutoDetect()
 	require.NoError(t, err)
 
 	// verify
-	assert.Equal(t, platform.OpenShift, cfg.Platform())
+	assert.Equal(t, autodetect.OpenShiftPlatform, cfg.Platform())
 	assert.True(t, calledBack)
 }
 
@@ -75,10 +73,10 @@ func TestAutoDetectInBackground(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 	mock := &mockAutoDetect{
-		PlatformFunc: func() (platform.Platform, error) {
+		PlatformFunc: func() (autodetect.Platform, error) {
 			wg.Done()
 			// returning Unknown will cause the auto-detection to keep trying to detect the platform
-			return platform.Unknown, nil
+			return autodetect.UnknownPlatform, nil
 		},
 	}
 	cfg := config.New(
@@ -87,7 +85,7 @@ func TestAutoDetectInBackground(t *testing.T) {
 	)
 
 	// sanity check
-	require.Equal(t, platform.Unknown, cfg.Platform())
+	require.Equal(t, autodetect.UnknownPlatform, cfg.Platform())
 
 	// test
 	err := cfg.StartAutoDetect()
@@ -100,24 +98,24 @@ func TestAutoDetectInBackground(t *testing.T) {
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	PlatformFunc        func() (platform.Platform, error)
-	OpenshiftRoutesFunc func() (openshiftroutes.OpenShiftRoutesAvailability, error)
+	PlatformFunc        func() (autodetect.Platform, error)
+	OpenshiftRoutesFunc func() (autodetect.OpenShiftRoutesAvailability, error)
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
 	return autodetect.DefaultAutoscalingVersion, nil
 }
 
-func (m *mockAutoDetect) Platform() (platform.Platform, error) {
+func (m *mockAutoDetect) Platform() (autodetect.Platform, error) {
 	if m.PlatformFunc != nil {
 		return m.PlatformFunc()
 	}
-	return platform.Unknown, nil
+	return autodetect.UnknownPlatform, nil
 }
 
-func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshiftroutes.OpenShiftRoutesAvailability, error) {
+func (m *mockAutoDetect) OpenShiftRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {
 	if m.OpenshiftRoutesFunc != nil {
 		return m.OpenshiftRoutesFunc()
 	}
-	return openshiftroutes.NotAvailable, nil
+	return autodetect.OpenShiftRoutesNotAvailable, nil
 }

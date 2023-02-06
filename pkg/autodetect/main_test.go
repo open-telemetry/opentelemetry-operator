@@ -26,18 +26,16 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 )
 
 func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 	for _, tt := range []struct {
 		apiGroupList *metav1.APIGroupList
-		expected     platform.Platform
+		expected     autodetect.Platform
 	}{
 		{
 			&metav1.APIGroupList{},
-			platform.Kubernetes,
+			autodetect.KubernetesPlatform,
 		},
 		{
 			&metav1.APIGroupList{
@@ -47,7 +45,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 					},
 				},
 			},
-			platform.OpenShift,
+			autodetect.OpenShiftPlatform,
 		},
 	} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -87,17 +85,17 @@ func TestUnknownPlatformOnError(t *testing.T) {
 
 	// verify
 	assert.Error(t, err)
-	assert.Equal(t, platform.Unknown, plt)
+	assert.Equal(t, autodetect.UnknownPlatform, plt)
 }
 
 func TestDetectOpenShiftRoutes(t *testing.T) {
 	for _, tt := range []struct {
 		apiGroupList *metav1.APIGroupList
-		expected     openshiftroutes.OpenShiftRoutesAvailability
+		expected     autodetect.OpenShiftRoutesAvailability
 	}{
 		{
 			&metav1.APIGroupList{},
-			openshiftroutes.NotAvailable,
+			autodetect.OpenShiftRoutesNotAvailable,
 		},
 		{
 			&metav1.APIGroupList{
@@ -107,7 +105,7 @@ func TestDetectOpenShiftRoutes(t *testing.T) {
 					},
 				},
 			},
-			openshiftroutes.Available,
+			autodetect.OpenShiftRoutesAvailable,
 		},
 	} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -147,7 +145,7 @@ func TestUnknownOpenShiftRoutesOnError(t *testing.T) {
 
 	// verify
 	assert.Error(t, err)
-	assert.Equal(t, openshiftroutes.NotAvailable, routes)
+	assert.Equal(t, autodetect.OpenShiftRoutesNotAvailable, routes)
 }
 
 func TestAutoscalingVersionToString(t *testing.T) {
