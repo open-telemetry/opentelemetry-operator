@@ -87,7 +87,7 @@ The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `
 
 #### Sidecar injection
 
-A sidecar with the OpenTelemetry Collector can be injected into pod-based workloads by setting the pod annotation `sidecar.opentelemetry.io/inject` to either `"true"`, or to the name of a concrete `OpenTelemetryCollector` from the same namespace, like in the following example:
+A sidecar with the OpenTelemetry Collector can be injected into pod-based workloads by setting the pod annotation `sidecar.opentelemetry.io/inject` to either `"true"`, or to the name of a concrete `OpenTelemetryCollector`, like in the following example:
 
 ```yaml
 kubectl apply -f - <<EOF
@@ -138,6 +138,13 @@ The annotation value can come either from the namespace, or from the pod. The mo
 
 * the pod annotation is used when it's set to a concrete instance name or to `"false"`
 * namespace annotation is used when the pod annotation is either absent or set to `"true"`, and the namespace is set to a concrete instance or to `"false"`
+
+The possible values for the annotation can be:
+
+* "true" - inject `OpenTelemetryCollector` resource from the namespace.
+* "sidecar-for-my-app" - name of `OpenTelemetryCollector` CR instance in the current namespace.
+* "my-other-namespace/my-instrumentation" - name and namespace of `OpenTelemetryCollector` CR instance in another namespace.
+* "false" - do not inject
 
 When using a pod-based workload, such as `Deployment` or `Statefulset`, make sure to add the annotation to the `PodTemplate` part. Like:
 

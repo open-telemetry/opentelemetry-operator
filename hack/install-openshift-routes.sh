@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ "$(kubectl api-resources)" =~ "openshift" ]]; then
+if [[ "$(kubectl api-resources --api-group=operator.openshift.io -o name)" ]]; then
     echo "Connected to an OpenShift cluster. OpenShift routes installation is not needed"
 else
     kubectl apply -f https://raw.githubusercontent.com/openshift/router/release-4.12/deploy/router_rbac.yaml

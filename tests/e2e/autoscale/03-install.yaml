@@ -13,6 +13,8 @@ spec:
           args:
             - -otlp-endpoint=simplest-collector-headless:4317
             - -otlp-insecure
+            # High duration to ensure the trace creation doesn't stop.
+            # It'll be stopped in step 4
             - -duration=1m
             - -workers=20
       restartPolicy: Never

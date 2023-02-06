@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -45,6 +46,13 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Name:      "otelcol-sample",
 			Namespace: "some-app",
 		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Config: `
+receivers:
+exporters:
+processors:
+`,
+		},
 	}
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
@@ -53,9 +61,35 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 
 	// verify
 	assert.NoError(t, err)
-	assert.Len(t, changed.Spec.Containers, 2)
-	assert.Len(t, changed.Spec.Volumes, 2)
+	require.Len(t, changed.Spec.Containers, 2)
+	require.Len(t, changed.Spec.Volumes, 1)
 	assert.Equal(t, "some-app.otelcol-sample", changed.Labels["sidecar.opentelemetry.io/injected"])
+	assert.Equal(t, corev1.Container{
+		Name:  "otc-container",
+		Image: "some-default-image",
+		Args:  []string{"--config=env:OTEL_CONFIG"},
+		Env: []corev1.EnvVar{
+			{
+				Name: "POD_NAME",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "metadata.name",
+					},
+				},
+			},
+			{
+				Name:  "OTEL_CONFIG",
+				Value: otelcol.Spec.Config,
+			},
+		},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "metrics",
+				ContainerPort: 8888,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+	}, changed.Spec.Containers[1])
 }
 
 // this situation should never happen in the current code path, but it should not fail
