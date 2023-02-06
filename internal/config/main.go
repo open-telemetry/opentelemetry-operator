@@ -261,7 +261,9 @@ type openshiftRoutesStore interface {
 }
 
 func newOpenShiftRoutesWrapper() openshiftRoutesStore {
-	return &openshiftRoutesWrapper{}
+	return &openshiftRoutesWrapper{
+		current: openshiftroutes.NotAvailable,
+	}
 }
 
 type openshiftRoutesWrapper struct {

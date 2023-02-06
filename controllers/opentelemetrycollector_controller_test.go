@@ -403,5 +403,5 @@ func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshiftroutes.OpenShif
 	if m.OpenshiftRoutesFunc != nil {
 		return m.OpenshiftRoutesFunc()
 	}
-	return openshiftroutes.NotAvailable, nil
+	return openshiftroutes.Available, nil
 }
