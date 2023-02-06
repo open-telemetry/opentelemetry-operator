@@ -26,9 +26,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 func TestHPA(t *testing.T) {

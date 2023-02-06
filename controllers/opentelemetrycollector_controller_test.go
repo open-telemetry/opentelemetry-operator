@@ -38,9 +38,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 var logger = logf.Log.WithName("unit-tests")

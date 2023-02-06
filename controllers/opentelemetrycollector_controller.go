@@ -34,8 +34,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.

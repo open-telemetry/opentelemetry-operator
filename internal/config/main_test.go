@@ -24,8 +24,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 )
 
 func TestNewConfig(t *testing.T) {

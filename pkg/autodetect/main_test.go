@@ -26,8 +26,8 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 )
 
 func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {

@@ -23,8 +23,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/openshiftroutes"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
+	openshiftroutes "github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/openshiftroutes"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect/platform"
 )
 
 // Option represents one specific configuration option.
