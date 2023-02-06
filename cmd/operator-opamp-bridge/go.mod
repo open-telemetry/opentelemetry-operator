@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/oklog/ulid/v2 v2.0.2
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/open-telemetry/opamp-go v0.6.0
 	github.com/open-telemetry/opentelemetry-operator v1.51.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
