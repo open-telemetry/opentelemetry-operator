@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/oklog/ulid/v2 v2.0.2
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/open-telemetry/opamp-go v0.6.0
 	github.com/open-telemetry/opentelemetry-operator v1.51.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
@@ -13,7 +13,7 @@ require (
 	go.opentelemetry.io/otel v1.12.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.34.0
 	go.opentelemetry.io/otel/metric v0.34.0
-	go.opentelemetry.io/otel/sdk v1.11.2
+	go.opentelemetry.io/otel/sdk v1.12.0
 	go.opentelemetry.io/otel/sdk/metric v0.34.0
 	go.uber.org/multierr v1.6.0
 	gopkg.in/yaml.v2 v2.4.0
