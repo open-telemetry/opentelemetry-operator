@@ -1,5 +1,22 @@
 Changes by Version
 ==================
+0.69.0
+------------------
+### 🚩 Deprecations 🚩
+* `target allocator`: Replace deprecated `gorilla/mux` dependency with `gin` ([#1383](https://github.com/open-telemetry/opentelemetry-operator/pull/1383), [@matej-g](https://github.com/matej-g))
+### 💡 Enhancements 💡
+* `operator`: CRD defs for Apache HTTPD Autoinstrumentation ([#1305](https://github.com/open-telemetry/opentelemetry-operator/pull/1305), [@chrlic](https://github.com/chrlic))
+* `operator`: Inject otelcol sidecar into any namespace ([#1395](https://github.com/open-telemetry/opentelemetry-operator/pull/1395), [@pavolloffay](https://github.com/pavolloffay))
+* `target allocator`: register pprof endpoints for allocator ([#1408](https://github.com/open-telemetry/opentelemetry-operator/pull/1408), [@seankhliao](https://github.com/seankhliao))
+* `target allocator`: Addtl server unit tests ([#1357](https://github.com/open-telemetry/opentelemetry-operator/pull/1357), [@kristinapathak](https://github.com/kristinapathak))
+### 🧰 Bug fixes 🧰
+* `operator`: Fix daemonset-features E2E test for OpenShift ([#1354](https://github.com/open-telemetry/opentelemetry-operator/pull/1354), [@iblancasa](https://github.com/iblancasa))
+* `operator`: Fix E2E autoscale test for OpenShift ([#1365](https://github.com/open-telemetry/opentelemetry-operator/pull/1365), [@iblancasa](https://github.com/iblancasa))
+* `target allocator`: Fix Target Allocator tests ([#1403](https://github.com/open-telemetry/opentelemetry-operator/pull/1403), [@jaronoff97](https://github.com/jaronoff97))
+#### OpenTelemetry Collector and Contrib
+* [OpenTelemetry Collector - v0.69.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.69.0)
+* [OpenTelemetry Contrib - v0.69.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.69.0)
+
 0.68.0
 ------------------
 ### 🚩 Deprecations 🚩
