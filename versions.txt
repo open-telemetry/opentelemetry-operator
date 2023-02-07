@@ -29,3 +29,6 @@ autoinstrumentation-dotnet=0.5.0
 # Represents the current release of Apache HTTPD instrumentation.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-apache-httpd=1.0.2
+
+# Represents the current release of the Operator OpAMP Bridge.
+operator-opamp-bridge=0.1.0
