@@ -84,9 +84,11 @@ func main() {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
+	srv := server.NewServer(log, allocator, cliConf.ListenAddr)
+
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
 	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger())
-	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook)
+	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
 	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cliConf.ClusterConfig)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
@@ -97,7 +99,6 @@ func main() {
 		setupLog.Error(err, "Can't start the file watcher")
 		os.Exit(1)
 	}
-	srv := server.NewServer(log, allocator, targetDiscoverer, cliConf.ListenAddr)
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer close(interrupts)
 
