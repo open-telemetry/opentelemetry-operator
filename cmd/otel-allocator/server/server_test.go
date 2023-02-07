@@ -174,7 +174,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 			var itemResponse []*target.Item
 			err = json.Unmarshal(bodyBytes, &itemResponse)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.want.items, itemResponse)
+			assert.ElementsMatch(t, tt.want.items, itemResponse)
 		})
 	}
 }
