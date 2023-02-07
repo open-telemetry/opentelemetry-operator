@@ -16,6 +16,7 @@ package target
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"testing"
 	"time"
@@ -100,6 +101,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	tests := []struct {
 		description string
 		cfg         *promconfig.Config
+		expectErr   bool
 	}{
 		{
 			description: "base config",
@@ -240,6 +242,17 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 				},
 			},
 		},
+		{
+			description: "mock error on update - no hash update",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName: "error",
+					},
+				},
+			},
+			expectErr: true,
+		},
 		// {
 		// TODO: fix handler logic so this test passes.
 		// This test currently fails due to the regexp struct not having any
@@ -271,6 +284,11 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 		// 	},
 		// },
 	}
+	var (
+		lastValidHash   uint64
+		lastValidConfig map[string]*promconfig.ScrapeConfig
+	)
+
 	scu := &mockScrapeConfigUpdater{}
 	ctx := context.Background()
 	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
@@ -279,22 +297,42 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, tc.cfg)
-			assert.NoError(t, err)
-			assert.NotZero(t, manager.scrapeConfigsHash)
-			// Assert that scrape configs in manager are correctly
-			// reflected in the scrape job updater.
-			assert.Equal(t, manager.jobToScrapeConfig, scu.mockCfg)
+			if !tc.expectErr {
+				assert.NoError(t, err)
+				assert.NotZero(t, manager.scrapeConfigsHash)
+				// Assert that scrape configs in manager are correctly
+				// reflected in the scrape job updater.
+				assert.Equal(t, manager.jobToScrapeConfig, scu.mockCfg)
+
+				lastValidHash = manager.scrapeConfigsHash
+				lastValidConfig = manager.jobToScrapeConfig
+			} else {
+				// In case of error, assert that we retain the last
+				// known valid config.
+				assert.Error(t, err)
+				assert.Equal(t, lastValidHash, manager.scrapeConfigsHash)
+				assert.Equal(t, lastValidConfig, manager.jobToScrapeConfig)
+				assert.Equal(t, lastValidConfig, scu.mockCfg)
+			}
+
 		})
 	}
 }
 
 var _ scrapeConfigsUpdater = &mockScrapeConfigUpdater{}
 
+// mockScrapeConfigUpdater is a mock implementation of the scrapeConfigsUpdater.
+// If a job with name "error" is provided to the UpdateScrapeConfigResponse,
+// it will return an error for testing purposes.
 type mockScrapeConfigUpdater struct {
 	mockCfg map[string]*promconfig.ScrapeConfig
 }
 
 func (m *mockScrapeConfigUpdater) UpdateScrapeConfigResponse(cfg map[string]*promconfig.ScrapeConfig) error {
+	if _, ok := cfg["error"]; ok {
+		return errors.New("error")
+	}
+
 	m.mockCfg = cfg
 	return nil
 }
