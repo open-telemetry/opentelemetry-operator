@@ -24,6 +24,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
@@ -53,7 +54,7 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 			listenAddr := ":8080"
 			a.SetCollectors(cols)
 			a.SetTargets(targets)
-			s := NewServer(logger, a, nil, &listenAddr)
+			s := NewServer(logger, a, &listenAddr)
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", allocatorName, v.numCollectors, v.numJobs), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
@@ -77,12 +78,11 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 	tests := []int{0, 5, 10, 50, 100, 500}
 	for _, n := range tests {
 		data := makeNScrapeConfigs(n)
+		assert.NoError(b, s.UpdateScrapeConfigResponse(data))
+
 		b.Run(fmt.Sprintf("%d_targets", n), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				s.compareHash = 0
-				s.discoveryManager = &mockDiscoveryManager{m: data}
-
 				c, _ := gin.CreateTestContext(httptest.NewRecorder())
 				gin.SetMode(gin.ReleaseMode)
 				c.Request = httptest.NewRequest("GET", "/scrape_configs", nil)
