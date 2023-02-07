@@ -39,7 +39,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -47,8 +46,8 @@ var mockAutoDetector = &mockAutoDetect{
 	HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
 		return autodetect.AutoscalingVersionV2Beta2, nil
 	},
-	PlatformFunc: func() (platform.Platform, error) {
-		return platform.OpenShift, nil
+	OSRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
+		return autodetect.OpenShiftRoutesAvailable, nil
 	},
 }
 
@@ -379,17 +378,17 @@ func TestRegisterWithManager(t *testing.T) {
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	PlatformFunc   func() (platform.Platform, error)
-	HPAVersionFunc func() (autodetect.AutoscalingVersion, error)
+	OSRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
+	HPAVersionFunc           func() (autodetect.AutoscalingVersion, error)
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
 	return m.HPAVersionFunc()
 }
 
-func (m *mockAutoDetect) Platform() (platform.Platform, error) {
-	if m.PlatformFunc != nil {
-		return m.PlatformFunc()
+func (m *mockAutoDetect) OSRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {
+	if m.OSRoutesAvailabilityFunc != nil {
+		return m.OSRoutesAvailabilityFunc()
 	}
-	return platform.Unknown, nil
+	return autodetect.OpenShiftRoutesNotAvailable, nil
 }
