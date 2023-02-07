@@ -41,7 +41,7 @@ func TestContainerNewDefault(t *testing.T) {
 	cfg := config.New(config.WithCollectorImage("default-image"))
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Equal(t, "default-image", c.Image)
@@ -58,7 +58,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	cfg := config.New(config.WithCollectorImage("default-image"))
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Equal(t, "overridden-image", c.Image)
@@ -191,7 +191,7 @@ service:
 			cfg := config.New(config.WithCollectorImage("default-image"))
 
 			// test
-			c := Container(cfg, logger, otelcol)
+			c := Container(cfg, logger, otelcol, true)
 
 			// verify
 			assert.ElementsMatch(t, testCase.expectedPorts, c.Ports)
@@ -212,7 +212,7 @@ func TestContainerConfigFlagIsIgnored(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Len(t, c.Args, 2)
@@ -232,7 +232,7 @@ func TestContainerCustomVolumes(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Len(t, c.VolumeMounts, 2)
@@ -241,7 +241,7 @@ func TestContainerCustomVolumes(t *testing.T) {
 
 func TestContainerCustomSecurityContext(t *testing.T) {
 	// default config without security context
-	c1 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{Spec: v1alpha1.OpenTelemetryCollectorSpec{}})
+	c1 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{Spec: v1alpha1.OpenTelemetryCollectorSpec{}}, true)
 
 	// verify
 	assert.Nil(t, c1.SecurityContext)
@@ -258,7 +258,7 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 				RunAsUser:  &uid,
 			},
 		},
-	})
+	}, true)
 
 	// verify
 	assert.NotNil(t, c2.SecurityContext)
@@ -281,7 +281,7 @@ func TestContainerEnvVarsOverridden(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Len(t, c.Env, 2)
@@ -297,7 +297,7 @@ func TestContainerDefaultEnvVars(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Len(t, c.Env, 1)
@@ -323,7 +323,7 @@ func TestContainerResourceRequirements(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Equal(t, resource.MustParse("100m"), *c.Resources.Limits.Cpu())
@@ -340,7 +340,7 @@ func TestContainerDefaultResourceRequirements(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Empty(t, c.Resources)
@@ -359,7 +359,7 @@ func TestContainerArgs(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Contains(t, c.Args, "--metrics-level=detailed")
@@ -376,7 +376,7 @@ func TestContainerImagePullPolicy(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Equal(t, c.ImagePullPolicy, corev1.PullIfNotPresent)
@@ -409,7 +409,7 @@ func TestContainerEnvFrom(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Contains(t, c.EnvFrom, envFrom1)
@@ -429,7 +429,7 @@ service:
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, otelcol, true)
 
 	// verify
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)

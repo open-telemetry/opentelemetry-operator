@@ -74,7 +74,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	} else {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
-	config, err := ReplaceConfig(params)
+	config, err := ReplaceConfig(params.Instance)
 	if err != nil {
 		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", err)
 	}

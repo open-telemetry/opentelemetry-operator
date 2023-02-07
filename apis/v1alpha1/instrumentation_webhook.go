@@ -27,12 +27,13 @@ import (
 )
 
 const (
-	AnnotationDefaultAutoInstrumentationJava   = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
-	AnnotationDefaultAutoInstrumentationNodeJS = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
-	AnnotationDefaultAutoInstrumentationPython = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
-	AnnotationDefaultAutoInstrumentationDotNet = "instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"
-	envPrefix                                  = "OTEL_"
-	envSplunkPrefix                            = "SPLUNK_"
+	AnnotationDefaultAutoInstrumentationJava        = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
+	AnnotationDefaultAutoInstrumentationNodeJS      = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
+	AnnotationDefaultAutoInstrumentationPython      = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
+	AnnotationDefaultAutoInstrumentationDotNet      = "instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"
+	AnnotationDefaultAutoInstrumentationApacheHttpd = "instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"
+	envPrefix                                       = "OTEL_"
+	envSplunkPrefix                                 = "SPLUNK_"
 )
 
 // log is for logging in this package.
@@ -77,6 +78,17 @@ func (r *Instrumentation) Default() {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationDotNet]; ok {
 			r.Spec.DotNet.Image = val
 		}
+	}
+	if r.Spec.ApacheHttpd.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationApacheHttpd]; ok {
+			r.Spec.ApacheHttpd.Image = val
+		}
+	}
+	if r.Spec.ApacheHttpd.Version == "" {
+		r.Spec.ApacheHttpd.Version = "2.4"
+	}
+	if r.Spec.ApacheHttpd.ConfigPath == "" {
+		r.Spec.ApacheHttpd.ConfigPath = "/usr/local/apache2/conf"
 	}
 }
 
@@ -132,6 +144,9 @@ func (r *Instrumentation) validate() error {
 		return err
 	}
 	if err := r.validateEnv(r.Spec.DotNet.Env); err != nil {
+		return err
+	}
+	if err := r.validateEnv(r.Spec.ApacheHttpd.Env); err != nil {
 		return err
 	}
 

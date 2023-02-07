@@ -1,18 +1,26 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kuttl-otel-sidecar-other-namespace
+---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: daemonset 
+  name: sidecar-for-my-app
+  namespace: kuttl-otel-sidecar-other-namespace
 spec:
-  mode: daemonset 
-  hostNetwork: true
+  mode: sidecar
   config: |
     receivers:
       jaeger:
         protocols:
           grpc:
     processors:
+
     exporters:
       logging:
+
     service:
       pipelines:
         traces:

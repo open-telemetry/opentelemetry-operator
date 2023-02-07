@@ -36,7 +36,7 @@ import (
 const maxPortLen = 15
 
 // Container builds a container for the given collector.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, addConfig bool) corev1.Container {
 	image := otelcol.Spec.Image
 	if len(image) == 0 {
 		image = cfg.CollectorImage()
@@ -52,27 +52,28 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		}
 	}
 
+	var volumeMounts []corev1.VolumeMount
 	argsMap := otelcol.Spec.Args
 	if argsMap == nil {
 		argsMap = map[string]string{}
 	}
-
-	if _, exists := argsMap["config"]; exists {
-		logger.Info("the 'config' flag isn't allowed and is being ignored")
+	if addConfig {
+		if _, exists := argsMap["config"]; exists {
+			logger.Info("the 'config' flag isn't allowed and is being ignored")
+		}
+		// this effectively overrides any 'config' entry that might exist in the CR
+		argsMap["config"] = fmt.Sprintf("/conf/%s", cfg.CollectorConfigMapEntry())
+		volumeMounts = append(volumeMounts,
+			corev1.VolumeMount{
+				Name:      naming.ConfigMapVolume(),
+				MountPath: "/conf",
+			})
 	}
-
-	// this effectively overrides any 'config' entry that might exist in the CR
-	argsMap["config"] = fmt.Sprintf("/conf/%s", cfg.CollectorConfigMapEntry())
 
 	var args []string
 	for k, v := range argsMap {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
-
-	volumeMounts := []corev1.VolumeMount{{
-		Name:      naming.ConfigMapVolume(),
-		MountPath: "/conf",
-	}}
 
 	if len(otelcol.Spec.VolumeMounts) > 0 {
 		volumeMounts = append(volumeMounts, otelcol.Spec.VolumeMounts...)

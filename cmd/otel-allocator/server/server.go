@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/pprof"
 	"net/url"
 	"time"
 
@@ -78,6 +79,7 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager
 	router.GET("/jobs", s.JobHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	registerPprof(router.Group("/debug/pprof/"))
 
 	s.server = &http.Server{Addr: *listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
 	return s
@@ -191,4 +193,12 @@ func GetAllTargetsByJob(allocator allocation.Allocator, job string) map[string]c
 		displayData[col.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name), Jobs: items}
 	}
 	return displayData
+}
+
+func registerPprof(g *gin.RouterGroup) {
+	g.GET("/", gin.WrapF(pprof.Index))
+	g.GET("/cmdline", gin.WrapF(pprof.Cmdline))
+	g.GET("/profile", gin.WrapF(pprof.Profile))
+	g.GET("/symbol", gin.WrapF(pprof.Symbol))
+	g.GET("/trace", gin.WrapF(pprof.Trace))
 }

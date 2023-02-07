@@ -24,23 +24,31 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 const (
-	label = "sidecar.opentelemetry.io/injected"
+	label      = "sidecar.opentelemetry.io/injected"
+	confEnvVar = "OTEL_CONFIG"
 )
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
-	// add the container
-	volumes := collector.Volumes(cfg, otelcol)
-	container := collector.Container(cfg, logger, otelcol)
+	otelColCfg, err := reconcile.ReplaceConfig(otelcol)
+	if err != nil {
+		return pod, err
+	}
+
+	container := collector.Container(cfg, logger, otelcol, false)
+	container.Args = append(container.Args, fmt.Sprintf("--config=env:%s", confEnvVar))
+
+	container.Env = append(container.Env, corev1.EnvVar{Name: confEnvVar, Value: otelColCfg})
 	if !hasResourceAttributeEnvVar(container.Env) {
 		container.Env = append(container.Env, attributes...)
 	}
 	pod.Spec.Containers = append(pod.Spec.Containers, container)
-	pod.Spec.Volumes = append(pod.Spec.Volumes, volumes...)
+	pod.Spec.Volumes = append(pod.Spec.Volumes, otelcol.Spec.Volumes...)
 
 	if pod.Labels == nil {
 		pod.Labels = map[string]string{}

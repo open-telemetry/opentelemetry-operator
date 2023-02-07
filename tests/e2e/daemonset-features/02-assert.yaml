@@ -10,5 +10,3 @@ spec:
        - args:
          - --config=/conf/collector.yaml
          name: otc-container
-status:
-  numberReady: 1
