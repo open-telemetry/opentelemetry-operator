@@ -21,12 +21,12 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"net/url"
+	"sync"
 	"time"
 
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
-	"github.com/mitchellh/hashstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -49,29 +49,27 @@ type collectorJSON struct {
 	Jobs []*target.Item `json:"targets"`
 }
 
-type DiscoveryManager interface {
-	GetScrapeConfigs() map[string]*promconfig.ScrapeConfig
-}
-
 type Server struct {
-	logger           logr.Logger
-	allocator        allocation.Allocator
-	discoveryManager DiscoveryManager
-	server           *http.Server
+	logger    logr.Logger
+	allocator allocation.Allocator
+	server    *http.Server
 
-	compareHash          uint64
+	// Use RWMutex to protect scrapeConfigResponse, since it
+	// will be predominantly read and only written when config
+	// is applied.
+	mtx                  sync.RWMutex
 	scrapeConfigResponse []byte
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, discoveryManager DiscoveryManager, listenAddr *string) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr *string) *Server {
 	s := &Server{
-		logger:           log,
-		allocator:        allocator,
-		discoveryManager: discoveryManager,
-		compareHash:      uint64(0),
+		logger:    log,
+		allocator: allocator,
 	}
 
-	router := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router.Use(gin.Recovery())
 	router.UseRawPath = true
 	router.UnescapePathValues = false
 	router.Use(s.PrometheusMiddleware)
@@ -95,38 +93,35 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
-// The target allocator first marshals these configurations such that the underlying prometheus marshaling is used.
-// After that, the YAML is converted in to a JSON format for consumers to use.
-func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
-	configs := s.discoveryManager.GetScrapeConfigs()
-
-	hash, err := hashstructure.Hash(configs, nil)
+// UpdateScrapeConfigResponse updates the scrape config response. The target allocator first marshals these
+// configurations such that the underlying prometheus marshaling is used. After that, the YAML is converted
+// in to a JSON format for consumers to use.
+func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
+	var configBytes []byte
+	configBytes, err := yaml.Marshal(configs)
 	if err != nil {
-		s.logger.Error(err, "failed to hash the config")
-		s.errorHandler(c.Writer, err)
-		return
+		return err
 	}
-	// if the hashes are different, we need to recompute the scrape config
-	if hash != s.compareHash {
-		var configBytes []byte
-		configBytes, err = yaml.Marshal(configs)
-		if err != nil {
-			s.errorHandler(c.Writer, err)
-			return
-		}
-		var jsonConfig []byte
-		jsonConfig, err = yaml2.YAMLToJSON(configBytes)
-		if err != nil {
-			s.errorHandler(c.Writer, err)
-			return
-		}
-		s.scrapeConfigResponse = jsonConfig
-		s.compareHash = hash
+	var jsonConfig []byte
+	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
+	if err != nil {
+		return err
 	}
+	s.mtx.Lock()
+	s.scrapeConfigResponse = jsonConfig
+	s.mtx.Unlock()
+	return nil
+}
+
+// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
+func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
+	s.mtx.RLock()
+	result := s.scrapeConfigResponse
+	s.mtx.RUnlock()
+
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
 	c.Writer.Header().Set("Content-Type", "application/json")
-	_, err = c.Writer.Write(s.scrapeConfigResponse)
+	_, err := c.Writer.Write(result)
 	if err != nil {
 		s.errorHandler(c.Writer, err)
 	}

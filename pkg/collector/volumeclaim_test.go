@@ -59,7 +59,7 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	// check the access mode is correct
 	assert.Equal(t, corev1.PersistentVolumeAccessMode("ReadWriteOnce"), volumeClaims[0].Spec.AccessModes[0])
 
-	//check the storage is correct
+	// check the storage is correct
 	assert.Equal(t, resource.MustParse("1Gi"), volumeClaims[0].Spec.Resources.Requests["storage"])
 }
 

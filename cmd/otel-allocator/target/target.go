@@ -21,7 +21,7 @@ import (
 	"github.com/prometheus/common/model"
 )
 
-// This package contains common structs and methods that relate to scrape targets.
+// LinkJSON This package contains common structs and methods that relate to scrape targets.
 type LinkJSON struct {
 	Link string `json:"_link"`
 }
