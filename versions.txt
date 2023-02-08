@@ -11,7 +11,7 @@ operator=0.69.0
 targetallocator=0.69.0
 
 # Represents the current release of the Operator OpAMP Bridge.
-operator-opamp-bridge=0.68.0
+operator-opamp-bridge=0.69.0
 
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
