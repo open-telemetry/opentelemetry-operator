@@ -24,7 +24,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -155,7 +154,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tt.args.allocator, nil, &listenAddr)
+			s := NewServer(logger, tt.args.allocator, &listenAddr)
 			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{"test-collector": {Name: "test-collector"}})
 			tt.args.allocator.SetTargets(tt.args.cMap)
 			request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/%s/targets?collector_id=%s", tt.args.job, tt.args.collector), nil)
@@ -175,7 +174,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 			var itemResponse []*target.Item
 			err = json.Unmarshal(bodyBytes, &itemResponse)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.want.items, itemResponse)
+			assert.ElementsMatch(t, tt.want.items, itemResponse)
 		})
 	}
 }
@@ -191,13 +190,13 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			description:   "nil scrape config",
 			scrapeConfigs: nil,
 			expectedCode:  http.StatusOK,
-			expectedBody:  []byte{},
+			expectedBody:  []byte("{}"),
 		},
 		{
 			description:   "empty scrape config",
 			scrapeConfigs: map[string]*promconfig.ScrapeConfig{},
 			expectedCode:  http.StatusOK,
-			expectedBody:  []byte{},
+			expectedBody:  []byte("{}"),
 		},
 		{
 			description: "single entry",
@@ -446,8 +445,9 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			dm := &mockDiscoveryManager{m: tc.scrapeConfigs}
-			s := NewServer(logger, nil, dm, &listenAddr)
+			s := NewServer(logger, nil, &listenAddr)
+			assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
+
 			request := httptest.NewRequest("GET", "/scrape_configs", nil)
 			w := httptest.NewRecorder()
 
@@ -465,197 +465,6 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			err = yaml.Unmarshal(bodyBytes, scrapeConfigs)
 			require.NoError(t, err)
 			assert.Equal(t, tc.scrapeConfigs, scrapeConfigs)
-		})
-	}
-}
-
-func TestScrapeConfigsHandler_Hashing(t *testing.T) {
-	s := &Server{logger: logger}
-	// these tests are meant to be run sequentially in this order, to test
-	// that hashing doesn't cause us to send the wrong information.
-	tests := []struct {
-		description   string
-		scrapeConfigs map[string]*promconfig.ScrapeConfig
-	}{
-		{
-			description: "base config",
-			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
-				"serviceMonitor/testapp/testapp/0": {
-					JobName:         "serviceMonitor/testapp/testapp/0",
-					HonorTimestamps: true,
-					ScrapeInterval:  model.Duration(30 * time.Second),
-					ScrapeTimeout:   model.Duration(30 * time.Second),
-					MetricsPath:     "/metrics",
-					Scheme:          "http",
-					HTTPClientConfig: config.HTTPClientConfig{
-						FollowRedirects: true,
-					},
-					RelabelConfigs: []*relabel.Config{
-						{
-							SourceLabels: model.LabelNames{model.LabelName("job")},
-							Separator:    ";",
-							Regex:        relabel.MustNewRegexp("(.*)"),
-							TargetLabel:  "__tmp_prometheus_job_name",
-							Replacement:  "$$1",
-							Action:       relabel.Replace,
-						},
-					},
-				},
-			},
-		},
-		{
-			description: "different bool",
-			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
-				"serviceMonitor/testapp/testapp/0": {
-					JobName:         "serviceMonitor/testapp/testapp/0",
-					HonorTimestamps: false,
-					ScrapeInterval:  model.Duration(30 * time.Second),
-					ScrapeTimeout:   model.Duration(30 * time.Second),
-					MetricsPath:     "/metrics",
-					Scheme:          "http",
-					HTTPClientConfig: config.HTTPClientConfig{
-						FollowRedirects: true,
-					},
-					RelabelConfigs: []*relabel.Config{
-						{
-							SourceLabels: model.LabelNames{model.LabelName("job")},
-							Separator:    ";",
-							Regex:        relabel.MustNewRegexp("(.*)"),
-							TargetLabel:  "__tmp_prometheus_job_name",
-							Replacement:  "$$1",
-							Action:       relabel.Replace,
-						},
-					},
-				},
-			},
-		},
-		{
-			description: "different job name",
-			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
-				"serviceMonitor/testapp/testapp/0": {
-					JobName:         "serviceMonitor/testapp/testapp/1",
-					HonorTimestamps: false,
-					ScrapeInterval:  model.Duration(30 * time.Second),
-					ScrapeTimeout:   model.Duration(30 * time.Second),
-					MetricsPath:     "/metrics",
-					Scheme:          "http",
-					HTTPClientConfig: config.HTTPClientConfig{
-						FollowRedirects: true,
-					},
-					RelabelConfigs: []*relabel.Config{
-						{
-							SourceLabels: model.LabelNames{model.LabelName("job")},
-							Separator:    ";",
-							Regex:        relabel.MustNewRegexp("(.*)"),
-							TargetLabel:  "__tmp_prometheus_job_name",
-							Replacement:  "$$1",
-							Action:       relabel.Replace,
-						},
-					},
-				},
-			},
-		},
-		{
-			description: "different key",
-			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
-				"serviceMonitor/testapp/testapp/1": {
-					JobName:         "serviceMonitor/testapp/testapp/1",
-					HonorTimestamps: false,
-					ScrapeInterval:  model.Duration(30 * time.Second),
-					ScrapeTimeout:   model.Duration(30 * time.Second),
-					MetricsPath:     "/metrics",
-					Scheme:          "http",
-					HTTPClientConfig: config.HTTPClientConfig{
-						FollowRedirects: true,
-					},
-					RelabelConfigs: []*relabel.Config{
-						{
-							SourceLabels: model.LabelNames{model.LabelName("job")},
-							Separator:    ";",
-							Regex:        relabel.MustNewRegexp("(.*)"),
-							TargetLabel:  "__tmp_prometheus_job_name",
-							Replacement:  "$$1",
-							Action:       relabel.Replace,
-						},
-					},
-				},
-			},
-		},
-		{
-			description: "unset scrape interval",
-			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
-				"serviceMonitor/testapp/testapp/1": {
-					JobName:         "serviceMonitor/testapp/testapp/1",
-					HonorTimestamps: false,
-					ScrapeTimeout:   model.Duration(30 * time.Second),
-					MetricsPath:     "/metrics",
-					Scheme:          "http",
-					HTTPClientConfig: config.HTTPClientConfig{
-						FollowRedirects: true,
-					},
-					RelabelConfigs: []*relabel.Config{
-						{
-							SourceLabels: model.LabelNames{model.LabelName("job")},
-							Separator:    ";",
-							Regex:        relabel.MustNewRegexp("(.*)"),
-							TargetLabel:  "__tmp_prometheus_job_name",
-							Replacement:  "$$1",
-							Action:       relabel.Replace,
-						},
-					},
-				},
-			},
-		},
-		//{
-		//
-		// TODO: fix handler logic so this test passes.
-		// This test currently fails due to the regexp struct not having any
-		// exported fields for the hashing algorithm to hash on, causing the
-		// hashes to be the same even though the data is different.
-		//
-		//	description: "different regex",
-		//	scrapeConfigs: map[string]*promconfig.ScrapeConfig{
-		//		"serviceMonitor/testapp/testapp/1": {
-		//			JobName:         "serviceMonitor/testapp/testapp/1",
-		//			HonorTimestamps: false,
-		//			ScrapeTimeout:   model.Duration(30 * time.Second),
-		//			MetricsPath:     "/metrics",
-		//			HTTPClientConfig: config.HTTPClientConfig{
-		//				FollowRedirects: true,
-		//			},
-		//			RelabelConfigs: []*relabel.Config{
-		//				{
-		//					SourceLabels: model.LabelNames{model.LabelName("job")},
-		//					Separator:    ";",
-		//					Regex:        relabel.MustNewRegexp("something else"),
-		//					TargetLabel:  "__tmp_prometheus_job_name",
-		//					Replacement:  "$$1",
-		//					Action:       relabel.Replace,
-		//				},
-		//			},
-		//		},
-		//	},
-		//},
-	}
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			dm := &mockDiscoveryManager{m: tc.scrapeConfigs}
-			s.discoveryManager = dm
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-			gin.SetMode(gin.ReleaseMode)
-			c.Request = httptest.NewRequest("GET", "/scrape_configs", nil)
-
-			s.ScrapeConfigsHandler(c)
-			result := w.Result()
-
-			assert.Equal(t, http.StatusOK, result.StatusCode)
-			bodyBytes, err := io.ReadAll(result.Body)
-			require.NoError(t, err)
-			scrapeConfigResult := map[string]*promconfig.ScrapeConfig{}
-			err = yaml.Unmarshal(bodyBytes, scrapeConfigResult)
-			require.NoError(t, err)
-			assert.Equal(t, tc.scrapeConfigs, scrapeConfigResult)
 		})
 	}
 }
@@ -709,7 +518,7 @@ func TestServer_JobHandler(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
 			a := &mockAllocator{targetItems: tc.targetItems}
-			s := NewServer(logger, a, nil, &listenAddr)
+			s := NewServer(logger, a, &listenAddr)
 			request := httptest.NewRequest("GET", "/jobs", nil)
 			w := httptest.NewRecorder()
 

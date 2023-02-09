@@ -50,7 +50,7 @@ func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: ServiceAccountName(otelcol),
-					Containers:         []corev1.Container{Container(cfg, logger, otelcol)},
+					Containers:         []corev1.Container{Container(cfg, logger, otelcol, true)},
 					Volumes:            Volumes(cfg, otelcol),
 					Tolerations:        otelcol.Spec.Tolerations,
 					NodeSelector:       otelcol.Spec.NodeSelector,

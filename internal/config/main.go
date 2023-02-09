@@ -184,7 +184,7 @@ func (c *Config) AutoInstrumentationDotNetImage() string {
 	return c.autoInstrumentationDotNetImage
 }
 
-// Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+// LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
 }

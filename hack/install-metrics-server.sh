@@ -5,7 +5,7 @@
 # you can just add --addons "metrics-server" to the start command.
 
 
-if [[ "$(kubectl api-resources)" =~ "openshift" ]]; then
+if [[ "$(kubectl api-resources --api-group=operator.openshift.io -o name)" ]]; then
     echo "Connected to an OpenShift cluster. metrics-server installation is not needed"
 elif [[ "$(kubectl get deployment metrics-server -n kube-system 2>&1 )" =~ "NotFound" ]]; then
     kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml

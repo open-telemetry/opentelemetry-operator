@@ -16,6 +16,7 @@ package target
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/mitchellh/hashstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/model"
@@ -34,31 +35,34 @@ var (
 )
 
 type Discoverer struct {
-	log               logr.Logger
-	manager           *discovery.Manager
-	close             chan struct{}
-	configsMap        map[allocatorWatcher.EventSource]*config.Config
-	jobToScrapeConfig map[string]*config.ScrapeConfig
-	hook              discoveryHook
+	log                  logr.Logger
+	manager              *discovery.Manager
+	close                chan struct{}
+	configsMap           map[allocatorWatcher.EventSource]*config.Config
+	jobToScrapeConfig    map[string]*config.ScrapeConfig
+	hook                 discoveryHook
+	scrapeConfigsHash    uint64
+	scrapeConfigsUpdater scrapeConfigsUpdater
 }
 
 type discoveryHook interface {
 	SetConfig(map[string][]*relabel.Config)
 }
 
-func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook) *Discoverer {
-	return &Discoverer{
-		log:               log,
-		manager:           manager,
-		close:             make(chan struct{}),
-		configsMap:        make(map[allocatorWatcher.EventSource]*config.Config),
-		jobToScrapeConfig: make(map[string]*config.ScrapeConfig),
-		hook:              hook,
-	}
+type scrapeConfigsUpdater interface {
+	UpdateScrapeConfigResponse(map[string]*config.ScrapeConfig) error
 }
 
-func (m *Discoverer) GetScrapeConfigs() map[string]*config.ScrapeConfig {
-	return m.jobToScrapeConfig
+func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater) *Discoverer {
+	return &Discoverer{
+		log:                  log,
+		manager:              manager,
+		close:                make(chan struct{}),
+		configsMap:           make(map[allocatorWatcher.EventSource]*config.Config),
+		jobToScrapeConfig:    make(map[string]*config.ScrapeConfig),
+		hook:                 hook,
+		scrapeConfigsUpdater: scrapeConfigsUpdater,
+	}
 }
 
 func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.Config) error {
@@ -73,6 +77,21 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *confi
 			discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
 			relabelCfg[scrapeConfig.JobName] = scrapeConfig.RelabelConfigs
 		}
+	}
+
+	hash, err := hashstructure.Hash(m.jobToScrapeConfig, nil)
+	if err != nil {
+		return err
+	}
+	// If the hash has changed, updated stored hash and send the new config.
+	// Otherwise skip updating scrape configs.
+	if m.scrapeConfigsUpdater != nil && m.scrapeConfigsHash != hash {
+		err := m.scrapeConfigsUpdater.UpdateScrapeConfigResponse(m.jobToScrapeConfig)
+		if err != nil {
+			return err
+		}
+
+		m.scrapeConfigsHash = hash
 	}
 
 	if m.hook != nil {

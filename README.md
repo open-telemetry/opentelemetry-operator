@@ -2,7 +2,7 @@
 
 # OpenTelemetry Operator for Kubernetes
 
-The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](https://coreos.com/operators/).
+The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
 
 The operator manages:
 * [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector)
@@ -87,7 +87,7 @@ The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `
 
 #### Sidecar injection
 
-A sidecar with the OpenTelemetry Collector can be injected into pod-based workloads by setting the pod annotation `sidecar.opentelemetry.io/inject` to either `"true"`, or to the name of a concrete `OpenTelemetryCollector` from the same namespace, like in the following example:
+A sidecar with the OpenTelemetry Collector can be injected into pod-based workloads by setting the pod annotation `sidecar.opentelemetry.io/inject` to either `"true"`, or to the name of a concrete `OpenTelemetryCollector`, like in the following example:
 
 ```yaml
 kubectl apply -f - <<EOF
@@ -138,6 +138,13 @@ The annotation value can come either from the namespace, or from the pod. The mo
 
 * the pod annotation is used when it's set to a concrete instance name or to `"false"`
 * namespace annotation is used when the pod annotation is either absent or set to `"true"`, and the namespace is set to a concrete instance or to `"false"`
+
+The possible values for the annotation can be:
+
+* "true" - inject `OpenTelemetryCollector` resource from the namespace.
+* "sidecar-for-my-app" - name of `OpenTelemetryCollector` CR instance in the current namespace.
+* "my-other-namespace/my-instrumentation" - name and namespace of `OpenTelemetryCollector` CR instance in another namespace.
+* "false" - do not inject
 
 When using a pod-based workload, such as `Deployment` or `Statefulset`, make sure to add the annotation to the `PodTemplate` part. Like:
 
@@ -403,6 +410,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.69.0                | v1.19 to v1.25       | v1                  |
 | v0.68.0                | v1.19 to v1.25       | v1                  |
 | v0.67.0                | v1.19 to v1.25       | v1                  |
 | v0.66.0                | v1.19 to v1.25       | v1                  |
@@ -424,7 +432,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.49.0                | v1.19 to v1.23       | v1alpha2            |
 | v0.48.0                | v1.19 to v1.23       | v1alpha2            |
 | v0.47.0                | v1.19 to v1.23       | v1alpha2            |
-| v0.46.0                | v1.19 to v1.23       | v1alpha2            |
 
 
 
@@ -446,8 +453,15 @@ Emeritus Approvers:
 - [Owais Lone](https://github.com/owais), Splunk
 - [Pablo Baeyens](https://github.com/mx-psi), DataDog
 
+Target Allocator Maintainers ([@open-telemetry/operator-ta-maintainers](https://github.com/orgs/open-telemetry/teams/operator-ta-maintainers)):
+
+- [Anthony Mirabella](https://github.com/Aneurysm9), AWS
+- [Kristina Pathak](https://github.com/kristinapathak), Lightstep
+- [Sebastian Poxhofer](https://github.com/secustor)
+
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
+- [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
 - [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 - [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
