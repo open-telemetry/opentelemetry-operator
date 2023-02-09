@@ -20,7 +20,6 @@ import (
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
@@ -83,62 +82,15 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 			return fmt.Errorf("failed to get %w", err)
 		}
 
-		updated := existing.DeepCopyObject().(client.Object)
-		updated.SetOwnerReferences(desired.GetOwnerReferences())
-		setAutoscalerSpec(params, autoscalingVersion, updated)
-
-		annotations := updated.GetAnnotations()
-		for k, v := range desired.GetAnnotations() {
-			annotations[k] = v
-		}
-		updated.SetAnnotations(annotations)
-		labels := updated.GetLabels()
-		for k, v := range desired.GetLabels() {
-			labels[k] = v
-		}
-		updated.SetLabels(labels)
-
-		patch := client.MergeFrom(existing)
-
-		if err := params.Client.Patch(ctx, updated, patch); err != nil {
-			return fmt.Errorf("failed to apply changes: %w", err)
+		existing = obj.DeepCopyObject().(client.Object)
+		if err := params.Client.Update(ctx, existing); err != nil {
+			return fmt.Errorf("failed to update hpa: %w", err)
 		}
 
-		params.Log.V(2).Info("applied", "hpa.name", desired.GetName(), "hpa.namespace", desired.GetNamespace())
+		params.Log.V(2).Info("updated", "hpa.name", desired.GetName(), "hpa.namespace", desired.GetNamespace())
 	}
 
 	return nil
-}
-
-func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object) {
-	one := int32(1)
-	if params.Instance.Spec.Autoscaler.MaxReplicas != nil {
-		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
-			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.Autoscaler.MaxReplicas
-			if params.Instance.Spec.Autoscaler.MinReplicas != nil {
-				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = params.Instance.Spec.Autoscaler.MinReplicas
-			} else {
-				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
-			}
-			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics[0].Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
-		} else {
-			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.Autoscaler.MaxReplicas
-			if params.Instance.Spec.Autoscaler.MinReplicas != nil {
-				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = params.Instance.Spec.Autoscaler.MinReplicas
-			} else {
-				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
-			}
-
-			// This will update memory and CPU usage for now, and can be used to update other metrics in the future
-			for _, metric := range updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics {
-				if metric.Resource.Name == corev1.ResourceCPU {
-					metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
-				} else if metric.Resource.Name == corev1.ResourceMemory {
-					metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetMemoryUtilization
-				}
-			}
-		}
-	}
 }
 
 func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
