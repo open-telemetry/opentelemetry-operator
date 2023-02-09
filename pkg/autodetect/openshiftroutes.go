@@ -23,7 +23,7 @@ const (
 	OpenShiftRoutesAvailable OpenShiftRoutesAvailability = iota
 
 	// OpenShiftRoutesNotAvailable represents the route.openshift.io API is not available.
-	OpenShiftRoutesNotAvailable OpenShiftRoutesAvailability = iota
+	OpenShiftRoutesNotAvailable
 )
 
 func (p OpenShiftRoutesAvailability) String() string {
