@@ -51,17 +51,22 @@ func TestExpectedHPA(t *testing.T) {
 		err = expectedHorizontalPodAutoscalers(context.Background(), params, []client.Object{expectedHPA})
 		assert.NoError(t, err)
 
-		exists, hpaErr := populateObjectIfExists(t, &autoscalingv2beta2.HorizontalPodAutoscaler{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+		actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
+		exists, hpaErr := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		assert.NoError(t, hpaErr)
+		assert.Len(t, actual.Spec.Metrics, 1)
+
 		assert.True(t, exists)
 	})
 
 	t.Run("should update HPA", func(t *testing.T) {
 		minReplicas := int32(1)
 		maxReplicas := int32(3)
+		memUtilization := int32(70)
 		updateParms := paramsWithHPA(autodetect.AutoscalingVersionV2Beta2)
 		updateParms.Instance.Spec.Autoscaler.MinReplicas = &minReplicas
 		updateParms.Instance.Spec.Autoscaler.MaxReplicas = &maxReplicas
+		updateParms.Instance.Spec.Autoscaler.TargetMemoryUtilization = &memUtilization
 		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
 
 		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
@@ -77,6 +82,9 @@ func TestExpectedHPA(t *testing.T) {
 			assert.True(t, withHPA)
 			assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
 			assert.Equal(t, int32(3), actual.Spec.MaxReplicas)
+			assert.Len(t, actual.Spec.Metrics, 2)
+			assert.Equal(t, int32(70), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
+			assert.Equal(t, int32(90), *actual.Spec.Metrics[1].Resource.Target.AverageUtilization)
 		} else {
 			updatedAutoscaler := *updatedHPA.(*autoscalingv2.HorizontalPodAutoscaler)
 			createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
@@ -90,6 +98,8 @@ func TestExpectedHPA(t *testing.T) {
 			assert.True(t, withHPA)
 			assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
 			assert.Equal(t, int32(3), actual.Spec.MaxReplicas)
+			assert.Equal(t, int32(70), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
+			assert.Equal(t, int32(90), *actual.Spec.Metrics[1].Resource.Target.AverageUtilization)
 		}
 	})
 
