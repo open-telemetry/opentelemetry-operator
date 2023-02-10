@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -73,7 +74,7 @@ func TestExpectedHPA(t *testing.T) {
 			updatedAutoscaler := *updatedHPA.(*autoscalingv2beta2.HorizontalPodAutoscaler)
 			createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
 			hpaUpdateErr = expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
-			assert.NoError(t, hpaUpdateErr)
+			require.NoError(t, hpaUpdateErr)
 
 			actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
 			withHPA, hpaUpdateErr = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
@@ -86,10 +87,11 @@ func TestExpectedHPA(t *testing.T) {
 			assert.Equal(t, int32(70), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
 			assert.Equal(t, int32(90), *actual.Spec.Metrics[1].Resource.Target.AverageUtilization)
 		} else {
+			fmt.Println("V2222")
 			updatedAutoscaler := *updatedHPA.(*autoscalingv2.HorizontalPodAutoscaler)
 			createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
 			hpaUpdateErr = expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
-			assert.NoError(t, hpaUpdateErr)
+			require.NoError(t, hpaUpdateErr)
 
 			actual := autoscalingv2.HorizontalPodAutoscaler{}
 			withHPA, hpaUpdateErr := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
@@ -98,6 +100,7 @@ func TestExpectedHPA(t *testing.T) {
 			assert.True(t, withHPA)
 			assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
 			assert.Equal(t, int32(3), actual.Spec.MaxReplicas)
+			assert.Len(t, actual.Spec.Metrics, 2)
 			assert.Equal(t, int32(70), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
 			assert.Equal(t, int32(90), *actual.Spec.Metrics[1].Resource.Target.AverageUtilization)
 		}
