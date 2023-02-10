@@ -27,7 +27,7 @@ var _ AutoDetect = (*autoDetect)(nil)
 
 // AutoDetect provides an assortment of routines that auto-detect traits based on the runtime.
 type AutoDetect interface {
-	OSRoutesAvailability() (OpenShiftRoutesAvailability, error)
+	OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error)
 	HPAVersion() (AutoscalingVersion, error)
 }
 
@@ -60,8 +60,8 @@ func New(restConfig *rest.Config) (AutoDetect, error) {
 	}, nil
 }
 
-// OSRoutesAvailability checks if OpenShift Route are available.
-func (a *autoDetect) OSRoutesAvailability() (OpenShiftRoutesAvailability, error) {
+// OpenShiftRoutesAvailability checks if OpenShift Route are available.
+func (a *autoDetect) OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
 		return OpenShiftRoutesNotAvailable, err

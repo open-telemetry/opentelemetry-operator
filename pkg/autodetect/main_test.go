@@ -63,7 +63,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 		require.NoError(t, err)
 
 		// test
-		ora, err := autoDetect.OSRoutesAvailability()
+		ora, err := autoDetect.OpenShiftRoutesAvailability()
 
 		// verify
 		assert.NoError(t, err)

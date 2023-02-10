@@ -110,7 +110,7 @@ func (c *Config) periodicAutoDetect() {
 func (c *Config) AutoDetect() error {
 	c.logger.V(2).Info("auto-detecting the configuration based on the environment")
 
-	ora, err := c.autoDetect.OSRoutesAvailability()
+	ora, err := c.autoDetect.OpenShiftRoutesAvailability()
 	if err != nil {
 		return err
 	}

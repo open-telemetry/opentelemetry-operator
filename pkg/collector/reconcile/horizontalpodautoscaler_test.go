@@ -164,17 +164,17 @@ func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	OSRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
-	HPAVersionFunc           func() (autodetect.AutoscalingVersion, error)
+	OpenShiftRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
+	HPAVersionFunc                  func() (autodetect.AutoscalingVersion, error)
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
 	return m.HPAVersionFunc()
 }
 
-func (m *mockAutoDetect) OSRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {
-	if m.OSRoutesAvailabilityFunc != nil {
-		return m.OSRoutesAvailabilityFunc()
+func (m *mockAutoDetect) OpenShiftRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {
+	if m.OpenShiftRoutesAvailabilityFunc != nil {
+		return m.OpenShiftRoutesAvailabilityFunc()
 	}
 	return autodetect.OpenShiftRoutesNotAvailable, nil
 }

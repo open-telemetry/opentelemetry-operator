@@ -44,7 +44,7 @@ func TestOnPlatformChangeCallback(t *testing.T) {
 	// prepare
 	calledBack := false
 	mock := &mockAutoDetect{
-		OSRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
+		OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
 			return autodetect.OpenShiftRoutesAvailable, nil
 		},
 	}
@@ -73,7 +73,7 @@ func TestAutoDetectInBackground(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 	mock := &mockAutoDetect{
-		OSRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
+		OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
 			wg.Done()
 			return autodetect.OpenShiftRoutesNotAvailable, nil
 		},
@@ -97,16 +97,16 @@ func TestAutoDetectInBackground(t *testing.T) {
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	OSRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
+	OpenShiftRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
 	return autodetect.DefaultAutoscalingVersion, nil
 }
 
-func (m *mockAutoDetect) OSRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {
-	if m.OSRoutesAvailabilityFunc != nil {
-		return m.OSRoutesAvailabilityFunc()
+func (m *mockAutoDetect) OpenShiftRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {
+	if m.OpenShiftRoutesAvailabilityFunc != nil {
+		return m.OpenShiftRoutesAvailabilityFunc()
 	}
 	return autodetect.OpenShiftRoutesNotAvailable, nil
 }
