@@ -389,6 +389,8 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
 
 Note how the Operator added a `global` section and a new `http_sd_configs` to the `otel-collector` scrape config, pointing to a Target Allocator instance it provisioned.
 
+More info on the TargetAllocator can be found here [README.md](cmd/otel-allocator/README.md)
+
 ## Compatibility matrix
 
 ### OpenTelemetry Operator vs. OpenTelemetry Collector
