@@ -89,6 +89,9 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 		} else {
 			byteHPA, err = json.Marshal(obj.(*autoscalingv2.HorizontalPodAutoscaler))
 		}
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal HPA object %w", err)
+		}
 		patch := client.RawPatch(types.StrategicMergePatchType, byteHPA)
 
 		if err := params.Client.Patch(ctx, existing, patch); err != nil {
