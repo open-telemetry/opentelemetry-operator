@@ -16,6 +16,7 @@ package reconcile
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -82,9 +83,16 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 			return fmt.Errorf("failed to get %w", err)
 		}
 
-		existing = obj.DeepCopyObject().(client.Object)
-		if err := params.Client.Update(ctx, existing); err != nil {
-			return fmt.Errorf("failed to update hpa: %w", err)
+		var byteHPA []byte
+		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
+			byteHPA, err = json.Marshal(obj.(*autoscalingv2beta2.HorizontalPodAutoscaler))
+		} else {
+			byteHPA, err = json.Marshal(obj.(*autoscalingv2.HorizontalPodAutoscaler))
+		}
+		patch := client.RawPatch(types.StrategicMergePatchType, byteHPA)
+
+		if err := params.Client.Patch(ctx, existing, patch); err != nil {
+			return fmt.Errorf("failed to apply changes: %w", err)
 		}
 
 		params.Log.V(2).Info("updated", "hpa.name", desired.GetName(), "hpa.namespace", desired.GetNamespace())

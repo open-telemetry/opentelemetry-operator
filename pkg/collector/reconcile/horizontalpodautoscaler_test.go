@@ -54,7 +54,8 @@ func TestExpectedHPAVersionV2Beta2(t *testing.T) {
 		actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
 		exists, hpaErr := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		assert.NoError(t, hpaErr)
-		assert.Len(t, actual.Spec.Metrics, 1)
+		require.Len(t, actual.Spec.Metrics, 1)
+		assert.Equal(t, int32(90), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
 
 		assert.True(t, exists)
 	})
@@ -69,8 +70,6 @@ func TestExpectedHPAVersionV2Beta2(t *testing.T) {
 		updateParms.Instance.Spec.Autoscaler.TargetMemoryUtilization = &memUtilization
 		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
 
-		updatedAutoscaler := *updatedHPA.(*autoscalingv2beta2.HorizontalPodAutoscaler)
-		createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
 		hpaUpdateErr = expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
 		require.NoError(t, hpaUpdateErr)
 
@@ -116,7 +115,8 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 		actual := autoscalingv2.HorizontalPodAutoscaler{}
 		exists, hpaErr := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
 		assert.NoError(t, hpaErr)
-		assert.Len(t, actual.Spec.Metrics, 1)
+		require.Len(t, actual.Spec.Metrics, 1)
+		assert.Equal(t, int32(90), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
 
 		assert.True(t, exists)
 	})
@@ -131,8 +131,6 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 		updateParms.Instance.Spec.Autoscaler.TargetMemoryUtilization = &memUtilization
 		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
 
-		updatedAutoscaler := *updatedHPA.(*autoscalingv2.HorizontalPodAutoscaler)
-		createObjectIfNotExists(t, "test-collector", &updatedAutoscaler)
 		hpaUpdateErr = expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
 		require.NoError(t, hpaUpdateErr)
 
