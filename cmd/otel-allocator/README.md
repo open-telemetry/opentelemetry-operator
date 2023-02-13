@@ -5,8 +5,9 @@ distribute targets of the PrometheusReceiver on all deployed Collector instances
 operator's most recent release as well.
 
 In essence, Prometheus Receiver configs are "stolen" and replaced with a http_sd_configs directive that points to the 
-Allocator, these are then loadbalanced/sharded to the collectors. In addition, the TargetAllocator can discover targets via Prometheus CRs (currently ServiceMonitor,
-PodMonitor) which it presents on the `/jobs` endpoint.
+Allocator, these are then loadbalanced/sharded to the collectors. In addition, the TargetAllocator can discover targets
+via Prometheus CRs (currently ServiceMonitor, PodMonitor) which it presents as scrape configs and jobs on the
+`/scrape_configs` and `/jobs` endpoints respectively.
 
 # Usage
 The `targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
@@ -61,13 +62,13 @@ OpenTelemetry Collector operator specific config.
         target_allocator:
           endpoint: http://my-targetallocator-service
           interval: 30s
-          collector_id: collector-1
+          collector_id: "${POD_NAME}"
 ```
 Upstream documentation here: [Prometheusreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#opentelemetry-operator)
 
 The TargetAllocator service is named based on the OpenTelemetryCollector CR name. `collector_id` should be unique per
-collector instance, such as the pod name. This can be passed down to the pod with env vars and replaced in the config
-with `${ENV}` notation.
+collector instance, such as the pod name. The `POD_NAME` environment variable is convenient since this is supplied
+to collector instance pods by default.
 
 The CRDs naturally also has to exist for the Allocator to pick them up. The best place to get them is from
 prometheus-operator: [Releases](https://github.com/prometheus-operator/prometheus-operator/releases). Only the CRDs for
