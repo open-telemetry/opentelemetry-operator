@@ -41,6 +41,7 @@ type options struct {
 	collectorConfigMapEntry        string
 	targetAllocatorConfigMapEntry  string
 	targetAllocatorImage           string
+	operatorOpAMPBridgeImage       string
 	onPlatformChange               changeHandler
 	labelsFilter                   []string
 	platform                       platformStore
@@ -63,7 +64,11 @@ func WithTargetAllocatorImage(s string) Option {
 		o.targetAllocatorImage = s
 	}
 }
-
+func WithOperatorOpAMPBridgeImage(s string) Option {
+	return func(o *options) {
+		o.operatorOpAMPBridgeImage = s
+	}
+}
 func WithCollectorImage(s string) Option {
 	return func(o *options) {
 		o.collectorImage = s
