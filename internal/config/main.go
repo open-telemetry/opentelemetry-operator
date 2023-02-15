@@ -37,6 +37,7 @@ type Config struct {
 	autoDetect                     autodetect.AutoDetect
 	logger                         logr.Logger
 	targetAllocatorImage           string
+	operatorOpAMPBridgeImage       string
 	autoInstrumentationPythonImage string
 	collectorImage                 string
 	collectorConfigMapEntry        string
@@ -74,6 +75,7 @@ func New(opts ...Option) Config {
 		collectorImage:                 o.collectorImage,
 		collectorConfigMapEntry:        o.collectorConfigMapEntry,
 		targetAllocatorImage:           o.targetAllocatorImage,
+		operatorOpAMPBridgeImage:       o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
 		logger:                         o.logger,
 		openshiftRoutes:                o.openshiftRoutes,
