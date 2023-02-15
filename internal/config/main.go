@@ -38,6 +38,7 @@ type Config struct {
 	autoDetect                     autodetect.AutoDetect
 	logger                         logr.Logger
 	targetAllocatorImage           string
+	operatorOpAMPBridgeImage       string
 	autoInstrumentationPythonImage string
 	collectorImage                 string
 	collectorConfigMapEntry        string
@@ -75,6 +76,7 @@ func New(opts ...Option) Config {
 		collectorImage:                 o.collectorImage,
 		collectorConfigMapEntry:        o.collectorConfigMapEntry,
 		targetAllocatorImage:           o.targetAllocatorImage,
+		operatorOpAMPBridgeImage:       o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
 		logger:                         o.logger,
 		onPlatformChange:               o.onPlatformChange,
@@ -185,7 +187,7 @@ func (c *Config) AutoInstrumentationDotNetImage() string {
 	return c.autoInstrumentationDotNetImage
 }
 
-// Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+// LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
 }
