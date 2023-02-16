@@ -33,7 +33,7 @@ In order to have more people comfortable with the release process, and in order 
 
 ## Release schedule
 
-The operator should be released within a week after the [OpenTelementry collector releas](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/release.md#release-schedule).
+The operator should be released within a week after the [OpenTelemetry collector release](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/release.md#release-schedule).
 
 | Version | Release manager |
 |---------------------------|
