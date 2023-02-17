@@ -70,7 +70,7 @@ The TargetAllocator service is named based on the OpenTelemetryCollector CR name
 collector instance, such as the pod name. The `POD_NAME` environment variable is convenient since this is supplied
 to collector instance pods by default.
 
-The CRDs naturally also has to exist for the Allocator to pick them up. The best place to get them is from
+The Prometheus CRDs also have to exist for the Allocator to pick them up. The best place to get them is from
 prometheus-operator: [Releases](https://github.com/prometheus-operator/prometheus-operator/releases). Only the CRDs for
 CRs that the Allocator watches for need to be deployed. They can be picked out from the bundle.yaml file.
 
