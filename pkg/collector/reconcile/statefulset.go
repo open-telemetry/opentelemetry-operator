@@ -72,9 +72,9 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 			return fmt.Errorf("failed to get: %w", err)
 		}
 
-		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
-		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-			params.Log.V(2).Info("Spec.Selector change detected, trying to delete, the new collector statfulset will be created in the next reconcile cycle", "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
+		// Check for immutable fields. If set, we cannot modify the stateful set, otherwise we will face reconciliation error.
+		if needsDeletion, fieldName := hasImmutableFieldChange(&desired, existing); needsDeletion {
+			params.Log.V(2).Info("Immutable field change detected, trying to delete, the new collector statfulset will be created in the next reconcile cycle", "field", fieldName, "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
 
 			if err := params.Client.Delete(ctx, existing); err != nil {
 				return fmt.Errorf("failed to delete statefulset: %w", err)
@@ -144,4 +144,16 @@ func deleteStatefulSets(ctx context.Context, params Params, expected []appsv1.St
 	}
 
 	return nil
+}
+
+func hasImmutableFieldChange(desired, existing *appsv1.StatefulSet) (bool, string) {
+	if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+		return true, "Spec.Selector"
+	}
+
+	if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates, existing.Spec.VolumeClaimTemplates) {
+		return true, "Spec.VolumeClaimTemplates"
+	}
+
+	return false, ""
 }

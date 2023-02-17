@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -138,7 +139,45 @@ func TestExpectedStatefulsets(t *testing.T) {
 		oldSs := collector.StatefulSet(param.Config, logger, param.Instance)
 		oldSs.Spec.Selector.MatchLabels["app.kubernetes.io/version"] = "latest"
 		oldSs.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
-		oldSs.Name = "update-ss"
+		oldSs.Name = "update-selector"
+
+		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{oldSs})
+		assert.NoError(t, err)
+		exists, err := populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		newSs := collector.StatefulSet(param.Config, logger, param.Instance)
+		newSs.Name = oldSs.Name
+		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{newSs})
+		assert.NoError(t, err)
+		exists, err = populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{newSs})
+		assert.NoError(t, err)
+		actual := v1.StatefulSet{}
+		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, newSs.Spec.Selector.MatchLabels, actual.Spec.Selector.MatchLabels)
+	})
+
+	t.Run("change Spec.VolumeClaimTemplates should recreate statefulset", func(t *testing.T) {
+
+		oldSs := collector.StatefulSet(param.Config, logger, param.Instance)
+		oldSs.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default-volume",
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{"storage": resource.MustParse("50Mi")},
+				},
+			}}}
+		oldSs.Name = "update-volumeclaimtemplates"
 
 		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{oldSs})
 		assert.NoError(t, err)
