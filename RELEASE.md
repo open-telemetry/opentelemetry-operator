@@ -13,6 +13,7 @@ Steps to release a new version of the OpenTelemetry Operator:
 9. After the release, generate a new OLM bundle (`make bundle`) and create two PRs against the `Community Operators repositories`:
    1. one for the `community-operators-prod`, used by OLM on Kubernetes. Example: [`operator-framework/community-operators-prod`](https://github.com/redhat-openshift-ecosystem/community-operators-prod/pull/494)
    1. one for the `community-operators` directory, used by Operatorhub.io. Example: [`operator-framework/community-operators`](https://github.com/k8s-operatorhub/community-operators/pull/461)
+10. Update release schedule table, by moving the current release manager to the end of the table with updated release version.
 
 ## Generating the changelog
 
@@ -37,10 +38,9 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version | Release manager |
 |---------------------------|
-| v0.69.0 | @pavolloffay    |
 | v0.70.0 | @VineethReddy02 |
 | v0.71.0 | @frzifus        |
 | v0.72.0 | @yuriolisa      |
 | v0.73.0 | @jaronoff97     |
-
+| v0.74.0 | @pavolloffay    |
 
