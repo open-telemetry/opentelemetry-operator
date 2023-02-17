@@ -4,15 +4,20 @@ Changes by Version
 <!-- next version -->
 
 0.70.0
-------------------
+
 ### 💡 Enhancements 💡
+
 - `target allocator`: Save the scrape config response in the HTTP server upon relevant config change, instead of building it on every handler call. At the same time, this avoids data race when accessing the scrape configs map. (#1359)
 - `target allocator`: Configure `gin` router to be used in release mode and do not use the default logging middleware which is noisy and not formatted properly. (#1352)
 - `github action`: This PR adds github action for publishing the `Operator OpAMP Bridge` container image to Github Container Registry. (#1369)
 - `operator`: Add `Operator-OpAMP-Bridge` version info to Operator (#1455)
+
 ### 🧰 Bug fixes 🧰
+
 - `statsd-receiver`: Switched the protocol of statsd-receiver to UDP from TCP (#1476)
+
 ### Components
+
 * [OpenTelemetry Collector - v0.70.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.70.0)
 * [OpenTelemetry Contrib - v0.70.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.70.0)
 * [Java auto-instrumentation - 1.23.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.23.0)
