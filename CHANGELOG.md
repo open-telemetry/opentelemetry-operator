@@ -1,5 +1,8 @@
 Changes by Version
 ==================
+
+<!-- next version -->
+
 0.69.0
 ------------------
 ### 🚩 Deprecations 🚩
