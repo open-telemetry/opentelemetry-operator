@@ -4,7 +4,7 @@ Changes by Version
 <!-- next version -->
 
 0.70.0
-
+------------------
 ### 💡 Enhancements 💡
 
 - `target allocator`: Save the scrape config response in the HTTP server upon relevant config change, instead of building it on every handler call. At the same time, this avoids data race when accessing the scrape configs map. (#1359)
