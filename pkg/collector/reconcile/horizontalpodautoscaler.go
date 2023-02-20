@@ -125,7 +125,7 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 			numDesiredMetrics := len(desiredMetrics)
 			numFoundMetrics := len(updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics)
 			if numDesiredMetrics == numFoundMetrics {
-			// This will update memory and CPU usage for now, and can be used to update other metrics in the future
+				// This will update memory and CPU usage for now, and can be used to update other metrics in the future
 				for _, metric := range updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics {
 					if metric.Resource.Name == corev1.ResourceCPU {
 						metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
@@ -134,7 +134,7 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 					}
 				}
 			} else {
-				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics = desiredMetrics 
+				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics = desiredMetrics
 			}
 		} else {
 			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.Autoscaler.MaxReplicas
@@ -148,7 +148,7 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 			numDesiredMetrics := len(desiredMetrics)
 			numFoundMetrics := len(updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics)
 			if numDesiredMetrics == numFoundMetrics {
-			// This will update memory and CPU usage for now, and can be used to update other metrics in the future
+				// This will update memory and CPU usage for now, and can be used to update other metrics in the future
 				for _, metric := range updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics {
 					if metric.Resource.Name == corev1.ResourceCPU {
 						metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
@@ -157,7 +157,7 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 					}
 				}
 			} else {
-				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics = desiredMetrics 
+				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics = desiredMetrics
 			}
 
 		}
