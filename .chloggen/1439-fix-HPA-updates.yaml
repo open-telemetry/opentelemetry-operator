@@ -5,7 +5,7 @@ change_type: bug_fix
 component: Autoscaler
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: This PR fixes issue where HPA fails to update when an additional metric is added to the spec.
+note: Fix the issue where HPA fails to update when an additional metric is added to the spec.
 
 # One or more tracking issues related to the change
 issues:
