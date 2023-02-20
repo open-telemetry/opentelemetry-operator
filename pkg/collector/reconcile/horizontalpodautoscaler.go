@@ -136,7 +136,6 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 			} else {
 				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics = desiredMetrics 
 			}
-			// updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics[0].Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
 		} else {
 			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.Autoscaler.MaxReplicas
 			if params.Instance.Spec.Autoscaler.MinReplicas != nil {
