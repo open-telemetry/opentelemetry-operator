@@ -31,7 +31,7 @@ type InstrumentationSpec struct {
 
 	// Propagators defines inter-process context propagation configuration.
 	// Values in this list will be set in the OTEL_PROPAGATORS env var.
-	// +kubebuilder:validation:Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none
+	// Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none
 	// +optional
 	Propagators []Propagator `json:"propagators,omitempty"`
 

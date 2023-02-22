@@ -131,9 +131,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b>propagators</b></td>
         <td>[]enum</td>
         <td>
-          Propagators defines inter-process context propagation configuration. Values in this list will be set in the OTEL_PROPAGATORS env var.<br/>
-          <br/>
-            <i>Enum</i>: tracecontext, baggage, b3, b3multi, jaeger, xray, ottrace, none<br/>
+          Propagators defines inter-process context propagation configuration. Values in this list will be set in the OTEL_PROPAGATORS env var. Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none<br/>
         </td>
         <td>false</td>
       </tr><tr>

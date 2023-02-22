@@ -801,16 +801,7 @@ spec:
               propagators:
                 description: Propagators defines inter-process context propagation
                   configuration. Values in this list will be set in the OTEL_PROPAGATORS
-                  env var.
-                enum:
-                - tracecontext
-                - baggage
-                - b3
-                - b3multi
-                - jaeger
-                - xray
-                - ottrace
-                - none
+                  env var. Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none
                 items:
                   description: Propagator represents the propagation type.
                   enum:
