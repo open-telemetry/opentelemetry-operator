@@ -80,6 +80,7 @@ func TestDownstreamParsers(t *testing.T) {
 		{parser.NewInfluxdbReceiverParser, "influxdb", "influxdb", "__influxdb", 8086},
 		{parser.NewSplunkHecReceiverParser, "splunk-hec", "splunk-hec", "__splunk_hec", 8088},
 		{parser.NewAWSXrayReceiverParser, "awsxray", "awsxray", "__awsxray", 2000},
+		{parser.NewDatadogReceiverParser, "datadog", "datadog", "__datadog", 8126},
 	} {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
