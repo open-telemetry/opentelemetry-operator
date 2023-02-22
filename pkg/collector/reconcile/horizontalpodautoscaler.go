@@ -84,14 +84,14 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 
 		updated := existing.DeepCopyObject().(client.Object)
 		updated.SetOwnerReferences(desired.GetOwnerReferences())
-		setAutoscalerSpec(params, autoscalingVersion, updated, obj)
+		setAutoscalerSpec(params, autoscalingVersion, updated)
 
 		// update metrics separately because the structure of the metrics can change.
 		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
-			desiredMetrics := desired.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics 
+			desiredMetrics := desired.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics
 			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics = desiredMetrics
 		} else { // autoscalingv2
-			desiredMetrics := desired.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics  
+			desiredMetrics := desired.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics
 			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics = desiredMetrics
 		}
 
@@ -118,7 +118,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 	return nil
 }
 
-func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object, desired client.Object) {
+func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object) {
 	one := int32(1)
 	if params.Instance.Spec.Autoscaler.MaxReplicas != nil {
 		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
