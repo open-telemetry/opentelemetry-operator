@@ -74,7 +74,7 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 
 		// Check for immutable fields. If set, we cannot modify the stateful set, otherwise we will face reconciliation error.
 		if needsDeletion, fieldName := hasImmutableFieldChange(&desired, existing); needsDeletion {
-			params.Log.V(2).Info("Immutable field change detected, trying to delete, the new collector statfulset will be created in the next reconcile cycle", "field", fieldName, "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
+			params.Log.V(2).Info("Immu field change detected, trying to delete, the new collector statfulset will be created in the next reconcile cycle", "field", fieldName, "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
 
 			if err := params.Client.Delete(ctx, existing); err != nil {
 				return fmt.Errorf("failed to delete statefulset: %w", err)
@@ -151,9 +151,37 @@ func hasImmutableFieldChange(desired, existing *appsv1.StatefulSet) (bool, strin
 		return true, "Spec.Selector"
 	}
 
-	if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates, existing.Spec.VolumeClaimTemplates) {
+	if hasVolumeClaimsTemplatesChanged(desired, existing) {
 		return true, "Spec.VolumeClaimTemplates"
 	}
 
 	return false, ""
+}
+
+// hasVolumeClaimsTemplatesChanged if volume claims template change has been detected.
+// We need to this by hand due to some fields being automatically filled by the API server
+// and these needs to be excluded from the comparison to prevent false positives.
+func hasVolumeClaimsTemplatesChanged(desired, existing *appsv1.StatefulSet) bool {
+	if len(desired.Spec.VolumeClaimTemplates) != len(existing.Spec.VolumeClaimTemplates) {
+		return true
+	}
+
+	for i := range desired.Spec.VolumeClaimTemplates {
+		// VolumeMode is automatically set by the API server, so if it is not set in the CR, assume it's the same as the existing one.
+		if desired.Spec.VolumeClaimTemplates[i].Spec.VolumeMode == nil || *desired.Spec.VolumeClaimTemplates[i].Spec.VolumeMode == "" {
+			desired.Spec.VolumeClaimTemplates[i].Spec.VolumeMode = existing.Spec.VolumeClaimTemplates[i].Spec.VolumeMode
+		}
+
+		if desired.Spec.VolumeClaimTemplates[i].Name != existing.Spec.VolumeClaimTemplates[i].Name {
+			return true
+		}
+		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Annotations, existing.Spec.VolumeClaimTemplates[i].Annotations) {
+			return true
+		}
+		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Spec, existing.Spec.VolumeClaimTemplates[i].Spec) {
+			return true
+		}
+	}
+
+	return false
 }
