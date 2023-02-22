@@ -1,5 +1,30 @@
 Changes by Version
 ==================
+
+<!-- next version -->
+
+0.70.0
+------------------
+### 💡 Enhancements 💡
+
+- `target allocator`: Save the scrape config response in the HTTP server upon relevant config change, instead of building it on every handler call. At the same time, this avoids data race when accessing the scrape configs map. (#1359)
+- `target allocator`: Configure `gin` router to be used in release mode and do not use the default logging middleware which is noisy and not formatted properly. (#1352)
+- `github action`: This PR adds github action for publishing the `Operator OpAMP Bridge` container image to Github Container Registry. (#1369)
+- `operator`: Add `Operator-OpAMP-Bridge` version info to Operator (#1455)
+
+### 🧰 Bug fixes 🧰
+
+- `statsd-receiver`: Switched the protocol of statsd-receiver to UDP from TCP (#1476)
+
+### Components
+
+* [OpenTelemetry Collector - v0.70.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.70.0)
+* [OpenTelemetry Contrib - v0.70.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.70.0)
+* [Java auto-instrumentation - 1.23.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.23.0)
+* [Dotnet auto-instrumentation - 0.5.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.5.0)
+* [Node.JS - 0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.34.0)
+* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
+
 0.69.0
 ------------------
 ### 🚩 Deprecations 🚩
@@ -17,9 +42,13 @@ Changes by Version
 * `operator`: Fix daemonset-features E2E test for OpenShift ([#1354](https://github.com/open-telemetry/opentelemetry-operator/pull/1354), [@iblancasa](https://github.com/iblancasa))
 * `operator`: Fix E2E autoscale test for OpenShift ([#1365](https://github.com/open-telemetry/opentelemetry-operator/pull/1365), [@iblancasa](https://github.com/iblancasa))
 * `target allocator`: Fix Target Allocator tests ([#1403](https://github.com/open-telemetry/opentelemetry-operator/pull/1403), [@jaronoff97](https://github.com/jaronoff97))
-#### OpenTelemetry Collector and Contrib
+### Components
 * [OpenTelemetry Collector - v0.69.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.69.0)
 * [OpenTelemetry Contrib - v0.69.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.69.0)
+* [Java auto-instrumentation - 1.22.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.22.1)
+* [Dotnet auto-instrumentation - 0.5.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.5.0)
+* [Node.JS - 0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.34.0)
+* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
 
 0.68.0
 ------------------
