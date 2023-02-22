@@ -14,18 +14,22 @@
 
 package parser
 
-import "github.com/go-logr/logr"
+import (
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+)
 
 const parserNameStatsd = "__statsd"
 
 // NewStatsdReceiverParser builds a new parser for Statsd receivers, from the contrib repository.
 func NewStatsdReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
 	return &GenericReceiver{
-		logger:      logger,
-		name:        name,
-		config:      config,
-		defaultPort: 8125,
-		parserName:  parserNameStatsd,
+		logger:          logger,
+		name:            name,
+		config:          config,
+		defaultPort:     8125,
+		defaultProtocol: corev1.ProtocolUDP,
+		parserName:      parserNameStatsd,
 	}
 }
 
