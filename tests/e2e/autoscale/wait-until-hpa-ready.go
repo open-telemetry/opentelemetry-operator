@@ -101,7 +101,7 @@ func main() {
 			return false, nil
 		}
 
-		if len(hpav2.Spec.Metrics) != 1 {
+		if len(hpav2.Spec.Metrics) != numMetrics {
 			fmt.Printf("Metrics has incorrect length for HPA %s\n", hpaName)
 			return false, nil
 		}
