@@ -74,7 +74,8 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 
 		// Check for immutable fields. If set, we cannot modify the stateful set, otherwise we will face reconciliation error.
 		if needsDeletion, fieldName := hasImmutableFieldChange(&desired, existing); needsDeletion {
-			params.Log.V(2).Info("Immu field change detected, trying to delete, the new collector statfulset will be created in the next reconcile cycle", "field", fieldName, "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
+			params.Log.V(2).Info("Immutable field change detected, trying to delete, the new collector statfulset will be created in the next reconcile cycle",
+				"field", fieldName, "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
 
 			if err := params.Client.Delete(ctx, existing); err != nil {
 				return fmt.Errorf("failed to delete statefulset: %w", err)
