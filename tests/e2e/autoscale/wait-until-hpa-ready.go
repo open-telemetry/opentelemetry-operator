@@ -32,6 +32,7 @@ import (
 func main() {
 	var hpaName string
 	var timeout int
+	var numMetrics int
 	var kubeconfigPath string
 
 	defaultKubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
@@ -39,6 +40,7 @@ func main() {
 	pflag.IntVar(&timeout, "timeout", 600, "The timeout for the check.")
 	pflag.StringVar(&hpaName, "hpa", "", "HPA to check")
 	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", defaultKubeconfigPath, "Absolute path to the KubeconfigPath file")
+	pflag.IntVar(&numMetrics, "num-metrics", 1, "number of expected metrics in Spec")
 	pflag.Parse()
 
 	if len(hpaName) == 0 {
@@ -96,6 +98,11 @@ func main() {
 
 		if hpav2.Status.CurrentMetrics == nil {
 			fmt.Printf("Current metrics are not set yet for HPA %s\n", hpaName)
+			return false, nil
+		}
+
+		if len(hpav2.Spec.Metrics) != 1 {
+			fmt.Printf("Metrics has incorrect length for HPA %s\n", hpaName)
 			return false, nil
 		}
 		return true, nil
