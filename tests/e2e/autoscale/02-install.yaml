@@ -10,6 +10,13 @@ spec:
   autoscaler:
     targetCPUUtilization: 50
     targetMemoryUtilization: 70
+    behavior:
+      scaleDown:
+        # policies:
+        # - type: Pods
+        #   value: 1
+        #   periodSeconds: 10
+        stabilizationWindowSeconds: 1
   resources:
     limits:
       cpu: 500m

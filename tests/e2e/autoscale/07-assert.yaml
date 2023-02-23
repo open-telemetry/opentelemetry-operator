@@ -1,4 +1,9 @@
-# Wait for the collector to scale back down to 1
+# # Wait for the collector to scale back down to 1
+# apiVersion: kuttl.dev/v1beta1
+# kind: TestAssert
+# # it can take up to 6 minutes for the HPA to finally scale down
+# timeout: 360
+# ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
