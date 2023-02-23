@@ -364,7 +364,7 @@ func TestSDKInjection(t *testing.T) {
 			inj := sdkInjector{
 				client: k8sClient,
 			}
-			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, 0)
+			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, 0, 0)
 			_, err = json.MarshalIndent(pod, "", "  ")
 			assert.NoError(t, err)
 			assert.Equal(t, test.expected, pod)
@@ -803,6 +803,187 @@ func TestInjectDotNet(t *testing.T) {
 			},
 		},
 	}, pod)
+}
+
+func TestInjectGolang(t *testing.T) {
+	falsee := false
+	truee := true
+	zero := int64(0)
+
+	tests := []struct {
+		name     string
+		insts    languageInstrumentations
+		pod      corev1.Pod
+		expected corev1.Pod
+	}{
+		{
+			name: "shared process namespace disabled",
+			insts: languageInstrumentations{
+				Golang: &v1alpha1.Instrumentation{
+					Spec: v1alpha1.InstrumentationSpec{
+						Golang: v1alpha1.Golang{
+							Image: "otel/golang:1",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					ShareProcessNamespace: &falsee,
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					ShareProcessNamespace: &falsee,
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "OTEL_TARGET_EXE not set",
+			insts: languageInstrumentations{
+				Golang: &v1alpha1.Instrumentation{
+					Spec: v1alpha1.InstrumentationSpec{
+						Golang: v1alpha1.Golang{
+							Image: "otel/golang:1",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "OTEL_TARGET_EXE set by inst",
+			insts: languageInstrumentations{
+				Golang: &v1alpha1.Instrumentation{
+					Spec: v1alpha1.InstrumentationSpec{
+						Golang: v1alpha1.Golang{
+							Image: "otel/golang:1",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_TARGET_EXE",
+									Value: "foo",
+								},
+							},
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					ShareProcessNamespace: &truee,
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+						{
+							Name:  sideCarName,
+							Image: "otel/golang:1",
+							SecurityContext: &corev1.SecurityContext{
+								RunAsUser:  &zero,
+								Privileged: &truee,
+								Capabilities: &corev1.Capabilities{
+									Add: []corev1.Capability{"SYS_PTRACE"},
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									MountPath: "/sys/kernel/debug",
+									Name:      kernelDebugVolumeName,
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_TARGET_EXE",
+									Value: "foo",
+								},
+
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: kernelDebugVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kernelDebugVolumePath,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			inj := sdkInjector{
+				logger: logr.Discard(),
+			}
+			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, "")
+			assert.Equal(t, test.expected, pod)
+		})
+	}
 }
 
 func TestInjectSdkOnly(t *testing.T) {

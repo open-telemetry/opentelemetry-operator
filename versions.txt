@@ -29,6 +29,9 @@ autoinstrumentation-python=0.36b0
 # Should match autoinstrumentation/dotnet/version.txt
 autoinstrumentation-dotnet=0.6.0
 
+# Represents the current release of Golang instrumentation.
+autoinstrumentation-golang=v0.6.4
+
 # Represents the current release of Apache HTTPD instrumentation.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-apache-httpd=1.0.2

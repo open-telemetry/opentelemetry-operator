@@ -61,6 +61,10 @@ type InstrumentationSpec struct {
 	// +optional
 	DotNet DotNet `json:"dotnet,omitempty"`
 
+	// DotNet defines configuration for DotNet auto-instrumentation.
+	// +optional
+	Golang Golang `json:"golang,omitempty"`
+
 	// Apache defines configuration for Apache HTTPD auto-instrumentation.
 	// +optional
 	ApacheHttpd ApacheHttpd `json:"apacheHttpd,omitempty"`
@@ -147,6 +151,18 @@ type DotNet struct {
 	Image string `json:"image,omitempty"`
 
 	// Env defines DotNet specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+}
+
+type Golang struct {
+	// Image is a container image with Golang SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// Env defines Golang specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional

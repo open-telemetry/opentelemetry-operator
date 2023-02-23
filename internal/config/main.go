@@ -42,6 +42,7 @@ type Config struct {
 	collectorImage                 string
 	collectorConfigMapEntry        string
 	autoInstrumentationDotNetImage string
+	autoInstrumentationGolangImage string
 	targetAllocatorConfigMapEntry  string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationJavaImage   string
@@ -184,6 +185,11 @@ func (c *Config) AutoInstrumentationPythonImage() string {
 // AutoInstrumentationDotNetImage returns OpenTelemetry DotNet auto-instrumentation container image.
 func (c *Config) AutoInstrumentationDotNetImage() string {
 	return c.autoInstrumentationDotNetImage
+}
+
+// AutoInstrumentationGolangImage returns OpenTelemetry Golang auto-instrumentation container image.
+func (c *Config) AutoInstrumentationGolangImage() string {
+	return c.autoInstrumentationGolangImage
 }
 
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
