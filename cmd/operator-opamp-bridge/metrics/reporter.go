@@ -27,8 +27,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/instrument/asyncfloat64"
-	"go.opentelemetry.io/otel/metric/instrument/asyncint64"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	otelresource "go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
@@ -50,8 +48,8 @@ type MetricReporter struct {
 	process *process.Process
 
 	// Some example metrics to report.
-	processMemoryPhysical asyncint64.Gauge
-	processCpuTime        asyncfloat64.Counter
+	processMemoryPhysical instrument.Float64ObservableGauge
+	processCpuTime        instrument.Float64ObservableCounter
 }
 
 // NewMetricReporter creates an OTLP/HTTP client to the destination address supplied by the server.
@@ -124,25 +122,19 @@ func NewMetricReporter(
 
 	// Create some metrics that will be reported according to OpenTelemetry semantic
 	// conventions for process metrics (conventions are TBD for now).
-	reporter.processCpuTime, err = reporter.meter.AsyncFloat64().Counter(
+	reporter.processCpuTime, err = reporter.meter.Float64ObservableGauge(
 		"process.cpu.time",
+		instrument.WithFloat64Callback(reporter.processCpuTimeFunc),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't create process time metric: %w", err)
 	}
-	err = reporter.meter.RegisterCallback([]instrument.Asynchronous{reporter.processCpuTime}, reporter.processCpuTimeFunc)
-	if err != nil {
-		return nil, fmt.Errorf("can't create register callback: %w", err)
-	}
-	reporter.processMemoryPhysical, err = reporter.meter.AsyncInt64().Gauge(
+	reporter.processMemoryPhysical, err = reporter.meter.Float64ObservableCounter(
 		"process.memory.physical_usage",
+		instrument.WithFloat64Callback(reporter.processMemoryPhysicalFunc),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't create memory metric: %w", err)
-	}
-	err = reporter.meter.RegisterCallback([]instrument.Asynchronous{reporter.processMemoryPhysical}, reporter.processMemoryPhysicalFunc)
-	if err != nil {
-		return nil, fmt.Errorf("can't register callback: %w", err)
 	}
 
 	reporter.meterShutdowner = func() { _ = provider.Shutdown(context.Background()) }
@@ -150,23 +142,25 @@ func NewMetricReporter(
 	return reporter, nil
 }
 
-func (reporter *MetricReporter) processCpuTimeFunc(c context.Context) {
+func (reporter *MetricReporter) processCpuTimeFunc(_ context.Context, observer instrument.Float64Observer) error {
 	times, err := reporter.process.Times()
 	if err != nil {
 		reporter.logger.Errorf("Cannot get process CPU times: %w", err)
 	}
-	reporter.processCpuTime.Observe(c, times.User, attribute.String("state", "user"))
-	reporter.processCpuTime.Observe(c, times.System, attribute.String("state", "system"))
-	reporter.processCpuTime.Observe(c, times.Iowait, attribute.String("state", "wait"))
+	observer.Observe(times.User, attribute.String("state", "user"))
+	observer.Observe(times.System, attribute.String("state", "system"))
+	observer.Observe(times.Iowait, attribute.String("state", "wait"))
+	return nil
 }
 
-func (reporter *MetricReporter) processMemoryPhysicalFunc(ctx context.Context) {
+func (reporter *MetricReporter) processMemoryPhysicalFunc(_ context.Context, observer instrument.Float64Observer) error {
 	memory, err := reporter.process.MemoryInfo()
 	if err != nil {
 		reporter.logger.Errorf("Cannot get process memory information: %w", err)
-		return
+		return nil
 	}
-	reporter.processMemoryPhysical.Observe(ctx, int64(memory.RSS))
+	observer.Observe(float64(memory.RSS))
+	return nil
 }
 
 func (reporter *MetricReporter) Shutdown() {
