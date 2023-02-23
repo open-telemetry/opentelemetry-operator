@@ -280,13 +280,13 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.5
+KUSTOMIZE_VERSION ?= v5.0.0
 CONTROLLER_TOOLS_VERSION ?= v0.9.2
 
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4,$(KUSTOMIZE_VERSION))
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
