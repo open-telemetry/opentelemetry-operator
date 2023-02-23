@@ -83,7 +83,7 @@ The default and only other acceptable value for `.Spec.UpgradeStrategy` is `auto
 
 ### Deployment modes
 
-The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at [this sample](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/daemonset-features/00-install.yaml) for reference.
+The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at [this sample](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/daemonset-features/01-install.yaml) for reference.
 
 #### Sidecar injection
 
@@ -410,6 +410,8 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.70.0                | v1.19 to v1.25       | v1                  |
+| v0.69.0                | v1.19 to v1.25       | v1                  |
 | v0.68.0                | v1.19 to v1.25       | v1                  |
 | v0.67.0                | v1.19 to v1.25       | v1                  |
 | v0.66.0                | v1.19 to v1.25       | v1                  |
@@ -430,14 +432,14 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.50.0                | v1.19 to v1.23       | v1alpha2            |
 | v0.49.0                | v1.19 to v1.23       | v1alpha2            |
 | v0.48.0                | v1.19 to v1.23       | v1alpha2            |
-| v0.47.0                | v1.19 to v1.23       | v1alpha2            |
-| v0.46.0                | v1.19 to v1.23       | v1alpha2            |
 
 
 
 ## Contributing and Developing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+In addition to the [core responsibilities](https://github.com/open-telemetry/community/blob/main/community-membership.md) the operator project requires approvers and maintainers to be responsible for releasing the project. See [RELEASE.md](./RELEASE.md) for more information and release schedule.
 
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 

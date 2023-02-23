@@ -24,7 +24,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 const (
@@ -38,6 +37,7 @@ type Config struct {
 	autoDetect                     autodetect.AutoDetect
 	logger                         logr.Logger
 	targetAllocatorImage           string
+	operatorOpAMPBridgeImage       string
 	autoInstrumentationPythonImage string
 	collectorImage                 string
 	collectorConfigMapEntry        string
@@ -45,9 +45,9 @@ type Config struct {
 	targetAllocatorConfigMapEntry  string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationJavaImage   string
-	onPlatformChange               changeHandler
+	onOpenShiftRoutesChange        changeHandler
 	labelsFilter                   []string
-	platform                       platformStore
+	openshiftRoutes                openshiftRoutesStore
 	autoDetectFrequency            time.Duration
 	autoscalingVersion             autodetect.AutoscalingVersion
 }
@@ -60,10 +60,10 @@ func New(opts ...Option) Config {
 		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
 		logger:                        logf.Log.WithName("config"),
-		platform:                      newPlatformWrapper(),
+		openshiftRoutes:               newOpenShiftRoutesWrapper(),
 		version:                       version.Get(),
 		autoscalingVersion:            autodetect.DefaultAutoscalingVersion,
-		onPlatformChange:              newOnChange(),
+		onOpenShiftRoutesChange:       newOnChange(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -75,10 +75,11 @@ func New(opts ...Option) Config {
 		collectorImage:                 o.collectorImage,
 		collectorConfigMapEntry:        o.collectorConfigMapEntry,
 		targetAllocatorImage:           o.targetAllocatorImage,
+		operatorOpAMPBridgeImage:       o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
 		logger:                         o.logger,
-		onPlatformChange:               o.onPlatformChange,
-		platform:                       o.platform,
+		openshiftRoutes:                o.openshiftRoutes,
+		onOpenShiftRoutesChange:        o.onOpenShiftRoutesChange,
 		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
@@ -111,15 +112,15 @@ func (c *Config) periodicAutoDetect() {
 func (c *Config) AutoDetect() error {
 	c.logger.V(2).Info("auto-detecting the configuration based on the environment")
 
-	plt, err := c.autoDetect.Platform()
+	ora, err := c.autoDetect.OpenShiftRoutesAvailability()
 	if err != nil {
 		return err
 	}
 
-	if c.platform.Get() != plt {
-		c.logger.V(1).Info("platform detected", "platform", plt)
-		c.platform.Set(plt)
-		if err = c.onPlatformChange.Do(); err != nil {
+	if c.openshiftRoutes.Get() != ora {
+		c.logger.V(1).Info("openshift routes detected", "available", ora)
+		c.openshiftRoutes.Set(ora)
+		if err = c.onOpenShiftRoutesChange.Do(); err != nil {
 			// Don't fail if the callback failed, as auto-detection itself worked.
 			c.logger.Error(err, "configuration change notification failed for callback")
 		}
@@ -155,9 +156,9 @@ func (c *Config) TargetAllocatorConfigMapEntry() string {
 	return c.targetAllocatorConfigMapEntry
 }
 
-// Platform represents the type of the platform this operator is running.
-func (c *Config) Platform() platform.Platform {
-	return c.platform.Get()
+// OpenShiftRoutes represents the availability of the OpenShift Routes API.
+func (c *Config) OpenShiftRoutes() autodetect.OpenShiftRoutesAvailability {
+	return c.openshiftRoutes.Get()
 }
 
 // AutoscalingVersion represents the preferred version of autoscaling.
@@ -185,40 +186,42 @@ func (c *Config) AutoInstrumentationDotNetImage() string {
 	return c.autoInstrumentationDotNetImage
 }
 
-// Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+// LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
 }
 
-// RegisterPlatformChangeCallback registers the given function as a callback that
-// is called when the platform detection detects a change.
-func (c *Config) RegisterPlatformChangeCallback(f func() error) {
-	c.onPlatformChange.Register(f)
+// RegisterOpenShiftRoutesChangeCallback registers the given function as a callback that
+// is called when the OpenShift Routes detection detects a change.
+func (c *Config) RegisterOpenShiftRoutesChangeCallback(f func() error) {
+	c.onOpenShiftRoutesChange.Register(f)
 }
 
-type platformStore interface {
-	Set(plt platform.Platform)
-	Get() platform.Platform
+type openshiftRoutesStore interface {
+	Set(ora autodetect.OpenShiftRoutesAvailability)
+	Get() autodetect.OpenShiftRoutesAvailability
 }
 
-func newPlatformWrapper() platformStore {
-	return &platformWrapper{}
+func newOpenShiftRoutesWrapper() openshiftRoutesStore {
+	return &openshiftRoutesWrapper{
+		current: autodetect.OpenShiftRoutesNotAvailable,
+	}
 }
 
-type platformWrapper struct {
+type openshiftRoutesWrapper struct {
 	mu      sync.Mutex
-	current platform.Platform
+	current autodetect.OpenShiftRoutesAvailability
 }
 
-func (p *platformWrapper) Set(plt platform.Platform) {
+func (p *openshiftRoutesWrapper) Set(ora autodetect.OpenShiftRoutesAvailability) {
 	p.mu.Lock()
-	p.current = plt
+	p.current = ora
 	p.mu.Unlock()
 }
 
-func (p *platformWrapper) Get() platform.Platform {
+func (p *openshiftRoutesWrapper) Get() autodetect.OpenShiftRoutesAvailability {
 	p.mu.Lock()
-	plt := p.current
+	ora := p.current
 	p.mu.Unlock()
-	return plt
+	return ora
 }

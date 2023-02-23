@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -67,7 +68,9 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr *stri
 		allocator: allocator,
 	}
 
-	router := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router.Use(gin.Recovery())
 	router.UseRawPath = true
 	router.UnescapePathValues = false
 	router.Use(s.PrometheusMiddleware)
@@ -188,10 +191,22 @@ func GetAllTargetsByJob(allocator allocation.Allocator, job string) map[string]c
 	return displayData
 }
 
+// registerPprof registers the pprof handlers and either serves the requested
+// specific profile or falls back to index handler.
 func registerPprof(g *gin.RouterGroup) {
-	g.GET("/", gin.WrapF(pprof.Index))
-	g.GET("/cmdline", gin.WrapF(pprof.Cmdline))
-	g.GET("/profile", gin.WrapF(pprof.Profile))
-	g.GET("/symbol", gin.WrapF(pprof.Symbol))
-	g.GET("/trace", gin.WrapF(pprof.Trace))
+	g.GET("/*profile", func(c *gin.Context) {
+		path := c.Param("profile")
+		switch strings.TrimPrefix(path, "/") {
+		case "cmdline":
+			gin.WrapF(pprof.Cmdline)(c)
+		case "profile":
+			gin.WrapF(pprof.Profile)(c)
+		case "symbol":
+			gin.WrapF(pprof.Symbol)(c)
+		case "trace":
+			gin.WrapF(pprof.Trace)(c)
+		default:
+			gin.WrapF(pprof.Index)(c)
+		}
+	})
 }
