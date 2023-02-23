@@ -56,7 +56,7 @@ func NewPrometheusCRWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfi
 		monitoringv1.PodMonitorName:     podMonitorInformers,
 	}
 
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), &monitoringv1.Prometheus{}) // TODO replace Nop?
+	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), &monitoringv1.Prometheus{}, true) // TODO replace Nop?
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,16 @@ func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
 		OAuth2Assets:    nil,
 		SigV4Assets:     nil,
 	}
-	generatedConfig, err := w.configGenerator.Generate(&monitoringv1.Prometheus{}, serviceMonitorInstances, podMonitorInstances, map[string]*monitoringv1.Probe{}, &store, nil, nil, nil, []string{})
+	// TODO: We should make these durations configurable
+	prom := &monitoringv1.Prometheus{
+		Spec: monitoringv1.PrometheusSpec{
+			EvaluationInterval: monitoringv1.Duration("30s"),
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				ScrapeInterval: monitoringv1.Duration("30s"),
+			},
+		},
+	}
+	generatedConfig, err := w.configGenerator.Generate(prom, serviceMonitorInstances, podMonitorInstances, map[string]*monitoringv1.Probe{}, &store, nil, nil, nil, []string{})
 	if err != nil {
 		return nil, err
 	}
