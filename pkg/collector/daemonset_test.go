@@ -55,6 +55,9 @@ func TestDaemonSetNewDefault(t *testing.T) {
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
 		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"prometheus.io/path":                   "/metrics",
+		"prometheus.io/port":                   "8888",
+		"prometheus.io/scrape":                 "true",
 	}
 	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
@@ -103,9 +106,17 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 func TestDaemonsetPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
+
+	// Add sha256 podAnnotation
+	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	testPodAnnotationValues["prometheus.io/path"] = "/metrics"
+	testPodAnnotationValues["prometheus.io/port"] = "8888"
+	testPodAnnotationValues["prometheus.io/scrape"] = "true"
+
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance",
+			Name:        "my-instance",
+			Annotations: testPodAnnotationValues,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			PodAnnotations: testPodAnnotationValues,
@@ -115,9 +126,6 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 
 	// test
 	ds := DaemonSet(cfg, logger, otelcol)
-
-	// Add sha256 podAnnotation
-	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 	// verify
 	assert.Equal(t, "my-instance-collector", ds.Name)
