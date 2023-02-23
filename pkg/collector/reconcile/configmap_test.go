@@ -103,8 +103,10 @@ receivers:
         metrics_path: /metrics
         scheme: http
         follow_redirects: true
+        enable_http2: true
         http_sd_configs:
         - follow_redirects: false
+          enable_http2: false
           url: http://test-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
 service:
   pipelines:
@@ -152,8 +154,10 @@ receivers:
         metrics_path: /metrics
         scheme: http
         follow_redirects: true
+        enable_http2: true
         http_sd_configs:
         - follow_redirects: false
+          enable_http2: false
           url: http://test-targetallocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
 service:
   pipelines:
