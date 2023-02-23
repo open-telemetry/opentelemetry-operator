@@ -20,4 +20,4 @@ spec:
       - name: myapp
         image: ghcr.io/pavolloffay/spring-petclinic:latest
       - name: myrabbit
-        image: rabbitmq
+        image: rabbitmq:3
