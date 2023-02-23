@@ -56,7 +56,7 @@ func NewPrometheusCRWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfi
 		monitoringv1.PodMonitorName:     podMonitorInformers,
 	}
 
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), &monitoringv1.Prometheus{}) // TODO replace Nop?
+	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), &monitoringv1.Prometheus{}, true) // TODO replace Nop?
 	if err != nil {
 		return nil, err
 	}
