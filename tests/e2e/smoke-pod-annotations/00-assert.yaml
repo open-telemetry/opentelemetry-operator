@@ -4,11 +4,20 @@ metadata:
   name: pa-collector
   annotations:
     regular-annotation: regular-value
+    opentelemetry-operator-config/sha256: dad2b0c2baaeed3a4d75d654900786da3721e6976b3a37eb25a9eaaba87d7b1e
+    prometheus.io/path: /metrics
+    prometheus.io/port: "8888"
+    prometheus.io/scrape: "true"
 spec:
   template:
     metadata:
       annotations:
         pod-annotation1: value1
         pod-annotation2: value2
+        opentelemetry-operator-config/sha256: dad2b0c2baaeed3a4d75d654900786da3721e6976b3a37eb25a9eaaba87d7b1e
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8888"
+        prometheus.io/scrape: "true"
+        regular-annotation: regular-value
 status:
   readyReplicas: 1
