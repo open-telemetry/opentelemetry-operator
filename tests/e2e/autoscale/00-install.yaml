@@ -55,11 +55,7 @@ spec:
     targetCPUUtilization: 50
     behavior:
       scaleDown:
-      #   policies:
-      #   - type: Pods
-      #     value: 1
-      #     periodSeconds: 10
-        stabilizationWindowSeconds: 1
+        stabilizationWindowSeconds: 15
   resources:
     limits:
       cpu: 500m
