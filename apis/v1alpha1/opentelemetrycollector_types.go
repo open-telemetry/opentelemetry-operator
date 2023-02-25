@@ -107,7 +107,8 @@ type OpenTelemetryCollectorSpec struct {
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	TargetAllocator OpenTelemetryTargetAllocator `json:"targetAllocator,omitempty"`
-	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
+	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar).
+	// Default value is deployment.
 	// +optional
 	Mode Mode `json:"mode,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,

@@ -1276,7 +1276,8 @@ spec:
                 type: integer
               mode:
                 description: Mode represents how the collector should be deployed
-                  (deployment, daemonset, statefulset or sidecar)
+                  (deployment, daemonset, statefulset or sidecar). Default value is
+                  deployment.
                 enum:
                 - daemonset
                 - deployment
