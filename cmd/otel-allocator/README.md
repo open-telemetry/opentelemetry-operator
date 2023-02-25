@@ -4,15 +4,16 @@ The TargetAllocator is an optional separately deployed component of an OpenTelem
 distribute targets of the PrometheusReceiver on all deployed Collector instances. The release version matches the
 operator's most recent release as well.
 
-In essence, Prometheus Receiver configs are "stolen" and replaced with a http_sd_configs directive that points to the 
-Allocator, these are then loadbalanced/sharded to the collectors. In addition, the TargetAllocator can discover targets
-via Prometheus CRs (currently ServiceMonitor, PodMonitor) which it presents as scrape configs and jobs on the
-`/scrape_configs` and `/jobs` endpoints respectively.
+In essence, Prometheus Receiver configs are overridden with a http_sd_configs directive that points to the
+Allocator, these are then loadbalanced/sharded to the collectors. The Prometheus Receiver configs that are overridden
+are what will be distributed with the same name. In addition to picking up receiver configs, the TargetAllocator
+can discover targets via Prometheus CRs (currently ServiceMonitor, PodMonitor) which it presents as scrape configs
+and jobs on the `/scrape_configs` and `/jobs` endpoints respectively.
 
 # Usage
-The `targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
+The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
 
-A basic example that deploys, but does nothing.
+A basic example that deploys.
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
@@ -28,26 +29,25 @@ spec:
         config:
           scrape_configs:
           - job_name: 'otel-collector'
+            scrape_interval: 10s
+            static_configs:
+            - targets: [ '0.0.0.0:8888' ]
 
     exporters:
       logging:
 
     service:
       pipelines:
-        traces:
+        metrics:
           receivers: [prometheus]
           processors: []
           exporters: [logging]
 ```
 
 ## PrometheusCR specifics
-TargetAllocator discovery of PrometheusCRs can be turned on with
-```yaml
-  targetAllocator:
-    enabled: true
-    prometheusCR:
-      enabled: true
-```
+TargetAllocator discovery of PrometheusCRs can be turned on by setting
+`.spec.targetAllocator.prometheusCR.enabled` to `true`
+
 The CRs can be filtered by labels as documented here: [api.md#opentelemetrycollectorspectargetallocatorprometheuscr](../../docs/api.md#opentelemetrycollectorspectargetallocatorprometheuscr)
 
 The prometheus receiver in the deployed collector also has to know where the Allocator service exists. This is done by a

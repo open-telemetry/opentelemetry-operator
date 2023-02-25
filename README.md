@@ -348,7 +348,7 @@ spec:
 
     service:
       pipelines:
-        traces:
+        metrics:
           receivers: [prometheus]
           processors: []
           exporters: [logging]
@@ -381,7 +381,7 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
 
     service:
       pipelines:
-        traces:
+        metrics:
           receivers: [prometheus]
           processors: []
           exporters: [logging]
