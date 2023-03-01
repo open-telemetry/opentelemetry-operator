@@ -22,9 +22,6 @@ jobs:
     - name: "install kubebuilder"
       run: ./hack/install-kubebuilder.sh
 
-    - name: "install kustomize"
-      run: ./hack/install-kustomize.sh
-
     - name: "basic checks"
       run: make ci
 
