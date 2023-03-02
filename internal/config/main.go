@@ -34,21 +34,23 @@ const (
 
 // Config holds the static configuration for this operator.
 type Config struct {
-	autoDetect                     autodetect.AutoDetect
-	logger                         logr.Logger
-	targetAllocatorImage           string
-	autoInstrumentationPythonImage string
-	collectorImage                 string
-	collectorConfigMapEntry        string
-	autoInstrumentationDotNetImage string
-	targetAllocatorConfigMapEntry  string
-	autoInstrumentationNodeJSImage string
-	autoInstrumentationJavaImage   string
-	onOpenShiftRoutesChange        changeHandler
-	labelsFilter                   []string
-	openshiftRoutes                openshiftRoutesStore
-	autoDetectFrequency            time.Duration
-	autoscalingVersion             autodetect.AutoscalingVersion
+	autoDetect                          autodetect.AutoDetect
+	logger                              logr.Logger
+	targetAllocatorImage                string
+	operatorOpAMPBridgeImage            string
+	autoInstrumentationPythonImage      string
+	collectorImage                      string
+	collectorConfigMapEntry             string
+	autoInstrumentationDotNetImage      string
+	targetAllocatorConfigMapEntry       string
+	autoInstrumentationNodeJSImage      string
+	autoInstrumentationJavaImage        string
+	autoInstrumentationApacheHttpdImage string
+	onOpenShiftRoutesChange             changeHandler
+	labelsFilter                        []string
+	openshiftRoutes                     openshiftRoutesStore
+	autoDetectFrequency                 time.Duration
+	autoscalingVersion                  autodetect.AutoscalingVersion
 }
 
 // New constructs a new configuration based on the given options.
