@@ -3,6 +3,16 @@ Changes by Version
 
 <!-- next version -->
 
+## 0.63.1-125-ga8f00b4
+
+### 🛑 Breaking changes 🛑
+
+- `target allocator`: Updates versions of many dependencies, sets defaults for prometheus operator to work. The breaking change introduced is the new RBAC requirement for "endpointslices" in the "discovery.k8s.io" api group. (#1464)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Properly handle all types of profiles in the pprof endpoint. Previously, some profiles where unavailable, leading to 404 response. (#1478)
+
 0.70.0
 ------------------
 ### 💡 Enhancements 💡

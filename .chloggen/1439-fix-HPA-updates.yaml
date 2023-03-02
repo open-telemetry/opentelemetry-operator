@@ -1,14 +1,15 @@
 # One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
-change_type: breaking
+change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. operator, target allocator, github action)
-component: target allocator
+component: Autoscaler
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Updates versions of many dependencies, sets defaults for prometheus operator to work. The breaking change introduced is the new RBAC requirement for "endpointslices" in the "discovery.k8s.io" api group.
+note: Fix the issue where HPA fails to update when an additional metric is added to the spec.
 
 # One or more tracking issues related to the change
-issues: [1464]
+issues:
+  - 1439
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
