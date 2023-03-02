@@ -3,7 +3,8 @@ Changes by Version
 
 <!-- next version -->
 
-## 0.63.1-125-ga8f00b4
+0.71.0
+------------------
 
 ### 🛑 Breaking changes 🛑
 
