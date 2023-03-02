@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: tracegen
+  name: tracegen-set-utilization
 spec:
   template:
     spec:
@@ -11,7 +11,7 @@ spec:
           command:
             - "./tracegen"
           args:
-            - -otlp-endpoint=simplest-collector-headless:4317
+            - -otlp-endpoint=simplest-set-utilization-collector-headless:4317
             - -otlp-insecure
             # High duration to ensure the trace creation doesn't stop.
             # It'll be stopped in step 4

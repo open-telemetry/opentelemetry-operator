@@ -213,6 +213,13 @@ spec:
 EOF
 ```
 
+The values for `propagators` are added to the `OTEL_PROPAGATORS` environment variable.
+Valid values for `propagators` are defined by the [OpenTelemetry Specification for OTEL_PROPAGATORS](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_propagators).
+
+The value for `sampler.type` is added to the `OTEL_TRACES_SAMPLER` envrionment variable.
+Valid values for `sampler.type` are defined by the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler).
+The value for `sampler.argument` is added to the `OTEL_TRACES_SAMPLER_ARG` environment variable. Valid values for `sampler.argument` will depend on the chosen sampler. See the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER_ARG](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler_arg) for more details.  
+
 The above CR can be queried by `kubectl get otelinst`.
 
 Then add an annotation to a pod to enable injection. The annotation can be added to a namespace, so that all pods within
@@ -412,6 +419,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.71.0                | v1.19 to v1.25       | v1                  |
 | v0.70.0                | v1.19 to v1.25       | v1                  |
 | v0.69.0                | v1.19 to v1.25       | v1                  |
 | v0.68.0                | v1.19 to v1.25       | v1                  |
@@ -433,7 +441,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.51.0                | v1.19 to v1.23       | v1alpha2            |
 | v0.50.0                | v1.19 to v1.23       | v1alpha2            |
 | v0.49.0                | v1.19 to v1.23       | v1alpha2            |
-| v0.48.0                | v1.19 to v1.23       | v1alpha2            |
 
 
 
