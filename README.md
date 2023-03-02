@@ -2,7 +2,7 @@
 
 # OpenTelemetry Operator for Kubernetes
 
-The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](https://coreos.com/operators/).
+The OpenTelemetry Operator is an implementation of a [Kubernetes Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
 
 The operator manages:
 * [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector)
@@ -83,7 +83,7 @@ The default and only other acceptable value for `.Spec.UpgradeStrategy` is `auto
 
 ### Deployment modes
 
-The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at [this sample](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/daemonset-features/00-install.yaml) for reference.
+The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the collector should run as a `DaemonSet`, `Sidecar`, or `Deployment` (default). Look at [this sample](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/daemonset-features/01-install.yaml) for reference.
 
 #### Sidecar injection
 
@@ -378,7 +378,7 @@ spec:
 
     service:
       pipelines:
-        traces:
+        metrics:
           receivers: [prometheus]
           processors: []
           exporters: [logging]
@@ -411,13 +411,15 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
 
     service:
       pipelines:
-        traces:
+        metrics:
           receivers: [prometheus]
           processors: []
           exporters: [logging]
 ```
 
 Note how the Operator added a `global` section and a new `http_sd_configs` to the `otel-collector` scrape config, pointing to a Target Allocator instance it provisioned.
+
+More info on the TargetAllocator can be found [here](cmd/otel-allocator/README.md).
 
 ## Compatibility matrix
 
@@ -440,6 +442,8 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.70.0                | v1.19 to v1.25       | v1                  |
+| v0.69.0                | v1.19 to v1.25       | v1                  |
 | v0.68.0                | v1.19 to v1.25       | v1                  |
 | v0.67.0                | v1.19 to v1.25       | v1                  |
 | v0.66.0                | v1.19 to v1.25       | v1                  |
@@ -460,14 +464,14 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.50.0                | v1.19 to v1.23       | v1alpha2            |
 | v0.49.0                | v1.19 to v1.23       | v1alpha2            |
 | v0.48.0                | v1.19 to v1.23       | v1alpha2            |
-| v0.47.0                | v1.19 to v1.23       | v1alpha2            |
-| v0.46.0                | v1.19 to v1.23       | v1alpha2            |
 
 
 
 ## Contributing and Developing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+In addition to the [core responsibilities](https://github.com/open-telemetry/community/blob/main/community-membership.md) the operator project requires approvers and maintainers to be responsible for releasing the project. See [RELEASE.md](./RELEASE.md) for more information and release schedule.
 
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
@@ -483,9 +487,15 @@ Emeritus Approvers:
 - [Owais Lone](https://github.com/owais), Splunk
 - [Pablo Baeyens](https://github.com/mx-psi), DataDog
 
+Target Allocator Maintainers ([@open-telemetry/operator-ta-maintainers](https://github.com/orgs/open-telemetry/teams/operator-ta-maintainers)):
+
+- [Anthony Mirabella](https://github.com/Aneurysm9), AWS
+- [Kristina Pathak](https://github.com/kristinapathak), Lightstep
+- [Sebastian Poxhofer](https://github.com/secustor)
+
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
-- [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
+- [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 - [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
 
@@ -493,6 +503,7 @@ Emeritus Maintainers
 
 - [Alex Boten](https://github.com/codeboten), Lightstep
 - [Bogdan Drutu](https://github.com/BogdanDrutu), Splunk
+- [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
 - [Tigran Najaryan](https://github.com/tigrannajaryan), Splunk
 
 Learn more about roles in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md).

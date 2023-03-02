@@ -23,7 +23,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 // Option represents one specific configuration option.
@@ -42,9 +41,10 @@ type options struct {
 	collectorConfigMapEntry             string
 	targetAllocatorConfigMapEntry       string
 	targetAllocatorImage                string
-	onPlatformChange                    changeHandler
+	operatorOpAMPBridgeImage            string
+	onOpenShiftRoutesChange             changeHandler
 	labelsFilter                        []string
-	platform                            platformStore
+	openshiftRoutes                     openshiftRoutesStore
 	autoDetectFrequency                 time.Duration
 	autoscalingVersion                  autodetect.AutoscalingVersion
 }
@@ -64,7 +64,11 @@ func WithTargetAllocatorImage(s string) Option {
 		o.targetAllocatorImage = s
 	}
 }
-
+func WithOperatorOpAMPBridgeImage(s string) Option {
+	return func(o *options) {
+		o.operatorOpAMPBridgeImage = s
+	}
+}
 func WithCollectorImage(s string) Option {
 	return func(o *options) {
 		o.collectorImage = s
@@ -85,17 +89,17 @@ func WithLogger(logger logr.Logger) Option {
 		o.logger = logger
 	}
 }
-func WithOnPlatformChangeCallback(f func() error) Option {
+func WithOnOpenShiftRoutesChangeCallback(f func() error) Option {
 	return func(o *options) {
-		if o.onPlatformChange == nil {
-			o.onPlatformChange = newOnChange()
+		if o.onOpenShiftRoutesChange == nil {
+			o.onOpenShiftRoutesChange = newOnChange()
 		}
-		o.onPlatformChange.Register(f)
+		o.onOpenShiftRoutesChange.Register(f)
 	}
 }
-func WithPlatform(plt platform.Platform) Option {
+func WithPlatform(ora autodetect.OpenShiftRoutesAvailability) Option {
 	return func(o *options) {
-		o.platform.Set(plt)
+		o.openshiftRoutes.Set(ora)
 	}
 }
 func WithVersion(v version.Version) Option {

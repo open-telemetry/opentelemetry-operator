@@ -25,6 +25,7 @@ var (
 	buildDate                      string
 	otelCol                        string
 	targetAllocator                string
+	operatorOpAMPBridge            string
 	autoInstrumentationJava        string
 	autoInstrumentationNodeJS      string
 	autoInstrumentationPython      string
@@ -39,6 +40,7 @@ type Version struct {
 	OpenTelemetryCollector         string `json:"opentelemetry-collector-version"`
 	Go                             string `json:"go-version"`
 	TargetAllocator                string `json:"target-allocator-version"`
+	OperatorOpAMPBridge            string `json:"operator-opamp-bridge"`
 	AutoInstrumentationJava        string `json:"auto-instrumentation-java"`
 	AutoInstrumentationNodeJS      string `json:"auto-instrumentation-nodejs"`
 	AutoInstrumentationPython      string `json:"auto-instrumentation-python"`
@@ -64,11 +66,13 @@ func Get() Version {
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationApacheHttpd='%v')", v.Operator,
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v')",
+		v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
 		v.Go,
 		v.TargetAllocator,
+		v.OperatorOpAMPBridge,
 		v.AutoInstrumentationJava,
 		v.AutoInstrumentationNodeJS,
 		v.AutoInstrumentationPython,
@@ -93,6 +97,17 @@ func TargetAllocator() string {
 	if len(targetAllocator) > 0 {
 		// this should always be set, as it's specified during the build
 		return targetAllocator
+	}
+
+	// fallback value, useful for tests
+	return "0.0.0"
+}
+
+// OperatorOpAMPBridge returns the default OperatorOpAMPBridge to use when no versions are specified via CLI or configuration.
+func OperatorOpAMPBridge() string {
+	if len(operatorOpAMPBridge) > 0 {
+		// this should always be set, as it's specified during the build
+		return operatorOpAMPBridge
 	}
 
 	// fallback value, useful for tests

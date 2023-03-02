@@ -20,4 +20,4 @@ spec:
       - name: myapp
         image: ghcr.io/anuraaga/flask-hello-world:latest
       - name: myrabbit
-        image: rabbitmq
+        image: rabbitmq:3

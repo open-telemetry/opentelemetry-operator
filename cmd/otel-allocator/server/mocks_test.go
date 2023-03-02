@@ -15,24 +15,11 @@
 package server
 
 import (
-	promconfig "github.com/prometheus/prometheus/config"
-
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
-var (
-	_ DiscoveryManager     = &mockDiscoveryManager{}
-	_ allocation.Allocator = &mockAllocator{}
-)
-
-type mockDiscoveryManager struct {
-	m map[string]*promconfig.ScrapeConfig
-}
-
-func (m *mockDiscoveryManager) GetScrapeConfigs() map[string]*promconfig.ScrapeConfig {
-	return m.m
-}
+var _ allocation.Allocator = &mockAllocator{}
 
 // mockAllocator implements the Allocator interface, but all funcs other than
 // TargetItems() are a no-op.

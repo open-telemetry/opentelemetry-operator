@@ -35,7 +35,7 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstApacheHttpd string
 }
 
-//+kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
 
 // ManagedInstances upgrades managed instances by the opentelemetry-operator.
 func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
