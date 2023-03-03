@@ -65,7 +65,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 			},
 			Replicas:             otelcol.Spec.Replicas,
 			PodManagementPolicy:  "Parallel",
-			VolumeClaimTemplates: VolumeClaimTemplates(cfg, otelcol),
+			VolumeClaimTemplates: VolumeClaimTemplates(otelcol),
 		},
 	}
 }

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stateful-collector
+spec:
+  podManagementPolicy: Parallel
+  template:
+    spec:
+       containers:
+       - args:
+         - --config=/conf/collector.yaml
+         name: otc-container
+         volumeMounts:
+         - mountPath: /conf
+           name: otc-internal
+         - mountPath: /usr/share/testvolume
+           name: testvolume
+       volumes:
+       - configMap:
+           items:
+           - key: collector.yaml
+             path: collector.yaml
+           name: stateful-collector
+         name: otc-internal
+       - emptyDir: {}
+         name: testvolume
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: testvolume
+    spec:
+      accessModes:
+      - ReadWriteMany
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
+status:
+  replicas: 3
+  readyReplicas: 3
