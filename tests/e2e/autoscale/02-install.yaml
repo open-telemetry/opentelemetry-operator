@@ -1,6 +1,6 @@
 # This updates an existing deployment with a new Spec.
 # Target memory utilization is now added. 
-# scaledown behavior is now added.
+# scaleDown and scaleUp behavior is now added.
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
