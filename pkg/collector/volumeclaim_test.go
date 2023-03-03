@@ -23,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
@@ -45,10 +44,9 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 			}},
 		},
 	}
-	cfg := config.New()
 
 	// test
-	volumeClaims := VolumeClaimTemplates(cfg, otelcol)
+	volumeClaims := VolumeClaimTemplates(otelcol)
 
 	// verify that volume claim replaces
 	assert.Len(t, volumeClaims, 1)
@@ -81,10 +79,9 @@ func TestVolumeClaimChecksForStatefulset(t *testing.T) {
 			}},
 		},
 	}
-	cfg := config.New()
 
 	// test
-	volumeClaims := VolumeClaimTemplates(cfg, otelcol)
+	volumeClaims := VolumeClaimTemplates(otelcol)
 
 	// verify that volume claim replaces
 	assert.Len(t, volumeClaims, 0)
