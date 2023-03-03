@@ -160,7 +160,7 @@ func hasImmutableFieldChange(desired, existing *appsv1.StatefulSet) (bool, strin
 }
 
 // hasVolumeClaimsTemplatesChanged if volume claims template change has been detected.
-// We need to this by hand due to some fields being automatically filled by the API server
+// We need to do this manually due to some fields being automatically filled by the API server
 // and these needs to be excluded from the comparison to prevent false positives.
 func hasVolumeClaimsTemplatesChanged(desired, existing *appsv1.StatefulSet) bool {
 	if len(desired.Spec.VolumeClaimTemplates) != len(existing.Spec.VolumeClaimTemplates) {
