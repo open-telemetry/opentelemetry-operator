@@ -37,6 +37,7 @@ func main() {
 	var kubeconfigPath string
 	var cpuValue int
 	var memoryValue int
+	var scaleDownValue int
 
 	defaultKubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
 
@@ -46,6 +47,7 @@ func main() {
 	pflag.IntVar(&numMetrics, "num-metrics", 1, "number of expected metrics in Spec")
 	pflag.IntVar(&cpuValue, "cpu-value", -1, "value for target CPU utilization")
 	pflag.IntVar(&memoryValue, "memory-value", -1, "value for target memory utilization")
+	pflag.IntVar(&scaleDownWindow, "scale-down", -1, "value for scaleDown stabilization window")
 	pflag.Parse()
 
 	if len(hpaName) == 0 {
@@ -144,6 +146,11 @@ func main() {
 					return false, nil
 				}
 			}
+		}
+
+		if int32(scaleDownWindow) != hpav2.Spec.Behavior.ScaleDown.StabilizationWindowSeconds {
+			fmt.Printf("Incorrect scaleDown stabilization window found for HPA %s\n", hpaName)
+			return false, nil
 		}
 
 		return true, nil
