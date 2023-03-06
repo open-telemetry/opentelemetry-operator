@@ -28,7 +28,7 @@ func errorNotAMap(component string) error {
 	return fmt.Errorf("%s property in the configuration doesn't contain valid %s", component, component)
 }
 
-// ConfigToPromConfig converts the incoming configuration object into a the Prometheus receiver config.
+// ConfigToPromConfig converts the incoming configuration object into the Prometheus receiver config.
 func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 	config, err := adapters.ConfigFromString(cfg)
 	if err != nil {
@@ -55,15 +55,5 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 		return nil, errorNotAMap("prometheus")
 	}
 
-	prometheusConfigProperty, ok := prometheus["config"]
-	if !ok {
-		return nil, errorNoComponent("prometheusConfig")
-	}
-
-	prometheusConfig, ok := prometheusConfigProperty.(map[interface{}]interface{})
-	if !ok {
-		return nil, errorNotAMap("prometheusConfig")
-	}
-
-	return prometheusConfig, nil
+	return prometheus, nil
 }
