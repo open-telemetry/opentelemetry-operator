@@ -16,8 +16,9 @@ package reconcile
 
 import (
 	"context"
-	"go.opentelemetry.io/collector/featuregate"
 	"testing"
+
+	"go.opentelemetry.io/collector/featuregate"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
