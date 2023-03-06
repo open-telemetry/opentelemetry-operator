@@ -21,7 +21,6 @@ import (
 
 	"go.opentelemetry.io/collector/featuregate"
 
-	"github.com/mitchellh/mapstructure"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/http"
@@ -51,7 +50,7 @@ type targetAllocator struct {
 
 type Config struct {
 	PromConfig        *promconfig.Config `yaml:"config"`
-	TargetAllocConfig *targetAllocator   `yaml:"target_allocator"`
+	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
 }
 
 func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
@@ -69,9 +68,7 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 	}
 
 	// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
-	promCfg, marshalErr := yaml.Marshal(map[string]interface{}{
-		"config": promCfgMap,
-	})
+	promCfg, marshalErr := yaml.Marshal(promCfgMap)
 	if marshalErr != nil {
 		return "", marshalErr
 	}
@@ -98,13 +95,8 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		}
 	}
 
-	updPromCfgMap := make(map[string]interface{})
-	if err := mapstructure.Decode(cfg, &updPromCfgMap); err != nil {
-		return "", err
-	}
-
 	// type coercion checks are handled in the ConfigToPromConfig method above
-	config["receivers"].(map[interface{}]interface{})["prometheus"].(map[interface{}]interface{})["config"] = updPromCfgMap["PromConfig"]
+	config["receivers"].(map[interface{}]interface{})["prometheus"] = cfg
 
 	out, err := yaml.Marshal(config)
 	if err != nil {

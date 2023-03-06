@@ -40,9 +40,7 @@ func TestPrometheusParser(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		promCfg, err := yaml.Marshal(map[string]interface{}{
-			"config": promCfgMap,
-		})
+		promCfg, err := yaml.Marshal(promCfgMap)
 		assert.NoError(t, err)
 
 		err = yaml.UnmarshalStrict(promCfg, &cfg)
@@ -65,43 +63,9 @@ func TestPrometheusParser(t *testing.T) {
 		assert.True(t, cfg.TargetAllocConfig == nil)
 	})
 
-	t.Run("should not update config with http_sd_config", func(t *testing.T) {
-		param.Instance.Spec.TargetAllocator.Enabled = false
-		actualConfig, err := ReplaceConfig(param.Instance)
-		assert.NoError(t, err)
-
-		// prepare
-		var cfg Config
-		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
-		assert.NoError(t, err)
-
-		promCfg, err := yaml.Marshal(map[string]interface{}{
-			"config": promCfgMap,
-		})
-		assert.NoError(t, err)
-
-		err = yaml.UnmarshalStrict(promCfg, &cfg)
-		assert.NoError(t, err)
-
-		// test
-		expectedMap := map[string]bool{
-			"prometheus": false,
-			"service-x":  false,
-		}
-		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
-			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 2)
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "file")
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[1].Name(), "static")
-			expectedMap[scrapeConfig.JobName] = true
-		}
-		for k := range expectedMap {
-			assert.True(t, expectedMap[k], k)
-		}
-		assert.True(t, cfg.TargetAllocConfig == nil)
-	})
-
 	t.Run("should update config with targetAllocator block", func(t *testing.T) {
 		err := featuregate.GlobalRegistry().Set(EnableTargetAllocatorRewrite.ID(), true)
+		param.Instance.Spec.TargetAllocator.Enabled = true
 		assert.NoError(t, err)
 		actualConfig, err := ReplaceConfig(param.Instance)
 		assert.NoError(t, err)
@@ -111,9 +75,7 @@ func TestPrometheusParser(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		promCfg, err := yaml.Marshal(map[string]interface{}{
-			"config": promCfgMap,
-		})
+		promCfg, err := yaml.Marshal(promCfgMap)
 		assert.NoError(t, err)
 
 		err = yaml.UnmarshalStrict(promCfg, &cfg)
@@ -138,7 +100,42 @@ func TestPrometheusParser(t *testing.T) {
 			Interval:    30 * time.Second,
 			CollectorID: "${POD_NAME}",
 		}
-		assert.Equal(t, cfg.TargetAllocConfig, expectedTAConfig)
+		assert.Equal(t, expectedTAConfig, cfg.TargetAllocConfig)
+		err = featuregate.GlobalRegistry().Set(EnableTargetAllocatorRewrite.ID(), false)
+		assert.NoError(t, err)
+	})
+
+	t.Run("should not update config with http_sd_config", func(t *testing.T) {
+		param.Instance.Spec.TargetAllocator.Enabled = false
+		actualConfig, err := ReplaceConfig(param.Instance)
+		assert.NoError(t, err)
+
+		// prepare
+		var cfg Config
+		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
+		assert.NoError(t, err)
+
+		promCfg, err := yaml.Marshal(promCfgMap)
+		assert.NoError(t, err)
+
+		err = yaml.UnmarshalStrict(promCfg, &cfg)
+		assert.NoError(t, err)
+
+		// test
+		expectedMap := map[string]bool{
+			"prometheus": false,
+			"service-x":  false,
+		}
+		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
+			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 2)
+			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "file")
+			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[1].Name(), "static")
+			expectedMap[scrapeConfig.JobName] = true
+		}
+		for k := range expectedMap {
+			assert.True(t, expectedMap[k], k)
+		}
+		assert.True(t, cfg.TargetAllocConfig == nil)
 	})
 
 }
