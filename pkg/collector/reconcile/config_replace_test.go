@@ -16,6 +16,9 @@ package reconcile
 
 import (
 	"testing"
+	"time"
+
+	"go.opentelemetry.io/collector/featuregate"
 
 	"github.com/prometheus/prometheus/discovery/http"
 	"github.com/stretchr/testify/assert"
@@ -59,6 +62,7 @@ func TestPrometheusParser(t *testing.T) {
 		for k := range expectedMap {
 			assert.True(t, expectedMap[k], k)
 		}
+		assert.True(t, cfg.TargetAllocConfig == nil)
 	})
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
@@ -93,6 +97,48 @@ func TestPrometheusParser(t *testing.T) {
 		for k := range expectedMap {
 			assert.True(t, expectedMap[k], k)
 		}
+		assert.True(t, cfg.TargetAllocConfig == nil)
+	})
+
+	t.Run("should update config with targetAllocator block", func(t *testing.T) {
+		err := featuregate.GlobalRegistry().Set(EnableTargetAllocatorRewrite.ID(), true)
+		assert.NoError(t, err)
+		actualConfig, err := ReplaceConfig(param.Instance)
+		assert.NoError(t, err)
+
+		// prepare
+		var cfg Config
+		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
+		assert.NoError(t, err)
+
+		promCfg, err := yaml.Marshal(map[string]interface{}{
+			"config": promCfgMap,
+		})
+		assert.NoError(t, err)
+
+		err = yaml.UnmarshalStrict(promCfg, &cfg)
+		assert.NoError(t, err)
+
+		// test
+		expectedMap := map[string]bool{
+			"prometheus": false,
+			"service-x":  false,
+		}
+		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
+			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 1)
+			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "http")
+			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "http://test-targetallocator:80/jobs/"+scrapeConfig.JobName+"/targets?collector_id=$POD_NAME")
+			expectedMap[scrapeConfig.JobName] = true
+		}
+		for k := range expectedMap {
+			assert.True(t, expectedMap[k], k)
+		}
+		expectedTAConfig := &targetAllocator{
+			Endpoint:    "http://test-targetallocator:80",
+			Interval:    30 * time.Second,
+			CollectorID: "${POD_NAME}",
+		}
+		assert.Equal(t, cfg.TargetAllocConfig, expectedTAConfig)
 	})
 
 }

@@ -17,6 +17,9 @@ package reconcile
 import (
 	"fmt"
 	"net/url"
+	"time"
+
+	"go.opentelemetry.io/collector/featuregate"
 
 	"github.com/mitchellh/mapstructure"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -31,8 +34,24 @@ import (
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
+var (
+	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
+	// automatically be rewritten when the target allocator is enabled.
+	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
+		"operator.enableTargetAllocatorRewrite",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"))
+)
+
+type targetAllocator struct {
+	Endpoint    string        `yaml:"endpoint"`
+	Interval    time.Duration `yaml:"interval"`
+	CollectorID string        `yaml:"collector_id"`
+}
+
 type Config struct {
-	PromConfig *promconfig.Config `yaml:"config"`
+	PromConfig        *promconfig.Config `yaml:"config"`
+	TargetAllocConfig *targetAllocator   `yaml:"target_allocator"`
 }
 
 func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
@@ -68,6 +87,14 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 			&http.SDConfig{
 				URL: fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", naming.TAService(instance), escapedJob),
 			},
+		}
+	}
+
+	if EnableTargetAllocatorRewrite.IsEnabled() {
+		cfg.TargetAllocConfig = &targetAllocator{
+			Endpoint:    fmt.Sprintf("http://%s:80", naming.TAService(instance)),
+			Interval:    30 * time.Second,
+			CollectorID: "${POD_NAME}",
 		}
 	}
 
