@@ -143,6 +143,8 @@ Your pull-request should add a new `.yaml` file to this directory. The name of y
 
 During the collector release process, all `./.chloggen/*.yaml` files are transcribed into `CHANGELOG.md` and then deleted.
 
+If a changelog entry is not required, add either `[chore]` to the title of the pull request or add the `"Skip Changelog"` label to disable this action.
+
 **Recommended Steps**
 1. Create an entry file using `make chlog-new`. This generates a file based on your current branch (e.g. `./.chloggen/my-branch.yaml`)
 2. Fill in all fields in the new file
