@@ -220,7 +220,7 @@ Python:
 instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
-.NET ([docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v0.5.0/docs/README.md)):
+.NET ([docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v0.6.0/docs/README.md)):
 ```bash
 instrumentation.opentelemetry.io/inject-dotnet: "true"
 ```
