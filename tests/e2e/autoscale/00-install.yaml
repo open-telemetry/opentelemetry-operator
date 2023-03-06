@@ -55,9 +55,6 @@ spec:
   maxReplicas: 2
   autoscaler:
     targetCPUUtilization: 50
-    behavior:
-      scaleDown:
-        stabilizationWindowSeconds: 15
   resources:
     limits:
       cpu: 500m

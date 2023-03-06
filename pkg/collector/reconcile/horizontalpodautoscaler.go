@@ -120,8 +120,9 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}
 
-			desiredMetrics := desired.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics
-			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics = desiredMetrics
+			desiredSpec := desired.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec
+			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics = desiredSpec.Metrics
+			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Behavior = desiredSpec.Behavior
 		} else { // autoscalingv2
 			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.Autoscaler.MaxReplicas
 			if params.Instance.Spec.Autoscaler.MinReplicas != nil {
@@ -130,8 +131,9 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}
 
-			desiredMetrics := desired.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics
-			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics = desiredMetrics
+			desiredSpec := desired.(*autoscalingv2.HorizontalPodAutoscaler).Spec
+			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics = desiredSpec.Metrics
+			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Behavior = desiredSpec.Behavior
 		}
 	}
 }
