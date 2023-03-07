@@ -19,7 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// OpAMPBridgeSpec defines the desired state of OpAMPBridge
+// OpAMPBridgeSpec defines the desired state of OpAMPBridge.
 type OpAMPBridgeSpec struct {
 	// OpAMP backend Server endpoint
 	// +required
@@ -99,7 +99,7 @@ type OpAMPBridgeSpec struct {
 	Affinity *v1.Affinity `json:"affinity,omitempty"`
 }
 
-// OpAMPBridgeStatus defines the observed state of OpAMPBridge
+// OpAMPBridgeStatus defines the observed state of OpAMPBridge.
 type OpAMPBridgeStatus struct {
 	// Version of the managed OpAMP Bridge (operand)
 	// +optional
@@ -114,7 +114,7 @@ type OpAMPBridgeStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpAMP Bridge"
 // +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{ConfigMaps,v1},{Service,v1}}
 
-// OpAMPBridge is the Schema for the opampbridges API
+// OpAMPBridge is the Schema for the opampbridges API.
 type OpAMPBridge struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
