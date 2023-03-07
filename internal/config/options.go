@@ -29,23 +29,24 @@ import (
 type Option func(c *options)
 
 type options struct {
-	autoDetect                     autodetect.AutoDetect
-	version                        version.Version
-	logger                         logr.Logger
-	autoInstrumentationDotNetImage string
-	autoInstrumentationJavaImage   string
-	autoInstrumentationNodeJSImage string
-	autoInstrumentationPythonImage string
-	collectorImage                 string
-	collectorConfigMapEntry        string
-	targetAllocatorConfigMapEntry  string
-	targetAllocatorImage           string
-	operatorOpAMPBridgeImage       string
-	onOpenShiftRoutesChange        changeHandler
-	labelsFilter                   []string
-	openshiftRoutes                openshiftRoutesStore
-	autoDetectFrequency            time.Duration
-	autoscalingVersion             autodetect.AutoscalingVersion
+	autoDetect                        autodetect.AutoDetect
+	version                           version.Version
+	logger                            logr.Logger
+	autoInstrumentationDotNetImage    string
+	autoInstrumentationJavaImage      string
+	autoInstrumentationNodeJSImage    string
+	autoInstrumentationPythonImage    string
+	collectorImage                    string
+	collectorConfigMapEntry           string
+	targetAllocatorConfigMapEntry     string
+	operatorOpAMPBridgeConfigMapEntry string
+	targetAllocatorImage              string
+	operatorOpAMPBridgeImage          string
+	onOpenShiftRoutesChange           changeHandler
+	labelsFilter                      []string
+	openshiftRoutes                   openshiftRoutesStore
+	autoDetectFrequency               time.Duration
+	autoscalingVersion                autodetect.AutoscalingVersion
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -81,6 +82,11 @@ func WithCollectorConfigMapEntry(s string) Option {
 func WithTargetAllocatorConfigMapEntry(s string) Option {
 	return func(o *options) {
 		o.targetAllocatorConfigMapEntry = s
+	}
+}
+func WithOperatorOpAMPBridgeConfigMapEntry(s string) Option {
+	return func(o *options) {
+		o.operatorOpAMPBridgeConfigMapEntry = s
 	}
 }
 func WithLogger(logger logr.Logger) Option {
