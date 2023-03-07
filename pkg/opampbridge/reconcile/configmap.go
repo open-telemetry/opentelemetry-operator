@@ -106,7 +106,7 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 	return nil
 }
 
-func desiredConfigMap(ctx context.Context, params Params) (corev1.ConfigMap, error) {
+func desiredConfigMap(_ context.Context, params Params) (corev1.ConfigMap, error) {
 	name := naming.OpAMPBridgeConfigMap(params.Instance)
 	version := strings.Split(params.Instance.Spec.Image, ":")
 	labels := opampbridge.Labels(params.Instance, []string{})

@@ -32,7 +32,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// OpAMPBridgeReconciler reconciles a OpAMPBridge object
+// OpAMPBridgeReconciler reconciles a OpAMPBridge object.
 type OpAMPBridgeReconciler struct {
 	client.Client
 	scheme   *runtime.Scheme

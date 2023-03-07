@@ -77,7 +77,7 @@ func TestExpectedDeployments(t *testing.T) {
 		createObjectIfNotExists(t, "test-opamp-bridge", &expectedDeploy)
 		orgUID := expectedDeploy.OwnerReferences[0].UID
 
-		updatedParam, err := newParams("test/test-img", "")
+		updatedParam, err := newParams("test/test-img")
 		assert.NoError(t, err)
 		updatedDeploy := opampbridge.Deployment(updatedParam.Config, logger, updatedParam.Instance)
 

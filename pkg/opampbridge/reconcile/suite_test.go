@@ -210,7 +210,7 @@ func params() Params {
 	}
 }
 
-func newParams(opampBridgeContainerImage string, file string) (Params, error) {
+func newParams(opampBridgeContainerImage string) (Params, error) {
 	replicas := int32(1)
 
 	cfg := config.New(config.WithOperatorOpAMPBridgeImage(defaultOpAMPBridgeImage))
