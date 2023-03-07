@@ -108,6 +108,7 @@ type OpAMPBridgeStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
 // +kubebuilder:printcolumn:name="Endpoint",type="string",JSONPath=".spec.endpoint"
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpAMP Bridge"
