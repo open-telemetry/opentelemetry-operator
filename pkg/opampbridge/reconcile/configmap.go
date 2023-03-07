@@ -20,14 +20,14 @@ import (
 	"reflect"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/opampbridge"
 	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/opampbridge"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -73,14 +73,14 @@ func TestExpectedDeployments(t *testing.T) {
 	})
 
 	t.Run("should update opamp-bridge deployment when the container image is updated", func(t *testing.T) {
-		ctx := context.Background()
+		ctx = context.Background()
 		createObjectIfNotExists(t, "test-opamp-bridge", &expectedDeploy)
 		orgUID := expectedDeploy.OwnerReferences[0].UID
 
 		updatedParam := newParams("test/test-img")
 		updatedDeploy := opampbridge.Deployment(updatedParam.Config, logger, updatedParam.Instance)
 
-		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		err := expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
