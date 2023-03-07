@@ -75,16 +75,13 @@ func (r *OpAMPBridge) ValidateCreate() error {
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *OpAMPBridge) ValidateUpdate(old runtime.Object) error {
 	opampbridgelog.Info("validate update", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
+	r.validateCRDSpec()
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *OpAMPBridge) ValidateDelete() error {
 	opampbridgelog.Info("validate delete", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }
 

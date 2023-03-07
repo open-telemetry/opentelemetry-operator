@@ -42,7 +42,7 @@ type OpAMPBridgeReconciler struct {
 	config   config.Config
 }
 
-// OpAMPBridgeReconcilerParams is the set of options to build a new openTelemetryCollectorReconciler.
+// OpAMPBridgeReconcilerParams is the set of options to build a new OpAMPBridgeReconciler.
 type OpAMPBridgeReconcilerParams struct {
 	client.Client
 	Recorder record.EventRecorder
