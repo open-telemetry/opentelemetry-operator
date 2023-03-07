@@ -40,7 +40,7 @@ func (r *OpAMPBridge) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Defaulter = &OpAMPBridge{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *OpAMPBridge) Default() {
 	opampbridgelog.Info("default", "name", r.Name)
 	if len(r.Spec.UpgradeStrategy) == 0 {
@@ -65,19 +65,19 @@ func (r *OpAMPBridge) Default() {
 
 var _ webhook.Validator = &OpAMPBridge{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpAMPBridge) ValidateCreate() error {
 	opampbridgelog.Info("validate create", "name", r.Name)
 	return r.validateCRDSpec()
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpAMPBridge) ValidateUpdate(old runtime.Object) error {
 	opampbridgelog.Info("validate update", "name", r.Name)
 	return r.validateCRDSpec()
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (r *OpAMPBridge) ValidateDelete() error {
 	opampbridgelog.Info("validate delete", "name", r.Name)
 	return nil

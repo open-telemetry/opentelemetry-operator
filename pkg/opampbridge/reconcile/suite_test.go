@@ -210,7 +210,7 @@ func params() Params {
 	}
 }
 
-func newParams(opampBridgeContainerImage string) (Params, error) {
+func newParams(opampBridgeContainerImage string) Params {
 	replicas := int32(1)
 
 	cfg := config.New(config.WithOperatorOpAMPBridgeImage(defaultOpAMPBridgeImage))
@@ -248,7 +248,7 @@ func newParams(opampBridgeContainerImage string) (Params, error) {
 		},
 		Scheme: testScheme,
 		Log:    logger,
-	}, nil
+	}
 }
 
 func createObjectIfNotExists(tb testing.TB, name string, object client.Object) {

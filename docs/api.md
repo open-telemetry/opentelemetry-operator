@@ -2178,7 +2178,7 @@ Sampler defines sampling configuration.
 
 
 
-OpAMPBridge is the Schema for the opampbridges API
+OpAMPBridge is the Schema for the opampbridges API.
 
 <table>
     <thead>
@@ -2210,14 +2210,14 @@ OpAMPBridge is the Schema for the opampbridges API
         <td><b><a href="#opampbridgespec">spec</a></b></td>
         <td>object</td>
         <td>
-          OpAMPBridgeSpec defines the desired state of OpAMPBridge<br/>
+          OpAMPBridgeSpec defines the desired state of OpAMPBridge.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opampbridgestatus">status</a></b></td>
         <td>object</td>
         <td>
-          OpAMPBridgeStatus defines the observed state of OpAMPBridge<br/>
+          OpAMPBridgeStatus defines the observed state of OpAMPBridge.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2229,7 +2229,7 @@ OpAMPBridge is the Schema for the opampbridges API
 
 
 
-OpAMPBridgeSpec defines the desired state of OpAMPBridge
+OpAMPBridgeSpec defines the desired state of OpAMPBridge.
 
 <table>
     <thead>
@@ -7702,7 +7702,7 @@ vsphereVolume represents a vSphere volume attached and mounted on kubelets host 
 
 
 
-OpAMPBridgeStatus defines the observed state of OpAMPBridge
+OpAMPBridgeStatus defines the observed state of OpAMPBridge.
 
 <table>
     <thead>

@@ -41,7 +41,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: OpAMPBridge is the Schema for the opampbridges API
+        description: OpAMPBridge is the Schema for the opampbridges API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -56,7 +56,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: OpAMPBridgeSpec defines the desired state of OpAMPBridge
+            description: OpAMPBridgeSpec defines the desired state of OpAMPBridge.
             properties:
               affinity:
                 description: If specified, indicates the pod's scheduling constraints
@@ -3120,7 +3120,7 @@ spec:
             - protocol
             type: object
           status:
-            description: OpAMPBridgeStatus defines the observed state of OpAMPBridge
+            description: OpAMPBridgeStatus defines the observed state of OpAMPBridge.
             properties:
               version:
                 description: Version of the managed OpAMP Bridge (operand)

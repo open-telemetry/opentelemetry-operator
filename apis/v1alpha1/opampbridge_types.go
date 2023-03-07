@@ -125,7 +125,7 @@ type OpAMPBridge struct {
 
 //+kubebuilder:object:root=true
 
-// OpAMPBridgeList contains a list of OpAMPBridge
+// OpAMPBridgeList contains a list of OpAMPBridge.
 type OpAMPBridgeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
