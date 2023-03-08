@@ -423,6 +423,22 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas",
 		},
 		{
+			name: "invalid autoscaler metric type",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []autoscalingv2.MetricSpec{
+							autoscalingv2.MetricSpec{
+								Type: autoscalingv2.ResourceMetricSourceType,
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod",
+		},
+		{
 			name: "invalid deployment mode incompabible with ingress settings",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
