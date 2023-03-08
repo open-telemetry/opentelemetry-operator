@@ -299,6 +299,11 @@ type AutoscalerSpec struct {
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// +optional
 	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
+	// Metrics is meant to provide a customizable way to configure HPA metrics.
+	// currently the only supported custom metrics is type=Pod.
+	// Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.
+	// +optional
+	Metrics []autoscalingv2.MetricSpec
 	// TargetCPUUtilization sets the target average CPU used across all replicas.
 	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
 	// +optional

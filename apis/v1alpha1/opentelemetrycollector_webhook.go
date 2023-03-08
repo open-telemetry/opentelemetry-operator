@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	"fmt"
 
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -218,6 +219,24 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		}
 		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetMemoryUtilization != nil && (*r.Spec.Autoscaler.TargetMemoryUtilization < int32(1) || *r.Spec.Autoscaler.TargetMemoryUtilization > int32(99)) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
+		}
+
+		if r.Spec.Autoscaler != nil && len(r.Spec.Autoscaler.Metrics) > 0 {
+			for _, metric := range r.Spec.Autoscaler.Metrics {
+				if metric.Type != autoscalingv2.PodsMetricSourceType {
+					return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod")
+				}
+
+				if metric.Pods.Target.Type != autoscalingv2.AverageValueMetricType {
+					return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, target type unsupported. Expected target type of AverageValue")
+				}
+
+				if metric.Pods.Target.AverageValue != nil { 
+					if val, ok := metric.Pods.Target.AverageValue.AsInt64(); (!ok || val < int64(1)) {
+						return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0")
+					} 
+				}
+			}
 		}
 	}
 
