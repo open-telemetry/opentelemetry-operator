@@ -74,6 +74,13 @@ func (in *AutoscalerSpec) DeepCopyInto(out *AutoscalerSpec) {
 		*out = new(v2.HorizontalPodAutoscalerBehavior)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Metrics != nil {
+		in, out := &in.Metrics, &out.Metrics
+		*out = make([]v2.MetricSpec, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.TargetCPUUtilization != nil {
 		in, out := &in.TargetCPUUtilization, &out.TargetCPUUtilization
 		*out = new(int32)
