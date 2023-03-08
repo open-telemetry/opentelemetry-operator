@@ -231,10 +231,10 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 					return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, target type unsupported. Expected target type of AverageValue")
 				}
 
-				if metric.Pods.Target.AverageValue != nil { 
-					if val, ok := metric.Pods.Target.AverageValue.AsInt64(); (!ok || val < int64(1)) {
+				if metric.Pods.Target.AverageValue != nil {
+					if val, ok := metric.Pods.Target.AverageValue.AsInt64(); !ok || val < int64(1) {
 						return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0")
-					} 
+					}
 				}
 			}
 		}
