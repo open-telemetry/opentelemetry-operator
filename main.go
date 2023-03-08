@@ -24,6 +24,10 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/collector/featuregate"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/flags"
+
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,8 +78,10 @@ func init() {
 func main() {
 	// registers any flags that underlying libraries might use
 	opts := zap.Options{}
+	flagset := flags.Flags()
 	opts.BindFlags(flag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.CommandLine.AddGoFlagSet(flagset)
 
 	v := version.Get()
 
@@ -113,6 +119,13 @@ func main() {
 	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
 	pflag.Parse()
+
+	for id, enabled := range flags.GetFeatureGatesFlag(flagset) {
+		if err := featuregate.GlobalRegistry().Set(id, enabled); err != nil {
+			setupLog.Error(err, "failed to set feature flags")
+			os.Exit(1)
+		}
+	}
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
