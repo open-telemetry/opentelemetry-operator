@@ -9,16 +9,6 @@ metadata:
     app.kubernetes.io/name: opentelemetry-operator
   name: opampbridges.opentelemetry.io
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: webhook-service
-          namespace: opentelemetry-operator-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: opentelemetry.io
   names:
     kind: OpAMPBridge
