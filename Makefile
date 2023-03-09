@@ -59,7 +59,7 @@ START_KIND_CLUSTER ?= true
 KUBE_VERSION ?= 1.24
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 
-OPERATOR_SDK_VERSION ?= 1.23.0
+OPERATOR_SDK_VERSION ?= 1.27.0
 
 CERTMANAGER_VERSION ?= 1.10.0
 
@@ -285,7 +285,7 @@ CHLOGGEN ?= $(LOCALBIN)/chloggen
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.0
-CONTROLLER_TOOLS_VERSION ?= v0.9.2
+CONTROLLER_TOOLS_VERSION ?= v0.10.0
 
 
 .PHONY: kustomize
@@ -375,6 +375,7 @@ bundle: kustomize operator-sdk manifests set-image-controller
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
+	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build
