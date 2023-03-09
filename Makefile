@@ -58,6 +58,7 @@ START_KIND_CLUSTER ?= true
 
 KUBE_VERSION ?= 1.24
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
+KIND_CLUSTER_NAME ?= "otel-operator"
 
 OPERATOR_SDK_VERSION ?= 1.27.0
 
@@ -219,7 +220,7 @@ container-operator-opamp-bridge:
 .PHONY: start-kind
 start-kind:
 ifeq (true,$(START_KIND_CLUSTER))
-	kind create cluster --config $(KIND_CONFIG)
+	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
 endif
 
 .PHONY: install-metrics-server
@@ -236,7 +237,7 @@ load-image-all: load-image-operator load-image-target-allocator load-image-opera
 .PHONY: load-image-operator
 load-image-operator: container
 ifeq (true,$(START_KIND_CLUSTER))
-	kind load docker-image $(IMG)
+	kind load --name $(KIND_CLUSTER_NAME) docker-image $(IMG)
 else
 	$(MAKE) container-push
 endif
@@ -245,7 +246,7 @@ endif
 .PHONY: load-image-target-allocator
 load-image-target-allocator: container-target-allocator
 ifeq (true,$(START_KIND_CLUSTER))
-	kind load docker-image $(TARGETALLOCATOR_IMG)
+	kind load --name $(KIND_CLUSTER_NAME) docker-image $(TARGETALLOCATOR_IMG)
 else
 	$(MAKE) container-target-allocator-push
 endif
@@ -253,7 +254,7 @@ endif
 
 .PHONY: load-image-operator-opamp-bridge
 load-image-operator-opamp-bridge:
-	kind load docker-image ${OPERATOROPAMPBRIDGE_IMG}
+	kind load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
 
 .PHONY: cert-manager
 cert-manager: cmctl
