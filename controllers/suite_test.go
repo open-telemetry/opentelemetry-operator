@@ -105,6 +105,11 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	if err = (&v1alpha1.OpAMPBridge{}).SetupWebhookWithManager(mgr); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
+		os.Exit(1)
+	}
+
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()
 	go func() {
