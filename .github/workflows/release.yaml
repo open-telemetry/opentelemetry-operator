@@ -14,9 +14,6 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    - name: "install kubebuilder"
-      run: ./hack/install-kubebuilder.sh
-
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator"
 
