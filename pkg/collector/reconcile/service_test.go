@@ -145,7 +145,6 @@ func TestDesiredService(t *testing.T) {
 		actual := desiredService(context.Background(), p)
 
 		assert.Equal(t, expected, *actual)
-
 	})
 
 }
