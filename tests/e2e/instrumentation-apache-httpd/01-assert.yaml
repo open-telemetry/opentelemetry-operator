@@ -3,7 +3,6 @@ kind: Pod
 metadata:
   annotations:
     instrumentation.opentelemetry.io/inject-apache-httpd: 'true'
-    instrumentation.opentelemetry.io/otel-namespace: my-app-apache-services
     sidecar.opentelemetry.io/inject: 'true'
   labels:
     app: my-apache
