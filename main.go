@@ -242,7 +242,7 @@ func main() {
 				}),
 		})
 	} else {
-		ctrl.Log.Info("Webhooks are disabled, operator is running in not-supported mode", "ENABLE_WEBHOOKS", "false")
+		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
 	}
 	// +kubebuilder:scaffold:builder
 
