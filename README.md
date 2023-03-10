@@ -242,7 +242,6 @@ instrumentation.opentelemetry.io/inject-dotnet: "true"
 Apache HTTPD:
 ```bash
 instrumentation.opentelemetry.io/inject-apache-httpd: "true"
-instrumentation.opentelemetry.io/otel-namespace: "my-custom-namespace" # optional, if missing, OTEL_NAMESPACE will be set to pod namespace 
 ```
 
 OpenTelemetry SDK environment variables only:

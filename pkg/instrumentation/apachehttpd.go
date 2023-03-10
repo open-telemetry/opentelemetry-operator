@@ -194,9 +194,7 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 	}
 	serviceName := chooseServiceName(pod, resourceMap, index)
 	serviceNamespace := pod.GetNamespace()
-	if annotNamespace, found := pod.GetAnnotations()[annotationInjectOtelNamespace]; found {
-		serviceNamespace = annotNamespace
-	}
+	// Namespace name override TBD
 
 	versionSuffix := ""
 	if apacheSpec.Version == "2.2" {
