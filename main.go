@@ -241,6 +241,8 @@ func main() {
 					instrumentation.NewMutator(logger, mgr.GetClient()),
 				}),
 		})
+	} else {
+		ctrl.Log.Info("Webhooks are disabled, operator is running in not-supported mode", "ENABLE_WEBHOOKS", "false")
 	}
 	// +kubebuilder:scaffold:builder
 
