@@ -61,6 +61,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: defaultInitContainerResourceRequirements(),
 						},
 					},
 					Containers: []corev1.Container{
@@ -119,6 +120,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: defaultInitContainerResourceRequirements(),
 						},
 					},
 					Containers: []corev1.Container{

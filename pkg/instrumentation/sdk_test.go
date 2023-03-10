@@ -419,6 +419,7 @@ func TestInjectJava(t *testing.T) {
 						Name:      volumeName,
 						MountPath: "/otel-auto-instrumentation",
 					}},
+					Resources: defaultInitContainerResourceRequirements(),
 				},
 			},
 			Containers: []corev1.Container{
@@ -517,6 +518,7 @@ func TestInjectNodeJS(t *testing.T) {
 						Name:      volumeName,
 						MountPath: "/otel-auto-instrumentation",
 					}},
+					Resources: defaultInitContainerResourceRequirements(),
 				},
 			},
 			Containers: []corev1.Container{
@@ -616,6 +618,7 @@ func TestInjectPython(t *testing.T) {
 						Name:      volumeName,
 						MountPath: "/otel-auto-instrumentation",
 					}},
+					Resources: defaultInitContainerResourceRequirements(),
 				},
 			},
 			Containers: []corev1.Container{
@@ -730,6 +733,7 @@ func TestInjectDotNet(t *testing.T) {
 						Name:      volumeName,
 						MountPath: "/otel-auto-instrumentation",
 					}},
+					Resources: defaultInitContainerResourceRequirements(),
 				},
 			},
 			Containers: []corev1.Container{

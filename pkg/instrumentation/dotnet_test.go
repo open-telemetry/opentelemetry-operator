@@ -61,6 +61,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: defaultInitContainerResourceRequirements(),
 						},
 					},
 					Containers: []corev1.Container{
@@ -163,6 +164,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: defaultInitContainerResourceRequirements(),
 						},
 					},
 					Containers: []corev1.Container{
