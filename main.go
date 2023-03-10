@@ -128,6 +128,7 @@ func main() {
 		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"auto-instrumentation-python", autoInstrumentationPython,
 		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
+		"auto-instrumentation-apache-httpd", autoInstrumentationApacheHttpd,
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
