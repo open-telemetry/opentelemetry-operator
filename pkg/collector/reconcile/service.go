@@ -114,6 +114,11 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 		return nil
 	}
 
+	trafficPolicy := corev1.ServiceInternalTrafficPolicyCluster
+	if params.Instance.Spec.Mode == v1alpha1.ModeDaemonSet {
+		trafficPolicy = corev1.ServiceInternalTrafficPolicyLocal
+	}
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Service(params.Instance),
@@ -122,9 +127,10 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 			Annotations: params.Instance.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:  collector.SelectorLabels(params.Instance),
-			ClusterIP: "",
-			Ports:     ports,
+			InternalTrafficPolicy: &trafficPolicy,
+			Selector:              collector.SelectorLabels(params.Instance),
+			ClusterIP:             "",
+			Ports:                 ports,
 		},
 	}
 }

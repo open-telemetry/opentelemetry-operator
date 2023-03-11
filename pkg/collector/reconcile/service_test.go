@@ -130,6 +130,23 @@ func TestDesiredService(t *testing.T) {
 
 	})
 
+	t.Run("should return service with local internal traffic policy", func(t *testing.T) {
+
+		grpc := "grpc"
+		jaegerPorts := v1.ServicePort{
+			Name:        "jaeger-grpc",
+			Protocol:    "TCP",
+			Port:        14250,
+			AppProtocol: &grpc,
+		}
+		p := paramsWithMode(v1alpha1.ModeDaemonSet)
+		ports := append(p.Instance.Spec.Ports, jaegerPorts)
+		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
+		actual := desiredService(context.Background(), p)
+
+		assert.Equal(t, expected, *actual)
+	})
+
 }
 
 func TestExpectedServices(t *testing.T) {
@@ -230,6 +247,10 @@ func TestMonitoringService(t *testing.T) {
 }
 
 func service(name string, ports []v1.ServicePort) v1.Service {
+	return serviceWithInternalTrafficPolicy(name, ports, v1.ServiceInternalTrafficPolicyCluster)
+}
+
+func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
 	labels := collector.Labels(params().Instance, []string{})
 	labels["app.kubernetes.io/name"] = name
 
@@ -241,9 +262,10 @@ func service(name string, ports []v1.ServicePort) v1.Service {
 			Annotations: params().Instance.Annotations,
 		},
 		Spec: v1.ServiceSpec{
-			Selector:  collector.SelectorLabels(params().Instance),
-			ClusterIP: "",
-			Ports:     ports,
+			InternalTrafficPolicy: &internalTrafficPolicy,
+			Selector:              collector.SelectorLabels(params().Instance),
+			ClusterIP:             "",
+			Ports:                 ports,
 		},
 	}
 }
