@@ -4143,7 +4143,7 @@ PodSecurityContext will be set as the pod security context.
         <td><b>supplementalGroups</b></td>
         <td>[]integer</td>
         <td>
-          A list of groups applied to the first process run in each container, in addition to the container's primary GID.  If unspecified, no groups will be added to any container. Note that this field cannot be set when spec.os.name is windows.<br/>
+          A list of groups applied to the first process run in each container, in addition to the container's primary GID, the fsGroup (if specified), and group memberships defined in the container image for the uid of the container process. If unspecified, no additional groups are added to any container. Note that group memberships defined in the container image for the uid of the container process are still effective, even if they are not included in this list. Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4414,6 +4414,15 @@ Resources to set on the OpAMPBridge pods.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#opampbridgespecresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>limits</b></td>
         <td>map[string]int or string</td>
         <td>
@@ -4427,6 +4436,33 @@ Resources to set on the OpAMPBridge pods.
           Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.resources.claims[index]
+<sup><sup>[↩ Parent](#opampbridgespecresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
@@ -5835,14 +5871,14 @@ The specification for the PersistentVolumeClaim. The entire content is copied un
         <td><b><a href="#opampbridgespecvolumesindexephemeralvolumeclaimtemplatespecdatasource">dataSource</a></b></td>
         <td>object</td>
         <td>
-          dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. If the AnyVolumeDataSource feature gate is enabled, this field will always have the same contents as the DataSourceRef field.<br/>
+          dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opampbridgespecvolumesindexephemeralvolumeclaimtemplatespecdatasourceref">dataSourceRef</a></b></td>
         <td>object</td>
         <td>
-          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any local object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the DataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, both fields (DataSource and DataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. There are two important differences between DataSource and DataSourceRef: * While DataSource only allows two specific types of objects, DataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While DataSource ignores disallowed values (dropping them), DataSourceRef preserves all values, and generates an error if a disallowed value is specified. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.<br/>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn't specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn't set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5889,7 +5925,7 @@ The specification for the PersistentVolumeClaim. The entire content is copied un
 
 
 
-dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. If the AnyVolumeDataSource feature gate is enabled, this field will always have the same contents as the DataSourceRef field.
+dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.
 
 <table>
     <thead>
@@ -5930,7 +5966,7 @@ dataSource field can be used to specify either: * An existing VolumeSnapshot obj
 
 
 
-dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any local object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the DataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, both fields (DataSource and DataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. There are two important differences between DataSource and DataSourceRef: * While DataSource only allows two specific types of objects, DataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While DataSource ignores disallowed values (dropping them), DataSourceRef preserves all values, and generates an error if a disallowed value is specified. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn't specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn't set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
 
 <table>
     <thead>
@@ -5962,6 +5998,13 @@ dataSourceRef specifies the object from which to populate the volume with data, 
           APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of resource being referenced Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details. (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -5983,6 +6026,15 @@ resources represents the minimum resources the volume should have. If RecoverVol
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#opampbridgespecvolumesindexephemeralvolumeclaimtemplatespecresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>limits</b></td>
         <td>map[string]int or string</td>
         <td>
@@ -5996,6 +6048,33 @@ resources represents the minimum resources the volume should have. If RecoverVol
           Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.volumes[index].ephemeral.volumeClaimTemplate.spec.resources.claims[index]
+<sup><sup>[↩ Parent](#opampbridgespecvolumesindexephemeralvolumeclaimtemplatespecresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
