@@ -366,6 +366,28 @@ func TestContainerArgs(t *testing.T) {
 	assert.Contains(t, c.Args, "--log-level=debug")
 }
 
+func TestContainerOrderedArgs(t *testing.T) {
+	// prepare a scenario where the debug level and a feature gate has been enabled
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Args: map[string]string{
+				"log-level":     "debug",
+				"feature-gates": "+random-feature",
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify that the first args is (always) the config, and the remaining args are ordered alphabetically
+	// by the key
+	assert.Equal(t, "--config=/conf/collector.yaml", c.Args[0])
+	assert.Equal(t, "--feature-gates=+random-feature", c.Args[1])
+	assert.Equal(t, "--log-level=debug", c.Args[2])
+}
+
 func TestContainerImagePullPolicy(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
