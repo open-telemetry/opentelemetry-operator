@@ -57,12 +57,21 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	if argsMap == nil {
 		argsMap = map[string]string{}
 	}
+	// defines the output (sorted) array for final output
+	var args []string
+	// When adding a config via v1alpha1.OpenTelemetryCollectorSpec.Config, we ensure that it is always the
+	// first item in the args. At the time of writing, although multiple configs are allowed in the
+	// opentelemetry collector, the operator has yet to implement such functionality.  When multiple configs
+	// are present they should be merged in a deterministic manner using the order given, and because
+	// v1alpha1.OpenTelemetryCollectorSpec.Config is a required field we assume that it will always be the
+	// "primary" config and in the future additional configs can be appended to the container args in a simple manner.
 	if addConfig {
+		// if key exists then delete key and excluded from the iteration after this block
 		if _, exists := argsMap["config"]; exists {
 			logger.Info("the 'config' flag isn't allowed and is being ignored")
+			delete(argsMap, "config")
 		}
-		// this effectively overrides any 'config' entry that might exist in the CR
-		argsMap["config"] = fmt.Sprintf("/conf/%s", cfg.CollectorConfigMapEntry())
+		args = append(args, fmt.Sprintf("--config=/conf/%s", cfg.CollectorConfigMapEntry()))
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{
 				Name:      naming.ConfigMapVolume(),
@@ -70,10 +79,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 			})
 	}
 
-	var args []string
+	// ensure that the v1alpha1.OpenTelemetryCollectorSpec.Args are ordered when moved to container.Args,
+	// where iterating over a map does not guarantee, so that reconcile will not be fooled by different
+	// ordering in args.
+	var sortedArgs []string
 	for k, v := range argsMap {
-		args = append(args, fmt.Sprintf("--%s=%s", k, v))
+		sortedArgs = append(sortedArgs, fmt.Sprintf("--%s=%s", k, v))
 	}
+	sort.Strings(sortedArgs)
+	args = append(args, sortedArgs...)
 
 	if len(otelcol.Spec.VolumeMounts) > 0 {
 		volumeMounts = append(volumeMounts, otelcol.Spec.VolumeMounts...)
