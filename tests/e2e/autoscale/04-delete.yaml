@@ -3,5 +3,6 @@ kind: TestStep
 delete:
 - apiVersion: batch/v1
   kind: Job
+  propagationPolicy: Background
   metadata:
-    name: tracegen
+    name: tracegen-set-utilization

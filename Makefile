@@ -58,8 +58,9 @@ START_KIND_CLUSTER ?= true
 
 KUBE_VERSION ?= 1.24
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
+KIND_CLUSTER_NAME ?= "otel-operator"
 
-OPERATOR_SDK_VERSION ?= 1.23.0
+OPERATOR_SDK_VERSION ?= 1.27.0
 
 CERTMANAGER_VERSION ?= 1.10.0
 
@@ -71,6 +72,10 @@ endif
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
+
+## On MacOS, use gsed instead of sed, to make sed behavior
+## consistent with Linux.
+SED ?= $(shell which gsed 2>/dev/null || which sed)
 
 .PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
@@ -182,7 +187,7 @@ e2e-log-operator:
 
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-openshift-routes load-image-all deploy
-	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) ./hack/modify-test-images.sh
+	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -215,7 +220,7 @@ container-operator-opamp-bridge:
 .PHONY: start-kind
 start-kind:
 ifeq (true,$(START_KIND_CLUSTER))
-	kind create cluster --config $(KIND_CONFIG)
+	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
 endif
 
 .PHONY: install-metrics-server
@@ -232,7 +237,7 @@ load-image-all: load-image-operator load-image-target-allocator load-image-opera
 .PHONY: load-image-operator
 load-image-operator: container
 ifeq (true,$(START_KIND_CLUSTER))
-	kind load docker-image $(IMG)
+	kind load --name $(KIND_CLUSTER_NAME) docker-image $(IMG)
 else
 	$(MAKE) container-push
 endif
@@ -241,7 +246,7 @@ endif
 .PHONY: load-image-target-allocator
 load-image-target-allocator: container-target-allocator
 ifeq (true,$(START_KIND_CLUSTER))
-	kind load docker-image $(TARGETALLOCATOR_IMG)
+	kind load --name $(KIND_CLUSTER_NAME) docker-image $(TARGETALLOCATOR_IMG)
 else
 	$(MAKE) container-target-allocator-push
 endif
@@ -249,7 +254,7 @@ endif
 
 .PHONY: load-image-operator-opamp-bridge
 load-image-operator-opamp-bridge:
-	kind load docker-image ${OPERATOROPAMPBRIDGE_IMG}
+	kind load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
 
 .PHONY: cert-manager
 cert-manager: cmctl
@@ -279,14 +284,13 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
 
-## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.5
-CONTROLLER_TOOLS_VERSION ?= v0.9.2
+KUSTOMIZE_VERSION ?= v5.0.0
+CONTROLLER_TOOLS_VERSION ?= v0.11.3
 
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4,$(KUSTOMIZE_VERSION))
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
@@ -371,6 +375,7 @@ bundle: kustomize operator-sdk manifests set-image-controller
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
+	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build

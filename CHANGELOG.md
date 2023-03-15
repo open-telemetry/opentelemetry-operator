@@ -3,6 +3,45 @@ Changes by Version
 
 <!-- next version -->
 
+## 0.72.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Fixes inability of the operator to reconcile in stateful set mode when the immutable field `volumeClaimTemplates` is changed. If such change is detected, the operator will recreate the stateful set. (#1491)
+
+### 💡 Enhancements 💡
+
+- `operator`: Bump OpenTelemetry .NET Automatic Instrumentation to 0.6.0 (#1538)
+- `operator`: Bump Kubernetes golang dependencies to 1.26.x (#1385)
+- `operator`: Build operator, target-allocator and opAMP bridge with golang 1.20. (#1566)
+
+### 🧰 Bug fixes 🧰
+
+- `Autoscaler`: Fix the issue where HPA fails to update when an additional metric is added to the spec. (#1439)
+- `operator`: The args created for corev1.container object is not ordered and creates a situation where there is a diff detected during reconcile. Forces an ordered args. (#1460)
+- `Autoscaler`: Fix the issue where HPA fails to update autoscaler behavior. (#1516)
+- `operator`: Set `ServiceInternalTrafficPolicy`` to `Local` when using daemonset mode. (#1401)
+
+### Components
+
+* [OpenTelemetry Collector - v0.72.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.72.0)
+* [OpenTelemetry Contrib - v0.72.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.72.0)
+* [Java auto-instrumentation - 1.23.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.23.0)
+* [Dotnet auto-instrumentation - 0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
+* [Node.JS - 0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.34.0)
+* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
+
+0.71.0
+------------------
+
+### 🛑 Breaking changes 🛑
+
+- `target allocator`: Updates versions of many dependencies, sets defaults for prometheus operator to work. The breaking change introduced is the new RBAC requirement for "endpointslices" in the "discovery.k8s.io" api group. (#1464)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Properly handle all types of profiles in the pprof endpoint. Previously, some profiles where unavailable, leading to 404 response. (#1478)
+
 0.70.0
 ------------------
 ### 💡 Enhancements 💡

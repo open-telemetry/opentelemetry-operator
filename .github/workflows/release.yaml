@@ -10,15 +10,9 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.19
+        go-version: "1.20"
 
     - uses: actions/checkout@v3
-
-    - name: "install kubebuilder"
-      run: ./hack/install-kubebuilder.sh
-
-    - name: "install kustomize"
-      run: ./hack/install-kustomize.sh
 
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator"

@@ -31,7 +31,7 @@ import (
 )
 
 func BenchmarkServerTargetsHandler(b *testing.B) {
-	rand.Seed(time.Now().UnixNano())
+	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
 	var table = []struct {
 		numCollectors int
 		numJobs       int
@@ -58,8 +58,8 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", allocatorName, v.numCollectors, v.numJobs), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					randomJob := rand.Intn(v.numJobs)       //nolint: gosec
-					randomCol := rand.Intn(v.numCollectors) //nolint: gosec
+					randomJob := random.Intn(v.numJobs)       //nolint: gosec
+					randomCol := random.Intn(v.numCollectors) //nolint: gosec
 					request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/test-job-%d/targets?collector_id=collector-%d", randomJob, randomCol), nil)
 					w := httptest.NewRecorder()
 					s.server.Handler.ServeHTTP(w, request)
@@ -70,14 +70,14 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 }
 
 func BenchmarkScrapeConfigsHandler(b *testing.B) {
-	rand.Seed(time.Now().UnixNano())
+	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
 	s := &Server{
 		logger: logger,
 	}
 
 	tests := []int{0, 5, 10, 50, 100, 500}
 	for _, n := range tests {
-		data := makeNScrapeConfigs(n)
+		data := makeNScrapeConfigs(*random, n)
 		assert.NoError(b, s.UpdateScrapeConfigResponse(data))
 
 		b.Run(fmt.Sprintf("%d_targets", n), func(b *testing.B) {
@@ -94,7 +94,7 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 }
 
 func BenchmarkCollectorMapJSONHandler(b *testing.B) {
-	rand.Seed(time.Now().UnixNano())
+	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
 	s := &Server{
 		logger: logger,
 	}
@@ -137,7 +137,7 @@ func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 		},
 	}
 	for _, tc := range tests {
-		data := makeNCollectorJSON(tc.numCollectors, tc.numTargets)
+		data := makeNCollectorJSON(*random, tc.numCollectors, tc.numTargets)
 		b.Run(fmt.Sprintf("%d_collectors_%d_targets", tc.numCollectors, tc.numTargets), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
@@ -149,7 +149,7 @@ func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 }
 
 func BenchmarkTargetItemsJSONHandler(b *testing.B) {
-	rand.Seed(time.Now().UnixNano())
+	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
 	s := &Server{
 		logger: logger,
 	}
@@ -196,7 +196,7 @@ func BenchmarkTargetItemsJSONHandler(b *testing.B) {
 		},
 	}
 	for _, tc := range tests {
-		data := makeNTargetItems(tc.numTargets, tc.numLabels)
+		data := makeNTargetItems(*random, tc.numTargets, tc.numLabels)
 		b.Run(fmt.Sprintf("%d_targets_%d_labels", tc.numTargets, tc.numLabels), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
@@ -209,22 +209,22 @@ func BenchmarkTargetItemsJSONHandler(b *testing.B) {
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_/")
 
-func randSeq(n int) string {
+func randSeq(random rand.Rand, n int) string {
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))] //nolint:gosec
+		b[i] = letters[random.Intn(len(letters))] //nolint:gosec
 	}
 	return string(b)
 }
 
-func makeNScrapeConfigs(n int) map[string]*promconfig.ScrapeConfig {
+func makeNScrapeConfigs(random rand.Rand, n int) map[string]*promconfig.ScrapeConfig {
 	items := make(map[string]*promconfig.ScrapeConfig, n)
 	for i := 0; i < n; i++ {
-		items[randSeq(20)] = &promconfig.ScrapeConfig{
-			JobName:               randSeq(20),
+		items[randSeq(random, 20)] = &promconfig.ScrapeConfig{
+			JobName:               randSeq(random, 20),
 			ScrapeInterval:        model.Duration(30 * time.Second),
 			ScrapeTimeout:         model.Duration(time.Minute),
-			MetricsPath:           randSeq(50),
+			MetricsPath:           randSeq(random, 50),
 			SampleLimit:           5,
 			TargetLimit:           200,
 			LabelLimit:            20,
@@ -235,34 +235,34 @@ func makeNScrapeConfigs(n int) map[string]*promconfig.ScrapeConfig {
 	return items
 }
 
-func makeNCollectorJSON(numCollectors, numItems int) map[string]collectorJSON {
+func makeNCollectorJSON(random rand.Rand, numCollectors, numItems int) map[string]collectorJSON {
 	items := make(map[string]collectorJSON, numCollectors)
 	for i := 0; i < numCollectors; i++ {
-		items[randSeq(20)] = collectorJSON{
-			Link: randSeq(120),
-			Jobs: makeNTargetItems(numItems, 50),
+		items[randSeq(random, 20)] = collectorJSON{
+			Link: randSeq(random, 120),
+			Jobs: makeNTargetItems(random, numItems, 50),
 		}
 	}
 	return items
 }
 
-func makeNTargetItems(numItems, numLabels int) []*target.Item {
+func makeNTargetItems(random rand.Rand, numItems, numLabels int) []*target.Item {
 	items := make([]*target.Item, 0, numItems)
 	for i := 0; i < numItems; i++ {
 		items = append(items, target.NewItem(
-			randSeq(80),
-			randSeq(150),
-			makeNNewLabels(numLabels),
-			randSeq(30),
+			randSeq(random, 80),
+			randSeq(random, 150),
+			makeNNewLabels(random, numLabels),
+			randSeq(random, 30),
 		))
 	}
 	return items
 }
 
-func makeNNewLabels(n int) model.LabelSet {
+func makeNNewLabels(random rand.Rand, n int) model.LabelSet {
 	labels := make(map[model.LabelName]model.LabelValue, n)
 	for i := 0; i < n; i++ {
-		labels[model.LabelName(randSeq(20))] = model.LabelValue(randSeq(20))
+		labels[model.LabelName(randSeq(random, 20))] = model.LabelValue(randSeq(random, 20))
 	}
 	return labels
 }

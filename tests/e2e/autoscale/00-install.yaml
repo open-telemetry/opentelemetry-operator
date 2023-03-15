@@ -1,6 +1,8 @@
 # This creates two different deployments:
-#   * The first one will be used to see if we scale properly
-#   * The second is to check the targetCPUUtilization option
+#   * The first one is to ensure an autoscaler is created without
+#     setting any metrics in the Spec.
+#   * The second is to check that scaling works properly and that
+#     spec updates are working as expected.
 #
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
