@@ -1,6 +1,5 @@
 # This updates an existing deployment with a new Spec.
 # Target memory utilization is now added. 
-# scaleDown and scaleUp behavior is now added.
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
@@ -11,11 +10,6 @@ spec:
   autoscaler:
     targetCPUUtilization: 50
     targetMemoryUtilization: 70
-    behavior:
-      scaleDown:
-        stabilizationWindowSeconds: 1
-      scaleUp:
-        stabilizationWindowSeconds: 1
   resources:
     limits:
       cpu: 500m

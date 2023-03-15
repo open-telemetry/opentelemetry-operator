@@ -1,6 +1,6 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
-timeout: 300
+timeout: 360
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector

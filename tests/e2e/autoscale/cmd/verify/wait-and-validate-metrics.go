@@ -157,7 +157,7 @@ func main() {
 		}
 
 		if scaleDownWindow > 0 {
-			if hpav2.Spec.Behavior.ScaleDown != nil {
+			if hpav2.Spec.Behavior.ScaleDown == nil {
 				fmt.Printf("Behavior scaledown not set for HPA %s\n", hpaName)
 				return false, nil
 			}
@@ -172,7 +172,7 @@ func main() {
 		}
 
 		if scaleUpWindow > 0 {
-			if hpav2.Spec.Behavior.ScaleUp != nil {
+			if hpav2.Spec.Behavior.ScaleUp == nil {
 				fmt.Printf("Behavior scaleup not set for HPA %s\n", hpaName)
 				return false, nil
 			}
