@@ -59,7 +59,7 @@ spec:
       scaleUp:
         stabilizationWindowSeconds: 10
       scaleDown:
-        stabilizationWindowSeconds: 15
+        stabilizationWindowSeconds: 1
   resources:
     limits:
       cpu: 500m
