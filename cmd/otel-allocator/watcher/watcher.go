@@ -19,7 +19,9 @@ import promconfig "github.com/prometheus/prometheus/config"
 type Watcher interface {
 	// Watch watcher and supply channels which will receive change events
 	Watch(upstreamEvents chan Event, upstreamErrors chan error) error
-	LoadConfig() (*promconfig.Config, error)
+	// LoadConfig loads the Prometheus config from the event. It also returns a boolean
+	// indicating whether the config has changed since the last time it was loaded.
+	LoadConfig() (*promconfig.Config, bool, error)
 	Close() error
 }
 

@@ -189,9 +189,12 @@ func main() {
 				select {
 				case event := <-eventChan:
 					eventsMetric.WithLabelValues(event.Source.String()).Inc()
-					loadConfig, err := event.Watcher.LoadConfig()
+					loadConfig, changed, err := event.Watcher.LoadConfig()
 					if err != nil {
 						setupLog.Error(err, "Unable to load configuration")
+						continue
+					}
+					if !changed {
 						continue
 					}
 					err = targetDiscoverer.ApplyConfig(event.Source, loadConfig)

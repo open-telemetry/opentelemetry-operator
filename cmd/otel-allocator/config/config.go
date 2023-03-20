@@ -27,6 +27,7 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
+	"github.com/zeebo/xxh3"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -76,24 +77,40 @@ type CLIConfig struct {
 	PromCRWatcherConf  PrometheusCRWatcherConfig
 }
 
+// LoadConfig loads the target allocator configuration from the given file.
 func Load(file string) (Config, error) {
 	var cfg Config
-	if err := unmarshal(&cfg, file); err != nil {
+	if _, err := unmarshal(&cfg, file, false); err != nil {
 		return Config{}, err
 	}
 	return cfg, nil
 }
 
-func unmarshal(cfg *Config, configFile string) error {
+// LoadForPromCfg loads only Prometheus configuration from the given file.
+// It also returns the hash of the configuration for comparison.
+func LoadForPromCfg(file string) (*promconfig.Config, uint64, error) {
+	var cfg Config
+	hash, err := unmarshal(&cfg, file, true)
+	if err != nil {
+		return nil, 0, err
+	}
+	return cfg.Config, hash, nil
+}
 
+func unmarshal(cfg *Config, configFile string, withHash bool) (uint64, error) {
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if err = yaml.UnmarshalStrict(yamlFile, cfg); err != nil {
-		return fmt.Errorf("error unmarshaling YAML: %w", err)
+		return 0, fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
-	return nil
+
+	if !withHash {
+		return 0, nil
+	}
+
+	return xxh3.Hash(yamlFile), nil
 }
 
 func ParseCLI() (CLIConfig, error) {

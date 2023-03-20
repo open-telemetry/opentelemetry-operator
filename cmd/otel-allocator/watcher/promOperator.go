@@ -27,6 +27,7 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/prometheus"
 	promconfig "github.com/prometheus/prometheus/config"
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
+	"github.com/zeebo/xxh3"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -81,6 +82,7 @@ type PrometheusCRWatcher struct {
 	informers            map[string]*informers.ForResource
 	stopChannel          chan struct{}
 	configGenerator      *prometheus.ConfigGenerator
+	lastConfigHash       uint64
 	kubeConfigPath       string
 
 	serviceMonitorSelector labels.Selector
@@ -133,7 +135,7 @@ func (w *PrometheusCRWatcher) Close() error {
 	return nil
 }
 
-func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
+func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, bool, error) {
 	serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
 
 	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(w.serviceMonitorSelector, func(sm interface{}) {
@@ -142,7 +144,7 @@ func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
 		serviceMonitorInstances[key] = monitor
 	})
 	if smRetrieveErr != nil {
-		return nil, smRetrieveErr
+		return nil, false, smRetrieveErr
 	}
 
 	podMonitorInstances := make(map[string]*monitoringv1.PodMonitor)
@@ -152,7 +154,7 @@ func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
 		podMonitorInstances[key] = monitor
 	})
 	if pmRetrieveErr != nil {
-		return nil, pmRetrieveErr
+		return nil, false, pmRetrieveErr
 	}
 
 	store := assets.Store{
@@ -173,13 +175,22 @@ func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
 	}
 	generatedConfig, err := w.configGenerator.Generate(prom, serviceMonitorInstances, podMonitorInstances, map[string]*monitoringv1.Probe{}, &store, nil, nil, nil, []string{})
 	if err != nil {
-		return nil, err
+		return nil, false, err
+	}
+
+	if len(generatedConfig) > 0 {
+		newHash := xxh3.Hash(generatedConfig)
+		// If not changed, shortcut and return without config change.
+		if newHash == w.lastConfigHash {
+			return nil, false, nil
+		}
+		w.lastConfigHash = newHash
 	}
 
 	promCfg := &promconfig.Config{}
 	unmarshalErr := yaml.Unmarshal(generatedConfig, promCfg)
 	if unmarshalErr != nil {
-		return nil, unmarshalErr
+		return nil, false, unmarshalErr
 	}
 
 	// set kubeconfig path to service discovery configs, else kubernetes_sd will always attempt in-cluster
@@ -192,5 +203,5 @@ func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
 			}
 		}
 	}
-	return promCfg, nil
+	return promCfg, true, nil
 }

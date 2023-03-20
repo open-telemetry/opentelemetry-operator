@@ -29,6 +29,7 @@ var _ Watcher = &FileWatcher{}
 type FileWatcher struct {
 	logger         logr.Logger
 	configFilePath string
+	lastConfigHash uint64
 	watcher        *fsnotify.Watcher
 	closer         chan bool
 }
@@ -48,13 +49,18 @@ func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (*FileWatcher, 
 	}, nil
 }
 
-func (f *FileWatcher) LoadConfig() (*promconfig.Config, error) {
-	cfg, err := config.Load(f.configFilePath)
+func (f *FileWatcher) LoadConfig() (*promconfig.Config, bool, error) {
+	promCfg, hash, err := config.LoadForPromCfg(f.configFilePath)
 	if err != nil {
 		f.logger.Error(err, "Unable to load configuration")
-		return nil, err
+		return nil, false, err
 	}
-	return cfg.Config, nil
+	if hash == f.lastConfigHash {
+		return nil, false, nil
+	}
+
+	f.lastConfigHash = hash
+	return promCfg, true, nil
 }
 
 func (f *FileWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
