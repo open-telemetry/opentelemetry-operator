@@ -16,7 +16,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
@@ -187,14 +186,6 @@ func (s *Server) errorHandler(w http.ResponseWriter, err error) {
 func (s *Server) jsonHandler(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	err := s.jsonMarshaller.NewEncoder(w).Encode(data)
-	if err != nil {
-		s.logger.Error(err, "failed to encode data for http response")
-	}
-}
-
-func (s *Server) oldJsonHandler(w http.ResponseWriter, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
 		s.logger.Error(err, "failed to encode data for http response")
 	}
