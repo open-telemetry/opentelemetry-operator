@@ -1,4 +1,4 @@
-bundle/manifests/opentelemetry.io_opentelemetrycollectors.yamlapiVersion: apiextensions.k8s.io/v1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
