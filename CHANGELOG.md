@@ -5,6 +5,10 @@ Changes by Version
 
 ## 0.73.0
 
+### 💡 Enhancements 💡
+
+- `target allocator`: Use jsoniter to marshal json (#1336)
+
 ### Components
 
 * [OpenTelemetry Collector - v0.73.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.73.0)
