@@ -54,10 +54,13 @@ spec:
   minReplicas: 1
   maxReplicas: 2
   autoscaler:
-    targetCPUUtilization: 50
+    targetCPUUtilization: 99
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 300
   resources:
     limits:
-      cpu: 500m
+      cpu: 250m
       memory: 128Mi
     requests:
       cpu: 5m
