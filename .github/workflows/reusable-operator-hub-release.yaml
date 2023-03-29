@@ -25,9 +25,6 @@ jobs:
           TAG=${TAG:1} # remove v (prefix)
           echo version=${TAG} >> $GITHUB_ENV # update GitHub ENV vars
 
-      - name: print version
-        run: echo ${{ env.version }}
-
       - name: Sync fork
         env:
           # this is the personal access token used for "gh repo sync" below
