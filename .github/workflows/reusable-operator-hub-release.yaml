@@ -27,7 +27,6 @@ jobs:
 
       - name: Sync fork
         env:
-          # this is the personal access token used for "gh repo sync" below
           GH_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
         run: |
           # synchronizing the fork is fast, and avoids the need to fetch the full upstream repo
@@ -41,14 +40,12 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: opentelemetrybot/${{ inputs.repo }}
-          # this is the personal access token used for "git push" below
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
 
       - name: Checkout opentelemetry-operator to tmp/ directory
         uses: actions/checkout@v3
         with:
           repository: open-telemetry/opentelemetry-operator
-          # this is the personal access token used for "git push" below
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
           path: tmp/
 
@@ -68,7 +65,6 @@ jobs:
       - name: Create pull request against ${{ inputs.org }}/${{ inputs.repo }}
         env:
           VERSION: ${{ env.version }}
-          # this is the personal access token used for "gh pr create" below
           GH_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
         run: |
           message="Update the opentelemetry to $VERSION"
