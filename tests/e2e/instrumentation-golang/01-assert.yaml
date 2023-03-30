@@ -39,12 +39,6 @@ spec:
         - name: kernel-debug
           mountPath: "/sys/kernel/debug"
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-  volumes:
-    - projected:
-        defaultMode: 420
-    - name: kernel-debug
-      hostPath:
-        path: "/sys/kernel/debug"
 
 status:
   phase: Running

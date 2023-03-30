@@ -53,6 +53,25 @@ func TestInjectGolangSDK(t *testing.T) {
 			err: fmt.Errorf("shared process namespace has been explicitly disabled"),
 		},
 		{
+			name:   "using container-names",
+			Golang: v1alpha1.Golang{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/container-names": "foo,bar",
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/container-names": "foo,bar",
+					},
+				},
+			},
+			err: fmt.Errorf("golang instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container"),
+		},
+		{
 			name: "pod annotation takes precedence",
 			Golang: v1alpha1.Golang{
 				Image: "foo/bar:1",
@@ -127,8 +146,19 @@ func TestInjectGolangSDK(t *testing.T) {
 					},
 				},
 			},
-			pod: corev1.Pod{},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/container-names": "foo",
+					},
+				},
+			},
 			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/container-names": "foo",
+					},
+				},
 				Spec: corev1.PodSpec{
 					ShareProcessNamespace: &truee,
 					Containers: []corev1.Container{

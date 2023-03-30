@@ -16,6 +16,7 @@ package instrumentation
 
 import (
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -33,6 +34,11 @@ func injectGolangSDK(golangSpec v1alpha1.Golang, pod corev1.Pod) (corev1.Pod, er
 	// skip instrumentation if share process namespaces is explicitly disabled
 	if pod.Spec.ShareProcessNamespace != nil && !*pod.Spec.ShareProcessNamespace {
 		return pod, fmt.Errorf("shared process namespace has been explicitly disabled")
+	}
+
+	containerNames, ok := pod.Annotations[annotationInjectContainerName]
+	if ok && len(strings.Split(containerNames, ",")) > 1 {
+		return pod, fmt.Errorf("golang instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container")
 	}
 
 	truee := true
