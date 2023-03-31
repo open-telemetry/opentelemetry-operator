@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flags
+package featuregate
 
 import (
 	"flag"
@@ -24,6 +24,7 @@ const (
 	featureGatesFlag = "feature-gates"
 )
 
+// Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
 func Flags(reg *featuregate.Registry) *flag.FlagSet {
 	flagSet := new(flag.FlagSet)
 	flagSet.Var(featuregate.NewFlag(reg), featureGatesFlag,
