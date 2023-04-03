@@ -48,7 +48,7 @@ func TestDiscovery(t *testing.T) {
 			args: args{
 				file: "./testdata/test.yaml",
 			},
-			want: []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "promfile.domain:1001", "promfile.domain:3000"},
+			want: []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "prom.domain:8001", "promfile.domain:1001", "promfile.domain:3000"},
 		},
 		{
 			name: "update",
@@ -58,9 +58,10 @@ func TestDiscovery(t *testing.T) {
 			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
 		},
 	}
+	scu := &mockScrapeConfigUpdater{}
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, nil)
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 	defer close(manager.close)
 	defer cancelFunc()
 
@@ -91,6 +92,13 @@ func TestDiscovery(t *testing.T) {
 			sort.Strings(gotTargets)
 			sort.Strings(tt.want)
 			assert.Equal(t, tt.want, gotTargets)
+
+			// check the updated scrape configs
+			expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
+			for _, scrapeConfig := range cfg.Config.ScrapeConfigs {
+				expectedScrapeConfigs[scrapeConfig.JobName] = scrapeConfig
+			}
+			assert.Equal(t, expectedScrapeConfigs, scu.mockCfg)
 		})
 	}
 }
@@ -305,7 +313,11 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 				assert.Equal(t, manager.jobToScrapeConfig, scu.mockCfg)
 
 				lastValidHash = manager.scrapeConfigsHash
-				lastValidConfig = manager.jobToScrapeConfig
+				// make a copy of the config, or else it'll change underneath us
+				lastValidConfig = make(map[string]*promconfig.ScrapeConfig)
+				for key, value := range manager.jobToScrapeConfig {
+					lastValidConfig[key] = value
+				}
 			} else {
 				// In case of error, assert that we retain the last
 				// known valid config.
