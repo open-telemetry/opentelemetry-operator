@@ -1,5 +1,7 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { alibabaCloudEcsDetector } from '@opentelemetry/resource-detector-alibaba-cloud';
 import { awsEc2Detector, awsEksDetector } from '@opentelemetry/resource-detector-aws';
 import { containerDetector } from '@opentelemetry/resource-detector-container';
@@ -12,6 +14,9 @@ const sdk = new NodeSDK({
     autoDetectResources: true,
     instrumentations: [getNodeAutoInstrumentations()],
     traceExporter: new OTLPTraceExporter(),
+    metricReader: new PeriodicExportingMetricReader({
+        exporter: new OTLPMetricExporter(),
+    }),
     resourceDetectors:
         [
             // Standard resource detectors.
