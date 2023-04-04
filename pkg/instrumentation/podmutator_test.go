@@ -925,7 +925,7 @@ func TestMutatePod(t *testing.T) {
 			},
 		},
 		{
-			name: "goloang injection feature gate disabled",
+			name: "golang injection feature gate disabled",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "golang-disabled",
