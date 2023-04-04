@@ -22,14 +22,22 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
 )
 
 func TestUpgrade(t *testing.T) {
+	originalVal := instrumentation.EnableGolangAutoInstrumentationSupport.IsEnabled()
+	require.NoError(t, featuregate.GlobalRegistry().Set(instrumentation.EnableGolangAutoInstrumentationSupport.ID(), true))
+	t.Cleanup(func() {
+		require.NoError(t, featuregate.GlobalRegistry().Set(instrumentation.EnableGolangAutoInstrumentationSupport.ID(), originalVal))
+	})
+
 	nsName := strings.ToLower(t.Name())
 	err := k8sClient.Create(context.Background(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

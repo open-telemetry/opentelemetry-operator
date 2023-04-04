@@ -29,6 +29,7 @@ spec:
       containers:
       - args:
         - --enable-leader-election
+        - --feature-gates=+operator.autoinstrumentation.golang
         image: controller
         name: manager
         livenessProbe:

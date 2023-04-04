@@ -22,6 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -36,12 +37,13 @@ func TestMutatePod(t *testing.T) {
 	zero := int64(0)
 
 	tests := []struct {
-		name     string
-		err      string
-		pod      corev1.Pod
-		expected corev1.Pod
-		inst     v1alpha1.Instrumentation
-		ns       corev1.Namespace
+		name            string
+		err             string
+		pod             corev1.Pod
+		expected        corev1.Pod
+		inst            v1alpha1.Instrumentation
+		ns              corev1.Namespace
+		setFeatureGates func(t *testing.T)
 	}{
 		{
 			name: "javaagent injection, true",
@@ -221,6 +223,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "nodejs injection, true",
@@ -386,6 +389,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "python injection, true",
@@ -567,6 +571,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "dotnet injection, true",
@@ -748,6 +753,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "goloang injection, true",
@@ -910,6 +916,94 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			setFeatureGates: func(t *testing.T) {
+				originalVal := EnableGolangAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, featuregate.GlobalRegistry().Set(EnableGolangAutoInstrumentationSupport.ID(), true))
+				t.Cleanup(func() {
+					require.NoError(t, featuregate.GlobalRegistry().Set(EnableGolangAutoInstrumentationSupport.ID(), originalVal))
+				})
+			},
+		},
+		{
+			name: "goloang injection feature gate disabled",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "golang-disabled",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "golang-disabled",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Golang: v1alpha1.Golang{
+						Image: "otel/golang:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+							{
+								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+								Value: "http://localhost:4317",
+							},
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+						{
+							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+							Value: "true",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectGolang:   "true",
+						annotationGolangExecPath: "/app",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectGolang:   "true",
+						annotationGolangExecPath: "/app",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "missing annotation",
@@ -950,6 +1044,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "annotation set to false",
@@ -1000,6 +1095,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "annotation set to non existing instance",
@@ -1036,12 +1132,15 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			err: `instrumentations.opentelemetry.io "doesnotexists" not found`,
+			err:             `instrumentations.opentelemetry.io "doesnotexists" not found`,
+			setFeatureGates: func(t *testing.T) {},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			test.setFeatureGates(t)
+
 			err := k8sClient.Create(context.Background(), &test.ns)
 			require.NoError(t, err)
 			defer func() {

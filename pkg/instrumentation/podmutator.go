@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +32,11 @@ import (
 var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
 	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available")
+
+	EnableGolangAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.golang",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("controls whether the operator supports Goland auto-instrumentation"))
 )
 
 type instPodMutator struct {
@@ -110,7 +116,11 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.Golang = inst
+	if EnableGolangAutoInstrumentationSupport.IsEnabled() {
+		insts.Golang = inst
+	} else {
+		logger.Error(err, "support for Golang auto instrumentation is not enable")
+	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
