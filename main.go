@@ -26,6 +26,7 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/spf13/pflag"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -47,6 +48,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
@@ -74,8 +76,10 @@ func init() {
 func main() {
 	// registers any flags that underlying libraries might use
 	opts := zap.Options{}
+	flagset := featuregate.Flags(colfeaturegate.GlobalRegistry())
 	opts.BindFlags(flag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.CommandLine.AddGoFlagSet(flagset)
 
 	v := version.Get()
 
