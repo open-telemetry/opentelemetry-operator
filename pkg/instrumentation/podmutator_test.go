@@ -756,7 +756,7 @@ func TestMutatePod(t *testing.T) {
 			setFeatureGates: func(t *testing.T) {},
 		},
 		{
-			name: "goloang injection, true",
+			name: "golang injection, true",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "golang",
