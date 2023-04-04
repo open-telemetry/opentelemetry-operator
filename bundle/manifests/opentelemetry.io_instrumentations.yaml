@@ -549,7 +549,7 @@ spec:
                     type: string
                 type: object
               golang:
-                description: DotNet defines configuration for DotNet auto-instrumentation.
+                description: Golang defines configuration for Golang auto-instrumentation.
                 properties:
                   env:
                     description: 'Env defines Golang specific env vars. There are

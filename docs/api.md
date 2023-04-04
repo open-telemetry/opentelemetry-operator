@@ -117,7 +117,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b><a href="#instrumentationspecgolang">golang</a></b></td>
         <td>object</td>
         <td>
-          DotNet defines configuration for DotNet auto-instrumentation.<br/>
+          Golang defines configuration for Golang auto-instrumentation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1271,7 +1271,7 @@ Exporter defines exporter configuration.
 
 
 
-DotNet defines configuration for DotNet auto-instrumentation.
+Golang defines configuration for Golang auto-instrumentation.
 
 <table>
     <thead>
