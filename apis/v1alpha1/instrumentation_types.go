@@ -61,7 +61,7 @@ type InstrumentationSpec struct {
 	// +optional
 	DotNet DotNet `json:"dotnet,omitempty"`
 
-	// DotNet defines configuration for DotNet auto-instrumentation.
+	// Golang defines configuration for Golang auto-instrumentation.
 	// +optional
 	Golang Golang `json:"golang,omitempty"`
 
