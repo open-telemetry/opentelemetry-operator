@@ -111,7 +111,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	if EnableDotnetAutoInstrumentationSupport.IsEnabled() {
 		insts.DotNet = inst
 	} else {
-		logger.Error(nil, "support for .NET auto instrumentation is not enable")
+		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {

@@ -103,7 +103,7 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet] = u.DefaultAutoInstDotNet
 			}
 		} else {
-			u.Logger.Error(nil, "support for .NET auto instrumentation is not enable")
+			u.Logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 		}
 	}
 	return inst
