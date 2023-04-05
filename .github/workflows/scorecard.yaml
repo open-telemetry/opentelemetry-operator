@@ -14,12 +14,12 @@ jobs:
       matrix:
         kube-version:
           - "1.19"
-          - "1.25"
+          - "1.26"
 
     steps:
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: "1.20"
 

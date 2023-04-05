@@ -1,15 +1,14 @@
 # One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
-change_type: bug_fix
+change_type: enhancement
 
 # The name of the component, or a single word describing the area of concern, (e.g. operator, target allocator, github action)
-component: Autoscaler
+component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Fix the issue where HPA fails to update autoscaler behavior.
+note: Add ability to use feature gates in the operator
 
 # One or more tracking issues related to the change
-issues:
-  - 1516
+issues: [1619]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.

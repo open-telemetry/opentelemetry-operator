@@ -2,13 +2,13 @@
 change_type: enhancement
 
 # The name of the component, or a single word describing the area of concern, (e.g. operator, target allocator, github action)
-component: operator
+component: autoinstrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Build operator, target-allocator and opAMP bridge with golang 1.20.
+note: Add metrics exporter to Node.JS autoinstrumentation
 
 # One or more tracking issues related to the change
-issues: [1566]
+issues: [1627]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
