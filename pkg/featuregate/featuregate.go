@@ -24,6 +24,13 @@ const (
 	featureGatesFlag = "feature-gates"
 )
 
+var (
+	EnableDotnetAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.dotnet",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports .NET auto-instrumentation"))
+)
+
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
 func Flags(reg *featuregate.Registry) *flag.FlagSet {
 	flagSet := new(flag.FlagSet)

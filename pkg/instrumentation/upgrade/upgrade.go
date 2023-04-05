@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 type InstrumentationUpgrade struct {
@@ -96,7 +96,7 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 	}
 	autoInstDotnet := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet]
 	if autoInstDotnet != "" {
-		if instrumentation.EnableDotnetAutoInstrumentationSupport.IsEnabled() {
+		if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() {
 			// upgrade the image only if the image matches the annotation
 			if inst.Spec.DotNet.Image == autoInstDotnet {
 				inst.Spec.DotNet.Image = u.DefaultAutoInstDotNet
