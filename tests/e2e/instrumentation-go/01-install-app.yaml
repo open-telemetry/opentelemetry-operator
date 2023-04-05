@@ -13,8 +13,8 @@ spec:
         app: my-pod-with-sidecar
       annotations:
         sidecar.opentelemetry.io/inject: "true"
-        instrumentation.opentelemetry.io/inject-golang: "true"
-        instrumentation.opentelemetry.io/golang-target-exec: /usr/local/bin/emojivoto-voting-svc
+        instrumentation.opentelemetry.io/inject-go: "true"
+        instrumentation.opentelemetry.io/go-target-exec: /usr/local/bin/emojivoto-voting-svc
     spec:
       containers:
       - name: voting-svc

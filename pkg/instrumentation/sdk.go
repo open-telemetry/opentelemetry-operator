@@ -113,14 +113,14 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 		}
 	}
-	if insts.Golang != nil {
+	if insts.Go != nil {
 		origPod := pod
-		otelinst := *insts.Golang
+		otelinst := *insts.Go
 		var err error
-		i.logger.V(1).Info("injecting Golang instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		pod, err = injectGolangSDK(otelinst.Spec.Golang, pod)
+		i.logger.V(1).Info("injecting Go instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		pod, err = injectGoSDK(otelinst.Spec.Go, pod)
 		if err != nil {
-			i.logger.Info("Skipping Golang SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			i.logger.Info("Skipping Go SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 		} else {
 			// Common env vars and config need to be applied to the agent contain.
 			pod = i.injectCommonEnvVar(otelinst, pod, len(pod.Spec.Containers)-1)
@@ -129,7 +129,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			// Ensure that after all the env var coalescing we have a value for OTEL_TARGET_EXE
 			idx := getIndexOfEnv(pod.Spec.Containers[len(pod.Spec.Containers)-1].Env, envOtelTargetExe)
 			if idx == -1 {
-				i.logger.Info("Skipping Golang SDK injection", "reason", "OTEL_TARGET_EXE not set", "container", pod.Spec.Containers[index].Name)
+				i.logger.Info("Skipping Go SDK injection", "reason", "OTEL_TARGET_EXE not set", "container", pod.Spec.Containers[index].Name)
 				pod = origPod
 			}
 		}

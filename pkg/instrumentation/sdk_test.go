@@ -805,7 +805,7 @@ func TestInjectDotNet(t *testing.T) {
 	}, pod)
 }
 
-func TestInjectGolang(t *testing.T) {
+func TestInjectGo(t *testing.T) {
 	falsee := false
 	truee := true
 	zero := int64(0)
@@ -819,10 +819,10 @@ func TestInjectGolang(t *testing.T) {
 		{
 			name: "shared process namespace disabled",
 			insts: languageInstrumentations{
-				Golang: &v1alpha1.Instrumentation{
+				Go: &v1alpha1.Instrumentation{
 					Spec: v1alpha1.InstrumentationSpec{
-						Golang: v1alpha1.Golang{
-							Image: "otel/golang:1",
+						Go: v1alpha1.Go{
+							Image: "otel/go:1",
 						},
 					},
 				},
@@ -851,10 +851,10 @@ func TestInjectGolang(t *testing.T) {
 		{
 			name: "OTEL_TARGET_EXE not set",
 			insts: languageInstrumentations{
-				Golang: &v1alpha1.Instrumentation{
+				Go: &v1alpha1.Instrumentation{
 					Spec: v1alpha1.InstrumentationSpec{
-						Golang: v1alpha1.Golang{
-							Image: "otel/golang:1",
+						Go: v1alpha1.Go{
+							Image: "otel/go:1",
 						},
 					},
 				},
@@ -881,10 +881,10 @@ func TestInjectGolang(t *testing.T) {
 		{
 			name: "OTEL_TARGET_EXE set by inst",
 			insts: languageInstrumentations{
-				Golang: &v1alpha1.Instrumentation{
+				Go: &v1alpha1.Instrumentation{
 					Spec: v1alpha1.InstrumentationSpec{
-						Golang: v1alpha1.Golang{
-							Image: "otel/golang:1",
+						Go: v1alpha1.Go{
+							Image: "otel/go:1",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_TARGET_EXE",
@@ -913,7 +913,7 @@ func TestInjectGolang(t *testing.T) {
 						},
 						{
 							Name:  sideCarName,
-							Image: "otel/golang:1",
+							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
 								Privileged: &truee,

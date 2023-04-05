@@ -30,7 +30,7 @@ const (
 	kernelDebugVolumePath = "/sys/kernel/debug"
 )
 
-func injectGolangSDK(golangSpec v1alpha1.Golang, pod corev1.Pod) (corev1.Pod, error) {
+func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 	// skip instrumentation if share process namespaces is explicitly disabled
 	if pod.Spec.ShareProcessNamespace != nil && !*pod.Spec.ShareProcessNamespace {
 		return pod, fmt.Errorf("shared process namespace has been explicitly disabled")
@@ -38,16 +38,16 @@ func injectGolangSDK(golangSpec v1alpha1.Golang, pod corev1.Pod) (corev1.Pod, er
 
 	containerNames, ok := pod.Annotations[annotationInjectContainerName]
 	if ok && len(strings.Split(containerNames, ",")) > 1 {
-		return pod, fmt.Errorf("golang instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container")
+		return pod, fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container")
 	}
 
 	truee := true
 	zero := int64(0)
 	pod.Spec.ShareProcessNamespace = &truee
 
-	golangAgent := corev1.Container{
+	goAgent := corev1.Container{
 		Name:  sideCarName,
-		Image: golangSpec.Image,
+		Image: goSpec.Image,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser:  &zero,
 			Privileged: &truee,
@@ -64,24 +64,24 @@ func injectGolangSDK(golangSpec v1alpha1.Golang, pod corev1.Pod) (corev1.Pod, er
 	}
 
 	// Annotation takes precedence for OTEL_TARGET_EXE
-	execPath, ok := pod.Annotations[annotationGolangExecPath]
+	execPath, ok := pod.Annotations[annotationGoExecPath]
 	if ok {
-		golangAgent.Env = append(golangAgent.Env, corev1.EnvVar{
+		goAgent.Env = append(goAgent.Env, corev1.EnvVar{
 			Name:  envOtelTargetExe,
 			Value: execPath,
 		})
 	}
 
-	// Inject Golang instrumentation spec env vars.
-	// For Golang, env vars must be added to the agent contain
-	for _, env := range golangSpec.Env {
-		idx := getIndexOfEnv(golangAgent.Env, env.Name)
+	// Inject Go instrumentation spec env vars.
+	// For Go, env vars must be added to the agent contain
+	for _, env := range goSpec.Env {
+		idx := getIndexOfEnv(goAgent.Env, env.Name)
 		if idx == -1 {
-			golangAgent.Env = append(golangAgent.Env, env)
+			goAgent.Env = append(goAgent.Env, env)
 		}
 	}
 
-	pod.Spec.Containers = append(pod.Spec.Containers, golangAgent)
+	pod.Spec.Containers = append(pod.Spec.Containers, goAgent)
 	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 		Name: kernelDebugVolumeName,
 		VolumeSource: corev1.VolumeSource{

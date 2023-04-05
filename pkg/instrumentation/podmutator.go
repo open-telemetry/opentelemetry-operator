@@ -33,8 +33,8 @@ var (
 	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
 	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available")
 
-	EnableGolangAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.golang",
+	EnableGoAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.go",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator supports Goland auto-instrumentation"))
 )
@@ -50,7 +50,7 @@ type languageInstrumentations struct {
 	NodeJS *v1alpha1.Instrumentation
 	Python *v1alpha1.Instrumentation
 	DotNet *v1alpha1.Instrumentation
-	Golang *v1alpha1.Instrumentation
+	Go     *v1alpha1.Instrumentation
 	Sdk    *v1alpha1.Instrumentation
 }
 
@@ -111,15 +111,15 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.DotNet = inst
 
-	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectGolang); err != nil {
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectGo); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if EnableGolangAutoInstrumentationSupport.IsEnabled() {
-		insts.Golang = inst
+	if EnableGoAutoInstrumentationSupport.IsEnabled() {
+		insts.Go = inst
 	} else {
-		logger.Error(err, "support for Golang auto instrumentation is not enable")
+		logger.Error(err, "support for Go auto instrumentation is not enable")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
@@ -129,7 +129,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.Sdk = inst
 
-	if insts.Java == nil && insts.NodeJS == nil && insts.Python == nil && insts.DotNet == nil && insts.Golang == nil && insts.Sdk == nil {
+	if insts.Java == nil && insts.NodeJS == nil && insts.Python == nil && insts.DotNet == nil && insts.Go == nil && insts.Sdk == nil {
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}

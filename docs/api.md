@@ -114,10 +114,10 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#instrumentationspecgolang">golang</a></b></td>
+        <td><b><a href="#instrumentationspecgo">go</a></b></td>
         <td>object</td>
         <td>
-          Golang defines configuration for Golang auto-instrumentation.<br/>
+          Go defines configuration for Go auto-instrumentation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1266,12 +1266,12 @@ Exporter defines exporter configuration.
 </table>
 
 
-### Instrumentation.spec.golang
+### Instrumentation.spec.go
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
 
 
-Golang defines configuration for Golang auto-instrumentation.
+Go defines configuration for Go auto-instrumentation.
 
 <table>
     <thead>
@@ -1283,25 +1283,25 @@ Golang defines configuration for Golang auto-instrumentation.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#instrumentationspecgolangenvindex">env</a></b></td>
+        <td><b><a href="#instrumentationspecgoenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines Golang specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
+          Env defines Go specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
-          Image is a container image with Golang SDK and auto-instrumentation.<br/>
+          Image is a container image with Go SDK and auto-instrumentation.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
 </table>
 
 
-### Instrumentation.spec.golang.env[index]
-<sup><sup>[↩ Parent](#instrumentationspecgolang)</sup></sup>
+### Instrumentation.spec.go.env[index]
+<sup><sup>[↩ Parent](#instrumentationspecgo)</sup></sup>
 
 
 
@@ -1331,7 +1331,7 @@ EnvVar represents an environment variable present in a Container.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#instrumentationspecgolangenvindexvaluefrom">valueFrom</a></b></td>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefrom">valueFrom</a></b></td>
         <td>object</td>
         <td>
           Source for the environment variable's value. Cannot be used if value is not empty.<br/>
@@ -1341,8 +1341,8 @@ EnvVar represents an environment variable present in a Container.
 </table>
 
 
-### Instrumentation.spec.golang.env[index].valueFrom
-<sup><sup>[↩ Parent](#instrumentationspecgolangenvindex)</sup></sup>
+### Instrumentation.spec.go.env[index].valueFrom
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindex)</sup></sup>
 
 
 
@@ -1358,28 +1358,28 @@ Source for the environment variable's value. Cannot be used if value is not empt
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#instrumentationspecgolangenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
         <td>object</td>
         <td>
           Selects a key of a ConfigMap.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#instrumentationspecgolangenvindexvaluefromfieldref">fieldRef</a></b></td>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#instrumentationspecgolangenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#instrumentationspecgolangenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
         <td>object</td>
         <td>
           Selects a key of a secret in the pod's namespace<br/>
@@ -1389,8 +1389,8 @@ Source for the environment variable's value. Cannot be used if value is not empt
 </table>
 
 
-### Instrumentation.spec.golang.env[index].valueFrom.configMapKeyRef
-<sup><sup>[↩ Parent](#instrumentationspecgolangenvindexvaluefrom)</sup></sup>
+### Instrumentation.spec.go.env[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
 
 
 
@@ -1430,8 +1430,8 @@ Selects a key of a ConfigMap.
 </table>
 
 
-### Instrumentation.spec.golang.env[index].valueFrom.fieldRef
-<sup><sup>[↩ Parent](#instrumentationspecgolangenvindexvaluefrom)</sup></sup>
+### Instrumentation.spec.go.env[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
 
 
 
@@ -1464,8 +1464,8 @@ Selects a field of the pod: supports metadata.name, metadata.namespace, `metadat
 </table>
 
 
-### Instrumentation.spec.golang.env[index].valueFrom.resourceFieldRef
-<sup><sup>[↩ Parent](#instrumentationspecgolangenvindexvaluefrom)</sup></sup>
+### Instrumentation.spec.go.env[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
 
 
 
@@ -1505,8 +1505,8 @@ Selects a resource of the container: only resources limits and requests (limits.
 </table>
 
 
-### Instrumentation.spec.golang.env[index].valueFrom.secretKeyRef
-<sup><sup>[↩ Parent](#instrumentationspecgolangenvindexvaluefrom)</sup></sup>
+### Instrumentation.spec.go.env[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
 
 
 

@@ -548,13 +548,13 @@ spec:
                     description: Endpoint is address of the collector with OTLP endpoint.
                     type: string
                 type: object
-              golang:
-                description: Golang defines configuration for Golang auto-instrumentation.
+              go:
+                description: Go defines configuration for Go auto-instrumentation.
                 properties:
                   env:
-                    description: 'Env defines Golang specific env vars. There are
-                      four layers for env vars'' definitions and the precedence order
-                      is: `original container env vars` > `language specific env vars`
+                    description: 'Env defines Go specific env vars. There are four
+                      layers for env vars'' definitions and the precedence order is:
+                      `original container env vars` > `language specific env vars`
                       > `common env vars` > `instrument spec configs'' vars`. If the
                       former var had been defined, then the other vars would be ignored.'
                     items:
@@ -670,7 +670,7 @@ spec:
                       type: object
                     type: array
                   image:
-                    description: Image is a container image with Golang SDK and auto-instrumentation.
+                    description: Image is a container image with Go SDK and auto-instrumentation.
                     type: string
                 type: object
               java:

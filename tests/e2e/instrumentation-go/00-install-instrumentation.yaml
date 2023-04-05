@@ -1,7 +1,7 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
-  name: golang
+  name: go
 spec:
   env:
     - name: OTEL_TRACES_EXPORTER

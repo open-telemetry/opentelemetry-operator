@@ -32,10 +32,10 @@ import (
 )
 
 func TestUpgrade(t *testing.T) {
-	originalVal := instrumentation.EnableGolangAutoInstrumentationSupport.IsEnabled()
-	require.NoError(t, featuregate.GlobalRegistry().Set(instrumentation.EnableGolangAutoInstrumentationSupport.ID(), true))
+	originalVal := instrumentation.EnableGoAutoInstrumentationSupport.IsEnabled()
+	require.NoError(t, featuregate.GlobalRegistry().Set(instrumentation.EnableGoAutoInstrumentationSupport.ID(), true))
 	t.Cleanup(func() {
-		require.NoError(t, featuregate.GlobalRegistry().Set(instrumentation.EnableGolangAutoInstrumentationSupport.ID(), originalVal))
+		require.NoError(t, featuregate.GlobalRegistry().Set(instrumentation.EnableGoAutoInstrumentationSupport.ID(), originalVal))
 	})
 
 	nsName := strings.ToLower(t.Name())
@@ -55,7 +55,7 @@ func TestUpgrade(t *testing.T) {
 				v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS: "nodejs:1",
 				v1alpha1.AnnotationDefaultAutoInstrumentationPython: "python:1",
 				v1alpha1.AnnotationDefaultAutoInstrumentationDotNet: "dotnet:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationGolang: "golang:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationGo:     "go:1",
 			},
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -69,7 +69,7 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "nodejs:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python:1", inst.Spec.Python.Image)
 	assert.Equal(t, "dotnet:1", inst.Spec.DotNet.Image)
-	assert.Equal(t, "golang:1", inst.Spec.Golang.Image)
+	assert.Equal(t, "go:1", inst.Spec.Go.Image)
 	err = k8sClient.Create(context.Background(), inst)
 	require.NoError(t, err)
 
@@ -79,7 +79,7 @@ func TestUpgrade(t *testing.T) {
 		DefaultAutoInstNodeJS: "nodejs:2",
 		DefaultAutoInstPython: "python:2",
 		DefaultAutoInstDotNet: "dotnet:2",
-		DefaultAutoInstGolang: "golang:2",
+		DefaultAutoInstGo:     "go:2",
 		Client:                k8sClient,
 	}
 	err = up.ManagedInstances(context.Background())
@@ -99,6 +99,6 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "python:2", updated.Spec.Python.Image)
 	assert.Equal(t, "dotnet:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet])
 	assert.Equal(t, "dotnet:2", updated.Spec.DotNet.Image)
-	assert.Equal(t, "golang:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGolang])
-	assert.Equal(t, "golang:2", updated.Spec.Golang.Image)
+	assert.Equal(t, "go:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo])
+	assert.Equal(t, "go:2", updated.Spec.Go.Image)
 }

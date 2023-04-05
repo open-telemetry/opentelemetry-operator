@@ -25,21 +25,21 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-func TestInjectGolangSDK(t *testing.T) {
+func TestInjectGoSDK(t *testing.T) {
 	falsee := false
 	truee := true
 	zero := int64(0)
 
 	tests := []struct {
 		name string
-		v1alpha1.Golang
+		v1alpha1.Go
 		pod      corev1.Pod
 		expected corev1.Pod
 		err      error
 	}{
 		{
-			name:   "shared process namespace disabled",
-			Golang: v1alpha1.Golang{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			name: "shared process namespace disabled",
+			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					ShareProcessNamespace: &falsee,
@@ -53,8 +53,8 @@ func TestInjectGolangSDK(t *testing.T) {
 			err: fmt.Errorf("shared process namespace has been explicitly disabled"),
 		},
 		{
-			name:   "using container-names",
-			Golang: v1alpha1.Golang{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			name: "using container-names",
+			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -69,11 +69,11 @@ func TestInjectGolangSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("golang instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container"),
+			err: fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container"),
 		},
 		{
 			name: "pod annotation takes precedence",
-			Golang: v1alpha1.Golang{
+			Go: v1alpha1.Go{
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
@@ -85,14 +85,14 @@ func TestInjectGolangSDK(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/golang-target-exec": "bar",
+						"instrumentation.opentelemetry.io/go-target-exec": "bar",
 					},
 				},
 			},
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/golang-target-exec": "bar",
+						"instrumentation.opentelemetry.io/go-target-exec": "bar",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -137,7 +137,7 @@ func TestInjectGolangSDK(t *testing.T) {
 		},
 		{
 			name: "use instrumentation env var",
-			Golang: v1alpha1.Golang{
+			Go: v1alpha1.Go{
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
@@ -201,7 +201,7 @@ func TestInjectGolangSDK(t *testing.T) {
 		},
 		{
 			name: "inject env vars",
-			Golang: v1alpha1.Golang{
+			Go: v1alpha1.Go{
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
@@ -264,7 +264,7 @@ func TestInjectGolangSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectGolangSDK(test.Golang, test.pod)
+			pod, err := injectGoSDK(test.Go, test.pod)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

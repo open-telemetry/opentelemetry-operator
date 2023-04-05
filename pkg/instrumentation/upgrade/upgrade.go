@@ -33,7 +33,7 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstNodeJS string
 	DefaultAutoInstPython string
 	DefaultAutoInstDotNet string
-	DefaultAutoInstGolang string
+	DefaultAutoInstGo     string
 }
 
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
@@ -103,12 +103,12 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet] = u.DefaultAutoInstDotNet
 		}
 	}
-	autoInstGolang := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGolang]
-	if autoInstGolang != "" && instrumentation.EnableGolangAutoInstrumentationSupport.IsEnabled() {
+	autoInstGo := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo]
+	if autoInstGo != "" && instrumentation.EnableGoAutoInstrumentationSupport.IsEnabled() {
 		// upgrade the image only if the image matches the annotation
-		if inst.Spec.Golang.Image == autoInstGolang {
-			inst.Spec.Golang.Image = u.DefaultAutoInstGolang
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGolang] = u.DefaultAutoInstGolang
+		if inst.Spec.Go.Image == autoInstGo {
+			inst.Spec.Go.Image = u.DefaultAutoInstGo
+			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo] = u.DefaultAutoInstGo
 		}
 	}
 	return inst

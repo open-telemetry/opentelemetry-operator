@@ -756,20 +756,20 @@ func TestMutatePod(t *testing.T) {
 			setFeatureGates: func(t *testing.T) {},
 		},
 		{
-			name: "golang injection, true",
+			name: "go injection, true",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "golang",
+					Name: "go",
 				},
 			},
 			inst: v1alpha1.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
-					Namespace: "golang",
+					Namespace: "go",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Golang: v1alpha1.Golang{
-						Image: "otel/golang:1",
+					Go: v1alpha1.Go{
+						Image: "otel/go:1",
 						Env: []corev1.EnvVar{
 							{
 								Name:  "OTEL_LOG_LEVEL",
@@ -807,8 +807,8 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectGolang:   "true",
-						annotationGolangExecPath: "/app",
+						annotationInjectGo:   "true",
+						annotationGoExecPath: "/app",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -822,8 +822,8 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectGolang:   "true",
-						annotationGolangExecPath: "/app",
+						annotationInjectGo:   "true",
+						annotationGoExecPath: "/app",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -834,7 +834,7 @@ func TestMutatePod(t *testing.T) {
 						},
 						{
 							Name:  sideCarName,
-							Image: "otel/golang:1",
+							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
 								Privileged: &truee,
@@ -899,7 +899,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=golang,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+									Value: "k8s.container.name=app,k8s.namespace.name=go,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
 								},
 							},
 						},
@@ -917,28 +917,28 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			setFeatureGates: func(t *testing.T) {
-				originalVal := EnableGolangAutoInstrumentationSupport.IsEnabled()
-				require.NoError(t, featuregate.GlobalRegistry().Set(EnableGolangAutoInstrumentationSupport.ID(), true))
+				originalVal := EnableGoAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, featuregate.GlobalRegistry().Set(EnableGoAutoInstrumentationSupport.ID(), true))
 				t.Cleanup(func() {
-					require.NoError(t, featuregate.GlobalRegistry().Set(EnableGolangAutoInstrumentationSupport.ID(), originalVal))
+					require.NoError(t, featuregate.GlobalRegistry().Set(EnableGoAutoInstrumentationSupport.ID(), originalVal))
 				})
 			},
 		},
 		{
-			name: "golang injection feature gate disabled",
+			name: "go injection feature gate disabled",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "golang-disabled",
+					Name: "go-disabled",
 				},
 			},
 			inst: v1alpha1.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
-					Namespace: "golang-disabled",
+					Namespace: "go-disabled",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					Golang: v1alpha1.Golang{
-						Image: "otel/golang:1",
+					Go: v1alpha1.Go{
+						Image: "otel/go:1",
 						Env: []corev1.EnvVar{
 							{
 								Name:  "OTEL_LOG_LEVEL",
@@ -976,8 +976,8 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectGolang:   "true",
-						annotationGolangExecPath: "/app",
+						annotationInjectGo:   "true",
+						annotationGoExecPath: "/app",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -991,8 +991,8 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectGolang:   "true",
-						annotationGolangExecPath: "/app",
+						annotationInjectGo:   "true",
+						annotationGoExecPath: "/app",
 					},
 				},
 				Spec: corev1.PodSpec{

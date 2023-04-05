@@ -183,7 +183,7 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Golang, Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Go, Java, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -253,13 +253,13 @@ DotNet:
 instrumentation.opentelemetry.io/inject-dotnet: "true"
 ```
 
-Golang:
+Go:
 
-Golang auto-instrumentation also honors an annotation that will be used to set the [OTEL_TARGET_EXE env var](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/main/docs/how-it-works.md).
+Go auto-instrumentation also honors an annotation that will be used to set the [OTEL_TARGET_EXE env var](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/main/docs/how-it-works.md).
 This env var can also be set via the instrumentation object, with the annotation taking precedence.
 ```bash
-instrumentation.opentelemetry.io/inject-golang: "true"
-instrumentation.opentelemetry.io/golang-target-exec: "/path/to/container/executable"
+instrumentation.opentelemetry.io/inject-go: "true"
+instrumentation.opentelemetry.io/go-target-exec: "/path/to/container/executable"
 ```
 
 OpenTelemetry SDK environment variables only:
@@ -311,7 +311,7 @@ spec:
 
 In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3` will not.
 
-**NOTE**: Golang auto-instrumentation **does not** support multicontainer pods. When injecting Golang auto-instrumentation the first pod should be the only pod you want instrumented.
+**NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first pod should be the only pod you want instrumented.
 
 #### Use customized or vendor instrumentation
 
@@ -332,8 +332,8 @@ spec:
     image: your-customized-auto-instrumentation-image:python
   dotnet:
     image: your-customized-auto-instrumentation-image:dotnet
-  golang:
-    image: your-customized-auto-instrumentation-image:golang
+  go:
+    image: your-customized-auto-instrumentation-image:go
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).

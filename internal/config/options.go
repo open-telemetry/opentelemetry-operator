@@ -33,7 +33,7 @@ type options struct {
 	version                        version.Version
 	logger                         logr.Logger
 	autoInstrumentationDotNetImage string
-	autoInstrumentationGolangImage string
+	autoInstrumentationGoImage     string
 	autoInstrumentationJavaImage   string
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationPythonImage string
@@ -132,9 +132,9 @@ func WithAutoInstrumentationDotNetImage(s string) Option {
 	}
 }
 
-func WithAutoInstrumentationGolangImage(s string) Option {
+func WithAutoInstrumentationGoImage(s string) Option {
 	return func(o *options) {
-		o.autoInstrumentationGolangImage = s
+		o.autoInstrumentationGoImage = s
 	}
 }
 
