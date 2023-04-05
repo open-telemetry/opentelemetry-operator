@@ -9,7 +9,7 @@ metadata:
     app: my-pod-with-sidecar
 spec:
   containers:
-    - name: voting-svc
+    - name: productcatalogservice
     - name: otc-container
     - name: opentelemetry-auto-instrumentation
       image: keyval/otel-go-agent:v0.6.4
