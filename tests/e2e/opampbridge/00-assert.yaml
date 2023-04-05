@@ -30,6 +30,29 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: test-opamp-bridge
+data:
+  remoteconfiguration.yaml: |
+    capabilities:
+      - AcceptsRemoteConfig
+      - ReportsEffectiveConfig
+      - ReportsOwnTraces
+      - ReportsOwnMetrics
+      - ReportsOwnLogs
+      - AcceptsOpAMPConnectionSettings
+      - AcceptsOtherConnectionSettings
+      - AcceptsRestartCommand
+      - ReportsHealth
+      - ReportsRemoteConfig
+    components_allowed:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - batch
+      exporters:
+        - logging
+    endpoint: ws://127.0.0.1:4320/v1/opamp
+    protocol: wss
 ---
 apiVersion: v1
 kind: Service

@@ -879,6 +879,19 @@ spec:
               capabilities:
                 description: Capabilities supported by the OpAMP Bridge
                 items:
+                  description: OpAMPBridgeCapability represents capability supported
+                    by OpAMP Bridge.
+                  enum:
+                  - AcceptsRemoteConfig
+                  - ReportsEffectiveConfig
+                  - ReportsOwnTraces
+                  - ReportsOwnMetrics
+                  - ReportsOwnLogs
+                  - AcceptsOpAMPConnectionSettings
+                  - AcceptsOtherConnectionSettings
+                  - AcceptsRestartCommand
+                  - ReportsHealth
+                  - ReportsRemoteConfig
                   type: string
                 type: array
               components_allowed:
@@ -1297,6 +1310,7 @@ spec:
               replicas:
                 description: Replicas is the number of pod instances for the OpAMPBridge.
                 format: int32
+                maximum: 1
                 type: integer
               resources:
                 description: Resources to set on the OpAMPBridge pods.
@@ -1305,7 +1319,8 @@ spec:
                     description: "Claims lists the names of resources, defined in
                       spec.resourceClaims, that are used by this container. \n This
                       is an alpha field and requires enabling the DynamicResourceAllocation
-                      feature gate. \n This field is immutable."
+                      feature gate. \n This field is immutable. It can only be set
+                      for containers."
                     items:
                       description: ResourceClaim references one entry in PodSpec.ResourceClaims.
                       properties:
@@ -2174,7 +2189,8 @@ spec:
                                         defined in spec.resourceClaims, that are used
                                         by this container. \n This is an alpha field
                                         and requires enabling the DynamicResourceAllocation
-                                        feature gate. \n This field is immutable."
+                                        feature gate. \n This field is immutable.
+                                        It can only be set for containers."
                                       items:
                                         description: ResourceClaim references one
                                           entry in PodSpec.ResourceClaims.

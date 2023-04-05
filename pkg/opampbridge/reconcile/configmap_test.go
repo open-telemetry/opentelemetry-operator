@@ -100,7 +100,7 @@ func TestExpectedConfigMap(t *testing.T) {
 				Spec: v1alpha1.OpAMPBridgeSpec{
 					Endpoint:     "ws://127.0.0.1:4320/v1/opamp",
 					Protocol:     "wss",
-					Capabilities: []string{"AcceptsRemoteConfig", "ReportsEffectiveConfig"},
+					Capabilities: []v1alpha1.OpAMPBridgeCapability{v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig, v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig},
 				},
 			},
 			Scheme: testScheme,

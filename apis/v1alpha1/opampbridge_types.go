@@ -29,7 +29,7 @@ type OpAMPBridgeSpec struct {
 	Protocol string `json:"protocol"`
 	// Capabilities supported by the OpAMP Bridge
 	// +required
-	Capabilities []string `json:"capabilities"`
+	Capabilities []OpAMPBridgeCapability `json:"capabilities"`
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	// +optional
 	ComponentsAllowed map[string][]string `json:"components_allowed,omitempty"`
@@ -41,6 +41,7 @@ type OpAMPBridgeSpec struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Replicas is the number of pod instances for the OpAMPBridge.
 	// +optional
+	// +kubebuilder:validation:Maximum=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// SecurityContext will be set as the container security context.
 	// +optional

@@ -2242,7 +2242,7 @@ OpAMPBridgeSpec defines the desired state of OpAMPBridge.
     </thead>
     <tbody><tr>
         <td><b>capabilities</b></td>
-        <td>[]string</td>
+        <td>[]enum</td>
         <td>
           Capabilities supported by the OpAMP Bridge<br/>
         </td>
@@ -2352,6 +2352,7 @@ OpAMPBridgeSpec defines the desired state of OpAMPBridge.
           Replicas is the number of pod instances for the OpAMPBridge.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Maximum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4419,7 +4420,7 @@ Resources to set on the OpAMPBridge pods.
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6031,7 +6032,7 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>

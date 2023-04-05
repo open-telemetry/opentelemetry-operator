@@ -96,7 +96,7 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 				Spec: OpAMPBridgeSpec{
 					Endpoint:     "ws://opamp-server:4320/v1/opamp",
 					Protocol:     "wss",
-					Capabilities: []string{"AcceptsRemoteConfig", "ReportsEffectiveConfig", "ReportsOwnTraces", "ReportsOwnMetrics", "ReportsOwnLogs", "AcceptsOpAMPConnectionSettings", "AcceptsOtherConnectionSettings", "AcceptsRestartCommand", "ReportsHealth", "ReportsRemoteConfig"},
+					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
 				},
 			},
 		},
@@ -135,7 +135,7 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 				Spec: OpAMPBridgeSpec{
 					Endpoint:     "ws://opamp-server:4320/v1/opamp",
 					Protocol:     "wss",
-					Capabilities: []string{"AcceptsRemoteConfig", "ReportsEffectiveConfig", "ReportsOwnTraces", "ReportsOwnMetrics", "ReportsOwnLogs", "AcceptsOpAMPConnectionSettings", "AcceptsOtherConnectionSettings", "AcceptsRestartCommand", "ReportsHealth", "ReportsRemoteConfig"},
+					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
 					Ports: []v1.ServicePort{
 						{
 							// this port name contains a non alphanumeric character, which is invalid.
@@ -154,7 +154,7 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 				Spec: OpAMPBridgeSpec{
 					Endpoint:     "ws://opamp-server:4320/v1/opamp",
 					Protocol:     "wss",
-					Capabilities: []string{"AcceptsRemoteConfig", "ReportsEffectiveConfig", "ReportsOwnTraces", "ReportsOwnMetrics", "ReportsOwnLogs", "AcceptsOpAMPConnectionSettings", "AcceptsOtherConnectionSettings", "AcceptsRestartCommand", "ReportsHealth", "ReportsRemoteConfig"},
+					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
 					Ports: []v1.ServicePort{
 						{
 							Name: "aaaabbbbccccdddd", // len: 16, too long
@@ -171,7 +171,7 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 				Spec: OpAMPBridgeSpec{
 					Endpoint:     "ws://opamp-server:4320/v1/opamp",
 					Protocol:     "wss",
-					Capabilities: []string{"AcceptsRemoteConfig", "ReportsEffectiveConfig", "ReportsOwnTraces", "ReportsOwnMetrics", "ReportsOwnLogs", "AcceptsOpAMPConnectionSettings", "AcceptsOtherConnectionSettings", "AcceptsRestartCommand", "ReportsHealth", "ReportsRemoteConfig"},
+					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
 					Ports: []v1.ServicePort{
 						{
 							Name: "aaaabbbbccccddd", // len: 15

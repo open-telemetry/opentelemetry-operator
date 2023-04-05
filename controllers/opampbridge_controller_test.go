@@ -72,7 +72,7 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 		Spec: v1alpha1.OpAMPBridgeSpec{
 			Endpoint:     "ws://opamp-server:4320/v1/opamp",
 			Protocol:     "wss",
-			Capabilities: []string{"AcceptsRemoteConfig", "ReportsEffectiveConfig", "ReportsOwnTraces", "ReportsOwnMetrics", "ReportsOwnLogs", "AcceptsOpAMPConnectionSettings", "AcceptsOtherConnectionSettings", "AcceptsRestartCommand", "ReportsHealth", "ReportsRemoteConfig"},
+			Capabilities: []v1alpha1.OpAMPBridgeCapability{v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig, v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig, v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces, v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics, v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs, v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand, v1alpha1.OpAMPBridgeCapabilityReportsHealth, v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig},
 		},
 	}
 	err := k8sClient.Create(context.Background(), created)
@@ -194,7 +194,7 @@ func TestBreakOnUnrecoverableError_OpAMPBridge(t *testing.T) {
 		Spec: v1alpha1.OpAMPBridgeSpec{
 			Endpoint:     "ws://opamp-server:4320/v1/opamp",
 			Protocol:     "wss",
-			Capabilities: []string{"AcceptsRemoteConfig", "ReportsEffectiveConfig", "ReportsOwnTraces", "ReportsOwnMetrics", "ReportsOwnLogs", "AcceptsOpAMPConnectionSettings", "AcceptsOtherConnectionSettings", "AcceptsRestartCommand", "ReportsHealth", "ReportsRemoteConfig"},
+			Capabilities: []v1alpha1.OpAMPBridgeCapability{v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig, v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig, v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces, v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics, v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs, v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand, v1alpha1.OpAMPBridgeCapabilityReportsHealth, v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig},
 		},
 	}
 	err := k8sClient.Create(context.Background(), created)
