@@ -807,7 +807,7 @@ func TestInjectDotNet(t *testing.T) {
 
 func TestInjectGo(t *testing.T) {
 	falsee := false
-	truee := true
+	true := true
 	zero := int64(0)
 
 	tests := []struct {
@@ -906,7 +906,7 @@ func TestInjectGo(t *testing.T) {
 			},
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
+					ShareProcessNamespace: &true,
 					Containers: []corev1.Container{
 						{
 							Name: "app",
@@ -916,7 +916,106 @@ func TestInjectGo(t *testing.T) {
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &truee,
+								Privileged: &true,
+								Capabilities: &corev1.Capabilities{
+									Add: []corev1.Capability{"SYS_PTRACE"},
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									MountPath: "/sys/kernel/debug",
+									Name:      kernelDebugVolumeName,
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_TARGET_EXE",
+									Value: "foo",
+								},
+
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: kernelDebugVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kernelDebugVolumePath,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "OTEL_TARGET_EXE set by annotation",
+			insts: languageInstrumentations{
+				Go: &v1alpha1.Instrumentation{
+					Spec: v1alpha1.InstrumentationSpec{
+						Go: v1alpha1.Go{
+							Image: "otel/go:1",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/go-target-exec": "foo",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/go-target-exec": "foo",
+					},
+				},
+				Spec: corev1.PodSpec{
+					ShareProcessNamespace: &true,
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+						{
+							Name:  sideCarName,
+							Image: "otel/go:1",
+							SecurityContext: &corev1.SecurityContext{
+								RunAsUser:  &zero,
+								Privileged: &true,
 								Capabilities: &corev1.Capabilities{
 									Add: []corev1.Capability{"SYS_PTRACE"},
 								},

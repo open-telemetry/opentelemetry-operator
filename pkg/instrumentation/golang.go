@@ -41,16 +41,16 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 		return pod, fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container")
 	}
 
-	truee := true
+	true := true
 	zero := int64(0)
-	pod.Spec.ShareProcessNamespace = &truee
+	pod.Spec.ShareProcessNamespace = &true
 
 	goAgent := corev1.Container{
 		Name:  sideCarName,
 		Image: goSpec.Image,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser:  &zero,
-			Privileged: &truee,
+			Privileged: &true,
 			Capabilities: &corev1.Capabilities{
 				Add: []corev1.Capability{"SYS_PTRACE"},
 			},

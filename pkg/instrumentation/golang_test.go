@@ -27,7 +27,7 @@ import (
 
 func TestInjectGoSDK(t *testing.T) {
 	falsee := false
-	truee := true
+	true := true
 	zero := int64(0)
 
 	tests := []struct {
@@ -96,14 +96,14 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
+					ShareProcessNamespace: &true,
 					Containers: []corev1.Container{
 						{
 							Name:  sideCarName,
 							Image: "foo/bar:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &truee,
+								Privileged: &true,
 								Capabilities: &corev1.Capabilities{
 									Add: []corev1.Capability{"SYS_PTRACE"},
 								},
@@ -160,14 +160,14 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
+					ShareProcessNamespace: &true,
 					Containers: []corev1.Container{
 						{
 							Name:  sideCarName,
 							Image: "foo/bar:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &truee,
+								Privileged: &true,
 								Capabilities: &corev1.Capabilities{
 									Add: []corev1.Capability{"SYS_PTRACE"},
 								},
@@ -217,14 +217,14 @@ func TestInjectGoSDK(t *testing.T) {
 			pod: corev1.Pod{},
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
+					ShareProcessNamespace: &true,
 					Containers: []corev1.Container{
 						{
 							Name:  sideCarName,
 							Image: "foo/bar:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &truee,
+								Privileged: &true,
 								Capabilities: &corev1.Capabilities{
 									Add: []corev1.Capability{"SYS_PTRACE"},
 								},

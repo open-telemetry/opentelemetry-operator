@@ -154,6 +154,13 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 	return pod
 }
 
+// injectCommonSDKConfig adds common SDK configuration environment variables to the necessary pod
+// agentIndex represents the index of the pod the needs the env vars to instrument the application.
+// appIndex represents the index of the pod the will produce the telemetry.
+// When the pod handling the instrumentation is the same as the pod producing the telemetry agentIndex
+// and appIndex should be the same value.  This is true for dotnet, java, nodejs, and python instrumentations.
+// Go requires the agent to be a different container in the pod, so the agentIndex should represent this new sidecar
+// and appIndex should represent the application being instrumented.
 func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, agentIndex int, appIndex int) corev1.Pod {
 	container := &pod.Spec.Containers[agentIndex]
 	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod, appIndex)

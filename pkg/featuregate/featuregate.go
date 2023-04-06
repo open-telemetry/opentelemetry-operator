@@ -24,6 +24,13 @@ const (
 	featureGatesFlag = "feature-gates"
 )
 
+var (
+	EnableGoAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.go",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("controls whether the operator supports Goland auto-instrumentation"))
+)
+
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
 func Flags(reg *featuregate.Registry) *flag.FlagSet {
 	flagSet := new(flag.FlagSet)

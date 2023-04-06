@@ -22,18 +22,19 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/featuregate"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestMutatePod(t *testing.T) {
 	mutator := NewMutator(logr.Discard(), k8sClient)
 	require.NotNil(t, mutator)
 
-	truee := true
+	true := true
 	zero := int64(0)
 
 	tests := []struct {
@@ -827,7 +828,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					ShareProcessNamespace: &truee,
+					ShareProcessNamespace: &true,
 					Containers: []corev1.Container{
 						{
 							Name: "app",
@@ -837,7 +838,7 @@ func TestMutatePod(t *testing.T) {
 							Image: "otel/go:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
-								Privileged: &truee,
+								Privileged: &true,
 								Capabilities: &corev1.Capabilities{
 									Add: []corev1.Capability{"SYS_PTRACE"},
 								},
@@ -917,10 +918,10 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			setFeatureGates: func(t *testing.T) {
-				originalVal := EnableGoAutoInstrumentationSupport.IsEnabled()
-				require.NoError(t, featuregate.GlobalRegistry().Set(EnableGoAutoInstrumentationSupport.ID(), true))
+				originalVal := featuregate.EnableGoAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), true))
 				t.Cleanup(func() {
-					require.NoError(t, featuregate.GlobalRegistry().Set(EnableGoAutoInstrumentationSupport.ID(), originalVal))
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), originalVal))
 				})
 			},
 		},

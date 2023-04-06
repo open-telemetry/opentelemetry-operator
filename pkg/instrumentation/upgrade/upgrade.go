@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 type InstrumentationUpgrade struct {
@@ -104,11 +104,15 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		}
 	}
 	autoInstGo := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo]
-	if autoInstGo != "" && instrumentation.EnableGoAutoInstrumentationSupport.IsEnabled() {
-		// upgrade the image only if the image matches the annotation
-		if inst.Spec.Go.Image == autoInstGo {
-			inst.Spec.Go.Image = u.DefaultAutoInstGo
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo] = u.DefaultAutoInstGo
+	if autoInstGo != "" {
+		if featuregate.EnableGoAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.Go.Image == autoInstGo {
+				inst.Spec.Go.Image = u.DefaultAutoInstGo
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo] = u.DefaultAutoInstGo
+			}
+		} else {
+			u.Logger.Error(nil, "support for Go auto instrumentation is not enabled")
 		}
 	}
 	return inst

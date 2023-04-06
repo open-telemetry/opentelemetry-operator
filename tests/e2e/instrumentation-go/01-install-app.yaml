@@ -14,7 +14,7 @@ spec:
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-go: "true"
-        instrumentation.opentelemetry.io/go-target-exec: /usr/local/bin/emojivoto-voting-svc
+        instrumentation.opentelemetry.io/go-target-exec: /usr/src/app/productcatalogservice
     spec:
       containers:
       - name: productcatalogservice

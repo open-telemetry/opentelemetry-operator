@@ -22,20 +22,20 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/featuregate"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestUpgrade(t *testing.T) {
-	originalVal := instrumentation.EnableGoAutoInstrumentationSupport.IsEnabled()
-	require.NoError(t, featuregate.GlobalRegistry().Set(instrumentation.EnableGoAutoInstrumentationSupport.ID(), true))
+	originalVal := featuregate.EnableGoAutoInstrumentationSupport.IsEnabled()
+	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), true))
 	t.Cleanup(func() {
-		require.NoError(t, featuregate.GlobalRegistry().Set(instrumentation.EnableGoAutoInstrumentationSupport.ID(), originalVal))
+		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), originalVal))
 	})
 
 	nsName := strings.ToLower(t.Name())
