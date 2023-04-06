@@ -15,7 +15,7 @@ spec:
       image: keyval/otel-go-agent:v0.6.4
       env:
         - name: OTEL_TARGET_EXE
-          value: /usr/local/bin/emojivoto-voting-svc
+          value: /usr/src/app/productcatalogservice
         - name: OTEL_TRACES_EXPORTER
           value: otlp
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
