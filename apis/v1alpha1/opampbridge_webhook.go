@@ -106,5 +106,10 @@ func (r *OpAMPBridge) validateCRDSpec() error {
 				p.Name, nameErrs, p.Port, numErrs)
 		}
 	}
+
+	// check for maximum replica count
+	if r.Spec.Replicas != nil && *r.Spec.Replicas > 1 {
+		return fmt.Errorf("replica count must not be greater than 1")
+	}
 	return nil
 }

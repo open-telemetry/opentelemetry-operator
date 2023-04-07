@@ -76,10 +76,9 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 	}
 }
 
-// TODO: a lot of these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
-// deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
-// still supported but should eventually be updated.
 func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
+
+	two := int32(2)
 
 	tests := []struct { //nolint:govet
 		name        string
@@ -128,6 +127,22 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "the capabilities supported by OpAMP Bridge are not specified",
+		},
+		{
+			name: "replica count greater than 1 should return error",
+			opampBridge: OpAMPBridge{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: OpAMPBridgeSpec{
+					Replicas:     &two,
+					Endpoint:     "ws://opamp-server:4320/v1/opamp",
+					Protocol:     "wss",
+					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
+				},
+			},
+			expectedErr: "replica count must not be greater than 1",
 		},
 		{
 			name: "invalid port name",
