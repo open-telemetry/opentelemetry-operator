@@ -58,8 +58,7 @@ func (r *OpAMPBridge) Default() {
 	}
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-opentelemetry-io-v1alpha1-opampbridge,mutating=false,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update,versions=v1alpha1,name=vopampbridge.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-opentelemetry-io-v1alpha1-opampbridge,mutating=false,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update;delete,versions=v1alpha1,name=vopampbridge.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &OpAMPBridge{}
 

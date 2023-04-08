@@ -593,6 +593,7 @@ spec:
       operations:
       - CREATE
       - UPDATE
+      - DELETE
       resources:
       - opampbridges
     sideEffects: None

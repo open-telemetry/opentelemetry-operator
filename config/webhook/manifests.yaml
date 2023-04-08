@@ -148,6 +148,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - opampbridges
   sideEffects: None
