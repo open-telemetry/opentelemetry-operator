@@ -39,7 +39,6 @@ type Discoverer struct {
 	manager              *discovery.Manager
 	close                chan struct{}
 	configsMap           map[allocatorWatcher.EventSource]*config.Config
-	jobToScrapeConfig    map[string]*config.ScrapeConfig
 	hook                 discoveryHook
 	scrapeConfigsHash    uint64
 	scrapeConfigsUpdater scrapeConfigsUpdater
@@ -59,7 +58,6 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 		manager:              manager,
 		close:                make(chan struct{}),
 		configsMap:           make(map[allocatorWatcher.EventSource]*config.Config),
-		jobToScrapeConfig:    make(map[string]*config.ScrapeConfig),
 		hook:                 hook,
 		scrapeConfigsUpdater: scrapeConfigsUpdater,
 	}
@@ -67,33 +65,32 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 
 func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.Config) error {
 	m.configsMap[source] = cfg
-	newJobToScrapeConfig := make(map[string]*config.ScrapeConfig)
+	jobToScrapeConfig := make(map[string]*config.ScrapeConfig)
 
 	discoveryCfg := make(map[string]discovery.Configs)
 	relabelCfg := make(map[string][]*relabel.Config)
 
 	for _, value := range m.configsMap {
 		for _, scrapeConfig := range value.ScrapeConfigs {
-			newJobToScrapeConfig[scrapeConfig.JobName] = scrapeConfig
+			jobToScrapeConfig[scrapeConfig.JobName] = scrapeConfig
 			discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
 			relabelCfg[scrapeConfig.JobName] = scrapeConfig.RelabelConfigs
 		}
 	}
 
-	hash, err := hashstructure.Hash(newJobToScrapeConfig, nil)
+	hash, err := hashstructure.Hash(jobToScrapeConfig, nil)
 	if err != nil {
 		return err
 	}
 	// If the hash has changed, updated stored hash and send the new config.
 	// Otherwise skip updating scrape configs.
 	if m.scrapeConfigsUpdater != nil && m.scrapeConfigsHash != hash {
-		err := m.scrapeConfigsUpdater.UpdateScrapeConfigResponse(newJobToScrapeConfig)
+		err := m.scrapeConfigsUpdater.UpdateScrapeConfigResponse(jobToScrapeConfig)
 		if err != nil {
 			return err
 		}
 
 		m.scrapeConfigsHash = hash
-		m.jobToScrapeConfig = newJobToScrapeConfig // only assign after we've successfully updated
 	}
 
 	if m.hook != nil {

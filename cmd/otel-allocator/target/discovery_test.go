@@ -294,6 +294,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	}
 	var (
 		lastValidHash   uint64
+		expectedConfig  map[string]*promconfig.ScrapeConfig
 		lastValidConfig map[string]*promconfig.ScrapeConfig
 	)
 
@@ -306,24 +307,25 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, tc.cfg)
 			if !tc.expectErr {
+				expectedConfig = make(map[string]*promconfig.ScrapeConfig)
+				for _, value := range manager.configsMap {
+					for _, scrapeConfig := range value.ScrapeConfigs {
+						expectedConfig[scrapeConfig.JobName] = scrapeConfig
+					}
+				}
 				assert.NoError(t, err)
 				assert.NotZero(t, manager.scrapeConfigsHash)
 				// Assert that scrape configs in manager are correctly
 				// reflected in the scrape job updater.
-				assert.Equal(t, manager.jobToScrapeConfig, scu.mockCfg)
+				assert.Equal(t, expectedConfig, scu.mockCfg)
 
 				lastValidHash = manager.scrapeConfigsHash
-				// make a copy of the config, or else it'll change underneath us
-				lastValidConfig = make(map[string]*promconfig.ScrapeConfig)
-				for key, value := range manager.jobToScrapeConfig {
-					lastValidConfig[key] = value
-				}
+				lastValidConfig = expectedConfig
 			} else {
 				// In case of error, assert that we retain the last
 				// known valid config.
 				assert.Error(t, err)
 				assert.Equal(t, lastValidHash, manager.scrapeConfigsHash)
-				assert.Equal(t, lastValidConfig, manager.jobToScrapeConfig)
 				assert.Equal(t, lastValidConfig, scu.mockCfg)
 			}
 
