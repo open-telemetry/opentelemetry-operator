@@ -3,6 +3,23 @@ Changes by Version
 
 <!-- next version -->
 
+## 0.75.0
+
+### 💡 Enhancements 💡
+
+- `operator`: Add ability to use feature gates in the operator (#1619)
+- `autoinstrumentation`: Add metrics exporter to Node.JS autoinstrumentation (#1627)
+- `autoinstrumentation`: Bump nodejs dependencies to latest versions (#1626)
+
+### Components
+
+* [OpenTelemetry Collector - v0.75.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.75.0)
+* [OpenTelemetry Contrib - v0.75.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.75.0)
+* [Java auto-instrumentation - 1.24.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.24.0)
+* [Dotnet auto-instrumentation - 0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
+* [Node.JS - 0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.37.0)
+* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
+
 ## 0.74.0
 
 ### Components
