@@ -9,7 +9,7 @@
 # - Grant the necessary access to `/autoinstrumentation` directory. `chmod -R go+r /autoinstrumentation`
 # - For auto-instrumentation by container injection, the Linux command cp is
 #   used and must be availabe in the image.
-FROM python:3.10-alpine AS build
+FROM python:3.11-alpine AS build
 
 WORKDIR /operator-build
 
