@@ -25,6 +25,7 @@ jobs:
           grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print "OTELCOL_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print "TARGETALLOCATOR_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep operator-opamp-bridge | awk -F= '{print "OPERATOR_OPAMP_BRIDGE_VERSION="$2}' >> $GITHUB_ENV
+          grep -v '\#' versions.txt | grep autoinstrumentation-utils | awk -F= '{print "AUTO_INSTRUMENTATION_UTILS_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-java | awk -F= '{print "AUTO_INSTRUMENTATION_JAVA_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-nodejs | awk -F= '{print "AUTO_INSTRUMENTATION_NODEJS_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-python | awk -F= '{print "AUTO_INSTRUMENTATION_PYTHON_VERSION="$2}' >> $GITHUB_ENV
@@ -89,6 +90,7 @@ jobs:
             OTELCOL_VERSION=${{ env.OTELCOL_VERSION }}
             TARGETALLOCATOR_VERSION=${{ env.TARGETALLOCATOR_VERSION }}
             OPERATOR_OPAMP_BRIDGE_VERSION=${{ env.OPERATOR_OPAMP_BRIDGE_VERSION }}
+            AUTO_INSTRUMENTATION_UTILS_VERSION=${{ env.AUTO_INSTRUMENTATION_UTILS_VERSION }}
             AUTO_INSTRUMENTATION_JAVA_VERSION=${{ env.AUTO_INSTRUMENTATION_JAVA_VERSION }}
             AUTO_INSTRUMENTATION_NODEJS_VERSION=${{ env.AUTO_INSTRUMENTATION_NODEJS_VERSION }}
             AUTO_INSTRUMENTATION_PYTHON_VERSION=${{ env.AUTO_INSTRUMENTATION_PYTHON_VERSION }}
