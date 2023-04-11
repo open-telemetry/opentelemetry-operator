@@ -15,6 +15,10 @@ WORKDIR /operator-build
 
 ADD requirements.txt .
 
+RUN apk update && apk add gcc \
+                          libc-dev \
+                          libffi-dev
+
 RUN mkdir workspace && pip install --target workspace -r requirements.txt
 
 FROM busybox
