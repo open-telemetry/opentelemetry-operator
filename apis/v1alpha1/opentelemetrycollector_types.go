@@ -291,7 +291,7 @@ type OpenTelemetryCollectorList struct {
 
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
-	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
@@ -299,17 +299,17 @@ type AutoscalerSpec struct {
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// +optional
 	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
-	// Metrics is meant to provide a customizable way to configure HPA metrics.
-	// currently the only supported custom metrics is type=Pod.
-	// Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.
+	// Metrics is the array of metrics to scale on. 
 	// +optional
 	Metrics []autoscalingv2.MetricSpec `json:"metrics,omitempty"`
 	// TargetCPUUtilization sets the target average CPU used across all replicas.
 	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
 	// +optional
+	// Deprecated: Configure "OpenTelemetryCollector.Spec.Autoscaler.Metrics" instead.
 	TargetCPUUtilization *int32 `json:"targetCPUUtilization,omitempty"`
-	// +optional
 	// TargetMemoryUtilization sets the target average memory utilization across all replicas
+	// +optional
+	// Deprecated: Configure "OpenTelemetryCollector.Spec.Autoscaler.Metrics" instead.
 	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
 }
 

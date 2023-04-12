@@ -108,8 +108,8 @@ func TestHPA(t *testing.T) {
 }
 
 func TestConvertToV2Beta2PodMetrics(t *testing.T) {
-	expectedValues := []int64{int64(10), int64(20)}
-	expectedNames := []string{"custom1", "custom2"}
+	expectedValues := []int64{int64(10), int64(20), int64(20)}
+	expectedNames := []string{"custom1", "custom2", corev1.ResourceCPU.String()}
 
 	v2metrics := []autoscalingv2.MetricSpec{
 		{
@@ -136,14 +136,34 @@ func TestConvertToV2Beta2PodMetrics(t *testing.T) {
 				},
 			},
 		},
+		{
+			Type: autoscalingv2.ResourceMetricSourceType,
+			Resource: &autoscalingv2.ResourceMetricSource{
+				Name: corev1.ResourceCPU,
+				Target: autoscalingv2.MetricTarget{
+					Type:         autoscalingv2.AverageValueMetricType,
+					AverageValue: resource.NewQuantity(int64(20), resource.DecimalSI),
+				},
+			},
+		},
 	}
 
-	v2beta2metrics := ConvertToV2Beta2PodMetrics(v2metrics)
+	v2beta2metrics := ConvertToV2Beta2Metrics(v2metrics)
 
 	for i, metric := range v2beta2metrics {
-
-		assert.Equal(t, expectedNames[i], metric.Pods.Metric.Name)
-		val, ok := metric.Pods.Target.AverageValue.AsInt64()
+		var val int64
+		var ok bool
+		switch metric.Type {
+		case autoscalingv2beta2.ObjectMetricSourceType:
+		case autoscalingv2beta2.PodsMetricSourceType:
+			assert.Equal(t, expectedNames[i], metric.Pods.Metric.Name)
+			val, ok = metric.Pods.Target.AverageValue.AsInt64()
+		case autoscalingv2beta2.ResourceMetricSourceType:
+			assert.Equal(t, expectedNames[i], metric.Resource.Name.String())
+			val, ok = metric.Resource.Target.AverageValue.AsInt64()
+		case autoscalingv2beta2.ContainerResourceMetricSourceType:
+		case autoscalingv2beta2.ExternalMetricSourceType:
+		}
 		assert.True(t, ok)
 		assert.Equal(t, expectedValues[i], val)
 	}

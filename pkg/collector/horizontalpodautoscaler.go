@@ -96,7 +96,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 
 		// check for custom metrics
 		if len(otelcol.Spec.Autoscaler.Metrics) > 0 {
-			metrics := ConvertToV2Beta2PodMetrics(otelcol.Spec.Autoscaler.Metrics)
+			metrics := ConvertToV2Beta2Metrics(otelcol.Spec.Autoscaler.Metrics)
 			autoscaler.Spec.Metrics = append(autoscaler.Spec.Metrics, metrics...)
 		}
 
@@ -175,23 +175,60 @@ func checkUtilizationSet(metrics []autoscalingv2.MetricSpec) (bool, bool) {
 	}
 	return foundMemory, foundCPU
 }
-func ConvertToV2Beta2PodMetrics(v2metrics []autoscalingv2.MetricSpec) []autoscalingv2beta2.MetricSpec {
+func ConvertToV2Beta2Metrics(v2metrics []autoscalingv2.MetricSpec) []autoscalingv2beta2.MetricSpec {
 	metrics := make([]autoscalingv2beta2.MetricSpec, len(v2metrics))
 
 	for i, v2metric := range v2metrics {
 		metrics[i].Type = autoscalingv2beta2.MetricSourceType(v2metric.Type)
-		if v2metric.Pods != nil {
-			metrics[i].Pods = &autoscalingv2beta2.PodsMetricSource{
-				Metric: autoscalingv2beta2.MetricIdentifier{
-					Name:     v2metric.Pods.Metric.Name,
-					Selector: v2metric.Pods.Metric.Selector,
-				},
-				Target: autoscalingv2beta2.MetricTarget{
-					Type:         autoscalingv2beta2.MetricTargetType(v2metric.Pods.Target.Type),
-					AverageValue: v2metric.Pods.Target.AverageValue,
-				},
+		switch v2metric.Type {
+		case autoscalingv2.ObjectMetricSourceType:
+		case autoscalingv2.PodsMetricSourceType:
+			if v2metric.Pods != nil {
+				metrics[i].Pods = &autoscalingv2beta2.PodsMetricSource{
+					Metric: autoscalingv2beta2.MetricIdentifier{
+						Name:     v2metric.Pods.Metric.Name,
+						Selector: v2metric.Pods.Metric.Selector,
+					},
+					Target: autoscalingv2beta2.MetricTarget{
+						Type:         autoscalingv2beta2.MetricTargetType(v2metric.Pods.Target.Type),
+						AverageValue: v2metric.Pods.Target.AverageValue,
+					},
+				}
 			}
+			// set the target value/utilization
+			switch v2metric.Pods.Target.Type {
+			case autoscalingv2.AverageValueMetricType:
+				metrics[i].Pods.Target.AverageValue = v2metric.Pods.Target.AverageValue
+			case autoscalingv2.ValueMetricType:
+				metrics[i].Pods.Target.Value = v2metric.Pods.Target.Value
+			case autoscalingv2.UtilizationMetricType:
+				metrics[i].Pods.Target.AverageUtilization = v2metric.Pods.Target.AverageUtilization
+			}
+		case autoscalingv2.ResourceMetricSourceType:
+			if v2metric.Resource != nil {
+				metrics[i].Resource = &autoscalingv2beta2.ResourceMetricSource{
+					Name: v2metric.Resource.Name,
+					Target: autoscalingv2beta2.MetricTarget{
+						Type:         autoscalingv2beta2.MetricTargetType(v2metric.Resource.Target.Type),
+					},
+				}
+			}
+			// set the target value/utilization
+			switch v2metric.Resource.Target.Type {
+			case autoscalingv2.AverageValueMetricType:
+				metrics[i].Resource.Target.AverageValue = v2metric.Resource.Target.AverageValue
+			case autoscalingv2.ValueMetricType:
+				metrics[i].Resource.Target.Value = v2metric.Resource.Target.Value
+			case autoscalingv2.UtilizationMetricType:
+				metrics[i].Resource.Target.AverageUtilization = v2metric.Resource.Target.AverageUtilization
+			}
+
+		case autoscalingv2.ContainerResourceMetricSourceType:
+		case autoscalingv2.ExternalMetricSourceType:
+
 		}
+
+		
 	}
 
 	return metrics
