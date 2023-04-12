@@ -210,7 +210,18 @@ func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
 				Autoscaler: &v1alpha1.AutoscalerSpec{
 					MinReplicas:          &minReplicas,
 					MaxReplicas:          &maxReplicas,
-					TargetCPUUtilization: &cpuUtilization,
+					Metrics: []autoscalingv2.MetricSpec{
+						{
+							Type: autoscalingv2.ResourceMetricSourceType,
+							Resource: &autoscalingv2.ResourceMetricSource{
+								Name: corev1.ResourceCPU,
+								Target: autoscalingv2.MetricTarget{
+									Type:         autoscalingv2.UtilizationMetricType,
+									AverageUtilization: &cpuUtilization,
+								},
+							},
+						},
+					},
 				},
 			},
 		},
