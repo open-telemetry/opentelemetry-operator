@@ -10,6 +10,7 @@ Changes by Version
 - `operator`: Add ability to use feature gates in the operator (#1619)
 - `autoinstrumentation`: Add metrics exporter to Node.JS autoinstrumentation (#1627)
 - `autoinstrumentation`: Bump nodejs dependencies to latest versions (#1626)
+- `autoinstrumentation`: Bump python dependencies to latest versions (#1640)
 
 ### Components
 
@@ -18,7 +19,7 @@ Changes by Version
 * [Java auto-instrumentation - 1.24.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.24.0)
 * [Dotnet auto-instrumentation - 0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
 * [Node.JS - 0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.37.0)
-* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
+* [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
 
 ## 0.74.0
 
