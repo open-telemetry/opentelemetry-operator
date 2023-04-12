@@ -160,7 +160,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 }
 
 // checkUtilization set checks the metrics array for targetMemoryUtilization and targetCPUUtilization
-// if found then these deprecated fields should be ignored and the metrics array values should be respected
+// if found then these deprecated fields should be ignored and the metrics array values should be respected.
 func checkUtilizationSet(metrics []autoscalingv2.MetricSpec) (bool, bool) {
 	foundMemory := false
 	foundCPU := false
@@ -171,7 +171,7 @@ func checkUtilizationSet(metrics []autoscalingv2.MetricSpec) (bool, bool) {
 			} else if metric.Resource.Name == corev1.ResourceMemory {
 				foundMemory = true
 			}
-		} 
+		}
 	}
 	return foundMemory, foundCPU
 }
