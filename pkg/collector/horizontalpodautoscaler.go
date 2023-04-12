@@ -185,8 +185,8 @@ func ConvertToV2Beta2Metrics(v2metrics []autoscalingv2.MetricSpec) []autoscaling
 			if v2metric.Object != nil {
 				metrics[i].Object = &autoscalingv2beta2.ObjectMetricSource{
 					DescribedObject: autoscalingv2beta2.CrossVersionObjectReference{
-						Kind: v2metric.Object.DescribedObject.Kind,
-						Name: v2metric.Object.DescribedObject.Name,
+						Kind:       v2metric.Object.DescribedObject.Kind,
+						Name:       v2metric.Object.DescribedObject.Name,
 						APIVersion: v2metric.Object.DescribedObject.APIVersion,
 					},
 					Metric: autoscalingv2beta2.MetricIdentifier{
@@ -194,7 +194,7 @@ func ConvertToV2Beta2Metrics(v2metrics []autoscalingv2.MetricSpec) []autoscaling
 						Selector: v2metric.Object.Metric.Selector,
 					},
 					Target: autoscalingv2beta2.MetricTarget{
-						Type:         autoscalingv2beta2.MetricTargetType(v2metric.Object.Target.Type),
+						Type: autoscalingv2beta2.MetricTargetType(v2metric.Object.Target.Type),
 					},
 				}
 				// set the target value/utilization.
@@ -216,7 +216,7 @@ func ConvertToV2Beta2Metrics(v2metrics []autoscalingv2.MetricSpec) []autoscaling
 						Selector: v2metric.Pods.Metric.Selector,
 					},
 					Target: autoscalingv2beta2.MetricTarget{
-						Type:         autoscalingv2beta2.MetricTargetType(v2metric.Pods.Target.Type),
+						Type: autoscalingv2beta2.MetricTargetType(v2metric.Pods.Target.Type),
 					},
 				}
 				// set the target value/utilization.

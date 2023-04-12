@@ -148,14 +148,14 @@ func TestConvertToV2Beta2PodMetrics(t *testing.T) {
 		},
 		{
 			Type: autoscalingv2.ObjectMetricSourceType,
-			Object:	&autoscalingv2.ObjectMetricSource{
+			Object: &autoscalingv2.ObjectMetricSource{
 				DescribedObject: autoscalingv2.CrossVersionObjectReference{
-					Kind: "Pod", 
-					Name: "my-pod",
+					Kind:       "Pod",
+					Name:       "my-pod",
 					APIVersion: "api/v1",
 				},
 				Metric: autoscalingv2.MetricIdentifier{
-					Name:     "object-metric",
+					Name: "object-metric",
 				},
 				Target: autoscalingv2.MetricTarget{
 					Type:         autoscalingv2.AverageValueMetricType,
