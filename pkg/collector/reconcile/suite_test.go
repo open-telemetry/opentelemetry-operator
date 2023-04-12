@@ -176,6 +176,10 @@ func TestMain(m *testing.M) {
 }
 
 func params() Params {
+	return paramsWithMode(v1alpha1.ModeDeployment)
+}
+
+func paramsWithMode(mode v1alpha1.Mode) Params {
 	replicas := int32(2)
 	configYAML, err := os.ReadFile("../testdata/test.yaml")
 	if err != nil {
@@ -207,6 +211,7 @@ func params() Params {
 				}},
 				Replicas: &replicas,
 				Config:   string(configYAML),
+				Mode:     mode,
 			},
 		},
 		Scheme:   testScheme,

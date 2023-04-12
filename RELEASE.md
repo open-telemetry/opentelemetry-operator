@@ -10,9 +10,9 @@ Steps to release a new version of the OpenTelemetry Operator:
 6. Check the OpenTelemetry Collector's changelog and ensure migration steps are present in `pkg/collector/upgrade`
 7. Once the changes above are merged and available in `main`, tag it with the desired version, prefixed with `v`: `v0.38.0`
 8. The GitHub Workflow will take it from here, creating a GitHub release with the generated artifacts (manifests) and publishing the images
-9. After the release, generate a new OLM bundle (`make bundle`) and create two PRs against the `Community Operators repositories`:
-   1. one for the `community-operators-prod`, used by OLM on Kubernetes. Example: [`operator-framework/community-operators-prod`](https://github.com/redhat-openshift-ecosystem/community-operators-prod/pull/494)
-   1. one for the `community-operators` directory, used by Operatorhub.io. Example: [`operator-framework/community-operators`](https://github.com/k8s-operatorhub/community-operators/pull/461)
+9. The GitHub Workflow, submits two pull requests to the Operator hub repositories. Make sure the pull requests are approved and merged.
+   1. `community-operators-prod` is used by OLM on OpenShift. Example: [`operator-framework/community-operators-prod`](https://github.com/redhat-openshift-ecosystem/community-operators-prod/pull/494)
+   1. `community-operators` is used by Operatorhub.io. Example: [`operator-framework/community-operators`](https://github.com/k8s-operatorhub/community-operators/pull/461)
 10. Update release schedule table, by moving the current release manager to the end of the table with updated release version.
 
 ## Generating the changelog
@@ -38,8 +38,8 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version | Release manager |
 |---------|-----------------|
-| v0.72.0 | @yuriolisa      |
-| v0.73.0 | @jaronoff97     |
-| v0.74.0 | @pavolloffay    |
 | v0.75.0 | @VineethReddy02 |
 | v0.76.0 | @frzifus        |
+| v0.77.0 | @yuriolisa      |
+| v0.78.0 | @jaronoff97     |
+| v0.79.0 | @pavolloffay    |

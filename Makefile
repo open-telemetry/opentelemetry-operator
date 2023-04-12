@@ -58,8 +58,9 @@ START_KIND_CLUSTER ?= true
 
 KUBE_VERSION ?= 1.24
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
+KIND_CLUSTER_NAME ?= "otel-operator"
 
-OPERATOR_SDK_VERSION ?= 1.23.0
+OPERATOR_SDK_VERSION ?= 1.27.0
 
 CERTMANAGER_VERSION ?= 1.10.0
 
@@ -219,7 +220,7 @@ container-operator-opamp-bridge:
 .PHONY: start-kind
 start-kind:
 ifeq (true,$(START_KIND_CLUSTER))
-	kind create cluster --config $(KIND_CONFIG)
+	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
 endif
 
 .PHONY: install-metrics-server
@@ -236,7 +237,7 @@ load-image-all: load-image-operator load-image-target-allocator load-image-opera
 .PHONY: load-image-operator
 load-image-operator: container
 ifeq (true,$(START_KIND_CLUSTER))
-	kind load docker-image $(IMG)
+	kind load --name $(KIND_CLUSTER_NAME) docker-image $(IMG)
 else
 	$(MAKE) container-push
 endif
@@ -245,7 +246,7 @@ endif
 .PHONY: load-image-target-allocator
 load-image-target-allocator: container-target-allocator
 ifeq (true,$(START_KIND_CLUSTER))
-	kind load docker-image $(TARGETALLOCATOR_IMG)
+	kind load --name $(KIND_CLUSTER_NAME) docker-image $(TARGETALLOCATOR_IMG)
 else
 	$(MAKE) container-target-allocator-push
 endif
@@ -253,7 +254,7 @@ endif
 
 .PHONY: load-image-operator-opamp-bridge
 load-image-operator-opamp-bridge:
-	kind load docker-image ${OPERATOROPAMPBRIDGE_IMG}
+	kind load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
 
 .PHONY: cert-manager
 cert-manager: cmctl
@@ -283,9 +284,8 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
 
-## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.0
-CONTROLLER_TOOLS_VERSION ?= v0.9.2
+CONTROLLER_TOOLS_VERSION ?= v0.11.3
 
 
 .PHONY: kustomize
@@ -375,6 +375,7 @@ bundle: kustomize operator-sdk manifests set-image-controller
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
+	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build
