@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: opentelemetry-operator-system/opentelemetry-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.11.3
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: opentelemetry-operator
@@ -1016,10 +1016,7 @@ spec:
                     format: int32
                     type: integer
                   metrics:
-                    description: Metrics is meant to provide a customizable way to
-                      configure HPA metrics. currently the only supported custom metrics
-                      is type=Pod. Use TargetCPUUtilization or TargetMemoryUtilization
-                      instead if scaling on these common resource metrics.
+                    description: Metrics is the array of metrics to scale on.
                     items:
                       description: MetricSpec specifies how to scale based on a single
                         metric (only `type` and one other matching field should be
@@ -1506,19 +1503,21 @@ spec:
                     type: array
                   minReplicas:
                     description: MinReplicas sets a lower bound to the autoscaling
-                      feature.  Set this if your are using autoscaling. It must be
+                      feature.  Set this if you are using autoscaling. It must be
                       at least 1
                     format: int32
                     type: integer
                   targetCPUUtilization:
-                    description: TargetCPUUtilization sets the target average CPU
+                    description: 'TargetCPUUtilization sets the target average CPU
                       used across all replicas. If average CPU exceeds this value,
-                      the HPA will scale up. Defaults to 90 percent.
+                      the HPA will scale up. Defaults to 90 percent. Deprecated: Configure
+                      "OpenTelemetryCollector.Spec.Autoscaler.Metrics" instead.'
                     format: int32
                     type: integer
                   targetMemoryUtilization:
-                    description: TargetMemoryUtilization sets the target average memory
-                      utilization across all replicas
+                    description: 'TargetMemoryUtilization sets the target average
+                      memory utilization across all replicas Deprecated: Configure
+                      "OpenTelemetryCollector.Spec.Autoscaler.Metrics" instead.'
                     format: int32
                     type: integer
                 type: object
