@@ -428,7 +428,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					MaxReplicas: &three,
 					Autoscaler: &AutoscalerSpec{
 						Metrics: []autoscalingv2.MetricSpec{
-							autoscalingv2.MetricSpec{
+							{
 								Type: "invalid",
 							},
 						},
@@ -458,7 +458,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average utilization should be greater than 0 and less than 100", 
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average utilization should be greater than 0 and less than 100",
 		},
 		{
 			name: "invalid pod metric value",
@@ -483,7 +483,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0", 
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0",
 		},
 		{
 			name: "invalid deployment mode incompabible with ingress settings",
