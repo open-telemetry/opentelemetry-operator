@@ -3786,14 +3786,14 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
         <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindex">metrics</a></b></td>
         <td>[]object</td>
         <td>
-          Metrics is meant to provide a customizable way to configure HPA metrics. currently the only supported custom metrics is type=Pod. Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.<br/>
+          Metrics is the array of metrics to scale on.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -3802,7 +3802,7 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
         <td><b>targetCPUUtilization</b></td>
         <td>integer</td>
         <td>
-          TargetCPUUtilization sets the target average CPU used across all replicas. If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.<br/>
+          TargetCPUUtilization sets the target average CPU used across all replicas. If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent. Deprecated: Configure "OpenTelemetryCollector.Spec.Autoscaler.Metrics" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -3811,7 +3811,7 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
         <td><b>targetMemoryUtilization</b></td>
         <td>integer</td>
         <td>
-          TargetMemoryUtilization sets the target average memory utilization across all replicas<br/>
+          TargetMemoryUtilization sets the target average memory utilization across all replicas Deprecated: Configure "OpenTelemetryCollector.Spec.Autoscaler.Metrics" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
