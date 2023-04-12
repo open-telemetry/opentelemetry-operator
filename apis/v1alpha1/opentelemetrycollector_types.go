@@ -299,7 +299,7 @@ type AutoscalerSpec struct {
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// +optional
 	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
-	// Metrics is the array of metrics to scale on. 
+	// Metrics is the array of metrics to scale on.
 	// +optional
 	Metrics []autoscalingv2.MetricSpec `json:"metrics,omitempty"`
 	// TargetCPUUtilization sets the target average CPU used across all replicas.
