@@ -209,7 +209,7 @@ func ConvertToV2Beta2Metrics(v2metrics []autoscalingv2.MetricSpec) []autoscaling
 				metrics[i].Resource = &autoscalingv2beta2.ResourceMetricSource{
 					Name: v2metric.Resource.Name,
 					Target: autoscalingv2beta2.MetricTarget{
-						Type:         autoscalingv2beta2.MetricTargetType(v2metric.Resource.Target.Type),
+						Type: autoscalingv2beta2.MetricTargetType(v2metric.Resource.Target.Type),
 					},
 				}
 			}
@@ -228,7 +228,6 @@ func ConvertToV2Beta2Metrics(v2metrics []autoscalingv2.MetricSpec) []autoscaling
 
 		}
 
-		
 	}
 
 	return metrics

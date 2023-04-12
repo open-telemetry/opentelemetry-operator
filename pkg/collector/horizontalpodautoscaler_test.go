@@ -158,12 +158,15 @@ func TestConvertToV2Beta2PodMetrics(t *testing.T) {
 		case autoscalingv2beta2.PodsMetricSourceType:
 			assert.Equal(t, expectedNames[i], metric.Pods.Metric.Name)
 			val, ok = metric.Pods.Target.AverageValue.AsInt64()
+
 		case autoscalingv2beta2.ResourceMetricSourceType:
 			assert.Equal(t, expectedNames[i], metric.Resource.Name.String())
 			val, ok = metric.Resource.Target.AverageValue.AsInt64()
+
 		case autoscalingv2beta2.ContainerResourceMetricSourceType:
 		case autoscalingv2beta2.ExternalMetricSourceType:
 		}
+
 		assert.True(t, ok)
 		assert.Equal(t, expectedValues[i], val)
 	}
