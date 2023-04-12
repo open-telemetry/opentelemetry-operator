@@ -42,11 +42,12 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		Labels:      labels,
 		Annotations: annotations,
 	}
+	foundMemUtilizationSet, foundCpuUtilizationSet := checkUtilizationSet(otelcol.Spec.Autoscaler.Metrics)
 
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 		metrics := []autoscalingv2beta2.MetricSpec{}
 
-		if otelcol.Spec.Autoscaler.TargetMemoryUtilization != nil {
+		if otelcol.Spec.Autoscaler.TargetMemoryUtilization != nil && !foundMemUtilizationSet {
 			utilizationTarget := autoscalingv2beta2.MetricSpec{
 				Type: autoscalingv2beta2.ResourceMetricSourceType,
 				Resource: &autoscalingv2beta2.ResourceMetricSource{
@@ -60,17 +61,19 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			metrics = append(metrics, utilizationTarget)
 		}
 
-		targetCPUUtilization := autoscalingv2beta2.MetricSpec{
-			Type: autoscalingv2beta2.ResourceMetricSourceType,
-			Resource: &autoscalingv2beta2.ResourceMetricSource{
-				Name: corev1.ResourceCPU,
-				Target: autoscalingv2beta2.MetricTarget{
-					Type:               autoscalingv2beta2.UtilizationMetricType,
-					AverageUtilization: otelcol.Spec.Autoscaler.TargetCPUUtilization,
+		if otelcol.Spec.Autoscaler.TargetCPUUtilization != nil && !foundCpuUtilizationSet {
+			targetCPUUtilization := autoscalingv2beta2.MetricSpec{
+				Type: autoscalingv2beta2.ResourceMetricSourceType,
+				Resource: &autoscalingv2beta2.ResourceMetricSource{
+					Name: corev1.ResourceCPU,
+					Target: autoscalingv2beta2.MetricTarget{
+						Type:               autoscalingv2beta2.UtilizationMetricType,
+						AverageUtilization: otelcol.Spec.Autoscaler.TargetCPUUtilization,
+					},
 				},
-			},
+			}
+			metrics = append(metrics, targetCPUUtilization)
 		}
-		metrics = append(metrics, targetCPUUtilization)
 
 		autoscaler := autoscalingv2beta2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
@@ -101,7 +104,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	} else {
 		metrics := []autoscalingv2.MetricSpec{}
 
-		if otelcol.Spec.Autoscaler.TargetMemoryUtilization != nil {
+		if otelcol.Spec.Autoscaler.TargetMemoryUtilization != nil && !foundMemUtilizationSet {
 			utilizationTarget := autoscalingv2.MetricSpec{
 				Type: autoscalingv2.ResourceMetricSourceType,
 				Resource: &autoscalingv2.ResourceMetricSource{
@@ -115,7 +118,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			metrics = append(metrics, utilizationTarget)
 		}
 
-		if otelcol.Spec.Autoscaler.TargetCPUUtilization != nil {
+		if otelcol.Spec.Autoscaler.TargetCPUUtilization != nil && !foundCpuUtilizationSet {
 			targetCPUUtilization := autoscalingv2.MetricSpec{
 				Type: autoscalingv2.ResourceMetricSourceType,
 				Resource: &autoscalingv2.ResourceMetricSource{
@@ -156,6 +159,22 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	return result
 }
 
+// checkUtilization set checks the metrics array for targetMemoryUtilization and targetCPUUtilization
+// if found then these deprecated fields should be ignored and the metrics array values should be respected
+func checkUtilizationSet(metrics []autoscalingv2.MetricSpec) (bool, bool) {
+	foundMemory := false
+	foundCPU := false
+	for _, metric := range metrics {
+		if metric.Type == autoscalingv2.ResourceMetricSourceType {
+			if metric.Resource.Name == corev1.ResourceCPU {
+				foundCPU = true
+			} else if metric.Resource.Name == corev1.ResourceMemory {
+				foundMemory = true
+			}
+		} 
+	}
+	return foundMemory, foundCPU
+}
 func ConvertToV2Beta2PodMetrics(v2metrics []autoscalingv2.MetricSpec) []autoscalingv2beta2.MetricSpec {
 	metrics := make([]autoscalingv2beta2.MetricSpec, len(v2metrics))
 

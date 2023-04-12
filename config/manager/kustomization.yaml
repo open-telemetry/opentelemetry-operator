@@ -1,2 +1,8 @@
 resources:
 - manager.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: controller
+  newName: ghcr.io/mohamed.osman/opentelemetry-operator/opentelemetry-operator
+  newTag: 0.71.0-11-gcf5fc89
