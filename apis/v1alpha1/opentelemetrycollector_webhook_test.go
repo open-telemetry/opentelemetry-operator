@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -428,13 +429,61 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					Autoscaler: &AutoscalerSpec{
 						Metrics: []autoscalingv2.MetricSpec{
 							autoscalingv2.MetricSpec{
-								Type: autoscalingv2.ResourceMetricSourceType,
+								Type: "invalid",
 							},
 						},
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod",
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported",
+		},
+		{
+			name: "invalid resource cpu utilization",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []autoscalingv2.MetricSpec{
+							{
+								Type: autoscalingv2.ResourceMetricSourceType,
+								Resource: &autoscalingv2.ResourceMetricSource{
+									Name: v1.ResourceCPU,
+									Target: autoscalingv2.MetricTarget{
+										Type:               autoscalingv2.UtilizationMetricType,
+										AverageUtilization: &zero,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average utilization should be greater than 0 and less than 100", 
+		},
+		{
+			name: "invalid pod metric value",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []autoscalingv2.MetricSpec{
+							{
+								Type: autoscalingv2.PodsMetricSourceType,
+								Pods: &autoscalingv2.PodsMetricSource{
+									Metric: autoscalingv2.MetricIdentifier{
+										Name: "custom1",
+									},
+									Target: autoscalingv2.MetricTarget{
+										Type:         autoscalingv2.AverageValueMetricType,
+										AverageValue: resource.NewQuantity(int64(0), resource.DecimalSI),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0", 
 		},
 		{
 			name: "invalid deployment mode incompabible with ingress settings",
