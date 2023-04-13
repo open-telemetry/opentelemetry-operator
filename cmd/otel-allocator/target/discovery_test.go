@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
@@ -48,7 +49,7 @@ func TestDiscovery(t *testing.T) {
 			args: args{
 				file: "./testdata/test.yaml",
 			},
-			want: []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "promfile.domain:1001", "promfile.domain:3000"},
+			want: []string{"prom.domain:9001", "prom.domain:9002", "prom.domain:9003", "prom.domain:8001", "promfile.domain:1001", "promfile.domain:3000"},
 		},
 		{
 			name: "update",
@@ -58,9 +59,10 @@ func TestDiscovery(t *testing.T) {
 			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
 		},
 	}
+	scu := &mockScrapeConfigUpdater{}
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, nil)
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
 	defer close(manager.close)
 	defer cancelFunc()
 
@@ -91,6 +93,13 @@ func TestDiscovery(t *testing.T) {
 			sort.Strings(gotTargets)
 			sort.Strings(tt.want)
 			assert.Equal(t, tt.want, gotTargets)
+
+			// check the updated scrape configs
+			expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
+			for _, scrapeConfig := range cfg.Config.ScrapeConfigs {
+				expectedScrapeConfigs[scrapeConfig.JobName] = scrapeConfig
+			}
+			assert.Equal(t, expectedScrapeConfigs, scu.mockCfg)
 		})
 	}
 }
@@ -286,6 +295,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	}
 	var (
 		lastValidHash   uint64
+		expectedConfig  map[string]*promconfig.ScrapeConfig
 		lastValidConfig map[string]*promconfig.ScrapeConfig
 	)
 
@@ -298,24 +308,72 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, tc.cfg)
 			if !tc.expectErr {
+				expectedConfig = make(map[string]*promconfig.ScrapeConfig)
+				for _, value := range manager.configsMap {
+					for _, scrapeConfig := range value.ScrapeConfigs {
+						expectedConfig[scrapeConfig.JobName] = scrapeConfig
+					}
+				}
 				assert.NoError(t, err)
 				assert.NotZero(t, manager.scrapeConfigsHash)
 				// Assert that scrape configs in manager are correctly
 				// reflected in the scrape job updater.
-				assert.Equal(t, manager.jobToScrapeConfig, scu.mockCfg)
+				assert.Equal(t, expectedConfig, scu.mockCfg)
 
 				lastValidHash = manager.scrapeConfigsHash
-				lastValidConfig = manager.jobToScrapeConfig
+				lastValidConfig = expectedConfig
 			} else {
 				// In case of error, assert that we retain the last
 				// known valid config.
 				assert.Error(t, err)
 				assert.Equal(t, lastValidHash, manager.scrapeConfigsHash)
-				assert.Equal(t, lastValidConfig, manager.jobToScrapeConfig)
 				assert.Equal(t, lastValidConfig, scu.mockCfg)
 			}
 
 		})
+	}
+}
+
+func BenchmarkApplyScrapeConfig(b *testing.B) {
+	numConfigs := 1000
+	scrapeConfig := promconfig.ScrapeConfig{
+		JobName:         "serviceMonitor/testapp/testapp/0",
+		HonorTimestamps: true,
+		ScrapeInterval:  model.Duration(30 * time.Second),
+		ScrapeTimeout:   model.Duration(30 * time.Second),
+		MetricsPath:     "/metrics",
+		Scheme:          "http",
+		HTTPClientConfig: commonconfig.HTTPClientConfig{
+			FollowRedirects: true,
+		},
+		RelabelConfigs: []*relabel.Config{
+			{
+				SourceLabels: model.LabelNames{model.LabelName("job")},
+				Separator:    ";",
+				Regex:        relabel.MustNewRegexp("(.*)"),
+				TargetLabel:  "__tmp_prometheus_job_name",
+				Replacement:  "$$1",
+				Action:       relabel.Replace,
+			},
+		},
+	}
+	cfg := &promconfig.Config{
+		ScrapeConfigs: make([]*promconfig.ScrapeConfig, numConfigs),
+	}
+
+	for i := 0; i < numConfigs; i++ {
+		cfg.ScrapeConfigs[i] = &scrapeConfig
+	}
+
+	scu := &mockScrapeConfigUpdater{}
+	ctx := context.Background()
+	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg)
+		require.NoError(b, err)
 	}
 }
 
