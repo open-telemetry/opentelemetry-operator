@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
@@ -330,6 +331,49 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+func BenchmarkApplyScrapeConfig(b *testing.B) {
+	numConfigs := 1000
+	scrapeConfig := promconfig.ScrapeConfig{
+		JobName:         "serviceMonitor/testapp/testapp/0",
+		HonorTimestamps: true,
+		ScrapeInterval:  model.Duration(30 * time.Second),
+		ScrapeTimeout:   model.Duration(30 * time.Second),
+		MetricsPath:     "/metrics",
+		Scheme:          "http",
+		HTTPClientConfig: commonconfig.HTTPClientConfig{
+			FollowRedirects: true,
+		},
+		RelabelConfigs: []*relabel.Config{
+			{
+				SourceLabels: model.LabelNames{model.LabelName("job")},
+				Separator:    ";",
+				Regex:        relabel.MustNewRegexp("(.*)"),
+				TargetLabel:  "__tmp_prometheus_job_name",
+				Replacement:  "$$1",
+				Action:       relabel.Replace,
+			},
+		},
+	}
+	cfg := &promconfig.Config{
+		ScrapeConfigs: make([]*promconfig.ScrapeConfig, numConfigs),
+	}
+
+	for i := 0; i < numConfigs; i++ {
+		cfg.ScrapeConfigs[i] = &scrapeConfig
+	}
+
+	scu := &mockScrapeConfigUpdater{}
+	ctx := context.Background()
+	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg)
+		require.NoError(b, err)
 	}
 }
 
