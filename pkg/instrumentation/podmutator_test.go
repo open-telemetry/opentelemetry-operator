@@ -25,13 +25,14 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestMutatePod(t *testing.T) {
-	mutator := NewMutator(logr.Discard(), k8sClient)
+	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(1))
 	require.NotNil(t, mutator)
 
 	tests := []struct {
