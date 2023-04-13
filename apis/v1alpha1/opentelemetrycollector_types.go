@@ -368,7 +368,7 @@ type Probe struct {
 // more metric type can be supported as needed.
 // See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
 type MetricSpec struct {
-	Type autoscalingv2.MetricSourceType `json:"type"`
+	Type autoscalingv2.MetricSourceType  `json:"type"`
 	Pods *autoscalingv2.PodsMetricSource `json:"pods,omitempty"`
 }
 
