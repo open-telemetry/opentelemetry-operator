@@ -428,8 +428,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					MaxReplicas: &three,
 					Autoscaler: &AutoscalerSpec{
-						Metrics: []autoscalingv2.MetricSpec{
-							autoscalingv2.MetricSpec{
+						Metrics: []MetricSpec{
+							{
 								Type: autoscalingv2.ResourceMetricSourceType,
 							},
 						},
