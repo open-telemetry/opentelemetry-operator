@@ -236,12 +236,13 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
 		}
 
-		if r.Spec.Autoscaler != nil && len(r.Spec.Autoscaler.Metrics) > 0 {
+		if r.Spec.Autoscaler != nil {
 			for _, metric := range r.Spec.Autoscaler.Metrics {
 				if metric.Type != autoscalingv2.PodsMetricSourceType {
 					return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod")
 				}
 
+				// pod metrics target only support value and averageValue.
 				if metric.Pods.Target.Type == autoscalingv2.AverageValueMetricType {
 					if val, ok := metric.Pods.Target.AverageValue.AsInt64(); !ok || val < int64(1) {
 						return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0")
@@ -250,12 +251,8 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 					if val, ok := metric.Pods.Target.Value.AsInt64(); !ok || val < int64(1) {
 						return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, value should be greater than 0")
 					}
-				} else if metric.Pods.Target.Type == autoscalingv2.UtilizationMetricType {
-					if *metric.Pods.Target.AverageUtilization < int32(1) || *metric.Pods.Target.AverageUtilization > int32(99) {
-						return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, average utilization should be greater than 0 and less than 100")
-					}
 				} else {
-					return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, unrecognized pods target type")
+					return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type")
 				}
 			}
 		}

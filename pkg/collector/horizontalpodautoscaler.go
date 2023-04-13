@@ -146,7 +146,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			autoscaler.Spec.Behavior = otelcol.Spec.Autoscaler.Behavior
 		}
 
-		// convert each metric into a autoscalingv2.MetricSpec
+		// convert from v1alpha1.MetricSpec into a autoscalingv2.MetricSpec.
 		for _, metric := range otelcol.Spec.Autoscaler.Metrics {
 			if metric.Type == autoscalingv2.PodsMetricSourceType {
 				v2metric := autoscalingv2.MetricSpec{

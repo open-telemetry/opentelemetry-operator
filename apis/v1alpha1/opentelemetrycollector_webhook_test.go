@@ -465,6 +465,31 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0",
 		},
 		{
+			name: "utilization target is not valid with pod metrics",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.PodsMetricSourceType,
+								Pods: &autoscalingv2.PodsMetricSource{
+									Metric: autoscalingv2.MetricIdentifier{
+										Name: "custom1",
+									},
+									Target: autoscalingv2.MetricTarget{
+										Type:               autoscalingv2.UtilizationMetricType,
+										AverageUtilization: &one,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type",
+		},
+		{
 			name: "invalid deployment mode incompabible with ingress settings",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
