@@ -146,9 +146,15 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			autoscaler.Spec.Behavior = otelcol.Spec.Autoscaler.Behavior
 		}
 
-		// check for custom metrics
-		if len(otelcol.Spec.Autoscaler.Metrics) > 0 {
-			autoscaler.Spec.Metrics = append(autoscaler.Spec.Metrics, otelcol.Spec.Autoscaler.Metrics...)
+		// convert each metric into a autoscalingv2.MetricSpec 
+		for _, metric := range otelcol.Spec.Autoscaler.Metrics {
+			if metric.Type == autoscalingv2.PodsMetricSourceType {
+				v2metric := autoscalingv2.MetricSpec{
+					Type: metric.Type,
+					Pods: metric.Pods,
+				}
+				autoscaler.Spec.Metrics = append(autoscaler.Spec.Metrics, v2metric)
+			} // pod metrics
 		}
 		result = &autoscaler
 	}
@@ -156,7 +162,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	return result
 }
 
-func ConvertToV2Beta2PodMetrics(v2metrics []autoscalingv2.MetricSpec) []autoscalingv2beta2.MetricSpec {
+func ConvertToV2Beta2PodMetrics(v2metrics []v1alpha1.MetricSpec) []autoscalingv2beta2.MetricSpec {
 	metrics := make([]autoscalingv2beta2.MetricSpec, len(v2metrics))
 
 	for i, v2metric := range v2metrics {

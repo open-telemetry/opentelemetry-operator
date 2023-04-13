@@ -111,7 +111,7 @@ func TestConvertToV2Beta2PodMetrics(t *testing.T) {
 	expectedValues := []int64{int64(10), int64(20)}
 	expectedNames := []string{"custom1", "custom2"}
 
-	v2metrics := []autoscalingv2.MetricSpec{
+	v2metrics := []v1alpha1.MetricSpec{
 		{
 			Type: autoscalingv2.PodsMetricSourceType,
 			Pods: &autoscalingv2.PodsMetricSource{
