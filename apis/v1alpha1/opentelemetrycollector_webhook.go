@@ -200,6 +200,12 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		}
 	}
 
+	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
+		return fmt.Errorf("the OptenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
+		)
+	}
+
 	// validate autoscale with horizontal pod autoscaler
 	if maxReplicas != nil {
 		if *maxReplicas < int32(1) {
@@ -219,11 +225,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		}
 
 		if r.Spec.Autoscaler != nil {
-			err := checkAutoscalerSpec(r.Spec.Autoscaler)
-			if err != nil {
-				return err
-			}
-
+			return checkAutoscalerSpec(r.Spec.Autoscaler)
 		}
 	}
 
