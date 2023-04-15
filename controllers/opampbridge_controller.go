@@ -29,7 +29,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/opampbridge/reconcile"
+	opampbridgereconcile "github.com/open-telemetry/opentelemetry-operator/pkg/reconcile/opampbridge"
 )
 
 // OpAMPBridgeReconciler reconciles a OpAMPBridge object.
@@ -54,7 +54,7 @@ type OpAMPBridgeReconcilerParams struct {
 
 // OpAMPBridgeReconcilerTask represents a reconciliation task to be executed by the OpAMPBridgeReconciler.
 type OpAMPBridgeReconcilerTask struct {
-	Do          func(context.Context, reconcile.Params) error
+	Do          func(context.Context, opampbridgereconcile.Params) error
 	Name        string
 	BailOnError bool
 }
@@ -71,27 +71,27 @@ func NewOpAMPBridgeReconciler(params OpAMPBridgeReconcilerParams) *OpAMPBridgeRe
 	if len(reconciler.tasks) == 0 {
 		reconciler.tasks = []OpAMPBridgeReconcilerTask{
 			{
-				reconcile.ConfigMaps,
+				opampbridgereconcile.ConfigMaps,
 				"config maps",
 				true,
 			},
 			{
-				reconcile.ServiceAccounts,
+				opampbridgereconcile.ServiceAccounts,
 				"service accounts",
 				true,
 			},
 			{
-				reconcile.Services,
+				opampbridgereconcile.Services,
 				"services",
 				true,
 			},
 			{
-				reconcile.Deployments,
+				opampbridgereconcile.Deployments,
 				"deployments",
 				true,
 			},
 			{
-				reconcile.Self,
+				opampbridgereconcile.Self,
 				"opamp bridge",
 				true,
 			},
@@ -121,7 +121,7 @@ func (r *OpAMPBridgeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params := reconcile.Params{
+	params := opampbridgereconcile.Params{
 		Client:   r.Client,
 		Recorder: r.recorder,
 		Scheme:   r.scheme,
@@ -135,7 +135,7 @@ func (r *OpAMPBridgeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return ctrl.Result{}, nil
 }
 
-func (r *OpAMPBridgeReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
+func (r *OpAMPBridgeReconciler) RunTasks(ctx context.Context, params opampbridgereconcile.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
 			if apierrors.IsForbidden(err) && apierrors.HasStatusCause(err, corev1.NamespaceTerminatingCause) {

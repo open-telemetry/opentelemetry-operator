@@ -37,7 +37,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/opampbridge/reconcile"
+	opampbridgereconcile "github.com/open-telemetry/opentelemetry-operator/pkg/reconcile/opampbridge"
 )
 
 var opampBridgeLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
@@ -134,14 +134,14 @@ func TestContinueOnRecoverableFailure_OpAMPBridge(t *testing.T) {
 		Tasks: []controllers.OpAMPBridgeReconcilerTask{
 			{
 				Name: "should-fail",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, opampbridgereconcile.Params) error {
 					return errors.New("should fail")
 				},
 				BailOnError: false,
 			},
 			{
 				Name: "should-be-called",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, opampbridgereconcile.Params) error {
 					taskCalled = true
 					return nil
 				},
@@ -150,7 +150,7 @@ func TestContinueOnRecoverableFailure_OpAMPBridge(t *testing.T) {
 	})
 
 	// test
-	err := reconciler.RunTasks(context.Background(), reconcile.Params{})
+	err := reconciler.RunTasks(context.Background(), opampbridgereconcile.Params{})
 
 	// verify
 	assert.NoError(t, err)
@@ -171,7 +171,7 @@ func TestBreakOnUnrecoverableError_OpAMPBridge(t *testing.T) {
 		Tasks: []controllers.OpAMPBridgeReconcilerTask{
 			{
 				Name: "should-fail",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, opampbridgereconcile.Params) error {
 					taskCalled = true
 					return expectedErr
 				},
@@ -179,7 +179,7 @@ func TestBreakOnUnrecoverableError_OpAMPBridge(t *testing.T) {
 			},
 			{
 				Name: "should-not-be-called",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, opampbridgereconcile.Params) error {
 					assert.Fail(t, "should not have been called")
 					return nil
 				},
@@ -226,7 +226,7 @@ func TestSkipWhenInstanceDoesNotExist_OpAMPBridge(t *testing.T) {
 		Tasks: []controllers.OpAMPBridgeReconcilerTask{
 			{
 				Name: "should-not-be-called",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, opampbridgereconcile.Params) error {
 					assert.Fail(t, "should not have been called")
 					return nil
 				},

@@ -34,7 +34,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
+	collectorreconcile "github.com/open-telemetry/opentelemetry-operator/pkg/reconcile/collector"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -51,12 +51,12 @@ type OpenTelemetryCollectorReconciler struct {
 
 // Task represents a reconciliation task to be executed by the reconciler.
 type Task struct {
-	Do          func(context.Context, reconcile.Params) error
+	Do          func(context.Context, collectorreconcile.Params) error
 	Name        string
 	BailOnError bool
 }
 
-// Params is the set of options to build a new openTelemetryCollectorReconciler.
+// Params is the set of options to build a new OpenTelemetryCollectorReconciler.
 type Params struct {
 	client.Client
 	Recorder record.EventRecorder
@@ -93,7 +93,7 @@ func (r *OpenTelemetryCollectorReconciler) addRouteTask(ora autodetect.OpenShift
 	defer r.muTasks.Unlock()
 	// if exists and openshift routes are available
 	if routesIdx == -1 && ora == autodetect.OpenShiftRoutesAvailable {
-		r.tasks = append([]Task{{reconcile.Routes, "routes", true}}, r.tasks...)
+		r.tasks = append([]Task{{collectorreconcile.Routes, "routes", true}}, r.tasks...)
 	}
 	return nil
 }
@@ -125,47 +125,47 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	if len(r.tasks) == 0 {
 		r.tasks = []Task{
 			{
-				reconcile.ConfigMaps,
+				collectorreconcile.ConfigMaps,
 				"config maps",
 				true,
 			},
 			{
-				reconcile.ServiceAccounts,
+				collectorreconcile.ServiceAccounts,
 				"service accounts",
 				true,
 			},
 			{
-				reconcile.Services,
+				collectorreconcile.Services,
 				"services",
 				true,
 			},
 			{
-				reconcile.Deployments,
+				collectorreconcile.Deployments,
 				"deployments",
 				true,
 			},
 			{
-				reconcile.HorizontalPodAutoscalers,
+				collectorreconcile.HorizontalPodAutoscalers,
 				"horizontal pod autoscalers",
 				true,
 			},
 			{
-				reconcile.DaemonSets,
+				collectorreconcile.DaemonSets,
 				"daemon sets",
 				true,
 			},
 			{
-				reconcile.StatefulSets,
+				collectorreconcile.StatefulSets,
 				"stateful sets",
 				true,
 			},
 			{
-				reconcile.Ingresses,
+				collectorreconcile.Ingresses,
 				"ingresses",
 				true,
 			},
 			{
-				reconcile.Self,
+				collectorreconcile.Self,
 				"opentelemetry",
 				true,
 			},
@@ -199,7 +199,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params := reconcile.Params{
+	params := collectorreconcile.Params{
 		Config:   r.config,
 		Client:   r.Client,
 		Instance: instance,
@@ -216,7 +216,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 }
 
 // RunTasks runs all the tasks associated with this reconciler.
-func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
+func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params collectorreconcile.Params) error {
 	r.muTasks.RLock()
 	defer r.muTasks.RUnlock()
 	for _, task := range r.tasks {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controllers_test
+package collector
 
 import (
 	"context"
@@ -26,19 +26,28 @@ import (
 	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/reconcile/collector/testdata"
-	// +kubebuilder:scaffold:imports
 )
 
 var (
@@ -47,8 +56,17 @@ var (
 	testScheme *runtime.Scheme = scheme.Scheme
 	ctx        context.Context
 	cancel     context.CancelFunc
-	err        error
-	cfg        *rest.Config
+
+	logger = logf.Log.WithName("unit-tests")
+
+	instanceUID = uuid.NewUUID()
+	err         error
+	cfg         *rest.Config
+)
+
+const (
+	defaultCollectorImage    = "default-collector"
+	defaultTaAllocationImage = "default-ta-allocator"
 )
 
 func TestMain(m *testing.M) {
@@ -56,10 +74,12 @@ func TestMain(m *testing.M) {
 	defer cancel()
 
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
-		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
+		CRDInstallOptions: envtest.CRDInstallOptions{
+			CRDs: []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD},
+		},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "config", "webhook")},
+			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
 		},
 	}
 	cfg, err = testEnv.Start()
@@ -101,11 +121,6 @@ func TestMain(m *testing.M) {
 	}
 
 	if err = (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
-		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
-		os.Exit(1)
-	}
-
-	if err = (&v1alpha1.OpAMPBridge{}).SetupWebhookWithManager(mgr); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
@@ -158,4 +173,124 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
+}
+
+func params() Params {
+	return paramsWithMode(v1alpha1.ModeDeployment)
+}
+
+func paramsWithMode(mode v1alpha1.Mode) Params {
+	replicas := int32(2)
+	configYAML, err := os.ReadFile("testdata/test.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+	return Params{
+		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
+		Client: k8sClient,
+		Instance: v1alpha1.OpenTelemetryCollector{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
+				Replicas: &replicas,
+				Config:   string(configYAML),
+				Mode:     mode,
+			},
+		},
+		Scheme:   testScheme,
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
+func newParams(taContainerImage string, file string) (Params, error) {
+	replicas := int32(1)
+	var configYAML []byte
+	var err error
+
+	if file == "" {
+		configYAML, err = os.ReadFile("testdata/test.yaml")
+	} else {
+		configYAML, err = os.ReadFile(file)
+	}
+	if err != nil {
+		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
+	}
+
+	cfg := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
+
+	return Params{
+		Config: cfg,
+		Client: k8sClient,
+		Instance: v1alpha1.OpenTelemetryCollector{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Mode: v1alpha1.ModeStatefulSet,
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
+				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+					Enabled: true,
+					Image:   taContainerImage,
+				},
+				Replicas: &replicas,
+				Config:   string(configYAML),
+			},
+		},
+		Scheme: testScheme,
+		Log:    logger,
+	}, nil
+}
+
+func createObjectIfNotExists(tb testing.TB, name string, object client.Object) {
+	tb.Helper()
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, object)
+	if errors.IsNotFound(err) {
+		err := k8sClient.Create(context.Background(), object)
+		assert.NoError(tb, err)
+	}
+}
+
+func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
+	t.Helper()
+	err := k8sClient.Get(context.Background(), namespacedName, object)
+	if errors.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+
 }
