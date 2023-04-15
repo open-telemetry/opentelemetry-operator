@@ -83,19 +83,7 @@ func TestPrometheusParser(t *testing.T) {
 		assert.NoError(t, err)
 
 		// test
-		expectedMap := map[string]bool{
-			"prometheus": false,
-			"service-x":  false,
-		}
-		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
-			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 1)
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "http")
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "http://test-targetallocator:80/jobs/"+scrapeConfig.JobName+"/targets?collector_id=$POD_NAME")
-			expectedMap[scrapeConfig.JobName] = true
-		}
-		for k := range expectedMap {
-			assert.True(t, expectedMap[k], k)
-		}
+		assert.Len(t, cfg.PromConfig.ScrapeConfigs, 0)
 		expectedTAConfig := &targetAllocator{
 			Endpoint:    "http://test-targetallocator:80",
 			Interval:    30 * time.Second,

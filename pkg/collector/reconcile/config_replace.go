@@ -83,6 +83,8 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 			Interval:    30 * time.Second,
 			CollectorID: "${POD_NAME}",
 		}
+		// we don't need the scrape configs here anymore with target allocator enabled
+		cfg.PromConfig.ScrapeConfigs = []*promconfig.ScrapeConfig{}
 	}
 
 	// type coercion checks are handled in the ConfigToPromConfig method above

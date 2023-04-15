@@ -205,19 +205,6 @@ receivers:
         scrape_interval: 1m
         scrape_timeout: 10s
         evaluation_interval: 1m
-      scrape_configs:
-      - job_name: serviceMonitor/test/test/0
-        honor_timestamps: true
-        scrape_interval: 1m
-        scrape_timeout: 10s
-        metrics_path: /metrics
-        scheme: http
-        follow_redirects: true
-        enable_http2: true
-        http_sd_configs:
-        - follow_redirects: false
-          enable_http2: false
-          url: http://test-targetallocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
     target_allocator:
       endpoint: http://test-targetallocator:80
       interval: 30s
