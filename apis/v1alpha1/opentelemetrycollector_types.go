@@ -173,6 +173,12 @@ type OpenTelemetryCollectorSpec struct {
 	// If specified, indicates the pod's scheduling constraints
 	// +optional
 	Affinity *v1.Affinity `json:"affinity,omitempty"`
+	// Actions that the management system should take in response to container lifecycle events. Cannot be updated.
+	// +optional
+	Lifecycle *v1.Lifecycle `json:"lifecycle,omitempty"`
+	// Duration in seconds the pod needs to terminate gracefully upon probe failure.
+	// +optional
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
