@@ -478,7 +478,15 @@ func TestContainerLifecycle(t *testing.T) {
 	// test
 	c := Container(cfg, logger, otelcol, true)
 
+	expectedLifecycleHooks := corev1.Lifecycle{
+		PostStart: &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 100"}},
+		},
+		PreStop: &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 300"}},
+		},
+	}
+
 	// verify
-	assert.Equal(t, []string{"sh", "sleep 100"}, c.Lifecycle.PostStart.Exec.Command)
-	assert.Equal(t, []string{"sh", "sleep 300"}, c.Lifecycle.PreStop.Exec.Command)
+	assert.Equal(t, expectedLifecycleHooks, *c.Lifecycle)
 }
