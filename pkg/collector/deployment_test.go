@@ -304,3 +304,33 @@ func TestDeploymentAffinity(t *testing.T) {
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
+
+func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	d1 := Deployment(cfg, logger, otelcol1)
+	assert.Nil(t, d1.Spec.Template.Spec.TerminationGracePeriodSeconds)
+
+	gracePeriodSec := int64(60)
+
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-terminationGracePeriodSeconds",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TerminationGracePeriodSeconds: &gracePeriodSec,
+		},
+	}
+
+	cfg = config.New()
+
+	d2 := Deployment(cfg, logger, otelcol2)
+	assert.NotNil(t, d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	assert.Equal(t, gracePeriodSec, *d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+}
