@@ -116,6 +116,8 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	}
 
 	switch endpoint := endpoint.(type) {
+	case nil:
+		break
 	case string:
 		port, err := portFromEndpoint(endpoint)
 		if err != nil {
