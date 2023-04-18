@@ -1,0 +1,6 @@
+- op: add
+  path: /stages/0/tests/-
+  value:
+    image: docker.io/andreasgerstmayr/scorecard-test-kuttl:1681909083
+    labels:
+      suite: kuttl

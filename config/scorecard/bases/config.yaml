@@ -4,5 +4,5 @@ metadata:
   name: config
 serviceaccount: scorecard-admin
 stages:
-  - parallel: true
-    tests: []
+- parallel: true
+  tests: []

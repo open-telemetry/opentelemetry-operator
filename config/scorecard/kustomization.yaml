@@ -13,7 +13,7 @@ patchesJson6902:
     version: v1alpha3
     kind: Configuration
     name: config
-- path: patches/smoke.config.yaml
+- path: patches/kuttl.config.yaml
   target:
     group: scorecard.operatorframework.io
     version: v1alpha3
