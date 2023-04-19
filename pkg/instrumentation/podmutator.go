@@ -109,6 +109,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() {
 		insts.DotNet = inst
 	} else {
+		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
 	}
 
