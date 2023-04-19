@@ -42,10 +42,11 @@ type options struct {
 	targetAllocatorImage           string
 	operatorOpAMPBridgeImage       string
 	onOpenShiftRoutesChange        changeHandler
+	onHPAVersionChange             changeHandler
 	labelsFilter                   []string
 	openshiftRoutes                openshiftRoutesStore
+	hpaVersion                     hpaVersionStore
 	autoDetectFrequency            time.Duration
-	autoscalingVersion             autodetect.AutoscalingVersion
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -86,6 +87,14 @@ func WithTargetAllocatorConfigMapEntry(s string) Option {
 func WithLogger(logger logr.Logger) Option {
 	return func(o *options) {
 		o.logger = logger
+	}
+}
+func WithOnHPAVersionChangeCallback(f func() error) Option {
+	return func(o *options) {
+		if o.onHPAVersionChange == nil {
+			o.onHPAVersionChange = newOnChange()
+		}
+		o.onHPAVersionChange.Register(f)
 	}
 }
 func WithOnOpenShiftRoutesChangeCallback(f func() error) Option {
