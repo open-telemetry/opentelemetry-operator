@@ -65,7 +65,7 @@ func New(opts ...Option) Config {
 		hpaVersion:                    newHPAVersionWrapper(),
 		version:                       version.Get(),
 		onOpenShiftRoutesChange:       newOnChange(),
-		onHPAVersionChange: newOnChange(),
+		onHPAVersionChange:            newOnChange(),
 	}
 	for _, opt := range opts {
 		opt(&o)
