@@ -42,7 +42,6 @@ type options struct {
 	targetAllocatorImage           string
 	operatorOpAMPBridgeImage       string
 	onOpenShiftRoutesChange        changeHandler
-	onHPAVersionChange             changeHandler
 	labelsFilter                   []string
 	openshiftRoutes                openshiftRoutesStore
 	hpaVersion                     hpaVersionStore
@@ -89,14 +88,7 @@ func WithLogger(logger logr.Logger) Option {
 		o.logger = logger
 	}
 }
-func WithOnHPAVersionChangeCallback(f func() error) Option {
-	return func(o *options) {
-		if o.onHPAVersionChange == nil {
-			o.onHPAVersionChange = newOnChange()
-		}
-		o.onHPAVersionChange.Register(f)
-	}
-}
+
 func WithOnOpenShiftRoutesChangeCallback(f func() error) Option {
 	return func(o *options) {
 		if o.onOpenShiftRoutesChange == nil {

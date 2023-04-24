@@ -46,7 +46,6 @@ type Config struct {
 	autoInstrumentationNodeJSImage string
 	autoInstrumentationJavaImage   string
 	onOpenShiftRoutesChange        changeHandler
-	onHPAVersionChange             changeHandler
 	labelsFilter                   []string
 	openshiftRoutes                openshiftRoutesStore
 	autoDetectFrequency            time.Duration
@@ -65,7 +64,6 @@ func New(opts ...Option) Config {
 		hpaVersion:                    newHPAVersionWrapper(),
 		version:                       version.Get(),
 		onOpenShiftRoutesChange:       newOnChange(),
-		onHPAVersionChange:            newOnChange(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -83,7 +81,6 @@ func New(opts ...Option) Config {
 		openshiftRoutes:                o.openshiftRoutes,
 		hpaVersion:                     o.hpaVersion,
 		onOpenShiftRoutesChange:        o.onOpenShiftRoutesChange,
-		onHPAVersionChange:             o.onHPAVersionChange,
 		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
@@ -136,10 +133,6 @@ func (c *Config) AutoDetect() error {
 	if c.hpaVersion.Get() != hpaV {
 		c.logger.V(1).Info("HPA version detected", "version", hpaV)
 		c.hpaVersion.Set(hpaV)
-		if err = c.onHPAVersionChange.Do(); err != nil {
-			// Don't fail if the callback failed, as auto-detection itself worked.
-			c.logger.Error(err, "configuration change notification failed for callback")
-		}
 	}
 
 	return nil
