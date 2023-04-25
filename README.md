@@ -347,6 +347,21 @@ You can configure the OpenTelemetry SDK for applications which can't currently b
 instrumentation.opentelemetry.io/inject-sdk: "true"
 ```
 
+#### Controlling Instrumentation Capabilities
+
+The operator allows specifying, via the feature gates,  which languages the Instrumentation resource may instrument.
+These feature gates must be passed to the operator via the `--feature-gates` flag.
+The flag allows for a comma-delimited list of feature gate identifiers.
+Prefix a gate with '-' to disable support for the corresponding language.
+Prefixing a gate with '+' or no prefix will enable support for the corresponding language.
+If a language is enabled by default its gate only needs to be supplied when disabling the gate.
+
+| Language | Gate                                  | Default Value   |
+|----------|---------------------------------------|-----------------|
+| .NET     | `operator.autoinstrumentation.dotnet` | enabled         |
+
+Language not specified in the table are always supported and cannot be disabled.
+
 ### Target Allocator
 
 The OpenTelemetry Operator comes with an optional component, the Target Allocator (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also change the Prometheus receiver configuration in the CR, so that it uses the [http_sd_config](https://prometheus.io/docs/prometheus/latest/http_sd/) from the TA. The following example shows how to get started with the Target Allocator:
@@ -439,6 +454,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.75.0                | v1.19 to v1.26       | v1                  |
 | v0.74.0                | v1.19 to v1.26       | v1                  |
 | v0.73.0                | v1.19 to v1.26       | v1                  |
 | v0.72.0                | v1.19 to v1.26       | v1                  |
@@ -461,7 +477,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.54.0                | v1.19 to v1.24       | v1                  |
 | v0.53.0                | v1.19 to v1.24       | v1                  |
 | v0.52.0                | v1.19 to v1.23       | v1                  |
-| v0.51.0                | v1.19 to v1.23       | v1alpha2            |
 
 
 

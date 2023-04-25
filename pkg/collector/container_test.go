@@ -458,3 +458,35 @@ service:
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
 }
+
+func TestContainerLifecycle(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Lifecycle: &corev1.Lifecycle{
+				PostStart: &corev1.LifecycleHandler{
+					Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 100"}},
+				},
+				PreStop: &corev1.LifecycleHandler{
+					Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 300"}},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	expectedLifecycleHooks := corev1.Lifecycle{
+		PostStart: &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 100"}},
+		},
+		PreStop: &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 300"}},
+		},
+	}
+
+	// verify
+	assert.Equal(t, expectedLifecycleHooks, *c.Lifecycle)
+}

@@ -2596,6 +2596,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecycle">lifecycle</a></b></td>
+        <td>object</td>
+        <td>
+          Actions that the management system should take in response to container lifecycle events. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>maxReplicas</b></td>
         <td>integer</td>
         <td>
@@ -2692,6 +2699,15 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>object</td>
         <td>
           TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4786,6 +4802,422 @@ IngressTLS describes the transport layer security associated with an Ingress.
         <td>string</td>
         <td>
           SecretName is the name of the secret used to terminate TLS traffic on port 443. Field is left optional to allow TLS routing based on SNI hostname alone. If the SNI host in a listener conflicts with the "Host" header field used by an IngressRule, the SNI host is used for termination and value of the Host header is used for routing.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+Actions that the management system should take in response to container lifecycle events. Cannot be updated.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecyclepoststart">postStart</a></b></td>
+        <td>object</td>
+        <td>
+          PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy. Other management of the container blocks until the hook completes. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecycleprestop">preStop</a></b></td>
+        <td>object</td>
+        <td>
+          PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc. The handler is not called if the container crashes or exits. The Pod's termination grace period countdown begins before the PreStop hook is executed. Regardless of the outcome of the handler, the container will eventually terminate within the Pod's termination grace period (unless delayed by finalizers). Other management of the container blocks until the hook completes or until the termination grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.postStart
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecycle)</sup></sup>
+
+
+
+PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy. Other management of the container blocks until the hook completes. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecyclepoststartexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecyclepoststarthttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecyclepoststarttcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility. There are no validation of this field and lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.postStart.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecyclepoststart)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem. The command is simply exec'd, it is not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use a shell, you need to explicitly call out to that shell. Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.postStart.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecyclepoststart)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecyclepoststarthttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.postStart.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecyclepoststarthttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.postStart.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecyclepoststart)</sup></sup>
+
+
+
+Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility. There are no validation of this field and lifecycle hooks will fail in runtime when tcp handler is specified.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.preStop
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecycle)</sup></sup>
+
+
+
+PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc. The handler is not called if the container crashes or exits. The Pod's termination grace period countdown begins before the PreStop hook is executed. Regardless of the outcome of the handler, the container will eventually terminate within the Pod's termination grace period (unless delayed by finalizers). Other management of the container blocks until the hook completes or until the termination grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecycleprestopexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecycleprestophttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecycleprestoptcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility. There are no validation of this field and lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.preStop.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecycleprestop)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem. The command is simply exec'd, it is not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use a shell, you need to explicitly call out to that shell. Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.preStop.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecycleprestop)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclifecycleprestophttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.preStop.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecycleprestophttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.lifecycle.preStop.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspeclifecycleprestop)</sup></sup>
+
+
+
+Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility. There are no validation of this field and lifecycle hooks will fail in runtime when tcp handler is specified.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

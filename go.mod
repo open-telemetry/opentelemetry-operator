@@ -5,14 +5,14 @@ go 1.20
 retract v1.51.0
 
 require (
-	github.com/Masterminds/semver/v3 v3.2.0
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/go-logr/logr v1.2.4
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/prometheus v1.8.2-0.20210621150501-ff58416a0b02
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.2
-	go.opentelemetry.io/collector/featuregate v0.74.0
+	go.opentelemetry.io/collector/featuregate v0.75.0
 	go.opentelemetry.io/otel v1.14.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.26.3
@@ -21,7 +21,7 @@ require (
 	k8s.io/client-go v0.26.3
 	k8s.io/component-base v0.26.3
 	k8s.io/kubectl v0.26.3
-	sigs.k8s.io/controller-runtime v0.14.5
+	sigs.k8s.io/controller-runtime v0.14.6
 )
 
 require (
