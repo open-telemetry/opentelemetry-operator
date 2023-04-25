@@ -44,8 +44,8 @@ type options struct {
 	onOpenShiftRoutesChange        changeHandler
 	labelsFilter                   []string
 	openshiftRoutes                openshiftRoutesStore
+	hpaVersion                     hpaVersionStore
 	autoDetectFrequency            time.Duration
-	autoscalingVersion             autodetect.AutoscalingVersion
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -88,6 +88,7 @@ func WithLogger(logger logr.Logger) Option {
 		o.logger = logger
 	}
 }
+
 func WithOnOpenShiftRoutesChangeCallback(f func() error) Option {
 	return func(o *options) {
 		if o.onOpenShiftRoutesChange == nil {

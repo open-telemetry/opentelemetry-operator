@@ -38,6 +38,7 @@ func TestNewConfig(t *testing.T) {
 	assert.Equal(t, "some-image", cfg.CollectorImage())
 	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry())
 	assert.Equal(t, autodetect.OpenShiftRoutesNotAvailable, cfg.OpenShiftRoutes())
+	assert.Equal(t, autodetect.AutoscalingVersionUnknown, cfg.AutoscalingVersion())
 }
 
 func TestOnPlatformChangeCallback(t *testing.T) {
@@ -77,6 +78,10 @@ func TestAutoDetectInBackground(t *testing.T) {
 			wg.Done()
 			return autodetect.OpenShiftRoutesNotAvailable, nil
 		},
+		HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
+			wg.Done()
+			return autodetect.AutoscalingVersionV2, nil
+		},
 	}
 	cfg := config.New(
 		config.WithAutoDetect(mock),
@@ -85,6 +90,7 @@ func TestAutoDetectInBackground(t *testing.T) {
 
 	// sanity check
 	require.Equal(t, autodetect.OpenShiftRoutesNotAvailable, cfg.OpenShiftRoutes())
+	require.Equal(t, autodetect.AutoscalingVersionUnknown, cfg.AutoscalingVersion())
 
 	// test
 	err := cfg.StartAutoDetect()
@@ -98,9 +104,13 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
+	HPAVersionFunc                  func() (autodetect.AutoscalingVersion, error)
 }
 
 func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
+	if m.HPAVersionFunc != nil {
+		return m.HPAVersionFunc()
+	}
 	return autodetect.DefaultAutoscalingVersion, nil
 }
 
