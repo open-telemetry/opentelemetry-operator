@@ -120,6 +120,7 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 			}
 		} else {
 			u.Logger.Error(nil, "support for Go auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Go auto instrumentation is not enabled")
 		}
 	}
 	return inst

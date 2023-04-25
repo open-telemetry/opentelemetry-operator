@@ -29,9 +29,7 @@ var (
 		"operator.autoinstrumentation.dotnet",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports .NET auto-instrumentation"))
-)
 
-var (
 	EnableGoAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.go",
 		featuregate.StageAlpha,
