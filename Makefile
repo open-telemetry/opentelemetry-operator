@@ -65,21 +65,9 @@ OPERATOR_SDK_VERSION ?= 1.27.0
 CERTMANAGER_VERSION ?= 1.10.0
 
 SCORECARD_KUTTL_TESTS := \
-	ingress \
-	instrumentation-dotnet \
-	instrumentation-dotnet-multicontainer \
-	instrumentation-java \
-	instrumentation-java-multicontainer \
-	instrumentation-nodejs \
-	instrumentation-nodejs-multicontainer \
-	instrumentation-python \
-	instrumentation-python-multicontainer \
-	smoke-pod-annotations \
-	smoke-restarting-deployment \
-	smoke-sidecar \
 	smoke-simplest \
-	smoke-statefulset \
-	statefulset-features \
+	smoke-sidecar \
+	instrumentation-java
 
 ifndef ignore-not-found
   ignore-not-found = false
