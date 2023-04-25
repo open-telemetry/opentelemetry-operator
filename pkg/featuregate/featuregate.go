@@ -21,13 +21,20 @@ import (
 )
 
 const (
-	featureGatesFlag = "feature-gates"
+	FeatureGatesFlag = "feature-gates"
+)
+
+var (
+	EnableDotnetAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.dotnet",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports .NET auto-instrumentation"))
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
 func Flags(reg *featuregate.Registry) *flag.FlagSet {
 	flagSet := new(flag.FlagSet)
-	flagSet.Var(featuregate.NewFlag(reg), featureGatesFlag,
+	flagSet.Var(featuregate.NewFlag(reg), FeatureGatesFlag,
 		"Comma-delimited list of feature gate identifiers. Prefix with '-' to disable the feature. '+' or no prefix will enable the feature.")
 	return flagSet
 }
