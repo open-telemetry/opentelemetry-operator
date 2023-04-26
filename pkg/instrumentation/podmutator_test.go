@@ -32,7 +32,7 @@ import (
 )
 
 func TestMutatePod(t *testing.T) {
-	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(1))
+	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100))
 	require.NotNil(t, mutator)
 
 	true := true
@@ -225,7 +225,6 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "nodejs injection, true",
@@ -391,7 +390,6 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "python injection, true",
@@ -573,7 +571,6 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "dotnet injection, true",
@@ -755,7 +752,91 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {},
+		},
+		{
+			name: "dotnet injection feature gate disabled",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "dotnet-disabled",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "dotnet-disabled",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					DotNet: v1alpha1.DotNet{
+						Image: "otel/dotnet:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+							{
+								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+								Value: "http://localhost:4317",
+							},
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+						{
+							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+							Value: "true",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			setFeatureGates: func(t *testing.T) {
+				originalVal := featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), false))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), originalVal))
+				})
+			},
 		},
 		{
 			name: "go injection, true",
@@ -1005,92 +1086,6 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {},
-		},
-		{
-			name: "dotnet injection feature gate disabled",
-			ns: corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "dotnet-disabled",
-				},
-			},
-			inst: v1alpha1.Instrumentation{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "example-inst",
-					Namespace: "dotnet-disabled",
-				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
-						Image: "otel/dotnet:1",
-						Env: []corev1.EnvVar{
-							{
-								Name:  "OTEL_LOG_LEVEL",
-								Value: "debug",
-							},
-							{
-								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-								Value: "http://localhost:4317",
-							},
-						},
-					},
-					Exporter: v1alpha1.Exporter{
-						Endpoint: "http://collector:12345",
-					},
-					Env: []corev1.EnvVar{
-						{
-							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
-							Value: "20",
-						},
-						{
-							Name:  "OTEL_TRACES_SAMPLER",
-							Value: "parentbased_traceidratio",
-						},
-						{
-							Name:  "OTEL_TRACES_SAMPLER_ARG",
-							Value: "0.85",
-						},
-						{
-							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
-							Value: "true",
-						},
-					},
-				},
-			},
-			pod: corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationInjectDotNet: "true",
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name: "app",
-						},
-					},
-				},
-			},
-			expected: corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationInjectDotNet: "true",
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name: "app",
-						},
-					},
-				},
-			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), false))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), originalVal))
-				})
-			},
 		},
 		{
 			name: "missing annotation",
@@ -1131,7 +1126,6 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "annotation set to false",
@@ -1182,7 +1176,6 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {},
 		},
 		{
 			name: "annotation set to non existing instance",
@@ -1219,8 +1212,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			err:             `instrumentations.opentelemetry.io "doesnotexists" not found`,
-			setFeatureGates: func(t *testing.T) {},
+			err: `instrumentations.opentelemetry.io "doesnotexists" not found`,
 		},
 	}
 

@@ -107,7 +107,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() {
+	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() || inst == nil {
 		insts.DotNet = inst
 	} else {
 		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
@@ -119,7 +119,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableGoAutoInstrumentationSupport.IsEnabled() {
+	if featuregate.EnableGoAutoInstrumentationSupport.IsEnabled() || inst == nil {
 		insts.Go = inst
 	} else {
 		logger.Error(err, "support for Go auto instrumentation is not enabled")
