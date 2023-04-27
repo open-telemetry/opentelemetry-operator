@@ -20,14 +20,17 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 type InstrumentationUpgrade struct {
 	Client                client.Client
 	Logger                logr.Logger
+	Recorder              record.EventRecorder
 	DefaultAutoInstJava   string
 	DefaultAutoInstNodeJS string
 	DefaultAutoInstPython string
@@ -95,10 +98,15 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 	}
 	autoInstDotnet := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet]
 	if autoInstDotnet != "" {
-		// upgrade the image only if the image matches the annotation
-		if inst.Spec.DotNet.Image == autoInstDotnet {
-			inst.Spec.DotNet.Image = u.DefaultAutoInstDotNet
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet] = u.DefaultAutoInstDotNet
+		if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.DotNet.Image == autoInstDotnet {
+				inst.Spec.DotNet.Image = u.DefaultAutoInstDotNet
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet] = u.DefaultAutoInstDotNet
+			}
+		} else {
+			u.Logger.Error(nil, "support for .NET auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for .NET auto instrumentation is not enabled")
 		}
 	}
 	return inst

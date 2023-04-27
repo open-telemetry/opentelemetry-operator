@@ -115,11 +115,13 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 		endpoint = getAddressFromConfig(logger, name, endpointKey, config)
 	}
 
-	switch endpoint := endpoint.(type) {
+	switch e := endpoint.(type) {
+	case nil:
+		break
 	case string:
-		port, err := portFromEndpoint(endpoint)
+		port, err := portFromEndpoint(e)
 		if err != nil {
-			logger.WithValues(endpointKey, endpoint).Info("couldn't parse the endpoint's port")
+			logger.WithValues(endpointKey, e).Error(err, "couldn't parse the endpoint's port")
 			return nil
 		}
 
@@ -128,7 +130,7 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 			Port: port,
 		}
 	default:
-		logger.Info("receiver's endpoint isn't a string")
+		logger.WithValues(endpointKey, endpoint).Error(fmt.Errorf("unrecognized type %T", endpoint), "receiver's endpoint isn't a string")
 	}
 
 	return nil

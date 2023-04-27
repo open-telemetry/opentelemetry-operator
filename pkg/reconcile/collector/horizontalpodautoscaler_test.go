@@ -163,7 +163,7 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 }
 
 func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
-	configYAML, err := os.ReadFile("../testdata/test.yaml")
+	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
