@@ -121,7 +121,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 
 	var livenessProbe *corev1.Probe
 	if config, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
-		if probe, err := adapters.ConfigToContainerProbe(config); err == nil {
+		if probe, err := getLivenessProbe(config, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
 		}
 	}
@@ -230,4 +230,30 @@ func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPo
 		return ports[i].Name < ports[j].Name
 	})
 	return ports
+}
+
+func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha1.Probe) (*corev1.Probe, error) {
+	probe, err := adapters.ConfigToContainerProbe(config)
+	if err != nil {
+		return nil, err
+	}
+	if probeConfig != nil {
+		if probeConfig.InitialDelaySeconds != nil {
+			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
+		}
+		if probeConfig.PeriodSeconds != nil {
+			probe.PeriodSeconds = *probeConfig.PeriodSeconds
+		}
+		if probeConfig.FailureThreshold != nil {
+			probe.FailureThreshold = *probeConfig.FailureThreshold
+		}
+		if probeConfig.SuccessThreshold != nil {
+			probe.SuccessThreshold = *probeConfig.SuccessThreshold
+		}
+		if probeConfig.TimeoutSeconds != nil {
+			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
+		}
+		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
+	}
+	return probe, nil
 }
