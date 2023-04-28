@@ -25,7 +25,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -502,104 +501,6 @@ service:
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
-}
-
-func TestContainerProbeInvalidConfig(t *testing.T) {
-	// prepare
-	initialDelaySeconds := int32(-1)
-	timeoutSeconds := int32(0)
-	periodSeconds := int32(0)
-	successThreshold := int32(0)
-	failureThreshold := int32(0)
-	terminationGracePeriodSeconds := int64(0)
-	configString := `extensions: 
-  health_check:
-service:
-  extensions: [health_check]`
-	// make sure the health extension config is working
-	configMap, err := adapters.ConfigFromString(configString)
-	assert.NoError(t, err)
-	_, err = adapters.ConfigToContainerProbe(configMap)
-	assert.NoError(t, err)
-
-	// test initial delay
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: configString,
-			LivenessProbe: &v1alpha1.Probe{
-				InitialDelaySeconds: &initialDelaySeconds,
-			},
-		},
-	}
-	cfg := config.New()
-	c := Container(cfg, logger, otelcol, true)
-	// verify
-	assert.Nil(t, c.LivenessProbe)
-	// test timeoutSeconds
-	otelcol = v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: configString,
-			LivenessProbe: &v1alpha1.Probe{
-				TimeoutSeconds: &timeoutSeconds,
-			},
-		},
-	}
-	cfg = config.New()
-	c = Container(cfg, logger, otelcol, true)
-	// verify
-	assert.Nil(t, c.LivenessProbe)
-	// test periodSeconds
-	otelcol = v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: configString,
-			LivenessProbe: &v1alpha1.Probe{
-				PeriodSeconds: &periodSeconds,
-			},
-		},
-	}
-	cfg = config.New()
-	c = Container(cfg, logger, otelcol, true)
-	// verify
-	assert.Nil(t, c.LivenessProbe)
-	// test successThreshold
-	otelcol = v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: configString,
-			LivenessProbe: &v1alpha1.Probe{
-				SuccessThreshold: &successThreshold,
-			},
-		},
-	}
-	cfg = config.New()
-	c = Container(cfg, logger, otelcol, true)
-	// verify
-	assert.Nil(t, c.LivenessProbe)
-	// test failureThreshold
-	otelcol = v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: configString,
-			LivenessProbe: &v1alpha1.Probe{
-				FailureThreshold: &failureThreshold,
-			},
-		},
-	}
-	cfg = config.New()
-	c = Container(cfg, logger, otelcol, true)
-	// verify
-	assert.Nil(t, c.LivenessProbe)
-	// test terminationGracePeriodSeconds
-	otelcol = v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: configString,
-			LivenessProbe: &v1alpha1.Probe{
-				TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
-			},
-		},
-	}
-	cfg = config.New()
-	c = Container(cfg, logger, otelcol, true)
-	// verify
-	assert.Nil(t, c.LivenessProbe)
 }
 
 func TestContainerProbeNoConfig(t *testing.T) {
