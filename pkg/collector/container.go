@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"github.com/go-logr/logr"
+	validatorv10 "github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -34,6 +35,8 @@ import (
 // maxPortLen allows us to truncate a port name according to what is considered valid port syntax:
 // https://pkg.go.dev/k8s.io/apimachinery/pkg/util/validation#IsValidPortName
 const maxPortLen = 15
+
+var validator = validatorv10.New()
 
 // Container builds a container for the given collector.
 func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, addConfig bool) corev1.Container {
@@ -123,6 +126,8 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	if config, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
 		if probe, err := getLivenessProbe(config, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
+		} else {
+			logger.Error(err, "Cannot create liveness probe.")
 		}
 	}
 
@@ -238,6 +243,10 @@ func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha1.
 		return nil, err
 	}
 	if probeConfig != nil {
+		err = validator.Struct(probeConfig)
+		if err != nil {
+			return nil, err
+		}
 		if probeConfig.InitialDelaySeconds != nil {
 			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
 		}
