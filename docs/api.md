@@ -2319,7 +2319,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspeclivenessprobe">livenessProbe</a></b></td>
         <td>object</td>
         <td>
-          Liveness config for OpenTelemetry Collector except the proble handler which will be auto generated from the health extension of the collector. It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.<br/>
+          Liveness config for OpenTelemetry Collector except the proble handler which will be auto generated from the health extension of the collector.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4949,7 +4949,7 @@ Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the ba
 
 
 
-Liveness config for OpenTelemetry Collector except the proble handler which will be auto generated from the health extension of the collector. It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
+Liveness config for OpenTelemetry Collector except the proble handler which will be auto generated from the health extension of the collector.
 
 <table>
     <thead>
