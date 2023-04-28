@@ -180,6 +180,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 	// Liveness config for OpenTelemetry Collector except the proble handler which will be auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
 }
