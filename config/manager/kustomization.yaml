@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/yuanpeng/opentelemetry-operator/opentelemetry-operator
-  newTag: 0.75.0-15-g471f2de
+  newTag: 0.75.0-16-g8311aa5
