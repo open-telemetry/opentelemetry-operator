@@ -123,6 +123,8 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	if config, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
 		if probe, err := getLivenessProbe(config, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
+		} else {
+			logger.Error(err, "Cannot create liveness probe.")
 		}
 	}
 
