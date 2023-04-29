@@ -229,22 +229,22 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 
 	if r.Spec.LivenessProbe != nil {
 		if r.Spec.LivenessProbe.InitialDelaySeconds != nil && *r.Spec.LivenessProbe.InitialDelaySeconds < 0 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuiration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
 		}
 		if r.Spec.LivenessProbe.PeriodSeconds != nil && *r.Spec.LivenessProbe.PeriodSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe PeriodSeconds configuiration is incorrect. PeriodSeconds should be greater than or equal to 1")
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.TimeoutSeconds != nil && *r.Spec.LivenessProbe.TimeoutSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuiration is incorrect. TimeoutSeconds should be greater than or equal to 1")
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.SuccessThreshold != nil && *r.Spec.LivenessProbe.SuccessThreshold < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe SuccessThreshold configuiration is incorrect. SuccessThreshold should be greater than or equal to 1")
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.FailureThreshold != nil && *r.Spec.LivenessProbe.FailureThreshold < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe FailureThreshold configuiration is incorrect. FailureThreshold should be greater than or equal to 1")
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.TerminationGracePeriodSeconds != nil && *r.Spec.LivenessProbe.TerminationGracePeriodSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuiration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
 		}
 	}
 
