@@ -481,7 +481,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OptenTelemetry Spec LivenessProbe InitialDelaySeconds configuiration is incorrect",
+			expectedErr: "the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuiration is incorrect",
 		},
 		{
 			name: "invalid PeriodSeconds",
@@ -492,7 +492,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OptenTelemetry Spec LivenessProbe PeriodSeconds configuiration is incorrect",
+			expectedErr: "the OpenTelemetry Spec LivenessProbe PeriodSeconds configuiration is incorrect",
 		},
 		{
 			name: "invalid TimeoutSeconds",
@@ -503,7 +503,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OptenTelemetry Spec LivenessProbe TimeoutSeconds configuiration is incorrect",
+			expectedErr: "the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuiration is incorrect",
 		},
 		{
 			name: "invalid SuccessThreshold",
@@ -514,7 +514,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OptenTelemetry Spec LivenessProbe SuccessThreshold configuiration is incorrect",
+			expectedErr: "the OpenTelemetry Spec LivenessProbe SuccessThreshold configuiration is incorrect",
 		},
 		{
 			name: "invalid FailureThreshold",
@@ -525,7 +525,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OptenTelemetry Spec LivenessProbe FailureThreshold configuiration is incorrect",
+			expectedErr: "the OpenTelemetry Spec LivenessProbe FailureThreshold configuiration is incorrect",
 		},
 		{
 			name: "invalid TerminationGracePeriodSeconds",
@@ -536,7 +536,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OptenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuiration is incorrect",
+			expectedErr: "the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuiration is incorrect",
 		},
 	}
 
