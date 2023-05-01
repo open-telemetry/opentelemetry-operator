@@ -87,10 +87,15 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 	}
 	autoInstNodeJS := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS]
 	if autoInstNodeJS != "" {
-		// upgrade the image only if the image matches the annotation
-		if inst.Spec.NodeJS.Image == autoInstNodeJS {
-			inst.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS] = u.DefaultAutoInstNodeJS
+		if featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.NodeJS.Image == autoInstNodeJS {
+				inst.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS] = u.DefaultAutoInstNodeJS
+			}
+		} else {
+			u.Logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for NodeJS auto instrumentation is not enabled")
 		}
 	}
 	autoInstPython := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython]
