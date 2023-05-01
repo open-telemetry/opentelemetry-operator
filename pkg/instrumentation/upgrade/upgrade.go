@@ -90,10 +90,15 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 	}
 	autoInstPython := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython]
 	if autoInstPython != "" {
-		// upgrade the image only if the image matches the annotation
-		if inst.Spec.Python.Image == autoInstPython {
-			inst.Spec.Python.Image = u.DefaultAutoInstPython
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython] = u.DefaultAutoInstPython
+		if featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.Python.Image == autoInstPython {
+				inst.Spec.Python.Image = u.DefaultAutoInstPython
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython] = u.DefaultAutoInstPython
+			}
+		} else {
+			u.Logger.Error(nil, "support for Python auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Python auto instrumentation is not enabled")
 		}
 	}
 	autoInstDotnet := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet]
