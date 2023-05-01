@@ -345,7 +345,8 @@ If a language is enabled by default its gate only needs to be supplied when disa
 
 | Language | Gate                                  | Default Value   |
 |----------|---------------------------------------|-----------------|
-| .NET     | `operator.autoinstrumentation.dotnet` | enabled         |
+| Python   | `operator.autoinstrumentation.python` | enabled         |
+| DotNet   | `operator.autoinstrumentation.dotnet` | enabled         |
 
 Language not specified in the table are always supported and cannot be disabled.
 
