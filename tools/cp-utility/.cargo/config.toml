@@ -1,0 +1,3 @@
+# Use git CLI to fetch the source code instead of relying on the rust git implementation
+[net]
+git-fetch-with-cli = true
