@@ -345,6 +345,7 @@ If a language is enabled by default its gate only needs to be supplied when disa
 
 | Language | Gate                                  | Default Value   |
 |----------|---------------------------------------|-----------------|
+| Java     | `operator.autoinstrumentation.java`   | enabled         |
 | Python   | `operator.autoinstrumentation.python` | enabled         |
 | DotNet   | `operator.autoinstrumentation.dotnet` | enabled         |
 

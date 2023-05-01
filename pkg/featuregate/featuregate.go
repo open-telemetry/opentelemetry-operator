@@ -33,6 +33,10 @@ var (
 		"operator.autoinstrumentation.python",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports Python auto-instrumentation"))
+	EnableJavaAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.java",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports Java auto-instrumentation"))
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

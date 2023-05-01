@@ -224,6 +224,102 @@ func TestMutatePod(t *testing.T) {
 			},
 		},
 		{
+			name: "javaagent injection feature gate disabled",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "javaagent-disabled",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "javaagent-disabled",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Java: v1alpha1.Java{
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_JAVAAGENT_DEBUG",
+								Value: "true",
+							},
+							{
+								Name:  "OTEL_INSTRUMENTATION_JDBC_ENABLED",
+								Value: "false",
+							},
+							{
+								Name:  "SPLUNK_PROFILER_ENABLED",
+								Value: "false",
+							},
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "http://localhost:4317",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+						{
+							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+							Value: "true",
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJava: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJava: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			setFeatureGates: func(t *testing.T) {
+				originalVal := featuregate.EnableJavaAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableJavaAutoInstrumentationSupport.ID(), false))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableJavaAutoInstrumentationSupport.ID(), originalVal))
+				})
+			},
+		},
+		{
 			name: "nodejs injection, true",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
