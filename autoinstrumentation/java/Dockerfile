@@ -9,7 +9,7 @@
 FROM rust:1.69 as builder
 
 WORKDIR /usr/src/cp-utility
-COPY ./tools/cp-utility .
+COPY ./cp-utility .
 
 ## TARGETARCH is defined by buildx
 # https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope
