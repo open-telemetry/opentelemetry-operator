@@ -179,7 +179,7 @@ type OpenTelemetryCollectorSpec struct {
 	// Duration in seconds the pod needs to terminate gracefully upon probe failure.
 	// +optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
-	// Liveness config for OpenTelemetry Collector except the proble handler which will be auto generated from the health extension of the collector.
+	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
