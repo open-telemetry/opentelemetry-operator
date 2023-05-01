@@ -74,10 +74,15 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) v1alpha1.Instrumentation {
 	autoInstJava := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava]
 	if autoInstJava != "" {
-		// upgrade the image only if the image matches the annotation
-		if inst.Spec.Java.Image == autoInstJava {
-			inst.Spec.Java.Image = u.DefaultAutoInstJava
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava] = u.DefaultAutoInstJava
+		if featuregate.EnableJavaAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.Java.Image == autoInstJava {
+				inst.Spec.Java.Image = u.DefaultAutoInstJava
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava] = u.DefaultAutoInstJava
+			}
+		} else {
+			u.Logger.Error(nil, "support for Java auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Java auto instrumentation is not enabled")
 		}
 	}
 	autoInstNodeJS := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS]
