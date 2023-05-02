@@ -183,7 +183,7 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Java, NodeJS, Python and Apache HTTPD are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Java, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -207,11 +207,25 @@ spec:
     env:
       # Required if endpoint is set to 4317.
       # Python autoinstrumentation uses http/proto by default
-      # so data must be sent to 4318 instead of 4137.
+      # so data must be sent to 4318 instead of 4317.
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://otel-collector:4318
+  dotnet:
+    env:
+      # Required if endpoint is set to 4317.
+      # Dotnet autoinstrumentation uses http/proto by default
+      # See https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/888e2cd216c77d12e56b54ee91dafbc4e7452a52/docs/config.md#otlp
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://otel-collector:4318
 EOF
 ```
+
+The values for `propagators` are added to the `OTEL_PROPAGATORS` environment variable.
+Valid values for `propagators` are defined by the [OpenTelemetry Specification for OTEL_PROPAGATORS](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_propagators).
+
+The value for `sampler.type` is added to the `OTEL_TRACES_SAMPLER` envrionment variable.
+Valid values for `sampler.type` are defined by the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler).
+The value for `sampler.argument` is added to the `OTEL_TRACES_SAMPLER_ARG` environment variable. Valid values for `sampler.argument` will depend on the chosen sampler. See the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER_ARG](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler_arg) for more details.  
 
 The above CR can be queried by `kubectl get otelinst`.
 
@@ -439,6 +453,10 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.74.0                | v1.19 to v1.26       | v1                  |
+| v0.73.0                | v1.19 to v1.26       | v1                  |
+| v0.72.0                | v1.19 to v1.26       | v1                  |
+| v0.71.0                | v1.19 to v1.25       | v1                  |
 | v0.70.0                | v1.19 to v1.25       | v1                  |
 | v0.69.0                | v1.19 to v1.25       | v1                  |
 | v0.68.0                | v1.19 to v1.25       | v1                  |
@@ -458,9 +476,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.53.0                | v1.19 to v1.24       | v1                  |
 | v0.52.0                | v1.19 to v1.23       | v1                  |
 | v0.51.0                | v1.19 to v1.23       | v1alpha2            |
-| v0.50.0                | v1.19 to v1.23       | v1alpha2            |
-| v0.49.0                | v1.19 to v1.23       | v1alpha2            |
-| v0.48.0                | v1.19 to v1.23       | v1alpha2            |
 
 
 

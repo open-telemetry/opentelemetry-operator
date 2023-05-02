@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: opentelemetry-operator
@@ -801,7 +801,8 @@ spec:
                 type: object
               propagators:
                 description: Propagators defines inter-process context propagation
-                  configuration.
+                  configuration. Values in this list will be set in the OTEL_PROPAGATORS
+                  env var. Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none
                 items:
                   description: Propagator represents the propagation type.
                   enum:
@@ -961,10 +962,12 @@ spec:
                   argument:
                     description: Argument defines sampler argument. The value depends
                       on the sampler type. For instance for parentbased_traceidratio
-                      sampler type it is a number in range [0..1] e.g. 0.25.
+                      sampler type it is a number in range [0..1] e.g. 0.25. The value
+                      will be set in the OTEL_TRACES_SAMPLER_ARG env var.
                     type: string
                   type:
-                    description: Type defines sampler type. The value can be for instance
+                    description: Type defines sampler type. The value will be set
+                      in the OTEL_TRACES_SAMPLER env var. The value can be for instance
                       parentbased_always_on, parentbased_always_off, parentbased_traceidratio...
                     enum:
                     - always_on

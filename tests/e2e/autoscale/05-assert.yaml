@@ -1,8 +1,7 @@
-# Wait for the collector to scale back down to 1
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: simplest
+  name: simplest-set-utilization
 status:
   scale:
     replicas: 1

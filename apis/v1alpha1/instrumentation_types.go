@@ -30,6 +30,8 @@ type InstrumentationSpec struct {
 	Resource Resource `json:"resource,omitempty"`
 
 	// Propagators defines inter-process context propagation configuration.
+	// Values in this list will be set in the OTEL_PROPAGATORS env var.
+	// Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none
 	// +optional
 	Propagators []Propagator `json:"propagators,omitempty"`
 
@@ -87,6 +89,7 @@ type Exporter struct {
 // Sampler defines sampling configuration.
 type Sampler struct {
 	// Type defines sampler type.
+	// The value will be set in the OTEL_TRACES_SAMPLER env var.
 	// The value can be for instance parentbased_always_on, parentbased_always_off, parentbased_traceidratio...
 	// +optional
 	Type SamplerType `json:"type,omitempty"`
@@ -94,6 +97,7 @@ type Sampler struct {
 	// Argument defines sampler argument.
 	// The value depends on the sampler type.
 	// For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25.
+	// The value will be set in the OTEL_TRACES_SAMPLER_ARG env var.
 	// +optional
 	Argument string `json:"argument,omitempty"`
 }

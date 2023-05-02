@@ -20,7 +20,6 @@ import (
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
@@ -85,7 +84,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 
 		updated := existing.DeepCopyObject().(client.Object)
 		updated.SetOwnerReferences(desired.GetOwnerReferences())
-		setAutoscalerSpec(params, autoscalingVersion, updated)
+		setAutoscalerSpec(params, autoscalingVersion, updated, obj)
 
 		annotations := updated.GetAnnotations()
 		for k, v := range desired.GetAnnotations() {
@@ -110,7 +109,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 	return nil
 }
 
-func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object) {
+func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object, desired client.Object) {
 	one := int32(1)
 	if params.Instance.Spec.Autoscaler.MaxReplicas != nil {
 		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
@@ -120,8 +119,11 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 			} else {
 				updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}
-			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics[0].Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
-		} else {
+
+			desiredSpec := desired.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec
+			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Metrics = desiredSpec.Metrics
+			updated.(*autoscalingv2beta2.HorizontalPodAutoscaler).Spec.Behavior = desiredSpec.Behavior
+		} else { // autoscalingv2
 			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MaxReplicas = *params.Instance.Spec.Autoscaler.MaxReplicas
 			if params.Instance.Spec.Autoscaler.MinReplicas != nil {
 				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = params.Instance.Spec.Autoscaler.MinReplicas
@@ -129,14 +131,9 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 				updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.MinReplicas = &one
 			}
 
-			// This will update memory and CPU usage for now, and can be used to update other metrics in the future
-			for _, metric := range updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics {
-				if metric.Resource.Name == corev1.ResourceCPU {
-					metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetCPUUtilization
-				} else if metric.Resource.Name == corev1.ResourceMemory {
-					metric.Resource.Target.AverageUtilization = params.Instance.Spec.Autoscaler.TargetMemoryUtilization
-				}
-			}
+			desiredSpec := desired.(*autoscalingv2.HorizontalPodAutoscaler).Spec
+			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Metrics = desiredSpec.Metrics
+			updated.(*autoscalingv2.HorizontalPodAutoscaler).Spec.Behavior = desiredSpec.Behavior
 		}
 	}
 }
