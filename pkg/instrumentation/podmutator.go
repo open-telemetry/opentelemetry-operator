@@ -22,6 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -37,6 +38,7 @@ type instPodMutator struct {
 	Client      client.Client
 	sdkInjector *sdkInjector
 	Logger      logr.Logger
+	Recorder    record.EventRecorder
 }
 
 type languageInstrumentations struct {
@@ -50,7 +52,7 @@ type languageInstrumentations struct {
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
+func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder) *instPodMutator {
 	return &instPodMutator{
 		Logger: logger,
 		Client: client,
@@ -58,6 +60,7 @@ func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
 			logger: logger,
 			client: client,
 		},
+		Recorder: recorder,
 	}
 }
 

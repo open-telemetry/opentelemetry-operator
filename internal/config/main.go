@@ -50,7 +50,7 @@ type Config struct {
 	labelsFilter                        []string
 	openshiftRoutes                     openshiftRoutesStore
 	autoDetectFrequency                 time.Duration
-	autoscalingVersion                  autodetect.AutoscalingVersion
+	hpaVersion                          hpaVersionStore
 }
 
 // New constructs a new configuration based on the given options.
@@ -62,8 +62,8 @@ func New(opts ...Option) Config {
 		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
 		logger:                        logf.Log.WithName("config"),
 		openshiftRoutes:               newOpenShiftRoutesWrapper(),
+		hpaVersion:                    newHPAVersionWrapper(),
 		version:                       version.Get(),
-		autoscalingVersion:            autodetect.DefaultAutoscalingVersion,
 		onOpenShiftRoutesChange:       newOnChange(),
 	}
 	for _, opt := range opts {
@@ -71,22 +71,23 @@ func New(opts ...Option) Config {
 	}
 
 	return Config{
-		autoDetect:                     o.autoDetect,
-		autoDetectFrequency:            o.autoDetectFrequency,
-		collectorImage:                 o.collectorImage,
-		collectorConfigMapEntry:        o.collectorConfigMapEntry,
-		targetAllocatorImage:           o.targetAllocatorImage,
-		operatorOpAMPBridgeImage:       o.operatorOpAMPBridgeImage,
-		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
-		logger:                         o.logger,
-		openshiftRoutes:                o.openshiftRoutes,
-		onOpenShiftRoutesChange:        o.onOpenShiftRoutesChange,
-		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
-		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
-		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
-		autoInstrumentationDotNetImage: o.autoInstrumentationDotNetImage,
-		labelsFilter:                   o.labelsFilter,
-		autoscalingVersion:             o.autoscalingVersion,
+		autoDetect:                          o.autoDetect,
+		autoDetectFrequency:                 o.autoDetectFrequency,
+		collectorImage:                      o.collectorImage,
+		collectorConfigMapEntry:             o.collectorConfigMapEntry,
+		targetAllocatorImage:                o.targetAllocatorImage,
+		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
+		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
+		logger:                              o.logger,
+		openshiftRoutes:                     o.openshiftRoutes,
+		hpaVersion:                          o.hpaVersion,
+		onOpenShiftRoutesChange:             o.onOpenShiftRoutesChange,
+		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
+		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
+		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
+		autoInstrumentationDotNetImage:      o.autoInstrumentationDotNetImage,
+		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
+		labelsFilter:                        o.labelsFilter,
 	}
 }
 
@@ -127,12 +128,14 @@ func (c *Config) AutoDetect() error {
 		}
 	}
 
-	hpaVersion, err := c.autoDetect.HPAVersion()
+	hpaV, err := c.autoDetect.HPAVersion()
 	if err != nil {
 		return err
 	}
-	c.autoscalingVersion = hpaVersion
-	c.logger.V(2).Info("autoscaling version detected", "autoscaling-version", c.autoscalingVersion.String())
+	if c.hpaVersion.Get() != hpaV {
+		c.logger.V(1).Info("HPA version detected", "version", hpaV)
+		c.hpaVersion.Set(hpaV)
+	}
 
 	return nil
 }
@@ -164,7 +167,7 @@ func (c *Config) OpenShiftRoutes() autodetect.OpenShiftRoutesAvailability {
 
 // AutoscalingVersion represents the preferred version of autoscaling.
 func (c *Config) AutoscalingVersion() autodetect.AutoscalingVersion {
-	return c.autoscalingVersion
+	return c.hpaVersion.Get()
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
@@ -187,7 +190,7 @@ func (c *Config) AutoInstrumentationDotNetImage() string {
 	return c.autoInstrumentationDotNetImage
 }
 
-// AutoInstrumentationApacheHttpdImage returns OpenTelemetry Apache HTTPD auto-instrumentation container image.
+// AutoInstrumentationApacheHttpdImage returns OpenTelemetry ApacheHttpd auto-instrumentation container image.
 func (c *Config) AutoInstrumentationApacheHttpdImage() string {
 	return c.autoInstrumentationApacheHttpdImage
 }
@@ -201,6 +204,35 @@ func (c *Config) LabelsFilter() []string {
 // is called when the OpenShift Routes detection detects a change.
 func (c *Config) RegisterOpenShiftRoutesChangeCallback(f func() error) {
 	c.onOpenShiftRoutesChange.Register(f)
+}
+
+type hpaVersionStore interface {
+	Set(hpaV autodetect.AutoscalingVersion)
+	Get() autodetect.AutoscalingVersion
+}
+
+func newHPAVersionWrapper() hpaVersionStore {
+	return &hpaVersionWrapper{
+		current: autodetect.AutoscalingVersionUnknown,
+	}
+}
+
+type hpaVersionWrapper struct {
+	mu      sync.Mutex
+	current autodetect.AutoscalingVersion
+}
+
+func (p *hpaVersionWrapper) Set(hpaV autodetect.AutoscalingVersion) {
+	p.mu.Lock()
+	p.current = hpaV
+	p.mu.Unlock()
+}
+
+func (p *hpaVersionWrapper) Get() autodetect.AutoscalingVersion {
+	p.mu.Lock()
+	hpaV := p.current
+	p.mu.Unlock()
+	return hpaV
 }
 
 type openshiftRoutesStore interface {

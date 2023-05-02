@@ -133,6 +133,7 @@ func main() {
 		"auto-instrumentation-python", autoInstrumentationPython,
 		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"auto-instrumentation-apache-httpd", autoInstrumentationApacheHttpd,
+		// "feature-gates", flagset.Lookup(featuregate.FeatureGatesFlag).Value.String(),
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
@@ -303,6 +304,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 			DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
 			DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
 			Client:                     mgr.GetClient(),
+			Recorder:                   mgr.GetEventRecorderFor("opentelemetry-operator"),
 		}
 		return u.ManagedInstances(c)
 	}))

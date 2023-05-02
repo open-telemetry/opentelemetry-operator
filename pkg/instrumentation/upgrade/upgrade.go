@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -28,6 +29,7 @@ import (
 type InstrumentationUpgrade struct {
 	Client                     client.Client
 	Logger                     logr.Logger
+	Recorder                   record.EventRecorder
 	DefaultAutoInstJava        string
 	DefaultAutoInstNodeJS      string
 	DefaultAutoInstPython      string
