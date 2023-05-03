@@ -33,20 +33,20 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func NewPrometheusCRWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
+func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliConfig allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
 	mClient, err := monitoringclient.NewForConfig(cliConfig.ClusterConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	clientset, err := kubernetes.NewForConfig(cliConfig.ClusterConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, allocatorconfig.DefaultResyncTime, nil) //TODO decide what strategy to use regarding namespaces
 
-	serviceMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
-	if err != nil {
-		return nil, err
-	}
-
-	podMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
+	monitoringInformers, err := getInformers(factory)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,9 @@ func NewPrometheusCRWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfi
 	podMonSelector := getSelector(cfg.PodMonitorSelector)
 
 	return &PrometheusCRWatcher{
+		logger:                 logger,
 		kubeMonitoringClient:   mClient,
+		k8sClient:              clientset,
 		informers:              monitoringInformers,
 		stopChannel:            make(chan struct{}),
 		configGenerator:        generator,
@@ -77,7 +79,9 @@ func NewPrometheusCRWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfi
 }
 
 type PrometheusCRWatcher struct {
-	kubeMonitoringClient *monitoringclient.Clientset
+	logger               logr.Logger
+	kubeMonitoringClient monitoringclient.Interface
+	k8sClient            kubernetes.Interface
 	informers            map[string]*informers.ForResource
 	stopChannel          chan struct{}
 	configGenerator      *prometheus.ConfigGenerator
@@ -88,11 +92,28 @@ type PrometheusCRWatcher struct {
 }
 
 func getSelector(s map[string]string) labels.Selector {
-	sel := labels.NewSelector()
 	if s == nil {
-		return sel
+		return labels.NewSelector()
 	}
 	return labels.SelectorFromSet(s)
+}
+
+// getInformers returns a map of informers for the given resources.
+func getInformers(factory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
+	serviceMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
+	if err != nil {
+		return nil, err
+	}
+
+	podMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]*informers.ForResource{
+		monitoringv1.ServiceMonitorName: serviceMonitorInformers,
+		monitoringv1.PodMonitorName:     podMonitorInformers,
+	}, nil
 }
 
 // Watch wrapped informers and wait for an initial sync.
