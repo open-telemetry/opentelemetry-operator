@@ -133,7 +133,7 @@ func (w *PrometheusCRWatcher) Close() error {
 	return nil
 }
 
-func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
+func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Config, error) {
 	serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
 
 	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(w.serviceMonitorSelector, func(sm interface{}) {

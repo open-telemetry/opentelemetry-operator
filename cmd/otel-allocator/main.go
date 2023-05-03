@@ -189,7 +189,7 @@ func main() {
 				select {
 				case event := <-eventChan:
 					eventsMetric.WithLabelValues(event.Source.String()).Inc()
-					loadConfig, err := event.Watcher.LoadConfig()
+					loadConfig, err := event.Watcher.LoadConfig(ctx)
 					if err != nil {
 						setupLog.Error(err, "Unable to load configuration")
 						continue
