@@ -86,7 +86,12 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.Java = inst
+	if featuregate.EnableJavaAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.Java = inst
+	} else {
+		logger.Error(nil, "support for Java auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Java auto instrumentation is not enabled")
+	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNodeJS); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
@@ -100,7 +105,12 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.Python = inst
+	if featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.Python = inst
+	} else {
+		logger.Error(nil, "support for Python auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
+	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDotNet); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs

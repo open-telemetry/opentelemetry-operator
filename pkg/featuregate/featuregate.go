@@ -29,7 +29,14 @@ var (
 		"operator.autoinstrumentation.dotnet",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports .NET auto-instrumentation"))
-
+	EnablePythonAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.python",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports Python auto-instrumentation"))
+	EnableJavaAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.java",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports Java auto-instrumentation"))
 	EnableGoAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.go",
 		featuregate.StageAlpha,
