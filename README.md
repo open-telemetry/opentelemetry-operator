@@ -259,7 +259,7 @@ Go auto-instrumentation also honors an annotation that will be used to set the [
 This env var can also be set via the instrumentation object, with the annotation taking precedence.
 ```bash
 instrumentation.opentelemetry.io/inject-go: "true"
-instrumentation.opentelemetry.io/go-target-exec: "/path/to/container/executable"
+instrumentation.opentelemetry.io/otel-go-auto-target-exe: "/path/to/container/executable"
 ```
 
 OpenTelemetry SDK environment variables only:

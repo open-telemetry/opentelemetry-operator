@@ -4,7 +4,7 @@ metadata:
   annotations:
     sidecar.opentelemetry.io/inject: "true"
     instrumentation.opentelemetry.io/inject-go: "true"
-    instrumentation.opentelemetry.io/go-target-exec: /usr/src/app/productcatalogservice
+    instrumentation.opentelemetry.io/otel-go-auto-target-exe: /usr/src/app/productcatalogservice
   labels:
     app: my-pod-with-sidecar
 spec:

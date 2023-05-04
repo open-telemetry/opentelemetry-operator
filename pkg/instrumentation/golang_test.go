@@ -85,14 +85,14 @@ func TestInjectGoSDK(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/go-target-exec": "bar",
+						"instrumentation.opentelemetry.io/otel-go-auto-target-exe": "bar",
 					},
 				},
 			},
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/go-target-exec": "bar",
+						"instrumentation.opentelemetry.io/otel-go-auto-target-exe": "bar",
 					},
 				},
 				Spec: corev1.PodSpec{
