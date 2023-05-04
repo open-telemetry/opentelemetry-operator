@@ -14,7 +14,7 @@ spec:
     - name: opentelemetry-auto-instrumentation
       image: keyval/otel-go-agent:v0.6.4
       env:
-        - name: OTEL_TARGET_EXE
+        - name: OTEL_GO_AUTO_TARGET_EXE
           value: /usr/src/app/productcatalogservice
         - name: OTEL_TRACES_EXPORTER
           value: otlp

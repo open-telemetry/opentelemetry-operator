@@ -126,10 +126,10 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonEnvVar(otelinst, pod, len(pod.Spec.Containers)-1)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, len(pod.Spec.Containers)-1, 0)
 
-			// Ensure that after all the env var coalescing we have a value for OTEL_TARGET_EXE
+			// Ensure that after all the env var coalescing we have a value for OTEL_GO_AUTO_TARGET_EXE
 			idx := getIndexOfEnv(pod.Spec.Containers[len(pod.Spec.Containers)-1].Env, envOtelTargetExe)
 			if idx == -1 {
-				i.logger.Info("Skipping Go SDK injection", "reason", "OTEL_TARGET_EXE not set", "container", pod.Spec.Containers[index].Name)
+				i.logger.Info("Skipping Go SDK injection", "reason", "OTEL_GO_AUTO_TARGET_EXE not set", "container", pod.Spec.Containers[index].Name)
 				pod = origPod
 			}
 		}

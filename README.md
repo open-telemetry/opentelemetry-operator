@@ -255,7 +255,7 @@ instrumentation.opentelemetry.io/inject-dotnet: "true"
 
 Go:
 
-Go auto-instrumentation also honors an annotation that will be used to set the [OTEL_TARGET_EXE env var](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/main/docs/how-it-works.md).
+Go auto-instrumentation also honors an annotation that will be used to set the [OTEL_GO_AUTO_TARGET_EXE env var](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/main/docs/how-it-works.md).
 This env var can also be set via the instrumentation object, with the annotation taking precedence.
 ```bash
 instrumentation.opentelemetry.io/inject-go: "true"

@@ -1122,7 +1122,7 @@ func TestMutatePod(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_TARGET_EXE",
+									Name:  "OTEL_GO_AUTO_TARGET_EXE",
 									Value: "/app",
 								},
 								{

@@ -849,7 +849,7 @@ func TestInjectGo(t *testing.T) {
 			},
 		},
 		{
-			name: "OTEL_TARGET_EXE not set",
+			name: "OTEL_GO_AUTO_TARGET_EXE not set",
 			insts: languageInstrumentations{
 				Go: &v1alpha1.Instrumentation{
 					Spec: v1alpha1.InstrumentationSpec{
@@ -879,7 +879,7 @@ func TestInjectGo(t *testing.T) {
 			},
 		},
 		{
-			name: "OTEL_TARGET_EXE set by inst",
+			name: "OTEL_GO_AUTO_TARGET_EXE set by inst",
 			insts: languageInstrumentations{
 				Go: &v1alpha1.Instrumentation{
 					Spec: v1alpha1.InstrumentationSpec{
@@ -887,7 +887,7 @@ func TestInjectGo(t *testing.T) {
 							Image: "otel/go:1",
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_TARGET_EXE",
+									Name:  "OTEL_GO_AUTO_TARGET_EXE",
 									Value: "foo",
 								},
 							},
@@ -929,7 +929,7 @@ func TestInjectGo(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_TARGET_EXE",
+									Name:  "OTEL_GO_AUTO_TARGET_EXE",
 									Value: "foo",
 								},
 
@@ -974,7 +974,7 @@ func TestInjectGo(t *testing.T) {
 			},
 		},
 		{
-			name: "OTEL_TARGET_EXE set by annotation",
+			name: "OTEL_GO_AUTO_TARGET_EXE set by annotation",
 			insts: languageInstrumentations{
 				Go: &v1alpha1.Instrumentation{
 					Spec: v1alpha1.InstrumentationSpec{
@@ -1028,7 +1028,7 @@ func TestInjectGo(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_TARGET_EXE",
+									Name:  "OTEL_GO_AUTO_TARGET_EXE",
 									Value: "foo",
 								},
 

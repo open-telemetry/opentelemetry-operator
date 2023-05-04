@@ -77,7 +77,7 @@ func TestInjectGoSDK(t *testing.T) {
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
-						Name:  "OTEL_TARGET_EXE",
+						Name:  "OTEL_GO_AUTO_TARGET_EXE",
 						Value: "foo",
 					},
 				},
@@ -116,7 +116,7 @@ func TestInjectGoSDK(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_TARGET_EXE",
+									Name:  "OTEL_GO_AUTO_TARGET_EXE",
 									Value: "bar",
 								},
 							},
@@ -141,7 +141,7 @@ func TestInjectGoSDK(t *testing.T) {
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
-						Name:  "OTEL_TARGET_EXE",
+						Name:  "OTEL_GO_AUTO_TARGET_EXE",
 						Value: "foo",
 					},
 				},
@@ -180,7 +180,7 @@ func TestInjectGoSDK(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_TARGET_EXE",
+									Name:  "OTEL_GO_AUTO_TARGET_EXE",
 									Value: "foo",
 								},
 							},

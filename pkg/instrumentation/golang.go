@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	envOtelTargetExe = "OTEL_TARGET_EXE"
+	envOtelTargetExe = "OTEL_GO_AUTO_TARGET_EXE"
 
 	kernelDebugVolumeName = "kernel-debug"
 	kernelDebugVolumePath = "/sys/kernel/debug"
@@ -63,7 +63,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 		},
 	}
 
-	// Annotation takes precedence for OTEL_TARGET_EXE
+	// Annotation takes precedence for OTEL_GO_AUTO_TARGET_EXE
 	execPath, ok := pod.Annotations[annotationGoExecPath]
 	if ok {
 		goAgent.Env = append(goAgent.Env, corev1.EnvVar{
