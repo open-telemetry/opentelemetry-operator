@@ -114,7 +114,8 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/component":  "opentelemetry-collector",
 	}
-	taConfig["config"] = promConfig
+	// We only take the "config" from the returned object, we don't need the "target_allocator" configuration here.
+	taConfig["config"] = promConfig["config"]
 	if len(params.Instance.Spec.TargetAllocator.AllocationStrategy) > 0 {
 		taConfig["allocation_strategy"] = params.Instance.Spec.TargetAllocator.AllocationStrategy
 	} else {
