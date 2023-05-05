@@ -47,7 +47,7 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		return "", getStringErr
 	}
 
-	// Get the Prometheus config map with dollar signs replaced
+	// Get the Prometheus config map with dollar signs replaced to ensure successful validation of Prometheus regex
 	promCfgMap, getCfgPromErr := ta.ReplaceDollarSignInPromConfig(instance.Spec.Config)
 	if getCfgPromErr != nil {
 		return "", getCfgPromErr
