@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
@@ -28,6 +30,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
@@ -181,6 +184,55 @@ service:
 
 		// Reset the value
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
+
+	})
+
+	t.Run("should return expected escaped collector config map with target_allocator config block", func(t *testing.T) {
+		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
+		expectedLables["app.kubernetes.io/version"] = "latest"
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		assert.NoError(t, err)
+
+		expectedData := map[string]string{
+			"collector.yaml": `exporters:
+  logging: null
+processors: null
+receivers:
+  prometheus:
+    config:
+      global:
+        scrape_interval: 1m
+        scrape_timeout: 10s
+        evaluation_interval: 1m
+    target_allocator:
+      endpoint: http://test-targetallocator:80
+      interval: 30s
+      collector_id: ${POD_NAME}
+service:
+  pipelines:
+    metrics:
+      exporters:
+      - logging
+      processors: []
+      receivers:
+      - prometheus
+`,
+		}
+
+		param, err := newParams("test/test-img", "../testdata/http_sd_config_servicemonitor_test.yaml")
+		assert.NoError(t, err)
+		param.Instance.Spec.TargetAllocator.Enabled = true
+		actual := desiredConfigMap(context.Background(), param)
+
+		assert.Equal(t, "test-collector", actual.Name)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+
+		// Reset the value
+		expectedLables["app.kubernetes.io/version"] = "0.47.0"
+		err = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		assert.NoError(t, err)
 
 	})
 
@@ -358,7 +410,7 @@ func TestExpectedConfigMap(t *testing.T) {
 		assert.True(t, exists)
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
 
-		parmConfig, err := ta.ConfigToPromConfig(params().Instance.Spec.Config)
+		promConfig, err := ta.ConfigToPromConfig(params().Instance.Spec.Config)
 		assert.NoError(t, err)
 
 		taConfig := make(map[interface{}]interface{})
@@ -367,7 +419,7 @@ func TestExpectedConfigMap(t *testing.T) {
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 			"app.kubernetes.io/component":  "opentelemetry-collector",
 		}
-		taConfig["config"] = parmConfig
+		taConfig["config"] = promConfig["config"]
 		taConfig["allocation_strategy"] = "least-weighted"
 		taConfigYAML, _ := yaml.Marshal(taConfig)
 

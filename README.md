@@ -422,6 +422,64 @@ Note how the Operator added a `global` section and a new `http_sd_configs` to th
 
 More info on the TargetAllocator can be found [here](cmd/otel-allocator/README.md).
 
+#### Target Allocator config rewriting
+
+Prometheus receiver now has explicit support for acquiring scrape targets from the target allocator. As such, it is now possible to have the
+Operator add the necessary target allocator configuration automatically. This feature currently requires the `operator.collector.rewritetargetallocator` feature flag to be enabled. With the flag enabled, the configuration from the previous section would be rendered as:
+
+```yaml
+    receivers:
+      prometheus:
+        config:
+          global:
+            scrape_interval: 1m
+            scrape_timeout: 10s
+            evaluation_interval: 1m
+        target_allocator:
+          endpoint: http://collector-with-ta-targetallocator:80
+          interval: 30s
+          collector_id: $POD_NAME
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: []
+          exporters: [logging]
+```
+
+This also allows for a more straightforward collector configuration for target discovery using prometheus-operator CRDs. See below for a minimal example:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: collector-with-ta-prometheus-cr
+spec:
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    serviceAccount: everything-prometheus-operator-needs
+    prometheusCR:
+      enabled: true
+  config: |
+    receivers:
+      prometheus:
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: []
+          exporters: [logging]
+```
+
 ## Compatibility matrix
 
 ### OpenTelemetry Operator vs. OpenTelemetry Collector
