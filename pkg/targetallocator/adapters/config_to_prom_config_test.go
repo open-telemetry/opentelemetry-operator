@@ -76,3 +76,56 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 	// verify
 	assert.True(t, reflect.ValueOf(promConfig).IsNil())
 }
+
+func TestReplaceDollarSignInPromConfig(t *testing.T) {
+	actual := `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        relabel_configs:
+        - source_labels: ['__meta_service_id']
+          target_label: 'job'
+          replacement: 'my_service_$$1'
+        - source_labels: ['__meta_service_name']
+          target_label: 'instance'
+          replacement: '$1'
+        metric_relabel_configs:
+        - source_labels: ['job']
+          target_label: 'job'
+          replacement: '$$1_$2'
+`
+	expected := `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        relabel_configs:
+        - source_labels: ['__meta_service_id']
+          target_label: 'job'
+          replacement: 'my_service___DOUBLE_DOLLAR__1'
+        - source_labels: ['__meta_service_name']
+          target_label: 'instance'
+          replacement: '__SINGLE_DOLLAR__1'
+        metric_relabel_configs:
+        - source_labels: ['job']
+          target_label: 'job'
+          replacement: '__DOUBLE_DOLLAR__1___SINGLE_DOLLAR__2'
+`
+
+	config, err := ta.ReplaceDollarSignInPromConfig(actual)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	expectedConfig, err := ta.ReplaceDollarSignInPromConfig(expected)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if !reflect.DeepEqual(config, expectedConfig) {
+		t.Errorf("unexpected config: got %v, want %v", config, expectedConfig)
+	}
+}
