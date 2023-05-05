@@ -16,7 +16,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator v0.63.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.64.1
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.64.1
-	github.com/prometheus/client_golang v1.15.0
+	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/common v0.42.0
 	github.com/prometheus/prometheus v1.8.2-0.20211214150951-52c693a63be1
 	github.com/spf13/pflag v1.0.5
