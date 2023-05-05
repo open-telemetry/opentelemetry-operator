@@ -13,4 +13,6 @@ issues: [1581]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  Note that the ConfigToPromConfig function in pkg/targetallocator/adapters now correctly returns the prometheus receiver config
+  in accordance with its docstring. It used to erroneously return the actual Prometheus config from a level lower.
