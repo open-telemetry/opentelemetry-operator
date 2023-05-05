@@ -15,6 +15,7 @@
 package adapters
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
@@ -56,4 +57,29 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 	}
 
 	return prometheus, nil
+}
+
+// ValidatePromConfig checks if the prometheus receiver config is valid given other collector-level settings.
+func ValidatePromConfig(config map[interface{}]interface{}, targetAllocatorEnabled bool, targetAllocatorRewriteEnabled bool) error {
+	_, promConfigExists := config["config"]
+
+	if targetAllocatorEnabled {
+		if targetAllocatorRewriteEnabled { // if rewrite is enabled, we will add a target_allocator section during rewrite
+			return nil
+		}
+		_, targetAllocatorExists := config["target_allocator"]
+
+		// otherwise, either the target_allocator or config section needs to be here
+		if !(promConfigExists || targetAllocatorExists) {
+			return errors.New("either target allocator or prometheus config needs to be present")
+		}
+
+		return nil
+	}
+	// if target allocator isn't enabled, we need a config section
+	if !promConfigExists {
+		return errorNoComponent("prometheusConfig")
+	}
+
+	return nil
 }
