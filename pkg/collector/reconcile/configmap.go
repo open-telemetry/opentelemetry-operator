@@ -103,7 +103,7 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
 
-	promConfig, err := ta.ConfigToPromConfig(params.Instance.Spec.Config)
+	promConfig, err := ta.ReplaceDollarSignInTAPromConfig(params.Instance.Spec.Config)
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}

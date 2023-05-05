@@ -15,6 +15,7 @@
 package reconcile
 
 import (
+	"os"
 	"testing"
 
 	"github.com/prometheus/prometheus/discovery/http"
@@ -95,4 +96,32 @@ func TestPrometheusParser(t *testing.T) {
 		}
 	})
 
+}
+
+func TestRelabelConfig(t *testing.T) {
+	param, err := newParams("test/test-img", "../testdata/relabel_config_original.yaml")
+	assert.NoError(t, err)
+
+	t.Run("should escape $ characters in relabel configs replacement key", func(t *testing.T) {
+		expectedConfigBytes, err := os.ReadFile("../testdata/relabel_config_expected.yaml")
+		assert.NoError(t, err)
+		expectedConfig := string(expectedConfigBytes)
+
+		actualConfig, err := ReplaceConfig(param.Instance)
+		assert.NoError(t, err)
+
+		assert.Equal(t, expectedConfig, actualConfig)
+	})
+
+	t.Run("should not modify config when TargetAllocator is disabled", func(t *testing.T) {
+		param.Instance.Spec.TargetAllocator.Enabled = false
+		expectedConfigBytes, err := os.ReadFile("../testdata/relabel_config_original.yaml")
+		assert.NoError(t, err)
+		expectedConfig := string(expectedConfigBytes)
+
+		actualConfig, err := ReplaceConfig(param.Instance)
+		assert.NoError(t, err)
+
+		assert.Equal(t, expectedConfig, actualConfig)
+	})
 }
