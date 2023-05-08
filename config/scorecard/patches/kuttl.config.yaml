@@ -1,6 +1,9 @@
 - op: add
   path: /stages/0/tests/-
   value:
+    # TODO: Switch to quay.io/operator-framework/scorecard-test-kuttl image
+    # once https://github.com/operator-framework/operator-sdk/pull/6401 is merged.
+    # https://github.com/open-telemetry/opentelemetry-operator/issues/1721
     image: docker.io/andreasgerstmayr/scorecard-test-kuttl:1681909083
     labels:
       suite: kuttl
