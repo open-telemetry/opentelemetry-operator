@@ -37,6 +37,10 @@ var (
 		"operator.autoinstrumentation.java",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports Java auto-instrumentation"))
+	EnableNodeJSAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.nodejs",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports NodeJS auto-instrumentation"))
 
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
 	// automatically be rewritten when the target allocator is enabled.
