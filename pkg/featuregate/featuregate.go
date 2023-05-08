@@ -37,6 +37,10 @@ var (
 		"operator.autoinstrumentation.java",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports Java auto-instrumentation"))
+	EnableNodeJSAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.nodejs",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports NodeJS auto-instrumentation"))
 	EnableGoAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.go",
 		featuregate.StageAlpha,
