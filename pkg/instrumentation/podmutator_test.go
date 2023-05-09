@@ -485,6 +485,95 @@ func TestMutatePod(t *testing.T) {
 			},
 		},
 		{
+			name: "nodejs injection feature gate disabled",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "nodejs-disabled",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "nodejs-disabled",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					NodeJS: v1alpha1.NodeJS{
+						Image: "otel/nodejs:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_NODEJS_DEBUG",
+								Value: "true",
+							},
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "http://localhost:4317",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+						{
+							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+							Value: "true",
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectNodeJS: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectNodeJS: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			setFeatureGates: func(t *testing.T) {
+				originalVal := featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNodeJSAutoInstrumentationSupport.ID(), false))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNodeJSAutoInstrumentationSupport.ID(), originalVal))
+				})
+			},
+		},
+		{
 			name: "python injection, true",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
