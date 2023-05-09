@@ -117,7 +117,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b><a href="#instrumentationspecgo">go</a></b></td>
         <td>object</td>
         <td>
-          Go defines configuration for Go auto-instrumentation.<br/>
+          Go defines configuration for Go auto-instrumentation. When using Go auto-instrumenetation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation. Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1271,7 +1271,7 @@ Exporter defines exporter configuration.
 
 
 
-Go defines configuration for Go auto-instrumentation.
+Go defines configuration for Go auto-instrumentation. When using Go auto-instrumenetation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation. Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.
 
 <table>
     <thead>
