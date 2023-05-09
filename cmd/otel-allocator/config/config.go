@@ -129,3 +129,13 @@ func ParseCLI() (CLIConfig, error) {
 	cLIConf.ClusterConfig = clusterConfig
 	return cLIConf, nil
 }
+
+// ValidateConfig validates the cli and file configs together.
+func ValidateConfig(config *Config, cliConfig *CLIConfig) error {
+	if !*cliConfig.PromCRWatcherConf.Enabled &&
+		(config.Config == nil ||
+			len(config.Config.ScrapeConfigs) == 0) {
+		return fmt.Errorf("either at least one scrape config must be defined, or Prometheus CR watching must be enabled")
+	}
+	return nil
+}

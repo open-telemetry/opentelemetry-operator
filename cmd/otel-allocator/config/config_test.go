@@ -92,6 +92,14 @@ func TestLoad(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
+			name: "no config",
+			args: args{
+				file: "./testdata/no_config.yaml",
+			},
+			want:    Config{},
+			wantErr: assert.NoError,
+		},
+		{
 			name: "service monitor pod monitor selector",
 			args: args{
 				file: "./testdata/pod_service_selector_test.yaml",

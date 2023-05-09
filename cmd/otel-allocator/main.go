@@ -74,6 +74,10 @@ func main() {
 		setupLog.Error(configLoadErr, "Unable to load configuration")
 	}
 
+	if validationErr := config.ValidateConfig(&cfg, &cliConf); validationErr != nil {
+		setupLog.Error(validationErr, "Invalid configuration")
+	}
+
 	cliConf.RootLogger.Info("Starting the Target Allocator")
 	ctx := context.Background()
 	log := ctrl.Log.WithName("allocator")
@@ -148,10 +152,12 @@ func main() {
 	runGroup.Add(
 		func() error {
 			// Initial loading of the config file's scrape config
-			err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.Config)
-			if err != nil {
-				setupLog.Error(err, "Unable to apply initial configuration")
-				return err
+			if cfg.Config != nil {
+				err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.Config)
+				if err != nil {
+					setupLog.Error(err, "Unable to apply initial configuration")
+					return err
+				}
 			}
 			err := targetDiscoverer.Watch(allocator.SetTargets)
 			setupLog.Info("Target discoverer exited")
