@@ -171,7 +171,9 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 // deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
 // still supported but should eventually be updated.
 func TestOTELColValidatingWebhook(t *testing.T) {
+	minusOne := int32(-1)
 	zero := int32(0)
+	zero64 := int64(0)
 	one := int32(1)
 	three := int32(3)
 	five := int32(5)
@@ -469,6 +471,72 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "does not support the attribute 'affinity'",
+		},
+		{
+			name: "invalid InitialDelaySeconds",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						InitialDelaySeconds: &minusOne,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect",
+		},
+		{
+			name: "invalid PeriodSeconds",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						PeriodSeconds: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect",
+		},
+		{
+			name: "invalid TimeoutSeconds",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						TimeoutSeconds: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect",
+		},
+		{
+			name: "invalid SuccessThreshold",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						SuccessThreshold: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect",
+		},
+		{
+			name: "invalid FailureThreshold",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						FailureThreshold: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect",
+		},
+		{
+			name: "invalid TerminationGracePeriodSeconds",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						TerminationGracePeriodSeconds: &zero64,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect",
 		},
 	}
 
