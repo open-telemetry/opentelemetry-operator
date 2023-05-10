@@ -537,6 +537,7 @@ In addition to the [core responsibilities](https://github.com/open-telemetry/com
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
 - [Benedikt Bongartz](https://github.com/frzifus), Red Hat
+- [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
 
 Emeritus Approvers:
