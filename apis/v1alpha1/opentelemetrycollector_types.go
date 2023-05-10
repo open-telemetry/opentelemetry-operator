@@ -197,8 +197,11 @@ type OpenTelemetryTargetAllocator struct {
 	// +optional
 	AllocationStrategy OpenTelemetryTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
-	// The only current option is relabel-config (drops targets based on prom relabel_config).
-	// Filtering is disabled by default.
+	// The only current option is relabel-config (drops targets based on prom relabel_config). It's important to consider
+	// setting it with relabel-config if you have a scrape job with a discovery role for example, endpoints which could
+	// produce multiple targets per endpoint. If these targets lead to the same metric after a relabeling step and they
+	// are assigned to different collectors, the outcome may be undesirable because duplicate time series are created for
+	// the metric. Filtering is disabled by default.
 	// +optional
 	FilterStrategy string `json:"filterStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,

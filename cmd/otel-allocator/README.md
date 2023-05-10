@@ -44,7 +44,7 @@ spec:
           exporters: [logging]
 ```
 ## Set up filterStrategy
-`filterStrategy` determines how to filter targets before allocating them among multiple collectors. `relabel-config` is the currently supported option. With `filterStrategy`, targets will be consolidated based on Prometheus configuration "relabel_config". By default, filtering is disabled.
+`filterStrategy` determines how to filter targets before allocating them among multiple collectors. `relabel-config` is the currently supported option. With `filterStrategy`, targets will be consolidated based on Prometheus configuration `relabel_config`. By default, filtering is disabled.
 
 It's important to consider setting `filterStrategy` if you have a scrape job with a discovery role for example, `endpoints` which could produce multiple targets per endpoint. If these targets lead to the same metric after a relabeling step and they are assigned to different collectors, the outcome may be undesirable because duplicate time series are created for the metric. 
 
