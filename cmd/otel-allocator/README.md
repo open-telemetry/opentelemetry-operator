@@ -43,12 +43,20 @@ spec:
           processors: []
           exporters: [logging]
 ```
-## Set up filter_strategy
-`FilterStrategy` determines how to filter targets before allocating them among multiple collectors. `relabel-config` is the currently supported option. With `FilterStrategy`, targets will be consolidated based on Prometheus configuration "relabel_config". By default, filtering is disabled.
+## Set up filterStrategy
+`filterStrategy` determines how to filter targets before allocating them among multiple collectors. `relabel-config` is the currently supported option. With `filterStrategy`, targets will be consolidated based on Prometheus configuration "relabel_config". By default, filtering is disabled.
 
-It's important to consider setting `FilterStrategy` if you have a scrape job with a discovery role for example, `endpoints` which could produce multiple targets per endpoint. If these targets lead to the same metric after a relabeling step and they are assigned to different collectors, the outcome may be undesirable because duplicate time series are created for the metric.  
+It's important to consider setting `filterStrategy` if you have a scrape job with a discovery role for example, `endpoints` which could produce multiple targets per endpoint. If these targets lead to the same metric after a relabeling step and they are assigned to different collectors, the outcome may be undesirable because duplicate time series are created for the metric. 
 
 For metrics collection pipeline where metrics are exported to Prometheus, you may see `out of order sample` error intermittenly if the time series produced have shifted time stamps from different collectors. 
+
+Here is an example of this setting,
+```yaml
+  targetAllocator:
+    enabled: true
+    allocationStrategy: consistent-hashing
+    filterStrategy: relabel-config
+```
 
 ## PrometheusCR specifics
 TargetAllocator discovery of PrometheusCRs can be turned on by setting
