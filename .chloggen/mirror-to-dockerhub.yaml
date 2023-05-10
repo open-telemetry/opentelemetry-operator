@@ -2,13 +2,13 @@
 change_type: enhancement
 
 # The name of the component, or a single word describing the area of concern, (e.g. operator, target allocator, github action)
-component: autoinstrumentation
+component: github actions
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Add metrics exporter to Node.JS autoinstrumentation
+note: Publish image to dockerhub too
 
 # One or more tracking issues related to the change
-issues: [1627]
+issues: [1708]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
