@@ -41,6 +41,7 @@ import (
 const (
 	volumeName        = "opentelemetry-auto-instrumentation"
 	initContainerName = "opentelemetry-auto-instrumentation"
+	svcNameAnnotation = "instrumentation.opentelemetry.io/service-name"
 )
 
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
@@ -243,6 +244,10 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 }
 
 func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) string {
+	serviceNames := strings.Split(pod.Annotations[svcNameAnnotation], ",")
+	if name := serviceNames[index]; name != "" {
+		return name
+	}
 	if name := resources[string(semconv.K8SDeploymentNameKey)]; name != "" {
 		return name
 	}
