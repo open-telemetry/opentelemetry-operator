@@ -106,7 +106,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 			Name:      initContainerName,
 			Image:     dotNetSpec.Image,
 			Command:   []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
-			Resources: defaultInitContainerResourceRequirements(),
+			Resources: dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volumeName,
 				MountPath: "/otel-auto-instrumentation",

@@ -69,7 +69,7 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 			Name:      initContainerName,
 			Image:     nodeJSSpec.Image,
 			Command:   []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
-			Resources: defaultInitContainerResourceRequirements(),
+			Resources: nodeJSSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volumeName,
 				MountPath: "/otel-auto-instrumentation",

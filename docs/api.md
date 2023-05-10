@@ -204,6 +204,13 @@ Apache defines configuration for Apache HTTPD auto-instrumentation.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>version</b></td>
         <td>string</td>
         <td>
@@ -706,6 +713,76 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.apacheHttpd.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpd)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecapachehttpdresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.dotnet
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -734,6 +811,13 @@ DotNet defines configuration for DotNet auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with DotNet SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -982,6 +1066,76 @@ Selects a key of a secret in the pod's namespace
           Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecdotnet)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecdotnetresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecdotnetresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
@@ -1289,6 +1443,13 @@ Java defines configuration for java auto-instrumentation.
           Image is a container image with javaagent auto-instrumentation JAR.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavaresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -1539,6 +1700,76 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.java.resources
+<sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecjavaresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.resources.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecjavaresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.nodejs
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -1567,6 +1798,13 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with NodeJS SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1819,6 +2057,76 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.nodejs.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecnodejs)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnodejsresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecnodejsresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.python
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -1847,6 +2155,13 @@ Python defines configuration for python auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with Python SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2095,6 +2410,76 @@ Selects a key of a secret in the pod's namespace
           Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecpython)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecpythonresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecpythonresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

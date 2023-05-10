@@ -69,7 +69,7 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 			Name:      initContainerName,
 			Image:     javaSpec.Image,
 			Command:   []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
-			Resources: defaultInitContainerResourceRequirements(),
+			Resources: javaSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volumeName,
 				MountPath: "/otel-auto-instrumentation",

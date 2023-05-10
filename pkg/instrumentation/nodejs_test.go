@@ -61,7 +61,6 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
-							Resources: defaultInitContainerResourceRequirements(),
 						},
 					},
 					Containers: []corev1.Container{
@@ -86,7 +85,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		},
 		{
 			name:   "NODE_OPTIONS defined",
-			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -120,7 +119,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
-							Resources: defaultInitContainerResourceRequirements(),
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{

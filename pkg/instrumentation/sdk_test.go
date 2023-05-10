@@ -25,10 +25,22 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
+
+var testResourceRequirements = corev1.ResourceRequirements{
+	Limits: corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("500m"),
+		corev1.ResourceMemory: resource.MustParse("128Mi"),
+	},
+	Requests: corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("500m"),
+		corev1.ResourceMemory: resource.MustParse("128Mi"),
+	},
+}
 
 func TestSDKInjection(t *testing.T) {
 	ns := corev1.Namespace{
@@ -376,7 +388,8 @@ func TestInjectJava(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
 		Spec: v1alpha1.InstrumentationSpec{
 			Java: v1alpha1.Java{
-				Image: "img:1",
+				Image:     "img:1",
+				Resources: testResourceRequirements,
 			},
 			Exporter: v1alpha1.Exporter{
 				Endpoint: "https://collector:4317",
@@ -419,7 +432,7 @@ func TestInjectJava(t *testing.T) {
 						Name:      volumeName,
 						MountPath: "/otel-auto-instrumentation",
 					}},
-					Resources: defaultInitContainerResourceRequirements(),
+					Resources: testResourceRequirements,
 				},
 			},
 			Containers: []corev1.Container{
@@ -475,7 +488,8 @@ func TestInjectNodeJS(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
 		Spec: v1alpha1.InstrumentationSpec{
 			NodeJS: v1alpha1.NodeJS{
-				Image: "img:1",
+				Image:     "img:1",
+				Resources: testResourceRequirements,
 			},
 			Exporter: v1alpha1.Exporter{
 				Endpoint: "https://collector:4318",
@@ -518,7 +532,7 @@ func TestInjectNodeJS(t *testing.T) {
 						Name:      volumeName,
 						MountPath: "/otel-auto-instrumentation",
 					}},
-					Resources: defaultInitContainerResourceRequirements(),
+					Resources: testResourceRequirements,
 				},
 			},
 			Containers: []corev1.Container{
@@ -618,7 +632,6 @@ func TestInjectPython(t *testing.T) {
 						Name:      volumeName,
 						MountPath: "/otel-auto-instrumentation",
 					}},
-					Resources: defaultInitContainerResourceRequirements(),
 				},
 			},
 			Containers: []corev1.Container{
@@ -733,7 +746,6 @@ func TestInjectDotNet(t *testing.T) {
 						Name:      volumeName,
 						MountPath: "/otel-auto-instrumentation",
 					}},
-					Resources: defaultInitContainerResourceRequirements(),
 				},
 			},
 			Containers: []corev1.Container{
