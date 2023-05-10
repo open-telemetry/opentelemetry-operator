@@ -16,24 +16,28 @@ package reconcile
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
+	"time"
 
-	"github.com/mitchellh/mapstructure"
 	promconfig "github.com/prometheus/prometheus/config"
-	"github.com/prometheus/prometheus/discovery"
-	"github.com/prometheus/prometheus/discovery/http"
 	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
+type targetAllocator struct {
+	Endpoint    string        `yaml:"endpoint"`
+	Interval    time.Duration `yaml:"interval"`
+	CollectorID string        `yaml:"collector_id"`
+}
+
 type Config struct {
-	PromConfig *promconfig.Config `yaml:"config"`
+	PromConfig        *promconfig.Config `yaml:"config"`
+	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
 }
 
 func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
@@ -42,67 +46,64 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		return instance.Spec.Config, nil
 	}
 
-	config, getStringErr := adapters.ConfigFromString(instance.Spec.Config)
-	if getStringErr != nil {
-		return "", getStringErr
-	}
-
-	// Get the Prometheus config map with dollar signs replaced to ensure successful validation of Prometheus regex
-	promCfgMap, getCfgPromErr := ta.ReplaceDollarSignInPromConfig(instance.Spec.Config)
-	if getCfgPromErr != nil {
-		return "", getCfgPromErr
-	}
-
-	// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
-	promCfg, marshalErr := yaml.Marshal(map[string]interface{}{
-		"config": promCfgMap,
-	})
-	if marshalErr != nil {
-		return "", marshalErr
-	}
-
-	var cfg Config
-	if marshalErr = yaml.UnmarshalStrict(promCfg, &cfg); marshalErr != nil {
-		return "", fmt.Errorf("error unmarshaling YAML: %w", marshalErr)
-	}
-
-	// Escapes default replacement key added by prometheus and resets all other replacement keys to their original values
-	replacer := strings.NewReplacer(
-		"$", "$$",
-		"__DOUBLE_DOLLAR__", "$$",
-		"__SINGLE_DOLLAR__", "$",
-	)
-
-	// Loop through the scrape configs and escape "$" characters in relabel_configs and metric_relabel_configs
-	for _, scrapeCfg := range cfg.PromConfig.ScrapeConfigs {
-		for _, relabelCfg := range scrapeCfg.RelabelConfigs {
-			relabelCfg.Replacement = replacer.Replace(relabelCfg.Replacement)
-		}
-		for _, metricRelabelCfg := range scrapeCfg.MetricRelabelConfigs {
-			metricRelabelCfg.Replacement = replacer.Replace(metricRelabelCfg.Replacement)
-		}
-		// Escape the job name for use in the URL
-		escapedJob := url.QueryEscape(scrapeCfg.JobName)
-		// Create the service discovery configuration with the formatted URL
-		sdConfig := &http.SDConfig{
-			URL: fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", naming.TAService(instance), escapedJob),
-		}
-		scrapeCfg.ServiceDiscoveryConfigs = discovery.Configs{sdConfig}
-	}
-
-	// Decode the Config struct back to a map and update the Prometheus config map
-	updPromCfgMap := make(map[string]interface{})
-	if err := mapstructure.Decode(cfg, &updPromCfgMap); err != nil {
+	config, err := adapters.ConfigFromString(instance.Spec.Config)
+	if err != nil {
 		return "", err
 	}
 
-	// Update the OpenTelemetryCollector instance's config with the updated Prometheus config map
-	// type coercion checks are handled in the ReplaceDollarSignInPromConfig method above
-	config["receivers"].(map[interface{}]interface{})["prometheus"].(map[interface{}]interface{})["config"] = updPromCfgMap["PromConfig"]
+	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
+		promCfgMap, err := ta.ConfigToPromConfig(instance.Spec.Config)
+		if err != nil {
+			return "", err
+		}
+
+		// update scrape configs before unmarshalling to avoid issues caused by Prometheus
+		// validation logic, which fails regex validation when it encounters $$ in the prom config.
+		// we don't need the scrape configs anymore with target allocator enabled
+		promCfgMap["scrape_configs"] = []map[string]interface{}{}
+
+		// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
+		promCfg, err := yaml.Marshal(promCfgMap)
+		if err != nil {
+			return "", err
+		}
+
+		var cfg Config
+		if err = yaml.UnmarshalStrict(promCfg, &cfg); err != nil {
+			return "", fmt.Errorf("error unmarshaling YAML: %w", err)
+		}
+
+		cfg.TargetAllocConfig = &targetAllocator{
+			Endpoint:    fmt.Sprintf("http://%s:80", naming.TAService(instance)),
+			Interval:    30 * time.Second,
+			CollectorID: "${POD_NAME}",
+		}
+
+		// type coercion checks are handled in the ConfigToPromConfig method above
+		config["receivers"].(map[interface{}]interface{})["prometheus"] = cfg
+
+		out, err := yaml.Marshal(cfg)
+		if err != nil {
+			return "", err
+		}
+
+		return string(out), nil
+	}
+
+	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
+	// $$ in the prom config, we update the YAML file directly without marshalling and unmarshalling.
+	promCfgMap, err := ta.AddHTTPSDConfigToPromConfig(instance.Spec.Config, naming.TAService(instance))
+	if err != nil {
+		return "", err
+	}
+
+	// type coercion checks are handled in the ConfigToPromConfig method above
+	config["receivers"].(map[interface{}]interface{})["prometheus"] = promCfgMap
 
 	out, err := yaml.Marshal(config)
 	if err != nil {
 		return "", err
 	}
+
 	return string(out), nil
 }

@@ -17,11 +17,15 @@ package reconcile
 import (
 	"os"
 	"testing"
+	"time"
+
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 
 	"github.com/prometheus/prometheus/discovery/http"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
@@ -38,9 +42,7 @@ func TestPrometheusParser(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		promCfg, err := yaml.Marshal(map[string]interface{}{
-			"config": promCfgMap,
-		})
+		promCfg, err := yaml.Marshal(promCfgMap)
 		assert.NoError(t, err)
 
 		err = yaml.UnmarshalStrict(promCfg, &cfg)
@@ -60,6 +62,37 @@ func TestPrometheusParser(t *testing.T) {
 		for k := range expectedMap {
 			assert.True(t, expectedMap[k], k)
 		}
+		assert.True(t, cfg.TargetAllocConfig == nil)
+	})
+
+	t.Run("should update config with targetAllocator block", func(t *testing.T) {
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		param.Instance.Spec.TargetAllocator.Enabled = true
+		assert.NoError(t, err)
+		actualConfig, err := ReplaceConfig(param.Instance)
+		assert.NoError(t, err)
+
+		// prepare
+		var cfg Config
+		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
+		assert.NoError(t, err)
+
+		promCfg, err := yaml.Marshal(promCfgMap)
+		assert.NoError(t, err)
+
+		err = yaml.UnmarshalStrict(promCfg, &cfg)
+		assert.NoError(t, err)
+
+		// test
+		assert.Len(t, cfg.PromConfig.ScrapeConfigs, 0)
+		expectedTAConfig := &targetAllocator{
+			Endpoint:    "http://test-targetallocator:80",
+			Interval:    30 * time.Second,
+			CollectorID: "${POD_NAME}",
+		}
+		assert.Equal(t, expectedTAConfig, cfg.TargetAllocConfig)
+		err = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		assert.NoError(t, err)
 	})
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
@@ -72,9 +105,7 @@ func TestPrometheusParser(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		promCfg, err := yaml.Marshal(map[string]interface{}{
-			"config": promCfgMap,
-		})
+		promCfg, err := yaml.Marshal(promCfgMap)
 		assert.NoError(t, err)
 
 		err = yaml.UnmarshalStrict(promCfg, &cfg)
@@ -94,16 +125,18 @@ func TestPrometheusParser(t *testing.T) {
 		for k := range expectedMap {
 			assert.True(t, expectedMap[k], k)
 		}
+		assert.True(t, cfg.TargetAllocConfig == nil)
 	})
 
 }
 
-func TestRelabelConfig(t *testing.T) {
+func TestReplaceConfig(t *testing.T) {
 	param, err := newParams("test/test-img", "../testdata/relabel_config_original.yaml")
 	assert.NoError(t, err)
 
-	t.Run("should escape $ characters in relabel configs replacement key", func(t *testing.T) {
-		expectedConfigBytes, err := os.ReadFile("../testdata/relabel_config_expected.yaml")
+	t.Run("should not modify config when TargetAllocator is disabled", func(t *testing.T) {
+		param.Instance.Spec.TargetAllocator.Enabled = false
+		expectedConfigBytes, err := os.ReadFile("../testdata/relabel_config_original.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
@@ -113,9 +146,10 @@ func TestRelabelConfig(t *testing.T) {
 		assert.Equal(t, expectedConfig, actualConfig)
 	})
 
-	t.Run("should not modify config when TargetAllocator is disabled", func(t *testing.T) {
-		param.Instance.Spec.TargetAllocator.Enabled = false
-		expectedConfigBytes, err := os.ReadFile("../testdata/relabel_config_original.yaml")
+	t.Run("should rewrite scrape configs with SD config when TargetAllocator is enabled and feature flag is not set", func(t *testing.T) {
+		param.Instance.Spec.TargetAllocator.Enabled = true
+
+		expectedConfigBytes, err := os.ReadFile("../testdata/relabel_config_expected_with_sd_config.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 

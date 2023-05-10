@@ -1,54 +1,51 @@
 exporters:
-  logging: null
-processors: null
+logging:
+processors:
 receivers:
   prometheus:
     config:
       global:
+        evaluation_interval: 1m
         scrape_interval: 1m
         scrape_timeout: 10s
-        evaluation_interval: 1m
       scrape_configs:
       - job_name: service-x
-        honor_timestamps: true
-        scrape_interval: 1m
-        scrape_timeout: 10s
         metrics_path: /metrics
         scheme: http
-        follow_redirects: true
-        enable_http2: true
+        scrape_interval: 1m
+        scrape_timeout: 10s
+        honor_labels: true
         relabel_configs:
         - source_labels: [label1]
-          regex: (.*)
           action: keep
-        - source_labels: [label2]
-          separator: ;
           regex: (.*)
-          target_label: label3
-          replacement: $$1_$2
+        - target_label: label3
+          source_labels: [label2]
           action: replace
-        - source_labels: [label4]
-          separator: ;
           regex: (.*)
-          replacement: $$1
+          replacement: "$$1_$2"
+          separator: ";"
+        - source_labels: [label4]
           action: labelmap
+          regex: (.*)
+          separator: ";"
         - regex: foo_.*
           action: labeldrop
         metric_relabel_configs:
         - source_labels: [label1]
-          separator: ;
-          regex: (.*)
-          replacement: $1
           action: keep
-        - source_labels: [label4]
-          separator: ;
           regex: (.*)
+          separator: ";"
+        - regex: (.*)
           action: labelmap
+          separator: ";"
+          source_labels: [label4]
+
 service:
   pipelines:
     metrics:
       exporters:
       - logging
-      processors: []
       receivers:
       - prometheus
+      processors: []

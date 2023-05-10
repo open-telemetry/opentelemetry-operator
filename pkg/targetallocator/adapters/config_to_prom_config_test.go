@@ -16,6 +16,7 @@ package adapters_test
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
 	"testing"
 
@@ -41,9 +42,49 @@ func TestExtractPromConfigFromConfig(t *testing.T) {
         endpoint: 0.0.0.0:15268
 `
 	expectedData := map[interface{}]interface{}{
-		"scrape_config": map[interface{}]interface{}{
-			"job_name":        "otel-collector",
-			"scrape_interval": "10s",
+		"config": map[interface{}]interface{}{
+			"scrape_config": map[interface{}]interface{}{
+				"job_name":        "otel-collector",
+				"scrape_interval": "10s",
+			},
+		},
+	}
+
+	// test
+	promConfig, err := ta.ConfigToPromConfig(configStr)
+	assert.NoError(t, err)
+
+	// verify
+	assert.Equal(t, expectedData, promConfig)
+}
+
+func TestExtractPromConfigWithTAConfigFromConfig(t *testing.T) {
+	configStr := `receivers:
+  examplereceiver:
+    endpoint: "0.0.0.0:12345"
+  examplereceiver/settings:
+    endpoint: "0.0.0.0:12346"
+  prometheus:
+    config:
+      scrape_config:
+        job_name: otel-collector
+        scrape_interval: 10s
+    target_allocator:
+      endpoint: "test:80"
+  jaeger/custom:
+    protocols:
+      thrift_http:
+        endpoint: 0.0.0.0:15268
+`
+	expectedData := map[interface{}]interface{}{
+		"config": map[interface{}]interface{}{
+			"scrape_config": map[interface{}]interface{}{
+				"job_name":        "otel-collector",
+				"scrape_interval": "10s",
+			},
+		},
+		"target_allocator": map[interface{}]interface{}{
+			"endpoint": "test:80",
 		},
 	}
 
@@ -61,8 +102,6 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
     endpoint: "0.0.0.0:12345"
   examplereceiver/settings:
     endpoint: "0.0.0.0:12346"
-  prometheus:
-    config:
   jaeger/custom:
     protocols:
       thrift_http:
@@ -71,13 +110,13 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 
 	// test
 	promConfig, err := ta.ConfigToPromConfig(configStr)
-	assert.Equal(t, err, fmt.Errorf("%s property in the configuration doesn't contain valid %s", "prometheusConfig", "prometheusConfig"))
+	assert.Equal(t, err, fmt.Errorf("no prometheus available as part of the configuration"))
 
 	// verify
 	assert.True(t, reflect.ValueOf(promConfig).IsNil())
 }
 
-func TestReplaceDollarSignInPromConfig(t *testing.T) {
+func TestUnescapeDollarSignsInPromConfig(t *testing.T) {
 	actual := `
 receivers:
   prometheus:
@@ -105,27 +144,69 @@ receivers:
         relabel_configs:
         - source_labels: ['__meta_service_id']
           target_label: 'job'
-          replacement: 'my_service___DOUBLE_DOLLAR__1'
+          replacement: 'my_service_$1'
         - source_labels: ['__meta_service_name']
           target_label: 'instance'
-          replacement: '__SINGLE_DOLLAR__1'
+          replacement: '$1'
         metric_relabel_configs:
         - source_labels: ['job']
           target_label: 'job'
-          replacement: '__DOUBLE_DOLLAR__1___SINGLE_DOLLAR__2'
+          replacement: '$1_$2'
 `
 
-	config, err := ta.ReplaceDollarSignInPromConfig(actual)
+	config, err := ta.UnescapeDollarSignsInPromConfig(actual)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	expectedConfig, err := ta.ReplaceDollarSignInPromConfig(expected)
+	expectedConfig, err := ta.UnescapeDollarSignsInPromConfig(expected)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
 	if !reflect.DeepEqual(config, expectedConfig) {
 		t.Errorf("unexpected config: got %v, want %v", config, expectedConfig)
+	}
+}
+
+func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
+	cfg := `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: "test_job"
+        static_configs:
+        - targets:
+          - "localhost:9090"
+`
+	taServiceName := "test-service"
+	expectedCfg := map[interface{}]interface{}{
+		"config": map[interface{}]interface{}{
+			"scrape_configs": []interface{}{
+				map[interface{}]interface{}{
+					"job_name": "test_job",
+					"static_configs": []interface{}{
+						map[interface{}]interface{}{
+							"targets": []interface{}{"localhost:9090"},
+						},
+					},
+					"http_sd_configs": []interface{}{
+						map[string]interface{}{
+							"url": fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", taServiceName, url.QueryEscape("test_job")),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	actualCfg, err := ta.AddHTTPSDConfigToPromConfig(cfg, taServiceName)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !reflect.DeepEqual(actualCfg, expectedCfg) {
+		t.Errorf("expected:\n%v\nbut got:\n%v", expectedCfg, actualCfg)
 	}
 }
