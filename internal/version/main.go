@@ -30,6 +30,7 @@ var (
 	autoInstrumentationNodeJS string
 	autoInstrumentationPython string
 	autoInstrumentationDotNet string
+	autoInstrumentationGo     string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
@@ -44,6 +45,7 @@ type Version struct {
 	AutoInstrumentationNodeJS string `json:"auto-instrumentation-nodejs"`
 	AutoInstrumentationPython string `json:"auto-instrumentation-python"`
 	AutoInstrumentationDotNet string `json:"auto-instrumentation-dotnet"`
+	AutoInstrumentationGo     string `json:"auto-instrumentation-go"`
 }
 
 // Get returns the Version object with the relevant information.
@@ -59,12 +61,13 @@ func Get() Version {
 		AutoInstrumentationNodeJS: AutoInstrumentationNodeJS(),
 		AutoInstrumentationPython: AutoInstrumentationPython(),
 		AutoInstrumentationDotNet: AutoInstrumentationDotNet(),
+		AutoInstrumentationGo:     AutoInstrumentationGo(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v')",
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
@@ -75,6 +78,7 @@ func (v Version) String() string {
 		v.AutoInstrumentationNodeJS,
 		v.AutoInstrumentationPython,
 		v.AutoInstrumentationDotNet,
+		v.AutoInstrumentationGo,
 	)
 }
 
@@ -135,6 +139,13 @@ func AutoInstrumentationPython() string {
 func AutoInstrumentationDotNet() string {
 	if len(autoInstrumentationDotNet) > 0 {
 		return autoInstrumentationDotNet
+	}
+	return "0.0.0"
+}
+
+func AutoInstrumentationGo() string {
+	if len(autoInstrumentationGo) > 0 {
+		return autoInstrumentationGo
 	}
 	return "0.0.0"
 }

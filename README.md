@@ -183,7 +183,7 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Go, Java, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -253,6 +253,17 @@ DotNet:
 instrumentation.opentelemetry.io/inject-dotnet: "true"
 ```
 
+Go:
+
+Go auto-instrumentation also honors an annotation that will be used to set the [OTEL_GO_AUTO_TARGET_EXE env var](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/main/docs/how-it-works.md).
+This env var can also be set via the Instrumentation resource, with the annotation taking precedence.
+Since Go auto-instrumentation requires `OTEL_GO_AUTO_TARGET_EXE` to be set, you must supply a valid
+executable path via the annotation or the Instrumentation resource. Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.
+```bash
+instrumentation.opentelemetry.io/inject-go: "true"
+instrumentation.opentelemetry.io/otel-go-auto-target-exe: "/path/to/container/executable"
+```
+
 OpenTelemetry SDK environment variables only:
 ```bash
 instrumentation.opentelemetry.io/inject-sdk: "true"
@@ -302,6 +313,8 @@ spec:
 
 In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3` will not.
 
+**NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first pod should be the only pod you want instrumented.
+
 #### Use customized or vendor instrumentation
 
 By default, the operator uses upstream auto-instrumentation libraries. Custom auto-instrumentation can be configured by
@@ -321,6 +334,8 @@ spec:
     image: your-customized-auto-instrumentation-image:python
   dotnet:
     image: your-customized-auto-instrumentation-image:dotnet
+  go:
+    image: your-customized-auto-instrumentation-image:go
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).
@@ -343,12 +358,13 @@ Prefix a gate with '-' to disable support for the corresponding language.
 Prefixing a gate with '+' or no prefix will enable support for the corresponding language.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
 
-| Language | Gate                                  | Default Value   |
-|----------|---------------------------------------|-----------------|
-| Java     | `operator.autoinstrumentation.java`   | enabled         |
-| NodeJS   | `operator.autoinstrumentation.nodejs` | enabled         |
-| Python   | `operator.autoinstrumentation.python` | enabled         |
-| DotNet   | `operator.autoinstrumentation.dotnet` | enabled         |
+| Language | Gate                                  | Default Value |
+|----------|---------------------------------------|---------------|
+| Java     | `operator.autoinstrumentation.java`   | enabled       |
+| NodeJS   | `operator.autoinstrumentation.nodejs` | enabled       |
+| Python   | `operator.autoinstrumentation.python` | enabled       |
+| DotNet   | `operator.autoinstrumentation.dotnet` | enabled       |
+| Go       | `operator.autoinstrumentation.go`     | disabled      |
 
 Language not specified in the table are always supported and cannot be disabled.
 
