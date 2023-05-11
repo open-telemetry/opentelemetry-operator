@@ -2,6 +2,5 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 artifactsDir: ./tests/_build/artifacts/
 testDirs:
-  - ./tests/e2e/
+  - ./tests/e2e-autoscale/
 timeout: 150
-parallel: 4
