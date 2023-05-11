@@ -120,6 +120,10 @@ type Java struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // NodeJS defines NodeJS SDK and instrumentation configuration.
@@ -133,6 +137,10 @@ type NodeJS struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.
@@ -146,8 +154,13 @@ type Python struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
+// DotNet defines DotNet SDK and instrumentation configuration.
 type DotNet struct {
 	// Image is a container image with DotNet SDK and auto-instrumentation.
 	// +optional
@@ -158,6 +171,9 @@ type DotNet struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
 type Go struct {
@@ -172,6 +188,7 @@ type Go struct {
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
+// ApacheHttpd defines Apache SDK and instrumentation configuration.
 type ApacheHttpd struct {
 	// Image is a container image with Apache SDK and auto-instrumentation.
 	// +optional
@@ -197,6 +214,9 @@ type ApacheHttpd struct {
 	// Needed only if different from default "/usr/local/apache2/conf"
 	// +optional
 	ConfigPath string `json:"configPath,omitempty"`
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.

@@ -75,6 +75,7 @@ func TestMutatePod(t *testing.T) {
 								Value: "false",
 							},
 						},
+						Resources: testResourceRequirements,
 					},
 					Env: []corev1.EnvVar{
 						{
@@ -144,6 +145,7 @@ func TestMutatePod(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{

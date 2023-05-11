@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -65,9 +66,33 @@ func (r *Instrumentation) Default() {
 			r.Spec.Java.Image = val
 		}
 	}
+	if r.Spec.Java.Resources.Limits == nil {
+		r.Spec.Java.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
+	if r.Spec.Java.Resources.Requests == nil {
+		r.Spec.Java.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
 	if r.Spec.NodeJS.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationNodeJS]; ok {
 			r.Spec.NodeJS.Image = val
+		}
+	}
+	if r.Spec.NodeJS.Resources.Limits == nil {
+		r.Spec.NodeJS.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.NodeJS.Resources.Requests == nil {
+		r.Spec.NodeJS.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		}
 	}
 	if r.Spec.Python.Image == "" {
@@ -75,9 +100,33 @@ func (r *Instrumentation) Default() {
 			r.Spec.Python.Image = val
 		}
 	}
+	if r.Spec.Python.Resources.Limits == nil {
+		r.Spec.Python.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
+	if r.Spec.Python.Resources.Requests == nil {
+		r.Spec.Python.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
 	if r.Spec.DotNet.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationDotNet]; ok {
 			r.Spec.DotNet.Image = val
+		}
+	}
+	if r.Spec.DotNet.Resources.Limits == nil {
+		r.Spec.DotNet.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.DotNet.Resources.Requests == nil {
+		r.Spec.DotNet.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		}
 	}
 	if r.Spec.Go.Image == "" {
@@ -88,6 +137,18 @@ func (r *Instrumentation) Default() {
 	if r.Spec.ApacheHttpd.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationApacheHttpd]; ok {
 			r.Spec.ApacheHttpd.Image = val
+		}
+	}
+	if r.Spec.ApacheHttpd.Resources.Limits == nil {
+		r.Spec.ApacheHttpd.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.ApacheHttpd.Resources.Requests == nil {
+		r.Spec.ApacheHttpd.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		}
 	}
 	if r.Spec.ApacheHttpd.Version == "" {
