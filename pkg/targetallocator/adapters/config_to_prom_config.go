@@ -123,18 +123,18 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 		}
 
 		for _, rc := range relabelConfigs {
-			relabelConfig, ok := rc.(map[interface{}]interface{})
-			if !ok {
+			relabelConfig, rcok := rc.(map[interface{}]interface{})
+			if !rcok {
 				return nil, errorNotAMap("relabel_config")
 			}
 
-			replacementProperty, ok := relabelConfig["replacement"]
-			if !ok {
+			replacementProperty, rcok := relabelConfig["replacement"]
+			if !rcok {
 				continue
 			}
 
-			replacement, ok := replacementProperty.(string)
-			if !ok {
+			replacement, rcok := replacementProperty.(string)
+			if !rcok {
 				return nil, errorNotAString("replacement")
 			}
 
@@ -152,18 +152,18 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 		}
 
 		for _, rc := range metricRelabelConfigs {
-			relabelConfig, ok := rc.(map[interface{}]interface{})
-			if !ok {
+			relabelConfig, mrcok := rc.(map[interface{}]interface{})
+			if !mrcok {
 				return nil, errorNotAMap("relabel_config")
 			}
 
-			replacementProperty, ok := relabelConfig["replacement"]
-			if !ok {
+			replacementProperty, mrcok := relabelConfig["replacement"]
+			if !mrcok {
 				continue
 			}
 
-			replacement, ok := replacementProperty.(string)
-			if !ok {
+			replacement, mrcok := replacementProperty.(string)
+			if !mrcok {
 				return nil, errorNotAString("replacement")
 			}
 

@@ -52,9 +52,9 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 	}
 
 	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
-		promCfgMap, err := ta.ConfigToPromConfig(instance.Spec.Config)
-		if err != nil {
-			return "", err
+		promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(instance.Spec.Config)
+		if getCfgPromErr != nil {
+			return "", getCfgPromErr
 		}
 
 		// update scrape configs before unmarshalling to avoid issues caused by Prometheus
@@ -63,9 +63,9 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		promCfgMap["scrape_configs"] = []map[string]interface{}{}
 
 		// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
-		promCfg, err := yaml.Marshal(promCfgMap)
-		if err != nil {
-			return "", err
+		promCfg, marshalErr := yaml.Marshal(promCfgMap)
+		if marshalErr != nil {
+			return "", marshalErr
 		}
 
 		var cfg Config
@@ -82,16 +82,16 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		// type coercion checks are handled in the ConfigToPromConfig method above
 		config["receivers"].(map[interface{}]interface{})["prometheus"] = cfg
 
-		out, err := yaml.Marshal(cfg)
-		if err != nil {
-			return "", err
+		out, updConfigMarshalErr := yaml.Marshal(cfg)
+		if updConfigMarshalErr != nil {
+			return "", updConfigMarshalErr
 		}
 
 		return string(out), nil
 	}
 
 	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
-	// $$ in the prom config, we update the YAML file directly without marshalling and unmarshalling.
+	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
 	promCfgMap, err := ta.AddHTTPSDConfigToPromConfig(instance.Spec.Config, naming.TAService(instance))
 	if err != nil {
 		return "", err
