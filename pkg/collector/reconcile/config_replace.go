@@ -54,13 +54,9 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
 		promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(instance.Spec.Config)
 		if getCfgPromErr != nil {
+
 			return "", getCfgPromErr
 		}
-
-		// update scrape configs before unmarshalling to avoid issues caused by Prometheus
-		// validation logic, which fails regex validation when it encounters $$ in the prom config.
-		// we don't need the scrape configs anymore with target allocator enabled
-		promCfgMap["scrape_configs"] = []map[string]interface{}{}
 
 		// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
 		promCfg, marshalErr := yaml.Marshal(promCfgMap)
@@ -78,13 +74,15 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 			Interval:    30 * time.Second,
 			CollectorID: "${POD_NAME}",
 		}
+		// we don't need the scrape configs here anymore with target allocator enabled
+		cfg.PromConfig.ScrapeConfigs = []*promconfig.ScrapeConfig{}
 
 		// type coercion checks are handled in the ConfigToPromConfig method above
 		config["receivers"].(map[interface{}]interface{})["prometheus"] = cfg
 
-		out, updConfigMarshalErr := yaml.Marshal(cfg)
-		if updConfigMarshalErr != nil {
-			return "", updConfigMarshalErr
+		out, updCfgMarshalErr := yaml.Marshal(cfg)
+		if updCfgMarshalErr != nil {
+			return "", updCfgMarshalErr
 		}
 
 		return string(out), nil

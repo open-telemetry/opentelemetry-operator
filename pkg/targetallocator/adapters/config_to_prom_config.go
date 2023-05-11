@@ -16,7 +16,6 @@ package adapters
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
@@ -38,7 +37,7 @@ func errorNotAString(component string) error {
 	return fmt.Errorf("%s must be a string", component)
 }
 
-// ConfigToPromConfig converts the incoming configuration object into the Prometheus receiver config.
+// ConfigToPromConfig converts the incoming configuration object into a the Prometheus receiver config.
 func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 	config, err := adapters.ConfigFromString(cfg)
 	if err != nil {
@@ -65,11 +64,47 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 		return nil, errorNotAMap("prometheus")
 	}
 
-	return prometheus, nil
+	prometheusConfigProperty, ok := prometheus["config"]
+	if !ok {
+		return nil, errorNoComponent("prometheusConfig")
+	}
+
+	prometheusConfig, ok := prometheusConfigProperty.(map[interface{}]interface{})
+	if !ok {
+		return nil, errorNotAMap("prometheusConfig")
+	}
+
+	return prometheusConfig, nil
 }
 
-// extractScrapeConfigs takes a Prometheus config as a map and returns a list of the "scrape_configs" sections.
-func extractScrapeConfigs(prometheus map[interface{}]interface{}) ([]interface{}, error) {
+// ReplaceDollarSignInPromConfig replaces "$$" with "__DOUBLE_DOLLAR__" and "$" with "__SINGLE_DOLLAR__" in
+// the "replacement" fields of both "relabel_configs" and "metric_relabel_configs" in a Prometheus configuration file.
+func ReplaceDollarSignInPromConfig(cfg string) (map[interface{}]interface{}, error) {
+	config, err := adapters.ConfigFromString(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	receiversProperty, ok := config["receivers"]
+	if !ok {
+		return nil, errorNoComponent("receivers")
+	}
+
+	receivers, ok := receiversProperty.(map[interface{}]interface{})
+	if !ok {
+		return nil, errorNotAMap("receivers")
+	}
+
+	prometheusProperty, ok := receivers["prometheus"]
+	if !ok {
+		return nil, errorNoComponent("prometheus")
+	}
+
+	prometheus, ok := prometheusProperty.(map[interface{}]interface{})
+	if !ok {
+		return nil, errorNotAMap("prometheus")
+	}
+
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
 		return nil, errorNoComponent("prometheusConfig")
@@ -90,20 +125,122 @@ func extractScrapeConfigs(prometheus map[interface{}]interface{}) ([]interface{}
 		return nil, errorNotAList("scrape_configs")
 	}
 
-	return scrapeConfigs, nil
+	for _, config := range scrapeConfigs {
+		scrapeConfig, ok := config.(map[interface{}]interface{})
+		if !ok {
+			return nil, errorNotAMap("scrape_config")
+		}
+
+		relabelConfigsProperty, ok := scrapeConfig["relabel_configs"]
+		if !ok {
+			continue
+		}
+
+		relabelConfigs, ok := relabelConfigsProperty.([]interface{})
+		if !ok {
+			return nil, errorNotAList("relabel_configs")
+		}
+
+		for _, rc := range relabelConfigs {
+			relabelConfig, ok := rc.(map[interface{}]interface{})
+			if !ok {
+				return nil, errorNotAMap("relabel_config")
+			}
+
+			replacementProperty, ok := relabelConfig["replacement"]
+			if !ok {
+				continue
+			}
+
+			replacement, ok := replacementProperty.(string)
+			if !ok {
+				return nil, errorNotAString("replacement")
+			}
+
+			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "__DOUBLE_DOLLAR__")
+			relabelConfig["replacement"] = strings.ReplaceAll(relabelConfig["replacement"].(string), "$", "__SINGLE_DOLLAR__")
+		}
+
+		metricRelabelConfigsProperty, ok := scrapeConfig["metric_relabel_configs"]
+		if !ok {
+			continue
+		}
+
+		metricRelabelConfigs, ok := metricRelabelConfigsProperty.([]interface{})
+		if !ok {
+			return nil, errorNotAList("metric_relabel_configs")
+		}
+
+		for _, rc := range metricRelabelConfigs {
+			relabelConfig, ok := rc.(map[interface{}]interface{})
+			if !ok {
+				return nil, errorNotAMap("relabel_config")
+			}
+
+			replacementProperty, ok := relabelConfig["replacement"]
+			if !ok {
+				continue
+			}
+
+			replacement, ok := replacementProperty.(string)
+			if !ok {
+				return nil, errorNotAString("replacement")
+			}
+
+			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "__DOUBLE_DOLLAR__")
+			relabelConfig["replacement"] = strings.ReplaceAll(relabelConfig["replacement"].(string), "$", "__SINGLE_DOLLAR__")
+		}
+	}
+
+	return prometheusConfig, nil
 }
 
-// UnescapeDollarSignsInPromConfig replaces "$$" with "$" in the "replacement" fields of
+// ReplaceDollarSignInTAPromConfig replaces "$$" with "$" in the "replacement" fields of
 // both "relabel_configs" and "metric_relabel_configs" in a Prometheus configuration file.
-func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, error) {
-	prometheus, err := ConfigToPromConfig(cfg)
+func ReplaceDollarSignInTAPromConfig(cfg string) (map[interface{}]interface{}, error) {
+	config, err := adapters.ConfigFromString(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	scrapeConfigs, err := extractScrapeConfigs(prometheus)
-	if err != nil {
-		return nil, err
+	receiversProperty, ok := config["receivers"]
+	if !ok {
+		return nil, errorNoComponent("receivers")
+	}
+
+	receivers, ok := receiversProperty.(map[interface{}]interface{})
+	if !ok {
+		return nil, errorNotAMap("receivers")
+	}
+
+	prometheusProperty, ok := receivers["prometheus"]
+	if !ok {
+		return nil, errorNoComponent("prometheus")
+	}
+
+	prometheus, ok := prometheusProperty.(map[interface{}]interface{})
+	if !ok {
+		return nil, errorNotAMap("prometheus")
+	}
+
+	prometheusConfigProperty, ok := prometheus["config"]
+	if !ok {
+		return nil, errorNoComponent("prometheusConfig")
+	}
+
+	prometheusConfig, ok := prometheusConfigProperty.(map[interface{}]interface{})
+	if !ok {
+		return nil, errorNotAMap("prometheusConfig")
+	}
+
+	scrapeConfigsProperty, ok := prometheusConfig["scrape_configs"]
+	if !ok {
+		return nil, errorNoComponent("scrape_configs")
+	}
+
+	scrapeConfigs, ok := scrapeConfigsProperty.([]interface{})
+	if !ok {
+		return nil, errorNotAList("scrape_configs")
 	}
 
 	for _, config := range scrapeConfigs {
@@ -123,18 +260,18 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 		}
 
 		for _, rc := range relabelConfigs {
-			relabelConfig, rcok := rc.(map[interface{}]interface{})
-			if !rcok {
+			relabelConfig, ok := rc.(map[interface{}]interface{})
+			if !ok {
 				return nil, errorNotAMap("relabel_config")
 			}
 
-			replacementProperty, rcok := relabelConfig["replacement"]
-			if !rcok {
+			replacementProperty, ok := relabelConfig["replacement"]
+			if !ok {
 				continue
 			}
 
-			replacement, rcok := replacementProperty.(string)
-			if !rcok {
+			replacement, ok := replacementProperty.(string)
+			if !ok {
 				return nil, errorNotAString("replacement")
 			}
 
@@ -152,18 +289,18 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 		}
 
 		for _, rc := range metricRelabelConfigs {
-			relabelConfig, mrcok := rc.(map[interface{}]interface{})
-			if !mrcok {
+			relabelConfig, ok := rc.(map[interface{}]interface{})
+			if !ok {
 				return nil, errorNotAMap("relabel_config")
 			}
 
-			replacementProperty, mrcok := relabelConfig["replacement"]
-			if !mrcok {
+			replacementProperty, ok := relabelConfig["replacement"]
+			if !ok {
 				continue
 			}
 
-			replacement, mrcok := replacementProperty.(string)
-			if !mrcok {
+			replacement, ok := replacementProperty.(string)
+			if !ok {
 				return nil, errorNotAString("replacement")
 			}
 
@@ -171,48 +308,5 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 		}
 	}
 
-	return prometheus, nil
-}
-
-// AddHTTPSDConfigToPromConfig takes a Prometheus configuration in YAML format and
-// adds service discovery configurations for each scrape job that specifies a "job_name"
-// property. The service discovery configuration is added as an "http_sd_configs" property,
-// with the URL pointing to a service endpoint that provides the list of targets for the
-// given job.
-func AddHTTPSDConfigToPromConfig(cfg string, taServiceName string) (map[interface{}]interface{}, error) {
-	prometheus, err := ConfigToPromConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	scrapeConfigs, err := extractScrapeConfigs(prometheus)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, config := range scrapeConfigs {
-		scrapeConfig, ok := config.(map[interface{}]interface{})
-		if !ok {
-			return nil, errorNotAMap("scrape_config")
-		}
-
-		jobNameProperty, ok := scrapeConfig["job_name"]
-		if !ok {
-			return nil, errorNotAString("job_name")
-		}
-
-		jobName, ok := jobNameProperty.(string)
-		if !ok {
-			return nil, errorNotAString("job_name is not a string")
-		}
-
-		escapedJob := url.QueryEscape(jobName)
-		scrapeConfig["http_sd_configs"] = []interface{}{
-			map[string]interface{}{
-				"url": fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", taServiceName, escapedJob),
-			},
-		}
-	}
-
-	return prometheus, nil
+	return prometheusConfig, nil
 }
