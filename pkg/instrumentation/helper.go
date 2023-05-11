@@ -14,7 +14,9 @@
 
 package instrumentation
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+)
 
 // Calculate if we already inject InitContainers.
 func isInitContainerMissing(pod corev1.Pod) bool {
