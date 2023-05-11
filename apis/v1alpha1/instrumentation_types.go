@@ -61,6 +61,13 @@ type InstrumentationSpec struct {
 	// +optional
 	DotNet DotNet `json:"dotnet,omitempty"`
 
+	// Go defines configuration for Go auto-instrumentation.
+	// When using Go auto-instrumenetation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the
+	// Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation.
+	// Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.
+	// +optional
+	Go Go `json:"go,omitempty"`
+
 	// Apache defines configuration for Apache HTTPD auto-instrumentation.
 	// +optional
 	ApacheHttpd ApacheHttpd `json:"apacheHttpd,omitempty"`
@@ -167,6 +174,18 @@ type DotNet struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+}
+
+type Go struct {
+	// Image is a container image with Go SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// Env defines Go specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // ApacheHttpd defines Apache SDK and instrumentation configuration.

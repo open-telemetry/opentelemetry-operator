@@ -35,5 +35,11 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 			return true
 		}
 	}
+	// Go uses a side car
+	for _, cont := range pod.Spec.Containers {
+		if cont.Name == sideCarName {
+			return true
+		}
+	}
 	return false
 }

@@ -32,6 +32,7 @@ const (
 	AnnotationDefaultAutoInstrumentationNodeJS      = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
 	AnnotationDefaultAutoInstrumentationPython      = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
 	AnnotationDefaultAutoInstrumentationDotNet      = "instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"
+	AnnotationDefaultAutoInstrumentationGo          = "instrumentation.opentelemetry.io/default-auto-instrumentation-go-image"
 	AnnotationDefaultAutoInstrumentationApacheHttpd = "instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"
 	envPrefix                                       = "OTEL_"
 	envSplunkPrefix                                 = "SPLUNK_"
@@ -128,6 +129,11 @@ func (r *Instrumentation) Default() {
 			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		}
 	}
+	if r.Spec.Go.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationGo]; ok {
+			r.Spec.Go.Image = val
+		}
+	}
 	if r.Spec.ApacheHttpd.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationApacheHttpd]; ok {
 			r.Spec.ApacheHttpd.Image = val
@@ -205,6 +211,9 @@ func (r *Instrumentation) validate() error {
 		return err
 	}
 	if err := r.validateEnv(r.Spec.DotNet.Env); err != nil {
+		return err
+	}
+	if err := r.validateEnv(r.Spec.Go.Env); err != nil {
 		return err
 	}
 	if err := r.validateEnv(r.Spec.ApacheHttpd.Env); err != nil {
