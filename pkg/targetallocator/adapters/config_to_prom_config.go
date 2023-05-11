@@ -114,18 +114,18 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 		}
 
 		for _, rc := range relabelConfigs {
-			relabelConfig, ok := rc.(map[interface{}]interface{})
-			if !ok {
+			relabelConfig, rcErr := rc.(map[interface{}]interface{})
+			if !rcErr {
 				return nil, errorNotAMap("relabel_config")
 			}
 
-			replacementProperty, ok := relabelConfig["replacement"]
-			if !ok {
+			replacementProperty, rcErr := relabelConfig["replacement"]
+			if !rcErr {
 				continue
 			}
 
-			replacement, ok := replacementProperty.(string)
-			if !ok {
+			replacement, rcErr := replacementProperty.(string)
+			if !rcErr {
 				return nil, errorNotAString("replacement")
 			}
 
@@ -206,8 +206,8 @@ func AddHTTPSDConfigToPromConfig(cfg string, taServiceName string) (map[interfac
 
 		// Check for other types of service discovery configs (e.g. dns_sd_configs, file_sd_configs, etc.)
 		for key := range scrapeConfig {
-			keyStr, ok := key.(string)
-			if !ok {
+			keyStr, keyErr := key.(string)
+			if !keyErr {
 				continue
 			}
 			if sdRegex.MatchString(keyStr) {
