@@ -186,11 +186,6 @@ receivers:
 			"scrape_configs": []interface{}{
 				map[interface{}]interface{}{
 					"job_name": "test_job",
-					"static_configs": []interface{}{
-						map[interface{}]interface{}{
-							"targets": []interface{}{"localhost:9090"},
-						},
-					},
 					"http_sd_configs": []interface{}{
 						map[string]interface{}{
 							"url": fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", taServiceName, url.QueryEscape("test_job")),

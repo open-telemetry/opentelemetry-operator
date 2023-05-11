@@ -80,7 +80,7 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		// type coercion checks are handled in the ConfigToPromConfig method above
 		config["receivers"].(map[interface{}]interface{})["prometheus"] = cfg
 
-		out, updCfgMarshalErr := yaml.Marshal(cfg)
+		out, updCfgMarshalErr := yaml.Marshal(config)
 		if updCfgMarshalErr != nil {
 			return "", updCfgMarshalErr
 		}
