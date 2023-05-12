@@ -44,6 +44,8 @@ spec:
       value: "true"
     - name: OTEL_SERVICE_NAME
       value: my-deployment-with-sidecar
+    - name: OTEL_SERVICE_VERSION
+      value: "3"
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
     - name: OTEL_PROPAGATORS

@@ -180,6 +180,18 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 			Value: chooseServiceName(pod, resourceMap, appIndex),
 		})
 	}
+
+	idx = getIndexOfEnv(container.Env, constants.EnvOTELServiceVersion)
+	if idx == -1 {
+		vsn := chooseServiceVersion(pod, appIndex)
+		if vsn != "" {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name:  constants.EnvOTELServiceVersion,
+				Value: vsn,
+			})
+		}
+	}
+
 	if otelinst.Spec.Exporter.Endpoint != "" {
 		idx = getIndexOfEnv(container.Env, constants.EnvOTELExporterOTLPEndpoint)
 		if idx == -1 {
@@ -297,6 +309,17 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) s
 		return name
 	}
 	return pod.Spec.Containers[index].Name
+}
+
+// obtains version by splitting image string on ":" and extracting final element from resulting array
+func chooseServiceVersion(pod corev1.Pod, index int) string {
+	parts := strings.Split(pod.Spec.Containers[index].Image, ":")
+	tag := parts[len(parts)-1]
+	//guard statement to handle case where image name has a port number
+	if strings.Contains(tag, "/") {
+		return ""
+	}
+	return tag
 }
 
 // createResourceMap creates resource attribute map.

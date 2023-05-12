@@ -13,6 +13,8 @@ spec:
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
     - name: OTEL_SERVICE_NAME
+    - name: OTEL_SERVICE_VERSION
+      value: "latest"
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME

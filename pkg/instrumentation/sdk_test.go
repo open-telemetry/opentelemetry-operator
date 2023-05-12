@@ -143,7 +143,8 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "application-name",
+							Name:  "application-name",
+							Image: "app:latest",
 						},
 					},
 				},
@@ -165,11 +166,16 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "application-name",
+							Name:  "application-name",
+							Image: "app:latest",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "my-deployment",
+								},
+								{
+									Name:  "OTEL_SERVICE_VERSION",
+									Value: "latest",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -232,9 +238,14 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
+							Image: "app:latest",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
+									Value: "explicitly_set",
+								},
+								{
+									Name:  "OTEL_SERVICE_VERSION",
 									Value: "explicitly_set",
 								},
 								{
@@ -266,9 +277,14 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
+							Image: "app:latest",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
+									Value: "explicitly_set",
+								},
+								{
+									Name:  "OTEL_SERVICE_VERSION",
 									Value: "explicitly_set",
 								},
 								{
@@ -323,7 +339,8 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "application-name",
+							Name:  "application-name",
+							Image: "app:latest",
 						},
 					},
 				},
@@ -345,11 +362,16 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "application-name",
+							Name:  "application-name",
+							Image: "app:latest",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "my-deployment",
+								},
+								{
+									Name:  "OTEL_SERVICE_VERSION",
+									Value: "latest",
 								},
 								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
@@ -408,7 +430,8 @@ func TestInjectJava(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -437,7 +460,8 @@ func TestInjectJava(t *testing.T) {
 			},
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeName,
@@ -452,6 +476,10 @@ func TestInjectJava(t *testing.T) {
 						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
+						},
+						{
+							Name:  "OTEL_SERVICE_VERSION",
+							Value: "latest",
 						},
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -508,7 +536,8 @@ func TestInjectNodeJS(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -537,7 +566,8 @@ func TestInjectNodeJS(t *testing.T) {
 			},
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeName,
@@ -552,6 +582,10 @@ func TestInjectNodeJS(t *testing.T) {
 						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
+						},
+						{
+							Name:  "OTEL_SERVICE_VERSION",
+							Value: "latest",
 						},
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -608,7 +642,8 @@ func TestInjectPython(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -636,7 +671,8 @@ func TestInjectPython(t *testing.T) {
 			},
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeName,
@@ -667,6 +703,10 @@ func TestInjectPython(t *testing.T) {
 						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
+						},
+						{
+							Name:  "OTEL_SERVICE_VERSION",
+							Value: "latest",
 						},
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -722,7 +762,8 @@ func TestInjectDotNet(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -750,7 +791,8 @@ func TestInjectDotNet(t *testing.T) {
 			},
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeName,
@@ -789,6 +831,10 @@ func TestInjectDotNet(t *testing.T) {
 						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
+						},
+						{
+							Name:  "OTEL_SERVICE_VERSION",
+							Value: "latest",
 						},
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -1271,7 +1317,8 @@ func TestInjectSdkOnly(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -1280,11 +1327,16 @@ func TestInjectSdkOnly(t *testing.T) {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					Env: []corev1.EnvVar{
 						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
+						},
+						{
+							Name:  "OTEL_SERVICE_VERSION",
+							Value: "latest",
 						},
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",

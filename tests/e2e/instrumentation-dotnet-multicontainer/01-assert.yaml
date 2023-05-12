@@ -41,6 +41,8 @@ spec:
       value: "true"
     - name: OTEL_SERVICE_NAME
       value: my-deployment-with-sidecar
+     - name: OTEL_SERVICE_VERSION
+      value: "d2e8d3415f6f12efae0369aa0a9777a58583841fb133f33e10a73adb9fb392da"
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
     - name: OTEL_PROPAGATORS
@@ -82,6 +84,8 @@ spec:
       value: "true"
     - name: OTEL_SERVICE_NAME
       value: my-deployment-with-sidecar
+    - name: OTEL_SERVICE_VERSION
+      value: "3"
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
     - name: OTEL_PROPAGATORS
