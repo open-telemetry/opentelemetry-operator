@@ -181,6 +181,11 @@ e2e:
 e2e-upgrade: undeploy
 	$(KUTTL) test --config kuttl-test-upgrade.yaml
 
+# end-to-end-test for testing autoscale
+.PHONY: e2e-autoscale
+e2e-autoscale:
+	$(KUTTL) test --config kuttl-test-autoscale.yaml
+
 .PHONY: e2e-log-operator
 e2e-log-operator:
 	kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
