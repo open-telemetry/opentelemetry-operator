@@ -81,6 +81,7 @@ func TestInjectGoSDK(t *testing.T) {
 						Value: "foo",
 					},
 				},
+				Resources: testResourceRequirements,
 			},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -99,8 +100,9 @@ func TestInjectGoSDK(t *testing.T) {
 					ShareProcessNamespace: &true,
 					Containers: []corev1.Container{
 						{
-							Name:  sideCarName,
-							Image: "foo/bar:1",
+							Name:      sideCarName,
+							Resources: testResourceRequirements,
+							Image:     "foo/bar:1",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
 								Privileged: &true,

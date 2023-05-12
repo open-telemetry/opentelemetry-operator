@@ -134,6 +134,18 @@ func (r *Instrumentation) Default() {
 			r.Spec.Go.Image = val
 		}
 	}
+	if r.Spec.Go.Resources.Limits == nil {
+		r.Spec.Go.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
+	if r.Spec.Go.Resources.Requests == nil {
+		r.Spec.Go.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
 	if r.Spec.ApacheHttpd.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationApacheHttpd]; ok {
 			r.Spec.ApacheHttpd.Image = val

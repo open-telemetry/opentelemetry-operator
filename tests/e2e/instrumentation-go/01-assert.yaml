@@ -12,6 +12,13 @@ spec:
     - name: productcatalogservice
     - name: otc-container
     - name: opentelemetry-auto-instrumentation
+      resources:
+        limits:
+          cpu: "500m"
+          memory: "32Mi"
+        requests:
+          cpu: "50m"
+          memory: "32Mi"
       image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:v0.2.1-alpha
       env:
         - name: OTEL_GO_AUTO_TARGET_EXE
