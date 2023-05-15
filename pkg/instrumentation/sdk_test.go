@@ -1207,7 +1207,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-							Value: "http://collector:12345",
+							Value: "https://collector:4318",
 						},
 						{
 							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
@@ -1227,7 +1227,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.namespace.name=apache-httpd,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
 						},
 					},
 				},
