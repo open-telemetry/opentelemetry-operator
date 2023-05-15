@@ -173,7 +173,6 @@ func (c *Config) OpenShiftRoutes() autodetect.OpenShiftRoutesAvailability {
 // AutoscalingVersion represents the preferred version of autoscaling.
 func (c *Config) AutoscalingVersion() autodetect.AutoscalingVersion {
 	return c.hpaVersion.Get()
-	return c.hpaVersion.Get()
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
