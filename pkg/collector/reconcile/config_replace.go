@@ -36,6 +36,9 @@ type targetAllocator struct {
 	Endpoint    string        `yaml:"endpoint"`
 	Interval    time.Duration `yaml:"interval"`
 	CollectorID string        `yaml:"collector_id"`
+	// HTTPSDConfig is a preference that can be set for the collector's target allocator, but the operator doesn't
+	// care about what the value is set to. We just need this for validation when unmarshalling the configmap.
+	HTTPSDConfig interface{} `yaml:"http_sd_config,omitempty"`
 }
 
 type Config struct {

@@ -162,6 +162,12 @@ receivers:
         - follow_redirects: false
           enable_http2: false
           url: http://test-targetallocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
+    target_allocator:
+      endpoint: http://test-targetallocator:80
+      interval: 30s
+      collector_id: ${POD_NAME}
+      http_sd_config:
+        refresh_interval: 60s
 service:
   pipelines:
     metrics:
@@ -173,7 +179,7 @@ service:
 `,
 		}
 
-		param, err := newParams("test/test-img", "../testdata/http_sd_config_servicemonitor_test.yaml")
+		param, err := newParams("test/test-img", "../testdata/http_sd_config_servicemonitor_test_ta_set.yaml")
 		assert.NoError(t, err)
 		param.Instance.Spec.TargetAllocator.Enabled = true
 		actual := desiredConfigMap(context.Background(), param)
