@@ -1117,6 +1117,33 @@ func TestMutatePod(t *testing.T) {
 										},
 									},
 								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      apacheAgentVolume,
+									MountPath: apacheAgentDirectory + apacheAgentSubDirectory,
+								},
+								{
+									Name:      apacheAgentConfigVolume,
+									MountPath: apacheAgentConfDirFull,
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      apacheAgentVolume,
+									MountPath: apacheAgentDirectory + apacheAgentSubDirectory,
+								},
+								{
+									Name:      apacheAgentConfigVolume,
+									MountPath: apacheConfigDirectory,
+								},
+							},
+							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "app",
@@ -1144,31 +1171,6 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=app,k8s.namespace.name=apache-httpd,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      apacheAgentVolume,
-									MountPath: apacheAgentDirectory + apacheAgentSubDirectory,
-								},
-								{
-									Name:      apacheAgentConfigVolume,
-									MountPath: apacheAgentConfDirFull,
-								},
-							},
-						},
-					},
-					Containers: []corev1.Container{
-						{
-							Name: "app",
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      apacheAgentVolume,
-									MountPath: apacheAgentDirectory + apacheAgentSubDirectory,
-								},
-								{
-									Name:      apacheAgentConfigVolume,
-									MountPath: apacheConfigDirectory,
 								},
 							},
 						},
