@@ -35,9 +35,6 @@ func TestMutatePod(t *testing.T) {
 	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100))
 	require.NotNil(t, mutator)
 
-	true := true
-	zero := int64(0)
-
 	tests := []struct {
 		name            string
 		err             string

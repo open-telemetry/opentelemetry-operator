@@ -141,7 +141,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
 		pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
 		pod = i.injectCommonEnvVar(otelinst, pod, index)
-		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index)
+		pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 	}
 	if insts.Sdk != nil {
 		otelinst := *insts.Sdk

@@ -130,7 +130,6 @@ func (c *Config) AutoDetect() error {
 	}
 
 	hpaV, err := c.autoDetect.HPAVersion()
-	hpaV, err := c.autoDetect.HPAVersion()
 	if err != nil {
 		return err
 	}
