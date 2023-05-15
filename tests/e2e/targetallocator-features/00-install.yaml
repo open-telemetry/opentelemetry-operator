@@ -24,13 +24,6 @@ metadata:
   name: stateful
 spec:
   mode: statefulset
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 200m
-      memory: 256Mi
   volumes:
     - name: testvolume
   volumeMounts:
@@ -48,6 +41,13 @@ spec:
     enabled: true
     image: "local/opentelemetry-operator-targetallocator:e2e"
     serviceAccount: ta
+    resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
     prometheusCR:
       enabled: true
   config: |
