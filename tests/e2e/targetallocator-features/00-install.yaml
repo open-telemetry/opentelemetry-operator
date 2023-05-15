@@ -24,6 +24,13 @@ metadata:
   name: stateful
 spec:
   mode: statefulset
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
   volumes:
     - name: testvolume
   volumeMounts:

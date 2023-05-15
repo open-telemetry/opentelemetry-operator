@@ -59,6 +59,13 @@ spec:
           volumeMounts:
           - mountPath: /conf
             name: ta-internal
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 200m
+              memory: 256Mi
       volumes:
         - configMap:
             items:

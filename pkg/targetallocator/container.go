@@ -55,6 +55,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		Image:        image,
 		Env:          envVars,
 		VolumeMounts: volumeMounts,
+		Resources:    otelcol.Spec.TargetAllocator.Resources,
 		Args:         args,
 	}
 }
