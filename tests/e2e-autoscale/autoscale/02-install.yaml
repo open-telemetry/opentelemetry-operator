@@ -19,7 +19,7 @@ spec:
         stabilizationWindowSeconds: 1
   resources:
     limits:
-      cpu: 250m
+      cpu: 100m
       memory: 128Mi
     requests:
       cpu: 5m

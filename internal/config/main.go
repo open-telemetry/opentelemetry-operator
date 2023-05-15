@@ -42,10 +42,11 @@ type Config struct {
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	autoInstrumentationDotNetImage      string
+	autoInstrumentationGoImage          string
+	autoInstrumentationApacheHttpdImage string
 	targetAllocatorConfigMapEntry       string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
-	autoInstrumentationApacheHttpdImage string
 	onOpenShiftRoutesChange             changeHandler
 	labelsFilter                        []string
 	openshiftRoutes                     openshiftRoutesStore
@@ -129,8 +130,13 @@ func (c *Config) AutoDetect() error {
 	}
 
 	hpaV, err := c.autoDetect.HPAVersion()
+	hpaV, err := c.autoDetect.HPAVersion()
 	if err != nil {
 		return err
+	}
+	if c.hpaVersion.Get() != hpaV {
+		c.logger.V(1).Info("HPA version detected", "version", hpaV)
+		c.hpaVersion.Set(hpaV)
 	}
 	if c.hpaVersion.Get() != hpaV {
 		c.logger.V(1).Info("HPA version detected", "version", hpaV)
@@ -168,6 +174,7 @@ func (c *Config) OpenShiftRoutes() autodetect.OpenShiftRoutesAvailability {
 // AutoscalingVersion represents the preferred version of autoscaling.
 func (c *Config) AutoscalingVersion() autodetect.AutoscalingVersion {
 	return c.hpaVersion.Get()
+	return c.hpaVersion.Get()
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
@@ -188,6 +195,11 @@ func (c *Config) AutoInstrumentationPythonImage() string {
 // AutoInstrumentationDotNetImage returns OpenTelemetry DotNet auto-instrumentation container image.
 func (c *Config) AutoInstrumentationDotNetImage() string {
 	return c.autoInstrumentationDotNetImage
+}
+
+// AutoInstrumentationGoImage returns OpenTelemetry Go auto-instrumentation container image.
+func (c *Config) AutoInstrumentationGoImage() string {
+	return c.autoInstrumentationGoImage
 }
 
 // AutoInstrumentationApacheHttpdImage returns OpenTelemetry ApacheHttpd auto-instrumentation container image.

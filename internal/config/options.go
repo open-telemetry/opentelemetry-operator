@@ -33,6 +33,7 @@ type options struct {
 	version                             version.Version
 	logger                              logr.Logger
 	autoInstrumentationDotNetImage      string
+	autoInstrumentationGoImage          string
 	autoInstrumentationJavaImage        string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationPythonImage      string
@@ -89,6 +90,7 @@ func WithLogger(logger logr.Logger) Option {
 		o.logger = logger
 	}
 }
+
 func WithOnOpenShiftRoutesChangeCallback(f func() error) Option {
 	return func(o *options) {
 		if o.onOpenShiftRoutesChange == nil {
@@ -129,6 +131,12 @@ func WithAutoInstrumentationPythonImage(s string) Option {
 func WithAutoInstrumentationDotNetImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationDotNetImage = s
+	}
+}
+
+func WithAutoInstrumentationGoImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationGoImage = s
 	}
 }
 

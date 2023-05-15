@@ -440,6 +440,72 @@ func TestContainerEnvFrom(t *testing.T) {
 
 func TestContainerProbe(t *testing.T) {
 	// prepare
+	initialDelaySeconds := int32(10)
+	timeoutSeconds := int32(11)
+	periodSeconds := int32(12)
+	successThreshold := int32(13)
+	failureThreshold := int32(14)
+	terminationGracePeriodSeconds := int64(15)
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Config: `extensions:
+  health_check:
+service:
+  extensions: [health_check]`,
+			LivenessProbe: &v1alpha1.Probe{
+				InitialDelaySeconds:           &initialDelaySeconds,
+				TimeoutSeconds:                &timeoutSeconds,
+				PeriodSeconds:                 &periodSeconds,
+				SuccessThreshold:              &successThreshold,
+				FailureThreshold:              &failureThreshold,
+				TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
+	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
+	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
+
+	assert.Equal(t, initialDelaySeconds, c.LivenessProbe.InitialDelaySeconds)
+	assert.Equal(t, timeoutSeconds, c.LivenessProbe.TimeoutSeconds)
+	assert.Equal(t, periodSeconds, c.LivenessProbe.PeriodSeconds)
+	assert.Equal(t, successThreshold, c.LivenessProbe.SuccessThreshold)
+	assert.Equal(t, failureThreshold, c.LivenessProbe.FailureThreshold)
+	assert.Equal(t, terminationGracePeriodSeconds, *c.LivenessProbe.TerminationGracePeriodSeconds)
+}
+
+func TestContainerProbeEmptyConfig(t *testing.T) {
+	// prepare
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Config: `extensions:
+  health_check:
+service:
+  extensions: [health_check]`,
+			LivenessProbe: &v1alpha1.Probe{},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
+	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
+	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
+}
+
+func TestContainerProbeNoConfig(t *testing.T) {
+	// prepare
+
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Config: `extensions:
@@ -457,4 +523,36 @@ service:
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
+}
+
+func TestContainerLifecycle(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Lifecycle: &corev1.Lifecycle{
+				PostStart: &corev1.LifecycleHandler{
+					Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 100"}},
+				},
+				PreStop: &corev1.LifecycleHandler{
+					Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 300"}},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	expectedLifecycleHooks := corev1.Lifecycle{
+		PostStart: &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 100"}},
+		},
+		PreStop: &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 300"}},
+		},
+	}
+
+	// verify
+	assert.Equal(t, expectedLifecycleHooks, *c.Lifecycle)
 }
