@@ -122,6 +122,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 	resourceMap := map[string]string{
 		string(semconv.K8SDeploymentNameKey): "apache-httpd-service-name",
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, 0, "http://otlp-endpoint:4317", resourceMap)
