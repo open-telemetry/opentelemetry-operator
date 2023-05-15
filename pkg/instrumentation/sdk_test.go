@@ -1113,7 +1113,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		DotNet: &inst,
+		ApacheHttpd: &inst,
 	}
 	inj := sdkInjector{
 		logger: logr.Discard(),
