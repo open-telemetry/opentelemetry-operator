@@ -112,7 +112,7 @@ func TestContainerResourceRequirements(t *testing.T) {
 	// test
 	c := Container(cfg, logger, otelcol)
 	resourcesValues := c.Resources
-	
+
 	// verify
 	assert.Equal(t, resourceTest, resourcesValues)
 }
