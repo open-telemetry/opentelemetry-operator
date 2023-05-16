@@ -12,7 +12,7 @@ spec:
     - name: productcatalogservice
     - name: otc-container
     - name: opentelemetry-auto-instrumentation
-      image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:v0.2.0-alpha
+      image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:v0.2.1-alpha
       env:
         - name: OTEL_GO_AUTO_TARGET_EXE
           value: /usr/src/app/productcatalogservice
