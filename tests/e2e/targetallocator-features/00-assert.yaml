@@ -58,11 +58,11 @@ spec:
                 fieldPath: metadata.namespace
           resources:
             limits:
-              cpu: 100m
+              cpu: 500m
               memory: 128Mi
             requests:
-              cpu: 200m
-              memory: 256Mi
+              cpu: 50m
+              memory: 128Mi
           volumeMounts:
           - mountPath: /conf
             name: ta-internal

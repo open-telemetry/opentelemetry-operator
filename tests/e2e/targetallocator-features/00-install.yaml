@@ -43,11 +43,11 @@ spec:
     serviceAccount: ta
     resources:
       limits:
-        cpu: 100m
-        memory: 128Mi
+        cpu: "500m"
+        memory: "128Mi"
       requests:
-        cpu: 200m
-        memory: 256Mi
+        cpu: "50m"
+        memory: "128Mi"
     prometheusCR:
       enabled: true
   config: |
