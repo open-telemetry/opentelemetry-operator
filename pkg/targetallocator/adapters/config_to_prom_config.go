@@ -235,3 +235,41 @@ func AddHTTPSDConfigToPromConfig(cfg string, taServiceName string) (map[interfac
 
 	return prometheus, nil
 }
+
+// AddTAConfigToPromConfig adds or updates the target_allocator configuration in the Prometheus configuration.
+func AddTAConfigToPromConfig(cfg string, taServiceName string) (map[interface{}]interface{}, error) {
+	prometheus, err := ConfigToPromConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	prometheusConfigProperty, ok := prometheus["config"]
+	if !ok {
+		return nil, errorNoComponent("prometheusConfig")
+	}
+
+	prometheusCfg, ok := prometheusConfigProperty.(map[interface{}]interface{})
+	if !ok {
+		return nil, errorNotAMap("prometheusConfig")
+	}
+
+	// Create the TargetAllocConfig dynamically if it doesn't exist
+	if prometheus["target_allocator"] == nil {
+		prometheus["target_allocator"] = make(map[interface{}]interface{})
+	}
+
+	targetAllocatorCfg, ok := prometheus["target_allocator"].(map[interface{}]interface{})
+	if !ok {
+		return nil, errorNotAMap("target_allocator")
+	}
+
+	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:80", taServiceName)
+	targetAllocatorCfg["interval"] = "30s"
+	targetAllocatorCfg["collector_id"] = "${POD_NAME}"
+
+	// we don't need the scrape configs here anymore with target allocator enabled
+	// Remove the scrape_configs key from the map
+	delete(prometheusCfg, "scrape_configs")
+
+	return prometheus, nil
+}

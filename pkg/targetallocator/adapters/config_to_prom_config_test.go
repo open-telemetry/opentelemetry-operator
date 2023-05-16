@@ -205,3 +205,31 @@ receivers:
 		t.Errorf("expected:\n%v\nbut got:\n%v", expectedCfg, actualCfg)
 	}
 }
+
+func TestAddTAConfigToPromConfig(t *testing.T) {
+	cfg := `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: "test_job"
+        static_configs:
+        - targets:
+          - "localhost:9090"
+`
+	taServiceName := "test-targetallocator"
+
+	expectedResult := map[interface{}]interface{}{
+		"config": map[interface{}]interface{}{},
+		"target_allocator": map[interface{}]interface{}{
+			"endpoint":     "http://test-targetallocator:80",
+			"interval":     "30s",
+			"collector_id": "${POD_NAME}",
+		},
+	}
+
+	result, err := ta.AddTAConfigToPromConfig(cfg, taServiceName)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResult, result)
+}

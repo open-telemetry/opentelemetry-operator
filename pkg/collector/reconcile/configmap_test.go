@@ -175,15 +175,11 @@ service:
 processors: null
 receivers:
   prometheus:
-    config:
-      global:
-        scrape_interval: 1m
-        scrape_timeout: 10s
-        evaluation_interval: 1m
+    config: {}
     target_allocator:
+      collector_id: ${POD_NAME}
       endpoint: http://test-targetallocator:80
       interval: 30s
-      collector_id: ${POD_NAME}
 service:
   pipelines:
     metrics:

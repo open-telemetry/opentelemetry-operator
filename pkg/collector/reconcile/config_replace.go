@@ -15,7 +15,6 @@
 package reconcile
 
 import (
-	"fmt"
 	"time"
 
 	promconfig "github.com/prometheus/prometheus/config"
@@ -52,33 +51,15 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 	}
 
 	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
-		promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(instance.Spec.Config)
+		// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
+		// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
+		promCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(instance.Spec.Config, naming.TAService(instance))
 		if getCfgPromErr != nil {
-
 			return "", getCfgPromErr
 		}
 
-		// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
-		promCfg, marshalErr := yaml.Marshal(promCfgMap)
-		if marshalErr != nil {
-			return "", marshalErr
-		}
-
-		var cfg Config
-		if err = yaml.UnmarshalStrict(promCfg, &cfg); err != nil {
-			return "", fmt.Errorf("error unmarshaling YAML: %w", err)
-		}
-
-		cfg.TargetAllocConfig = &targetAllocator{
-			Endpoint:    fmt.Sprintf("http://%s:80", naming.TAService(instance)),
-			Interval:    30 * time.Second,
-			CollectorID: "${POD_NAME}",
-		}
-		// we don't need the scrape configs here anymore with target allocator enabled
-		cfg.PromConfig.ScrapeConfigs = []*promconfig.ScrapeConfig{}
-
-		// type coercion checks are handled in the ConfigToPromConfig method above
-		config["receivers"].(map[interface{}]interface{})["prometheus"] = cfg
+		// type coercion checks are handled in the AddTAConfigToPromConfig method above
+		config["receivers"].(map[interface{}]interface{})["prometheus"] = promCfgMap
 
 		out, updCfgMarshalErr := yaml.Marshal(config)
 		if updCfgMarshalErr != nil {
