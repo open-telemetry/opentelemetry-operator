@@ -3,6 +3,38 @@ Changes by Version
 
 <!-- next version -->
 
+## 0.76.1
+
+### 💡 Enhancements 💡
+
+- `operator`: add support for `lifecycle` hooks and `terminationGracePeriodSeconds` in collector spec. (#1618)
+- `autoinstrumentation`: Bump OpenTelemetry .NET Automatic Instrumentation to 0.7.0 (#1672)
+- `autoinstrumentation`: Bump nodejs dependencies to latest versions (#1682)
+- `pkg/instrumentation`: Add dotnet instrumentation capability behind a feature gate which is enabled by default. (#1629)
+- `operator`: Add ability to use feature gates in the operator (#1619)
+- `autoinstrumentation`: Add metrics exporter to Node.JS autoinstrumentation (#1627)
+- `autoinstrumentation`: Bump nodejs dependencies to latest versions (#1626)
+- `pkg/instrumentation`: Add java instrumentation capability behind a feature gate which is enabled by default. (#1695)
+- `pkg/instrumentation`: Add nodejs instrumentation capability behind a feature gate which is enabled by default. (#1697)
+- `operator`: Introduces a new feature flag "`operator.collector.rewritetargetallocator`" that allows an operator to add the target_allocator configuration to the collector configuration (#1581)
+  Note that the ConfigToPromConfig function in pkg/targetallocator/adapters now correctly returns the prometheus receiver config
+  in accordance with its docstring. It used to erroneously return the actual Prometheus config from a level lower.
+
+- `pkg/instrumentation`: Add python instrumentation capability behind a feature gate which is enabled by default. (#1696)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: fix updating scrape configs (#1415)
+
+### Components
+
+* [OpenTelemetry Collector - v0.76.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.76.1)
+* [OpenTelemetry Contrib - v0.76.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.76.1)
+* [Java auto-instrumentation - 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0)
+* [Dotnet auto-instrumentation - 0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
+* [Node.JS - 0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.38.0)
+* [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
+
 ## 0.75.0
 
 ### 💡 Enhancements 💡

@@ -41,9 +41,49 @@ func TestExtractPromConfigFromConfig(t *testing.T) {
         endpoint: 0.0.0.0:15268
 `
 	expectedData := map[interface{}]interface{}{
-		"scrape_config": map[interface{}]interface{}{
-			"job_name":        "otel-collector",
-			"scrape_interval": "10s",
+		"config": map[interface{}]interface{}{
+			"scrape_config": map[interface{}]interface{}{
+				"job_name":        "otel-collector",
+				"scrape_interval": "10s",
+			},
+		},
+	}
+
+	// test
+	promConfig, err := ta.ConfigToPromConfig(configStr)
+	assert.NoError(t, err)
+
+	// verify
+	assert.Equal(t, expectedData, promConfig)
+}
+
+func TestExtractPromConfigWithTAConfigFromConfig(t *testing.T) {
+	configStr := `receivers:
+  examplereceiver:
+    endpoint: "0.0.0.0:12345"
+  examplereceiver/settings:
+    endpoint: "0.0.0.0:12346"
+  prometheus:
+    config:
+      scrape_config:
+        job_name: otel-collector
+        scrape_interval: 10s
+    target_allocator:
+      endpoint: "test:80"
+  jaeger/custom:
+    protocols:
+      thrift_http:
+        endpoint: 0.0.0.0:15268
+`
+	expectedData := map[interface{}]interface{}{
+		"config": map[interface{}]interface{}{
+			"scrape_config": map[interface{}]interface{}{
+				"job_name":        "otel-collector",
+				"scrape_interval": "10s",
+			},
+		},
+		"target_allocator": map[interface{}]interface{}{
+			"endpoint": "test:80",
 		},
 	}
 
@@ -61,8 +101,6 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
     endpoint: "0.0.0.0:12345"
   examplereceiver/settings:
     endpoint: "0.0.0.0:12346"
-  prometheus:
-    config:
   jaeger/custom:
     protocols:
       thrift_http:
@@ -71,7 +109,7 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 
 	// test
 	promConfig, err := ta.ConfigToPromConfig(configStr)
-	assert.Equal(t, err, fmt.Errorf("%s property in the configuration doesn't contain valid %s", "prometheusConfig", "prometheusConfig"))
+	assert.Equal(t, err, fmt.Errorf("no prometheus available as part of the configuration"))
 
 	// verify
 	assert.True(t, reflect.ValueOf(promConfig).IsNil())

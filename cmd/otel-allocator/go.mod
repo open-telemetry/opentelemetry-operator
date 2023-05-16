@@ -14,8 +14,8 @@ require (
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/oklog/run v1.1.0
 	github.com/prometheus-operator/prometheus-operator v0.63.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.64.0
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.64.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.64.1
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.64.1
 	github.com/prometheus/client_golang v1.15.0
 	github.com/prometheus/common v0.42.0
 	github.com/prometheus/prometheus v1.8.2-0.20211214150951-52c693a63be1
@@ -25,7 +25,7 @@ require (
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
-	k8s.io/klog/v2 v2.90.1
+	k8s.io/klog/v2 v2.100.1
 	sigs.k8s.io/controller-runtime v0.14.6
 )
 
@@ -54,7 +54,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/digitalocean/godo v1.82.0 // indirect
-	github.com/docker/distribution v2.8.1+incompatible // indirect
+	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect

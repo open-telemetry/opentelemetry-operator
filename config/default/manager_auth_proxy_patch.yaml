@@ -33,3 +33,4 @@ spec:
         - "--enable-leader-election"
         - "--zap-log-level=info"
         - "--zap-time-encoding=rfc3339nano"
+        - "--feature-gates=+operator.autoinstrumentation.go"
