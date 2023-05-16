@@ -152,12 +152,10 @@ func main() {
 	runGroup.Add(
 		func() error {
 			// Initial loading of the config file's scrape config
-			if cfg.Config != nil {
-				err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.Config)
-				if err != nil {
-					setupLog.Error(err, "Unable to apply initial configuration")
-					return err
-				}
+			err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.Config)
+			if err != nil {
+				setupLog.Error(err, "Unable to apply initial configuration")
+				return err
 			}
 			err := targetDiscoverer.Watch(allocator.SetTargets)
 			setupLog.Info("Target discoverer exited")

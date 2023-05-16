@@ -64,6 +64,9 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 }
 
 func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.Config) error {
+	if cfg == nil {
+		return nil
+	}
 	m.configsMap[source] = cfg
 	jobToScrapeConfig := make(map[string]*config.ScrapeConfig)
 
