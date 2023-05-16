@@ -6423,7 +6423,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b><a href="#opentelemetrycollectorspectargetallocatorresources">resources</a></b></td>
         <td>object</td>
         <td>
-          Resources to set on the OpenTelemetryTargetAllocator pods.<br/>
+          Resources to set on the OpenTelemetryTargetAllocator containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6483,7 +6483,7 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
 
 
 
-Resources to set on the OpenTelemetryTargetAllocator pods.
+Resources to set on the OpenTelemetryTargetAllocator containers.
 
 <table>
     <thead>

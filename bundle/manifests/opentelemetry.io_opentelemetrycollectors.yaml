@@ -2057,7 +2057,7 @@ spec:
                     type: integer
                   resources:
                     description: Resources to set on the OpenTelemetryTargetAllocator
-                      pods.
+                      containers.
                     properties:
                       claims:
                         description: "Claims lists the names of resources, defined

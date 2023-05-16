@@ -99,13 +99,20 @@ func TestContainerResourceRequirements(t *testing.T) {
 	}
 
 	cfg := config.New()
-
+	resourceTest := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("128M"),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("256M"),
+		},
+	}
 	// test
 	c := Container(cfg, logger, otelcol)
-
+	resourcesValues := c.Resources
+	
 	// verify
-	assert.Equal(t, resource.MustParse("100m"), *c.Resources.Limits.Cpu())
-	assert.Equal(t, resource.MustParse("128M"), *c.Resources.Limits.Memory())
-	assert.Equal(t, resource.MustParse("200m"), *c.Resources.Requests.Cpu())
-	assert.Equal(t, resource.MustParse("256M"), *c.Resources.Requests.Memory())
+	assert.Equal(t, resourceTest, resourcesValues)
 }

@@ -192,7 +192,7 @@ type OpenTelemetryTargetAllocator struct {
 	// that can be run in a high availability mode is consistent-hashing.
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
-	// Resources to set on the OpenTelemetryTargetAllocator pods.
+	// Resources to set on the OpenTelemetryTargetAllocator containers.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
