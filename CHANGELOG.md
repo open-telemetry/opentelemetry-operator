@@ -2,7 +2,6 @@ Changes by Version
 ==================
 
 <!-- next version -->
-
 ## 0.77.1
 
 ### 💡 Enhancements 💡
@@ -11,7 +10,11 @@ Changes by Version
 - `operator`: Add liveness probe configs (#760)
 - `operator`: set default resource limits for instrumentation init containers (#1407)
 - `github actions`: Publish image to dockerhub too (#1708)
+- `instrumentation`: Bump Go Instrumentation image from `v0.2.0-alpha` to `v0.2.1-alpha` (#1740)
 
+### 🧰 Bug fixes 🧰
+
+- `operator`: fixes a bug where setting the http_sd_config would crash the configmap replacement. (#1742)
 ### Components
 
 * [OpenTelemetry Collector - v0.77.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.77.0)
