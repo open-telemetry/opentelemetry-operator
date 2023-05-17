@@ -141,10 +141,15 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 	}
 	autoInstApacheHttpd := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd]
 	if autoInstApacheHttpd != "" {
-		// upgrade the image only if the image matches the annotation
-		if inst.Spec.ApacheHttpd.Image == autoInstApacheHttpd {
-			inst.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd] = u.DefaultAutoInstApacheHttpd
+		if featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.ApacheHttpd.Image == autoInstApacheHttpd {
+				inst.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd] = u.DefaultAutoInstApacheHttpd
+			}
+		} else {
+			u.Logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Apache HTTPD auto instrumentation is not enabled")
 		}
 	}
 	return inst
