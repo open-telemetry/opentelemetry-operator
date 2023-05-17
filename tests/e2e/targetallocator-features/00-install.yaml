@@ -63,6 +63,9 @@ spec:
               replacement: $$1
             - regex: test_.*
               action: labeldrop  
+            - regex: 'metrica_*|metricb.*'
+              action: labelkeep
+              replacement: $$1
     
     processors:
 
