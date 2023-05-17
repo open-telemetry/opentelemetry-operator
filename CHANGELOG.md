@@ -2,6 +2,28 @@ Changes by Version
 ==================
 
 <!-- next version -->
+## 0.77.0
+
+### 💡 Enhancements 💡
+
+- `operator`: Add support for Go auto instrumentation (#1555)
+- `operator`: Add liveness probe configs (#760)
+- `operator`: set default resource limits for instrumentation init containers (#1407)
+- `github actions`: Publish image to dockerhub too (#1708)
+- `instrumentation`: Bump Go Instrumentation image from `v0.2.0-alpha` to `v0.2.1-alpha` (#1740)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: fixes a bug where setting the http_sd_config would crash the configmap replacement. (#1742)
+### Components
+
+* [OpenTelemetry Collector - v0.77.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.77.0)
+* [OpenTelemetry Contrib - v0.77.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.77.0)
+* [Java auto-instrumentation - 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0)
+* [Dotnet auto-instrumentation - 0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
+* [Node.JS - 0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.38.0)
+* [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
+* [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
 
 ## 0.76.1
 
