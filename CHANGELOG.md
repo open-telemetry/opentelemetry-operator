@@ -2,7 +2,7 @@ Changes by Version
 ==================
 
 <!-- next version -->
-## 0.77.1
+## 0.77.0
 
 ### 💡 Enhancements 💡
 
