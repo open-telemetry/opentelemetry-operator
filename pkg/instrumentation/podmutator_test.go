@@ -1528,7 +1528,7 @@ func TestMutatePod(t *testing.T) {
 					Namespace: "apache-httpd-disabled",
 				},
 				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+					ApacheHttpd: v1alpha1.ApacheHttpd{
 						Image: "otel/apache-httpd:1",
 						Env: []corev1.EnvVar{
 							{
@@ -1577,7 +1577,7 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectDotNet: "true",
+						annotationInjectApacheHttpd: "true",
 					},
 				},
 				Spec: corev1.PodSpec{
