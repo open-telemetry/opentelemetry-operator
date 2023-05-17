@@ -23,7 +23,7 @@ Changes by Version
 * [Dotnet auto-instrumentation - 0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
 * [Node.JS - 0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.38.0)
 * [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
-* [Go - 0.2.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.0-alpha)
+* [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
 
 ## 0.76.1
 
