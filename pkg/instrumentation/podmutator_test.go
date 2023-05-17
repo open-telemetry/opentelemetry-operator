@@ -1589,7 +1589,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled()
+				originalVal := featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled()
 				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), false))
 				t.Cleanup(func() {
 					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), originalVal))
