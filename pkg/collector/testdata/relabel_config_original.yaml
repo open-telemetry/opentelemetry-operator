@@ -23,7 +23,7 @@ receivers:
           source_labels: [label2]
           action: replace
           regex: (.*)
-          replacement: "$$1_$2"
+          replacement: "$$1_$$2"
           separator: ";"
         - source_labels: [label4]
           action: labelmap
