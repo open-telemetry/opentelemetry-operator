@@ -588,6 +588,7 @@ func (in *OpenTelemetryTargetAllocator) DeepCopyInto(out *OpenTelemetryTargetAll
 		*out = new(int32)
 		**out = **in
 	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	in.PrometheusCR.DeepCopyInto(&out.PrometheusCR)
 }
 
