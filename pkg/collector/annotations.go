@@ -52,6 +52,13 @@ func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string 
 	for k, v := range instance.Spec.PodAnnotations {
 		podAnnotations[k] = v
 	}
+	
+	// propagating annotations from metadata.annotations
+	for kMeta, vMeta := range Annotations(instance) {
+		if _, found := podAnnotations[kMeta]; !found {
+			podAnnotations[kMeta] = vMeta
+		}
+	}
 
 	// make sure sha256 for configMap is always calculated
 	podAnnotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
