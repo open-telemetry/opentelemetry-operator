@@ -52,7 +52,7 @@ func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string 
 	for k, v := range instance.Spec.PodAnnotations {
 		podAnnotations[k] = v
 	}
-	
+
 	// propagating annotations from metadata.annotations
 	for kMeta, vMeta := range Annotations(instance) {
 		if _, found := podAnnotations[kMeta]; !found {

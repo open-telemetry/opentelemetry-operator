@@ -128,8 +128,10 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 	// verify
+	assert.Len(t, testPodAnnotationValues, 5)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, testPodAnnotationValues, d.Spec.Template.Annotations)
+	assert.Equal(t, "prometheus.io/path", testPodAnnotationValues["/metrics"])
 }
 
 func TestDeploymenttPodSecurityContext(t *testing.T) {

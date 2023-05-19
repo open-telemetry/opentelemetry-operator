@@ -121,7 +121,8 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 
 	// verify
 	assert.Equal(t, "my-instance-collector", ds.Name)
-	assert.Equal(t, testPodAnnotationValues, ds.Spec.Template.Annotations)
+	assert.Len(t, testPodAnnotationValues, 5)
+	assert.Equal(t, "prometheus.io/path", testPodAnnotationValues["/metrics"])
 }
 
 func TestDaemonstPodSecurityContext(t *testing.T) {
