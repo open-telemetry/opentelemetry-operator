@@ -312,6 +312,11 @@ type AutoscalerSpec struct {
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// +optional
 	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
+	// Metrics is meant to provide a customizable way to configure HPA metrics.
+	// currently the only supported custom metrics is type=Pod.
+	// Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.
+	// +optional
+	Metrics []MetricSpec `json:"metrics,omitempty"`
 	// TargetCPUUtilization sets the target average CPU used across all replicas.
 	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
 	// +optional
@@ -357,6 +362,14 @@ type Probe struct {
 	// Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
 	// +optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
+}
+
+// MetricSpec defines a subset of metrics to be defined for the HPA's metric array
+// more metric type can be supported as needed.
+// See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
+type MetricSpec struct {
+	Type autoscalingv2.MetricSourceType  `json:"type"`
+	Pods *autoscalingv2.PodsMetricSource `json:"pods,omitempty"`
 }
 
 func init() {
