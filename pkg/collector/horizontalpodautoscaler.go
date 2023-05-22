@@ -43,6 +43,12 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		Annotations: annotations,
 	}
 
+	// defaulting webhook should always set this, but if unset then return nil.
+	if otelcol.Spec.Autoscaler == nil {
+		logger.Info("Autoscaler field is unset in Spec, skipping")
+		return nil
+	}
+
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 		metrics := []autoscalingv2beta2.MetricSpec{}
 
@@ -86,9 +92,15 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			},
 		}
 
-		if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.Behavior != nil {
+		if otelcol.Spec.Autoscaler.Behavior != nil {
 			behavior := ConvertToV2beta2Behavior(*otelcol.Spec.Autoscaler.Behavior)
 			autoscaler.Spec.Behavior = &behavior
+		}
+
+		// check for custom metrics
+		if len(otelcol.Spec.Autoscaler.Metrics) > 0 {
+			metrics := ConvertToV2Beta2PodMetrics(otelcol.Spec.Autoscaler.Metrics)
+			autoscaler.Spec.Metrics = append(autoscaler.Spec.Metrics, metrics...)
 		}
 
 		result = &autoscaler
@@ -139,10 +151,43 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		if otelcol.Spec.Autoscaler.Behavior != nil {
 			autoscaler.Spec.Behavior = otelcol.Spec.Autoscaler.Behavior
 		}
+
+		// convert from v1alpha1.MetricSpec into a autoscalingv2.MetricSpec.
+		for _, metric := range otelcol.Spec.Autoscaler.Metrics {
+			if metric.Type == autoscalingv2.PodsMetricSourceType {
+				v2metric := autoscalingv2.MetricSpec{
+					Type: metric.Type,
+					Pods: metric.Pods,
+				}
+				autoscaler.Spec.Metrics = append(autoscaler.Spec.Metrics, v2metric)
+			} // pod metrics
+		}
 		result = &autoscaler
 	}
 
 	return result
+}
+
+func ConvertToV2Beta2PodMetrics(v2metrics []v1alpha1.MetricSpec) []autoscalingv2beta2.MetricSpec {
+	metrics := make([]autoscalingv2beta2.MetricSpec, len(v2metrics))
+
+	for i, v2metric := range v2metrics {
+		metrics[i].Type = autoscalingv2beta2.MetricSourceType(v2metric.Type)
+		if v2metric.Pods != nil {
+			metrics[i].Pods = &autoscalingv2beta2.PodsMetricSource{
+				Metric: autoscalingv2beta2.MetricIdentifier{
+					Name:     v2metric.Pods.Metric.Name,
+					Selector: v2metric.Pods.Metric.Selector,
+				},
+				Target: autoscalingv2beta2.MetricTarget{
+					Type:         autoscalingv2beta2.MetricTargetType(v2metric.Pods.Target.Type),
+					AverageValue: v2metric.Pods.Target.AverageValue,
+				},
+			}
+		}
+	}
+
+	return metrics
 }
 
 // Create a v2beta2 HorizontalPodAutoscalerBehavior from a v2 instance.

@@ -1013,6 +1013,138 @@ spec:
                       feature. If MaxReplicas is set autoscaling is enabled.
                     format: int32
                     type: integer
+                  metrics:
+                    description: Metrics is meant to provide a customizable way to
+                      configure HPA metrics. currently the only supported custom metrics
+                      is type=Pod. Use TargetCPUUtilization or TargetMemoryUtilization
+                      instead if scaling on these common resource metrics.
+                    items:
+                      description: MetricSpec defines a subset of metrics to be defined
+                        for the HPA's metric array more metric type can be supported
+                        as needed. See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec
+                        for reference.
+                      properties:
+                        pods:
+                          description: PodsMetricSource indicates how to scale on
+                            a metric describing each pod in the current scale target
+                            (for example, transactions-processed-per-second). The
+                            values will be averaged together before being compared
+                            to the target value.
+                          properties:
+                            metric:
+                              description: metric identifies the target metric by
+                                name and selector
+                              properties:
+                                name:
+                                  description: name is the name of the given metric
+                                  type: string
+                                selector:
+                                  description: selector is the string-encoded form
+                                    of a standard kubernetes label selector for the
+                                    given metric When set, it is passed as an additional
+                                    parameter to the metrics server for more specific
+                                    metrics scoping. When unset, just the metricName
+                                    will be used to gather metrics.
+                                  properties:
+                                    matchExpressions:
+                                      description: matchExpressions is a list of label
+                                        selector requirements. The requirements are
+                                        ANDed.
+                                      items:
+                                        description: A label selector requirement
+                                          is a selector that contains values, a key,
+                                          and an operator that relates the key and
+                                          values.
+                                        properties:
+                                          key:
+                                            description: key is the label key that
+                                              the selector applies to.
+                                            type: string
+                                          operator:
+                                            description: operator represents a key's
+                                              relationship to a set of values. Valid
+                                              operators are In, NotIn, Exists and
+                                              DoesNotExist.
+                                            type: string
+                                          values:
+                                            description: values is an array of string
+                                              values. If the operator is In or NotIn,
+                                              the values array must be non-empty.
+                                              If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. This
+                                              array is replaced during a strategic
+                                              merge patch.
+                                            items:
+                                              type: string
+                                            type: array
+                                        required:
+                                        - key
+                                        - operator
+                                        type: object
+                                      type: array
+                                    matchLabels:
+                                      additionalProperties:
+                                        type: string
+                                      description: matchLabels is a map of {key,value}
+                                        pairs. A single {key,value} in the matchLabels
+                                        map is equivalent to an element of matchExpressions,
+                                        whose key field is "key", the operator is
+                                        "In", and the values array contains only "value".
+                                        The requirements are ANDed.
+                                      type: object
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                              required:
+                              - name
+                              type: object
+                            target:
+                              description: target specifies the target value for the
+                                given metric
+                              properties:
+                                averageUtilization:
+                                  description: averageUtilization is the target value
+                                    of the average of the resource metric across all
+                                    relevant pods, represented as a percentage of
+                                    the requested value of the resource for the pods.
+                                    Currently only valid for Resource metric source
+                                    type
+                                  format: int32
+                                  type: integer
+                                averageValue:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  description: averageValue is the target value of
+                                    the average of the metric across all relevant
+                                    pods (as a quantity)
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                type:
+                                  description: type represents whether the metric
+                                    type is Utilization, Value, or AverageValue
+                                  type: string
+                                value:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  description: value is the target value of the metric
+                                    (as a quantity).
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                              required:
+                              - type
+                              type: object
+                          required:
+                          - metric
+                          - target
+                          type: object
+                        type:
+                          description: MetricSourceType indicates the type of metric.
+                          type: string
+                      required:
+                      - type
+                      type: object
+                    type: array
                   minReplicas:
                     description: MinReplicas sets a lower bound to the autoscaling
                       feature.  Set this if your are using autoscaling. It must be

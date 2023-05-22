@@ -21,6 +21,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -103,6 +104,48 @@ func TestHPA(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestConvertToV2Beta2PodMetrics(t *testing.T) {
+	expectedValues := []int64{int64(10), int64(20)}
+	expectedNames := []string{"custom1", "custom2"}
+
+	v2metrics := []v1alpha1.MetricSpec{
+		{
+			Type: autoscalingv2.PodsMetricSourceType,
+			Pods: &autoscalingv2.PodsMetricSource{
+				Metric: autoscalingv2.MetricIdentifier{
+					Name: "custom1",
+				},
+				Target: autoscalingv2.MetricTarget{
+					Type:         autoscalingv2.AverageValueMetricType,
+					AverageValue: resource.NewQuantity(int64(10), resource.DecimalSI),
+				},
+			},
+		},
+		{
+			Type: autoscalingv2.PodsMetricSourceType,
+			Pods: &autoscalingv2.PodsMetricSource{
+				Metric: autoscalingv2.MetricIdentifier{
+					Name: "custom2",
+				},
+				Target: autoscalingv2.MetricTarget{
+					Type:         autoscalingv2.AverageValueMetricType,
+					AverageValue: resource.NewQuantity(int64(20), resource.DecimalSI),
+				},
+			},
+		},
+	}
+
+	v2beta2metrics := ConvertToV2Beta2PodMetrics(v2metrics)
+
+	for i, metric := range v2beta2metrics {
+
+		assert.Equal(t, expectedNames[i], metric.Pods.Metric.Name)
+		val, ok := metric.Pods.Target.AverageValue.AsInt64()
+		assert.True(t, ok)
+		assert.Equal(t, expectedValues[i], val)
 	}
 }
 
