@@ -44,11 +44,11 @@ var (
 	EnableGoAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.go",
 		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("controls whether the operator supports Goland auto-instrumentation"))
+		featuregate.WithRegisterDescription("controls whether the operator supports Golang auto-instrumentation"))
 	EnableApacheHTTPAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.apache-httpd",
-		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTP auto-instrumentation"))
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTPD auto-instrumentation"))
 
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
 	// automatically be rewritten when the target allocator is enabled.
