@@ -38,6 +38,12 @@ func TestUpgrade(t *testing.T) {
 		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), originalVal))
 	})
 
+	originalVal = featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled()
+	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), true))
+	t.Cleanup(func() {
+		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), originalVal))
+	})
+
 	nsName := strings.ToLower(t.Name())
 	err := k8sClient.Create(context.Background(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
