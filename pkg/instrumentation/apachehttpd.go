@@ -215,6 +215,9 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 	serviceNamespace := pod.GetNamespace()
 	// Namespace name override TBD
 
+	// There are two versions of the OTEL modules - for Apache HTTPD 2.4 and 2.2.
+	// 2.4 is default and the module does not have any version suffix
+	// 2.2 has version suffix "22"
 	versionSuffix := ""
 	if apacheSpec.Version == "2.2" {
 		versionSuffix = "22"
