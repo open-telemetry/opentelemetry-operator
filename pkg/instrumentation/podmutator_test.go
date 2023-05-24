@@ -1514,6 +1514,13 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			setFeatureGates: func(t *testing.T) {
+				originalVal := featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), true))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), originalVal))
+				})
+			},
 		},
 		{
 			name: "apache httpd injection feature gate disabled",
