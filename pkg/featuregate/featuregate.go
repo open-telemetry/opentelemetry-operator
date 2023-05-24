@@ -47,7 +47,7 @@ var (
 		featuregate.WithRegisterDescription("controls whether the operator supports Goland auto-instrumentation"))
 	EnableApacheHTTPAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.apache-http",
-		featuregate.StageBeta,
+		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTP auto-instrumentation"))
 
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
