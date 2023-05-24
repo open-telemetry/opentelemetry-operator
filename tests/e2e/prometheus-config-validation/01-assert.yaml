@@ -1,0 +1,28 @@
+## Uncomment this after https://github.com/open-telemetry/opentelemetry-operator/issues/958 is resolved
+## Unfortunately kuttl doesn't have a way to skip tests
+
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: labeldrop-collector
+# status:
+#   replicas: 1
+#   readyReplicas: 1
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: labeldrop-targetallocator
+# status:
+#   replicas: 1
+#   readyReplicas: 1
+# ---
+# # Print TA and operator logs if test fails
+# apiVersion: kuttl.dev/v1beta1
+# kind: TestAssert
+# collectors:
+#   - selector: app.kubernetes.io/component=opentelemetry-targetallocator
+#   - selector: app.kubernetes.io/component=opentelemetry-collector
+#   - selector: app.kubernetes.io/name=opentelemetry-operator
+#     namespace: opentelemetry-operator-system
+#     container: manager

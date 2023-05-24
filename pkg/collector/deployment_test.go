@@ -81,6 +81,9 @@ func TestDeploymentNewDefault(t *testing.T) {
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
 		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"prometheus.io/path":                   "/metrics",
+		"prometheus.io/port":                   "8888",
+		"prometheus.io/scrape":                 "true",
 	}
 	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
@@ -127,9 +130,18 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	// Add sha256 podAnnotation
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
+	expectedPodAnnotationValues := map[string]string{
+		"annotation-key":                       "annotation-value",
+		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"prometheus.io/path":                   "/metrics",
+		"prometheus.io/port":                   "8888",
+		"prometheus.io/scrape":                 "true",
+	}
+
 	// verify
+	assert.Len(t, d.Spec.Template.Annotations, 5)
 	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, testPodAnnotationValues, d.Spec.Template.Annotations)
+	assert.Equal(t, expectedPodAnnotationValues, d.Spec.Template.Annotations)
 }
 
 func TestDeploymenttPodSecurityContext(t *testing.T) {

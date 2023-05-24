@@ -186,6 +186,10 @@ type Go struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
 // ApacheHttpd defines Apache SDK and instrumentation configuration.
