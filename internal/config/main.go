@@ -137,10 +137,6 @@ func (c *Config) AutoDetect() error {
 		c.logger.V(1).Info("HPA version detected", "version", hpaV)
 		c.hpaVersion.Set(hpaV)
 	}
-	if c.hpaVersion.Get() != hpaV {
-		c.logger.V(1).Info("HPA version detected", "version", hpaV)
-		c.hpaVersion.Set(hpaV)
-	}
 
 	return nil
 }
