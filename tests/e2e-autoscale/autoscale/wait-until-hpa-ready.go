@@ -31,12 +31,12 @@ import (
 
 func main() {
 	var hpaName string
-	var timeout int
+	var timeout time.Duration
 	var kubeconfigPath string
 
 	defaultKubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
 
-	pflag.IntVar(&timeout, "timeout", 600, "The timeout for the check.")
+	pflag.DurationVar(&timeout, "timeout", 5*time.Minute, "The timeout for the check.")
 	pflag.StringVar(&hpaName, "hpa", "", "HPA to check")
 	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", defaultKubeconfigPath, "Absolute path to the KubeconfigPath file")
 	pflag.Parse()
@@ -72,7 +72,7 @@ func main() {
 	// Search in v2 and v1 for an HPA with the given name
 
 	ctx := context.Background()
-	err = wait.PollUntilContextTimeout(ctx, pollInterval, 0, false, func(c context.Context) (done bool, err error) {
+	err = wait.PollUntilContextTimeout(ctx, pollInterval, timeout, false, func(c context.Context) (done bool, err error) {
 		hpav2, err := hpaClientV2.Get(
 			c,
 			hpaName,
