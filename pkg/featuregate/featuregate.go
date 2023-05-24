@@ -46,7 +46,7 @@ var (
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator supports Goland auto-instrumentation"))
 	EnableApacheHTTPAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.apache-http",
+		"operator.autoinstrumentation.apache-httpd",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTP auto-instrumentation"))
 
