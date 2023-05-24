@@ -6,13 +6,7 @@
 #    used and must be availabe in the image.
 
 # TODO: Remove dev image reference
-FROM jvsplk/opentelemetry-operator-utils:v0.0.1 AS utils
+FROM jvsplk/opentelemetry-operator-cp:v0.0.1
 ARG version
 ARG release_url=https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${version}/opentelemetry-javaagent.jar
-WORKDIR /utils/
-ADD $release_url  javaagent.jar
-RUN chmod 644 -R javaagent.jar
-
-FROM scratch AS final
-COPY --from=utils /utils/ /
-ENV PATH="${PATH}:/bin"
+ADD --chmod=go+r $release_url /javaagent.jar
