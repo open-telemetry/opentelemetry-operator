@@ -385,14 +385,14 @@ Prefix a gate with '-' to disable support for the corresponding language.
 Prefixing a gate with '+' or no prefix will enable support for the corresponding language.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
 
-| Language | Gate                                        | Default Value |
-|----------|---------------------------------------------|---------------|
-| Java     | `operator.autoinstrumentation.java`         | enabled       |
-| NodeJS   | `operator.autoinstrumentation.nodejs`       | enabled       |
-| Python   | `operator.autoinstrumentation.python`       | enabled       |
-| DotNet   | `operator.autoinstrumentation.dotnet`       | enabled       |
-| ApacheHttpD   | `operator.autoinstrumentation.apache-httpd` | enabled       |
-| Go       | `operator.autoinstrumentation.go`           | disabled      |
+| Language      | Gate                                        | Default Value |
+|---------------|---------------------------------------------|---------------|
+| Java          | `operator.autoinstrumentation.java`         | enabled       |
+| NodeJS        | `operator.autoinstrumentation.nodejs`       | enabled       |
+| Python        | `operator.autoinstrumentation.python`       | enabled       |
+| DotNet        | `operator.autoinstrumentation.dotnet`       | enabled       |
+| ApacheHttpD   | `operator.autoinstrumentation.apache-httpd` | disabled      |
+| Go            | `operator.autoinstrumentation.go`           | disabled      |
 
 Language not specified in the table are always supported and cannot be disabled.
 
