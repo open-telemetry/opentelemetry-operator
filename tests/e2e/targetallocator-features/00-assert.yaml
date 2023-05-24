@@ -56,6 +56,13 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          resources:
+            limits:
+              cpu: 200m
+              memory: 500Mi
+            requests:
+              cpu: 100m
+              memory: 250Mi
           volumeMounts:
           - mountPath: /conf
             name: ta-internal

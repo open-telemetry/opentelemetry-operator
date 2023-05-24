@@ -76,7 +76,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	}
 	config, err := ReplaceConfig(params.Instance)
 	if err != nil {
-		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", err)
+		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
 	}
 
 	return corev1.ConfigMap{
