@@ -17,7 +17,9 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: docker.io/chrlic/apache-test
+        image: docker.io/chrlic/apache-test@sha256:fad58c6ce7a4f477b455bece2a1980741fa6f81cef1e1093a3b72f9b2ffa7b8e
+        # image source at https://github.com/cisco-open/appdynamics-k8s-webhook-instrumentor/tree/main/testWorkloads/apache-httpd
+        # licensed under Apache 2.0 
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
