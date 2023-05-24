@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"strconv"
 	"strings"
 
@@ -177,21 +178,21 @@ func (r *Instrumentation) Default() {
 var _ webhook.Validator = &Instrumentation{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *Instrumentation) ValidateCreate() error {
+func (r *Instrumentation) ValidateCreate() (admission.Warnings, error) {
 	instrumentationlog.Info("validate create", "name", r.Name)
-	return r.validate()
+	return nil, r.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *Instrumentation) ValidateUpdate(old runtime.Object) error {
+func (r *Instrumentation) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	instrumentationlog.Info("validate update", "name", r.Name)
-	return r.validate()
+	return nil, r.validate()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *Instrumentation) ValidateDelete() error {
+func (r *Instrumentation) ValidateDelete() (admission.Warnings, error) {
 	instrumentationlog.Info("validate delete", "name", r.Name)
-	return nil
+	return nil, nil
 }
 
 func (r *Instrumentation) validate() error {

@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -116,21 +117,21 @@ func (r *OpenTelemetryCollector) Default() {
 var _ webhook.Validator = &OpenTelemetryCollector{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateCreate() error {
+func (r *OpenTelemetryCollector) ValidateCreate() (admission.Warnings, error) {
 	opentelemetrycollectorlog.Info("validate create", "name", r.Name)
-	return r.validateCRDSpec()
+	return nil, r.validateCRDSpec()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) error {
+func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	opentelemetrycollectorlog.Info("validate update", "name", r.Name)
-	return r.validateCRDSpec()
+	return nil, r.validateCRDSpec()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateDelete() error {
+func (r *OpenTelemetryCollector) ValidateDelete() (admission.Warnings, error) {
 	opentelemetrycollectorlog.Info("validate delete", "name", r.Name)
-	return nil
+	return nil, nil
 }
 
 func (r *OpenTelemetryCollector) validateCRDSpec() error {
