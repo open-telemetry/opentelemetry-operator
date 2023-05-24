@@ -307,7 +307,7 @@ spec:
                 - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
-                - --feature-gates=+operator.autoinstrumentation.go,+operator.autoinstrumentation.go
+                - --feature-gates=+operator.autoinstrumentation.go,+operator.autoinstrumentation.apache-httpd
                 image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.77.0
                 livenessProbe:
                   httpGet:
