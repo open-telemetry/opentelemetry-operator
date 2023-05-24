@@ -70,15 +70,17 @@ func main() {
 	pollInterval := time.Second
 
 	// Search in v2 and v1 for an HPA with the given name
-	err = wait.Poll(pollInterval, 0, func() (done bool, err error) {
+
+	ctx := context.Background()
+	err = wait.PollUntilContextTimeout(ctx, pollInterval, 0, false, func(c context.Context) (done bool, err error) {
 		hpav2, err := hpaClientV2.Get(
-			context.Background(),
+			c,
 			hpaName,
 			metav1.GetOptions{},
 		)
 		if err != nil {
 			hpav1, err := hpaClientV1.Get(
-				context.Background(),
+				c,
 				hpaName,
 				metav1.GetOptions{},
 			)
