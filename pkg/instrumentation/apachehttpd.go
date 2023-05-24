@@ -43,6 +43,21 @@ const (
 	apacheServiceInstanceIdEnvVar = "APACHE_SERVICE_INSTANCE_ID"
 )
 
+/*
+	Apache injection is different from other languages in:
+	- OpenTelemetry parameters are not passed as environmental variables, but via a configuration file
+	- OpenTelemetry module needs to be specified in the Apache HTTPD config file, but that is already specified by
+	  an author of the application image and the configuration must be preserved
+
+	Therefore, following approach is taken:
+	1) Inject an init container created as a *clone* of the application container and copy config file to an empty shared volume
+	2) Inject a second init container with the OpenTelemetry module itself - i.e. instrumentation image
+	3) Take the Apache HTTPD configuration file saved on volume and inject reference to OpenTelemetry module into config
+	4) Create on the same volume a configuration file for OpenTelemetry module
+	5) Copy OpenTelemetry module from second init container (instrumentation image) to another shared volume
+	6) Inject mounting of volumes / files into appropriate directories in application container
+*/
+
 func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod corev1.Pod, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
 
 	// caller checks if there is at least one container
@@ -57,6 +72,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 	}
 
 	// First make a clone of the instrumented container to take the existing Apache configuration from
+	// and create init container from it
 	if isApacheInitContainerMissing(pod, apacheAgentCloneContainerName) {
 		// Inject volume for original Apache configuration
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
@@ -105,7 +121,9 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		})
 	}
 
-	// We just inject Volumes and init containers for the first processed container
+	// Inject second init container with instrumentation image
+	// Create / update config files
+	// Copy OTEL module to a shared volume
 	if isApacheInitContainerMissing(pod, apacheAgentInitContainerName) {
 		// Inject volume for agent
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
