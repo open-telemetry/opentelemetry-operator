@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"strings"
 	"time"
 
@@ -41,6 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"

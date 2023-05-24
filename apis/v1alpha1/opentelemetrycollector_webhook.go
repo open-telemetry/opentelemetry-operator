@@ -16,7 +16,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -26,6 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
