@@ -103,7 +103,7 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
 
-	promConfig, err := ta.ConfigToPromConfig(params.Instance.Spec.Config)
+	prometheusReceiverConfig, err := ta.ConfigToPromConfig(params.Instance.Spec.Config)
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}
@@ -114,8 +114,11 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/component":  "opentelemetry-collector",
 	}
-	// We only take the "config" from the returned object, we don't need the "target_allocator" configuration here.
-	taConfig["config"] = promConfig["config"]
+	// We only take the "config" from the returned object, if it's present
+	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
+		taConfig["config"] = prometheusConfig
+	}
+
 	if len(params.Instance.Spec.TargetAllocator.AllocationStrategy) > 0 {
 		taConfig["allocation_strategy"] = params.Instance.Spec.TargetAllocator.AllocationStrategy
 	} else {

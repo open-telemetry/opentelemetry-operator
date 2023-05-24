@@ -26,6 +26,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
@@ -160,7 +161,11 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 
 	// validate Prometheus config for target allocation
 	if r.Spec.TargetAllocator.Enabled {
-		_, err := ta.ConfigToPromConfig(r.Spec.Config)
+		promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
+		if err != nil {
+			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+		}
+		err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
 		if err != nil {
 			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}
