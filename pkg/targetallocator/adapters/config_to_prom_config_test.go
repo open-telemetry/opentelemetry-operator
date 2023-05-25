@@ -172,16 +172,22 @@ receivers:
 
 func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 	t.Run("ValidConfiguration, add http_sd_config", func(t *testing.T) {
-		cfg := `
-receivers:
-  prometheus:
-    config:
-      scrape_configs:
-      - job_name: "test_job"
-        static_configs:
-        - targets:
-          - "localhost:9090"
-`
+		cfg := map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
+				"scrape_configs": []interface{}{
+					map[interface{}]interface{}{
+						"job_name": "test_job",
+						"static_configs": []interface{}{
+							map[interface{}]interface{}{
+								"targets": []interface{}{
+									"localhost:9090",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
 		taServiceName := "test-service"
 		expectedCfg := map[interface{}]interface{}{
 			"config": map[interface{}]interface{}{
@@ -204,35 +210,46 @@ receivers:
 	})
 
 	t.Run("invalid config property, returns error", func(t *testing.T) {
-		cfg := `
-receivers:
-  prometheus:
-    config: 
-      - job_name: "test_job"
-        static_configs:
-        - targets:
-          - "localhost:9090"
-		`
+		cfg := map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
+				"job_name": "test_job",
+				"static_configs": []interface{}{
+					map[interface{}]interface{}{
+						"targets": []interface{}{
+							"localhost:9090",
+						},
+					},
+				},
+			},
+		}
+
 		taServiceName := "test-service"
 
 		_, err := ta.AddHTTPSDConfigToPromConfig(cfg, taServiceName)
 		assert.Error(t, err)
-		assert.EqualError(t, err, "couldn't parse the opentelemetry-collector configuration")
+		assert.EqualError(t, err, "no scrape_configs available as part of the configuration")
 	})
 }
 
 func TestAddTAConfigToPromConfig(t *testing.T) {
 	t.Run("should return expected prom config map with TA config", func(t *testing.T) {
-		cfg := `
-receivers:
-  prometheus:
-    config:
-      scrape_configs:
-      - job_name: "test_job"
-        static_configs:
-        - targets:
-          - "localhost:9090"
-`
+		cfg := map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
+				"scrape_configs": []interface{}{
+					map[interface{}]interface{}{
+						"job_name": "test_job",
+						"static_configs": []interface{}{
+							map[interface{}]interface{}{
+								"targets": []interface{}{
+									"localhost:9090",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
 		taServiceName := "test-targetallocator"
 
 		expectedResult := map[interface{}]interface{}{
@@ -250,40 +267,36 @@ receivers:
 		assert.Equal(t, expectedResult, result)
 	})
 
-	t.Run("missing config property, returns error", func(t *testing.T) {
-		cfg := `
-receivers:
-  prometheus:
-      scrape_configs:
-      - job_name: "test_job"
-        static_configs:
-        - targets:
-          - "localhost:9090"
-`
+	t.Run("missing or invalid prometheusConfig property, returns error", func(t *testing.T) {
+		testCases := []struct {
+			name    string
+			cfg     map[interface{}]interface{}
+			errText string
+		}{
+			{
+				name:    "missing config property",
+				cfg:     map[interface{}]interface{}{},
+				errText: "no prometheusConfig available as part of the configuration",
+			},
+			{
+				name: "invalid config property",
+				cfg: map[interface{}]interface{}{
+					"config": "invalid",
+				},
+				errText: "prometheusConfig property in the configuration doesn't contain valid prometheusConfig",
+			},
+		}
+
 		taServiceName := "test-targetallocator"
 
-		_, err := ta.AddTAConfigToPromConfig(cfg, taServiceName)
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				_, err := ta.AddTAConfigToPromConfig(tc.cfg, taServiceName)
 
-		assert.Error(t, err)
-		assert.EqualError(t, err, "no prometheusConfig available as part of the configuration")
-	})
-
-	t.Run("invalid config property, returns error", func(t *testing.T) {
-		cfg := `
-receivers:
-  prometheus:
-      scrape_configs: "invalid"
-      - job_name: "test_job"
-        static_configs:
-        - targets:
-          - "localhost:9090"
-`
-		taServiceName := "test-targetallocator"
-
-		_, err := ta.AddTAConfigToPromConfig(cfg, taServiceName)
-
-		assert.Error(t, err)
-		assert.EqualError(t, err, "couldn't parse the opentelemetry-collector configuration")
+				assert.Error(t, err)
+				assert.EqualError(t, err, tc.errText)
+			})
+		}
 	})
 }
 

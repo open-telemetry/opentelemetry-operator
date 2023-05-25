@@ -178,12 +178,7 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 // This function removes any existing service discovery configurations (e.g., `sd_configs`, `dns_sd_configs`, `file_sd_configs`, etc.)
 // from the `scrape_configs` section and adds a single `http_sd_configs` configuration.
 // The `http_sd_configs` points to the TA (Target Allocator) endpoint that provides the list of targets for the given job.
-func AddHTTPSDConfigToPromConfig(cfg string, taServiceName string) (map[interface{}]interface{}, error) {
-	prometheus, err := ConfigToPromConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-
+func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string) (map[interface{}]interface{}, error) {
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
 		return nil, errorNoComponent("prometheusConfig")
@@ -247,12 +242,7 @@ func AddHTTPSDConfigToPromConfig(cfg string, taServiceName string) (map[interfac
 // AddTAConfigToPromConfig adds or updates the target_allocator configuration in the Prometheus configuration.
 // If the `EnableTargetAllocatorRewrite` feature flag for the target allocator is enabled, this function
 // removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.
-func AddTAConfigToPromConfig(cfg string, taServiceName string) (map[interface{}]interface{}, error) {
-	prometheus, err := ConfigToPromConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-
+func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string) (map[interface{}]interface{}, error) {
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
 		return nil, errorNoComponent("prometheusConfig")

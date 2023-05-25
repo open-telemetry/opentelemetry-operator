@@ -32,9 +32,6 @@ type targetAllocator struct {
 	Endpoint    string        `yaml:"endpoint"`
 	Interval    time.Duration `yaml:"interval"`
 	CollectorID string        `yaml:"collector_id"`
-	// HTTPSDConfig is a preference that can be set for the collector's target allocator, but the operator doesn't
-	// care about what the value is set to. We just need this for validation when unmarshalling the configmap.
-	HTTPSDConfig interface{} `yaml:"http_sd_config,omitempty"`
 }
 
 type Config struct {
@@ -53,16 +50,26 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		return "", err
 	}
 
+	promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(instance.Spec.Config)
+	if getCfgPromErr != nil {
+		return "", getCfgPromErr
+	}
+
+	validateCfgPromErr := ta.ValidatePromConfig(promCfgMap, instance.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
+	if validateCfgPromErr != nil {
+		return "", validateCfgPromErr
+	}
+
 	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
 		// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 		// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
-		promCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(instance.Spec.Config, naming.TAService(instance))
+		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance))
 		if getCfgPromErr != nil {
 			return "", getCfgPromErr
 		}
 
 		// type coercion checks are handled in the AddTAConfigToPromConfig method above
-		config["receivers"].(map[interface{}]interface{})["prometheus"] = promCfgMap
+		config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
 
 		out, updCfgMarshalErr := yaml.Marshal(config)
 		if updCfgMarshalErr != nil {
@@ -74,13 +81,13 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 
 	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
-	promCfgMap, err := ta.AddHTTPSDConfigToPromConfig(instance.Spec.Config, naming.TAService(instance))
+	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService(instance))
 	if err != nil {
 		return "", err
 	}
 
 	// type coercion checks are handled in the ConfigToPromConfig method above
-	config["receivers"].(map[interface{}]interface{})["prometheus"] = promCfgMap
+	config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
 
 	out, err := yaml.Marshal(config)
 	if err != nil {
