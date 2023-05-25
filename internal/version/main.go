@@ -21,53 +21,56 @@ import (
 )
 
 var (
-	version                   string
-	buildDate                 string
-	otelCol                   string
-	targetAllocator           string
-	operatorOpAMPBridge       string
-	autoInstrumentationJava   string
-	autoInstrumentationNodeJS string
-	autoInstrumentationPython string
-	autoInstrumentationDotNet string
-	autoInstrumentationGo     string
+	version                        string
+	buildDate                      string
+	otelCol                        string
+	targetAllocator                string
+	operatorOpAMPBridge            string
+	autoInstrumentationJava        string
+	autoInstrumentationNodeJS      string
+	autoInstrumentationPython      string
+	autoInstrumentationDotNet      string
+	autoInstrumentationApacheHttpd string
+	autoInstrumentationGo          string
 )
 
 // Version holds this Operator's version as well as the version of some of the components it uses.
 type Version struct {
-	Operator                  string `json:"opentelemetry-operator"`
-	BuildDate                 string `json:"build-date"`
-	OpenTelemetryCollector    string `json:"opentelemetry-collector-version"`
-	Go                        string `json:"go-version"`
-	TargetAllocator           string `json:"target-allocator-version"`
-	OperatorOpAMPBridge       string `json:"operator-opamp-bridge"`
-	AutoInstrumentationJava   string `json:"auto-instrumentation-java"`
-	AutoInstrumentationNodeJS string `json:"auto-instrumentation-nodejs"`
-	AutoInstrumentationPython string `json:"auto-instrumentation-python"`
-	AutoInstrumentationDotNet string `json:"auto-instrumentation-dotnet"`
-	AutoInstrumentationGo     string `json:"auto-instrumentation-go"`
+	Operator                       string `json:"opentelemetry-operator"`
+	BuildDate                      string `json:"build-date"`
+	OpenTelemetryCollector         string `json:"opentelemetry-collector-version"`
+	Go                             string `json:"go-version"`
+	TargetAllocator                string `json:"target-allocator-version"`
+	OperatorOpAMPBridge            string `json:"operator-opamp-bridge"`
+	AutoInstrumentationJava        string `json:"auto-instrumentation-java"`
+	AutoInstrumentationNodeJS      string `json:"auto-instrumentation-nodejs"`
+	AutoInstrumentationPython      string `json:"auto-instrumentation-python"`
+	AutoInstrumentationDotNet      string `json:"auto-instrumentation-dotnet"`
+	AutoInstrumentationGo          string `json:"auto-instrumentation-go"`
+	AutoInstrumentationApacheHttpd string `json:"auto-instrumentation-apache-httpd"`
 }
 
 // Get returns the Version object with the relevant information.
 func Get() Version {
 	return Version{
-		Operator:                  version,
-		BuildDate:                 buildDate,
-		OpenTelemetryCollector:    OpenTelemetryCollector(),
-		Go:                        runtime.Version(),
-		TargetAllocator:           TargetAllocator(),
-		OperatorOpAMPBridge:       OperatorOpAMPBridge(),
-		AutoInstrumentationJava:   AutoInstrumentationJava(),
-		AutoInstrumentationNodeJS: AutoInstrumentationNodeJS(),
-		AutoInstrumentationPython: AutoInstrumentationPython(),
-		AutoInstrumentationDotNet: AutoInstrumentationDotNet(),
-		AutoInstrumentationGo:     AutoInstrumentationGo(),
+		Operator:                       version,
+		BuildDate:                      buildDate,
+		OpenTelemetryCollector:         OpenTelemetryCollector(),
+		Go:                             runtime.Version(),
+		TargetAllocator:                TargetAllocator(),
+		OperatorOpAMPBridge:            OperatorOpAMPBridge(),
+		AutoInstrumentationJava:        AutoInstrumentationJava(),
+		AutoInstrumentationNodeJS:      AutoInstrumentationNodeJS(),
+		AutoInstrumentationPython:      AutoInstrumentationPython(),
+		AutoInstrumentationDotNet:      AutoInstrumentationDotNet(),
+		AutoInstrumentationGo:          AutoInstrumentationGo(),
+		AutoInstrumentationApacheHttpd: AutoInstrumentationApacheHttpd(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v')",
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
@@ -79,6 +82,7 @@ func (v Version) String() string {
 		v.AutoInstrumentationPython,
 		v.AutoInstrumentationDotNet,
 		v.AutoInstrumentationGo,
+		v.AutoInstrumentationApacheHttpd,
 	)
 }
 
@@ -139,6 +143,13 @@ func AutoInstrumentationPython() string {
 func AutoInstrumentationDotNet() string {
 	if len(autoInstrumentationDotNet) > 0 {
 		return autoInstrumentationDotNet
+	}
+	return "0.0.0"
+}
+
+func AutoInstrumentationApacheHttpd() string {
+	if len(autoInstrumentationApacheHttpd) > 0 {
+		return autoInstrumentationApacheHttpd
 	}
 	return "0.0.0"
 }
