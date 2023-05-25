@@ -34,23 +34,24 @@ const (
 
 // Config holds the static configuration for this operator.
 type Config struct {
-	autoDetect                     autodetect.AutoDetect
-	logger                         logr.Logger
-	targetAllocatorImage           string
-	operatorOpAMPBridgeImage       string
-	autoInstrumentationPythonImage string
-	collectorImage                 string
-	collectorConfigMapEntry        string
-	autoInstrumentationDotNetImage string
-	autoInstrumentationGoImage     string
-	targetAllocatorConfigMapEntry  string
-	autoInstrumentationNodeJSImage string
-	autoInstrumentationJavaImage   string
-	onOpenShiftRoutesChange        changeHandler
-	labelsFilter                   []string
-	openshiftRoutes                openshiftRoutesStore
-	autoDetectFrequency            time.Duration
-	hpaVersion                     hpaVersionStore
+	autoDetect                          autodetect.AutoDetect
+	logger                              logr.Logger
+	targetAllocatorImage                string
+	operatorOpAMPBridgeImage            string
+	autoInstrumentationPythonImage      string
+	collectorImage                      string
+	collectorConfigMapEntry             string
+	autoInstrumentationDotNetImage      string
+	autoInstrumentationGoImage          string
+	autoInstrumentationApacheHttpdImage string
+	targetAllocatorConfigMapEntry       string
+	autoInstrumentationNodeJSImage      string
+	autoInstrumentationJavaImage        string
+	onOpenShiftRoutesChange             changeHandler
+	labelsFilter                        []string
+	openshiftRoutes                     openshiftRoutesStore
+	autoDetectFrequency                 time.Duration
+	hpaVersion                          hpaVersionStore
 }
 
 // New constructs a new configuration based on the given options.
@@ -71,22 +72,23 @@ func New(opts ...Option) Config {
 	}
 
 	return Config{
-		autoDetect:                     o.autoDetect,
-		autoDetectFrequency:            o.autoDetectFrequency,
-		collectorImage:                 o.collectorImage,
-		collectorConfigMapEntry:        o.collectorConfigMapEntry,
-		targetAllocatorImage:           o.targetAllocatorImage,
-		operatorOpAMPBridgeImage:       o.operatorOpAMPBridgeImage,
-		targetAllocatorConfigMapEntry:  o.targetAllocatorConfigMapEntry,
-		logger:                         o.logger,
-		openshiftRoutes:                o.openshiftRoutes,
-		hpaVersion:                     o.hpaVersion,
-		onOpenShiftRoutesChange:        o.onOpenShiftRoutesChange,
-		autoInstrumentationJavaImage:   o.autoInstrumentationJavaImage,
-		autoInstrumentationNodeJSImage: o.autoInstrumentationNodeJSImage,
-		autoInstrumentationPythonImage: o.autoInstrumentationPythonImage,
-		autoInstrumentationDotNetImage: o.autoInstrumentationDotNetImage,
-		labelsFilter:                   o.labelsFilter,
+		autoDetect:                          o.autoDetect,
+		autoDetectFrequency:                 o.autoDetectFrequency,
+		collectorImage:                      o.collectorImage,
+		collectorConfigMapEntry:             o.collectorConfigMapEntry,
+		targetAllocatorImage:                o.targetAllocatorImage,
+		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
+		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
+		logger:                              o.logger,
+		openshiftRoutes:                     o.openshiftRoutes,
+		hpaVersion:                          o.hpaVersion,
+		onOpenShiftRoutesChange:             o.onOpenShiftRoutesChange,
+		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
+		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
+		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
+		autoInstrumentationDotNetImage:      o.autoInstrumentationDotNetImage,
+		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
+		labelsFilter:                        o.labelsFilter,
 	}
 }
 
@@ -192,6 +194,11 @@ func (c *Config) AutoInstrumentationDotNetImage() string {
 // AutoInstrumentationGoImage returns OpenTelemetry Go auto-instrumentation container image.
 func (c *Config) AutoInstrumentationGoImage() string {
 	return c.autoInstrumentationGoImage
+}
+
+// AutoInstrumentationApacheHttpdImage returns OpenTelemetry ApacheHttpd auto-instrumentation container image.
+func (c *Config) AutoInstrumentationApacheHttpdImage() string {
+	return c.autoInstrumentationApacheHttpdImage
 }
 
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
