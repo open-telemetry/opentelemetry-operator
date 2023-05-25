@@ -352,3 +352,4 @@ func TestValidatePromConfig(t *testing.T) {
 			assert.Equal(t, testCase.expectedError, err)
 		})
 	}
+}

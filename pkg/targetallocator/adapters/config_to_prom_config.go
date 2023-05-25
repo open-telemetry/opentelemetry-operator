@@ -281,6 +281,7 @@ func AddTAConfigToPromConfig(cfg string, taServiceName string) (map[interface{}]
 	delete(prometheusCfg, "scrape_configs")
 
 	return prometheus, nil
+}
 
 // ValidatePromConfig checks if the prometheus receiver config is valid given other collector-level settings.
 func ValidatePromConfig(config map[interface{}]interface{}, targetAllocatorEnabled bool, targetAllocatorRewriteEnabled bool) error {
