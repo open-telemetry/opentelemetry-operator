@@ -391,7 +391,7 @@ If a language is enabled by default its gate only needs to be supplied when disa
 | NodeJS        | `operator.autoinstrumentation.nodejs`       | enabled       |
 | Python        | `operator.autoinstrumentation.python`       | enabled       |
 | DotNet        | `operator.autoinstrumentation.dotnet`       | enabled       |
-| ApacheHttpD   | `operator.autoinstrumentation.apache-httpd` | disabled      |
+| ApacheHttpD   | `operator.autoinstrumentation.apache-httpd` | enabled      |
 | Go            | `operator.autoinstrumentation.go`           | disabled      |
 
 Language not specified in the table are always supported and cannot be disabled.
