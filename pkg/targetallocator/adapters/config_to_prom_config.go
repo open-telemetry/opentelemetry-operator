@@ -27,6 +27,10 @@ func errorNoComponent(component string) error {
 	return fmt.Errorf("no %s available as part of the configuration", component)
 }
 
+func errorNotAMapAtIndex(component string, index int) error {
+	return fmt.Errorf("index %d: %s property in the configuration doesn't contain a valid map: %s", index, component, component)
+}
+
 func errorNotAMap(component string) error {
 	return fmt.Errorf("%s property in the configuration doesn't contain valid %s", component, component)
 }
@@ -35,8 +39,12 @@ func errorNotAList(component string) error {
 	return fmt.Errorf("%s must be a list in the config", component)
 }
 
-func errorNotAString(component string) error {
-	return fmt.Errorf("%s must be a string", component)
+func errorNotAListAtIndex(component string, index int) error {
+	return fmt.Errorf("index %d: %s property in the configuration doesn't contain a valid index: %s", index, component, component)
+}
+
+func errorNotAStringAtIndex(component string, index int) error {
+	return fmt.Errorf("index %d: %s property in the configuration doesn't contain a valid string: %s", index, component, component)
 }
 
 // ConfigToPromConfig converts the incoming configuration object into the Prometheus receiver config.
@@ -97,10 +105,10 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 		return nil, errorNotAList("scrape_configs")
 	}
 
-	for _, config := range scrapeConfigs {
+	for i, config := range scrapeConfigs {
 		scrapeConfig, ok := config.(map[interface{}]interface{})
 		if !ok {
-			return nil, errorNotAMap("scrape_config")
+			return nil, errorNotAMapAtIndex("scrape_config", i)
 		}
 
 		relabelConfigsProperty, ok := scrapeConfig["relabel_configs"]
@@ -110,13 +118,13 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 		relabelConfigs, ok := relabelConfigsProperty.([]interface{})
 		if !ok {
-			return nil, errorNotAList("relabel_configs")
+			return nil, errorNotAListAtIndex("relabel_configs", i)
 		}
 
-		for _, rc := range relabelConfigs {
+		for i, rc := range relabelConfigs {
 			relabelConfig, rcErr := rc.(map[interface{}]interface{})
 			if !rcErr {
-				return nil, errorNotAMap("relabel_config")
+				return nil, errorNotAMapAtIndex("relabel_config", i)
 			}
 
 			replacementProperty, rcErr := relabelConfig["replacement"]
@@ -126,7 +134,7 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 			replacement, rcErr := replacementProperty.(string)
 			if !rcErr {
-				return nil, errorNotAString("replacement")
+				return nil, errorNotAStringAtIndex("replacement", i)
 			}
 
 			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
@@ -139,13 +147,13 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 		metricRelabelConfigs, ok := metricRelabelConfigsProperty.([]interface{})
 		if !ok {
-			return nil, errorNotAList("metric_relabel_configs")
+			return nil, errorNotAListAtIndex("metric_relabel_configs", i)
 		}
 
-		for _, rc := range metricRelabelConfigs {
+		for i, rc := range metricRelabelConfigs {
 			relabelConfig, ok := rc.(map[interface{}]interface{})
 			if !ok {
-				return nil, errorNotAMap("relabel_config")
+				return nil, errorNotAMapAtIndex("metric_relabel_config", i)
 			}
 
 			replacementProperty, ok := relabelConfig["replacement"]
@@ -155,7 +163,7 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 			replacement, ok := replacementProperty.(string)
 			if !ok {
-				return nil, errorNotAString("replacement")
+				return nil, errorNotAStringAtIndex("replacement", i)
 			}
 
 			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
@@ -165,11 +173,10 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 	return prometheus, nil
 }
 
-// AddHTTPSDConfigToPromConfig takes a Prometheus configuration in YAML format and
-// adds service discovery configurations for each scrape job that specifies a "job_name"
-// property. The service discovery configuration is added as an "http_sd_configs" property,
-// with the URL pointing to a service endpoint that provides the list of targets for the
-// given job.
+// AddHTTPSDConfigToPromConfig adds HTTP SD (Service Discovery) configuration to the Prometheus configuration.
+// This function removes any existing service discovery configurations (e.g., `sd_configs`, `dns_sd_configs`, `file_sd_configs`, etc.)
+// from the `scrape_configs` section and adds a single `http_sd_configs` configuration.
+// The `http_sd_configs` points to the TA (Target Allocator) endpoint that provides the list of targets for the given job.
 func AddHTTPSDConfigToPromConfig(cfg string, taServiceName string) (map[interface{}]interface{}, error) {
 	prometheus, err := ConfigToPromConfig(cfg)
 	if err != nil {
@@ -198,10 +205,10 @@ func AddHTTPSDConfigToPromConfig(cfg string, taServiceName string) (map[interfac
 
 	sdRegex := regexp.MustCompile(`^.*(sd|static)_configs$`)
 
-	for _, config := range scrapeConfigs {
+	for i, config := range scrapeConfigs {
 		scrapeConfig, ok := config.(map[interface{}]interface{})
 		if !ok {
-			return nil, errorNotAMap("scrape_config")
+			return nil, errorNotAMapAtIndex("scrape_config", i)
 		}
 
 		// Check for other types of service discovery configs (e.g. dns_sd_configs, file_sd_configs, etc.)
@@ -217,12 +224,12 @@ func AddHTTPSDConfigToPromConfig(cfg string, taServiceName string) (map[interfac
 
 		jobNameProperty, ok := scrapeConfig["job_name"]
 		if !ok {
-			return nil, errorNotAString("job_name")
+			return nil, errorNotAStringAtIndex("job_name", i)
 		}
 
 		jobName, ok := jobNameProperty.(string)
 		if !ok {
-			return nil, errorNotAString("job_name is not a string")
+			return nil, errorNotAStringAtIndex("job_name is not a string", i)
 		}
 
 		escapedJob := url.QueryEscape(jobName)
@@ -237,6 +244,8 @@ func AddHTTPSDConfigToPromConfig(cfg string, taServiceName string) (map[interfac
 }
 
 // AddTAConfigToPromConfig adds or updates the target_allocator configuration in the Prometheus configuration.
+// If the `EnableTargetAllocatorRewrite` feature flag for the target allocator is enabled, this function
+// removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.
 func AddTAConfigToPromConfig(cfg string, taServiceName string) (map[interface{}]interface{}, error) {
 	prometheus, err := ConfigToPromConfig(cfg)
 	if err != nil {
@@ -267,7 +276,6 @@ func AddTAConfigToPromConfig(cfg string, taServiceName string) (map[interface{}]
 	targetAllocatorCfg["interval"] = "30s"
 	targetAllocatorCfg["collector_id"] = "${POD_NAME}"
 
-	// we don't need the scrape configs here anymore with target allocator enabled
 	// Remove the scrape_configs key from the map
 	delete(prometheusCfg, "scrape_configs")
 
