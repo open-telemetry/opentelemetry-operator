@@ -38,6 +38,12 @@ func TestUpgrade(t *testing.T) {
 		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), originalVal))
 	})
 
+	originalVal = featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled()
+	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), true))
+	t.Cleanup(func() {
+		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), originalVal))
+	})
+
 	nsName := strings.ToLower(t.Name())
 	err := k8sClient.Create(context.Background(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -51,11 +57,12 @@ func TestUpgrade(t *testing.T) {
 			Name:      "my-inst",
 			Namespace: nsName,
 			Annotations: map[string]string{
-				v1alpha1.AnnotationDefaultAutoInstrumentationJava:   "java:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS: "nodejs:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationPython: "python:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationDotNet: "dotnet:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationGo:     "go:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationJava:        "java:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS:      "nodejs:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationPython:      "python:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationDotNet:      "dotnet:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationGo:          "go:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd: "apache-httpd:1",
 			},
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -70,17 +77,19 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "python:1", inst.Spec.Python.Image)
 	assert.Equal(t, "dotnet:1", inst.Spec.DotNet.Image)
 	assert.Equal(t, "go:1", inst.Spec.Go.Image)
+	assert.Equal(t, "apache-httpd:1", inst.Spec.ApacheHttpd.Image)
 	err = k8sClient.Create(context.Background(), inst)
 	require.NoError(t, err)
 
 	up := &InstrumentationUpgrade{
-		Logger:                logr.Discard(),
-		DefaultAutoInstJava:   "java:2",
-		DefaultAutoInstNodeJS: "nodejs:2",
-		DefaultAutoInstPython: "python:2",
-		DefaultAutoInstDotNet: "dotnet:2",
-		DefaultAutoInstGo:     "go:2",
-		Client:                k8sClient,
+		Logger:                     logr.Discard(),
+		DefaultAutoInstJava:        "java:2",
+		DefaultAutoInstNodeJS:      "nodejs:2",
+		DefaultAutoInstPython:      "python:2",
+		DefaultAutoInstDotNet:      "dotnet:2",
+		DefaultAutoInstGo:          "go:2",
+		DefaultAutoInstApacheHttpd: "apache-httpd:2",
+		Client:                     k8sClient,
 	}
 	err = up.ManagedInstances(context.Background())
 	require.NoError(t, err)
@@ -101,4 +110,6 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "dotnet:2", updated.Spec.DotNet.Image)
 	assert.Equal(t, "go:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo])
 	assert.Equal(t, "go:2", updated.Spec.Go.Image)
+	assert.Equal(t, "apache-httpd:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd])
+	assert.Equal(t, "apache-httpd:2", updated.Spec.ApacheHttpd.Image)
 }
