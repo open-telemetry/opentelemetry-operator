@@ -15,6 +15,7 @@
 package adapters_test
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -168,6 +169,7 @@ receivers:
 		t.Errorf("unexpected config: got %v, want %v", config, expectedConfig)
 	}
 }
+
 func TestAddHTTPSDConfigToPromConfig(t *testing.T) {
 	t.Run("ValidConfiguration, add http_sd_config", func(t *testing.T) {
 		cfg := `
@@ -284,3 +286,69 @@ receivers:
 		assert.EqualError(t, err, "couldn't parse the opentelemetry-collector configuration")
 	})
 }
+
+func TestValidatePromConfig(t *testing.T) {
+	testCases := []struct {
+		description                   string
+		config                        map[interface{}]interface{}
+		targetAllocatorEnabled        bool
+		targetAllocatorRewriteEnabled bool
+		expectedError                 error
+	}{
+		{
+			description:                   "target_allocator and rewrite enabled",
+			config:                        map[interface{}]interface{}{},
+			targetAllocatorEnabled:        true,
+			targetAllocatorRewriteEnabled: true,
+			expectedError:                 nil,
+		},
+		{
+			description: "target_allocator enabled, target_allocator section present",
+			config: map[interface{}]interface{}{
+				"target_allocator": map[interface{}]interface{}{},
+			},
+			targetAllocatorEnabled:        true,
+			targetAllocatorRewriteEnabled: false,
+			expectedError:                 nil,
+		},
+		{
+			description: "target_allocator enabled, config section present",
+			config: map[interface{}]interface{}{
+				"config": map[interface{}]interface{}{},
+			},
+			targetAllocatorEnabled:        true,
+			targetAllocatorRewriteEnabled: false,
+			expectedError:                 nil,
+		},
+		{
+			description:                   "target_allocator enabled, neither section present",
+			config:                        map[interface{}]interface{}{},
+			targetAllocatorEnabled:        true,
+			targetAllocatorRewriteEnabled: false,
+			expectedError:                 errors.New("either target allocator or prometheus config needs to be present"),
+		},
+		{
+			description: "target_allocator disabled, config section present",
+			config: map[interface{}]interface{}{
+				"config": map[interface{}]interface{}{},
+			},
+			targetAllocatorEnabled:        false,
+			targetAllocatorRewriteEnabled: false,
+			expectedError:                 nil,
+		},
+		{
+			description:                   "target_allocator disabled, config section not present",
+			config:                        map[interface{}]interface{}{},
+			targetAllocatorEnabled:        false,
+			targetAllocatorRewriteEnabled: false,
+			expectedError:                 fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.description, func(t *testing.T) {
+			err := ta.ValidatePromConfig(testCase.config, testCase.targetAllocatorEnabled, testCase.targetAllocatorRewriteEnabled)
+			assert.Equal(t, testCase.expectedError, err)
+		})
+	}
