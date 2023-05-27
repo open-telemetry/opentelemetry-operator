@@ -180,18 +180,6 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 			Value: chooseServiceName(pod, resourceMap, appIndex),
 		})
 	}
-
-	idx = getIndexOfEnv(container.Env, constants.EnvOTELServiceVersion)
-	if idx == -1 {
-		vsn := chooseServiceVersion(pod, appIndex)
-		if vsn != "" {
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  constants.EnvOTELServiceVersion,
-				Value: vsn,
-			})
-		}
-	}
-
 	if otelinst.Spec.Exporter.Endpoint != "" {
 		idx = getIndexOfEnv(container.Env, constants.EnvOTELExporterOTLPEndpoint)
 		if idx == -1 {
@@ -227,6 +215,15 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 			resourceMap[string(semconv.K8SPodUIDKey)] = fmt.Sprintf("$(%s)", constants.EnvPodUID)
 		}
 	}
+
+	idx = getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
+	if idx == -1 || !strings.Contains(container.Env[idx].Value, string(semconv.ServiceVersionKey)) {
+		vsn := chooseServiceVersion(pod, appIndex)
+		if vsn != "" {
+			resourceMap[string(semconv.ServiceVersionKey)] = vsn
+		}
+	}
+
 	if resourceMap[string(semconv.K8SNodeNameKey)] == "" {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name: constants.EnvNodeName,
@@ -311,7 +308,7 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) s
 	return pod.Spec.Containers[index].Name
 }
 
-// obtains version by splitting image string on ":" and extracting final element from resulting array
+// obtains version by splitting image string on ":" and extracting final element from resulting array.
 func chooseServiceVersion(pod corev1.Pod, index int) string {
 	parts := strings.Split(pod.Spec.Containers[index].Image, ":")
 	tag := parts[len(parts)-1]

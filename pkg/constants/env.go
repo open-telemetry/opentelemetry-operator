@@ -16,7 +16,6 @@ package constants
 
 const (
 	EnvOTELServiceName          = "OTEL_SERVICE_NAME"
-	EnvOTELServiceVersion       = "OTEL_SERVICE_VERSION"
 	EnvOTELExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	EnvOTELResourceAttrs        = "OTEL_RESOURCE_ATTRIBUTES"
 	EnvOTELPropagators          = "OTEL_PROPAGATORS"
