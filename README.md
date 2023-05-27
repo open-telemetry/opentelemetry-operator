@@ -187,6 +187,52 @@ EOF
 
 When using sidecar mode the OpenTelemetry collector container will have the environment variable `OTEL_RESOURCE_ATTRIBUTES`set with Kubernetes resource attributes, ready to be consumed by the [resourcedetection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) processor.
 
+#### Installing in restricted clusters
+
+Many clusters enforce restrictions on workloads using [Pod Security Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/) or other policy systems, which may conflict with the collector deployment or sidecar containers that the `opentelemetry-operator` creates. You can customize the [pod and container security context settings](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) using the appropriate field in the `OpenTelemetryCollector` resource definition.
+
+In `sidecar` mode, the `opentelemetry-operator` ignores the pod security context settings, so use an example like this:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+spec:
+  mode: sidecar
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+```
+
+In `deployment` mode, the `opentelemetry-operator` manages both the container and pod security contexts, so the following settings are a good default for most clusters:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+spec:
+  mode: deployment
+  securityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+      - ALL
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+```
+
+You can optionally configure `runAsUser` and set it to `10001`, as this is the `USER` defined in the [opentelemetry-collector Dockerfile](https://github.com/open-telemetry/opentelemetry-collector-releases/blob/main/distributions/otelcol/Dockerfile). In OpenShift, however, configuring this explicitly will conflict with the default `restricted` Security Context Constraint, which runs pods with a project/namespace-specific User ID (UID).
+
 ### OpenTelemetry auto-instrumentation injection
 
 The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, NodeJS and Python are supported.
