@@ -60,7 +60,7 @@ func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[
 		keepTarget := true
 		lset := convertLabelToPromLabelSet(tItem.Labels)
 		for _, cfg := range tf.relabelCfg[tItem.JobName] {
-			if newLset := relabel.Process(lset, cfg); newLset == nil {
+			if newLset, keep := relabel.Process(lset, cfg); !keep {
 				keepTarget = false
 				break // inner loop
 			} else {
