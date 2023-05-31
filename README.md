@@ -488,7 +488,7 @@ The OpenTelemetry Operator will also convert the Target Allocator's promethueus 
           regex: label_(.+)
           replacement: $1 
 ```
-Note that in this case, the Operator replaces "$$" with a single "$" in the replacement keys. This is because the collector supports environment variable substitution, whereas the TA (Target Allocator) does not. Therefore, to ensure compatibility, the TA ConfigMap should only contain a single "$" symbol.
+Note that in this case, the Operator replaces "$$" with a single "$" in the replacement keys. This is because the collector supports environment variable substitution, whereas the TA (Target Allocator) does not. Therefore, to ensure compatibility, the TA configuration should only contain a single "$" symbol.
 
 More info on the TargetAllocator can be found [here](cmd/otel-allocator/README.md).
 
