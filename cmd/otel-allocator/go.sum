@@ -563,8 +563,8 @@ github.com/prometheus-community/prom-label-proxy v0.6.0 h1:vRY29tUex8qI2MEimovTz
 github.com/prometheus-community/prom-label-proxy v0.6.0/go.mod h1:XyAyskjjhqEx0qnbGUVeAkYSz3Wm9gStT7/wXFxD8n0=
 github.com/prometheus-operator/prometheus-operator v0.64.1 h1:S5xTFyfcr3WhTXwVKXtY1r7C08QLBg6hHGN/ghdW3KU=
 github.com/prometheus-operator/prometheus-operator v0.64.1/go.mod h1:VE2DK2v0ur3xgIbqDE6FwnqK93TvvWdcyyR/VcNPrvw=
-github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.64.1 h1:bvntWler8vOjDJtxBwGDakGNC6srSZmgawGM9Jf7HC8=
-github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.64.1/go.mod h1:cfNgxpCPGyIydmt3HcwDqKDt0nYdlGRhzftl+DZH7WA=
+github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.65.2 h1:DZzMjhqxx3+kAPpwWdng3ktO6NErh1wGuW5tXJamak8=
+github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.65.2/go.mod h1:xcfWyzl4BpEe5jnVkw7D1yCHU7GHjfjCERJsEfGbpSU=
 github.com/prometheus-operator/prometheus-operator/pkg/client v0.64.1 h1:osAjfXA8xRsHY6pp8Me9xcmoRPYT7RnJcAbUtfxVy9I=
 github.com/prometheus-operator/prometheus-operator/pkg/client v0.64.1/go.mod h1:bpL5voXLr7djhPRHpY7k269A5HXlgLFNWEV1wB9/Zi0=
 github.com/prometheus/alertmanager v0.25.0 h1:vbXKUR6PYRiZPRIKfmXaG+dmCKG52RtPL4Btl8hQGvg=
