@@ -43,3 +43,20 @@ jobs:
 
       - name: "run scorecard test"
         run: make scorecard-tests
+
+  scorecard-tests-check:
+    runs-on: ubuntu-20.04
+    if: always()
+    needs: [scorecard-tests]
+    steps:
+      - name: Print result
+        run: echo ${{ needs.scorecard-tests.result }}
+      - name: Interpret result
+        run: |
+          if [[ success == ${{ needs.scorecard-tests.result }} ]]
+          then
+            echo "All matrix jobs passed!"
+          else
+            echo "One or more matrix jobs failed."
+            false
+          fi
