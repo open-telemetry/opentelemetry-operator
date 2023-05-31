@@ -60,6 +60,11 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		return "", getCfgPromErr
 	}
 
+	validateCfgPromErr := ta.ValidatePromConfig(promCfgMap, instance.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
+	if validateCfgPromErr != nil {
+		return "", validateCfgPromErr
+	}
+
 	// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
 	promCfg, marshalErr := yaml.Marshal(promCfgMap)
 	if marshalErr != nil {

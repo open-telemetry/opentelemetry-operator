@@ -46,8 +46,9 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 	pod.Spec.ShareProcessNamespace = &true
 
 	goAgent := corev1.Container{
-		Name:  sideCarName,
-		Image: goSpec.Image,
+		Name:      sideCarName,
+		Image:     goSpec.Image,
+		Resources: goSpec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser:  &zero,
 			Privileged: &true,

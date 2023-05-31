@@ -74,6 +74,10 @@ func main() {
 		setupLog.Error(configLoadErr, "Unable to load configuration")
 	}
 
+	if validationErr := config.ValidateConfig(&cfg, &cliConf); validationErr != nil {
+		setupLog.Error(validationErr, "Invalid configuration")
+	}
+
 	cliConf.RootLogger.Info("Starting the Target Allocator")
 	ctx := context.Background()
 	log := ctrl.Log.WithName("allocator")

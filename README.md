@@ -183,7 +183,7 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently DotNet, Go, Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -264,6 +264,11 @@ instrumentation.opentelemetry.io/inject-go: "true"
 instrumentation.opentelemetry.io/otel-go-auto-target-exe: "/path/to/container/executable"
 ```
 
+Apache HTTPD:
+```bash
+instrumentation.opentelemetry.io/inject-apache-httpd: "true"
+```
+
 OpenTelemetry SDK environment variables only:
 ```bash
 instrumentation.opentelemetry.io/inject-sdk: "true"
@@ -336,10 +341,32 @@ spec:
     image: your-customized-auto-instrumentation-image:dotnet
   go:
     image: your-customized-auto-instrumentation-image:go
+  apacheHttpd:
+    image: your-customized-auto-instrumentation-image:apache-httpd
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).
 Follow the instructions in the Dockerfiles on how to build a custom container image.
+
+#### Using Apache HTTPD autoinstrumentation
+
+For `Apache HTTPD` autoinstrumentation, by default, instrumentation assumes httpd version 2.4 and httpd configuration directory `/usr/local/apache2/conf` as it is in the official `Apache HTTPD` image (f.e. docker.io/httpd:latest). If you need to use version 2.2, or your HTTPD configuration directory is different, and or you need to adjust agent attributes, customize the instrumentation specification per following example:
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+  apache:
+    image: your-customized-auto-instrumentation-image:apache-httpd
+    version: 2.2
+    configPath: /your-custom-config-path
+    attrs:
+    - name: ApacheModuleOtelMaxQueueSize
+      value: "4096"
+    - name: ...
+      value: ...
+```
+List of all available attributes can be found at [otel-webserver-module](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module)
 
 #### Inject OpenTelemetry SDK environment variables only
 
@@ -358,13 +385,14 @@ Prefix a gate with '-' to disable support for the corresponding language.
 Prefixing a gate with '+' or no prefix will enable support for the corresponding language.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
 
-| Language | Gate                                  | Default Value |
-|----------|---------------------------------------|---------------|
-| Java     | `operator.autoinstrumentation.java`   | enabled       |
-| NodeJS   | `operator.autoinstrumentation.nodejs` | enabled       |
-| Python   | `operator.autoinstrumentation.python` | enabled       |
-| DotNet   | `operator.autoinstrumentation.dotnet` | enabled       |
-| Go       | `operator.autoinstrumentation.go`     | disabled      |
+| Language      | Gate                                        | Default Value |
+|---------------|---------------------------------------------|---------------|
+| Java          | `operator.autoinstrumentation.java`         | enabled       |
+| NodeJS        | `operator.autoinstrumentation.nodejs`       | enabled       |
+| Python        | `operator.autoinstrumentation.python`       | enabled       |
+| DotNet        | `operator.autoinstrumentation.dotnet`       | enabled       |
+| ApacheHttpD   | `operator.autoinstrumentation.apache-httpd` | enabled       |
+| Go            | `operator.autoinstrumentation.go`           | disabled      |
 
 Language not specified in the table are always supported and cannot be disabled.
 
