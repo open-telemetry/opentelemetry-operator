@@ -54,6 +54,7 @@ func Labels(instance v1alpha1.OpenTelemetryCollector, name string, filterLabels 
 		base["app.kubernetes.io/version"] = "latest"
 	}
 
+	// Don't override the app name if it already exists
 	if _, ok := base["app.kubernetes.io/name"]; !ok {
 		base["app.kubernetes.io/name"] = name
 	}
