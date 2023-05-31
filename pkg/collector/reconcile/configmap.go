@@ -103,6 +103,8 @@ func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 		labels["app.kubernetes.io/version"] = "latest"
 	}
 
+	// Collector supports environment variable substitution, but the TA does not.
+	// TA ConfigMap should have a single "$", as it does not support env var substitution
 	prometheusReceiverConfig, err := ta.UnescapeDollarSignsInPromConfig(params.Instance.Spec.Config)
 	if err != nil {
 		return corev1.ConfigMap{}, err
