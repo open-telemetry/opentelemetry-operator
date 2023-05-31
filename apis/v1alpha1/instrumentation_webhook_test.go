@@ -96,12 +96,18 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.err == "" {
-				assert.Nil(t, test.inst.ValidateCreate())
-				assert.Nil(t, test.inst.ValidateUpdate(nil))
+				warnings, err := test.inst.ValidateCreate()
+				assert.Nil(t, warnings)
+				assert.Nil(t, err)
+				warnings, err = test.inst.ValidateUpdate(nil)
+				assert.Nil(t, warnings)
+				assert.Nil(t, err)
 			} else {
-				err := test.inst.ValidateCreate()
+				warnings, err := test.inst.ValidateCreate()
+				assert.Nil(t, warnings)
 				assert.Contains(t, err.Error(), test.err)
-				err = test.inst.ValidateUpdate(nil)
+				warnings, err = test.inst.ValidateUpdate(nil)
+				assert.Nil(t, warnings)
 				assert.Contains(t, err.Error(), test.err)
 			}
 		})

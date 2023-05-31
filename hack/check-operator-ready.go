@@ -71,9 +71,10 @@ func main() {
 	fmt.Println("Waiting until the OpenTelemetry Operator deployment is created")
 	operatorDeployment := &appsv1.Deployment{}
 
-	err = wait.Poll(pollInterval, timeoutPoll, func() (done bool, err error) {
+	ctx := context.Background()
+	err = wait.PollUntilContextTimeout(ctx, pollInterval, timeoutPoll, false, func(c context.Context) (done bool, err error) {
 		err = clusterClient.Get(
-			context.Background(),
+			c,
 			client.ObjectKey{
 				Name:      "opentelemetry-operator-controller-manager",
 				Namespace: "opentelemetry-operator-system",
@@ -107,9 +108,10 @@ func main() {
 	_ = clusterClient.Delete(context.Background(), &collectorInstance)
 
 	fmt.Println("Check if the OpenTelemetry collector CR can be created.")
-	err = wait.Poll(pollInterval, timeoutPoll, func() (done bool, err error) {
+	collectorCtx := context.Background()
+	err = wait.PollUntilContextTimeout(collectorCtx, pollInterval, timeoutPoll, false, func(c context.Context) (done bool, err error) {
 		err = clusterClient.Create(
-			context.Background(),
+			c,
 			&collectorInstance,
 		)
 		if err != nil {
