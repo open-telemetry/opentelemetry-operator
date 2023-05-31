@@ -29,6 +29,11 @@ TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,$
 OPERATOROPAMPBRIDGE_IMG_REPO ?= operator-opamp-bridge
 OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addprefix v,${VERSION})
 
+# Kustomization directory for local manifests
+# Whenever we need to make any changes over the default manifests, we put them here
+KUSTOMIZATION_DIR = ./dist
+KUSTOMIZATION_BASE = config/default
+
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -83,7 +88,7 @@ SED ?= $(shell which gsed 2>/dev/null || which sed)
 .PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-generate-is-noop: USER=open-telemetry
-ensure-generate-is-noop: set-image-controller generate bundle
+ensure-generate-is-noop: bundle
 	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
 	@git restore config/manager/kustomization.yaml
 	@git diff -s --exit-code apis/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
@@ -134,25 +139,30 @@ uninstall: manifests kustomize
 
 # Set the controller image parameters
 .PHONY: set-image-controller
-set-image-controller: manifests kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+set-image-controller: manifests kustomize create-kustomization
+	cd $(KUSTOMIZATION_DIR) && $(KUSTOMIZE) edit set image controller=${IMG}
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build $(KUSTOMIZATION_DIR) | kubectl apply -f -
 	go run hack/check-operator-ready.go 300
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy
 undeploy: set-image-controller
-	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build $(KUSTOMIZATION_DIR) | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 # Generates the released manifests
 .PHONY: release-artifacts
 release-artifacts: set-image-controller
-	mkdir -p dist
-	$(KUSTOMIZE) build config/default -o dist/opentelemetry-operator.yaml
+	$(KUSTOMIZE) build $(KUSTOMIZATION_DIR) -o dist/opentelemetry-operator.yaml
+
+.PHONY: create-kustomization
+create-kustomization:
+	mkdir -p $(KUSTOMIZATION_DIR)
+	rm -f $(KUSTOMIZATION_DIR)/kustomization.yaml
+	cd $(KUSTOMIZATION_DIR) && $(KUSTOMIZE) create --resources ../$(KUSTOMIZATION_BASE)
 
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
@@ -436,9 +446,10 @@ operator-sdk:
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
+bundle: KUSTOMIZATION_BASE = config/manifests
 bundle: kustomize operator-sdk manifests set-image-controller
 	$(OPERATOR_SDK) generate kustomize manifests -q
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build $(KUSTOMIZATION_DIR) | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
 
