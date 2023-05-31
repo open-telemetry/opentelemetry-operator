@@ -76,7 +76,6 @@ func Services(ctx context.Context, params Params) error {
 func desiredService(ctx context.Context, params Params) *corev1.Service {
 	name := naming.Service(params.Instance)
 	labels := collector.Labels(params.Instance, name, []string{})
-	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
 	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
 	if err != nil {
@@ -137,11 +136,10 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 }
 
 func desiredTAService(params Params) corev1.Service {
-	labels := targetallocator.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = naming.TAService(params.Instance)
+	name := naming.TAService(params.Instance)
+	labels := targetallocator.Labels(params.Instance, name)
 
-	selector := targetallocator.Labels(params.Instance)
-	selector["app.kubernetes.io/name"] = naming.TargetAllocator(params.Instance)
+	selector := targetallocator.Labels(params.Instance, name)
 
 	return corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

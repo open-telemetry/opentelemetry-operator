@@ -89,8 +89,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(params.Instance)
 	version := strings.Split(params.Instance.Spec.Image, ":")
-	labels := targetallocator.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = name
+	labels := targetallocator.Labels(params.Instance, name)
 	if len(version) > 1 {
 		labels["app.kubernetes.io/version"] = version[len(version)-1]
 	} else {
