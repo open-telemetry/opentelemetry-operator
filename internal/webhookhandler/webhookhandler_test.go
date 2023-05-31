@@ -150,12 +150,8 @@ func TestShouldInjectSidecar(t *testing.T) {
 
 			// the webhook handler
 			cfg := config.New()
-			decoder, err := admission.NewDecoder(scheme.Scheme)
-			require.NoError(t, err)
-
-			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
-			injectErr := injector.InjectDecoder(decoder)
-			require.NoError(t, injectErr)
+			decoder := admission.NewDecoder(scheme.Scheme)
+			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 
 			// test
 			res := injector.Handle(context.Background(), req)
@@ -372,11 +368,8 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 
 			// the webhook handler
 			cfg := config.New()
-			decoder, err := admission.NewDecoder(scheme.Scheme)
-			require.NoError(t, err)
-
-			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
-			err = injector.InjectDecoder(decoder)
+			decoder := admission.NewDecoder(scheme.Scheme)
+			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 			require.NoError(t, err)
 
 			// test
@@ -433,12 +426,8 @@ func TestFailOnInvalidRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// prepare
 			cfg := config.New()
-			decoder, err := admission.NewDecoder(scheme.Scheme)
-			require.NoError(t, err)
-
-			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
-			err = injector.InjectDecoder(decoder)
-			require.NoError(t, err)
+			decoder := admission.NewDecoder(scheme.Scheme)
+			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 
 			// test
 			res := injector.Handle(context.Background(), tt.req)
