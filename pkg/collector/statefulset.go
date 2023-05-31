@@ -27,15 +27,15 @@ import (
 
 // StatefulSet builds the statefulset for the given instance.
 func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.StatefulSet {
-	labels := Labels(otelcol, cfg.LabelsFilter())
-	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
+	name := naming.Collector(otelcol)
+	labels := Labels(otelcol, name, cfg.LabelsFilter())
 
 	annotations := Annotations(otelcol)
 	podAnnotations := PodAnnotations(otelcol)
 
 	return appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Collector(otelcol),
+			Name:        name,
 			Namespace:   otelcol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,

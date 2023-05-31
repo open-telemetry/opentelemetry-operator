@@ -74,7 +74,8 @@ func Services(ctx context.Context, params Params) error {
 }
 
 func desiredService(ctx context.Context, params Params) *corev1.Service {
-	labels := collector.Labels(params.Instance, []string{})
+	name := naming.Service(params.Instance)
+	labels := collector.Labels(params.Instance, name, []string{})
 	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
 
 	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
@@ -182,12 +183,12 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 }
 
 func monitoringService(ctx context.Context, params Params) *corev1.Service {
-	labels := collector.Labels(params.Instance, []string{})
-	labels["app.kubernetes.io/name"] = naming.MonitoringService(params.Instance)
+	name := naming.MonitoringService(params.Instance)
+	labels := collector.Labels(params.Instance, name, []string{})
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.MonitoringService(params.Instance),
+			Name:        name,
 			Namespace:   params.Instance.Namespace,
 			Labels:      labels,
 			Annotations: params.Instance.Annotations,

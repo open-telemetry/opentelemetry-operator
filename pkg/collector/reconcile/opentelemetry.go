@@ -67,8 +67,7 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	name := naming.Collector(*changed)
 
 	// Set the scale selector
-	labels := collector.Labels(*changed, []string{})
-	labels["app.kubernetes.io/name"] = name
+	labels := collector.Labels(*changed, name, []string{})
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return fmt.Errorf("failed to get selector for labelSelector: %w", err)

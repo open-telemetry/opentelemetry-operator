@@ -251,8 +251,7 @@ func service(name string, ports []v1.ServicePort) v1.Service {
 }
 
 func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
-	labels := collector.Labels(params().Instance, []string{})
-	labels["app.kubernetes.io/name"] = name
+	labels := collector.Labels(params().Instance, name, []string{})
 
 	return v1.Service{
 		ObjectMeta: metav1.ObjectMeta{

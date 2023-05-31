@@ -31,8 +31,8 @@ import (
 func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
 	autoscalingVersion := cfg.AutoscalingVersion()
 
-	labels := Labels(otelcol, cfg.LabelsFilter())
-	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
+	name := naming.Collector(otelcol)
+	labels := Labels(otelcol, name, cfg.LabelsFilter())
 	annotations := Annotations(otelcol)
 	var result client.Object
 
