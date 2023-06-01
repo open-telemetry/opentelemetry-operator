@@ -40,6 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
@@ -184,24 +185,29 @@ func main() {
 	optionsTlSOptsFuncs := []func(*tls.Config){
 		func(config *tls.Config) { tlsConfigSetting(config, tlsOpt) },
 	}
+	var namespaces []string
+	if strings.Contains(watchNamespace, ",") {
+		namespaces = strings.Split(watchNamespace, ",")
+	} else {
+		namespaces = []string{watchNamespace}
+	}
 
 	mgrOptions := ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
-		Port:                   webhookPort,
-		TLSOpts:                optionsTlSOptsFuncs,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "9f7554c3.opentelemetry.io",
-		Namespace:              watchNamespace,
 		LeaseDuration:          &leaseDuration,
 		RenewDeadline:          &renewDeadline,
 		RetryPeriod:            &retryPeriod,
-	}
-
-	if strings.Contains(watchNamespace, ",") {
-		mgrOptions.Namespace = ""
-		mgrOptions.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(watchNamespace, ","))
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port:    webhookPort,
+			TLSOpts: optionsTlSOptsFuncs,
+		}),
+		Cache: cache.Options{
+			Namespaces: namespaces,
+		},
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
@@ -248,9 +254,9 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
-
+		decoder := admission.NewDecoder(mgr.GetScheme())
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
-			Handler: webhookhandler.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), mgr.GetClient(),
+			Handler: webhookhandler.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]webhookhandler.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
 					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator")),
@@ -325,11 +331,11 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 // refer to https://pkg.go.dev/k8s.io/component-base/cli/flag
 func tlsConfigSetting(cfg *tls.Config, tlsOpt tlsConfig) {
 	// TLSVersion helper function returns the TLS Version ID for the version name passed.
-	version, err := k8sapiflag.TLSVersion(tlsOpt.minVersion)
+	tlsVersion, err := k8sapiflag.TLSVersion(tlsOpt.minVersion)
 	if err != nil {
 		setupLog.Error(err, "TLS version invalid")
 	}
-	cfg.MinVersion = version
+	cfg.MinVersion = tlsVersion
 
 	// TLSCipherSuites helper function returns a list of cipher suite IDs from the cipher suite names passed.
 	cipherSuiteIDs, err := k8sapiflag.TLSCipherSuites(tlsOpt.cipherSuites)

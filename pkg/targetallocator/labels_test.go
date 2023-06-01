@@ -23,35 +23,45 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
+const (
+	name      = "my-instance"
+	namespace = "my-ns"
+)
+
 func TestLabelsCommonSet(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-instance",
-			Namespace: "my-ns",
+			Name:      name,
+			Namespace: namespace,
 		},
 	}
 
 	// test
-	labels := Labels(otelcol)
+	labels := Labels(otelcol, name)
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-targetallocator", labels["app.kubernetes.io/component"])
+	assert.Equal(t, name, labels["app.kubernetes.io/name"])
 }
 
 func TestLabelsPropagateDown(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{"myapp": "mycomponent"},
+			Labels: map[string]string{
+				"myapp":                  "mycomponent",
+				"app.kubernetes.io/name": "test",
+			},
 		},
 	}
 
 	// test
-	labels := Labels(otelcol)
+	labels := Labels(otelcol, name)
 
 	// verify
-	assert.Len(t, labels, 5)
+	assert.Len(t, labels, 6)
 	assert.Equal(t, "mycomponent", labels["myapp"])
+	assert.Equal(t, "test", labels["app.kubernetes.io/name"])
 }

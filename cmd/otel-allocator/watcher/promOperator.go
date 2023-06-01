@@ -162,16 +162,22 @@ func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
 		OAuth2Assets:    nil,
 		SigV4Assets:     nil,
 	}
-	// TODO: We should make these durations configurable
-	prom := &monitoringv1.Prometheus{
-		Spec: monitoringv1.PrometheusSpec{
-			EvaluationInterval: monitoringv1.Duration("30s"),
-			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval: monitoringv1.Duration("30s"),
-			},
-		},
-	}
-	generatedConfig, err := w.configGenerator.Generate(prom, serviceMonitorInstances, podMonitorInstances, map[string]*monitoringv1.Probe{}, &store, nil, nil, nil, []string{})
+	generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
+		"30s",
+		"",
+		nil,
+		nil,
+		monitoringv1.TSDBSpec{},
+		nil,
+		nil,
+		serviceMonitorInstances,
+		podMonitorInstances,
+		map[string]*monitoringv1.Probe{},
+		&store,
+		nil,
+		nil,
+		nil,
+		[]string{})
 	if err != nil {
 		return nil, err
 	}

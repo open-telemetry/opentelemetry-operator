@@ -27,8 +27,8 @@ import (
 
 // DaemonSet builds the deployment for the given instance.
 func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.DaemonSet {
-	labels := Labels(otelcol, cfg.LabelsFilter())
-	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
+	name := naming.Collector(otelcol)
+	labels := Labels(otelcol, name, cfg.LabelsFilter())
 
 	annotations := Annotations(otelcol)
 	podAnnotations := PodAnnotations(otelcol)
