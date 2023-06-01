@@ -11,7 +11,7 @@ require (
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/prometheus v0.43.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/collector/featuregate v0.75.0
 	go.opentelemetry.io/otel v1.14.0
 	gopkg.in/yaml.v2 v2.4.0
