@@ -32,7 +32,7 @@ func isFilteredLabel(label string, filterLabels []string) bool {
 }
 
 // Labels return the common labels to all objects that are part of a managed OpenTelemetryCollector.
-func Labels(instance v1alpha1.OpenTelemetryCollector, filterLabels []string) map[string]string {
+func Labels(instance v1alpha1.OpenTelemetryCollector, name string, filterLabels []string) map[string]string {
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
 	if nil != instance.Labels {
@@ -52,6 +52,11 @@ func Labels(instance v1alpha1.OpenTelemetryCollector, filterLabels []string) map
 		base["app.kubernetes.io/version"] = version[len(version)-1]
 	} else {
 		base["app.kubernetes.io/version"] = "latest"
+	}
+
+	// Don't override the app name if it already exists
+	if _, ok := base["app.kubernetes.io/name"]; !ok {
+		base["app.kubernetes.io/name"] = name
 	}
 
 	return base
