@@ -74,8 +74,8 @@ func Services(ctx context.Context, params Params) error {
 }
 
 func desiredService(ctx context.Context, params Params) *corev1.Service {
-	labels := collector.Labels(params.Instance, []string{})
-	labels["app.kubernetes.io/name"] = naming.Service(params.Instance)
+	name := naming.Service(params.Instance)
+	labels := collector.Labels(params.Instance, name, []string{})
 
 	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
 	if err != nil {
@@ -136,11 +136,10 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 }
 
 func desiredTAService(params Params) corev1.Service {
-	labels := targetallocator.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = naming.TAService(params.Instance)
+	name := naming.TAService(params.Instance)
+	labels := targetallocator.Labels(params.Instance, name)
 
-	selector := targetallocator.Labels(params.Instance)
-	selector["app.kubernetes.io/name"] = naming.TargetAllocator(params.Instance)
+	selector := targetallocator.Labels(params.Instance, name)
 
 	return corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -182,12 +181,12 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 }
 
 func monitoringService(ctx context.Context, params Params) *corev1.Service {
-	labels := collector.Labels(params.Instance, []string{})
-	labels["app.kubernetes.io/name"] = naming.MonitoringService(params.Instance)
+	name := naming.MonitoringService(params.Instance)
+	labels := collector.Labels(params.Instance, name, []string{})
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.MonitoringService(params.Instance),
+			Name:        name,
 			Namespace:   params.Instance.Namespace,
 			Labels:      labels,
 			Annotations: params.Instance.Annotations,
