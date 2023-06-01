@@ -59,6 +59,7 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	mode := changed.Spec.Mode
 	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet {
 		changed.Status.Scale.Replicas = 0
+		changed.Status.Scale.ReadyReplicas = 0
 		changed.Status.Scale.Selector = ""
 
 		return nil
@@ -81,6 +82,7 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	}
 
 	var replicas int32
+	var readyReplicas int32
 	switch mode { // nolint:exhaustive
 	case v1alpha1.ModeDeployment:
 		obj := &appsv1.Deployment{}
@@ -88,6 +90,7 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 			return fmt.Errorf("failed to get deployment status.replicas: %w", err)
 		}
 		replicas = obj.Status.Replicas
+		readyReplicas = obj.Status.ReadyReplicas
 
 	case v1alpha1.ModeStatefulSet:
 		obj := &appsv1.StatefulSet{}
@@ -95,8 +98,10 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 			return fmt.Errorf("failed to get statefulSet status.replicas: %w", err)
 		}
 		replicas = obj.Status.Replicas
+		readyReplicas = obj.Status.ReadyReplicas
 	}
 	changed.Status.Scale.Replicas = replicas
+	changed.Status.Scale.ReadyReplicas = readyReplicas
 
 	return nil
 }

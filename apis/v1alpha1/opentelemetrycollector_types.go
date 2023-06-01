@@ -82,7 +82,7 @@ type OpenTelemetryCollectorSpec struct {
 	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
-	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
 	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
@@ -248,6 +248,10 @@ type ScaleSubresourceStatus struct {
 	// OpenTelemetryCollector's deployment or statefulSet.
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
+
+	// readyReplicas is the number of pods targeted by this OpenTelemetryCollector with a Ready Condition.
+	// +optional
+	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
@@ -278,7 +282,10 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
+// +kubebuilder:printcolumn:name="Current",type="string",JSONPath=".status.scale.readyReplicas"
+// +kubebuilder:printcolumn:name="Desired",type="string",JSONPath=".status.scale.replicas"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Image",type="date",JSONPath=".spec.image"
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
 // This annotation provides a hint for OLM which resources are managed by OpenTelemetryCollector kind.
 // It's not mandatory to list all resources.

@@ -3,7 +3,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.11.3
+  creationTimestamp: null
   name: opentelemetrycollectors.opentelemetry.io
 spec:
   group: opentelemetry.io
@@ -26,8 +27,17 @@ spec:
       jsonPath: .status.version
       name: Version
       type: string
+    - jsonPath: .status.scale.readyReplicas
+      name: Current
+      type: string
+    - jsonPath: .status.scale.replicas
+      name: Desired
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
+      type: date
+    - jsonPath: .spec.image
+      name: Image
       type: date
     name: v1alpha1
     schema:
@@ -1646,7 +1656,7 @@ spec:
                 type: integer
               minReplicas:
                 description: 'MinReplicas sets a lower bound to the autoscaling feature.  Set
-                  this if your are using autoscaling. It must be at least 1 Deprecated:
+                  this if you are using autoscaling. It must be at least 1 Deprecated:
                   use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.'
                 format: int32
                 type: integer
@@ -4285,6 +4295,11 @@ spec:
                 description: Scale is the OpenTelemetryCollector's scale subresource
                   status.
                 properties:
+                  readyReplicas:
+                    description: readyReplicas is the number of pods targeted by this
+                      OpenTelemetryCollector with a Ready Condition.
+                    format: int32
+                    type: integer
                   replicas:
                     description: The total number non-terminated pods targeted by
                       this OpenTelemetryCollector's deployment or statefulSet.
