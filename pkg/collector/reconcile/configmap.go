@@ -66,14 +66,8 @@ func ConfigMaps(ctx context.Context, params Params) error {
 
 func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	name := naming.ConfigMap(params.Instance)
-	version := strings.Split(params.Instance.Spec.Image, ":")
-	labels := collector.Labels(params.Instance, []string{})
-	labels["app.kubernetes.io/name"] = name
-	if len(version) > 1 {
-		labels["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
-		labels["app.kubernetes.io/version"] = "latest"
-	}
+	labels := collector.Labels(params.Instance, name, []string{})
+
 	config, err := ReplaceConfig(params.Instance)
 	if err != nil {
 		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
@@ -95,8 +89,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(params.Instance)
 	version := strings.Split(params.Instance.Spec.Image, ":")
-	labels := targetallocator.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = name
+	labels := targetallocator.Labels(params.Instance, name)
 	if len(version) > 1 {
 		labels["app.kubernetes.io/version"] = version[len(version)-1]
 	} else {
