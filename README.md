@@ -418,6 +418,13 @@ spec:
             scrape_interval: 10s
             static_configs:
             - targets: [ '0.0.0.0:8888' ]
+            metric_relabel_configs:
+            - action: labeldrop
+              regex: (id|name)
+              replacement: $$1
+            - action: labelmap
+              regex: label_(.+)
+              replacement: $$1 
 
     exporters:
       logging:
@@ -429,6 +436,8 @@ spec:
           processors: []
           exporters: [logging]
 ```
+The usage of `$$` in the replacement keys in the example above is based on the information provided in the Prometheus receiver [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) documentation, which states:
+`Note: Since the collector configuration supports env variable substitution $ characters in your prometheus configuration are interpreted as environment variables. If you want to use $ characters in your prometheus configuration, you must escape them using $$.`
 
 Behind the scenes, the OpenTelemetry Operator will convert the Collector’s configuration after the reconciliation into the following:
 
@@ -436,21 +445,18 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
     receivers:
       prometheus:
         config:
-          global:
-            scrape_interval: 1m
-            scrape_timeout: 10s
-            evaluation_interval: 1m
           scrape_configs:
           - job_name: otel-collector
-            honor_timestamps: true
             scrape_interval: 10s
-            scrape_timeout: 10s
-            metrics_path: /metrics
-            scheme: http
-            follow_redirects: true
             http_sd_configs:
-            - follow_redirects: false
-              url: http://collector-with-ta-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
+            - url: http://collector-with-ta-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
+            metric_relabel_configs:
+            - action: labeldrop
+              regex: (id|name)
+              replacement: $$1
+            - action: labelmap
+              regex: label_(.+)
+              replacement: $$1 
 
     exporters:
       logging:
@@ -463,7 +469,26 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
           exporters: [logging]
 ```
 
-Note how the Operator added a `global` section and a new `http_sd_configs` to the `otel-collector` scrape config, pointing to a Target Allocator instance it provisioned.
+Note how the Operator removes any existing service discovery configurations (e.g., `static_configs`, `file_sd_configs`, etc.) from the `scrape_configs` section and adds an `http_sd_configs` configuration pointing to a Target Allocator instance it provisioned.
+
+The OpenTelemetry Operator will also convert the Target Allocator's promethueus configuration after the reconciliation into the following:
+
+```yaml
+    config:
+      scrape_configs:
+      - job_name: otel-collector
+        scrape_interval: 10s
+        static_configs:
+        - targets: [ '0.0.0.0:8888' ]
+        metric_relabel_configs:
+        - action: labeldrop
+          regex: (id|name)
+          replacement: $1
+        - action: labelmap
+          regex: label_(.+)
+          replacement: $1 
+```
+Note that in this case, the Operator replaces "$$" with a single "$" in the replacement keys. This is because the collector supports environment variable substitution, whereas the TA (Target Allocator) does not. Therefore, to ensure compatibility, the TA configuration should only contain a single "$" symbol.
 
 More info on the TargetAllocator can be found [here](cmd/otel-allocator/README.md).
 
