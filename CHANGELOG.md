@@ -2,6 +2,24 @@ Changes by Version
 ==================
 
 <!-- next version -->
+
+## 0.78.0
+
+### 💡 Enhancements 💡
+
+- `operator`: Added all webhook instrumentation logic, e2e tests, readme (#1444)
+- `Autoscaler`: Support scaling on Pod custom metrics. (#1560)
+- `targetallocator`: Set resource requests/limits for TargetAllocator (#1103)
+- `operator`: provide default resource limits for go sidecar container (#1732)
+- `operator`: Propagate Metadata.Annotations to PodSpec.Annotations (#900)
+- `operator`: Improve config validation for prometheus receiver and target allocator (#1581)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: fixes a previously undocumented behavior that a collector could not override the collector's app name (#1777)
+- `operator`: Fix issue where the operator's released image did not correctly set the default go auto-instrumentation version (#1757)
+- `pkg/collector, pkg/targetallocator`: fix issues related to prometheus relabel configs when target allocator is enabled (#958, #1622, #1623)
+
 ## 0.77.0
 
 ### 💡 Enhancements 💡
