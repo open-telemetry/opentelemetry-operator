@@ -7,6 +7,8 @@ Changes by Version
 
 ### 💡 Enhancements 💡
 
+- `autoinstrumentaiton/nodejs`: Bump js packages to latest versions (#1791)
+- `autoinstrumentation/python`: Bump python packages to 1.18.0/0.39b0 (#1790)
 - `operator`: Added all webhook instrumentation logic, e2e tests, readme (#1444)
 - `Autoscaler`: Support scaling on Pod custom metrics. (#1560)
 - `targetallocator`: Set resource requests/limits for TargetAllocator (#1103)
@@ -19,6 +21,16 @@ Changes by Version
 - `operator`: fixes a previously undocumented behavior that a collector could not override the collector's app name (#1777)
 - `operator`: Fix issue where the operator's released image did not correctly set the default go auto-instrumentation version (#1757)
 - `pkg/collector, pkg/targetallocator`: fix issues related to prometheus relabel configs when target allocator is enabled (#958, #1622, #1623)
+
+### Components
+
+* [OpenTelemetry Collector - v0.78.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.78.0)
+* [OpenTelemetry Contrib - v0.78.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.78.0)
+* [Java auto-instrumentation - 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0)
+* [.NET auto-instrumentation - 0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
+* [Node.JS - 0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.38.0)
+* [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
+* [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
 
 ## 0.77.0
 
@@ -39,8 +51,8 @@ Changes by Version
 * [OpenTelemetry Contrib - v0.77.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.77.0)
 * [Java auto-instrumentation - 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0)
 * [.NET auto-instrumentation - 0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
-* [Node.JS - 0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.38.0)
-* [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
+* [Node.JS - 0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.39.1)
+* [Python - 0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
 * [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
 
 ## 0.76.1
@@ -72,7 +84,7 @@ Changes by Version
 * [OpenTelemetry Contrib - v0.76.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.76.1)
 * [Java auto-instrumentation - 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0)
 * [.NET auto-instrumentation - 0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
-* [Node.JS - 0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.38.0)
+* [Node.JS - 0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.38.0)
 * [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
 
 ## 0.75.0

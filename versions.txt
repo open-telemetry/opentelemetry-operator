@@ -19,11 +19,11 @@ autoinstrumentation-java=1.26.0
 
 # Represents the current release of NodeJS instrumentation.
 # Should match value in autoinstrumentation/nodejs/package.json
-autoinstrumentation-nodejs=0.38.0
+autoinstrumentation-nodejs=0.39.1
 
 # Represents the current release of Python instrumentation.
 # Should match value in autoinstrumentation/python/requirements.txt
-autoinstrumentation-python=0.38b0
+autoinstrumentation-python=0.39b0
 
 # Represents the current release of DotNet instrumentation.
 # Should match autoinstrumentation/dotnet/version.txt
