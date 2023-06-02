@@ -16,6 +16,7 @@ package watcher
 
 import (
 	"fmt"
+	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 
@@ -173,6 +174,7 @@ func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
 		serviceMonitorInstances,
 		podMonitorInstances,
 		map[string]*monitoringv1.Probe{},
+		map[string]*promv1alpha1.ScrapeConfig{},
 		&store,
 		nil,
 		nil,
