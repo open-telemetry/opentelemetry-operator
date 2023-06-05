@@ -107,6 +107,9 @@ func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.Op
 		return otelcol, err
 	}
 
+	// Update with the latest known version, which is what we have from versions.txt
+	otelcol.Status.Version = u.Version.OpenTelemetryCollector
+
 	if instanceV.GreaterThan(&Latest.Version) {
 		u.Log.Info("skipping upgrade for OpenTelemetry Collector instance, as it's newer than our latest version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version, "latest", Latest.Version.String())
 		return otelcol, nil
@@ -126,9 +129,6 @@ func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.Op
 			otelcol = *upgraded
 		}
 	}
-
-	// at the end of the process, we are up to date with the latest known version, which is what we have from versions.txt
-	otelcol.Status.Version = u.Version.OpenTelemetryCollector
 
 	u.Log.V(1).Info("final version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
 	return otelcol, nil
