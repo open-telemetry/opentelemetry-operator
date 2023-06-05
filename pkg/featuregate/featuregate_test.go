@@ -32,7 +32,7 @@ const (
 func TestSetFlag(t *testing.T) {
 	featuregate.GlobalRegistry().MustRegister(basicGate, featuregate.StageAlpha)
 	featuregate.GlobalRegistry().MustRegister(advancedGate, featuregate.StageBeta)
-	featuregate.GlobalRegistry().MustRegister(falseGate, featuregate.StageStable, featuregate.WithRegisterRemovalVersion("v0.0.1"))
+	featuregate.GlobalRegistry().MustRegister(falseGate, featuregate.StageStable, featuregate.WithRegisterToVersion("v0.0.1"))
 	tests := []struct {
 		name          string
 		args          []string
