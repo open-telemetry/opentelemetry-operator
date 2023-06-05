@@ -92,6 +92,53 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "pollingIntervalMs is not a number",
+			err:  "invalid pollingIntervalMs: abc",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     JaegerRemote,
+						Argument: "pollingIntervalMs=abc",
+					},
+				},
+			},
+		},
+		{
+			name: "initialSamplingRate is out of range",
+			err:  "initialSamplingRate should be in rage [0..1]",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     JaegerRemote,
+						Argument: "initialSamplingRate=1.99",
+					},
+				},
+			},
+		},
+		{
+			name: "endpoint is missing",
+			err:  "endpoint cannot be empty",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     JaegerRemote,
+						Argument: "endpoint=",
+					},
+				},
+			},
+		},
+		{
+			name: "correct jaeger remote sampler configuration",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     JaegerRemote,
+						Argument: "endpoint=http://jaeger-collector:14250/,initialSamplingRate=0.99,pollingIntervalMs=1000",
+					},
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

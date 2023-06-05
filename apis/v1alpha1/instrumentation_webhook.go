@@ -195,6 +195,37 @@ func (r *Instrumentation) ValidateDelete() (admission.Warnings, error) {
 	return nil, nil
 }
 
+func parseJaegerRemoteSamplerArgument(argument string) error {
+	parts := strings.Split(argument, ",")
+
+	for _, part := range parts {
+		kv := strings.Split(part, "=")
+		if len(kv) != 2 {
+			return fmt.Errorf("invalid argument: %s", part)
+		}
+
+		switch kv[0] {
+		case "endpoint":
+			if kv[1] == "" {
+				return fmt.Errorf("endpoint cannot be empty")
+			}
+		case "pollingIntervalMs":
+			if _, err := strconv.Atoi(kv[1]); err != nil {
+				return fmt.Errorf("invalid pollingIntervalMs: %s", kv[1])
+			}
+		case "initialSamplingRate":
+			rate, err := strconv.ParseFloat(kv[1], 64)
+			if err != nil {
+				return fmt.Errorf("invalid initialSamplingRate: %s", kv[1])
+			}
+			if rate < 0 || rate > 1 {
+				return fmt.Errorf("initialSamplingRate should be in rage [0..1]: %s", kv[1])
+			}
+		}
+	}
+	return nil
+}
+
 func (r *Instrumentation) validate() error {
 	switch r.Spec.Sampler.Type {
 	case TraceIDRatio, ParentBasedTraceIDRatio:
@@ -207,7 +238,19 @@ func (r *Instrumentation) validate() error {
 				return fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Sampler.Argument)
 			}
 		}
-	case AlwaysOn, AlwaysOff, JaegerRemote, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
+	case JaegerRemote, ParentBasedJaegerRemote:
+		// value is a comma separated list of endpoint, pollingIntervalMs, initialSamplingRate
+		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
+		if r.Spec.Sampler.Argument != "" {
+			err := parseJaegerRemoteSamplerArgument(r.Spec.Sampler.Argument)
+
+			if err != nil {
+				return fmt.Errorf("spec.sampler.argument is not a valid JaegerRemoteSampler argument: %s", err.Error())
+			}
+		}
+	case AlwaysOn, AlwaysOff, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
+	default:
+		return fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
 	}
 
 	// validate env vars
