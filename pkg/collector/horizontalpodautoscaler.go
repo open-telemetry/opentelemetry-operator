@@ -149,7 +149,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			maxReplicas = otelcol.Spec.MaxReplicas
 		}
 
-
 		autoscaler := autoscalingv2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
 			Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
