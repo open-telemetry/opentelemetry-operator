@@ -19,9 +19,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 func TestSelf(t *testing.T) {
@@ -38,5 +41,24 @@ func TestSelf(t *testing.T) {
 
 		assert.Equal(t, actual.Status.Version, "0.0.0")
 
+	})
+}
+
+func TestUpdateScaleSubResourceStatus(t *testing.T) {
+	t.Run("should update the scale subresource status for the OpenTelemetry CR", func(t *testing.T) {
+		params := paramsWithMode(v1alpha1.ModeDaemonSet)
+		ctx := context.Background()
+		cli := params.Client
+		changed := params.Instance
+		err := updateScaleSubResourceStatus(ctx, cli, &changed)
+
+		assert.NoError(t, err)
+		name := naming.Collector(changed)
+
+		labels := collector.Labels(changed, []string{})
+		labels["app.kubernetes.io/name"] = name
+		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
+		assert.NoError(t, err)
+		assert.Equal(t, selector.String(), changed.Status.Scale.Selector)
 	})
 }

@@ -57,7 +57,7 @@ func Self(ctx context.Context, params Params) error {
 
 func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, changed *v1alpha1.OpenTelemetryCollector) error {
 	mode := changed.Spec.Mode
-	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet {
+	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet && mode != v1alpha1.ModeDaemonSet {
 		changed.Status.Scale.Replicas = 0
 		changed.Status.Scale.Selector = ""
 
@@ -74,7 +74,11 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	}
 	changed.Status.Scale.Selector = selector.String()
 
-	// Set the scale replicas
+	if mode == v1alpha1.ModeDaemonSet {
+		// DaemonSet does not have a replica count
+		return nil
+	}
+
 	objKey := client.ObjectKey{
 		Namespace: changed.GetNamespace(),
 		Name:      naming.Collector(*changed),
