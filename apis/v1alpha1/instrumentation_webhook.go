@@ -245,7 +245,7 @@ func (r *Instrumentation) validate() error {
 			err := parseJaegerRemoteSamplerArgument(r.Spec.Sampler.Argument)
 
 			if err != nil {
-				return fmt.Errorf("spec.sampler.argument is not a valid JaegerRemoteSampler argument: %s", err.Error())
+				return fmt.Errorf("spec.sampler.argument is not a valid JaegerRemoteSampler argument: %w", err)
 			}
 		}
 	case AlwaysOn, AlwaysOff, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
