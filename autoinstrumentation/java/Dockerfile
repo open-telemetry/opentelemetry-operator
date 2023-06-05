@@ -8,6 +8,10 @@ FROM busybox
 
 ARG version
 
-ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v$version/opentelemetry-javaagent.jar /javaagent.jar
+RUN addgroup otel -g 1000 && adduser -u 1000 -D -G otel otel
+
+USER 1000:1000
+
+ADD --chown=1000:1000 https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v$version/opentelemetry-javaagent.jar /javaagent.jar
 
 RUN chmod -R go+r /javaagent.jar
