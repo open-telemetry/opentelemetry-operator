@@ -17,10 +17,9 @@ package watcher
 import (
 	"fmt"
 
-	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
-
 	"github.com/go-kit/log"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
@@ -31,6 +30,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
+
+	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
 func NewPrometheusCRWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
@@ -173,6 +174,7 @@ func (w *PrometheusCRWatcher) LoadConfig() (*promconfig.Config, error) {
 		serviceMonitorInstances,
 		podMonitorInstances,
 		map[string]*monitoringv1.Probe{},
+		map[string]*promv1alpha1.ScrapeConfig{},
 		&store,
 		nil,
 		nil,

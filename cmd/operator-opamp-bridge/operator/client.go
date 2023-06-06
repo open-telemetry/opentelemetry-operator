@@ -77,9 +77,12 @@ func (c Client) create(ctx context.Context, name string, namespace string, colle
 		collector.ObjectMeta.Labels = map[string]string{}
 	}
 	collector.ObjectMeta.Labels[ResourceIdentifierKey] = ResourceIdentifierValue
-	err := collector.ValidateCreate()
+	warnings, err := collector.ValidateCreate()
 	if err != nil {
 		return err
+	}
+	if warnings != nil {
+		c.log.Info("Some warnings present on collector: %v", warnings)
 	}
 	c.log.Info("Creating collector")
 	return c.k8sClient.Create(ctx, collector)
@@ -88,9 +91,12 @@ func (c Client) create(ctx context.Context, name string, namespace string, colle
 func (c Client) update(ctx context.Context, old *v1alpha1.OpenTelemetryCollector, new *v1alpha1.OpenTelemetryCollector) error {
 	new.ObjectMeta = old.ObjectMeta
 	new.TypeMeta = old.TypeMeta
-	err := new.ValidateUpdate(old)
+	warnings, err := new.ValidateUpdate(old)
 	if err != nil {
 		return err
+	}
+	if warnings != nil {
+		c.log.Info("Some warnings present on collector: %v", warnings)
 	}
 	c.log.Info("Updating collector")
 	return c.k8sClient.Update(ctx, new)
