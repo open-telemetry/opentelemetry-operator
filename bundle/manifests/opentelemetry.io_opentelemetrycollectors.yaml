@@ -29,18 +29,15 @@ spec:
       jsonPath: .status.version
       name: Version
       type: string
-    - jsonPath: .status.scale.readyReplicas
-      name: Current
-      type: string
-    - jsonPath: .status.scale.replicas
-      name: Desired
+    - jsonPath: .status.scale.statusReplicas
+      name: Ready
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    - jsonPath: .spec.image
+    - jsonPath: .status.image
       name: Image
-      type: date
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -4280,6 +4277,10 @@ spec:
             description: OpenTelemetryCollectorStatus defines the observed state of
               OpenTelemetryCollector.
             properties:
+              image:
+                description: Image indicates the container image to use for the OpenTelemetry
+                  Collector.
+                type: string
               messages:
                 description: 'Messages about actions performed by the operator on
                   this resource. Deprecated: use Kubernetes events instead.'
@@ -4310,6 +4311,11 @@ spec:
                   selector:
                     description: The selector used to match the OpenTelemetryCollector's
                       deployment or statefulSet pods.
+                    type: string
+                  statusReplicas:
+                    description: statusReplicas is the number of pods targeted by
+                      this OpenTelemetryCollector with a Ready Condition and non-terminated
+                      pdos targeted by this OpenTelemetryCollector's deployment, statefulSet.
                     type: string
                 type: object
               version:
