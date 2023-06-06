@@ -252,6 +252,12 @@ type ScaleSubresourceStatus struct {
 	// readyReplicas is the number of pods targeted by this OpenTelemetryCollector with a Ready Condition.
 	// +optional
 	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
+
+	// statusReplicas is the number of pods targeted by this OpenTelemetryCollector
+	// with a Ready Condition and non-terminated pdos targeted by this OpenTelemetryCollector's
+	// deployment, statefulSet.
+	// +optional
+	StatusReplicas string `json:"statusReplicas,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
@@ -263,6 +269,10 @@ type OpenTelemetryCollectorStatus struct {
 	// Version of the managed OpenTelemetry Collector (operand)
 	// +optional
 	Version string `json:"version,omitempty"`
+
+	// Image indicates the container image to use for the OpenTelemetry Collector.
+	// +optional
+	Image string `json:"image,omitempty"`
 
 	// Messages about actions performed by the operator on this resource.
 	// +optional
@@ -282,10 +292,9 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
-// +kubebuilder:printcolumn:name="Current",type="string",JSONPath=".status.scale.readyReplicas"
-// +kubebuilder:printcolumn:name="Desired",type="string",JSONPath=".status.scale.replicas"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.scale.statusReplicas"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:printcolumn:name="Image",type="date",JSONPath=".spec.image"
+// +kubebuilder:printcolumn:name="Image",type="string",JSONPath=".status.image"
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
 // This annotation provides a hint for OLM which resources are managed by OpenTelemetryCollector kind.
 // It's not mandatory to list all resources.

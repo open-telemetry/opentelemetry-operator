@@ -10467,6 +10467,13 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image indicates the container image to use for the OpenTelemetry Collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>messages</b></td>
         <td>[]string</td>
         <td>
@@ -10539,6 +10546,13 @@ Scale is the OpenTelemetryCollector's scale subresource status.
         <td>string</td>
         <td>
           The selector used to match the OpenTelemetryCollector's deployment or statefulSet pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>statusReplicas</b></td>
+        <td>string</td>
+        <td>
+          statusReplicas is the number of pods targeted by this OpenTelemetryCollector with a Ready Condition and non-terminated pdos targeted by this OpenTelemetryCollector's deployment, statefulSet.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

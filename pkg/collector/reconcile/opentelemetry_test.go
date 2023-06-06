@@ -18,10 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 func TestSelf(t *testing.T) {
