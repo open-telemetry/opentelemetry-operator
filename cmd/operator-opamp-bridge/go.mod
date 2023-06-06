@@ -9,7 +9,7 @@ require (
 	github.com/open-telemetry/opentelemetry-operator v0.78.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/otel v1.15.1
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.38.1
 	go.opentelemetry.io/otel/metric v0.38.1
