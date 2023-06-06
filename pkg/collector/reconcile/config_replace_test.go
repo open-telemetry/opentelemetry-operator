@@ -15,8 +15,8 @@
 package reconcile
 
 import (
+	"os"
 	"testing"
-	"time"
 
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 
@@ -68,28 +68,28 @@ func TestPrometheusParser(t *testing.T) {
 		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
 		param.Instance.Spec.TargetAllocator.Enabled = true
 		assert.NoError(t, err)
+
+		// Set up the test scenario
+		param.Instance.Spec.TargetAllocator.Enabled = true
 		actualConfig, err := ReplaceConfig(param.Instance)
 		assert.NoError(t, err)
 
-		// prepare
-		var cfg Config
+		// Verify the expected changes in the config
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		promCfg, err := yaml.Marshal(promCfgMap)
-		assert.NoError(t, err)
+		prometheusConfig := promCfgMap["config"].(map[interface{}]interface{})
 
-		err = yaml.UnmarshalStrict(promCfg, &cfg)
-		assert.NoError(t, err)
+		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
-		// test
-		assert.Len(t, cfg.PromConfig.ScrapeConfigs, 0)
-		expectedTAConfig := &targetAllocator{
-			Endpoint:    "http://test-targetallocator:80",
-			Interval:    30 * time.Second,
-			CollectorID: "${POD_NAME}",
+		expectedTAConfig := map[interface{}]interface{}{
+			"endpoint":     "http://test-targetallocator:80",
+			"interval":     "30s",
+			"collector_id": "${POD_NAME}",
 		}
-		assert.Equal(t, expectedTAConfig, cfg.TargetAllocConfig)
+		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
+
+		// Disable the feature flag
 		err = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
 		assert.NoError(t, err)
 	})
@@ -127,4 +127,34 @@ func TestPrometheusParser(t *testing.T) {
 		assert.True(t, cfg.TargetAllocConfig == nil)
 	})
 
+}
+
+func TestReplaceConfig(t *testing.T) {
+	param, err := newParams("test/test-img", "../testdata/relabel_config_original.yaml")
+	assert.NoError(t, err)
+
+	t.Run("should not modify config when TargetAllocator is disabled", func(t *testing.T) {
+		param.Instance.Spec.TargetAllocator.Enabled = false
+		expectedConfigBytes, err := os.ReadFile("../testdata/relabel_config_original.yaml")
+		assert.NoError(t, err)
+		expectedConfig := string(expectedConfigBytes)
+
+		actualConfig, err := ReplaceConfig(param.Instance)
+		assert.NoError(t, err)
+
+		assert.Equal(t, expectedConfig, actualConfig)
+	})
+
+	t.Run("should rewrite scrape configs with SD config when TargetAllocator is enabled and feature flag is not set", func(t *testing.T) {
+		param.Instance.Spec.TargetAllocator.Enabled = true
+
+		expectedConfigBytes, err := os.ReadFile("../testdata/relabel_config_expected_with_sd_config.yaml")
+		assert.NoError(t, err)
+		expectedConfig := string(expectedConfigBytes)
+
+		actualConfig, err := ReplaceConfig(param.Instance)
+		assert.NoError(t, err)
+
+		assert.Equal(t, expectedConfig, actualConfig)
+	})
 }
