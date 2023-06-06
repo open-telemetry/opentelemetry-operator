@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/types"
 )
