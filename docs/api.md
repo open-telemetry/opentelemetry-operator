@@ -3084,7 +3084,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1 Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1 Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -10467,6 +10467,13 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image indicates the container image to use for the OpenTelemetry Collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>messages</b></td>
         <td>[]string</td>
         <td>
@@ -10530,6 +10537,13 @@ Scale is the OpenTelemetryCollector's scale subresource status.
         <td>string</td>
         <td>
           The selector used to match the OpenTelemetryCollector's deployment or statefulSet pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>statusReplicas</b></td>
+        <td>string</td>
+        <td>
+          StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition / Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector). Deployment, Daemonset, StatefulSet.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
