@@ -10524,15 +10524,6 @@ Scale is the OpenTelemetryCollector's scale subresource status.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>readyReplicas</b></td>
-        <td>integer</td>
-        <td>
-          readyReplicas is the number of pods targeted by this OpenTelemetryCollector with a Ready Condition.<br/>
-          <br/>
-            <i>Format</i>: int32<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
@@ -10552,7 +10543,7 @@ Scale is the OpenTelemetryCollector's scale subresource status.
         <td><b>statusReplicas</b></td>
         <td>string</td>
         <td>
-          statusReplicas is the number of pods targeted by this OpenTelemetryCollector with a Ready Condition and non-terminated pdos targeted by this OpenTelemetryCollector's deployment, statefulSet.<br/>
+          StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition / Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector). Deployment, Daemonset, StatefulSet<br/>
         </td>
         <td>false</td>
       </tr></tbody>
