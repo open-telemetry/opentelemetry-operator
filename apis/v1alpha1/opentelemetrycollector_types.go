@@ -249,13 +249,9 @@ type ScaleSubresourceStatus struct {
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// readyReplicas is the number of pods targeted by this OpenTelemetryCollector with a Ready Condition.
-	// +optional
-	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
-
-	// statusReplicas is the number of pods targeted by this OpenTelemetryCollector
-	// with a Ready Condition and non-terminated pdos targeted by this OpenTelemetryCollector's
-	// deployment, statefulSet.
+	// StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition /
+	// Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector).
+	// Deployment, Daemonset, StatefulSet.
 	// +optional
 	StatusReplicas string `json:"statusReplicas,omitempty"`
 }

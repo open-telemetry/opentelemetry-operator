@@ -60,7 +60,6 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	mode := changed.Spec.Mode
 	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet {
 		changed.Status.Scale.Replicas = 0
-		changed.Status.Scale.ReadyReplicas = 0
 		changed.Status.Scale.Selector = ""
 
 		return nil
@@ -116,7 +115,6 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 	}
 	changed.Status.Scale.Replicas = replicas
-	changed.Status.Scale.ReadyReplicas = readyReplicas
 	changed.Status.Image = statusImage
 	changed.Status.Scale.StatusReplicas = statusReplicas
 

@@ -4298,11 +4298,6 @@ spec:
                 description: Scale is the OpenTelemetryCollector's scale subresource
                   status.
                 properties:
-                  readyReplicas:
-                    description: readyReplicas is the number of pods targeted by this
-                      OpenTelemetryCollector with a Ready Condition.
-                    format: int32
-                    type: integer
                   replicas:
                     description: The total number non-terminated pods targeted by
                       this OpenTelemetryCollector's deployment or statefulSet.
@@ -4313,9 +4308,10 @@ spec:
                       deployment or statefulSet pods.
                     type: string
                   statusReplicas:
-                    description: statusReplicas is the number of pods targeted by
-                      this OpenTelemetryCollector with a Ready Condition and non-terminated
-                      pdos targeted by this OpenTelemetryCollector's deployment, statefulSet.
+                    description: StatusReplicas is the number of pods targeted by
+                      this OpenTelemetryCollector's with a Ready Condition / Total
+                      number of non-terminated pods targeted by this OpenTelemetryCollector's
+                      (their labels match the selector). Deployment, Daemonset, StatefulSet.
                     type: string
                 type: object
               version:
