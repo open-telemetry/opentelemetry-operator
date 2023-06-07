@@ -118,6 +118,8 @@ func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.Op
 		if instanceV.LessThan(otelColV) {
 			u.Log.Info("upgraded OpenTelemetry Collector version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
 			otelcol.Status.Version = u.Version.OpenTelemetryCollector
+		} else {
+			u.Log.Info("skipping upgrade for OpenTelemetry Collector instance", "name", otelcol.Name, "namespace", otelcol.Namespace)
 		}
 
 		return otelcol, nil
