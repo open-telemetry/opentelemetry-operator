@@ -10543,7 +10543,7 @@ Scale is the OpenTelemetryCollector's scale subresource status.
         <td><b>statusReplicas</b></td>
         <td>string</td>
         <td>
-          StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition / Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector). Deployment, Daemonset, StatefulSet<br/>
+          StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition / Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector). Deployment, Daemonset, StatefulSet.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
