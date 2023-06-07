@@ -78,17 +78,13 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		}
 		metrics = append(metrics, targetCPUUtilization)
 
-		var minReplicas *int32
-		if otelcol.Spec.Autoscaler.MinReplicas != nil {
-			minReplicas = otelcol.Spec.Autoscaler.MinReplicas
-		} else {
+		minReplicas := otelcol.Spec.Autoscaler.MinReplicas
+		if minReplicas == nil {
 			minReplicas = otelcol.Spec.MinReplicas
 		}
 
-		var maxReplicas *int32
-		if otelcol.Spec.Autoscaler.MaxReplicas != nil {
-			maxReplicas = otelcol.Spec.Autoscaler.MaxReplicas
-		} else {
+		maxReplicas := otelcol.Spec.Autoscaler.MaxReplicas
+		if maxReplicas == nil {
 			maxReplicas = otelcol.Spec.MaxReplicas
 		}
 
@@ -149,17 +145,13 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			metrics = append(metrics, targetCPUUtilization)
 		}
 
-		var minReplicas *int32
-		if otelcol.Spec.Autoscaler.MinReplicas != nil {
-			minReplicas = otelcol.Spec.Autoscaler.MinReplicas
-		} else {
+		minReplicas := otelcol.Spec.Autoscaler.MinReplicas
+		if minReplicas == nil {
 			minReplicas = otelcol.Spec.MinReplicas
 		}
 
-		var maxReplicas *int32
-		if otelcol.Spec.Autoscaler.MaxReplicas != nil {
-			maxReplicas = otelcol.Spec.Autoscaler.MaxReplicas
-		} else {
+		maxReplicas := otelcol.Spec.Autoscaler.MaxReplicas
+		if maxReplicas == nil {
 			maxReplicas = otelcol.Spec.MaxReplicas
 		}
 
