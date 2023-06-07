@@ -26,9 +26,15 @@ spec:
       jsonPath: .status.version
       name: Version
       type: string
+    - jsonPath: .status.scale.statusReplicas
+      name: Ready
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - jsonPath: .status.image
+      name: Image
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -1646,7 +1652,7 @@ spec:
                 type: integer
               minReplicas:
                 description: 'MinReplicas sets a lower bound to the autoscaling feature.  Set
-                  this if your are using autoscaling. It must be at least 1 Deprecated:
+                  this if you are using autoscaling. It must be at least 1 Deprecated:
                   use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.'
                 format: int32
                 type: integer
@@ -4268,6 +4274,10 @@ spec:
             description: OpenTelemetryCollectorStatus defines the observed state of
               OpenTelemetryCollector.
             properties:
+              image:
+                description: Image indicates the container image to use for the OpenTelemetry
+                  Collector.
+                type: string
               messages:
                 description: 'Messages about actions performed by the operator on
                   this resource. Deprecated: use Kubernetes events instead.'
@@ -4293,6 +4303,12 @@ spec:
                   selector:
                     description: The selector used to match the OpenTelemetryCollector's
                       deployment or statefulSet pods.
+                    type: string
+                  statusReplicas:
+                    description: StatusReplicas is the number of pods targeted by
+                      this OpenTelemetryCollector's with a Ready Condition / Total
+                      number of non-terminated pods targeted by this OpenTelemetryCollector's
+                      (their labels match the selector). Deployment, Daemonset, StatefulSet.
                     type: string
                 type: object
               version:
