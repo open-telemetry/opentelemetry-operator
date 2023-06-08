@@ -7,6 +7,7 @@ Changes by Version
 
 ### 💡 Enhancements 💡
 
+- `nodejs autoinstrumentation`: Prometheus metric exporter support for nodejs autoinstrumentation (#1798)
 - `operator`: Add service version injection (#1670)
   Adds the ability to inject the service version into the environment of the instrumented application.
 - `operator`: Added readyReplicas field to the status section and added Current,Desired and Image to the get operation. (#1355)
