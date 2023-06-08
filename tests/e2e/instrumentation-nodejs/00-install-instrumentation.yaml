@@ -16,6 +16,8 @@ spec:
       value: "0.85"
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
+    - name: OTEL_METRICS_EXPORTER
+      value: prometheus
   exporter:
     endpoint: http://localhost:4317
   propagators:
