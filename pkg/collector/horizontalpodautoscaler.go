@@ -49,6 +49,18 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		return nil
 	}
 
+	if otelcol.Spec.Autoscaler.MaxReplicas == nil {
+		otelcol.Spec.Autoscaler.MaxReplicas = otelcol.Spec.MaxReplicas
+	}
+
+	if otelcol.Spec.Autoscaler.MinReplicas == nil {
+		if otelcol.Spec.MinReplicas != nil {
+			otelcol.Spec.Autoscaler.MinReplicas = otelcol.Spec.MinReplicas
+		} else {
+			otelcol.Spec.Autoscaler.MinReplicas = otelcol.Spec.Replicas
+		}
+	}
+
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 		metrics := []autoscalingv2beta2.MetricSpec{}
 
@@ -78,16 +90,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		}
 		metrics = append(metrics, targetCPUUtilization)
 
-		minReplicas := otelcol.Spec.Autoscaler.MinReplicas
-		if minReplicas == nil {
-			minReplicas = otelcol.Spec.MinReplicas
-		}
-
-		maxReplicas := otelcol.Spec.Autoscaler.MaxReplicas
-		if maxReplicas == nil {
-			maxReplicas = otelcol.Spec.MaxReplicas
-		}
-
 		autoscaler := autoscalingv2beta2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
 			Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
@@ -96,8 +98,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					Kind:       "OpenTelemetryCollector",
 					Name:       naming.OpenTelemetryCollector(otelcol),
 				},
-				MinReplicas: minReplicas,
-				MaxReplicas: *maxReplicas,
+				MinReplicas: otelcol.Spec.Autoscaler.MinReplicas,
+				MaxReplicas: *otelcol.Spec.Autoscaler.MaxReplicas,
 				Metrics:     metrics,
 			},
 		}
@@ -145,16 +147,6 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 			metrics = append(metrics, targetCPUUtilization)
 		}
 
-		minReplicas := otelcol.Spec.Autoscaler.MinReplicas
-		if minReplicas == nil {
-			minReplicas = otelcol.Spec.MinReplicas
-		}
-
-		maxReplicas := otelcol.Spec.Autoscaler.MaxReplicas
-		if maxReplicas == nil {
-			maxReplicas = otelcol.Spec.MaxReplicas
-		}
-
 		autoscaler := autoscalingv2.HorizontalPodAutoscaler{
 			ObjectMeta: objectMeta,
 			Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
@@ -163,8 +155,8 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 					Kind:       "OpenTelemetryCollector",
 					Name:       naming.OpenTelemetryCollector(otelcol),
 				},
-				MinReplicas: minReplicas,
-				MaxReplicas: *maxReplicas,
+				MinReplicas: otelcol.Spec.Autoscaler.MinReplicas,
+				MaxReplicas: *otelcol.Spec.Autoscaler.MaxReplicas,
 				Metrics:     metrics,
 			},
 		}
