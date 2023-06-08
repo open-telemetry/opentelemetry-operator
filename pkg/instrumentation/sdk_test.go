@@ -143,7 +143,8 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "application-name",
+							Name:  "application-name",
+							Image: "app:latest",
 						},
 					},
 				},
@@ -165,7 +166,8 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "application-name",
+							Name:  "application-name",
+							Image: "app:latest",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -197,7 +199,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.version=latest",
 								},
 							},
 						},
@@ -232,6 +234,7 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
+							Image: "app:latest",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -251,7 +254,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "foo=bar,k8s.container.name=other,",
+									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,",
 								},
 							},
 						},
@@ -266,6 +269,7 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
+							Image: "app:latest",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -293,7 +297,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "foo=bar,k8s.container.name=other,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app",
+									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app",
 								},
 							},
 						},
@@ -323,7 +327,8 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "application-name",
+							Name:  "application-name",
+							Image: "app:latest",
 						},
 					},
 				},
@@ -345,7 +350,8 @@ func TestSDKInjection(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "application-name",
+							Name:  "application-name",
+							Image: "app:latest",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -361,7 +367,103 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,service.version=latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "SDK image with port number, no version",
+			inst: v1alpha1.Instrumentation{},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fictional.registry.example:10443/imagename",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fictional.registry.example:10443/imagename",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "SDK image with port number, with version",
+			inst: v1alpha1.Instrumentation{},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fictional.registry.example:10443/imagename:latest",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fictional.registry.example:10443/imagename:latest",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 								},
 							},
 						},
@@ -408,7 +510,8 @@ func TestInjectJava(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -437,7 +540,8 @@ func TestInjectJava(t *testing.T) {
 			},
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeName,
@@ -475,7 +579,7 @@ func TestInjectJava(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
@@ -508,7 +612,8 @@ func TestInjectNodeJS(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -537,7 +642,8 @@ func TestInjectNodeJS(t *testing.T) {
 			},
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeName,
@@ -575,7 +681,7 @@ func TestInjectNodeJS(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
@@ -608,7 +714,8 @@ func TestInjectPython(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -636,7 +743,8 @@ func TestInjectPython(t *testing.T) {
 			},
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeName,
@@ -690,7 +798,7 @@ func TestInjectPython(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
@@ -722,7 +830,8 @@ func TestInjectDotNet(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -750,7 +859,8 @@ func TestInjectDotNet(t *testing.T) {
 			},
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeName,
@@ -812,7 +922,7 @@ func TestInjectDotNet(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
@@ -915,7 +1025,8 @@ func TestInjectGo(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "app",
+							Name:  "app",
+							Image: "app:latest",
 						},
 					},
 				},
@@ -925,7 +1036,8 @@ func TestInjectGo(t *testing.T) {
 					ShareProcessNamespace: &true,
 					Containers: []corev1.Container{
 						{
-							Name: "app",
+							Name:  "app",
+							Image: "app:latest",
 						},
 						{
 							Name:  sideCarName,
@@ -971,7 +1083,7 @@ func TestInjectGo(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 								},
 							},
 						},
@@ -1009,7 +1121,8 @@ func TestInjectGo(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "app",
+							Name:  "app",
+							Image: "app:latest",
 						},
 					},
 				},
@@ -1024,7 +1137,8 @@ func TestInjectGo(t *testing.T) {
 					ShareProcessNamespace: &true,
 					Containers: []corev1.Container{
 						{
-							Name: "app",
+							Name:  "app",
+							Image: "app:latest",
 						},
 						{
 							Name:  sideCarName,
@@ -1070,7 +1184,7 @@ func TestInjectGo(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+									Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 								},
 							},
 						},
@@ -1271,7 +1385,8 @@ func TestInjectSdkOnly(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "app",
+						Name:  "app",
+						Image: "app:latest",
 					},
 				},
 			},
@@ -1280,7 +1395,8 @@ func TestInjectSdkOnly(t *testing.T) {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name: "app",
+					Name:  "app",
+					Image: "app:latest",
 					Env: []corev1.EnvVar{
 						{
 							Name:  "OTEL_SERVICE_NAME",
@@ -1308,7 +1424,7 @@ func TestInjectSdkOnly(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
 				},
