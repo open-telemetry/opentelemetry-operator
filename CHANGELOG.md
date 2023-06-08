@@ -12,6 +12,10 @@ Changes by Version
   Adds the ability to inject the service version into the environment of the instrumented application.
 - `operator`: Added readyReplicas field to the status section and added Current,Desired and Image to the get operation. (#1355)
 
+### 🧰 Bug fixes 🧰
+
+- `operator`: The OpenTelemetry Collector version is not shown properly in the status field if no upgrade routines are performed. (#1802)
+
 ### Components
 
 * [OpenTelemetry Collector - v0.79.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.79.0)
