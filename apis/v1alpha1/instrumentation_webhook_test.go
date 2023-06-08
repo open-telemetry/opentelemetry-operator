@@ -92,54 +92,8 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "pollingIntervalMs is not a number",
-			err:  "invalid pollingIntervalMs: abc",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     JaegerRemote,
-						Argument: "pollingIntervalMs=abc",
-					},
-				},
-			},
-		},
-		{
-			name: "initialSamplingRate is out of range",
-			err:  "initialSamplingRate should be in rage [0..1]",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     JaegerRemote,
-						Argument: "initialSamplingRate=1.99",
-					},
-				},
-			},
-		},
-		{
-			name: "endpoint is missing",
-			err:  "endpoint cannot be empty",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     JaegerRemote,
-						Argument: "endpoint=",
-					},
-				},
-			},
-		},
-		{
-			name: "correct jaeger remote sampler configuration",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     JaegerRemote,
-						Argument: "endpoint=http://jaeger-collector:14250/,initialSamplingRate=0.99,pollingIntervalMs=1000",
-					},
-				},
-			},
-		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.err == "" {
@@ -158,5 +112,65 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 				assert.Contains(t, err.Error(), test.err)
 			}
 		})
+	}
+}
+
+func TestInstrumentationJaegerRemote(t *testing.T) {
+	tests := []struct {
+		name string
+		err  string
+		arg  string
+	}{
+		{
+			name: "pollingIntervalMs is not a number",
+			err:  "invalid pollingIntervalMs: abc",
+			arg:  "pollingIntervalMs=abc",
+		},
+		{
+			name: "initialSamplingRate is out of range",
+			err:  "initialSamplingRate should be in rage [0..1]",
+			arg:  "initialSamplingRate=1.99",
+		},
+		{
+			name: "endpoint is missing",
+			err:  "endpoint cannot be empty",
+			arg:  "endpoint=",
+		},
+		{
+			name: "correct jaeger remote sampler configuration",
+			arg:  "endpoint=http://jaeger-collector:14250/,initialSamplingRate=0.99,pollingIntervalMs=1000",
+		},
+	}
+
+	samplers := []SamplerType{JaegerRemote, ParentBasedJaegerRemote}
+
+	for _, sampler := range samplers {
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				inst := Instrumentation{
+					Spec: InstrumentationSpec{
+						Sampler: Sampler{
+							Type:     sampler,
+							Argument: test.arg,
+						},
+					},
+				}
+				if test.err == "" {
+					warnings, err := inst.ValidateCreate()
+					assert.Nil(t, warnings)
+					assert.Nil(t, err)
+					warnings, err = inst.ValidateUpdate(nil)
+					assert.Nil(t, warnings)
+					assert.Nil(t, err)
+				} else {
+					warnings, err := inst.ValidateCreate()
+					assert.Nil(t, warnings)
+					assert.Contains(t, err.Error(), test.err)
+					warnings, err = inst.ValidateUpdate(nil)
+					assert.Nil(t, warnings)
+					assert.Contains(t, err.Error(), test.err)
+				}
+			})
+		}
 	}
 }
