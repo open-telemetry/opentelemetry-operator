@@ -49,6 +49,18 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		return nil
 	}
 
+	if otelcol.Spec.Autoscaler.MaxReplicas == nil {
+		otelcol.Spec.Autoscaler.MaxReplicas = otelcol.Spec.MaxReplicas
+	}
+
+	if otelcol.Spec.Autoscaler.MinReplicas == nil {
+		if otelcol.Spec.MinReplicas != nil {
+			otelcol.Spec.Autoscaler.MinReplicas = otelcol.Spec.MinReplicas
+		} else {
+			otelcol.Spec.Autoscaler.MinReplicas = otelcol.Spec.Replicas
+		}
+	}
+
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
 		metrics := []autoscalingv2beta2.MetricSpec{}
 
