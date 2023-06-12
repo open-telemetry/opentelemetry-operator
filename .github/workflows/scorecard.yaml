@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   scorecard-tests:
     name: test on k8s
@@ -14,7 +18,7 @@ jobs:
       matrix:
         kube-version:
           - "1.19"
-          - "1.26"
+          - "1.27"
 
     steps:
 
@@ -39,3 +43,20 @@ jobs:
 
       - name: "run scorecard test"
         run: make scorecard-tests
+
+  scorecard-tests-check:
+    runs-on: ubuntu-20.04
+    if: always()
+    needs: [scorecard-tests]
+    steps:
+      - name: Print result
+        run: echo ${{ needs.scorecard-tests.result }}
+      - name: Interpret result
+        run: |
+          if [[ success == ${{ needs.scorecard-tests.result }} ]]
+          then
+            echo "All matrix jobs passed!"
+          else
+            echo "One or more matrix jobs failed."
+            false
+          fi

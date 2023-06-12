@@ -26,7 +26,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/instrument"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	otelresource "go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
@@ -48,8 +47,8 @@ type MetricReporter struct {
 	process *process.Process
 
 	// Some example metrics to report.
-	processMemoryPhysical instrument.Float64ObservableGauge
-	processCpuTime        instrument.Float64ObservableCounter
+	processMemoryPhysical metric.Float64ObservableGauge
+	processCpuTime        metric.Float64ObservableCounter
 }
 
 // NewMetricReporter creates an OTLP/HTTP client to the destination address supplied by the server.
@@ -122,16 +121,17 @@ func NewMetricReporter(
 
 	// Create some metrics that will be reported according to OpenTelemetry semantic
 	// conventions for process metrics (conventions are TBD for now).
-	reporter.processCpuTime, err = reporter.meter.Float64ObservableGauge(
+	reporter.processCpuTime, err = reporter.meter.Float64ObservableCounter(
 		"process.cpu.time",
-		instrument.WithFloat64Callback(reporter.processCpuTimeFunc),
+		metric.WithFloat64Callback(reporter.processCpuTimeFunc),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't create process time metric: %w", err)
 	}
-	reporter.processMemoryPhysical, err = reporter.meter.Float64ObservableCounter(
+
+	reporter.processMemoryPhysical, err = reporter.meter.Float64ObservableGauge(
 		"process.memory.physical_usage",
-		instrument.WithFloat64Callback(reporter.processMemoryPhysicalFunc),
+		metric.WithFloat64Callback(reporter.processMemoryPhysicalFunc),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't create memory metric: %w", err)
@@ -142,18 +142,18 @@ func NewMetricReporter(
 	return reporter, nil
 }
 
-func (reporter *MetricReporter) processCpuTimeFunc(_ context.Context, observer instrument.Float64Observer) error {
+func (reporter *MetricReporter) processCpuTimeFunc(_ context.Context, observer metric.Float64Observer) error {
 	times, err := reporter.process.Times()
 	if err != nil {
 		reporter.logger.Errorf("Cannot get process CPU times: %w", err)
 	}
-	observer.Observe(times.User, attribute.String("state", "user"))
-	observer.Observe(times.System, attribute.String("state", "system"))
-	observer.Observe(times.Iowait, attribute.String("state", "wait"))
+	observer.Observe(times.User, metric.WithAttributes(attribute.String("state", "user")))
+	observer.Observe(times.System, metric.WithAttributes(attribute.String("state", "system")))
+	observer.Observe(times.Iowait, metric.WithAttributes(attribute.String("state", "wait")))
 	return nil
 }
 
-func (reporter *MetricReporter) processMemoryPhysicalFunc(_ context.Context, observer instrument.Float64Observer) error {
+func (reporter *MetricReporter) processMemoryPhysicalFunc(_ context.Context, observer metric.Float64Observer) error {
 	memory, err := reporter.process.MemoryInfo()
 	if err != nil {
 		reporter.logger.Errorf("Cannot get process memory information: %w", err)

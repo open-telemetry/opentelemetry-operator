@@ -27,12 +27,12 @@ import (
 
 // Deployment builds the deployment for the given instance.
 func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.Deployment {
-	labels := Labels(otelcol)
-	labels["app.kubernetes.io/name"] = naming.TargetAllocator(otelcol)
+	name := naming.TargetAllocator(otelcol)
+	labels := Labels(otelcol, name)
 
 	return appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TargetAllocator(otelcol),
+			Name:      name,
 			Namespace: otelcol.Namespace,
 			Labels:    labels,
 		},

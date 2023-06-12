@@ -26,6 +26,8 @@ spec:
       value: "0.85"
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
+    - name: OTEL_METRICS_EXPORTER
+      value: prometheus
     - name: OTEL_SERVICE_NAME
       value: my-deployment-with-sidecar
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -40,5 +42,13 @@ spec:
   - name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "128Mi"
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+
 status:
   phase: Running

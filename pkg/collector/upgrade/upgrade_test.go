@@ -84,25 +84,36 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 }
 
 func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
-	// prepare
-	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := makeOtelcol(nsn)
-	existing.Status.Version = "0.8.0"
+	for _, tt := range []struct {
+		desc      string
+		v         string
+		expectedV string
+	}{
+		{"upgrade-routine", "0.8.0", "0.10.0"},     // we don't have a 0.10.0 upgrade, but we have a 0.9.0
+		{"no-upgrade-routine", "0.61.1", "0.62.0"}, // No upgrade routines between these two versions
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			// prepare
+			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
+			existing := makeOtelcol(nsn)
+			existing.Status.Version = tt.v
 
-	currentV := version.Get()
-	currentV.OpenTelemetryCollector = "0.10.0" // we don't have a 0.10.0 upgrade, but we have a 0.9.0
-	up := &upgrade.VersionUpgrade{
-		Log:      logger,
-		Version:  currentV,
-		Client:   k8sClient,
-		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+			currentV := version.Get()
+			currentV.OpenTelemetryCollector = tt.expectedV
+			up := &upgrade.VersionUpgrade{
+				Log:      logger,
+				Version:  currentV,
+				Client:   k8sClient,
+				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+			}
+			// test
+			res, err := up.ManagedInstance(context.Background(), existing)
+
+			// verify
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedV, res.Status.Version)
+		})
 	}
-	// test
-	res, err := up.ManagedInstance(context.Background(), existing)
-
-	// verify
-	assert.NoError(t, err)
-	assert.Equal(t, "0.10.0", res.Status.Version)
 }
 
 func TestVersionsShouldNotBeChanged(t *testing.T) {

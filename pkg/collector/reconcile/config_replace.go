@@ -15,33 +15,42 @@
 package reconcile
 
 import (
-	"fmt"
-	"net/url"
+	"time"
 
-	"github.com/mitchellh/mapstructure"
 	promconfig "github.com/prometheus/prometheus/config"
-	"github.com/prometheus/prometheus/discovery"
-	"github.com/prometheus/prometheus/discovery/http"
 	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
+type targetAllocator struct {
+	Endpoint    string        `yaml:"endpoint"`
+	Interval    time.Duration `yaml:"interval"`
+	CollectorID string        `yaml:"collector_id"`
+	// HTTPSDConfig is a preference that can be set for the collector's target allocator, but the operator doesn't
+	// care about what the value is set to. We just need this for validation when unmarshalling the configmap.
+	HTTPSDConfig interface{} `yaml:"http_sd_config,omitempty"`
+}
+
 type Config struct {
-	PromConfig *promconfig.Config `yaml:"config"`
+	PromConfig        *promconfig.Config `yaml:"config"`
+	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
 }
 
 func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
+	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
 		return instance.Spec.Config, nil
 	}
-	config, getStringErr := adapters.ConfigFromString(instance.Spec.Config)
-	if getStringErr != nil {
-		return "", getStringErr
+
+	config, err := adapters.ConfigFromString(instance.Spec.Config)
+	if err != nil {
+		return "", err
 	}
 
 	promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(instance.Spec.Config)
@@ -49,39 +58,44 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		return "", getCfgPromErr
 	}
 
-	// yaml marshaling/unsmarshaling is preferred because of the problems associated with the conversion of map to a struct using mapstructure
-	promCfg, marshalErr := yaml.Marshal(map[string]interface{}{
-		"config": promCfgMap,
-	})
-	if marshalErr != nil {
-		return "", marshalErr
+	validateCfgPromErr := ta.ValidatePromConfig(promCfgMap, instance.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
+	if validateCfgPromErr != nil {
+		return "", validateCfgPromErr
 	}
 
-	var cfg Config
-	if marshalErr = yaml.UnmarshalStrict(promCfg, &cfg); marshalErr != nil {
-		return "", fmt.Errorf("error unmarshaling YAML: %w", marshalErr)
-	}
-
-	for i := range cfg.PromConfig.ScrapeConfigs {
-		escapedJob := url.QueryEscape(cfg.PromConfig.ScrapeConfigs[i].JobName)
-		cfg.PromConfig.ScrapeConfigs[i].ServiceDiscoveryConfigs = discovery.Configs{
-			&http.SDConfig{
-				URL: fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", naming.TAService(instance), escapedJob),
-			},
+	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
+		// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
+		// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
+		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance))
+		if getCfgPromErr != nil {
+			return "", getCfgPromErr
 		}
+
+		// type coercion checks are handled in the AddTAConfigToPromConfig method above
+		config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
+
+		out, updCfgMarshalErr := yaml.Marshal(config)
+		if updCfgMarshalErr != nil {
+			return "", updCfgMarshalErr
+		}
+
+		return string(out), nil
 	}
 
-	updPromCfgMap := make(map[string]interface{})
-	if err := mapstructure.Decode(cfg, &updPromCfgMap); err != nil {
+	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
+	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
+	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService(instance))
+	if err != nil {
 		return "", err
 	}
 
 	// type coercion checks are handled in the ConfigToPromConfig method above
-	config["receivers"].(map[interface{}]interface{})["prometheus"].(map[interface{}]interface{})["config"] = updPromCfgMap["PromConfig"]
+	config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
 
 	out, err := yaml.Marshal(config)
 	if err != nil {
 		return "", err
 	}
+
 	return string(out), nil
 }

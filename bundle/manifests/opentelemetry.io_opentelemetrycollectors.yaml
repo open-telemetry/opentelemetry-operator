@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: opentelemetry-operator-system/opentelemetry-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.11.3
+    controller-gen.kubebuilder.io/version: v0.12.0
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: opentelemetry-operator
@@ -29,9 +29,15 @@ spec:
       jsonPath: .status.version
       name: Version
       type: string
+    - jsonPath: .status.scale.statusReplicas
+      name: Ready
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - jsonPath: .status.image
+      name: Image
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -913,18 +919,18 @@ spec:
                                 must hold true for a specified past interval.
                               properties:
                                 periodSeconds:
-                                  description: PeriodSeconds specifies the window
+                                  description: periodSeconds specifies the window
                                     of time for which the policy should hold true.
                                     PeriodSeconds must be greater than zero and less
                                     than or equal to 1800 (30 min).
                                   format: int32
                                   type: integer
                                 type:
-                                  description: Type is used to specify the scaling
+                                  description: type is used to specify the scaling
                                     policy.
                                   type: string
                                 value:
-                                  description: Value contains the amount of change
+                                  description: value contains the amount of change
                                     which is permitted by the policy. It must be greater
                                     than zero
                                   format: int32
@@ -942,7 +948,7 @@ spec:
                               used.
                             type: string
                           stabilizationWindowSeconds:
-                            description: 'StabilizationWindowSeconds is the number
+                            description: 'stabilizationWindowSeconds is the number
                               of seconds for which past recommendations should be
                               considered while scaling up or scaling down. StabilizationWindowSeconds
                               must be greater than or equal to zero and less than
@@ -969,18 +975,18 @@ spec:
                                 must hold true for a specified past interval.
                               properties:
                                 periodSeconds:
-                                  description: PeriodSeconds specifies the window
+                                  description: periodSeconds specifies the window
                                     of time for which the policy should hold true.
                                     PeriodSeconds must be greater than zero and less
                                     than or equal to 1800 (30 min).
                                   format: int32
                                   type: integer
                                 type:
-                                  description: Type is used to specify the scaling
+                                  description: type is used to specify the scaling
                                     policy.
                                   type: string
                                 value:
-                                  description: Value contains the amount of change
+                                  description: value contains the amount of change
                                     which is permitted by the policy. It must be greater
                                     than zero
                                   format: int32
@@ -998,7 +1004,7 @@ spec:
                               used.
                             type: string
                           stabilizationWindowSeconds:
-                            description: 'StabilizationWindowSeconds is the number
+                            description: 'stabilizationWindowSeconds is the number
                               of seconds for which past recommendations should be
                               considered while scaling up or scaling down. StabilizationWindowSeconds
                               must be greater than or equal to zero and less than
@@ -1015,6 +1021,138 @@ spec:
                       feature. If MaxReplicas is set autoscaling is enabled.
                     format: int32
                     type: integer
+                  metrics:
+                    description: Metrics is meant to provide a customizable way to
+                      configure HPA metrics. currently the only supported custom metrics
+                      is type=Pod. Use TargetCPUUtilization or TargetMemoryUtilization
+                      instead if scaling on these common resource metrics.
+                    items:
+                      description: MetricSpec defines a subset of metrics to be defined
+                        for the HPA's metric array more metric type can be supported
+                        as needed. See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec
+                        for reference.
+                      properties:
+                        pods:
+                          description: PodsMetricSource indicates how to scale on
+                            a metric describing each pod in the current scale target
+                            (for example, transactions-processed-per-second). The
+                            values will be averaged together before being compared
+                            to the target value.
+                          properties:
+                            metric:
+                              description: metric identifies the target metric by
+                                name and selector
+                              properties:
+                                name:
+                                  description: name is the name of the given metric
+                                  type: string
+                                selector:
+                                  description: selector is the string-encoded form
+                                    of a standard kubernetes label selector for the
+                                    given metric When set, it is passed as an additional
+                                    parameter to the metrics server for more specific
+                                    metrics scoping. When unset, just the metricName
+                                    will be used to gather metrics.
+                                  properties:
+                                    matchExpressions:
+                                      description: matchExpressions is a list of label
+                                        selector requirements. The requirements are
+                                        ANDed.
+                                      items:
+                                        description: A label selector requirement
+                                          is a selector that contains values, a key,
+                                          and an operator that relates the key and
+                                          values.
+                                        properties:
+                                          key:
+                                            description: key is the label key that
+                                              the selector applies to.
+                                            type: string
+                                          operator:
+                                            description: operator represents a key's
+                                              relationship to a set of values. Valid
+                                              operators are In, NotIn, Exists and
+                                              DoesNotExist.
+                                            type: string
+                                          values:
+                                            description: values is an array of string
+                                              values. If the operator is In or NotIn,
+                                              the values array must be non-empty.
+                                              If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. This
+                                              array is replaced during a strategic
+                                              merge patch.
+                                            items:
+                                              type: string
+                                            type: array
+                                        required:
+                                        - key
+                                        - operator
+                                        type: object
+                                      type: array
+                                    matchLabels:
+                                      additionalProperties:
+                                        type: string
+                                      description: matchLabels is a map of {key,value}
+                                        pairs. A single {key,value} in the matchLabels
+                                        map is equivalent to an element of matchExpressions,
+                                        whose key field is "key", the operator is
+                                        "In", and the values array contains only "value".
+                                        The requirements are ANDed.
+                                      type: object
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                              required:
+                              - name
+                              type: object
+                            target:
+                              description: target specifies the target value for the
+                                given metric
+                              properties:
+                                averageUtilization:
+                                  description: averageUtilization is the target value
+                                    of the average of the resource metric across all
+                                    relevant pods, represented as a percentage of
+                                    the requested value of the resource for the pods.
+                                    Currently only valid for Resource metric source
+                                    type
+                                  format: int32
+                                  type: integer
+                                averageValue:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  description: averageValue is the target value of
+                                    the average of the metric across all relevant
+                                    pods (as a quantity)
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                type:
+                                  description: type represents whether the metric
+                                    type is Utilization, Value, or AverageValue
+                                  type: string
+                                value:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  description: value is the target value of the metric
+                                    (as a quantity).
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                              required:
+                              - type
+                              type: object
+                          required:
+                          - metric
+                          - target
+                          type: object
+                        type:
+                          description: MetricSourceType indicates the type of metric.
+                          type: string
+                      required:
+                      - type
+                      type: object
+                    type: array
                   minReplicas:
                     description: MinReplicas sets a lower bound to the autoscaling
                       feature.  Set this if your are using autoscaling. It must be
@@ -1235,10 +1373,10 @@ spec:
                     description: TLS configuration.
                     items:
                       description: IngressTLS describes the transport layer security
-                        associated with an Ingress.
+                        associated with an ingress.
                       properties:
                         hosts:
-                          description: Hosts are a list of hosts included in the TLS
+                          description: hosts is a list of hosts included in the TLS
                             certificate. The values in this list must match the name/s
                             used in the tlsSecret. Defaults to the wildcard host setting
                             for the loadbalancer controller fulfilling this Ingress,
@@ -1248,12 +1386,13 @@ spec:
                           type: array
                           x-kubernetes-list-type: atomic
                         secretName:
-                          description: SecretName is the name of the secret used to
+                          description: secretName is the name of the secret used to
                             terminate TLS traffic on port 443. Field is left optional
                             to allow TLS routing based on SNI hostname alone. If the
                             SNI host in a listener conflicts with the "Host" header
                             field used by an IngressRule, the SNI host is used for
-                            termination and value of the Host header is used for routing.
+                            termination and value of the "Host" header is used for
+                            routing.
                           type: string
                       type: object
                     type: array
@@ -1307,7 +1446,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -1402,7 +1543,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -1453,6 +1596,57 @@ spec:
                         type: object
                     type: object
                 type: object
+              livenessProbe:
+                description: Liveness config for the OpenTelemetry Collector except
+                  the probe handler which is auto generated from the health extension
+                  of the collector. It is only effective when healthcheckextension
+                  is configured in the OpenTelemetry Collector pipeline.
+                properties:
+                  failureThreshold:
+                    description: Minimum consecutive failures for the probe to be
+                      considered failed after having succeeded. Defaults to 3. Minimum
+                      value is 1.
+                    format: int32
+                    type: integer
+                  initialDelaySeconds:
+                    description: 'Number of seconds after the container has started
+                      before liveness probes are initiated. Defaults to 0 seconds.
+                      Minimum value is 0. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                    format: int32
+                    type: integer
+                  periodSeconds:
+                    description: How often (in seconds) to perform the probe. Default
+                      to 10 seconds. Minimum value is 1.
+                    format: int32
+                    type: integer
+                  successThreshold:
+                    description: Minimum consecutive successes for the probe to be
+                      considered successful after having failed. Defaults to 1. Must
+                      be 1 for liveness and startup. Minimum value is 1.
+                    format: int32
+                    type: integer
+                  terminationGracePeriodSeconds:
+                    description: Optional duration in seconds the pod needs to terminate
+                      gracefully upon probe failure. The grace period is the duration
+                      in seconds after the processes running in the pod are sent a
+                      termination signal and the time when the processes are forcibly
+                      halted with a kill signal. Set this value longer than the expected
+                      cleanup time for your process. If this value is nil, the pod's
+                      terminationGracePeriodSeconds will be used. Otherwise, this
+                      value overrides the value provided by the pod spec. Value must
+                      be non-negative integer. The value zero indicates stop immediately
+                      via the kill signal (no opportunity to shut down). This is a
+                      beta field and requires enabling ProbeTerminationGracePeriod
+                      feature gate. Minimum value is 1. spec.terminationGracePeriodSeconds
+                      is used if unset.
+                    format: int64
+                    type: integer
+                  timeoutSeconds:
+                    description: 'Number of seconds after which the probe times out.
+                      Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                    format: int32
+                    type: integer
+                type: object
               maxReplicas:
                 description: 'MaxReplicas sets an upper bound to the autoscaling feature.
                   If MaxReplicas is set autoscaling is enabled. Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas"
@@ -1461,7 +1655,7 @@ spec:
                 type: integer
               minReplicas:
                 description: 'MinReplicas sets a lower bound to the autoscaling feature.  Set
-                  this if your are using autoscaling. It must be at least 1 Deprecated:
+                  this if you are using autoscaling. It must be at least 1 Deprecated:
                   use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.'
                 format: int32
                 type: integer
@@ -1773,7 +1967,8 @@ spec:
                     description: 'Requests describes the minimum amount of compute
                       resources required. If Requests is omitted for a container,
                       it defaults to Limits if that is explicitly specified, otherwise
-                      to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                      to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     type: object
                 type: object
               securityContext:
@@ -2004,6 +2199,56 @@ spec:
                       high availability mode is consistent-hashing.
                     format: int32
                     type: integer
+                  resources:
+                    description: Resources to set on the OpenTelemetryTargetAllocator
+                      containers.
+                    properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
                   serviceAccount:
                     description: ServiceAccount indicates the name of an existing
                       service account to use with this instance. When set, the operator
@@ -2250,7 +2495,7 @@ spec:
                                 of compute resources required. If Requests is omitted
                                 for a container, it defaults to Limits if that is
                                 explicitly specified, otherwise to an implementation-defined
-                                value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                               type: object
                           type: object
                         selector:
@@ -2359,7 +2604,7 @@ spec:
                             volume claim. If underlying persistent volume is being
                             resized then the Condition will be set to 'ResizeStarted'.
                           items:
-                            description: PersistentVolumeClaimCondition contails details
+                            description: PersistentVolumeClaimCondition contains details
                               about state of pvc
                             properties:
                               lastProbeTime:
@@ -2837,7 +3082,7 @@ spec:
                             medium EmptyDir would be the minimum value between the
                             SizeLimit specified here and the sum of memory limits
                             of all containers in a pod. The default is nil which means
-                            that the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                            that the limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
                       type: object
@@ -3067,8 +3312,8 @@ spec:
                                         amount of compute resources required. If Requests
                                         is omitted for a container, it defaults to
                                         Limits if that is explicitly specified, otherwise
-                                        to an implementation-defined value. More info:
-                                        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                        to an implementation-defined value. Requests
+                                        cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                       type: object
                                   type: object
                                 selector:
@@ -4032,6 +4277,10 @@ spec:
             description: OpenTelemetryCollectorStatus defines the observed state of
               OpenTelemetryCollector.
             properties:
+              image:
+                description: Image indicates the container image to use for the OpenTelemetry
+                  Collector.
+                type: string
               messages:
                 description: 'Messages about actions performed by the operator on
                   this resource. Deprecated: use Kubernetes events instead.'
@@ -4057,6 +4306,12 @@ spec:
                   selector:
                     description: The selector used to match the OpenTelemetryCollector's
                       deployment or statefulSet pods.
+                    type: string
+                  statusReplicas:
+                    description: StatusReplicas is the number of pods targeted by
+                      this OpenTelemetryCollector's with a Ready Condition / Total
+                      number of non-terminated pods targeted by this OpenTelemetryCollector's
+                      (their labels match the selector). Deployment, Daemonset, StatefulSet.
                     type: string
                 type: object
               version:

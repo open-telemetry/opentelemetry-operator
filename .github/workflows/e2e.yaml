@@ -6,18 +6,26 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   e2e-tests:
     name: End-to-end tests
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
        # The e2e tests are run on the lowest and highest supported k8s version.
        # All Kubernetes version in between expose the same APIs, hence the operator
        # should be compatible with them.
        kube-version:
        - "1.19"
-       - "1.26"
+       - "1.27"
+       group:
+         - e2e e2e-upgrade
+         - e2e-autoscale
 
     steps:
 
@@ -35,10 +43,27 @@ jobs:
     - name: "run tests"
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
-      run: make prepare-e2e e2e e2e-upgrade KUBE_VERSION=$KUBE_VERSION VERSION=e2e
+      run: make prepare-e2e ${{ matrix.group }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
 
     - name: "log operator if failed"
       if: ${{ failure() }}
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
       run: make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
+
+  e2e-tests-check:
+    runs-on: ubuntu-20.04
+    if: always()
+    needs: [e2e-tests]
+    steps:
+      - name: Print result
+        run: echo ${{ needs.e2e-tests.result }}
+      - name: Interpret result
+        run: |
+          if [[ success == ${{ needs.e2e-tests.result }} ]]
+          then
+            echo "All matrix jobs passed!"
+          else
+            echo "One or more matrix jobs failed."
+            false
+          fi

@@ -64,6 +64,10 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 }
 
 func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.Config) error {
+	if cfg == nil {
+		m.log.Info("Service Discovery got empty Prometheus config", "source", source.String())
+		return nil
+	}
 	m.configsMap[source] = cfg
 	jobToScrapeConfig := make(map[string]*config.ScrapeConfig)
 

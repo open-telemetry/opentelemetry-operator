@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -171,7 +172,9 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 // deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
 // still supported but should eventually be updated.
 func TestOTELColValidatingWebhook(t *testing.T) {
+	minusOne := int32(-1)
 	zero := int32(0)
+	zero64 := int64(0)
 	one := int32(1)
 	three := int32(3)
 	five := int32(5)
@@ -421,6 +424,72 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas",
 		},
 		{
+			name: "invalid autoscaler metric type",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.ResourceMetricSourceType,
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod",
+		},
+		{
+			name: "invalid pod metric average value",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.PodsMetricSourceType,
+								Pods: &autoscalingv2.PodsMetricSource{
+									Metric: autoscalingv2.MetricIdentifier{
+										Name: "custom1",
+									},
+									Target: autoscalingv2.MetricTarget{
+										Type:         autoscalingv2.AverageValueMetricType,
+										AverageValue: resource.NewQuantity(int64(0), resource.DecimalSI),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0",
+		},
+		{
+			name: "utilization target is not valid with pod metrics",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.PodsMetricSourceType,
+								Pods: &autoscalingv2.PodsMetricSource{
+									Metric: autoscalingv2.MetricIdentifier{
+										Name: "custom1",
+									},
+									Target: autoscalingv2.MetricTarget{
+										Type:               autoscalingv2.UtilizationMetricType,
+										AverageUtilization: &one,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type",
+		},
+		{
 			name: "invalid deployment mode incompabible with ingress settings",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
@@ -469,6 +538,72 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "does not support the attribute 'affinity'",
+		},
+		{
+			name: "invalid InitialDelaySeconds",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						InitialDelaySeconds: &minusOne,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect",
+		},
+		{
+			name: "invalid PeriodSeconds",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						PeriodSeconds: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect",
+		},
+		{
+			name: "invalid TimeoutSeconds",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						TimeoutSeconds: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect",
+		},
+		{
+			name: "invalid SuccessThreshold",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						SuccessThreshold: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect",
+		},
+		{
+			name: "invalid FailureThreshold",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						FailureThreshold: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect",
+		},
+		{
+			name: "invalid TerminationGracePeriodSeconds",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					LivenessProbe: &Probe{
+						TerminationGracePeriodSeconds: &zero64,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect",
 		},
 	}
 

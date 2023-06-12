@@ -18,11 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
-
 	"github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
@@ -34,6 +33,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+
+	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
 func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliConfig allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
@@ -176,27 +177,23 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		return nil, pmRetrieveErr
 	}
 
-	// TODO: We should make these durations configurable
-	prom := &monitoringv1.Prometheus{
-		Spec: monitoringv1.PrometheusSpec{
-			EvaluationInterval: monitoringv1.Duration("30s"),
-			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval: monitoringv1.Duration("30s"),
-			},
-		},
-	}
-
-	generatedConfig, err := w.configGenerator.Generate(
-		prom,
+	generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
+		"30s",
+		"",
+		nil,
+		nil,
+		monitoringv1.TSDBSpec{},
+		nil,
+		nil,
 		serviceMonitorInstances,
 		podMonitorInstances,
 		map[string]*monitoringv1.Probe{},
-		store,
+		map[string]*promv1alpha1.ScrapeConfig{},
+		&store,
 		nil,
 		nil,
 		nil,
-		[]string{},
-	)
+		[]string{})
 	if err != nil {
 		return nil, err
 	}

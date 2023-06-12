@@ -61,6 +61,13 @@ type InstrumentationSpec struct {
 	// +optional
 	DotNet DotNet `json:"dotnet,omitempty"`
 
+	// Go defines configuration for Go auto-instrumentation.
+	// When using Go auto-instrumenetation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the
+	// Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation.
+	// Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.
+	// +optional
+	Go Go `json:"go,omitempty"`
+
 	// Apache defines configuration for Apache HTTPD auto-instrumentation.
 	// +optional
 	ApacheHttpd ApacheHttpd `json:"apacheHttpd,omitempty"`
@@ -113,6 +120,10 @@ type Java struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // NodeJS defines NodeJS SDK and instrumentation configuration.
@@ -126,6 +137,10 @@ type NodeJS struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.
@@ -139,8 +154,13 @@ type Python struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
+// DotNet defines DotNet SDK and instrumentation configuration.
 type DotNet struct {
 	// Image is a container image with DotNet SDK and auto-instrumentation.
 	// +optional
@@ -151,8 +171,28 @@ type DotNet struct {
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
+type Go struct {
+	// Image is a container image with Go SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// Env defines Go specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+}
+
+// ApacheHttpd defines Apache SDK and instrumentation configuration.
 type ApacheHttpd struct {
 	// Image is a container image with Apache SDK and auto-instrumentation.
 	// +optional
@@ -178,6 +218,9 @@ type ApacheHttpd struct {
 	// Needed only if different from default "/usr/local/apache2/conf"
 	// +optional
 	ConfigPath string `json:"configPath,omitempty"`
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.

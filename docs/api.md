@@ -114,6 +114,13 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecgo">go</a></b></td>
+        <td>object</td>
+        <td>
+          Go defines configuration for Go auto-instrumentation. When using Go auto-instrumenetation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation. Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecjava">java</a></b></td>
         <td>object</td>
         <td>
@@ -201,6 +208,13 @@ Apache defines configuration for Apache HTTPD auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with Apache SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -706,6 +720,76 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.apacheHttpd.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpd)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecapachehttpdresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.dotnet
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -734,6 +818,13 @@ DotNet defines configuration for DotNet auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with DotNet SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -982,6 +1073,76 @@ Selects a key of a secret in the pod's namespace
           Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecdotnet)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecdotnetresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecdotnetresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
@@ -1259,6 +1420,363 @@ Exporter defines exporter configuration.
 </table>
 
 
+### Instrumentation.spec.go
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+Go defines configuration for Go auto-instrumentation. When using Go auto-instrumenetation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation. Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecgoenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          Env defines Go specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image is a container image with Go SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index]
+<sup><sup>[↩ Parent](#instrumentationspecgo)</sup></sup>
+
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindex)</sup></sup>
+
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecgo)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecgoresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecgoresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.java
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -1287,6 +1805,13 @@ Java defines configuration for java auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with javaagent auto-instrumentation JAR.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavaresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1539,6 +2064,76 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.java.resources
+<sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecjavaresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.resources.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecjavaresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.nodejs
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -1567,6 +2162,13 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with NodeJS SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1819,6 +2421,76 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.nodejs.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecnodejs)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnodejsresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecnodejsresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.python
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -1847,6 +2519,13 @@ Python defines configuration for python auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with Python SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2099,6 +2778,76 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.python.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecpython)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecpythonresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecpythonresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.resource
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -2316,6 +3065,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclivenessprobe">livenessProbe</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector. It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>maxReplicas</b></td>
         <td>integer</td>
         <td>
@@ -2328,7 +3084,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1 Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1 Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -3799,6 +4555,13 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindex">metrics</a></b></td>
+        <td>[]object</td>
+        <td>
+          Metrics is meant to provide a customizable way to configure HPA metrics. currently the only supported custom metrics is type=Pod. Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
@@ -3897,7 +4660,7 @@ scaleDown is scaling policy for scaling Down. If not set, the default value is t
         <td><b>stabilizationWindowSeconds</b></td>
         <td>integer</td>
         <td>
-          StabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down. StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour). If not set, use the default values: - For scale up: 0 (i.e. no stabilization is done). - For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
+          stabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down. StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour). If not set, use the default values: - For scale up: 0 (i.e. no stabilization is done). - For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -3926,7 +4689,7 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
         <td><b>periodSeconds</b></td>
         <td>integer</td>
         <td>
-          PeriodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
+          periodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -3935,14 +4698,14 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          Type is used to specify the scaling policy.<br/>
+          type is used to specify the scaling policy.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>value</b></td>
         <td>integer</td>
         <td>
-          Value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
+          value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -3985,7 +4748,7 @@ scaleUp is scaling policy for scaling Up. If not set, the default value is the h
         <td><b>stabilizationWindowSeconds</b></td>
         <td>integer</td>
         <td>
-          StabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down. StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour). If not set, use the default values: - For scale up: 0 (i.e. no stabilization is done). - For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
+          stabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down. StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour). If not set, use the default values: - For scale up: 0 (i.e. no stabilization is done). - For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -4014,7 +4777,7 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
         <td><b>periodSeconds</b></td>
         <td>integer</td>
         <td>
-          PeriodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
+          periodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -4023,18 +4786,245 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          Type is used to specify the scaling policy.<br/>
+          type is used to specify the scaling policy.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>value</b></td>
         <td>integer</td>
         <td>
-          Value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
+          value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
         <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscaler)</sup></sup>
+
+
+
+MetricSpec defines a subset of metrics to be defined for the HPA's metric array more metric type can be supported as needed. See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          MetricSourceType indicates the type of metric.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpods">pods</a></b></td>
+        <td>object</td>
+        <td>
+          PodsMetricSource indicates how to scale on a metric describing each pod in the current scale target (for example, transactions-processed-per-second). The values will be averaged together before being compared to the target value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex)</sup></sup>
+
+
+
+PodsMetricSource indicates how to scale on a metric describing each pod in the current scale target (for example, transactions-processed-per-second). The values will be averaged together before being compared to the target value.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpodsmetric">metric</a></b></td>
+        <td>object</td>
+        <td>
+          metric identifies the target metric by name and selector<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpodstarget">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.metric
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpods)</sup></sup>
+
+
+
+metric identifies the target metric by name and selector
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpodsmetricselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping. When unset, just the metricName will be used to gather metrics.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.metric.selector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpodsmetric)</sup></sup>
+
+
+
+selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping. When unset, just the metricName will be used to gather metrics.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpodsmetricselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.metric.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpodsmetricselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpods)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the resource metric across all relevant pods, represented as a percentage of the requested value of the resource for the pods. Currently only valid for Resource metric source type<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -4492,7 +5482,7 @@ Route is an OpenShift specific section that is only considered when type "route"
 
 
 
-IngressTLS describes the transport layer security associated with an Ingress.
+IngressTLS describes the transport layer security associated with an ingress.
 
 <table>
     <thead>
@@ -4507,14 +5497,14 @@ IngressTLS describes the transport layer security associated with an Ingress.
         <td><b>hosts</b></td>
         <td>[]string</td>
         <td>
-          Hosts are a list of hosts included in the TLS certificate. The values in this list must match the name/s used in the tlsSecret. Defaults to the wildcard host setting for the loadbalancer controller fulfilling this Ingress, if left unspecified.<br/>
+          hosts is a list of hosts included in the TLS certificate. The values in this list must match the name/s used in the tlsSecret. Defaults to the wildcard host setting for the loadbalancer controller fulfilling this Ingress, if left unspecified.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>secretName</b></td>
         <td>string</td>
         <td>
-          SecretName is the name of the secret used to terminate TLS traffic on port 443. Field is left optional to allow TLS routing based on SNI hostname alone. If the SNI host in a listener conflicts with the "Host" header field used by an IngressRule, the SNI host is used for termination and value of the Host header is used for routing.<br/>
+          secretName is the name of the secret used to terminate TLS traffic on port 443. Field is left optional to allow TLS routing based on SNI hostname alone. If the SNI host in a listener conflicts with the "Host" header field used by an IngressRule, the SNI host is used for termination and value of the "Host" header is used for routing.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4698,7 +5688,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -4889,7 +5879,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -4931,6 +5921,80 @@ Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the ba
         <td>string</td>
         <td>
           Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.livenessProbe
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector. It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated. Defaults to 0 seconds. Minimum value is 0. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process. If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this value overrides the value provided by the pod spec. Value must be non-negative integer. The value zero indicates stop immediately via the kill signal (no opportunity to shut down). This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate. Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5304,7 +6368,7 @@ Resources to set on the OpenTelemetry Collector pods.
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5667,6 +6731,13 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Resources to set on the OpenTelemetryTargetAllocator containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>serviceAccount</b></td>
         <td>string</td>
         <td>
@@ -5714,6 +6785,76 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
           ServiceMonitors to be selected for target discovery. This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a ServiceMonitor's meta labels. The requirements are ANDed.<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.resources
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
+
+
+
+Resources to set on the OpenTelemetryTargetAllocator containers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
+ This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.resources.claims[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
@@ -6086,7 +7227,7 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6262,7 +7403,7 @@ status represents the current information/status of a persistent volume claim. R
 
 
 
-PersistentVolumeClaimCondition contails details about state of pvc
+PersistentVolumeClaimCondition contains details about state of pvc
 
 <table>
     <thead>
@@ -7299,7 +8440,7 @@ emptyDir represents a temporary directory that shares a pod's lifetime. More inf
         <td><b>sizeLimit</b></td>
         <td>int or string</td>
         <td>
-          sizeLimit is the total amount of local storage required for this EmptyDir volume. The size limit is also applicable for memory medium. The maximum usage on memory medium EmptyDir would be the minimum value between the SizeLimit specified here and the sum of memory limits of all containers in a pod. The default is nil which means that the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir<br/>
+          sizeLimit is the total amount of local storage required for this EmptyDir volume. The size limit is also applicable for memory medium. The maximum usage on memory medium EmptyDir would be the minimum value between the SizeLimit specified here and the sum of memory limits of all containers in a pod. The default is nil which means that the limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -7578,7 +8719,7 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9326,6 +10467,13 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image indicates the container image to use for the OpenTelemetry Collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>messages</b></td>
         <td>[]string</td>
         <td>
@@ -9389,6 +10537,13 @@ Scale is the OpenTelemetryCollector's scale subresource status.
         <td>string</td>
         <td>
           The selector used to match the OpenTelemetryCollector's deployment or statefulSet pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>statusReplicas</b></td>
+        <td>string</td>
+        <td>
+          StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition / Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector). Deployment, Daemonset, StatefulSet.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

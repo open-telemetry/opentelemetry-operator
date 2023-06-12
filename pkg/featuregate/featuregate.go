@@ -37,6 +37,25 @@ var (
 		"operator.autoinstrumentation.java",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports Java auto-instrumentation"))
+	EnableNodeJSAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.nodejs",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports NodeJS auto-instrumentation"))
+	EnableGoAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.go",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("controls whether the operator supports Golang auto-instrumentation"))
+	EnableApacheHTTPAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.apache-httpd",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTPD auto-instrumentation"))
+
+	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
+	// automatically be rewritten when the target allocator is enabled.
+	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
+		"operator.collector.rewritetargetallocator",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"))
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

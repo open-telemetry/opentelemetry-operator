@@ -334,6 +334,23 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	}
 }
 
+func TestDiscovery_NoConfig(t *testing.T) {
+	scu := &mockScrapeConfigUpdater{mockCfg: map[string]*promconfig.ScrapeConfig{}}
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
+	defer close(manager.close)
+	defer cancelFunc()
+
+	go func() {
+		err := d.Run()
+		assert.NoError(t, err)
+	}()
+	// check the updated scrape configs
+	expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
+	assert.Equal(t, expectedScrapeConfigs, scu.mockCfg)
+}
+
 func BenchmarkApplyScrapeConfig(b *testing.B) {
 	numConfigs := 1000
 	scrapeConfig := promconfig.ScrapeConfig{

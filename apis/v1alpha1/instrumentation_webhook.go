@@ -20,10 +20,12 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 const (
@@ -31,6 +33,7 @@ const (
 	AnnotationDefaultAutoInstrumentationNodeJS      = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
 	AnnotationDefaultAutoInstrumentationPython      = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
 	AnnotationDefaultAutoInstrumentationDotNet      = "instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"
+	AnnotationDefaultAutoInstrumentationGo          = "instrumentation.opentelemetry.io/default-auto-instrumentation-go-image"
 	AnnotationDefaultAutoInstrumentationApacheHttpd = "instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"
 	envPrefix                                       = "OTEL_"
 	envSplunkPrefix                                 = "SPLUNK_"
@@ -64,9 +67,33 @@ func (r *Instrumentation) Default() {
 			r.Spec.Java.Image = val
 		}
 	}
+	if r.Spec.Java.Resources.Limits == nil {
+		r.Spec.Java.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
+	if r.Spec.Java.Resources.Requests == nil {
+		r.Spec.Java.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
 	if r.Spec.NodeJS.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationNodeJS]; ok {
 			r.Spec.NodeJS.Image = val
+		}
+	}
+	if r.Spec.NodeJS.Resources.Limits == nil {
+		r.Spec.NodeJS.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.NodeJS.Resources.Requests == nil {
+		r.Spec.NodeJS.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		}
 	}
 	if r.Spec.Python.Image == "" {
@@ -74,14 +101,67 @@ func (r *Instrumentation) Default() {
 			r.Spec.Python.Image = val
 		}
 	}
+	if r.Spec.Python.Resources.Limits == nil {
+		r.Spec.Python.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
+	if r.Spec.Python.Resources.Requests == nil {
+		r.Spec.Python.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
 	if r.Spec.DotNet.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationDotNet]; ok {
 			r.Spec.DotNet.Image = val
 		}
 	}
+	if r.Spec.DotNet.Resources.Limits == nil {
+		r.Spec.DotNet.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.DotNet.Resources.Requests == nil {
+		r.Spec.DotNet.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.Go.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationGo]; ok {
+			r.Spec.Go.Image = val
+		}
+	}
+	if r.Spec.Go.Resources.Limits == nil {
+		r.Spec.Go.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
+	if r.Spec.Go.Resources.Requests == nil {
+		r.Spec.Go.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		}
+	}
 	if r.Spec.ApacheHttpd.Image == "" {
 		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationApacheHttpd]; ok {
 			r.Spec.ApacheHttpd.Image = val
+		}
+	}
+	if r.Spec.ApacheHttpd.Resources.Limits == nil {
+		r.Spec.ApacheHttpd.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.ApacheHttpd.Resources.Requests == nil {
+		r.Spec.ApacheHttpd.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		}
 	}
 	if r.Spec.ApacheHttpd.Version == "" {
@@ -98,21 +178,21 @@ func (r *Instrumentation) Default() {
 var _ webhook.Validator = &Instrumentation{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *Instrumentation) ValidateCreate() error {
+func (r *Instrumentation) ValidateCreate() (admission.Warnings, error) {
 	instrumentationlog.Info("validate create", "name", r.Name)
-	return r.validate()
+	return nil, r.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *Instrumentation) ValidateUpdate(old runtime.Object) error {
+func (r *Instrumentation) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	instrumentationlog.Info("validate update", "name", r.Name)
-	return r.validate()
+	return nil, r.validate()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *Instrumentation) ValidateDelete() error {
+func (r *Instrumentation) ValidateDelete() (admission.Warnings, error) {
 	instrumentationlog.Info("validate delete", "name", r.Name)
-	return nil
+	return nil, nil
 }
 
 func (r *Instrumentation) validate() error {
@@ -144,6 +224,9 @@ func (r *Instrumentation) validate() error {
 		return err
 	}
 	if err := r.validateEnv(r.Spec.DotNet.Env); err != nil {
+		return err
+	}
+	if err := r.validateEnv(r.Spec.Go.Env); err != nil {
 		return err
 	}
 	if err := r.validateEnv(r.Spec.ApacheHttpd.Env); err != nil {

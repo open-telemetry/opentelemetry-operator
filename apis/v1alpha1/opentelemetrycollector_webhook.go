@@ -17,12 +17,17 @@ package v1alpha1
 import (
 	"fmt"
 
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
@@ -67,6 +72,19 @@ func (r *OpenTelemetryCollector) Default() {
 		r.Spec.TargetAllocator.Replicas = &one
 	}
 
+	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Resources.Limits == nil {
+		r.Spec.TargetAllocator.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("500Mi"),
+		}
+	}
+	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Resources.Requests == nil {
+		r.Spec.TargetAllocator.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("250Mi"),
+		}
+	}
+
 	if r.Spec.MaxReplicas != nil || (r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil) {
 		if r.Spec.Autoscaler == nil {
 			r.Spec.Autoscaler = &AutoscalerSpec{}
@@ -99,21 +117,21 @@ func (r *OpenTelemetryCollector) Default() {
 var _ webhook.Validator = &OpenTelemetryCollector{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateCreate() error {
+func (r *OpenTelemetryCollector) ValidateCreate() (admission.Warnings, error) {
 	opentelemetrycollectorlog.Info("validate create", "name", r.Name)
-	return r.validateCRDSpec()
+	return nil, r.validateCRDSpec()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) error {
+func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	opentelemetrycollectorlog.Info("validate update", "name", r.Name)
-	return r.validateCRDSpec()
+	return nil, r.validateCRDSpec()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateDelete() error {
+func (r *OpenTelemetryCollector) ValidateDelete() (admission.Warnings, error) {
 	opentelemetrycollectorlog.Info("validate delete", "name", r.Name)
-	return nil
+	return nil, nil
 }
 
 func (r *OpenTelemetryCollector) validateCRDSpec() error {
@@ -144,7 +162,11 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 
 	// validate Prometheus config for target allocation
 	if r.Spec.TargetAllocator.Enabled {
-		_, err := ta.ConfigToPromConfig(r.Spec.Config)
+		promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
+		if err != nil {
+			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+		}
+		err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
 		if err != nil {
 			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}
@@ -184,6 +206,12 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		}
 	}
 
+	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
+		return fmt.Errorf("the OpenTelemetry Spec Ingress configuration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
+		)
+	}
+
 	// validate autoscale with horizontal pod autoscaler
 	if maxReplicas != nil {
 		if *maxReplicas < int32(1) {
@@ -202,29 +230,77 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
 		}
 
-		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.Behavior != nil {
-			if r.Spec.Autoscaler.Behavior.ScaleDown != nil && r.Spec.Autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds != nil &&
-				*r.Spec.Autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(1) {
-				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown should be one or more")
-			}
-
-			if r.Spec.Autoscaler.Behavior.ScaleUp != nil && r.Spec.Autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds != nil &&
-				*r.Spec.Autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(1) {
-				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
-			}
-		}
-		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetCPUUtilization != nil && (*r.Spec.Autoscaler.TargetCPUUtilization < int32(1) || *r.Spec.Autoscaler.TargetCPUUtilization > int32(99)) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
-		}
-		if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.TargetMemoryUtilization != nil && (*r.Spec.Autoscaler.TargetMemoryUtilization < int32(1) || *r.Spec.Autoscaler.TargetMemoryUtilization > int32(99)) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
+		if r.Spec.Autoscaler != nil {
+			return checkAutoscalerSpec(r.Spec.Autoscaler)
 		}
 	}
 
 	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
-		return fmt.Errorf("the OptenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+		return fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
+	}
+
+	if r.Spec.LivenessProbe != nil {
+		if r.Spec.LivenessProbe.InitialDelaySeconds != nil && *r.Spec.LivenessProbe.InitialDelaySeconds < 0 {
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
+		}
+		if r.Spec.LivenessProbe.PeriodSeconds != nil && *r.Spec.LivenessProbe.PeriodSeconds < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
+		}
+		if r.Spec.LivenessProbe.TimeoutSeconds != nil && *r.Spec.LivenessProbe.TimeoutSeconds < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
+		}
+		if r.Spec.LivenessProbe.SuccessThreshold != nil && *r.Spec.LivenessProbe.SuccessThreshold < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
+		}
+		if r.Spec.LivenessProbe.FailureThreshold != nil && *r.Spec.LivenessProbe.FailureThreshold < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
+		}
+		if r.Spec.LivenessProbe.TerminationGracePeriodSeconds != nil && *r.Spec.LivenessProbe.TerminationGracePeriodSeconds < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
+		}
+	}
+
+	return nil
+}
+
+func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
+	if autoscaler.Behavior != nil {
+		if autoscaler.Behavior.ScaleDown != nil && autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds != nil &&
+			*autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(1) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown should be one or more")
+		}
+
+		if autoscaler.Behavior.ScaleUp != nil && autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds != nil &&
+			*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(1) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
+		}
+	}
+	if autoscaler.TargetCPUUtilization != nil && (*autoscaler.TargetCPUUtilization < int32(1) || *autoscaler.TargetCPUUtilization > int32(99)) {
+		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
+	}
+	if autoscaler.TargetMemoryUtilization != nil && (*autoscaler.TargetMemoryUtilization < int32(1) || *autoscaler.TargetMemoryUtilization > int32(99)) {
+		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
+	}
+
+	for _, metric := range autoscaler.Metrics {
+		if metric.Type != autoscalingv2.PodsMetricSourceType {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod")
+		}
+
+		// pod metrics target only support value and averageValue.
+		if metric.Pods.Target.Type == autoscalingv2.AverageValueMetricType {
+			if val, ok := metric.Pods.Target.AverageValue.AsInt64(); !ok || val < int64(1) {
+				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0")
+			}
+		} else if metric.Pods.Target.Type == autoscalingv2.ValueMetricType {
+			if val, ok := metric.Pods.Target.Value.AsInt64(); !ok || val < int64(1) {
+				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, value should be greater than 0")
+			}
+		} else {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type")
+		}
 	}
 
 	return nil

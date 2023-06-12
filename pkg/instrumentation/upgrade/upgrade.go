@@ -28,13 +28,15 @@ import (
 )
 
 type InstrumentationUpgrade struct {
-	Client                client.Client
-	Logger                logr.Logger
-	Recorder              record.EventRecorder
-	DefaultAutoInstJava   string
-	DefaultAutoInstNodeJS string
-	DefaultAutoInstPython string
-	DefaultAutoInstDotNet string
+	Client                     client.Client
+	Logger                     logr.Logger
+	Recorder                   record.EventRecorder
+	DefaultAutoInstJava        string
+	DefaultAutoInstNodeJS      string
+	DefaultAutoInstPython      string
+	DefaultAutoInstDotNet      string
+	DefaultAutoInstApacheHttpd string
+	DefaultAutoInstGo          string
 }
 
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
@@ -87,10 +89,15 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 	}
 	autoInstNodeJS := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS]
 	if autoInstNodeJS != "" {
-		// upgrade the image only if the image matches the annotation
-		if inst.Spec.NodeJS.Image == autoInstNodeJS {
-			inst.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
-			inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS] = u.DefaultAutoInstNodeJS
+		if featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.NodeJS.Image == autoInstNodeJS {
+				inst.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS] = u.DefaultAutoInstNodeJS
+			}
+		} else {
+			u.Logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for NodeJS auto instrumentation is not enabled")
 		}
 	}
 	autoInstPython := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython]
@@ -117,6 +124,32 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		} else {
 			u.Logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for .NET auto instrumentation is not enabled")
+		}
+	}
+	autoInstGo := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo]
+	if autoInstGo != "" {
+		if featuregate.EnableGoAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.Go.Image == autoInstGo {
+				inst.Spec.Go.Image = u.DefaultAutoInstGo
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo] = u.DefaultAutoInstGo
+			}
+		} else {
+			u.Logger.Error(nil, "support for Go auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Go auto instrumentation is not enabled")
+		}
+	}
+	autoInstApacheHttpd := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd]
+	if autoInstApacheHttpd != "" {
+		if featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.ApacheHttpd.Image == autoInstApacheHttpd {
+				inst.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd] = u.DefaultAutoInstApacheHttpd
+			}
+		} else {
+			u.Logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Apache HTTPD auto instrumentation is not enabled")
 		}
 	}
 	return inst

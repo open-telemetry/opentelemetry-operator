@@ -21,6 +21,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -43,66 +44,126 @@ func TestHPA(t *testing.T) {
 	var cpuUtilization int32 = 66
 	var memoryUtilization int32 = 77
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance",
+	otelcols := []v1alpha1.OpenTelemetryCollector{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-instance",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Autoscaler: &v1alpha1.AutoscalerSpec{
+					MinReplicas:             &minReplicas,
+					MaxReplicas:             &maxReplicas,
+					TargetCPUUtilization:    &cpuUtilization,
+					TargetMemoryUtilization: &memoryUtilization,
+				},
+			},
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Autoscaler: &v1alpha1.AutoscalerSpec{
-				MinReplicas:             &minReplicas,
-				MaxReplicas:             &maxReplicas,
-				TargetCPUUtilization:    &cpuUtilization,
-				TargetMemoryUtilization: &memoryUtilization,
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-instance",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				MinReplicas: &minReplicas,
+				MaxReplicas: &maxReplicas,
+				Autoscaler: &v1alpha1.AutoscalerSpec{
+					TargetCPUUtilization:    &cpuUtilization,
+					TargetMemoryUtilization: &memoryUtilization,
+				},
 			},
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mockAutoDetector := &mockAutoDetect{
-				HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
-					return test.autoscalingVersion, nil
+	for _, otelcol := range otelcols {
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				mockAutoDetector := &mockAutoDetect{
+					HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
+						return test.autoscalingVersion, nil
+					},
+				}
+				configuration := config.New(config.WithAutoDetect(mockAutoDetector))
+				err := configuration.AutoDetect()
+				assert.NoError(t, err)
+				raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
+
+				if configuration.AutoscalingVersion() == autodetect.AutoscalingVersionV2Beta2 {
+					hpa := raw.(*autoscalingv2beta2.HorizontalPodAutoscaler)
+
+					// verify
+					assert.Equal(t, "my-instance-collector", hpa.Name)
+					assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
+					assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)
+					assert.Equal(t, int32(5), hpa.Spec.MaxReplicas)
+					for _, metric := range hpa.Spec.Metrics {
+						if metric.Resource.Name == corev1.ResourceCPU {
+							assert.Equal(t, cpuUtilization, *metric.Resource.Target.AverageUtilization)
+						} else if metric.Resource.Name == corev1.ResourceMemory {
+							assert.Equal(t, memoryUtilization, *metric.Resource.Target.AverageUtilization)
+						}
+					}
+				} else {
+					hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
+
+					// verify
+					assert.Equal(t, "my-instance-collector", hpa.Name)
+					assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
+					assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)
+					assert.Equal(t, int32(5), hpa.Spec.MaxReplicas)
+					assert.Equal(t, 2, len(hpa.Spec.Metrics))
+
+					for _, metric := range hpa.Spec.Metrics {
+						if metric.Resource.Name == corev1.ResourceCPU {
+							assert.Equal(t, cpuUtilization, *metric.Resource.Target.AverageUtilization)
+						} else if metric.Resource.Name == corev1.ResourceMemory {
+							assert.Equal(t, memoryUtilization, *metric.Resource.Target.AverageUtilization)
+						}
+					}
+				}
+			})
+		}
+	}
+
+}
+
+func TestConvertToV2Beta2PodMetrics(t *testing.T) {
+	expectedValues := []int64{int64(10), int64(20)}
+	expectedNames := []string{"custom1", "custom2"}
+
+	v2metrics := []v1alpha1.MetricSpec{
+		{
+			Type: autoscalingv2.PodsMetricSourceType,
+			Pods: &autoscalingv2.PodsMetricSource{
+				Metric: autoscalingv2.MetricIdentifier{
+					Name: "custom1",
 				},
-			}
-			configuration := config.New(config.WithAutoDetect(mockAutoDetector))
-			err := configuration.AutoDetect()
-			assert.NoError(t, err)
-			raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
+				Target: autoscalingv2.MetricTarget{
+					Type:         autoscalingv2.AverageValueMetricType,
+					AverageValue: resource.NewQuantity(int64(10), resource.DecimalSI),
+				},
+			},
+		},
+		{
+			Type: autoscalingv2.PodsMetricSourceType,
+			Pods: &autoscalingv2.PodsMetricSource{
+				Metric: autoscalingv2.MetricIdentifier{
+					Name: "custom2",
+				},
+				Target: autoscalingv2.MetricTarget{
+					Type:         autoscalingv2.AverageValueMetricType,
+					AverageValue: resource.NewQuantity(int64(20), resource.DecimalSI),
+				},
+			},
+		},
+	}
 
-			if configuration.AutoscalingVersion() == autodetect.AutoscalingVersionV2Beta2 {
-				hpa := raw.(*autoscalingv2beta2.HorizontalPodAutoscaler)
+	v2beta2metrics := ConvertToV2Beta2PodMetrics(v2metrics)
 
-				// verify
-				assert.Equal(t, "my-instance-collector", hpa.Name)
-				assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
-				assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)
-				assert.Equal(t, int32(5), hpa.Spec.MaxReplicas)
-				for _, metric := range hpa.Spec.Metrics {
-					if metric.Resource.Name == corev1.ResourceCPU {
-						assert.Equal(t, cpuUtilization, *metric.Resource.Target.AverageUtilization)
-					} else if metric.Resource.Name == corev1.ResourceMemory {
-						assert.Equal(t, memoryUtilization, *metric.Resource.Target.AverageUtilization)
-					}
-				}
-			} else {
-				hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
+	for i, metric := range v2beta2metrics {
 
-				// verify
-				assert.Equal(t, "my-instance-collector", hpa.Name)
-				assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
-				assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)
-				assert.Equal(t, int32(5), hpa.Spec.MaxReplicas)
-				assert.Equal(t, 2, len(hpa.Spec.Metrics))
-
-				for _, metric := range hpa.Spec.Metrics {
-					if metric.Resource.Name == corev1.ResourceCPU {
-						assert.Equal(t, cpuUtilization, *metric.Resource.Target.AverageUtilization)
-					} else if metric.Resource.Name == corev1.ResourceMemory {
-						assert.Equal(t, memoryUtilization, *metric.Resource.Target.AverageUtilization)
-					}
-				}
-			}
-		})
+		assert.Equal(t, expectedNames[i], metric.Pods.Metric.Name)
+		val, ok := metric.Pods.Target.AverageValue.AsInt64()
+		assert.True(t, ok)
+		assert.Equal(t, expectedValues[i], val)
 	}
 }
 
