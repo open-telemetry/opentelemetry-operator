@@ -57,7 +57,16 @@ func NewPrometheusCRWatcher(cfg allocatorconfig.Config, cliConfig allocatorconfi
 		monitoringv1.PodMonitorName:     podMonitorInformers,
 	}
 
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), &monitoringv1.Prometheus{}, true) // TODO replace Nop?
+	// TODO: We should make these durations configurable
+	prom := &monitoringv1.Prometheus{
+		Spec: monitoringv1.PrometheusSpec{
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				ScrapeInterval: monitoringv1.Duration("30s"),
+			},
+		},
+	}
+
+	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), prom, true) // TODO replace Nop?
 	if err != nil {
 		return nil, err
 	}
