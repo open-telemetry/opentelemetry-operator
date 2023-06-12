@@ -311,7 +311,15 @@ func getTestPrometheuCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, pm
 		t.Fatal(t, err)
 	}
 
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), &monitoringv1.Prometheus{}, true)
+	prom := &monitoringv1.Prometheus{
+		Spec: monitoringv1.PrometheusSpec{
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				ScrapeInterval: monitoringv1.Duration("30s"),
+			},
+		},
+	}
+
+	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), prom, true)
 	if err != nil {
 		t.Fatal(t, err)
 	}

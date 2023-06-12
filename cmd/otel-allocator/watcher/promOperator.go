@@ -189,7 +189,7 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		podMonitorInstances,
 		map[string]*monitoringv1.Probe{},
 		map[string]*promv1alpha1.ScrapeConfig{},
-		&store,
+		store,
 		nil,
 		nil,
 		nil,
