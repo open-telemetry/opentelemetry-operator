@@ -138,6 +138,12 @@ the `targetAllocator:` part of the OpenTelemetryCollector CR.
 **Note**: The Collector part of this same CR *also* has a serviceAccount key which only affects the collector and *not*
 the TargetAllocator.
 
+### Service / Pod monitor endpoint credentials
+
+If your service or pod monitor endpoints require credentials or other supported form of authentication (bearer token, basic auth, OAuth2 etc.), you need to ensure that the collector has access to this information. Due to some limitations in how the endpoints configuration is handled, target allocator currently does **not** support credentials provided via secrets. It is only possible to provide credentials in a file (for more details see issue https://github.com/open-telemetry/opentelemetry-operator/issues/1669).
+
+In order to ensure your endpoints can be scraped, your collector instance needs to have the particular secret mounted as a file at the correct path.
+
 
 # Design
 
