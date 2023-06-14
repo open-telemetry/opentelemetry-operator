@@ -201,7 +201,7 @@ func validateJaegerRemoteSmaplerArgument(argument string) error {
 	for _, part := range parts {
 		kv := strings.Split(part, "=")
 		if len(kv) != 2 {
-			return fmt.Errorf("invalid argument: %s", part)
+			return fmt.Errorf("invalid argument: %s, the argument should be in the form of key=value", part)
 		}
 
 		switch kv[0] {
