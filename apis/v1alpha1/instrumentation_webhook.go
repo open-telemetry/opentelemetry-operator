@@ -242,7 +242,7 @@ func (r *Instrumentation) validate() error {
 		// value is a comma separated list of endpoint, pollingIntervalMs, initialSamplingRate
 		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
 		if r.Spec.Sampler.Argument != "" {
-			err := validateJaegerRemoteSmaplerArgument(r.Spec.Sampler.Argument)
+			err := validateJaegerRemoteSamplerArgument(r.Spec.Sampler.Argument)
 
 			if err != nil {
 				return fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Sampler.Type, err)
