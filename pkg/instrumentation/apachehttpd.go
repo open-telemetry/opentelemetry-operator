@@ -81,10 +81,18 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}})
 
+		apacheConfDir := "/usr/local/apache2/conf/"
+		if apacheSpec.ConfigPath != "" {
+			apacheConfDir = apacheSpec.ConfigPath
+			if apacheConfDir[len(apacheConfDir)-1] != '/' {
+				apacheConfDir += "/"
+			}
+		}
+
 		cloneContainer := container.DeepCopy()
 		cloneContainer.Name = apacheAgentCloneContainerName
 		cloneContainer.Command = []string{"/bin/sh", "-c"}
-		cloneContainer.Args = []string{"cp -r /usr/local/apache2/conf/* " + apacheAgentConfDirFull}
+		cloneContainer.Args = []string{"cp -r " + apacheConfDir + "* " + apacheAgentConfDirFull}
 		cloneContainer.VolumeMounts = append(cloneContainer.VolumeMounts, corev1.VolumeMount{
 			Name:      apacheAgentConfigVolume,
 			MountPath: apacheAgentConfDirFull,
@@ -92,6 +100,10 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		// remove resource requirements since those are then reserved for the lifetime of a pod
 		// and we definitely do not need them for the init container for cp command
 		cloneContainer.Resources = apacheSpec.Resources
+		// remove livenessProbe, readinessProbe, and startupProbe, since not supported on init containers
+		cloneContainer.LivenessProbe = nil
+		cloneContainer.ReadinessProbe = nil
+		cloneContainer.StartupProbe = nil
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, *cloneContainer)
 
