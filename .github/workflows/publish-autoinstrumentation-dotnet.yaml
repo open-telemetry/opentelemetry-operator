@@ -71,7 +71,7 @@ jobs:
         with:
           context: autoinstrumentation/dotnet
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name == 'push' }}
+          push: true # ${{ github.event_name == 'push' }}
           build-args: version=${{ env.VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
