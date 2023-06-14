@@ -195,7 +195,7 @@ func (r *Instrumentation) ValidateDelete() (admission.Warnings, error) {
 	return nil, nil
 }
 
-func validateJaegerRemoteSmaplerArgument(argument string) error {
+func validateJaegerRemoteSamplerArgument(argument string) error {
 	parts := strings.Split(argument, ",")
 
 	for _, part := range parts {
