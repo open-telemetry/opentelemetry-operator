@@ -31,8 +31,8 @@ import (
 func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
 	autoscalingVersion := cfg.AutoscalingVersion()
 
-	labels := Labels(otelcol, cfg.LabelsFilter())
-	labels["app.kubernetes.io/name"] = naming.Collector(otelcol)
+	name := naming.Collector(otelcol)
+	labels := Labels(otelcol, name, cfg.LabelsFilter())
 	annotations := Annotations(otelcol)
 	var result client.Object
 
@@ -47,6 +47,18 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	if otelcol.Spec.Autoscaler == nil {
 		logger.Info("Autoscaler field is unset in Spec, skipping")
 		return nil
+	}
+
+	if otelcol.Spec.Autoscaler.MaxReplicas == nil {
+		otelcol.Spec.Autoscaler.MaxReplicas = otelcol.Spec.MaxReplicas
+	}
+
+	if otelcol.Spec.Autoscaler.MinReplicas == nil {
+		if otelcol.Spec.MinReplicas != nil {
+			otelcol.Spec.Autoscaler.MinReplicas = otelcol.Spec.MinReplicas
+		} else {
+			otelcol.Spec.Autoscaler.MinReplicas = otelcol.Spec.Replicas
+		}
 	}
 
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {

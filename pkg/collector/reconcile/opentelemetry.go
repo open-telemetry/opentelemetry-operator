@@ -18,6 +18,7 @@ package reconcile
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,8 +68,7 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	name := naming.Collector(*changed)
 
 	// Set the scale selector
-	labels := collector.Labels(*changed, []string{})
-	labels["app.kubernetes.io/name"] = name
+	labels := collector.Labels(*changed, name, []string{})
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return fmt.Errorf("failed to get selector for labelSelector: %w", err)
@@ -82,6 +82,10 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	}
 
 	var replicas int32
+	var readyReplicas int32
+	var statusReplicas string
+	var statusImage string
+
 	switch mode { // nolint:exhaustive
 	case v1alpha1.ModeDeployment:
 		obj := &appsv1.Deployment{}
@@ -89,6 +93,9 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 			return fmt.Errorf("failed to get deployment status.replicas: %w", err)
 		}
 		replicas = obj.Status.Replicas
+		readyReplicas = obj.Status.ReadyReplicas
+		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
+		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 
 	case v1alpha1.ModeStatefulSet:
 		obj := &appsv1.StatefulSet{}
@@ -96,8 +103,20 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 			return fmt.Errorf("failed to get statefulSet status.replicas: %w", err)
 		}
 		replicas = obj.Status.Replicas
+		readyReplicas = obj.Status.ReadyReplicas
+		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
+		statusImage = obj.Spec.Template.Spec.Containers[0].Image
+
+	case v1alpha1.ModeDaemonSet:
+		obj := &appsv1.DaemonSet{}
+		if err := cli.Get(ctx, objKey, obj); err != nil {
+			return fmt.Errorf("failed to get daemonSet status.replicas: %w", err)
+		}
+		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 	}
 	changed.Status.Scale.Replicas = replicas
+	changed.Status.Image = statusImage
+	changed.Status.Scale.StatusReplicas = statusReplicas
 
 	return nil
 }

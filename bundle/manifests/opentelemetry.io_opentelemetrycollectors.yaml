@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: opentelemetry-operator-system/opentelemetry-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.11.3
+    controller-gen.kubebuilder.io/version: v0.12.0
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: opentelemetry-operator
@@ -29,9 +29,15 @@ spec:
       jsonPath: .status.version
       name: Version
       type: string
+    - jsonPath: .status.scale.statusReplicas
+      name: Ready
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - jsonPath: .status.image
+      name: Image
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -913,18 +919,18 @@ spec:
                                 must hold true for a specified past interval.
                               properties:
                                 periodSeconds:
-                                  description: PeriodSeconds specifies the window
+                                  description: periodSeconds specifies the window
                                     of time for which the policy should hold true.
                                     PeriodSeconds must be greater than zero and less
                                     than or equal to 1800 (30 min).
                                   format: int32
                                   type: integer
                                 type:
-                                  description: Type is used to specify the scaling
+                                  description: type is used to specify the scaling
                                     policy.
                                   type: string
                                 value:
-                                  description: Value contains the amount of change
+                                  description: value contains the amount of change
                                     which is permitted by the policy. It must be greater
                                     than zero
                                   format: int32
@@ -942,7 +948,7 @@ spec:
                               used.
                             type: string
                           stabilizationWindowSeconds:
-                            description: 'StabilizationWindowSeconds is the number
+                            description: 'stabilizationWindowSeconds is the number
                               of seconds for which past recommendations should be
                               considered while scaling up or scaling down. StabilizationWindowSeconds
                               must be greater than or equal to zero and less than
@@ -969,18 +975,18 @@ spec:
                                 must hold true for a specified past interval.
                               properties:
                                 periodSeconds:
-                                  description: PeriodSeconds specifies the window
+                                  description: periodSeconds specifies the window
                                     of time for which the policy should hold true.
                                     PeriodSeconds must be greater than zero and less
                                     than or equal to 1800 (30 min).
                                   format: int32
                                   type: integer
                                 type:
-                                  description: Type is used to specify the scaling
+                                  description: type is used to specify the scaling
                                     policy.
                                   type: string
                                 value:
-                                  description: Value contains the amount of change
+                                  description: value contains the amount of change
                                     which is permitted by the policy. It must be greater
                                     than zero
                                   format: int32
@@ -998,7 +1004,7 @@ spec:
                               used.
                             type: string
                           stabilizationWindowSeconds:
-                            description: 'StabilizationWindowSeconds is the number
+                            description: 'stabilizationWindowSeconds is the number
                               of seconds for which past recommendations should be
                               considered while scaling up or scaling down. StabilizationWindowSeconds
                               must be greater than or equal to zero and less than
@@ -1367,10 +1373,10 @@ spec:
                     description: TLS configuration.
                     items:
                       description: IngressTLS describes the transport layer security
-                        associated with an Ingress.
+                        associated with an ingress.
                       properties:
                         hosts:
-                          description: Hosts are a list of hosts included in the TLS
+                          description: hosts is a list of hosts included in the TLS
                             certificate. The values in this list must match the name/s
                             used in the tlsSecret. Defaults to the wildcard host setting
                             for the loadbalancer controller fulfilling this Ingress,
@@ -1380,12 +1386,13 @@ spec:
                           type: array
                           x-kubernetes-list-type: atomic
                         secretName:
-                          description: SecretName is the name of the secret used to
+                          description: secretName is the name of the secret used to
                             terminate TLS traffic on port 443. Field is left optional
                             to allow TLS routing based on SNI hostname alone. If the
                             SNI host in a listener conflicts with the "Host" header
                             field used by an IngressRule, the SNI host is used for
-                            termination and value of the Host header is used for routing.
+                            termination and value of the "Host" header is used for
+                            routing.
                           type: string
                       type: object
                     type: array
@@ -1439,7 +1446,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -1534,7 +1543,9 @@ spec:
                                 be used in HTTP probes
                               properties:
                                 name:
-                                  description: The header field name
+                                  description: The header field name. This will be
+                                    canonicalized upon output, so case-variant names
+                                    will be understood as the same header.
                                   type: string
                                 value:
                                   description: The header field value
@@ -1644,7 +1655,7 @@ spec:
                 type: integer
               minReplicas:
                 description: 'MinReplicas sets a lower bound to the autoscaling feature.  Set
-                  this if your are using autoscaling. It must be at least 1 Deprecated:
+                  this if you are using autoscaling. It must be at least 1 Deprecated:
                   use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.'
                 format: int32
                 type: integer
@@ -1956,7 +1967,8 @@ spec:
                     description: 'Requests describes the minimum amount of compute
                       resources required. If Requests is omitted for a container,
                       it defaults to Limits if that is explicitly specified, otherwise
-                      to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                      to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     type: object
                 type: object
               securityContext:
@@ -2233,7 +2245,8 @@ spec:
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                          to an implementation-defined value. Requests cannot exceed
+                          Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
                   serviceAccount:
@@ -2482,7 +2495,7 @@ spec:
                                 of compute resources required. If Requests is omitted
                                 for a container, it defaults to Limits if that is
                                 explicitly specified, otherwise to an implementation-defined
-                                value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                               type: object
                           type: object
                         selector:
@@ -2591,7 +2604,7 @@ spec:
                             volume claim. If underlying persistent volume is being
                             resized then the Condition will be set to 'ResizeStarted'.
                           items:
-                            description: PersistentVolumeClaimCondition contails details
+                            description: PersistentVolumeClaimCondition contains details
                               about state of pvc
                             properties:
                               lastProbeTime:
@@ -3069,7 +3082,7 @@ spec:
                             medium EmptyDir would be the minimum value between the
                             SizeLimit specified here and the sum of memory limits
                             of all containers in a pod. The default is nil which means
-                            that the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                            that the limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
                       type: object
@@ -3299,8 +3312,8 @@ spec:
                                         amount of compute resources required. If Requests
                                         is omitted for a container, it defaults to
                                         Limits if that is explicitly specified, otherwise
-                                        to an implementation-defined value. More info:
-                                        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                        to an implementation-defined value. Requests
+                                        cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                       type: object
                                   type: object
                                 selector:
@@ -4264,6 +4277,10 @@ spec:
             description: OpenTelemetryCollectorStatus defines the observed state of
               OpenTelemetryCollector.
             properties:
+              image:
+                description: Image indicates the container image to use for the OpenTelemetry
+                  Collector.
+                type: string
               messages:
                 description: 'Messages about actions performed by the operator on
                   this resource. Deprecated: use Kubernetes events instead.'
@@ -4289,6 +4306,12 @@ spec:
                   selector:
                     description: The selector used to match the OpenTelemetryCollector's
                       deployment or statefulSet pods.
+                    type: string
+                  statusReplicas:
+                    description: StatusReplicas is the number of pods targeted by
+                      this OpenTelemetryCollector's with a Ready Condition / Total
+                      number of non-terminated pods targeted by this OpenTelemetryCollector's
+                      (their labels match the selector). Deployment, Daemonset, StatefulSet.
                     type: string
                 type: object
               version:

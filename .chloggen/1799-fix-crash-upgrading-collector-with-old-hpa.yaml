@@ -1,14 +1,14 @@
 # One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
-change_type: enhancement
+change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. operator, target allocator, github action)
 component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Added all webhook instrumentation logic, e2e tests, readme
+note: Fix the upgrade mechanism to not crash when one OTEL Collector instance uses the old approach to set the autoscaler.
 
 # One or more tracking issues related to the change
-issues: [1444]
+issues: [1799]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
