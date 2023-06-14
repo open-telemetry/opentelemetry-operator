@@ -130,3 +130,55 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 		})
 	}
 }
+
+func TestApacheInitContainerMissing(t *testing.T) {
+	tests := []struct {
+		name     string
+		pod      corev1.Pod
+		expected bool
+	}{
+		{
+			name: "InitContainer_Already_Inject",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "istio-init",
+						},
+						{
+							Name: apacheAgentInitContainerName,
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "InitContainer_Absent_1",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "istio-init",
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "InitContainer_Absent_2",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{},
+			},
+			expected: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := isApacheInitContainerMissing(test.pod, apacheAgentInitContainerName)
+			assert.Equal(t, test.expected, result)
+		})
+	}
+}
