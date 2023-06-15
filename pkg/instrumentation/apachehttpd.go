@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	apacheConfigDirectory         = "/usr/local/apache2/conf"
+	apacheDefaultConfigDirectory  = "/usr/local/apache2/conf"
 	apacheConfigFile              = "httpd.conf"
 	apacheAgentConfigFile         = "opentemetry_agent.conf"
 	apacheAgentDirectory          = "/opt/opentelemetry-webserver"
@@ -81,18 +81,12 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}})
 
-		apacheConfDir := "/usr/local/apache2/conf/"
-		if apacheSpec.ConfigPath != "" {
-			apacheConfDir = apacheSpec.ConfigPath
-			if apacheConfDir[len(apacheConfDir)-1] != '/' {
-				apacheConfDir += "/"
-			}
-		}
+		apacheConfDir := getApacheConfDir(apacheSpec.ConfigPath)
 
 		cloneContainer := container.DeepCopy()
 		cloneContainer.Name = apacheAgentCloneContainerName
 		cloneContainer.Command = []string{"/bin/sh", "-c"}
-		cloneContainer.Args = []string{"cp -r " + apacheConfDir + "* " + apacheAgentConfDirFull}
+		cloneContainer.Args = []string{"cp -r " + apacheConfDir + "/* " + apacheAgentConfDirFull}
 		cloneContainer.VolumeMounts = append(cloneContainer.VolumeMounts, corev1.VolumeMount{
 			Name:      apacheAgentConfigVolume,
 			MountPath: apacheAgentConfDirFull,
@@ -111,7 +105,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		// since it could over-write configuration provided by the injection
 		idxFound := -1
 		for idx, volume := range container.VolumeMounts {
-			if strings.Contains(volume.MountPath, apacheConfigDirectory) { // potentially passes config, which we want to pass to init copy only
+			if strings.Contains(volume.MountPath, apacheConfDir) { // potentially passes config, which we want to pass to init copy only
 				idxFound = idx
 				break
 			}
@@ -129,7 +123,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		})
 		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 			Name:      apacheAgentConfigVolume,
-			MountPath: apacheConfigDirectory,
+			MountPath: apacheConfDir,
 		})
 	}
 
@@ -158,7 +152,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 					"echo \"$" + apacheAttributesEnvVar + "\" > " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
 					"sed -i 's/" + apacheServiceInstanceId + "/'${" + apacheServiceInstanceIdEnvVar + "}'/g' " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
 					// Include a link to include Apache agent configuration file into httpd.conf
-					"echo 'Include " + apacheConfigDirectory + "/" + apacheAgentConfigFile + "' >> " + apacheAgentConfDirFull + "/" + apacheConfigFile,
+					"echo 'Include " + getApacheConfDir(apacheSpec.ConfigPath) + "/" + apacheAgentConfigFile + "' >> " + apacheAgentConfDirFull + "/" + apacheConfigFile,
 			},
 			Env: []corev1.EnvVar{
 				{
@@ -267,4 +261,15 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 	}
 
 	return configFileContent
+}
+
+func getApacheConfDir(configuredDir string) string {
+	apacheConfDir := apacheDefaultConfigDirectory
+	if configuredDir != "" {
+		apacheConfDir = configuredDir
+		if apacheConfDir[len(apacheConfDir)-1] == '/' {
+			apacheConfDir = apacheConfDir[:len(apacheConfDir)-1]
+		}
+	}
+	return apacheConfDir
 }
