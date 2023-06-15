@@ -9,8 +9,6 @@ ARG version
 RUN mkdir /opt/opentelemetry
 WORKDIR /opt/opentelemetry
 
-# RUN wget https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/download/webserver%2Fv$version/opentelemetry-webserver-sdk-x64-linux.tgz.zip
-# RUN unzip opentelemetry-webserver-sdk-x64-linux.tgz.zip
 RUN wget https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/download/webserver%2Fv$version/opentelemetry-webserver-sdk-x64-linux.tgz
 RUN mkdir agent
 RUN tar -xvf opentelemetry-webserver-sdk-x64-linux.tgz -C agent
