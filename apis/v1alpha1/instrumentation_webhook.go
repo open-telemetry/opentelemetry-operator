@@ -35,6 +35,7 @@ const (
 	AnnotationDefaultAutoInstrumentationDotNet      = "instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"
 	AnnotationDefaultAutoInstrumentationGo          = "instrumentation.opentelemetry.io/default-auto-instrumentation-go-image"
 	AnnotationDefaultAutoInstrumentationApacheHttpd = "instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"
+	AnnotationDefaultAutoInstrumentationNginx       = "instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image"
 	envPrefix                                       = "OTEL_"
 	envSplunkPrefix                                 = "SPLUNK_"
 )
@@ -170,6 +171,26 @@ func (r *Instrumentation) Default() {
 	if r.Spec.ApacheHttpd.ConfigPath == "" {
 		r.Spec.ApacheHttpd.ConfigPath = "/usr/local/apache2/conf"
 	}
+	if r.Spec.Nginx.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationNginx]; ok {
+			r.Spec.Nginx.Image = val
+		}
+	}
+	if r.Spec.Nginx.Resources.Limits == nil {
+		r.Spec.Nginx.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.Nginx.Resources.Requests == nil {
+		r.Spec.Nginx.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.Nginx.ConfigFile == "" {
+		r.Spec.Nginx.ConfigFile = "/etc/nginx/nginx.conf"
+	}
 }
 
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-instrumentation,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=instrumentations,versions=v1alpha1,name=vinstrumentationcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -273,6 +294,9 @@ func (r *Instrumentation) validate() error {
 		return err
 	}
 	if err := r.validateEnv(r.Spec.ApacheHttpd.Env); err != nil {
+		return err
+	}
+	if err := r.validateEnv(r.Spec.Nginx.Env); err != nil {
 		return err
 	}
 
