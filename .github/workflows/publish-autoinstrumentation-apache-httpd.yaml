@@ -60,7 +60,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: autoinstrumentation/apache-httpd
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name == 'push' }}
           build-args: version=${{ env.VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
