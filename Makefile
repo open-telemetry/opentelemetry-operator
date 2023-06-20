@@ -88,12 +88,10 @@ SED ?= $(shell which gsed 2>/dev/null || which sed)
 .PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-generate-is-noop: USER=open-telemetry
-ensure-generate-is-noop: bundle
-	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
-	@git restore config/manager/kustomization.yaml
+ensure-generate-is-noop: update-bundle
 	@git diff -s --exit-code apis/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
-	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
-	@git diff -s --exit-code bundle.Dockerfile || (echo "Build failed: the bundle.Dockerfile file has been changed. The file should be the same as generated one. Run 'make bundle' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make update-bundle' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code bundle.Dockerfile || (echo "Build failed: the bundle.Dockerfile file has been changed. The file should be the same as generated one. Run 'make update-bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
 .PHONY: all
@@ -451,6 +449,13 @@ bundle: kustomize operator-sdk manifests set-image-controller
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	$(KUSTOMIZE) build $(KUSTOMIZATION_DIR) | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
+
+# Update the bundle with semantic changes. This will intentionally ignore some changes to metadata, like creation time.
+.PHONY: update-bundle
+update-bundle: KUSTOMIZATION_BASE = config/manifests
+update-bundle: VERSION = $(shell cat versions.txt | grep "operator=" | cut -d "=" -f 2)  # the most recent release
+update-bundle: USER = open-telemetry
+update-bundle: bundle
 	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes

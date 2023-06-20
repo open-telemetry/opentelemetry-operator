@@ -32,11 +32,13 @@ The repository structure MUST be compliant with `operator-sdk` scaffolding, whic
 
 Refer to the [Operator SDK documentation](https://sdk.operatorframework.io/docs/building-operators/golang/) how to generate new APIs, Webhook and other parts of the project.
 
+If you make any change to the api definitions, please run `make update-bundle` to update the bundle manifest accordingly.
+
 ### Local run
 
 Build the manifests, install the CRD and run the operator as a local process:
 ```bash
-make bundle install run
+make install run
 ```
 
 ### Deployment with webhooks
@@ -66,7 +68,7 @@ When deploying the operator into the cluster using `make deploy`, an image in th
 * `IMG`, to override the entire image specification
 
 ```bash
-IMG=docker.io/${USER}/opentelemetry-operator:dev-$(git rev-parse --short HEAD)-$(date +%s) make generate bundle container container-push deploy
+IMG=docker.io/${USER}/opentelemetry-operator:dev-$(git rev-parse --short HEAD)-$(date +%s) make generate container container-push deploy
 ```
 
 Your operator will be available in the `opentelemetry-operator-system` namespace.
