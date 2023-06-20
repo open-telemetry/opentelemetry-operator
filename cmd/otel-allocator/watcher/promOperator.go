@@ -55,19 +55,6 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliC
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), &monitoringv1.Prometheus{}, true) // TODO replace Nop?
-=======
-	podMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
-	if err != nil {
-		return nil, err
-	}
-
-	monitoringInformers := map[string]*informers.ForResource{
-		monitoringv1.ServiceMonitorName: serviceMonitorInformers,
-		monitoringv1.PodMonitorName:     podMonitorInformers,
-	}
-
 	// TODO: We should make these durations configurable
 	prom := &monitoringv1.Prometheus{
 		Spec: monitoringv1.PrometheusSpec{
@@ -78,7 +65,6 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliC
 	}
 
 	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), prom, true) // TODO replace Nop?
->>>>>>> origin/main
 	if err != nil {
 		return nil, err
 	}
