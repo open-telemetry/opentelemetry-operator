@@ -207,9 +207,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
     endpoint: "0.0.0.0:12346"
   prometheus:
     config:
-      scrape_config:
-        job_name: otel-collector
-        scrape_interval: 10s
+      scrape_configs:
+        - job_name: otel-collector
+          scrape_interval: 10s
   jaeger/custom:
     protocols:
       thrift_http:
