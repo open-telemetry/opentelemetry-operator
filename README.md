@@ -264,6 +264,17 @@ instrumentation.opentelemetry.io/inject-go: "true"
 instrumentation.opentelemetry.io/otel-go-auto-target-exe: "/path/to/container/executable"
 ```
 
+Go auto-instrumentation also requires elevated permissions. The below permissions are set automatically and are required.
+
+```yaml
+securityContext:
+    capabilities:
+     add:
+     - SYS_PTRACE
+    privileged: true
+    runAsUser: 0
+```
+
 Apache HTTPD:
 ```bash
 instrumentation.opentelemetry.io/inject-apache-httpd: "true"
