@@ -91,6 +91,23 @@ var (
 		"pulsar",
 		"docker_stats",
 		"aerospike",
+		"zookeeper",
+		"prometheus_simple",
+		"saphana",
+		"riak",
+		"redis",
+		"rabbitmq",
+		"purefb",
+		"postgresql",
+		"nsxt",
+		"nginx",
+		"mysql",
+		"memcached",
+		"httpcheck",
+		"haproxy",
+		"flinkmetrics",
+		"couchdb",
+		"collectd",
 	}
 )
 
