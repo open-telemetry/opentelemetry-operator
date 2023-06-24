@@ -77,7 +77,31 @@ func IsRegistered(name string) bool {
 var (
 	endpointKey      = "endpoint"
 	listenAddressKey = "listen_address"
+	scraperReceivers = []string{
+		"kubeletstats",
+		"sshcheck",
+		"cloudfoundry",
+		"vcenter",
+		"oracledb",
+		"snmp",
+		"googlecloudpubsub",
+		"chrony",
+		"jmx",
+		"podman_stats",
+		"pulsar",
+		"docker_stats",
+		"aerospike",
+	}
 )
+
+func isScraperReceiver(name string) bool {
+	for _, r := range scraperReceivers {
+		if r == name {
+			return true
+		}
+	}
+	return false
+}
 
 func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *v1.ServicePort {
 	var endpoint interface{}
@@ -101,10 +125,10 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	case name == "tcplog" || name == "udplog":
 		endpoint = getAddressFromConfig(logger, name, listenAddressKey, config)
 
-	// ignore kubeletstats receiver as it holds the field key endpoint, and it
+	// ignore the receiver as it holds the field key endpoint, and it
 	// is a scraper, we only expose endpoint through k8s service objects for
 	// receivers that aren't scrapers.
-	case name == "kubeletstats":
+	case isScraperReceiver(name):
 		return nil
 
 	// ignore prometheus receiver as it has no listening endpoint

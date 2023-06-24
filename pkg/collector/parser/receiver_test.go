@@ -147,3 +147,14 @@ func (m *mockParser) Ports() ([]corev1.ServicePort, error) {
 func (m *mockParser) ParserName() string {
 	return "__mock"
 }
+
+func TestSkipPortsForScrapers(t *testing.T) {
+	for _, r := range scraperReceivers {
+		builder := NewGenericReceiverParser(logger, r, map[interface{}]interface{}{
+			"endpoint": "0.0.0.0:42069",
+		})
+		ports, err := builder.Ports()
+		assert.NoError(t, err)
+		assert.Len(t, ports, 0)
+	}
+}
