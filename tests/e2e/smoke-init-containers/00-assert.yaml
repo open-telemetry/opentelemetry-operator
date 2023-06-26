@@ -3,8 +3,10 @@ kind: Deployment
 metadata:
   name: simplest-collector
 spec:
-  initContainers:
-    - name: init-test-echo
+  template:
+    spec:
+      initContainers:
+        - name: init-test-echo
 status:
   readyReplicas: 1
 
