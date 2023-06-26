@@ -77,47 +77,43 @@ func IsRegistered(name string) bool {
 var (
 	endpointKey      = "endpoint"
 	listenAddressKey = "listen_address"
-	scraperReceivers = []string{
-		"kubeletstats",
-		"sshcheck",
-		"cloudfoundry",
-		"vcenter",
-		"oracledb",
-		"snmp",
-		"googlecloudpubsub",
-		"chrony",
-		"jmx",
-		"podman_stats",
-		"pulsar",
-		"docker_stats",
-		"aerospike",
-		"zookeeper",
-		"prometheus_simple",
-		"saphana",
-		"riak",
-		"redis",
-		"rabbitmq",
-		"purefb",
-		"postgresql",
-		"nsxt",
-		"nginx",
-		"mysql",
-		"memcached",
-		"httpcheck",
-		"haproxy",
-		"flinkmetrics",
-		"couchdb",
-		"collectd",
+	scraperReceivers = map[string]struct{}{
+		"kubeletstats":      {},
+		"sshcheck":          {},
+		"cloudfoundry":      {},
+		"vcenter":           {},
+		"oracledb":          {},
+		"snmp":              {},
+		"googlecloudpubsub": {},
+		"chrony":            {},
+		"jmx":               {},
+		"podman_stats":      {},
+		"pulsar":            {},
+		"docker_stats":      {},
+		"aerospike":         {},
+		"zookeeper":         {},
+		"prometheus_simple": {},
+		"saphana":           {},
+		"riak":              {},
+		"redis":             {},
+		"rabbitmq":          {},
+		"purefb":            {},
+		"postgresql":        {},
+		"nsxt":              {},
+		"nginx":             {},
+		"mysql":             {},
+		"memcached":         {},
+		"httpcheck":         {},
+		"haproxy":           {},
+		"flinkmetrics":      {},
+		"couchdb":           {},
+		"collectd":          {},
 	}
 )
 
 func isScraperReceiver(name string) bool {
-	for _, r := range scraperReceivers {
-		if r == name {
-			return true
-		}
-	}
-	return false
+	_, exists := scraperReceivers[name]
+	return exists
 }
 
 func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *v1.ServicePort {

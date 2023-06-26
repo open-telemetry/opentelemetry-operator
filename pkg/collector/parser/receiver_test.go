@@ -149,8 +149,8 @@ func (m *mockParser) ParserName() string {
 }
 
 func TestSkipPortsForScrapers(t *testing.T) {
-	for _, r := range scraperReceivers {
-		builder := NewGenericReceiverParser(logger, r, map[interface{}]interface{}{
+	for receiver, _ := range scraperReceivers {
+		builder := NewGenericReceiverParser(logger, receiver, map[interface{}]interface{}{
 			"endpoint": "0.0.0.0:42069",
 		})
 		ports, err := builder.Ports()
