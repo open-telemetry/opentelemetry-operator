@@ -43,11 +43,11 @@ const (
 // log is for logging in this package.
 var instrumentationlog = logf.Log.WithName("instrumentation-resource")
 
-var initContainerDefaultLimitResources = corev1.ResourceList{
+var apacheInitContainerDefaultLimitResources = corev1.ResourceList{
 	corev1.ResourceCPU:    resource.MustParse("500m"),
 	corev1.ResourceMemory: resource.MustParse("128Mi"),
 }
-var initContainerDefaultRequestedResources = corev1.ResourceList{
+var apacheInitContainerDefaultRequestedResources = corev1.ResourceList{
 	corev1.ResourceCPU:    resource.MustParse("1m"),
 	corev1.ResourceMemory: resource.MustParse("128Mi"),
 }
@@ -163,10 +163,10 @@ func (r *Instrumentation) Default() {
 		}
 	}
 	if r.Spec.ApacheHttpd.Resources.Limits == nil {
-		r.Spec.ApacheHttpd.Resources.Limits = initContainerDefaultLimitResources
+		r.Spec.ApacheHttpd.Resources.Limits = apacheInitContainerDefaultLimitResources
 	}
 	if r.Spec.ApacheHttpd.Resources.Requests == nil {
-		r.Spec.ApacheHttpd.Resources.Requests = initContainerDefaultRequestedResources
+		r.Spec.ApacheHttpd.Resources.Requests = apacheInitContainerDefaultRequestedResources
 	}
 	if r.Spec.ApacheHttpd.Version == "" {
 		r.Spec.ApacheHttpd.Version = "2.4"
@@ -180,10 +180,10 @@ func (r *Instrumentation) Default() {
 		}
 	}
 	if r.Spec.Nginx.Resources.Limits == nil {
-		r.Spec.Nginx.Resources.Limits = initContainerDefaultLimitResources
+		r.Spec.Nginx.Resources.Limits = apacheInitContainerDefaultLimitResources
 	}
 	if r.Spec.Nginx.Resources.Requests == nil {
-		r.Spec.Nginx.Resources.Requests = initContainerDefaultRequestedResources
+		r.Spec.Nginx.Resources.Requests = apacheInitContainerDefaultRequestedResources
 	}
 	if r.Spec.Nginx.ConfigFile == "" {
 		r.Spec.Nginx.ConfigFile = "/etc/nginx/nginx.conf"
