@@ -115,7 +115,7 @@ rules:
   - discovery.k8s.io
   resources:
   - endpointslices
-  verbs: ["get", "list", watch"]
+  verbs: ["get", "list", "watch"]
 - apiGroups:
   - networking.k8s.io
   resources:
