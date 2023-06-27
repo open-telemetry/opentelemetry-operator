@@ -163,16 +163,10 @@ func (r *Instrumentation) Default() {
 		}
 	}
 	if r.Spec.ApacheHttpd.Resources.Limits == nil {
-		r.Spec.ApacheHttpd.Resources.Limits = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-		}
+		r.Spec.ApacheHttpd.Resources.Limits = initContainerDefaultLimitResources
 	}
 	if r.Spec.ApacheHttpd.Resources.Requests == nil {
-		r.Spec.ApacheHttpd.Resources.Requests = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-		}
+		r.Spec.ApacheHttpd.Resources.Requests = initContainerDefaultRequestedResources
 	}
 	if r.Spec.ApacheHttpd.Version == "" {
 		r.Spec.ApacheHttpd.Version = "2.4"
@@ -186,16 +180,10 @@ func (r *Instrumentation) Default() {
 		}
 	}
 	if r.Spec.Nginx.Resources.Limits == nil {
-		r.Spec.Nginx.Resources.Limits = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-		}
+		r.Spec.Nginx.Resources.Limits = initContainerDefaultLimitResources
 	}
 	if r.Spec.Nginx.Resources.Requests == nil {
-		r.Spec.Nginx.Resources.Requests = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-		}
+		r.Spec.Nginx.Resources.Requests = initContainerDefaultRequestedResources
 	}
 	if r.Spec.Nginx.ConfigFile == "" {
 		r.Spec.Nginx.ConfigFile = "/etc/nginx/nginx.conf"
