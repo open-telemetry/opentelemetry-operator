@@ -1,4 +1,5 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { AWSXRayPropagator } from "@opentelemetry/propagator-aws-xray";
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
@@ -35,6 +36,7 @@ function getMetricReader() {
 const sdk = new NodeSDK({
     autoDetectResources: true,
     instrumentations: [getNodeAutoInstrumentations()],
+    textMapPropagator: new AWSXRayPropagator(),
     traceExporter: new OTLPTraceExporter(),
     metricReader: getMetricReader(),
     resourceDetectors:
