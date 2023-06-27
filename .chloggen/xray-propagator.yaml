@@ -5,7 +5,8 @@ change_type: enhancement
 component: autoinstrumentation/nodejs
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Enable AWS X-Ray propagator on NodeJs auto-instrumentation
+note: Adding AWS X-Ray propagator to nodejs instrumentation
+
 # One or more tracking issues related to the change
 issues: [1869]
 
