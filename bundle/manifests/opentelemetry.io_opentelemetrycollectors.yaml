@@ -2949,6 +2949,18 @@ spec:
                   This is only relevant to daemonset, statefulset, and deployment
                   mode
                 type: object
+              observability:
+                description: ObservabilitySpec defines how telemetry data gets handled.
+                properties:
+                  metrics:
+                    description: Metrics defines the metrics configuration for operands.
+                    properties:
+                      createServiceMonitors:
+                        description: CreateServiceMonitors specifies if ServiceMonitors
+                          should be created for the OpenTelemetry Collector.
+                        type: boolean
+                    type: object
+                type: object
               podAnnotations:
                 additionalProperties:
                   type: string

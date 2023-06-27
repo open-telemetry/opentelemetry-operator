@@ -190,6 +190,13 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
+
+	// ObservabilitySpec defines how telemetry data gets handled.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
+	Observability ObservabilitySpec `json:"observability,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
@@ -343,6 +350,26 @@ type AutoscalerSpec struct {
 	// +optional
 	// TargetMemoryUtilization sets the target average memory utilization across all replicas
 	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
+}
+
+// MetricsConfigSpec defines a metrics config.
+type MetricsConfigSpec struct {
+	// CreateServiceMonitors specifies if ServiceMonitors should be created for the OpenTelemetry Collector.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
+	CreateServiceMonitors bool `json:"createServiceMonitors,omitempty"`
+}
+
+// ObservabilitySpec defines how telemetry data gets handled.
+type ObservabilitySpec struct {
+	// Metrics defines the metrics configuration for operands.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metrics Config"
+	Metrics MetricsConfigSpec `json:"metrics,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config. Only Liveness probe is supported currently.

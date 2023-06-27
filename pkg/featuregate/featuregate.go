@@ -56,6 +56,12 @@ var (
 		"operator.collector.rewritetargetallocator",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"))
+
+	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
+	PrometheusOperatorIsAvailable = featuregate.GlobalRegistry().MustRegister(
+		"operator.observability.prometheus",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"))
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

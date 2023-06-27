@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -165,6 +166,11 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 				true,
 			},
 			{
+				reconcile.ServiceMonitors,
+				"service monitors",
+				true,
+			},
+			{
 				reconcile.Self,
 				"opentelemetry",
 				true,
@@ -249,7 +255,8 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{})
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&monitoringv1.ServiceMonitor{})
 
 	autoscalingVersion := r.config.AutoscalingVersion()
 	if autoscalingVersion == autodetect.AutoscalingVersionV2 {
