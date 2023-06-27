@@ -43,6 +43,15 @@ const (
 // log is for logging in this package.
 var instrumentationlog = logf.Log.WithName("instrumentation-resource")
 
+var initContainerDefaultLimitResources = corev1.ResourceList{
+	corev1.ResourceCPU:    resource.MustParse("500m"),
+	corev1.ResourceMemory: resource.MustParse("128Mi"),
+}
+var initContainerDefaultRequestedResources = corev1.ResourceList{
+	corev1.ResourceCPU:    resource.MustParse("1m"),
+	corev1.ResourceMemory: resource.MustParse("128Mi"),
+}
+
 func (r *Instrumentation) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
