@@ -7,6 +7,7 @@ Changes by Version
 
 ### 💡 Enhancements 💡
 
+- `collector`: Adds ability to set init containers for collector (#1684)
 - `operator`: Adding more tests to validate existence of init containers. (#1826)
 - `operator`: For Apache HTTPD instrumentation, use latest instrumentation library v1.0.3. (#1827)
 - `autoinstrumentation/nodejs`: Bump python packages to 1.14.0/0.40.0 (#1790)
@@ -17,6 +18,10 @@ Changes by Version
 
 - `operator`: Fix the upgrade mechanism to not crash when one OTEL Collector instance uses the old approach to set the autoscaler. (#1799)
 - `target allocator`: Fix the empty global scrape interval in Prometheus CR watcher, which causes configuration unmarshalling to fail. (#1811)
+
+### 🚀 New components 🚀
+
+- `operator`: Instrumentation crd for Nginx auto-instrumentation. (#1853)
 
 ### Components
 
