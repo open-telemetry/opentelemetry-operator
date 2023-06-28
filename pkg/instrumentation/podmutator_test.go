@@ -1477,7 +1477,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:      apacheAgentConfigVolume,
-									MountPath: apacheConfigDirectory,
+									MountPath: apacheDefaultConfigDirectory,
 								},
 							},
 							Env: []corev1.EnvVar{
