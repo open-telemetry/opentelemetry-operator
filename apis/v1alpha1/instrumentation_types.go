@@ -68,9 +68,13 @@ type InstrumentationSpec struct {
 	// +optional
 	Go Go `json:"go,omitempty"`
 
-	// Apache defines configuration for Apache HTTPD auto-instrumentation.
+	// ApacheHttpd defines configuration for Apache HTTPD auto-instrumentation.
 	// +optional
 	ApacheHttpd ApacheHttpd `json:"apacheHttpd,omitempty"`
+
+	// Nginx defines configuration for Nginx auto-instrumentation.
+	// +optional
+	Nginx Nginx `json:"nginx,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
@@ -218,6 +222,35 @@ type ApacheHttpd struct {
 	// Needed only if different from default "/usr/local/apache2/conf"
 	// +optional
 	ConfigPath string `json:"configPath,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+}
+
+// Nginx defines Nginx SDK and instrumentation configuration.
+type Nginx struct {
+	// Image is a container image with Nginx SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// Env defines Nginx specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Attrs defines Nginx agent specific attributes. The precedence order is:
+	// `agent default attributes` > `instrument spec attributes` .
+	// Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module
+	// +optional
+	Attrs []corev1.EnvVar `json:"attrs,omitempty"`
+
+	// Location of Nginx configuration file.
+	// Needed only if different from default "/etx/nginx/nginx.conf"
+	// +optional
+	ConfigFile string `json:"configFile,omitempty"`
+
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`

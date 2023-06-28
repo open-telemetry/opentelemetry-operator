@@ -183,6 +183,13 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
+	// InitContainers allows injecting initContainers to the Collector's pod definition.
+	// These init containers can be used to fetch secrets for injection into the
+	// configuration from external sources, run added checks, etc. Any errors during the execution of
+	// an initContainer will lead to a restart of the Pod. More info:
+	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+	// +optional
+	InitContainers []v1.Container `json:"initContainers,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
