@@ -37,6 +37,11 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Containers: []corev1.Container{
 				{Name: "my-app"},
 			},
+			InitContainers: []corev1.Container{
+				{
+					Name: "my-init",
+				},
+			},
 			// cross-test: the pod has a volume already, make sure we don't remove it
 			Volumes: []corev1.Volume{{}},
 		},
@@ -47,6 +52,11 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Namespace: "some-app",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			InitContainers: []corev1.Container{
+				{
+					Name: "test",
+				},
+			},
 			Config: `
 receivers:
 exporters:
@@ -62,6 +72,7 @@ processors:
 	// verify
 	assert.NoError(t, err)
 	require.Len(t, changed.Spec.Containers, 2)
+	require.Len(t, changed.Spec.InitContainers, 2)
 	require.Len(t, changed.Spec.Volumes, 1)
 	assert.Equal(t, "some-app.otelcol-sample", changed.Labels["sidecar.opentelemetry.io/injected"])
 	assert.Equal(t, corev1.Container{

@@ -35,12 +35,22 @@ const (
 	AnnotationDefaultAutoInstrumentationDotNet      = "instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"
 	AnnotationDefaultAutoInstrumentationGo          = "instrumentation.opentelemetry.io/default-auto-instrumentation-go-image"
 	AnnotationDefaultAutoInstrumentationApacheHttpd = "instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"
+	AnnotationDefaultAutoInstrumentationNginx       = "instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image"
 	envPrefix                                       = "OTEL_"
 	envSplunkPrefix                                 = "SPLUNK_"
 )
 
 // log is for logging in this package.
 var instrumentationlog = logf.Log.WithName("instrumentation-resource")
+
+var initContainerDefaultLimitResources = corev1.ResourceList{
+	corev1.ResourceCPU:    resource.MustParse("500m"),
+	corev1.ResourceMemory: resource.MustParse("128Mi"),
+}
+var initContainerDefaultRequestedResources = corev1.ResourceList{
+	corev1.ResourceCPU:    resource.MustParse("1m"),
+	corev1.ResourceMemory: resource.MustParse("128Mi"),
+}
 
 func (r *Instrumentation) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -153,22 +163,30 @@ func (r *Instrumentation) Default() {
 		}
 	}
 	if r.Spec.ApacheHttpd.Resources.Limits == nil {
-		r.Spec.ApacheHttpd.Resources.Limits = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-		}
+		r.Spec.ApacheHttpd.Resources.Limits = initContainerDefaultLimitResources
 	}
 	if r.Spec.ApacheHttpd.Resources.Requests == nil {
-		r.Spec.ApacheHttpd.Resources.Requests = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-		}
+		r.Spec.ApacheHttpd.Resources.Requests = initContainerDefaultRequestedResources
 	}
 	if r.Spec.ApacheHttpd.Version == "" {
 		r.Spec.ApacheHttpd.Version = "2.4"
 	}
 	if r.Spec.ApacheHttpd.ConfigPath == "" {
 		r.Spec.ApacheHttpd.ConfigPath = "/usr/local/apache2/conf"
+	}
+	if r.Spec.Nginx.Image == "" {
+		if val, ok := r.Annotations[AnnotationDefaultAutoInstrumentationNginx]; ok {
+			r.Spec.Nginx.Image = val
+		}
+	}
+	if r.Spec.Nginx.Resources.Limits == nil {
+		r.Spec.Nginx.Resources.Limits = initContainerDefaultLimitResources
+	}
+	if r.Spec.Nginx.Resources.Requests == nil {
+		r.Spec.Nginx.Resources.Requests = initContainerDefaultRequestedResources
+	}
+	if r.Spec.Nginx.ConfigFile == "" {
+		r.Spec.Nginx.ConfigFile = "/etc/nginx/nginx.conf"
 	}
 }
 
@@ -273,6 +291,9 @@ func (r *Instrumentation) validate() error {
 		return err
 	}
 	if err := r.validateEnv(r.Spec.ApacheHttpd.Env); err != nil {
+		return err
+	}
+	if err := r.validateEnv(r.Spec.Nginx.Env); err != nil {
 		return err
 	}
 
