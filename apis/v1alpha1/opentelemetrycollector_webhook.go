@@ -170,6 +170,10 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		if err != nil {
 			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}
+		err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
+		if err != nil {
+			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+		}
 	}
 
 	// validator port config

@@ -15,6 +15,7 @@
 package watcher
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
@@ -48,7 +49,7 @@ func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (*FileWatcher, 
 	}, nil
 }
 
-func (f *FileWatcher) LoadConfig() (*promconfig.Config, error) {
+func (f *FileWatcher) LoadConfig(_ context.Context) (*promconfig.Config, error) {
 	cfg, err := config.Load(f.configFilePath)
 	if err != nil {
 		f.logger.Error(err, "Unable to load configuration")
