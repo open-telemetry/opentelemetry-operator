@@ -366,3 +366,85 @@ func TestValidatePromConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateTargetAllocatorConfig(t *testing.T) {
+	testCases := []struct {
+		description                 string
+		config                      map[interface{}]interface{}
+		targetAllocatorPrometheusCR bool
+		expectedError               error
+	}{
+		{
+			description: "scrape configs present and PrometheusCR enabled",
+			config: map[interface{}]interface{}{
+				"config": map[interface{}]interface{}{
+					"scrape_configs": []interface{}{
+						map[interface{}]interface{}{
+							"job_name": "test_job",
+							"static_configs": []interface{}{
+								map[interface{}]interface{}{
+									"targets": []interface{}{
+										"localhost:9090",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			targetAllocatorPrometheusCR: true,
+			expectedError:               nil,
+		},
+		{
+			description: "scrape configs present and PrometheusCR disabled",
+			config: map[interface{}]interface{}{
+				"config": map[interface{}]interface{}{
+					"scrape_configs": []interface{}{
+						map[interface{}]interface{}{
+							"job_name": "test_job",
+							"static_configs": []interface{}{
+								map[interface{}]interface{}{
+									"targets": []interface{}{
+										"localhost:9090",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			targetAllocatorPrometheusCR: false,
+			expectedError:               nil,
+		},
+		{
+			description:                 "receiver config empty and PrometheusCR enabled",
+			config:                      map[interface{}]interface{}{},
+			targetAllocatorPrometheusCR: true,
+			expectedError:               nil,
+		},
+		{
+			description:                 "receiver config empty and PrometheusCR disabled",
+			config:                      map[interface{}]interface{}{},
+			targetAllocatorPrometheusCR: false,
+			expectedError:               fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
+		},
+		{
+			description: "scrape configs empty and PrometheusCR disabled",
+			config: map[interface{}]interface{}{
+				"config": map[interface{}]interface{}{
+					"scrape_configs": []interface{}{},
+				},
+			},
+			targetAllocatorPrometheusCR: false,
+			expectedError:               fmt.Errorf("either at least one scrape config needs to be defined or PrometheusCR needs to be enabled"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.description, func(t *testing.T) {
+			err := ta.ValidateTargetAllocatorConfig(testCase.targetAllocatorPrometheusCR, testCase.config)
+			assert.Equal(t, testCase.expectedError, err)
+		})
+	}
+}
