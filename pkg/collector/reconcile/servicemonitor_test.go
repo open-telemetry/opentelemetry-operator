@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,6 +25,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestDesiredServiceMonitors(t *testing.T) {
