@@ -7,6 +7,8 @@ Changes by Version
 
 ### 💡 Enhancements 💡
 
+- `collector`: Add Skywalking parser to extract skywalking service port from config (#1634)
+- `target allocator`: Only admit configurations where Target Allocator actually has targets (#1859)
 - `target allocator`: Populate credentials for Prometheus CR (service and pod monitor) scrape configs. (#1669)
 - `collector`: Adds ability to set init containers for collector (#1684)
 - `operator`: Adding more tests to validate existence of init containers. (#1826)
@@ -17,6 +19,7 @@ Changes by Version
 
 ### 🧰 Bug fixes 🧰
 
+- `operator`: Fix for #1820 and #1821 plus added covering unit tests. (#1847)
 - `operator`: Fix the upgrade mechanism to not crash when one OTEL Collector instance uses the old approach to set the autoscaler. (#1799)
 - `target allocator`: Fix the empty global scrape interval in Prometheus CR watcher, which causes configuration unmarshalling to fail. (#1811)
 
