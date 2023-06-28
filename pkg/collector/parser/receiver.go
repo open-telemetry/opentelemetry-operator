@@ -78,6 +78,7 @@ var (
 	endpointKey      = "endpoint"
 	listenAddressKey = "listen_address"
 	scraperReceivers = map[string]struct{}{
+		"prometheus":        {},
 		"kubeletstats":      {},
 		"sshcheck":          {},
 		"cloudfoundry":      {},
@@ -107,7 +108,6 @@ var (
 		"haproxy":           {},
 		"flinkmetrics":      {},
 		"couchdb":           {},
-		"collectd":          {},
 	}
 )
 
@@ -142,10 +142,6 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	// is a scraper, we only expose endpoint through k8s service objects for
 	// receivers that aren't scrapers.
 	case isScraperReceiver(name):
-		return nil
-
-	// ignore prometheus receiver as it has no listening endpoint
-	case name == "prometheus":
 		return nil
 
 	default:
