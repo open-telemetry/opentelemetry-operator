@@ -3,6 +3,41 @@ Changes by Version
 
 <!-- next version -->
 
+## 0.80.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Add Skywalking parser to extract skywalking service port from config (#1634)
+- `target allocator`: Only admit configurations where Target Allocator actually has targets (#1859)
+- `target allocator`: Populate credentials for Prometheus CR (service and pod monitor) scrape configs. (#1669)
+- `collector`: Adds ability to set init containers for collector (#1684)
+- `operator`: Adding more tests to validate existence of init containers. (#1826)
+- `operator`: For Apache HTTPD instrumentation, use latest instrumentation library v1.0.3. (#1827)
+- `autoinstrumentation/nodejs`: Bump python packages to 1.14.0/0.40.0 (#1790)
+- `samplers`: Add ParentBasedJaegerRemote sampler & validate argument (#1801)
+- `operator`: Operator-sdk upgrade to v1.29.0 (#1755)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fix for #1820 and #1821 plus added covering unit tests. (#1847)
+- `operator`: Fix the upgrade mechanism to not crash when one OTEL Collector instance uses the old approach to set the autoscaler. (#1799)
+- `target allocator`: Fix the empty global scrape interval in Prometheus CR watcher, which causes configuration unmarshalling to fail. (#1811)
+
+### 🚀 New components 🚀
+
+- `operator`: Instrumentation crd for Nginx auto-instrumentation. (#1853)
+
+### Components
+
+* [OpenTelemetry Collector - v0.80.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.80.0)
+* [OpenTelemetry Contrib - v0.80.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.80.0)
+* [Java auto-instrumentation - 1.26.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.26.0)
+* [.NET auto-instrumentation - 0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
+* [Node.JS - 0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.40.0)
+* [Python - 0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
+* [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+
 ## 0.79.0
 
 ### 💡 Enhancements 💡
