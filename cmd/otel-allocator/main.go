@@ -107,7 +107,7 @@ func main() {
 	defer close(interrupts)
 
 	if *cliConf.PromCRWatcherConf.Enabled {
-		promWatcher, err = allocatorWatcher.NewPrometheusCRWatcher(cfg, cliConf)
+		promWatcher, err = allocatorWatcher.NewPrometheusCRWatcher(setupLog.WithName("prometheus-cr-watcher"), cfg, cliConf)
 		if err != nil {
 			setupLog.Error(err, "Can't start the prometheus watcher")
 			os.Exit(1)
@@ -193,7 +193,7 @@ func main() {
 				select {
 				case event := <-eventChan:
 					eventsMetric.WithLabelValues(event.Source.String()).Inc()
-					loadConfig, err := event.Watcher.LoadConfig()
+					loadConfig, err := event.Watcher.LoadConfig(ctx)
 					if err != nil {
 						setupLog.Error(err, "Unable to load configuration")
 						continue
