@@ -35,16 +35,27 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		MountPath: "/conf",
 	}}
 
-	envVars := []corev1.EnvVar{}
+	var envVars = otelcol.Spec.TargetAllocator.Env
+	if otelcol.Spec.TargetAllocator.Env == nil {
+		envVars = []corev1.EnvVar{}
+	}
 
-	envVars = append(envVars, corev1.EnvVar{
-		Name: "OTELCOL_NAMESPACE",
-		ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.namespace",
+	idx := -1
+	for i := range envVars {
+		if envVars[i].Name == "OTELCOL_NAMESPACE" {
+			idx = i
+		}
+	}
+	if idx == -1 {
+		envVars = append(envVars, corev1.EnvVar{
+			Name: "OTELCOL_NAMESPACE",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.namespace",
+				},
 			},
-		},
-	})
+		})
+	}
 
 	var args []string
 	if otelcol.Spec.TargetAllocator.PrometheusCR.Enabled {
