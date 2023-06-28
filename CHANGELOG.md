@@ -7,6 +7,7 @@ Changes by Version
 
 ### 💡 Enhancements 💡
 
+- `target allocator`: Populate credentials for Prometheus CR (service and pod monitor) scrape configs. (#1669)
 - `collector`: Adds ability to set init containers for collector (#1684)
 - `operator`: Adding more tests to validate existence of init containers. (#1826)
 - `operator`: For Apache HTTPD instrumentation, use latest instrumentation library v1.0.3. (#1827)
