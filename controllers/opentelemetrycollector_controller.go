@@ -36,6 +36,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -255,8 +256,11 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{}).
-		Owns(&monitoringv1.ServiceMonitor{})
+		Owns(&appsv1.StatefulSet{})
+
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+		builder.Owns(&monitoringv1.ServiceMonitor{})
+	}
 
 	autoscalingVersion := r.config.AutoscalingVersion()
 	if autoscalingVersion == autodetect.AutoscalingVersionV2 {
