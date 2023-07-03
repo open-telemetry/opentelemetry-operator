@@ -31,6 +31,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
@@ -213,80 +214,11 @@ service:
 
 	})
 
-	t.Run("should return expected target allocator config map", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
-
-		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: least-weighted
-config:
-  scrape_configs:
-  - job_name: otel-collector
-    scrape_interval: 10s
-    static_configs:
-    - targets:
-      - 0.0.0.0:8888
-      - 0.0.0.0:9999
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.test
-  app.kubernetes.io/managed-by: opentelemetry-operator
-`,
-		}
-
-		actual, err := desiredTAConfigMap(params())
-		assert.NoError(t, err)
-
-		assert.Equal(t, "test-targetallocator", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-
-	})
-	t.Run("should return expected target allocator config map with label selectors", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
-
-		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: least-weighted
-config:
-  scrape_configs:
-  - job_name: otel-collector
-    scrape_interval: 10s
-    static_configs:
-    - targets:
-      - 0.0.0.0:8888
-      - 0.0.0.0:9999
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.test
-  app.kubernetes.io/managed-by: opentelemetry-operator
-pod_monitor_selector:
-  release: test
-service_monitor_selector:
-  release: test
-`,
-		}
-		p := params()
-		p.Instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = map[string]string{
-			"release": "test",
-		}
-		p.Instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = map[string]string{
-			"release": "test",
-		}
-		actual, err := desiredTAConfigMap(p)
-		assert.NoError(t, err)
-
-		assert.Equal(t, "test-targetallocator", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-
-	})
-
 }
 
 func TestExpectedConfigMap(t *testing.T) {
 	t.Run("should create collector and target allocator config maps", func(t *testing.T) {
-		configMap, err := desiredTAConfigMap(params())
+		configMap, err := targetallocator.ConfigMap(params().Instance)
 		assert.NoError(t, err)
 		err = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{desiredConfigMap(context.Background(), params()), configMap}, true)
 		assert.NoError(t, err)
@@ -371,11 +303,11 @@ func TestExpectedConfigMap(t *testing.T) {
 			Scheme: testScheme,
 			Log:    logger,
 		}
-		cm, err := desiredTAConfigMap(param)
+		cm, err := targetallocator.ConfigMap(param.Instance)
 		assert.EqualError(t, err, "no receivers available as part of the configuration")
 		createObjectIfNotExists(t, "test-targetallocator", &cm)
 
-		configMap, err := desiredTAConfigMap(params())
+		configMap, err := targetallocator.ConfigMap(params().Instance)
 		assert.NoError(t, err)
 		err = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap}, true)
 		assert.NoError(t, err)
