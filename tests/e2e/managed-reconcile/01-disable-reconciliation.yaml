@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fake-sa
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+spec:
+  # The deployments use the simplest-collector Service Account. Changing the
+  # SA here and setting the managementState to Unmanaged will make the operator
+  # to not change the original service account name
+  serviceAccount: fake-sa
+  managementState: Unmanaged

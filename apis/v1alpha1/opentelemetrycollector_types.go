@@ -21,6 +21,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ManagementStateType defines the type for CR management states.
+//
+// +kubebuilder:validation:Enum=Managed;Unmanaged
+type ManagementStateType string
+
+const (
+	// ManagementStateManaged when the OpenTelemetryCollector custom resource should be
+	// reconciled by the operator.
+	ManagementStateManaged ManagementStateType = "Managed"
+
+	// ManagementStateUnmanaged when the TempoStack custom resource should not be
+	// reconciled by the operator.
+	ManagementStateUnmanaged ManagementStateType = "Unmanaged"
+)
+
 // Ingress is used to specify how OpenTelemetry Collector is exposed. This
 // functionality is only available if one of the valid modes is set.
 // Valid modes are: deployment, daemonset and statefulset.
@@ -69,6 +84,13 @@ type OpenShiftRoute struct {
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
+	// ManagementState defines if the CR should be managed by the operator or not.
+	// Default is managed.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default:=Managed
+	ManagementState ManagementStateType `json:"managementState,omitempty"`
 	// Resources to set on the OpenTelemetry Collector pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
@@ -298,6 +320,7 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.scale.statusReplicas"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Image",type="string",JSONPath=".status.image"
+// +kubebuilder:printcolumn:name="Management",type="string",JSONPath=".spec.managementState",description="Management State"
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
 // This annotation provides a hint for OLM which resources are managed by OpenTelemetryCollector kind.
 // It's not mandatory to list all resources.
