@@ -4,31 +4,20 @@ metadata:
   name: simplest
 spec:
   managementState: Managed
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
 
----
-# Changing object managed by operator, should trigger reconciliation loop
-# in managed mode. Here, we have added jaeger receiver in config.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: simplest
-data: |
-  receivers:
-    jaeger:
-      protocols:
-        grpc:
-    otlp:
-      protocols:
-        grpc:
-        http:
-  processors:
+    exporters:
+      logging:
 
-  exporters:
-    logging:
-
-  service:
-    pipelines:
-      traces:
-        receivers: [jaeger,otlp]
-        processors: []
-        exporters: [logging]
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [logging]

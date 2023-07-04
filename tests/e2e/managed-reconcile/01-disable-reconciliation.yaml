@@ -1,15 +1,51 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: fake-sa
----
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  # The deployments use the simplest-collector Service Account. Changing the
-  # SA here and setting the managementState to Unmanaged will make the operator
-  # to not change the original service account name
-  serviceAccount: fake-sa
   managementState: Unmanaged
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [logging]
+
+---
+# change config map in Unmanaged mode and it should not get overridden as reconciliation is disabled
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simplest-collector
+data:
+  collector.yaml: |
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger, otlp]
+          processors: []
+          exporters: [logging]
