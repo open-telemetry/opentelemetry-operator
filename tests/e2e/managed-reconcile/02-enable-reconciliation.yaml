@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  managementState: managed
+  managementState: Managed
 
 ---
 # Changing object managed by operator, should trigger reconciliation loop
