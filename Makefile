@@ -161,10 +161,10 @@ vet:
 
 # Run go lint against code
 .PHONY: lint
-lint:
-	golangci-lint run
-	cd cmd/otel-allocator && golangci-lint run
-	cd cmd/operator-opamp-bridge && golangci-lint run
+lint: golangci-lint
+	$(GOLANGCI_LINT) run
+	cd cmd/otel-allocator && $(GOLANGCI_LINT) run
+	cd cmd/operator-opamp-bridge && $(GOLANGCI_LINT) run
 
 # Generate code
 .PHONY: generate
@@ -294,14 +294,19 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
+GOLANGCI_LINT_VERSION ?= v1.51.2
 
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
+
+golangci-lint: ## Download golangci-lint locally if necessary.
+	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
