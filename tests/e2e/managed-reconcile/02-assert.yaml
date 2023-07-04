@@ -4,12 +4,10 @@ metadata:
   name: simplest-collector
 status:
   readyReplicas: 1
-spec:
-  template:
-    spec:
-      serviceAccountName: simplest-collector
 
 ---
+# In managed mode config map change should trigger reconciliation 
+# and update the services
 
 apiVersion: v1
 kind: Service
@@ -17,6 +15,11 @@ metadata:
   name: simplest-collector-headless
 spec:
   ports:
+  - appProtocol: grpc
+    name: jaeger-grpc
+    port: 14250
+    protocol: TCP
+    targetPort: 14250
   - appProtocol: grpc
     name: otlp-grpc
     port: 4317
@@ -41,6 +44,11 @@ metadata:
   name: simplest-collector
 spec:
   ports:
+  - appProtocol: grpc
+    name: jaeger-grpc
+    port: 14250
+    protocol: TCP
+    targetPort: 14250
   - appProtocol: grpc
     name: otlp-grpc
     port: 4317

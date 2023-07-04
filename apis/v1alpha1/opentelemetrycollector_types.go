@@ -31,7 +31,7 @@ const (
 	// reconciled by the operator.
 	ManagementStateManaged ManagementStateType = "Managed"
 
-	// ManagementStateUnmanaged when the TempoStack custom resource should not be
+	// ManagementStateUnmanaged when the OpenTelemetryCollector custom resource should not be
 	// reconciled by the operator.
 	ManagementStateUnmanaged ManagementStateType = "Unmanaged"
 )

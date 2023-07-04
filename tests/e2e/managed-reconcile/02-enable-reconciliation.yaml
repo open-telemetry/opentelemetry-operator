@@ -1,0 +1,34 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+spec:
+  managementState: managed
+
+---
+# Changing object managed by operator, should trigger reconciliation loop
+# in managed mode. Here, we have added jaeger receiver in config.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simplest
+data: |
+  receivers:
+    jaeger:
+      protocols:
+        grpc:
+    otlp:
+      protocols:
+        grpc:
+        http:
+  processors:
+
+  exporters:
+    logging:
+
+  service:
+    pipelines:
+      traces:
+        receivers: [jaeger,otlp]
+        processors: []
+        exporters: [logging]
