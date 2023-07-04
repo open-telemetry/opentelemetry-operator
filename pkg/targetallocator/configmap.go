@@ -27,6 +27,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
+const (
+	targetAllocatorFilename = "targetallocator.yaml"
+)
+
 func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(instance)
 	version := strings.Split(instance.Spec.Image, ":")
@@ -86,7 +90,7 @@ func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, erro
 			Annotations: instance.Annotations,
 		},
 		Data: map[string]string{
-			"targetallocator.yaml": string(taConfigYAML),
+			targetAllocatorFilename: string(taConfigYAML),
 		},
 	}, nil
 }

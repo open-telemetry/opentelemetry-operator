@@ -272,7 +272,6 @@ func TestExpectedConfigMap(t *testing.T) {
 	t.Run("should update target allocator config map", func(t *testing.T) {
 
 		param := Params{
-			Client: k8sClient,
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -300,8 +299,6 @@ func TestExpectedConfigMap(t *testing.T) {
 					Config: "",
 				},
 			},
-			Scheme: testScheme,
-			Log:    logger,
 		}
 		cm, err := targetallocator.ConfigMap(param.Instance)
 		assert.EqualError(t, err, "no receivers available as part of the configuration")

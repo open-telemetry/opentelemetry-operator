@@ -15,30 +15,22 @@
 package targetallocator
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/uuid"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
 	expectedLables := map[string]string{
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/instance":   "default.test",
+		"app.kubernetes.io/instance":   "default.my-instance",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/version":    "0.47.0",
 	}
 
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
+		expectedLables["app.kubernetes.io/name"] = "my-instance-targetallocator"
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: least-weighted
@@ -52,7 +44,7 @@ config:
       - 0.0.0.0:9999
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.test
+  app.kubernetes.io/instance: default.my-instance
   app.kubernetes.io/managed-by: opentelemetry-operator
 `,
 		}
@@ -60,14 +52,14 @@ label_selector:
 		actual, err := ConfigMap(collectorInstance())
 		assert.NoError(t, err)
 
-		assert.Equal(t, "test-targetallocator", actual.Name)
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
 	})
 	t.Run("should return expected target allocator config map with label selectors", func(t *testing.T) {
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
+		expectedLables["app.kubernetes.io/name"] = "my-instance-targetallocator"
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: least-weighted
@@ -81,62 +73,28 @@ config:
       - 0.0.0.0:9999
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.test
+  app.kubernetes.io/instance: default.my-instance
   app.kubernetes.io/managed-by: opentelemetry-operator
 pod_monitor_selector:
-  release: test
+  release: my-instance
 service_monitor_selector:
-  release: test
+  release: my-instance
 `,
 		}
 		instance := collectorInstance()
 		instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = map[string]string{
-			"release": "test",
+			"release": "my-instance",
 		}
 		instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = map[string]string{
-			"release": "test",
+			"release": "my-instance",
 		}
 		actual, err := ConfigMap(instance)
 		assert.NoError(t, err)
 
-		assert.Equal(t, "test-targetallocator", actual.Name)
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
 	})
 
-}
-
-func collectorInstance() v1alpha1.OpenTelemetryCollector {
-	replicas := int32(2)
-	configYAML, err := os.ReadFile("testdata/test.yaml")
-	if err != nil {
-		fmt.Printf("Error getting yaml file: %v", err)
-	}
-	return v1alpha1.OpenTelemetryCollector{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "opentelemetry.io",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-			UID:       uuid.NewUUID(),
-		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-			Ports: []v1.ServicePort{{
-				Name: "web",
-				Port: 80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 80,
-				},
-				NodePort: 0,
-			}},
-			Replicas: &replicas,
-			Config:   string(configYAML),
-			Mode:     v1alpha1.ModeStatefulSet,
-		},
-	}
 }
