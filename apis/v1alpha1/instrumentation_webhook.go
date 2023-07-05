@@ -246,6 +246,7 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 
 func (r *Instrumentation) validate() error {
 	switch r.Spec.Sampler.Type {
+	case "": // not set, do nothing
 	case TraceIDRatio, ParentBasedTraceIDRatio:
 		if r.Spec.Sampler.Argument != "" {
 			rate, err := strconv.ParseFloat(r.Spec.Sampler.Argument, 64)
