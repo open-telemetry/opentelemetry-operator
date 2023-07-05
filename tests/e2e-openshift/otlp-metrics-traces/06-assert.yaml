@@ -3,4 +3,4 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 30
 commands:
-- script: ./tests/e2e-openshift/otlp-metrics/check_metrics.sh
+- script: ./tests/e2e-openshift/otlp-metrics-traces/check_metrics.sh
