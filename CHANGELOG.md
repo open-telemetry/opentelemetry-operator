@@ -3,6 +3,27 @@ Changes by Version
 
 <!-- next version -->
 
+## 0.81.0
+
+### 💡 Enhancements 💡
+
+- `operator`: Create index image to be used as a Catalog. (#1823)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fix `.sampler.type` being incorrectly required for Instrumentation (#1886)
+
+### Components
+
+* [OpenTelemetry Collector - v0.81.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.81.0)
+* [OpenTelemetry Contrib - v0.81.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.81.0)
+* [Java auto-instrumentation - 1.26.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.26.0)
+* [.NET auto-instrumentation - 0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
+* [Node.JS - 0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.40.0)
+* [Python - 0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
+* [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+
 ## 0.80.0
 
 ### 💡 Enhancements 💡
