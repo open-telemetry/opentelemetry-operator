@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-traces
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: telemetrygen-traces
+    spec:
+      containers:
+        - name: telemetrygen-traces
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=cluster-collector-collector-headless.kuttl-otlp-metrics.svc:4317"
+            - "--otlp-insecure=true"
+            - "--rate=1"
+            - "--duration=30s"
+            - "--otlp-attributes=telemetrygen=\"traces\""
+            - "--otlp-header=telemetrygen=\"traces\""
+            - "traces"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-metrics
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: telemetrygen-metrics
+    spec:
+      containers:
+        - name: telemetrygen-metrics
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=cluster-collector-collector-headless.kuttl-otlp-metrics.svc:4317"
+            - "--otlp-insecure=true"
+            - "--duration=30s"
+            - "--rate=1"
+            - "--otlp-attributes=telemetrygen=\"metrics\""
+            - "--otlp-header=telemetrygen=\"traces\""
+            - "metrics"
+      restartPolicy: Never
