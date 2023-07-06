@@ -12,6 +12,7 @@ Changes by Version
 ### 🧰 Bug fixes 🧰
 
 - `operator`: Fix `.sampler.type` being incorrectly required for Instrumentation (#1886)
+- `receivers`: Skip service port for scraper receivers (#1866)
 
 ### Components
 
