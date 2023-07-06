@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-traces
+status:
+  active: 1
+  ready: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-metrics
+status:
+  active: 1
+  ready: 1
+
+---
+apiVersion: v1
+kind: Pod
+status:
+  phase: Running

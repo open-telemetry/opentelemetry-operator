@@ -549,6 +549,7 @@ spec:
   config: |
     receivers:
       prometheus:
+        config:
 
     exporters:
       logging:
