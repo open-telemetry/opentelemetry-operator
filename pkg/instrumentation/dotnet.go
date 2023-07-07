@@ -33,11 +33,14 @@ const (
 	envDotNetOTelAutoHome               = "OTEL_DOTNET_AUTO_HOME"
 	dotNetCoreClrEnableProfilingEnabled = "1"
 	dotNetCoreClrProfilerID             = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
-	dotNetCoreClrProfilerPath           = "/otel-auto-instrumentation/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so"
-	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation/AdditionalDeps"
-	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation"
-	dotNetSharedStorePath               = "/otel-auto-instrumentation/store"
-	dotNetStartupHookPath               = "/otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	dotNetCoreClrProfilerPath           = "/otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so"
+	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation-dotnet/AdditionalDeps"
+	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation-dotnet"
+	dotNetSharedStorePath               = "/otel-auto-instrumentation-dotnet/store"
+	dotNetStartupHookPath               = "/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	dotnetVolumeName                    = volumeName + "-dotnet"
+	dotnetInitContainerName             = initContainerName + "-dotnet"
+	dotnetInstrMountPath                = "/otel-auto-instrumentation-dotnet"
 )
 
 func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, error) {
@@ -90,26 +93,26 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      volumeName,
-		MountPath: "/otel-auto-instrumentation",
+		Name:      dotnetVolumeName,
+		MountPath: dotnetInstrMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container.
-	if isInitContainerMissing(pod) {
+	if isInitContainerMissing(pod, dotnetInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: volumeName,
+			Name: dotnetVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}})
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:      initContainerName,
+			Name:      dotnetInitContainerName,
 			Image:     dotNetSpec.Image,
-			Command:   []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			Command:   []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 			Resources: dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      volumeName,
-				MountPath: "/otel-auto-instrumentation",
+				Name:      dotnetVolumeName,
+				MountPath: dotnetInstrMountPath,
 			}},
 		})
 	}
