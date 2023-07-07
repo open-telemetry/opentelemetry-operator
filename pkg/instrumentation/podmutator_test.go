@@ -131,7 +131,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation",
+							Name: javaVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
@@ -139,11 +139,11 @@ func TestMutatePod(t *testing.T) {
 					},
 					InitContainers: []corev1.Container{
 						{
-							Name:    initContainerName,
-							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+							Name:    javaInitContainerName,
+							Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      volumeName,
-								MountPath: "/otel-auto-instrumentation",
+								Name:      javaVolumeName,
+								MountPath: javaInstrMountPath,
 							}},
 							Resources: testResourceRequirements,
 						},
@@ -219,8 +219,8 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation",
-									MountPath: "/otel-auto-instrumentation",
+									Name:      javaVolumeName,
+									MountPath: javaInstrMountPath,
 								},
 							},
 						},
@@ -400,7 +400,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation",
+							Name: nodejsVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
@@ -408,12 +408,12 @@ func TestMutatePod(t *testing.T) {
 					},
 					InitContainers: []corev1.Container{
 						{
-							Name:    initContainerName,
+							Name:    nodejsInitContainerName,
 							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      volumeName,
-								MountPath: "/otel-auto-instrumentation",
+								Name:      nodejsVolumeName,
+								MountPath: nodejsInstrMountPath,
 							}},
 						},
 					},
@@ -480,8 +480,8 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation",
-									MountPath: "/otel-auto-instrumentation",
+									Name:      nodejsVolumeName,
+									MountPath: nodejsInstrMountPath,
 								},
 							},
 						},
@@ -658,7 +658,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation",
+							Name: pythonVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
@@ -666,12 +666,12 @@ func TestMutatePod(t *testing.T) {
 					},
 					InitContainers: []corev1.Container{
 						{
-							Name:    initContainerName,
+							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      volumeName,
-								MountPath: "/otel-auto-instrumentation",
+								Name:      pythonVolumeName,
+								MountPath: pythonInstrMountPath,
 							}},
 						},
 					},
@@ -750,8 +750,8 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation",
-									MountPath: "/otel-auto-instrumentation",
+									Name:      pythonVolumeName,
+									MountPath: pythonInstrMountPath,
 								},
 							},
 						},
@@ -924,7 +924,7 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: "opentelemetry-auto-instrumentation",
+							Name: dotnetVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
@@ -932,12 +932,12 @@ func TestMutatePod(t *testing.T) {
 					},
 					InitContainers: []corev1.Container{
 						{
-							Name:    initContainerName,
+							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      volumeName,
-								MountPath: "/otel-auto-instrumentation",
+								Name:      dotnetVolumeName,
+								MountPath: dotnetInstrMountPath,
 							}},
 						},
 					},
@@ -1024,8 +1024,8 @@ func TestMutatePod(t *testing.T) {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "opentelemetry-auto-instrumentation",
-									MountPath: "/otel-auto-instrumentation",
+									Name:      dotnetVolumeName,
+									MountPath: dotnetInstrMountPath,
 								},
 							},
 						},

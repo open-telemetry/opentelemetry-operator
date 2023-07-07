@@ -52,6 +52,16 @@ type languageInstrumentations struct {
 	Sdk         *v1alpha1.Instrumentation
 }
 
+type languageContainers struct {
+	Java        string
+	NodeJS      string
+	Python      string
+	DotNet      string
+	ApacheHttpd string
+	Go          string
+	Sdk         string
+}
+
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
 
 func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder) *instPodMutator {
@@ -79,6 +89,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	var err error
 
 	insts := languageInstrumentations{}
+	containers := languageContainers{}
 
 	// We bail out if any annotation fails to process.
 
@@ -167,14 +178,18 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 
 	// We retrieve the annotation for podname
-	var targetContainers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
+	containers.Java = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
+	containers.NodeJS = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
+	containers.Python = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectPythonContainersName)
+	containers.DotNet = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
+	containers.Go = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
+	containers.ApacheHttpd = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
+	containers.Sdk = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
 
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
 	modifiedPod := pod
-	for _, currentContainer := range strings.Split(targetContainers, ",") {
-		modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod, strings.TrimSpace(currentContainer))
-	}
+	modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod, containers)
 
 	return modifiedPod, nil
 }
