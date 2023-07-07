@@ -324,6 +324,7 @@ func TestExpectedConfigMap(t *testing.T) {
 			"app.kubernetes.io/instance":   "default.test",
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 			"app.kubernetes.io/component":  "opentelemetry-collector",
+			"app.kubernetes.io/part-of":    "opentelemetry",
 		}
 		taConfig["config"] = promConfig["config"]
 		taConfig["allocation_strategy"] = "least-weighted"

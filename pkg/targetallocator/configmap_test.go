@@ -46,6 +46,7 @@ label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.my-instance
   app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/part-of: opentelemetry
 `,
 		}
 
@@ -75,6 +76,7 @@ label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.my-instance
   app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/part-of: opentelemetry
 pod_monitor_selector:
   release: my-instance
 service_monitor_selector:

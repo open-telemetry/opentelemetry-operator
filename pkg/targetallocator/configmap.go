@@ -15,7 +15,6 @@
 package targetallocator
 
 import (
-	"fmt"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -23,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
@@ -49,11 +49,7 @@ func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, erro
 	}
 
 	taConfig := make(map[interface{}]interface{})
-	taConfig["label_selector"] = map[string]string{
-		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", instance.Namespace, instance.Name),
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/component":  "opentelemetry-collector",
-	}
+	taConfig["label_selector"] = collector.SelectorLabels(instance)
 	// We only take the "config" from the returned object, if it's present
 	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
 		taConfig["config"] = prometheusConfig
