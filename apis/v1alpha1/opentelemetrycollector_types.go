@@ -190,6 +190,12 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
+	// TopologySpreadConstraints embedded kubernetes pod configuration option,
+	// controls how pods are spread across your cluster among failure-domains
+	// such as regions, zones, nodes, and other user-defined topology domains
+	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+	// +optional
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
@@ -199,6 +205,10 @@ type OpenTelemetryTargetAllocator struct {
 	// that can be run in a high availability mode is consistent-hashing.
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+	// NodeSelector to schedule OpenTelemetry Collector pods.
+	// This is only relevant to daemonset, statefulset, and deployment mode
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Resources to set on the OpenTelemetryTargetAllocator containers.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
@@ -225,6 +235,12 @@ type OpenTelemetryTargetAllocator struct {
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// TopologySpreadConstraints embedded kubernetes pod configuration option,
+	// controls how pods are spread across your cluster among failure-domains
+	// such as regions, zones, nodes, and other user-defined topology domains
+	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+	// +optional
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {

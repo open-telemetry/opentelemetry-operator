@@ -15,6 +15,7 @@
 package targetallocator
 
 import (
+	v1 "k8s.io/api/core/v1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,6 +24,19 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
+
+var testTopologySpreadConstraintValue = []v1.TopologySpreadConstraint{
+	{
+		MaxSkew:           1,
+		TopologyKey:       "kubernetes.io/hostname",
+		WhenUnsatisfiable: "DoNotSchedule",
+		LabelSelector: &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"foo": "bar",
+			},
+		},
+	},
+}
 
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
@@ -68,4 +82,69 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", ds.Name)
 	assert.Equal(t, testPodAnnotationValues, ds.Spec.Template.Annotations)
+}
+
+func TestDeploymentNodeSelector(t *testing.T) {
+	// Test default
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+	d1 := Deployment(cfg, logger, otelcol1)
+	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
+
+	// Test nodeSelector
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-nodeselector",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				NodeSelector: map[string]string{
+					"node-key": "node-value",
+				},
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	d2 := Deployment(cfg, logger, otelcol2)
+	assert.Equal(t, map[string]string{"node-key": "node-value"}, d2.Spec.Template.Spec.NodeSelector)
+}
+
+func TestDeploymentTopologySpreadConstraints(t *testing.T) {
+	// Test default
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+	d1 := Deployment(cfg, logger, otelcol1)
+	assert.Equal(t, "my-instance-targetallocator", d1.Name)
+	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
+
+	// Test TopologySpreadConstraints
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-topologyspreadconstraint",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				TopologySpreadConstraints: testTopologySpreadConstraintValue,
+			},
+		},
+	}
+
+	cfg = config.New()
+	d2 := Deployment(cfg, logger, otelcol2)
+	assert.Equal(t, "my-instance-topologyspreadconstraint-targetallocator", d2.Name)
+	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
+	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
+	assert.Equal(t, testTopologySpreadConstraintValue, d2.Spec.Template.Spec.TopologySpreadConstraints)
 }
