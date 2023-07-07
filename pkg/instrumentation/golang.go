@@ -36,9 +36,9 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 		return pod, fmt.Errorf("shared process namespace has been explicitly disabled")
 	}
 
-	containerNames, ok := pod.Annotations[annotationInjectContainerName]
+	containerNames, ok := pod.Annotations[annotationInjectGoContainersName]
 	if ok && len(strings.Split(containerNames, ",")) > 1 {
-		return pod, fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container")
+		return pod, fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/go-container-names with more than 1 container")
 	}
 
 	true := true

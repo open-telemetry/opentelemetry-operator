@@ -53,23 +53,23 @@ func TestInjectGoSDK(t *testing.T) {
 			err: fmt.Errorf("shared process namespace has been explicitly disabled"),
 		},
 		{
-			name: "using container-names",
+			name: "using go-container-names",
 			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/container-names": "foo,bar",
+						"instrumentation.opentelemetry.io/go-container-names": "foo,bar",
 					},
 				},
 			},
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/container-names": "foo,bar",
+						"instrumentation.opentelemetry.io/go-container-names": "foo,bar",
 					},
 				},
 			},
-			err: fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container"),
+			err: fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/go-container-names with more than 1 container"),
 		},
 		{
 			name: "pod annotation takes precedence",
@@ -151,14 +151,14 @@ func TestInjectGoSDK(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/container-names": "foo",
+						"instrumentation.opentelemetry.io/go-container-names": "foo",
 					},
 				},
 			},
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/container-names": "foo",
+						"instrumentation.opentelemetry.io/go-container-names": "foo",
 					},
 				},
 				Spec: corev1.PodSpec{
