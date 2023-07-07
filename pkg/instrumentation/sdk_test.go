@@ -504,6 +504,9 @@ func TestInjectJava(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	containers := languageContainers{
+		Java: "",
+	}
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -515,12 +518,12 @@ func TestInjectJava(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		}, containers)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: volumeName,
+					Name: javaVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
@@ -528,12 +531,12 @@ func TestInjectJava(t *testing.T) {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Name:    initContainerName,
+					Name:    javaInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+					Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      volumeName,
-						MountPath: "/otel-auto-instrumentation",
+						Name:      javaVolumeName,
+						MountPath: javaInstrMountPath,
 					}},
 					Resources: testResourceRequirements,
 				},
@@ -544,8 +547,8 @@ func TestInjectJava(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      volumeName,
-							MountPath: "/otel-auto-instrumentation",
+							Name:      javaVolumeName,
+							MountPath: javaInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -606,6 +609,9 @@ func TestInjectNodeJS(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	containers := languageContainers{
+		NodeJS: "",
+	}
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -617,12 +623,12 @@ func TestInjectNodeJS(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		}, containers)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: volumeName,
+					Name: nodejsVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
@@ -630,12 +636,12 @@ func TestInjectNodeJS(t *testing.T) {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Name:    initContainerName,
+					Name:    nodejsInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      volumeName,
-						MountPath: "/otel-auto-instrumentation",
+						Name:      nodejsVolumeName,
+						MountPath: nodejsInstrMountPath,
 					}},
 					Resources: testResourceRequirements,
 				},
@@ -646,8 +652,8 @@ func TestInjectNodeJS(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      volumeName,
-							MountPath: "/otel-auto-instrumentation",
+							Name:      nodejsVolumeName,
+							MountPath: nodejsInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -708,6 +714,9 @@ func TestInjectPython(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	containers := languageContainers{
+		Python: "",
+	}
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -719,12 +728,12 @@ func TestInjectPython(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		}, containers)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: volumeName,
+					Name: pythonVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
@@ -732,12 +741,12 @@ func TestInjectPython(t *testing.T) {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Name:    initContainerName,
+					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      volumeName,
-						MountPath: "/otel-auto-instrumentation",
+						Name:      pythonVolumeName,
+						MountPath: pythonInstrMountPath,
 					}},
 				},
 			},
@@ -747,8 +756,8 @@ func TestInjectPython(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      volumeName,
-							MountPath: "/otel-auto-instrumentation",
+							Name:      pythonVolumeName,
+							MountPath: pythonInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -824,6 +833,9 @@ func TestInjectDotNet(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	containers := languageContainers{
+		DotNet: "",
+	}
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -835,12 +847,12 @@ func TestInjectDotNet(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		}, containers)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: volumeName,
+					Name: dotnetVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
@@ -848,12 +860,12 @@ func TestInjectDotNet(t *testing.T) {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Name:    initContainerName,
+					Name:    dotnetInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      volumeName,
-						MountPath: "/otel-auto-instrumentation",
+						Name:      dotnetVolumeName,
+						MountPath: dotnetInstrMountPath,
 					}},
 				},
 			},
@@ -863,8 +875,8 @@ func TestInjectDotNet(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      volumeName,
-							MountPath: "/otel-auto-instrumentation",
+							Name:      dotnetVolumeName,
+							MountPath: dotnetInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -1209,7 +1221,10 @@ func TestInjectGo(t *testing.T) {
 			inj := sdkInjector{
 				logger: logr.Discard(),
 			}
-			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, "")
+			containers := languageContainers{
+				Go: "",
+			}
+			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, containers)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1358,7 +1373,12 @@ func TestInjectApacheHttpd(t *testing.T) {
 			inj := sdkInjector{
 				logger: logr.Discard(),
 			}
-			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, "")
+
+			containers := languageContainers{
+				Go: "",
+			}
+
+			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, containers)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1379,6 +1399,10 @@ func TestInjectSdkOnly(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	containers := languageContainers{
+		Sdk: "",
+	}
+
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -1390,7 +1414,7 @@ func TestInjectSdkOnly(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		}, containers)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -1427,6 +1451,483 @@ func TestInjectSdkOnly(t *testing.T) {
 							Value: "k8s.container.name=app,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
 						},
 					},
+				},
+			},
+		},
+	}, pod)
+}
+
+func TestInjectMultipleInstrumentations(t *testing.T) {
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		DotNet: &inst,
+		Java:   &inst,
+		NodeJS: &inst,
+		Python: &inst,
+	}
+
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	containers := languageContainers{
+		DotNet: "dotnet-1",
+		Java:   "java-2",
+		NodeJS: "nodejs-1,nodejs-2",
+		Python: "python-1,python-2",
+	}
+
+	pod := inj.inject(context.Background(), insts,
+		corev1.Namespace{},
+		corev1.Pod{
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  "app",
+						Image: "app:latest",
+					},
+					{
+						Name:  "dotnet-1",
+						Image: "app:latest",
+					},
+					{
+						Name:  "dotnet-2",
+						Image: "app:latest",
+					},
+					{
+						Name:  "java-1",
+						Image: "app:latest",
+					},
+					{
+						Name:  "java-2",
+						Image: "app:latest",
+					},
+					{
+						Name:  "nodejs-1",
+						Image: "app:latest",
+					},
+					{
+						Name:  "nodejs-2",
+						Image: "app:latest",
+					},
+					{
+						Name:  "python-1",
+						Image: "app:latest",
+					},
+					{
+						Name:  "python-2",
+						Image: "app:latest",
+					},
+					{
+						Name:  "python-3",
+						Image: "app:latest",
+					},
+				},
+			},
+		}, containers)
+	assert.Equal(t, corev1.Pod{
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: javaVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
+					Name: nodejsVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
+					Name: pythonVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
+					Name: dotnetVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:    javaInitContainerName,
+					Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      javaVolumeName,
+						MountPath: javaInstrMountPath,
+					}},
+				},
+				{
+					Name:    nodejsInitContainerName,
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      nodejsVolumeName,
+						MountPath: nodejsInstrMountPath,
+					}},
+				},
+				{
+					Name:    pythonInitContainerName,
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      pythonVolumeName,
+						MountPath: pythonInstrMountPath,
+					}},
+				},
+				{
+					Name:    dotnetInitContainerName,
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      dotnetVolumeName,
+						MountPath: dotnetInstrMountPath,
+					}},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name:  "app",
+					Image: "app:latest",
+				},
+				{
+					Name:  "dotnet-1",
+					Image: "app:latest",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      dotnetVolumeName,
+							MountPath: dotnetInstrMountPath,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  envDotNetCoreClrEnableProfiling,
+							Value: dotNetCoreClrEnableProfilingEnabled,
+						},
+						{
+							Name:  envDotNetCoreClrProfiler,
+							Value: dotNetCoreClrProfilerID,
+						},
+						{
+							Name:  envDotNetCoreClrProfilerPath,
+							Value: dotNetCoreClrProfilerPath,
+						},
+						{
+							Name:  envDotNetStartupHook,
+							Value: dotNetStartupHookPath,
+						},
+						{
+							Name:  envDotNetAdditionalDeps,
+							Value: dotNetAdditionalDepsPath,
+						},
+						{
+							Name:  envDotNetOTelAutoHome,
+							Value: dotNetOTelAutoHomePath,
+						},
+						{
+							Name:  envDotNetSharedStore,
+							Value: dotNetSharedStorePath,
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "dotnet-1",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=dotnet-1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
+						},
+					},
+				},
+				{
+					Name:  "dotnet-2",
+					Image: "app:latest",
+				},
+				{
+					Name:  "java-1",
+					Image: "app:latest",
+				},
+				{
+					Name:  "java-2",
+					Image: "app:latest",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      javaVolumeName,
+							MountPath: javaInstrMountPath,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "JAVA_TOOL_OPTIONS",
+							Value: javaJVMArgument,
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "java-2",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=java-2,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
+						},
+					},
+				},
+				{
+					Name:  "nodejs-1",
+					Image: "app:latest",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      nodejsVolumeName,
+							MountPath: nodejsInstrMountPath,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: nodeRequireArgument,
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "nodejs-1",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=nodejs-1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
+						},
+					},
+				},
+				{
+					Name:  "nodejs-2",
+					Image: "app:latest",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      nodejsVolumeName,
+							MountPath: nodejsInstrMountPath,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "NODE_OPTIONS",
+							Value: nodeRequireArgument,
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "nodejs-2",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=nodejs-2,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
+						},
+					},
+				},
+				{
+					Name:  "python-1",
+					Image: "app:latest",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      pythonVolumeName,
+							MountPath: pythonInstrMountPath,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "PYTHONPATH",
+							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+						},
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+							Value: "http/protobuf",
+						},
+						{
+							Name:  "OTEL_METRICS_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+							Value: "http/protobuf",
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "python-1",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=python-1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
+						},
+					},
+				},
+				{
+					Name:  "python-2",
+					Image: "app:latest",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      pythonVolumeName,
+							MountPath: pythonInstrMountPath,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "PYTHONPATH",
+							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+						},
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+							Value: "http/protobuf",
+						},
+						{
+							Name:  "OTEL_METRICS_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+							Value: "http/protobuf",
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "python-2",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=python-2,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.version=latest",
+						},
+					},
+				},
+				{
+					Name:  "python-3",
+					Image: "app:latest",
 				},
 			},
 		},
