@@ -21,8 +21,11 @@ import (
 )
 
 const (
-	envNodeOptions      = "NODE_OPTIONS"
-	nodeRequireArgument = " --require /otel-auto-instrumentation/autoinstrumentation.js"
+	envNodeOptions          = "NODE_OPTIONS"
+	nodeRequireArgument     = " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
+	nodejsInitContainerName = initContainerName + "-nodejs"
+	nodejsVolumeName        = volumeName + "-nodejs"
+	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
 )
 
 func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
@@ -53,26 +56,26 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      volumeName,
-		MountPath: "/otel-auto-instrumentation",
+		Name:      nodejsVolumeName,
+		MountPath: nodejsInstrMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container
-	if isInitContainerMissing(pod) {
+	if isInitContainerMissing(pod, nodejsInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: volumeName,
+			Name: nodejsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}})
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:      initContainerName,
+			Name:      nodejsInitContainerName,
 			Image:     nodeJSSpec.Image,
-			Command:   []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			Command:   []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
 			Resources: nodeJSSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      volumeName,
-				MountPath: "/otel-auto-instrumentation",
+				Name:      nodejsVolumeName,
+				MountPath: nodejsInstrMountPath,
 			}},
 		})
 	}
