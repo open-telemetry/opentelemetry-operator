@@ -15,15 +15,15 @@ spec:
     - name: CORECLR_PROFILER
       value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
     - name: CORECLR_PROFILER_PATH
-      value: /otel-auto-instrumentation/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
     - name: DOTNET_STARTUP_HOOKS
-      value: /otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
+      value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
     - name: DOTNET_ADDITIONAL_DEPS
-      value: /otel-auto-instrumentation/AdditionalDeps
+      value: /otel-auto-instrumentation-dotnet/AdditionalDeps
     - name: OTEL_DOTNET_AUTO_HOME
-      value: /otel-auto-instrumentation
+      value: /otel-auto-instrumentation-dotnet
     - name: DOTNET_SHARED_STORE
-      value: /otel-auto-instrumentation/store
+      value: /otel-auto-instrumentation-dotnet/store
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -45,11 +45,11 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-    - mountPath: /otel-auto-instrumentation
-      name: opentelemetry-auto-instrumentation
+    - mountPath: /otel-auto-instrumentation-dotnet
+      name: opentelemetry-auto-instrumentation-dotnet
   - name: otc-container
   initContainers:
-  - name: opentelemetry-auto-instrumentation
+  - name: opentelemetry-auto-instrumentation-dotnet
     resources:
       limits:
         cpu: "500m"

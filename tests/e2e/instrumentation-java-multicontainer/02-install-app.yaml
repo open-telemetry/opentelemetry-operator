@@ -14,7 +14,7 @@ spec:
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-java: "true"
-        instrumentation.opentelemetry.io/container-names: "myrabbit"
+        instrumentation.opentelemetry.io/java-container-names: "myrabbit"
     spec:
       containers:
       - name: myapp

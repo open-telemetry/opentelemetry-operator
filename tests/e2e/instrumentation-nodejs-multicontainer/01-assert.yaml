@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   annotations:
     sidecar.opentelemetry.io/inject: "true"
-    instrumentation.opentelemetry.io/container-names: myapp,myrabbit
+    instrumentation.opentelemetry.io/nodejs-container-names: myapp,myrabbit
     instrumentation.opentelemetry.io/inject-nodejs: "true"
   labels:
     app: my-pod-with-sidecar
@@ -12,7 +12,7 @@ spec:
   - name: myapp
     env:
     - name: NODE_OPTIONS
-      value: ' --require /otel-auto-instrumentation/autoinstrumentation.js'
+      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -34,12 +34,12 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-    - mountPath: /otel-auto-instrumentation
-      name: opentelemetry-auto-instrumentation
+    - mountPath: /otel-auto-instrumentation-nodejs
+      name: opentelemetry-auto-instrumentation-nodejs
   - name: myrabbit
     env:
     - name: NODE_OPTIONS
-      value: ' --require /otel-auto-instrumentation/autoinstrumentation.js'
+      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -61,8 +61,8 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-    - mountPath: /otel-auto-instrumentation
-      name: opentelemetry-auto-instrumentation
+    - mountPath: /otel-auto-instrumentation-nodejs
+      name: opentelemetry-auto-instrumentation-nodejs
   - name: otc-container
 status:
   phase: Running
