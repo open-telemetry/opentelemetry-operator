@@ -16,12 +16,13 @@ package instrumentation
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/strings/slices"
 )
 
 // Calculate if we already inject InitContainers.
-func isInitContainerMissing(pod corev1.Pod) bool {
+func isInitContainerMissing(pod corev1.Pod, containerName string) bool {
 	for _, initContainer := range pod.Spec.InitContainers {
-		if initContainer.Name == initContainerName {
+		if initContainer.Name == containerName {
 			return false
 		}
 	}
@@ -31,7 +32,8 @@ func isInitContainerMissing(pod corev1.Pod) bool {
 // Checks if Pod is already instrumented by checking Instrumentation InitContainer presence.
 func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 	for _, cont := range pod.Spec.InitContainers {
-		if cont.Name == initContainerName {
+		if slices.Contains([]string{dotnetInitContainerName, javaInitContainerName,
+			nodejsInitContainerName, pythonInitContainerName, apacheAgentInitContainerName}, cont.Name) {
 			return true
 		}
 	}

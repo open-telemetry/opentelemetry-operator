@@ -36,7 +36,7 @@ func TestInitContainerMissing(t *testing.T) {
 							Name: "istio-init",
 						},
 						{
-							Name: initContainerName,
+							Name: javaInitContainerName,
 						},
 					},
 				},
@@ -67,7 +67,7 @@ func TestInitContainerMissing(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := isInitContainerMissing(test.pod)
+			result := isInitContainerMissing(test.pod, javaInitContainerName)
 			assert.Equal(t, test.expected, result)
 		})
 	}
@@ -88,7 +88,7 @@ func TestAutoInstrumentationInjected(t *testing.T) {
 							Name: "magic-init",
 						},
 						{
-							Name: initContainerName,
+							Name: nodejsInitContainerName,
 						},
 					},
 				},
