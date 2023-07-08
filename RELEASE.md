@@ -5,7 +5,7 @@ Steps to release a new version of the OpenTelemetry Operator:
 1. Change the `versions.txt`, so that it lists the target version of the OpenTelemetry Collector (operand), and the desired version for the target allocator and the operator. The `major.minor` should typically match, with the patch portion being possibly different.
 2. Change the `autoinstrumentation-*` versions in `versions.txt` as per the latest supported versions in `autoinstrumentation/`. 
 3. Run `make bundle USER=open-telemetry VERSION=0.38.0`, using the version that will be released.
-4. Change the compatibility matrix in the [readme](./README.md) file, using the OpenTelemetry Operator version to be released and the current latest Kubernetes version as the latest supported version.
+4. Change the compatibility matrix in the [readme](./README.md) file, using the OpenTelemetry Operator version to be released and the current latest Kubernetes version as the latest supported version. Remove the oldest entry.
 5. Add the changes to the changelog. Manually add versions of all operator components.
 6. Check the OpenTelemetry Collector's changelog and ensure migration steps are present in `pkg/collector/upgrade`
 7. Once the changes above are merged and available in `main`, tag it with the desired version, prefixed with `v`: `v0.38.0`
@@ -38,9 +38,9 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version | Release manager |
 |---------|-----------------|
-| v0.81.0 | @TylerHelmuth   |
 | v0.82.0 | @frzifus        |
 | v0.83.0 | @yuriolisa      |
 | v0.84.0 | @jaronoff97     |
 | v0.85.0 | @pavolloffay    |
 | v0.86.0 | @VineethReddy02 |
+| v0.87.0 | @TylerHelmuth   |
