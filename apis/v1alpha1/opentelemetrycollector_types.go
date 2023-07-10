@@ -194,6 +194,7 @@ type OpenTelemetryCollectorSpec struct {
 	// controls how pods are spread across your cluster among failure-domains
 	// such as regions, zones, nodes, and other user-defined topology domains
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+	// This is only relevant to statefulset, and deployment mode
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
@@ -205,8 +206,7 @@ type OpenTelemetryTargetAllocator struct {
 	// that can be run in a high availability mode is consistent-hashing.
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
-	// NodeSelector to schedule OpenTelemetry Collector pods.
-	// This is only relevant to daemonset, statefulset, and deployment mode
+	// NodeSelector to schedule OpenTelemetry TargetAllocator pods.
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// Resources to set on the OpenTelemetryTargetAllocator containers.
