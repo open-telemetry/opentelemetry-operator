@@ -14,12 +14,16 @@
 
 package watcher
 
-import promconfig "github.com/prometheus/prometheus/config"
+import (
+	"context"
+
+	promconfig "github.com/prometheus/prometheus/config"
+)
 
 type Watcher interface {
 	// Watch watcher and supply channels which will receive change events
 	Watch(upstreamEvents chan Event, upstreamErrors chan error) error
-	LoadConfig() (*promconfig.Config, error)
+	LoadConfig(ctx context.Context) (*promconfig.Config, error)
 	Close() error
 }
 

@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: openshift-user-workload-monitoring
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: openshift-user-workload-monitoring
+status:
+  availableReplicas: 2
+  currentReplicas: 2
+  readyReplicas: 2
+  replicas: 2
+  updatedReplicas: 2
+

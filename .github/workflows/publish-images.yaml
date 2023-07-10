@@ -29,6 +29,7 @@ jobs:
           grep -v '\#' versions.txt | grep autoinstrumentation-nodejs | awk -F= '{print "AUTO_INSTRUMENTATION_NODEJS_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-python | awk -F= '{print "AUTO_INSTRUMENTATION_PYTHON_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-dotnet | awk -F= '{print "AUTO_INSTRUMENTATION_DOTNET_VERSION="$2}' >> $GITHUB_ENV
+          grep -v '\#' versions.txt | grep autoinstrumentation-go | awk -F= '{print "AUTO_INSTRUMENTATION_GO_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-apache-httpd | awk -F= '{print "AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION="$2}' >> $GITHUB_ENV
           echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
           echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
@@ -37,7 +38,9 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+          images: |
+            otel/opentelemetry-operator
+            ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -58,8 +61,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      - name: Log into Docker.io
+        uses: docker/login-action@v2
+        if: ${{ github.event_name == 'push' }}
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Login to GitHub Package Registry
         uses: docker/login-action@v2
+        if: ${{ github.event_name == 'push' }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -85,6 +96,7 @@ jobs:
             AUTO_INSTRUMENTATION_NODEJS_VERSION=${{ env.AUTO_INSTRUMENTATION_NODEJS_VERSION }}
             AUTO_INSTRUMENTATION_PYTHON_VERSION=${{ env.AUTO_INSTRUMENTATION_PYTHON_VERSION }}
             AUTO_INSTRUMENTATION_DOTNET_VERSION=${{ env.AUTO_INSTRUMENTATION_DOTNET_VERSION }}
+            AUTO_INSTRUMENTATION_GO_VERSION=${{ env.AUTO_INSTRUMENTATION_GO_VERSION }}
             AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION=${{ env.AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache

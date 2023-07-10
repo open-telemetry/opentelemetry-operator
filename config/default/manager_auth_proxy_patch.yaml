@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
       - name: kube-rbac-proxy
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
         args:
         - "--secure-listen-address=0.0.0.0:8443"
         - "--upstream=http://127.0.0.1:8080/"
@@ -33,3 +33,4 @@ spec:
         - "--enable-leader-election"
         - "--zap-log-level=info"
         - "--zap-time-encoding=rfc3339nano"
+        - "--feature-gates=+operator.autoinstrumentation.go"

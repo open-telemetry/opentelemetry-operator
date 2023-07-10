@@ -82,7 +82,7 @@ type OpenTelemetryCollectorSpec struct {
 	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
-	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
 	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
@@ -183,6 +183,13 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
+	// InitContainers allows injecting initContainers to the Collector's pod definition.
+	// These init containers can be used to fetch secrets for injection into the
+	// configuration from external sources, run added checks, etc. Any errors during the execution of
+	// an initContainer will lead to a restart of the Pod. More info:
+	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+	// +optional
+	InitContainers []v1.Container `json:"initContainers,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
@@ -192,6 +199,9 @@ type OpenTelemetryTargetAllocator struct {
 	// that can be run in a high availability mode is consistent-hashing.
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Resources to set on the OpenTelemetryTargetAllocator containers.
+	// +optional
+	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted and consistent-hashing. The default option is least-weighted
 	// +optional
@@ -245,6 +255,12 @@ type ScaleSubresourceStatus struct {
 	// OpenTelemetryCollector's deployment or statefulSet.
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
+
+	// StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition /
+	// Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector).
+	// Deployment, Daemonset, StatefulSet.
+	// +optional
+	StatusReplicas string `json:"statusReplicas,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
@@ -256,6 +272,10 @@ type OpenTelemetryCollectorStatus struct {
 	// Version of the managed OpenTelemetry Collector (operand)
 	// +optional
 	Version string `json:"version,omitempty"`
+
+	// Image indicates the container image to use for the OpenTelemetry Collector.
+	// +optional
+	Image string `json:"image,omitempty"`
 
 	// Messages about actions performed by the operator on this resource.
 	// +optional
@@ -275,7 +295,9 @@ type OpenTelemetryCollectorStatus struct {
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.scale.statusReplicas"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Image",type="string",JSONPath=".status.image"
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
 // This annotation provides a hint for OLM which resources are managed by OpenTelemetryCollector kind.
 // It's not mandatory to list all resources.
@@ -309,6 +331,11 @@ type AutoscalerSpec struct {
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// +optional
 	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
+	// Metrics is meant to provide a customizable way to configure HPA metrics.
+	// currently the only supported custom metrics is type=Pod.
+	// Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.
+	// +optional
+	Metrics []MetricSpec `json:"metrics,omitempty"`
 	// TargetCPUUtilization sets the target average CPU used across all replicas.
 	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
 	// +optional
@@ -354,6 +381,14 @@ type Probe struct {
 	// Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
 	// +optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
+}
+
+// MetricSpec defines a subset of metrics to be defined for the HPA's metric array
+// more metric type can be supported as needed.
+// See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
+type MetricSpec struct {
+	Type autoscalingv2.MetricSourceType  `json:"type"`
+	Pods *autoscalingv2.PodsMetricSource `json:"pods,omitempty"`
 }
 
 func init() {

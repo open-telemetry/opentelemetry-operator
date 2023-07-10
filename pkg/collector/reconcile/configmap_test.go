@@ -94,23 +94,11 @@ receivers:
       grpc: null
   prometheus:
     config:
-      global:
-        scrape_interval: 1m
-        scrape_timeout: 10s
-        evaluation_interval: 1m
       scrape_configs:
-      - job_name: otel-collector
-        honor_timestamps: true
+      - http_sd_configs:
+        - url: http://test-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
+        job_name: otel-collector
         scrape_interval: 10s
-        scrape_timeout: 10s
-        metrics_path: /metrics
-        scheme: http
-        follow_redirects: true
-        enable_http2: true
-        http_sd_configs:
-        - follow_redirects: false
-          enable_http2: false
-          url: http://test-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
 service:
   pipelines:
     metrics:
@@ -145,23 +133,16 @@ processors: null
 receivers:
   prometheus:
     config:
-      global:
-        scrape_interval: 1m
-        scrape_timeout: 10s
-        evaluation_interval: 1m
       scrape_configs:
-      - job_name: serviceMonitor/test/test/0
-        honor_timestamps: true
-        scrape_interval: 1m
-        scrape_timeout: 10s
-        metrics_path: /metrics
-        scheme: http
-        follow_redirects: true
-        enable_http2: true
-        http_sd_configs:
-        - follow_redirects: false
-          enable_http2: false
-          url: http://test-targetallocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
+      - http_sd_configs:
+        - url: http://test-targetallocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
+        job_name: serviceMonitor/test/test/0
+    target_allocator:
+      collector_id: ${POD_NAME}
+      endpoint: http://test-targetallocator:80
+      http_sd_config:
+        refresh_interval: 60s
+      interval: 30s
 service:
   pipelines:
     metrics:
@@ -173,7 +154,7 @@ service:
 `,
 		}
 
-		param, err := newParams("test/test-img", "../testdata/http_sd_config_servicemonitor_test.yaml")
+		param, err := newParams("test/test-img", "../testdata/http_sd_config_servicemonitor_test_ta_set.yaml")
 		assert.NoError(t, err)
 		param.Instance.Spec.TargetAllocator.Enabled = true
 		actual := desiredConfigMap(context.Background(), param)
@@ -200,15 +181,11 @@ service:
 processors: null
 receivers:
   prometheus:
-    config:
-      global:
-        scrape_interval: 1m
-        scrape_timeout: 10s
-        evaluation_interval: 1m
+    config: {}
     target_allocator:
+      collector_id: ${POD_NAME}
       endpoint: http://test-targetallocator:80
       interval: 30s
-      collector_id: ${POD_NAME}
 service:
   pipelines:
     metrics:

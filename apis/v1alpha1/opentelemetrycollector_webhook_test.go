@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -206,9 +207,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
     endpoint: "0.0.0.0:12346"
   prometheus:
     config:
-      scrape_config:
-        job_name: otel-collector
-        scrape_interval: 10s
+      scrape_configs:
+        - job_name: otel-collector
+          scrape_interval: 10s
   jaeger/custom:
     protocols:
       thrift_http:
@@ -421,6 +422,72 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas",
+		},
+		{
+			name: "invalid autoscaler metric type",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.ResourceMetricSourceType,
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod",
+		},
+		{
+			name: "invalid pod metric average value",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.PodsMetricSourceType,
+								Pods: &autoscalingv2.PodsMetricSource{
+									Metric: autoscalingv2.MetricIdentifier{
+										Name: "custom1",
+									},
+									Target: autoscalingv2.MetricTarget{
+										Type:         autoscalingv2.AverageValueMetricType,
+										AverageValue: resource.NewQuantity(int64(0), resource.DecimalSI),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0",
+		},
+		{
+			name: "utilization target is not valid with pod metrics",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					Autoscaler: &AutoscalerSpec{
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.PodsMetricSourceType,
+								Pods: &autoscalingv2.PodsMetricSource{
+									Metric: autoscalingv2.MetricIdentifier{
+										Name: "custom1",
+									},
+									Target: autoscalingv2.MetricTarget{
+										Type:               autoscalingv2.UtilizationMetricType,
+										AverageUtilization: &one,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type",
 		},
 		{
 			name: "invalid deployment mode incompabible with ingress settings",

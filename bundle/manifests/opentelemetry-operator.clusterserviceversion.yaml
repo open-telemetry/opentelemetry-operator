@@ -31,13 +31,13 @@ metadata:
     categories: Logging & Tracing
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2023-04-10T17:45:14Z"
+    createdAt: "2023-07-05T18:15:51Z"
     description: Provides the OpenTelemetry components, including the Collector
-    operators.operatorframework.io/builder: operator-sdk-v1.27.0
+    operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.75.0
+  name: opentelemetry-operator.v0.81.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -307,7 +307,8 @@ spec:
                 - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.75.0
+                - --feature-gates=+operator.autoinstrumentation.go
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.81.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -338,7 +339,7 @@ spec:
                 - --upstream=http://127.0.0.1:8080/
                 - --logtostderr=true
                 - --v=0
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
                 name: kube-rbac-proxy
                 ports:
                 - containerPort: 8443
@@ -414,7 +415,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.75.0
+  version: 0.81.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

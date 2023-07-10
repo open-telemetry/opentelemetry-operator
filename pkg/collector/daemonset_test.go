@@ -55,6 +55,9 @@ func TestDaemonSetNewDefault(t *testing.T) {
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
 		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"prometheus.io/path":                   "/metrics",
+		"prometheus.io/port":                   "8888",
+		"prometheus.io/scrape":                 "true",
 	}
 	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
@@ -119,9 +122,18 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	// Add sha256 podAnnotation
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
+	expectedAnnotations := map[string]string{
+		"annotation-key":                       "annotation-value",
+		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"prometheus.io/path":                   "/metrics",
+		"prometheus.io/port":                   "8888",
+		"prometheus.io/scrape":                 "true",
+	}
+
 	// verify
 	assert.Equal(t, "my-instance-collector", ds.Name)
-	assert.Equal(t, testPodAnnotationValues, ds.Spec.Template.Annotations)
+	assert.Len(t, ds.Spec.Template.Annotations, 5)
+	assert.Equal(t, expectedAnnotations, ds.Spec.Template.Annotations)
 }
 
 func TestDaemonstPodSecurityContext(t *testing.T) {
@@ -263,4 +275,31 @@ func TestDaemonSetAffinity(t *testing.T) {
 	d2 := DaemonSet(cfg, logger, otelcol2)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
+}
+
+func TestDaemonSetInitContainer(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			InitContainers: []v1.Container{
+				{
+					Name: "test",
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	d := DaemonSet(cfg, logger, otelcol)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
+	assert.Len(t, d.Spec.Template.Spec.InitContainers, 1)
 }
