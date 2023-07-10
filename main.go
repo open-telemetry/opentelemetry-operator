@@ -25,6 +25,7 @@ import (
 	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,8 +42,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"

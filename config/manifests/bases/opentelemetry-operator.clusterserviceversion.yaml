@@ -64,7 +64,8 @@ spec:
         displayName: Metrics Config
         path: observability.metrics
       - description: CreateServiceMonitors specifies if ServiceMonitors should be
-          created for the OpenTelemetry Collector.
+          created for the OpenTelemetry Collector. The operator.observability.prometheus
+          feature gate must be enabled to use this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.createServiceMonitors
       version: v1alpha1
