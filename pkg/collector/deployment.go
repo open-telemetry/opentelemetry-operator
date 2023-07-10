@@ -63,6 +63,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 					PriorityClassName:             otelcol.Spec.PriorityClassName,
 					Affinity:                      otelcol.Spec.Affinity,
 					TerminationGracePeriodSeconds: otelcol.Spec.TerminationGracePeriodSeconds,
+					TopologySpreadConstraints:     otelcol.Spec.TopologySpreadConstraints,
 				},
 			},
 		},
