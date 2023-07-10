@@ -1,0 +1,25 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: otel-collector
+  namespace: kuttl-otlp-metrics
+spec:
+  podMetricsEndpoints:
+  - port: metrics
+  - metricRelabelings:
+    - action: labeldrop
+      regex: instance
+    - action: labeldrop
+      regex: job
+    port: promexporter
+    relabelings:
+    - action: labeldrop
+      regex: pod
+    - action: labeldrop
+      regex: container
+    - action: labeldrop
+      regex: endpoint
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cluster-collector-collector
