@@ -3821,7 +3821,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspectopologyspreadconstraintsindex">topologySpreadConstraints</a></b></td>
         <td>[]object</td>
         <td>
-          TopologySpreadConstraints embedded kubernetes pod configuration option, controls how pods are spread across your cluster among failure-domains such as regions, zones, nodes, and other user-defined topology domains https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/<br/>
+          TopologySpreadConstraints embedded kubernetes pod configuration option, controls how pods are spread across your cluster among failure-domains such as regions, zones, nodes, and other user-defined topology domains https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/ This is only relevant to statefulset, and deployment mode<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9702,7 +9702,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
-          NodeSelector to schedule OpenTelemetry Collector pods. This is only relevant to daemonset, statefulset, and deployment mode<br/>
+          NodeSelector to schedule OpenTelemetry TargetAllocator pods.<br/>
         </td>
         <td>false</td>
       </tr><tr>

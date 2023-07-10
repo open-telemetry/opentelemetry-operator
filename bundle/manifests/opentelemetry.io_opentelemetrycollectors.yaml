@@ -3440,9 +3440,8 @@ spec:
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: NodeSelector to schedule OpenTelemetry Collector
-                      pods. This is only relevant to daemonset, statefulset, and deployment
-                      mode
+                    description: NodeSelector to schedule OpenTelemetry TargetAllocator
+                      pods.
                     type: object
                   prometheusCR:
                     description: PrometheusCR defines the configuration for the retrieval
@@ -3770,6 +3769,7 @@ spec:
                   option, controls how pods are spread across your cluster among failure-domains
                   such as regions, zones, nodes, and other user-defined topology domains
                   https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+                  This is only relevant to statefulset, and deployment mode
                 items:
                   description: TopologySpreadConstraint specifies how to spread matching
                     pods among the given topology.
