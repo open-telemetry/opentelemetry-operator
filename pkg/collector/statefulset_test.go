@@ -382,3 +382,35 @@ func TestStatefulSetInitContainer(t *testing.T) {
 	assert.Equal(t, "/metrics", s.Annotations["prometheus.io/path"])
 	assert.Len(t, s.Spec.Template.Spec.InitContainers, 1)
 }
+
+func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
+	// Test default
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+	s1 := StatefulSet(cfg, logger, otelcol1)
+	assert.Equal(t, "my-instance-collector", s1.Name)
+	assert.Empty(t, s1.Spec.Template.Spec.TopologySpreadConstraints)
+
+	// Test TopologySpreadConstraints
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-topologyspreadconstraint",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TopologySpreadConstraints: testTopologySpreadConstraintValue,
+		},
+	}
+
+	cfg = config.New()
+
+	s2 := StatefulSet(cfg, logger, otelcol2)
+	assert.Equal(t, "my-instance-topologyspreadconstraint-collector", s2.Name)
+	assert.NotNil(t, s2.Spec.Template.Spec.TopologySpreadConstraints)
+	assert.NotEmpty(t, s2.Spec.Template.Spec.TopologySpreadConstraints)
+	assert.Equal(t, testTopologySpreadConstraintValue, s2.Spec.Template.Spec.TopologySpreadConstraints)
+}
