@@ -197,11 +197,12 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-openshift-routes install-prometheus-operator load-image-all deploy
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-openshift-routes install-prometheus-operator load-image-all enable-prometheus-feature-flag deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
-# Enable the Prometheus Operator feature flag
-	kubectl patch deployment opentelemetry-operator-controller-manager --patch-file  tests/patch-operator-deployment.yaml -n opentelemetry-operator-system
-	go run hack/check-operator-ready.go 300
+
+.PHONY: enable-prometheus-feature-flag
+enable-prometheus-feature-flag:
+	$(SED) -i "s#--feature-gates=+operator.autoinstrumentation.go#+operator.autoinstrumentation.go,+operator.observability.prometheus#g" config/default/manager_auth_proxy_patch.yaml
 
 
 .PHONY: scorecard-tests
