@@ -7,7 +7,7 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
-    image: "ghcr.io/iblancasa/opentelemetry-operator/target-allocator:v0.81.0-14-g27e2a7e"
+    image: "local/opentelemetry-operator-targetallocator:e2e"
     serviceAccount: ta
     prometheusCR:
       enabled: true
