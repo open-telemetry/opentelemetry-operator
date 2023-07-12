@@ -43,6 +43,9 @@ spec:
     serviceAccount: ta
     prometheusCR:
       enabled: true
+    env:
+      - name: TEST_ENV
+        value: "test"
   config: |
     receivers:
       jaeger:
