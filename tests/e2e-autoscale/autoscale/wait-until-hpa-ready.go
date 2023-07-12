@@ -45,7 +45,6 @@ func main() {
 		}
 	}
 
-
 	if len(hpaName) == 0 {
 		fmt.Println("hpa flag is mandatory")
 		os.Exit(1)
