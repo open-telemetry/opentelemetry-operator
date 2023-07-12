@@ -202,7 +202,7 @@ prepare-e2e: kuttl set-image-controller container container-target-allocator con
 
 .PHONY: enable-prometheus-feature-flag
 enable-prometheus-feature-flag:
-	$(SED) -i "s#--feature-gates=+operator.autoinstrumentation.go#+operator.autoinstrumentation.go,+operator.observability.prometheus#g" config/default/manager_auth_proxy_patch.yaml
+	$(SED) -i "s#--feature-gates=+operator.autoinstrumentation.go#--feature-gates=+operator.autoinstrumentation.go,+operator.observability.prometheus#g" config/default/manager_auth_proxy_patch.yaml
 
 
 .PHONY: scorecard-tests
