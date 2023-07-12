@@ -243,17 +243,10 @@ endif
 install-metrics-server:
 	./hack/install-metrics-server.sh
 
-<<<<<<< HEAD
-.PHONY: install-openshift-routes
-install-openshift-routes:
-	./hack/install-openshift-routes.sh
-
 .PHONY: install-prometheus-operator
 install-prometheus-operator:
 	./hack/install-prometheus-operator.sh
 
-=======
->>>>>>> e9af801033cbcc0b58c7a6211598109effd866de
 .PHONY: load-image-all
 load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge
 
