@@ -197,7 +197,7 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-openshift-routes install-prometheus-operator load-image-all enable-prometheus-feature-flag deploy
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-prometheus-operator load-image-all enable-prometheus-feature-flag deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 .PHONY: enable-prometheus-feature-flag
@@ -243,6 +243,7 @@ endif
 install-metrics-server:
 	./hack/install-metrics-server.sh
 
+<<<<<<< HEAD
 .PHONY: install-openshift-routes
 install-openshift-routes:
 	./hack/install-openshift-routes.sh
@@ -251,6 +252,8 @@ install-openshift-routes:
 install-prometheus-operator:
 	./hack/install-prometheus-operator.sh
 
+=======
+>>>>>>> e9af801033cbcc0b58c7a6211598109effd866de
 .PHONY: load-image-all
 load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge
 

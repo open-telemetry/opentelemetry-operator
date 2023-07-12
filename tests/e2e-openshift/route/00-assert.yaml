@@ -27,5 +27,4 @@ spec:
   to:
     kind: Service
     name: simplest-collector
-    weight: null
   wildcardPolicy: None
