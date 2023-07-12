@@ -65,6 +65,10 @@ func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, erro
 		taConfig["filter_strategy"] = instance.Spec.TargetAllocator.FilterStrategy
 	}
 
+	if instance.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Size() > 0 {
+		taConfig["cr_scrape_interval"] = instance.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Duration
+	}
+
 	if instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
 		taConfig["service_monitor_selector"] = &instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
 	}

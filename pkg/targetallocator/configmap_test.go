@@ -16,8 +16,10 @@ package targetallocator
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
@@ -91,6 +93,39 @@ service_monitor_selector:
 			"release": "my-instance",
 		}
 		actual, err := ConfigMap(instance)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+
+	})
+	t.Run("should return expected target allocator config map with scrape interval set", func(t *testing.T) {
+		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
+		expectedLables["app.kubernetes.io/name"] = "my-instance-targetallocator"
+
+		expectedData := map[string]string{
+			"targetallocator.yaml": `allocation_strategy: least-weighted
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+cr_scrape_interval: 30s
+label_selector:
+  app.kubernetes.io/component: opentelemetry-collector
+  app.kubernetes.io/instance: default.my-instance
+  app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/part-of: opentelemetry
+`,
+		}
+
+		collector := collectorInstance()
+		collector.Spec.TargetAllocator.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
+		actual, err := ConfigMap(collector)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
