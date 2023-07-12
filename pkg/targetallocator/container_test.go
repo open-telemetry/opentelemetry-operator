@@ -116,3 +116,106 @@ func TestContainerResourceRequirements(t *testing.T) {
 	// verify
 	assert.Equal(t, resourceTest, resourcesValues)
 }
+
+func TestContainerHasEnvVars(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+				Env: []corev1.EnvVar{
+					{
+						Name:  "TEST_ENV",
+						Value: "test",
+					},
+				},
+			},
+		},
+	}
+	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+
+	expected := corev1.Container{
+		Name:  "ta-container",
+		Image: "default-image",
+		Env: []corev1.EnvVar{
+			{
+				Name:  "TEST_ENV",
+				Value: "test",
+			},
+			{
+				Name:  "OTELCOL_NAMESPACE",
+				Value: "",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						APIVersion: "",
+						FieldPath:  "metadata.namespace",
+					},
+					ResourceFieldRef: nil,
+					ConfigMapKeyRef:  nil,
+					SecretKeyRef:     nil,
+				},
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:             "ta-internal",
+				ReadOnly:         false,
+				MountPath:        "/conf",
+				SubPath:          "",
+				MountPropagation: nil,
+				SubPathExpr:      "",
+			},
+		},
+	}
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, expected, c)
+}
+
+func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+				Env: []corev1.EnvVar{
+					{
+						Name:  "OTELCOL_NAMESPACE",
+						Value: "test",
+					},
+				},
+			},
+		},
+	}
+	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+
+	expected := corev1.Container{
+		Name:  "ta-container",
+		Image: "default-image",
+		Env: []corev1.EnvVar{
+			{
+				Name:  "OTELCOL_NAMESPACE",
+				Value: "test",
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:             "ta-internal",
+				ReadOnly:         false,
+				MountPath:        "/conf",
+				SubPath:          "",
+				MountPropagation: nil,
+				SubPathExpr:      "",
+			},
+		},
+	}
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, expected, c)
+}
