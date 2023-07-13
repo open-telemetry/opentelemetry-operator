@@ -18,9 +18,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,11 +26,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
-	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -44,7 +40,7 @@ func ConfigMaps(ctx context.Context, params Params) error {
 	}
 
 	if params.Instance.Spec.TargetAllocator.Enabled {
-		cm, err := desiredTAConfigMap(params)
+		cm, err := targetallocator.ConfigMap(params.Instance)
 		if err != nil {
 			return fmt.Errorf("failed to parse config: %w", err)
 		}
@@ -84,70 +80,6 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 			"collector.yaml": config,
 		},
 	}
-}
-
-func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
-	name := naming.TAConfigMap(params.Instance)
-	version := strings.Split(params.Instance.Spec.Image, ":")
-	labels := targetallocator.Labels(params.Instance, name)
-	if len(version) > 1 {
-		labels["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
-		labels["app.kubernetes.io/version"] = "latest"
-	}
-
-	// Collector supports environment variable substitution, but the TA does not.
-	// TA ConfigMap should have a single "$", as it does not support env var substitution
-	prometheusReceiverConfig, err := ta.UnescapeDollarSignsInPromConfig(params.Instance.Spec.Config)
-	if err != nil {
-		return corev1.ConfigMap{}, err
-	}
-
-	taConfig := make(map[interface{}]interface{})
-	taConfig["label_selector"] = map[string]string{
-		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/component":  "opentelemetry-collector",
-	}
-	// We only take the "config" from the returned object, if it's present
-	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
-		taConfig["config"] = prometheusConfig
-	}
-
-	if len(params.Instance.Spec.TargetAllocator.AllocationStrategy) > 0 {
-		taConfig["allocation_strategy"] = params.Instance.Spec.TargetAllocator.AllocationStrategy
-	} else {
-		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
-	}
-
-	if len(params.Instance.Spec.TargetAllocator.FilterStrategy) > 0 {
-		taConfig["filter_strategy"] = params.Instance.Spec.TargetAllocator.FilterStrategy
-	}
-
-	if params.Instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
-		taConfig["service_monitor_selector"] = &params.Instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
-	}
-
-	if params.Instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
-		taConfig["pod_monitor_selector"] = &params.Instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
-	}
-
-	taConfigYAML, err := yaml.Marshal(taConfig)
-	if err != nil {
-		return corev1.ConfigMap{}, err
-	}
-
-	return corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   params.Instance.Namespace,
-			Labels:      labels,
-			Annotations: params.Instance.Annotations,
-		},
-		Data: map[string]string{
-			"targetallocator.yaml": string(taConfigYAML),
-		},
-	}, nil
 }
 
 func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap, retry bool) error {
