@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -219,6 +220,13 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 	}
 	serviceName := chooseServiceName(pod, resourceMap, index)
 	serviceNamespace := pod.GetNamespace()
+	if len(serviceNamespace) == 0 {
+		serviceNamespace = resourceMap[string(semconv.K8SNamespaceNameKey)]
+		if len(serviceNamespace) == 0 {
+			serviceNamespace = "apache-httpd"
+		}
+
+	}
 	// Namespace name override TBD
 
 	// There are two versions of the OTEL modules - for Apache HTTPD 2.4 and 2.2.

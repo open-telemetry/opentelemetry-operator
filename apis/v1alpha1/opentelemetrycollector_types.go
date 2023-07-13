@@ -249,6 +249,10 @@ type OpenTelemetryTargetAllocator struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
+	// consumed in the config file for the TargetAllocator.
+	// +optional
+	Env []v1.EnvVar `json:"env,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {
