@@ -32,14 +32,18 @@ import (
 func main() {
 	var hpaName string
 	var timeout time.Duration
-	var kubeconfigPath string
-
-	defaultKubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
 
 	pflag.DurationVar(&timeout, "timeout", 5*time.Minute, "The timeout for the check.")
 	pflag.StringVar(&hpaName, "hpa", "", "HPA to check")
-	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", defaultKubeconfigPath, "Absolute path to the KubeconfigPath file")
 	pflag.Parse()
+
+	kubeconfigEnv := os.Getenv("KUBECONFIG")
+	kubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	if kubeconfigEnv != "" {
+		if _, err := os.Stat(kubeconfigEnv); err != nil {
+			kubeconfigPath = kubeconfigEnv
+		}
+	}
 
 	if len(hpaName) == 0 {
 		fmt.Println("hpa flag is mandatory")
