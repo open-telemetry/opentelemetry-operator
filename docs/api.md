@@ -9685,6 +9685,13 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be consumed in the config file for the TargetAllocator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>filterStrategy</b></td>
         <td>string</td>
         <td>
@@ -9740,6 +9747,252 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td>[]object</td>
         <td>
           TopologySpreadConstraints embedded kubernetes pod configuration option, controls how pods are spread across your cluster among failure-domains such as regions, zones, nodes, and other user-defined topology domains https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
+
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindex)</sup></sup>
+
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
