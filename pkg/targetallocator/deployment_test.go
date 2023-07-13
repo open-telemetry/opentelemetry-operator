@@ -15,6 +15,8 @@
 package targetallocator
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,11 +42,7 @@ var testTopologySpreadConstraintValue = []v1.TopologySpreadConstraint{
 
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance",
-		},
-	}
+	otelcol := collectorInstance()
 	cfg := config.New()
 
 	// test
@@ -56,8 +54,9 @@ func TestDeploymentNewDefault(t *testing.T) {
 
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
 
-	// none of the default annotations should propagate down to the pod
-	assert.Empty(t, d.Spec.Template.Annotations)
+	// should only have the ConfigMap hash annotation
+	assert.Contains(t, d.Spec.Template.Annotations, configMapHashAnnotationKey)
+	assert.Len(t, d.Spec.Template.Annotations, 1)
 
 	// the pod selector should match the pod spec's labels
 	assert.Equal(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
@@ -66,14 +65,8 @@ func TestDeploymentNewDefault(t *testing.T) {
 func TestDeploymentPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance",
-		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodAnnotations: testPodAnnotationValues,
-		},
-	}
+	otelcol := collectorInstance()
+	otelcol.Spec.PodAnnotations = testPodAnnotationValues
 	cfg := config.New()
 
 	// test
@@ -81,7 +74,24 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", ds.Name)
-	assert.Equal(t, testPodAnnotationValues, ds.Spec.Template.Annotations)
+	assert.Subset(t, ds.Spec.Template.Annotations, testPodAnnotationValues)
+}
+
+func collectorInstance() v1alpha1.OpenTelemetryCollector {
+	configYAML, err := os.ReadFile("testdata/test.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+	return v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image:  "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+			Config: string(configYAML),
+		},
+	}
 }
 
 func TestDeploymentNodeSelector(t *testing.T) {
