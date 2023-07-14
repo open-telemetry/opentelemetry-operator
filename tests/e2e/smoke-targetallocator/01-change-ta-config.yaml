@@ -10,6 +10,8 @@ spec:
     image: "local/opentelemetry-operator-targetallocator:e2e"
     prometheusCR:
       enabled: true
+      serviceMonitorSelector:
+        key: value # this is just an arbitrary change to the target allocator config
   config: |
     receivers:
       jaeger:
@@ -24,9 +26,9 @@ spec:
               scrape_interval: 10s
               static_configs:
                 - targets: [ '0.0.0.0:8888' ]
-    
+
     processors:
-    
+
     exporters:
       logging:
     service:
