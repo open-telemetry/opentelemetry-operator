@@ -14,7 +14,7 @@ spec:
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-python: "true"
-        instrumentation.opentelemetry.io/python-container-names: "myrabbit"
+        instrumentation.opentelemetry.io/container-names: "myrabbit"
     spec:
       containers:
       - name: myapp

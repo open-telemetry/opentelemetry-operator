@@ -4,7 +4,7 @@ metadata:
   annotations:
     sidecar.opentelemetry.io/inject: "true"
     instrumentation.opentelemetry.io/inject-apache-httpd: "true"
-    instrumentation.opentelemetry.io/apache-httpd-container-names: "myapp,myrabbit"
+    instrumentation.opentelemetry.io/container-names: "myapp,myrabbit"
   labels:
     app: my-apache
 spec:

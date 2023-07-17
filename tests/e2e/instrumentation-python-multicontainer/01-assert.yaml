@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   annotations:
     sidecar.opentelemetry.io/inject: "true"
-    instrumentation.opentelemetry.io/python-container-names: myapp,myrabbit
+    instrumentation.opentelemetry.io/container-names: myapp,myrabbit
     instrumentation.opentelemetry.io/inject-python: "true"
   labels:
     app: my-pod-with-sidecar

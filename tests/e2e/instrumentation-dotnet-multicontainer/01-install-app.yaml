@@ -14,7 +14,7 @@ spec:
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-dotnet: "true"
-        instrumentation.opentelemetry.io/dotnet-container-names: "myapp,myrabbit"
+        instrumentation.opentelemetry.io/container-names: "myapp,myrabbit"
     spec:
       containers:
       - name: myapp
