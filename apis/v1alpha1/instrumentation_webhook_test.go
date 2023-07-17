@@ -48,6 +48,20 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		inst Instrumentation
 	}{
 		{
+			name: "all defaults",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{},
+			},
+		},
+		{
+			name: "sampler configuration not present",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{},
+				},
+			},
+		},
+		{
 			name: "argument is not a number",
 			err:  "spec.sampler.argument is not a number",
 			inst: Instrumentation{
