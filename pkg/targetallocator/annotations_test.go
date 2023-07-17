@@ -15,6 +15,8 @@
 package targetallocator
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,10 +34,15 @@ func TestPodAnnotations(t *testing.T) {
 
 func TestConfigMapHash(t *testing.T) {
 	instance := collectorInstance()
+	expectedConfigMap, err := ConfigMap(instance)
+	require.NoError(t, err)
+	expectedConfig := expectedConfigMap.Data[targetAllocatorFilename]
+	require.NotEmpty(t, expectedConfig)
+	expectedHash := sha256.Sum256([]byte(expectedConfig))
 	annotations := Annotations(instance)
 	require.Contains(t, annotations, configMapHashAnnotationKey)
 	cmHash := annotations[configMapHashAnnotationKey]
-	assert.Len(t, cmHash, 64)
+	assert.Equal(t, fmt.Sprintf("%x", expectedHash), cmHash)
 }
 
 func TestInvalidConfigNoHash(t *testing.T) {
