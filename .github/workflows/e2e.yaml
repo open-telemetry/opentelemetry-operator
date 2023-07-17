@@ -30,6 +30,7 @@ jobs:
        group:
          - e2e e2e-upgrade
          - e2e-autoscale
+         - e2e-multi-instrumentation
 
     steps:
   
