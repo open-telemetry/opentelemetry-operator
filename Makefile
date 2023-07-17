@@ -176,6 +176,11 @@ generate: controller-gen api-docs
 e2e:
 	$(KUTTL) test
 
+# end-to-end-test for PrometheusCR E2E tests
+.PHONY: e2e-prometheuscr
+e2e-prometheuscr:
+	$(KUTTL) test --config kuttl-test-prometheuscr.yaml
+
 # end-to-end-test for testing upgrading
 .PHONY: e2e-upgrade
 e2e-upgrade: undeploy
@@ -197,7 +202,7 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-prometheus-operator load-image-all enable-prometheus-feature-flag deploy
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server load-image-all deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 .PHONY: enable-prometheus-feature-flag

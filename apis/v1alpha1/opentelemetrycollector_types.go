@@ -375,13 +375,13 @@ type AutoscalerSpec struct {
 
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
-	// CreateServiceMonitors specifies if ServiceMonitors should be created for the OpenTelemetry Collector.
+	// EnableMetrics specifies if ServiceMonitors should be created for the OpenTelemetry Collector.
 	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
-	CreateServiceMonitors bool `json:"createServiceMonitors,omitempty"`
+	EnableMetrics bool `json:"createServiceMonitors,omitempty"`
 }
 
 // ObservabilitySpec defines how telemetry data gets handled.

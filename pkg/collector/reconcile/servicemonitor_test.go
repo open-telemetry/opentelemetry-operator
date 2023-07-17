@@ -45,7 +45,7 @@ func TestExpectedServiceMonitors(t *testing.T) {
 
 	t.Run("should create the service monitor", func(t *testing.T) {
 		p := params()
-		p.Instance.Spec.Observability.Metrics.CreateServiceMonitors = true
+		p.Instance.Spec.Observability.Metrics.EnableMetrics = true
 
 		err := expectedServiceMonitors(
 			context.Background(),
@@ -130,7 +130,7 @@ func TestServiceMonitors(t *testing.T) {
 
 		ctx := context.Background()
 		p := params()
-		p.Instance.Spec.Observability.Metrics.CreateServiceMonitors = true
+		p.Instance.Spec.Observability.Metrics.EnableMetrics = true
 		err := ServiceMonitors(ctx, p)
 		assert.Nil(t, err)
 	})
