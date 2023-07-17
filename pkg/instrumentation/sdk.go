@@ -36,6 +36,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -60,7 +61,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.Java
 		var err error
 		i.logger.V(1).Info("injecting Java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		for _, container := range strings.Split(containers.Java, ",") {
+
+		javaContainers := containers.GeneralContainerNames
+		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+			javaContainers = containers.Java
+		}
+
+		for _, container := range strings.Split(javaContainers, ",") {
 			index := getContainerIndex(container, pod)
 			pod, err = injectJavaagent(otelinst.Spec.Java, pod, index)
 			if err != nil {
@@ -75,7 +82,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.NodeJS
 		var err error
 		i.logger.V(1).Info("injecting NodeJS instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		for _, container := range strings.Split(containers.NodeJS, ",") {
+
+		nodejsContainers := containers.GeneralContainerNames
+		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+			nodejsContainers = containers.NodeJS
+		}
+
+		for _, container := range strings.Split(nodejsContainers, ",") {
 			index := getContainerIndex(container, pod)
 			pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index)
 			if err != nil {
@@ -90,7 +103,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.Python
 		var err error
 		i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		for _, container := range strings.Split(containers.Python, ",") {
+
+		pythonContainers := containers.GeneralContainerNames
+		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+			pythonContainers = containers.Python
+		}
+
+		for _, container := range strings.Split(pythonContainers, ",") {
 			index := getContainerIndex(container, pod)
 			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index)
 			if err != nil {
@@ -105,7 +124,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.DotNet
 		var err error
 		i.logger.V(1).Info("injecting DotNet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		for _, container := range strings.Split(containers.DotNet, ",") {
+
+		dotnetContainers := containers.GeneralContainerNames
+		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+			dotnetContainers = containers.DotNet
+		}
+
+		for _, container := range strings.Split(dotnetContainers, ",") {
 			index := getContainerIndex(container, pod)
 			pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index)
 			if err != nil {
@@ -121,8 +146,14 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.Go
 		var err error
 		i.logger.V(1).Info("injecting Go instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+
+		goContainers := containers.GeneralContainerNames
+		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+			goContainers = containers.Go
+		}
+
 		// Go instrumentation supports only single container instrumentation. Loop here should be replaced/improved.
-		for _, container := range strings.Split(containers.Go, ",") {
+		for _, container := range strings.Split(goContainers, ",") {
 			index := getContainerIndex(container, pod)
 			pod, err = injectGoSDK(otelinst.Spec.Go, pod)
 			if err != nil {
@@ -144,7 +175,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	if insts.ApacheHttpd != nil {
 		otelinst := *insts.ApacheHttpd
 		i.logger.V(1).Info("injecting Apache Httpd instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		for _, container := range strings.Split(containers.ApacheHttpd, ",") {
+
+		apacheHttpdContainers := containers.GeneralContainerNames
+		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+			apacheHttpdContainers = containers.ApacheHttpd
+		}
+
+		for _, container := range strings.Split(apacheHttpdContainers, ",") {
 			index := getContainerIndex(container, pod)
 			// Apache agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
@@ -156,7 +193,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	if insts.Sdk != nil {
 		otelinst := *insts.Sdk
 		i.logger.V(1).Info("injecting sdk-only instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
-		for _, container := range strings.Split(containers.Sdk, ",") {
+
+		sdkContainers := containers.GeneralContainerNames
+		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+			sdkContainers = containers.Sdk
+		}
+
+		for _, container := range strings.Split(sdkContainers, ",") {
 			index := getContainerIndex(container, pod)
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)

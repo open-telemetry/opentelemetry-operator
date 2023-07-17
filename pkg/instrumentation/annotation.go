@@ -23,6 +23,7 @@ import (
 const (
 	// annotationInjectJava indicates whether java auto-instrumentation should be injected or not.
 	// Possible values are "true", "false" or "<Instrumentation>" name.
+	annotationInjectContainerName             = "instrumentation.opentelemetry.io/container-names"
 	annotationInjectJava                      = "instrumentation.opentelemetry.io/inject-java"
 	annotationInjectJavaContainersName        = "instrumentation.opentelemetry.io/java-container-names"
 	annotationInjectNodeJS                    = "instrumentation.opentelemetry.io/inject-nodejs"

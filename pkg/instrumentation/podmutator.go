@@ -17,6 +17,7 @@ package instrumentation
 import (
 	"context"
 	"errors"
+	"reflect"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -53,13 +54,14 @@ type languageInstrumentations struct {
 }
 
 type languageContainers struct {
-	Java        string
-	NodeJS      string
-	Python      string
-	DotNet      string
-	ApacheHttpd string
-	Go          string
-	Sdk         string
+	Java                  string
+	NodeJS                string
+	Python                string
+	DotNet                string
+	ApacheHttpd           string
+	Go                    string
+	Sdk                   string
+	GeneralContainerNames string
 }
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
@@ -178,13 +180,26 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 
 	// We retrieve the annotation for podname
-	containers.Java = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
-	containers.NodeJS = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
-	containers.Python = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectPythonContainersName)
-	containers.DotNet = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
-	containers.Go = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
-	containers.ApacheHttpd = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
-	containers.Sdk = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
+	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+		// We use annotations specific for instrumentation language
+		containers.Java = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
+		containers.NodeJS = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
+		containers.Python = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectPythonContainersName)
+		containers.DotNet = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
+		containers.Go = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
+		containers.ApacheHttpd = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
+		containers.Sdk = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
+	} else {
+		// We use general annotation for container names
+		// only for single type of instrumentation
+		if isSingleInstrumentationEnabled(insts) {
+			containers.GeneralContainerNames = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
+		} else {
+			logger.V(1).Info("multiple injection annotations present, skipping instrumentation injection")
+			return pod, nil
+		}
+
+	}
 
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
@@ -192,6 +207,24 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod, containers)
 
 	return modifiedPod, nil
+}
+
+func isSingleInstrumentationEnabled(instrumentations languageInstrumentations) bool {
+	// Check if more than one field is not nil
+	count := 0
+	value := reflect.ValueOf(instrumentations)
+	for i := 0; i < value.NumField(); i++ {
+		field := value.Field(i)
+		if !field.IsNil() {
+			count++
+		}
+	}
+
+	if count != 1 {
+		return false
+	} else {
+		return true
+	}
 }
 
 func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
