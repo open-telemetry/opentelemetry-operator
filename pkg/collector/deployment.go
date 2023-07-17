@@ -64,6 +64,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 					Affinity:                      otelcol.Spec.Affinity,
 					TerminationGracePeriodSeconds: otelcol.Spec.TerminationGracePeriodSeconds,
 					TopologySpreadConstraints:     otelcol.Spec.TopologySpreadConstraints,
+					ImagePullSecrets:              otelcol.Spec.ImagePullSecrets,
 				},
 			},
 		},

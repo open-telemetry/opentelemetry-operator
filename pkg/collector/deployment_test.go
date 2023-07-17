@@ -417,3 +417,30 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.Equal(t, testTopologySpreadConstraintValue, d2.Spec.Template.Spec.TopologySpreadConstraints)
 }
+
+func TestDeploymentImagePullSecrets(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ImagePullSecrets: []v1.LocalObjectReference{
+				{
+					Name: "test",
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	d := Deployment(cfg, logger, otelcol)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
+	assert.Len(t, d.Spec.Template.Spec.ImagePullSecrets, 1)
+}

@@ -60,6 +60,7 @@ func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 					SecurityContext:    otelcol.Spec.PodSecurityContext,
 					PriorityClassName:  otelcol.Spec.PriorityClassName,
 					Affinity:           otelcol.Spec.Affinity,
+					ImagePullSecrets:   otelcol.Spec.ImagePullSecrets,
 				},
 			},
 		},

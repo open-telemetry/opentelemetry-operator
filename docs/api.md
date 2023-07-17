@@ -3675,6 +3675,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets indicates the image pull secrets for the OpenTelemetry Collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingress">ingress</a></b></td>
         <td>object</td>
         <td>
@@ -6016,6 +6023,33 @@ The Secret to select from
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr></tbody>

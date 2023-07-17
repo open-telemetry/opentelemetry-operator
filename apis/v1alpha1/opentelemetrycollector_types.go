@@ -117,6 +117,9 @@ type OpenTelemetryCollectorSpec struct {
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	Image string `json:"image,omitempty"`
+	// ImagePullSecrets indicates the image pull secrets for the OpenTelemetry Collector.
+	// +optional
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
 	// +optional
 	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`

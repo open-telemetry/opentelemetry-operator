@@ -1333,6 +1333,20 @@ spec:
                 description: ImagePullPolicy indicates the pull policy to be used
                   for retrieving the container image (Always, Never, IfNotPresent)
                 type: string
+              imagePullSecrets:
+                description: ImagePullSecrets indicates the image pull secrets for
+                  the OpenTelemetry Collector.
+                items:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               ingress:
                 description: 'Ingress is used to specify how OpenTelemetry Collector
                   is exposed. This functionality is only available if one of the valid

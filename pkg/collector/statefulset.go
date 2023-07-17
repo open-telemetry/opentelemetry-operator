@@ -63,6 +63,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 					PriorityClassName:         otelcol.Spec.PriorityClassName,
 					Affinity:                  otelcol.Spec.Affinity,
 					TopologySpreadConstraints: otelcol.Spec.TopologySpreadConstraints,
+					ImagePullSecrets:          otelcol.Spec.ImagePullSecrets,
 				},
 			},
 			Replicas:             otelcol.Spec.Replicas,

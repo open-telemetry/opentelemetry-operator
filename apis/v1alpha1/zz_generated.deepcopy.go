@@ -536,6 +536,11 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 		}
 	}
 	in.TargetAllocator.DeepCopyInto(&out.TargetAllocator)
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
+	}
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
 		*out = make([]v1.VolumeMount, len(*in))
