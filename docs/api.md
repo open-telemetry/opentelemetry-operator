@@ -9036,7 +9036,7 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>createServiceMonitors</b></td>
+        <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
           EnableMetrics specifies if ServiceMonitors should be created for the OpenTelemetry Collector. The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
