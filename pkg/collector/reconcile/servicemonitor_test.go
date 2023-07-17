@@ -116,7 +116,7 @@ func TestServiceMonitors(t *testing.T) {
 	t.Run("enabled but featuregate not enabled", func(t *testing.T) {
 		ctx := context.Background()
 		p := params()
-		p.Instance.Spec.Observability.Metrics.CreateServiceMonitors = true
+		p.Instance.Spec.Observability.Metrics.EnableMetrics = true
 		err := ServiceMonitors(ctx, p)
 		assert.Nil(t, err)
 	})
