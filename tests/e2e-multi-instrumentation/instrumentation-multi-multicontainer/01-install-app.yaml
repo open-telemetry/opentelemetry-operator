@@ -35,3 +35,6 @@ spec:
           image: ghcr.io/anuraaga/flask-hello-world:latest
         - name: shouldnt-be-instrumented
           image: rabbitmq:3
+          env:
+            - name: TEST
+              value: test

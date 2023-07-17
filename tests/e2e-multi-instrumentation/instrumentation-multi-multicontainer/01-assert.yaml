@@ -49,39 +49,6 @@ spec:
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
         - mountPath: /otel-auto-instrumentation-dotnet
           name: opentelemetry-auto-instrumentation-dotnet
-    - name: dotnetapp2
-      env:
-        - name: OTEL_SERVICE_NAME
-          value: dotnetapp
-        - name: CORECLR_ENABLE_PROFILING
-          value: "1"
-        - name: CORECLR_PROFILER
-          value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
-        - name: CORECLR_PROFILER_PATH
-          value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
-        - name: DOTNET_STARTUP_HOOKS
-          value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
-        - name: DOTNET_ADDITIONAL_DEPS
-          value: /otel-auto-instrumentation-dotnet/AdditionalDeps
-        - name: OTEL_DOTNET_AUTO_HOME
-          value: /otel-auto-instrumentation-dotnet
-        - name: DOTNET_SHARED_STORE
-          value: /otel-auto-instrumentation-dotnet/store
-        - name: OTEL_TRACES_SAMPLER
-          value: parentbased_traceidratio
-        - name: OTEL_TRACES_SAMPLER_ARG
-          value: "0.85"
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: http://localhost:4317
-        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-        - name: OTEL_PROPAGATORS
-          value: jaeger,b3
-        - name: OTEL_RESOURCE_ATTRIBUTES
-      volumeMounts:
-        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-        - mountPath: /otel-auto-instrumentation-dotnet
-          name: opentelemetry-auto-instrumentation-dotnet
     - name: javaapp
       env:
         - name: OTEL_SERVICE_NAME
@@ -154,6 +121,9 @@ spec:
         - mountPath: /otel-auto-instrumentation-python
           name: opentelemetry-auto-instrumentation-python
     - name: shouldnt-be-instrumented
+      env:
+        - name: TEST
+          value: test
     - name: otc-container
 status:
   phase: Running
