@@ -381,7 +381,7 @@ type MetricsConfigSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
-	EnableMetrics bool `json:"createServiceMonitors,omitempty"`
+	EnableMetrics bool `json:"enableMetrics,omitempty"`
 }
 
 // ObservabilitySpec defines how telemetry data gets handled.

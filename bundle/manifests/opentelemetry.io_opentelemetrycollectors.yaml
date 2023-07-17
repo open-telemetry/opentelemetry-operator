@@ -2955,7 +2955,7 @@ spec:
                   metrics:
                     description: Metrics defines the metrics configuration for operands.
                     properties:
-                      createServiceMonitors:
+                      enableMetrics:
                         description: EnableMetrics specifies if ServiceMonitors should
                           be created for the OpenTelemetry Collector. The operator.observability.prometheus
                           feature gate must be enabled to use this feature.

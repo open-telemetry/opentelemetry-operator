@@ -67,7 +67,7 @@ spec:
           for the OpenTelemetry Collector. The operator.observability.prometheus feature
           gate must be enabled to use this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
-        path: observability.metrics.createServiceMonitors
+        path: observability.metrics.enableMetrics
       version: v1alpha1
   description: |-
     OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.

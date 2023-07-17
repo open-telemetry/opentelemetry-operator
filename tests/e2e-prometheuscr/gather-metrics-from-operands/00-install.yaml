@@ -5,7 +5,7 @@ metadata:
 spec:
   observability:
     metrics:
-      createServiceMonitors: true
+      enableMetrics: true
   config: |
     receivers:
       jaeger:
