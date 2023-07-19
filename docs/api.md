@@ -10030,6 +10030,17 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>scrapeInterval</b></td>
+        <td>string</td>
+        <td>
+          Interval between consecutive scrapes. Equivalent to the same setting on the Prometheus CRD. 
+ Default: "30s"<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>serviceMonitorSelector</b></td>
         <td>map[string]string</td>
         <td>

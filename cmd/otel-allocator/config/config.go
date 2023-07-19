@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
@@ -38,14 +39,20 @@ import (
 
 const DefaultResyncTime = 5 * time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
+const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
 
 type Config struct {
 	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
 	Config                 *promconfig.Config `yaml:"config"`
 	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
 	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
+	PrometheusCR           PrometheusCRConfig `yaml:"prometheus_cr,omitempty"`
 	PodMonitorSelector     map[string]string  `yaml:"pod_monitor_selector,omitempty"`
 	ServiceMonitorSelector map[string]string  `yaml:"service_monitor_selector,omitempty"`
+}
+
+type PrometheusCRConfig struct {
+	ScrapeInterval model.Duration `yaml:"scrape_interval,omitempty"`
 }
 
 func (c Config) GetAllocationStrategy() string {
@@ -77,7 +84,7 @@ type CLIConfig struct {
 }
 
 func Load(file string) (Config, error) {
-	var cfg Config
+	cfg := createDefaultConfig()
 	if err := unmarshal(&cfg, file); err != nil {
 		return Config{}, err
 	}
@@ -94,6 +101,14 @@ func unmarshal(cfg *Config, configFile string) error {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
 	return nil
+}
+
+func createDefaultConfig() Config {
+	return Config{
+		PrometheusCR: PrometheusCRConfig{
+			ScrapeInterval: DefaultCRScrapeInterval,
+		},
+	}
 }
 
 func ParseCLI() (CLIConfig, error) {
