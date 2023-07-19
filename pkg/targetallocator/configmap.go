@@ -49,6 +49,7 @@ func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, erro
 	}
 
 	taConfig := make(map[interface{}]interface{})
+	prometheusCRConfig := make(map[interface{}]interface{})
 	taConfig["label_selector"] = collector.SelectorLabels(instance)
 	// We only take the "config" from the returned object, if it's present
 	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
@@ -65,12 +66,20 @@ func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, erro
 		taConfig["filter_strategy"] = instance.Spec.TargetAllocator.FilterStrategy
 	}
 
+	if instance.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Size() > 0 {
+		prometheusCRConfig["scrape_interval"] = instance.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Duration
+	}
+
 	if instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
 		taConfig["service_monitor_selector"] = &instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
 	}
 
 	if instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
 		taConfig["pod_monitor_selector"] = &instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
+	}
+
+	if len(prometheusCRConfig) > 0 {
+		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
 	taConfigYAML, err := yaml.Marshal(taConfig)
