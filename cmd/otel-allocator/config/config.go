@@ -46,9 +46,13 @@ type Config struct {
 	Config                 *promconfig.Config `yaml:"config"`
 	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
 	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
-	CRScrapeInterval       model.Duration     `yaml:"cr_scrape_interval,omitempty"`
+	PrometheusCR           PrometheusCRConfig `yaml:"prometheus_cr,omitempty"`
 	PodMonitorSelector     map[string]string  `yaml:"pod_monitor_selector,omitempty"`
 	ServiceMonitorSelector map[string]string  `yaml:"service_monitor_selector,omitempty"`
+}
+
+type PrometheusCRConfig struct {
+	ScrapeInterval model.Duration `yaml:"scrape_interval,omitempty"`
 }
 
 func (c Config) GetAllocationStrategy() string {
@@ -101,7 +105,9 @@ func unmarshal(cfg *Config, configFile string) error {
 
 func createDefaultConfig() Config {
 	return Config{
-		CRScrapeInterval: DefaultCRScrapeInterval,
+		PrometheusCR: PrometheusCRConfig{
+			ScrapeInterval: DefaultCRScrapeInterval,
+		},
 	}
 }
 

@@ -114,12 +114,13 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
-cr_scrape_interval: 30s
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.my-instance
   app.kubernetes.io/managed-by: opentelemetry-operator
   app.kubernetes.io/part-of: opentelemetry
+prometheus_cr:
+  scrape_interval: 30s
 `,
 		}
 

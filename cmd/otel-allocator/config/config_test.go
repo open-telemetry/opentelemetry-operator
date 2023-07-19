@@ -48,7 +48,9 @@ func TestLoad(t *testing.T) {
 					"app.kubernetes.io/instance":   "default.test",
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
-				CRScrapeInterval: model.Duration(time.Second * 60),
+				PrometheusCR: PrometheusCRConfig{
+					ScrapeInterval: model.Duration(time.Second * 60),
+				},
 				Config: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
@@ -110,7 +112,9 @@ func TestLoad(t *testing.T) {
 					"app.kubernetes.io/instance":   "default.test",
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
-				CRScrapeInterval: DefaultCRScrapeInterval,
+				PrometheusCR: PrometheusCRConfig{
+					ScrapeInterval: DefaultCRScrapeInterval,
+				},
 				Config: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),

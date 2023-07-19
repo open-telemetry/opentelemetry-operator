@@ -59,7 +59,7 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliC
 	prom := &monitoringv1.Prometheus{
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval: monitoringv1.Duration(cfg.CRScrapeInterval.String()),
+				ScrapeInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 			},
 		},
 	}
