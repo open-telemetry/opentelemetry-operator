@@ -17,7 +17,6 @@ package instrumentation
 import (
 	"context"
 	"errors"
-	"reflect"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -43,25 +42,19 @@ type instPodMutator struct {
 	Recorder    record.EventRecorder
 }
 
-type languageInstrumentations struct {
-	Java        *v1alpha1.Instrumentation
-	NodeJS      *v1alpha1.Instrumentation
-	Python      *v1alpha1.Instrumentation
-	DotNet      *v1alpha1.Instrumentation
-	ApacheHttpd *v1alpha1.Instrumentation
-	Go          *v1alpha1.Instrumentation
-	Sdk         *v1alpha1.Instrumentation
+type instrumentationWithContainers struct {
+	Instrumentation *v1alpha1.Instrumentation
+	Containers      string
 }
 
-type languageContainers struct {
-	Java                  string
-	NodeJS                string
-	Python                string
-	DotNet                string
-	ApacheHttpd           string
-	Go                    string
-	Sdk                   string
-	GeneralContainerNames string
+type languageInstrumentations struct {
+	Java        instrumentationWithContainers
+	NodeJS      instrumentationWithContainers
+	Python      instrumentationWithContainers
+	DotNet      instrumentationWithContainers
+	ApacheHttpd instrumentationWithContainers
+	Go          instrumentationWithContainers
+	Sdk         instrumentationWithContainers
 }
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
@@ -91,7 +84,6 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	var err error
 
 	insts := languageInstrumentations{}
-	containers := languageContainers{}
 
 	// We bail out if any annotation fails to process.
 
@@ -101,7 +93,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableJavaAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.Java = inst
+		insts.Java.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Java auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Java auto instrumentation is not enabled")
@@ -113,7 +105,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.NodeJS = inst
+		insts.NodeJS.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
@@ -125,7 +117,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.Python = inst
+		insts.Python.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Python auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
@@ -137,7 +129,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.DotNet = inst
+		insts.DotNet.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
@@ -149,7 +141,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableGoAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.Go = inst
+		insts.Go.Instrumentation = inst
 	} else {
 		logger.Error(err, "support for Go auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Go auto instrumentation is not enabled")
@@ -161,7 +153,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.ApacheHttpd = inst
+		insts.ApacheHttpd.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Apache HTTPD auto instrumentation is not enabled")
@@ -172,9 +164,11 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.Sdk = inst
+	insts.Sdk.Instrumentation = inst
 
-	if insts.Java == nil && insts.NodeJS == nil && insts.Python == nil && insts.DotNet == nil && insts.Go == nil && insts.ApacheHttpd == nil && insts.Sdk == nil {
+	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
+		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
+		insts.Sdk.Instrumentation == nil {
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}
@@ -182,18 +176,32 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	// We retrieve the annotation for podname
 	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
 		// We use annotations specific for instrumentation language
-		containers.Java = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
-		containers.NodeJS = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
-		containers.Python = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectPythonContainersName)
-		containers.DotNet = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
-		containers.Go = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
-		containers.ApacheHttpd = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
-		containers.Sdk = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
+		insts.Java.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
+		insts.NodeJS.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
+		insts.Python.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectPythonContainersName)
+		insts.DotNet.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
+		insts.Go.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
+		insts.ApacheHttpd.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
+		insts.Sdk.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
+
+		// We check if provided annotations and instrumentations are valid
+		ok, msg := areContainerNamesConfiguredForMultipleInstrumentations(insts)
+		if !ok {
+			logger.V(1).Info("skipping instrumentation injection", "reason", msg)
+			return pod, nil
+		}
+
 	} else {
 		// We use general annotation for container names
-		// only for single type of instrumentation
-		if isSingleInstrumentationEnabled(insts) {
-			containers.GeneralContainerNames = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
+		// only when multi instrumentation is disabled
+		singleInstrEnabled, instrName := isSingleInstrumentationEnabled(insts)
+		if singleInstrEnabled {
+			generalContainerNames := annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
+			containersSet := setInstrumentationLanguageContainers(&insts, instrName, generalContainerNames)
+			if !containersSet {
+				logger.V(1).Info("skipping instrumentation injection, unknown instrumentation name")
+				return pod, nil
+			}
 		} else {
 			logger.V(1).Info("multiple injection annotations present, skipping instrumentation injection")
 			return pod, nil
@@ -204,27 +212,9 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
 	modifiedPod := pod
-	modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod, containers)
+	modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod)
 
 	return modifiedPod, nil
-}
-
-func isSingleInstrumentationEnabled(instrumentations languageInstrumentations) bool {
-	// Check if more than one field is not nil
-	count := 0
-	value := reflect.ValueOf(instrumentations)
-	for i := 0; i < value.NumField(); i++ {
-		field := value.Field(i)
-		if !field.IsNil() {
-			count++
-		}
-	}
-
-	if count != 1 {
-		return false
-	} else {
-		return true
-	}
 }
 
 func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {

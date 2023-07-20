@@ -4224,6 +4224,156 @@ func TestMutatePod(t *testing.T) {
 				})
 			},
 		},
+		{
+			name: "multi instrumentation feature gate enabled, multiple instrumentation annotations set, no containers",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multi-instrumentation-multi-containers-no-cont",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "multi-instrumentation-multi-containers-no-cont",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					DotNet: v1alpha1.DotNet{
+						Image: "otel/dotnet:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					Java: v1alpha1.Java{
+						Image: "otel/java:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					NodeJS: v1alpha1.NodeJS{
+						Image: "otel/nodejs:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					Python: v1alpha1.Python{
+						Image: "otel/python:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet: "true",
+						annotationInjectJava:   "true",
+						annotationInjectNodeJS: "true",
+						annotationInjectPython: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "dotnet1",
+						},
+						{
+							Name: "dotnet2",
+						},
+						{
+							Name: "java1",
+						},
+						{
+							Name: "java2",
+						},
+						{
+							Name: "nodejs1",
+						},
+						{
+							Name: "nodejs2",
+						},
+						{
+							Name: "python1",
+						},
+						{
+							Name: "python2",
+						},
+						{
+							Name: "should-not-be-instrumented1",
+						},
+						{
+							Name: "should-not-be-instrumented2",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet: "true",
+						annotationInjectJava:   "true",
+						annotationInjectNodeJS: "true",
+						annotationInjectPython: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "dotnet1",
+						},
+						{
+							Name: "dotnet2",
+						},
+						{
+							Name: "java1",
+						},
+						{
+							Name: "java2",
+						},
+						{
+							Name: "nodejs1",
+						},
+						{
+							Name: "nodejs2",
+						},
+						{
+							Name: "python1",
+						},
+						{
+							Name: "python2",
+						},
+						{
+							Name: "should-not-be-instrumented1",
+						},
+						{
+							Name: "should-not-be-instrumented2",
+						},
+					},
+				},
+			},
+			setFeatureGates: func(t *testing.T) {
+				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalVal))
+				})
+			},
+		},
 	}
 
 	for _, test := range tests {

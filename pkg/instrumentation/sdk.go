@@ -36,7 +36,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -52,20 +51,17 @@ type sdkInjector struct {
 	logger logr.Logger
 }
 
-func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod, containers languageContainers) corev1.Pod {
+func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
 	if len(pod.Spec.Containers) < 1 {
 		return pod
 	}
 
-	if insts.Java != nil {
-		otelinst := *insts.Java
+	if insts.Java.Instrumentation != nil {
+		otelinst := *insts.Java.Instrumentation
 		var err error
 		i.logger.V(1).Info("injecting Java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		javaContainers := containers.GeneralContainerNames
-		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
-			javaContainers = containers.Java
-		}
+		javaContainers := insts.Java.Containers
 
 		for _, container := range strings.Split(javaContainers, ",") {
 			index := getContainerIndex(container, pod)
@@ -78,15 +74,12 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			}
 		}
 	}
-	if insts.NodeJS != nil {
-		otelinst := *insts.NodeJS
+	if insts.NodeJS.Instrumentation != nil {
+		otelinst := *insts.NodeJS.Instrumentation
 		var err error
 		i.logger.V(1).Info("injecting NodeJS instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		nodejsContainers := containers.GeneralContainerNames
-		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
-			nodejsContainers = containers.NodeJS
-		}
+		nodejsContainers := insts.NodeJS.Containers
 
 		for _, container := range strings.Split(nodejsContainers, ",") {
 			index := getContainerIndex(container, pod)
@@ -99,15 +92,12 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			}
 		}
 	}
-	if insts.Python != nil {
-		otelinst := *insts.Python
+	if insts.Python.Instrumentation != nil {
+		otelinst := *insts.Python.Instrumentation
 		var err error
 		i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		pythonContainers := containers.GeneralContainerNames
-		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
-			pythonContainers = containers.Python
-		}
+		pythonContainers := insts.Python.Containers
 
 		for _, container := range strings.Split(pythonContainers, ",") {
 			index := getContainerIndex(container, pod)
@@ -120,15 +110,12 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			}
 		}
 	}
-	if insts.DotNet != nil {
-		otelinst := *insts.DotNet
+	if insts.DotNet.Instrumentation != nil {
+		otelinst := *insts.DotNet.Instrumentation
 		var err error
 		i.logger.V(1).Info("injecting DotNet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		dotnetContainers := containers.GeneralContainerNames
-		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
-			dotnetContainers = containers.DotNet
-		}
+		dotnetContainers := insts.DotNet.Containers
 
 		for _, container := range strings.Split(dotnetContainers, ",") {
 			index := getContainerIndex(container, pod)
@@ -141,16 +128,13 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			}
 		}
 	}
-	if insts.Go != nil {
+	if insts.Go.Instrumentation != nil {
 		origPod := pod
-		otelinst := *insts.Go
+		otelinst := *insts.Go.Instrumentation
 		var err error
 		i.logger.V(1).Info("injecting Go instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		goContainers := containers.GeneralContainerNames
-		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
-			goContainers = containers.Go
-		}
+		goContainers := insts.Go.Containers
 
 		// Go instrumentation supports only single container instrumentation. Loop here should be replaced/improved.
 		for _, container := range strings.Split(goContainers, ",") {
@@ -172,14 +156,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			}
 		}
 	}
-	if insts.ApacheHttpd != nil {
-		otelinst := *insts.ApacheHttpd
+	if insts.ApacheHttpd.Instrumentation != nil {
+		otelinst := *insts.ApacheHttpd.Instrumentation
 		i.logger.V(1).Info("injecting Apache Httpd instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		apacheHttpdContainers := containers.GeneralContainerNames
-		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
-			apacheHttpdContainers = containers.ApacheHttpd
-		}
+		apacheHttpdContainers := insts.ApacheHttpd.Containers
 
 		for _, container := range strings.Split(apacheHttpdContainers, ",") {
 			index := getContainerIndex(container, pod)
@@ -190,14 +171,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 		}
 	}
-	if insts.Sdk != nil {
-		otelinst := *insts.Sdk
+	if insts.Sdk.Instrumentation != nil {
+		otelinst := *insts.Sdk.Instrumentation
 		i.logger.V(1).Info("injecting sdk-only instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		sdkContainers := containers.GeneralContainerNames
-		if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
-			sdkContainers = containers.Sdk
-		}
+		sdkContainers := insts.Sdk.Containers
 
 		for _, container := range strings.Split(sdkContainers, ",") {
 			index := getContainerIndex(container, pod)
