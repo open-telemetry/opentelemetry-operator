@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/spf13/pflag"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -32,19 +32,17 @@ import (
 func main() {
 	var hpaName string
 	var timeout time.Duration
-	var kubeconfigPath string
-
-	defaultKubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
 
 	pflag.DurationVar(&timeout, "timeout", 5*time.Minute, "The timeout for the check.")
 	pflag.StringVar(&hpaName, "hpa", "", "HPA to check")
-	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", defaultKubeconfigPath, "Absolute path to the KubeconfigPath file")
 	pflag.Parse()
 
 	if len(hpaName) == 0 {
 		fmt.Println("hpa flag is mandatory")
 		os.Exit(1)
 	}
+
+	kubeconfigPath := getKubeconfigPath()
 
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
@@ -58,7 +56,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	namespace, err := client.CoreV1().Namespaces().Get(context.Background(), os.Getenv("NAMESPACE"), metav1.GetOptions{})
+	namespace, err := client.CoreV1().Namespaces().Get(context.Background(), os.Getenv("NAMESPACE"), v1.GetOptions{})
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -76,13 +74,13 @@ func main() {
 		hpav2, err := hpaClientV2.Get(
 			c,
 			hpaName,
-			metav1.GetOptions{},
+			v1.GetOptions{},
 		)
 		if err != nil {
 			hpav1, err := hpaClientV1.Get(
 				c,
 				hpaName,
-				metav1.GetOptions{},
+				v1.GetOptions{},
 			)
 			if err != nil {
 				fmt.Printf("HPA %s not found\n", hpaName)
@@ -108,4 +106,16 @@ func main() {
 	}
 
 	fmt.Printf("%s is ready!\n", hpaName)
+}
+
+func getKubeconfigPath() string {
+	kubeconfigEnv := os.Getenv("KUBECONFIG")
+	if kubeconfigEnv != "" {
+		if _, err := os.Stat(kubeconfigEnv); err == nil {
+			return kubeconfigEnv
+		}
+	}
+
+	homeDir := homedir.HomeDir()
+	return filepath.Join(homeDir, ".kube", "config")
 }

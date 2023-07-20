@@ -48,6 +48,9 @@ func TestLoad(t *testing.T) {
 					"app.kubernetes.io/instance":   "default.test",
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
+				PrometheusCR: PrometheusCRConfig{
+					ScrapeInterval: model.Duration(time.Second * 60),
+				},
 				Config: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
@@ -96,7 +99,7 @@ func TestLoad(t *testing.T) {
 			args: args{
 				file: "./testdata/no_config.yaml",
 			},
-			want:    Config{},
+			want:    createDefaultConfig(),
 			wantErr: assert.NoError,
 		},
 		{
@@ -108,6 +111,9 @@ func TestLoad(t *testing.T) {
 				LabelSelector: map[string]string{
 					"app.kubernetes.io/instance":   "default.test",
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				},
+				PrometheusCR: PrometheusCRConfig{
+					ScrapeInterval: DefaultCRScrapeInterval,
 				},
 				Config: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{

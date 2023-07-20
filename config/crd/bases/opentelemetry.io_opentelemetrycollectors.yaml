@@ -3575,6 +3575,12 @@ spec:
                           the map is going to exactly match a label in a PodMonitor's
                           meta labels. The requirements are ANDed.
                         type: object
+                      scrapeInterval:
+                        default: 30s
+                        description: "Interval between consecutive scrapes. Equivalent
+                          to the same setting on the Prometheus CRD. \n Default: \"30s\""
+                        format: duration
+                        type: string
                       serviceMonitorSelector:
                         additionalProperties:
                           type: string
