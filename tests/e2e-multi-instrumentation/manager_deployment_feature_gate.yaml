@@ -46,9 +46,10 @@ spec:
               cpu: 5m
               memory: 64Mi
         - name: manager
-          image: "ghcr.io/mrumian/opentelemetry-operator/opentelemetry-operator:0.53.0-392-g9692145"
+          image: "local/opentelemetry-operator:e2e"
           args:
             - "--metrics-addr=127.0.0.1:8080"
+            - "--zap-log-level=debug"
             - "--enable-leader-election"
             - "--feature-gates=+operator.autoinstrumentation.multi-instrumentation"
           volumeMounts:
