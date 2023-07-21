@@ -259,6 +259,12 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
+	// Interval between consecutive scrapes. Equivalent to the same setting on the Prometheus CRD.
+	//
+	// Default: "30s"
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
+	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
 	// PodMonitors to be selected for target discovery.
 	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
 	// PodMonitor's meta labels. The requirements are ANDed.
