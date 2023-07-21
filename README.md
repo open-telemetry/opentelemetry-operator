@@ -488,7 +488,7 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
 
 Note how the Operator removes any existing service discovery configurations (e.g., `static_configs`, `file_sd_configs`, etc.) from the `scrape_configs` section and adds an `http_sd_configs` configuration pointing to a Target Allocator instance it provisioned.
 
-The OpenTelemetry Operator will also convert the Target Allocator's Promethueus configuration after the reconciliation into the following:
+The OpenTelemetry Operator will also convert the Target Allocator's Prometheus configuration after the reconciliation into the following:
 
 ```yaml
     config:
