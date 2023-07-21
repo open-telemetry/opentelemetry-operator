@@ -186,6 +186,18 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		ContainerPort: metricsPort,
 		Protocol:      corev1.ProtocolTCP,
 	}
+
+	promExporterPort, err := getPrometheusExporterPort(c)
+	if err != nil {
+		logger.V(2).Info("prometheus exporter port not detected")
+	} else{
+		ports["promexporter"] = corev1.ContainerPort{
+			Name: "promexporter",
+			ContainerPort: promExporterPort,
+			Protocol: corev1.ProtocolTCP,
+		}
+	}
+
 	return ports
 }
 
@@ -218,6 +230,36 @@ func getMetricsPort(c map[interface{}]interface{}) (int32, error) {
 	i64, err := strconv.ParseInt(port, 10, 32)
 	if err != nil {
 		return 0, err
+	}
+
+	return int32(i64), nil
+}
+
+func getPrometheusExporterPort(c map[interface{}]interface{}) (int32, error) {
+	// we don't need to unmarshal the whole config, just follow the keys down to
+	// the prometheus endpoint.
+	type prometheusCfg struct {
+		Endpoint string
+	}
+	type exportersCfg struct {
+		Prometheus prometheusCfg
+	}
+	type cfg struct {
+		Exporters exportersCfg
+	}
+	var cOut cfg
+	err := mapstructure.Decode(c, &cOut)
+	if err != nil {
+		return 0, nil
+	}
+
+	_, port, err := net.SplitHostPort(cOut.Exporters.Prometheus.Endpoint)
+	if err != nil {
+		return 0, err
+	}
+	i64, err := strconv.ParseInt(port, 10, 32)
+	if err != nil {
+		return  0, err
 	}
 
 	return int32(i64), nil
