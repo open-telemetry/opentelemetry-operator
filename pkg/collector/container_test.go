@@ -179,7 +179,7 @@ service:
 		},
 		{
 			description: "prometheus exporter ",
-			specConfig:  `exporters:
+			specConfig: `exporters:
     prometheus:
         endpoint: "0.0.0.0:9090"`,
 			specPorts: []corev1.ServicePort{},
@@ -188,7 +188,7 @@ service:
 				{
 					Name:          "promexporter",
 					ContainerPort: 9090,
-					Protocol: corev1.ProtocolTCP,
+					Protocol:      corev1.ProtocolTCP,
 				},
 			},
 		},

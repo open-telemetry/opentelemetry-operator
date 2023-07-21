@@ -190,11 +190,11 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 	promExporterPort, err := getPrometheusExporterPort(c)
 	if err != nil {
 		logger.V(2).Info("prometheus exporter port not detected")
-	} else{
+	} else {
 		ports["promexporter"] = corev1.ContainerPort{
-			Name: "promexporter",
+			Name:          "promexporter",
 			ContainerPort: promExporterPort,
-			Protocol: corev1.ProtocolTCP,
+			Protocol:      corev1.ProtocolTCP,
 		}
 	}
 
@@ -259,7 +259,7 @@ func getPrometheusExporterPort(c map[interface{}]interface{}) (int32, error) {
 	}
 	i64, err := strconv.ParseInt(port, 10, 32)
 	if err != nil {
-		return  0, err
+		return 0, err
 	}
 
 	return int32(i64), nil
