@@ -34,17 +34,13 @@ func main() {
 	var hpaName string
 	var timeout time.Duration
 	var numMetrics int
-	var kubeconfigPath string
 	var cpuValue int
 	var memoryValue int
 	var scaleDownWindow int
 	var scaleUpWindow int
 
-	defaultKubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
-
 	pflag.DurationVar(&timeout, "timeout", 5*time.Minute, "The timeout for the check.")
 	pflag.StringVar(&hpaName, "hpa", "", "HPA to check")
-	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", defaultKubeconfigPath, "Absolute path to the KubeconfigPath file")
 	pflag.IntVar(&numMetrics, "num-metrics", 1, "number of expected metrics in Spec")
 	pflag.IntVar(&cpuValue, "cpu-value", -1, "value for target CPU utilization")
 	pflag.IntVar(&memoryValue, "memory-value", -1, "value for target memory utilization")
@@ -57,7 +53,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	kubeconfigPath := getKubeconfigPath()
+
+	configLoader := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath},
+		&clientcmd.ConfigOverrides{},
+	)
+
+	config, err := configLoader.ClientConfig()
 	if err != nil {
 		fmt.Printf("Error reading the kubeconfig: %s\n", err)
 		os.Exit(1)
@@ -169,4 +172,16 @@ func main() {
 	}
 
 	fmt.Printf("%s is ready!\n", hpaName)
+}
+
+func getKubeconfigPath() string {
+	kubeconfigEnv := os.Getenv("KUBECONFIG")
+	if kubeconfigEnv != "" {
+		if _, err := os.Stat(kubeconfigEnv); err == nil {
+			return kubeconfigEnv
+		}
+	}
+
+	homeDir := homedir.HomeDir()
+	return filepath.Join(homeDir, ".kube", "config")
 }
