@@ -3,7 +3,7 @@
 Target Allocator is an optional component of the OpenTelemetry Collector [Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) (CR). The release version matches the
 operator's most recent release as well.
 
-In a nutshell, the TA is used to manage Prometheus metrics without actually needing to have Prometheus installed in your Kubernetes cluster.
+In a nutshell, the TA is a mechanism for decoupling the service discovery and metric collection functions of Prometheus such that they can be scaled independently. The Collector manages Prometheus metrics without needing to install Prometheus. The TA manages the configuration of the Collector's [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md).
 
 The TA serves two functions:
 * Even distribution of Prometheus targets among a pool of Collectors
@@ -11,7 +11,7 @@ The TA serves two functions:
 
 ## Even Distribution of Prometheus Targets
 
-The Target Allocator's first job is to evenly distribute [Prometheus targets](https://www.tigera.io/learn/guides/prometheus-monitoring/prometheus-metrics/#:~:text=Prometheus%20monitoring%20works%20by%20identifying,and%20generates%20metrics%20from%20it.) among a pool of OTel Collectors. This means that the OTel Collectors collect the metrics instead of a Prometheus [scraper](https://uzxmx.github.io/prometheus-scrape-internals.html). Metrics are ingested by the OTel Collectors by way of the [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md).
+The Target Allocator's first job is to discover targets to scrape and collectors to allocate targets to. Then it can distribute the targets it discovers among the collectors. This means that the OTel Collectors collect the metrics instead of a Prometheus [scraper](https://uzxmx.github.io/prometheus-scrape-internals.html). Metrics are ingested by the OTel Collectors by way of the [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md).
 
 ## Discovery of Prometheus Custom Resources
 
