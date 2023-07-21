@@ -17,6 +17,7 @@ package instrumentation
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -97,6 +98,7 @@ func areContainerNamesConfiguredForMultipleInstrumentations(langInsts languageIn
 	// Look for duplicated containers.
 	containerDuplicates := findDuplicatedContainers(allContainers)
 	if containerDuplicates != nil {
+		sort.Strings(containerDuplicates)
 		return false, fmt.Sprintf("duplicated container names detected: %s", containerDuplicates)
 	}
 
