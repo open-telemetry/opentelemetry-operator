@@ -55,7 +55,7 @@ spec:
           exporters: [logging]
 ```
 
-In essence, Prometheus Receiver configs are overridden with a `http_sd_configs` directive that points to the
+In essence, Prometheus Receiver configs are overridden with a `http_sd_config` directive that points to the
 Allocator, these are then loadbalanced/sharded to the Collectors. The [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) configs that are overridden
 are what will be distributed with the same name.
 
