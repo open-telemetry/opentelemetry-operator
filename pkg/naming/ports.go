@@ -29,12 +29,10 @@ func PortName(name string) string {
 	for i, x := range strings.ToLower(name) {
 		if regex.Match([]byte(string(x))) {
 			d = append(d, x)
+		} else if i == 0 || i == utf8.RuneCountInString(name)-1 {
+			d = append(d, 'a')
 		} else {
-			if i == 0 || i == utf8.RuneCountInString(name)-1 {
-				d = append(d, 'a')
-			} else {
-				d = append(d, '-')
-			}
+			d = append(d, '-')
 		}
 	}
 
