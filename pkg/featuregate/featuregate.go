@@ -28,27 +28,39 @@ var (
 	EnableDotnetAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.dotnet",
 		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports .NET auto-instrumentation"))
+		featuregate.WithRegisterDescription("controls whether the operator supports .NET auto-instrumentation"),
+		featuregate.WithRegisterFromVersion("v0.76.1"),
+	)
 	EnablePythonAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.python",
 		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports Python auto-instrumentation"))
+		featuregate.WithRegisterDescription("controls whether the operator supports Python auto-instrumentation"),
+		featuregate.WithRegisterFromVersion("v0.76.1"),
+	)
 	EnableJavaAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.java",
 		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports Java auto-instrumentation"))
+		featuregate.WithRegisterDescription("controls whether the operator supports Java auto-instrumentation"),
+		featuregate.WithRegisterFromVersion("v0.76.1"),
+	)
 	EnableNodeJSAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.nodejs",
 		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports NodeJS auto-instrumentation"))
+		featuregate.WithRegisterDescription("controls whether the operator supports NodeJS auto-instrumentation"),
+		featuregate.WithRegisterFromVersion("v0.76.1"),
+	)
 	EnableGoAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.go",
 		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("controls whether the operator supports Golang auto-instrumentation"))
+		featuregate.WithRegisterDescription("controls whether the operator supports Golang auto-instrumentation"),
+		featuregate.WithRegisterFromVersion("v0.77.0"),
+	)
 	EnableApacheHTTPAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.apache-httpd",
 		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTPD auto-instrumentation"))
+		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTPD auto-instrumentation"),
+		featuregate.WithRegisterFromVersion("v0.76.1"),
+	)
 
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
 	// automatically be rewritten when the target allocator is enabled.
