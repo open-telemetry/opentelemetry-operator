@@ -59,7 +59,7 @@ var (
 		"operator.autoinstrumentation.apache-httpd",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTPD auto-instrumentation"),
-		featuregate.WithRegisterFromVersion("v0.76.1"),
+		featuregate.WithRegisterFromVersion("v0.80.0"),
 	)
 
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
@@ -67,7 +67,9 @@ var (
 	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.rewritetargetallocator",
 		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"))
+		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"),
+		featuregate.WithRegisterFromVersion("v0.76.1"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
