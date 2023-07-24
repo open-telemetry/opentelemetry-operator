@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +35,7 @@ import (
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
 // HorizontalPodAutoscaler reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
-func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
+func HorizontalPodAutoscalers(ctx context.Context, params reconcileutil.Params) error {
 	desired := []client.Object{}
 
 	// check if autoscale mode is on, e.g MaxReplicas is not nil
@@ -56,7 +58,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
+func expectedHorizontalPodAutoscalers(ctx context.Context, params reconcileutil.Params, expected []client.Object) error {
 	autoscalingVersion := params.Config.AutoscalingVersion()
 	var existing client.Object
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
@@ -111,7 +113,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 	return nil
 }
 
-func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object, desired client.Object) {
+func setAutoscalerSpec(params reconcileutil.Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object, desired client.Object) {
 	one := int32(1)
 	if params.Instance.Spec.Autoscaler.MaxReplicas != nil {
 		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
@@ -140,7 +142,7 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 	}
 }
 
-func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
+func deleteHorizontalPodAutoscalers(ctx context.Context, params reconcileutil.Params, expected []client.Object) error {
 	autoscalingVersion := params.Config.AutoscalingVersion()
 
 	opts := []client.ListOption{

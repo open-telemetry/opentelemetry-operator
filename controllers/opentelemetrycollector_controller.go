@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -51,7 +53,7 @@ type OpenTelemetryCollectorReconciler struct {
 
 // Task represents a reconciliation task to be executed by the reconciler.
 type Task struct {
-	Do          func(context.Context, reconcile.Params) error
+	Do          func(context.Context, reconcileutil.Params) error
 	Name        string
 	BailOnError bool
 }
@@ -199,7 +201,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params := reconcile.Params{
+	params := reconcileutil.Params{
 		Config:   r.config,
 		Client:   r.Client,
 		Instance: instance,
@@ -216,7 +218,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 }
 
 // RunTasks runs all the tasks associated with this reconciler.
-func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
+func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcileutil.Params) error {
 	r.muTasks.RLock()
 	defer r.muTasks.RUnlock()
 	for _, task := range r.tasks {

@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -175,17 +177,17 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func params() Params {
+func params() reconcileutil.Params {
 	return paramsWithMode(v1alpha1.ModeDeployment)
 }
 
-func paramsWithMode(mode v1alpha1.Mode) Params {
+func paramsWithMode(mode v1alpha1.Mode) reconcileutil.Params {
 	replicas := int32(2)
 	configYAML, err := os.ReadFile("../testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	return Params{
+	return reconcileutil.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
 		Client: k8sClient,
 		Instance: v1alpha1.OpenTelemetryCollector{
@@ -220,7 +222,7 @@ func paramsWithMode(mode v1alpha1.Mode) Params {
 	}
 }
 
-func newParams(taContainerImage string, file string) (Params, error) {
+func newParams(taContainerImage string, file string) (reconcileutil.Params, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -231,12 +233,12 @@ func newParams(taContainerImage string, file string) (Params, error) {
 		configYAML, err = os.ReadFile(file)
 	}
 	if err != nil {
-		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
+		return reconcileutil.Params{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}
 
 	cfg := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
 
-	return Params{
+	return reconcileutil.Params{
 		Config: cfg,
 		Client: k8sClient,
 		Instance: v1alpha1.OpenTelemetryCollector{

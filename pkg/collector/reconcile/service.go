@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,10 +45,10 @@ const (
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 
 // Services reconciles the service(s) required for the instance in the current context.
-func Services(ctx context.Context, params Params) error {
+func Services(ctx context.Context, params reconcileutil.Params) error {
 	desired := []corev1.Service{}
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
-		type builder func(context.Context, Params) *corev1.Service
+		type builder func(context.Context, reconcileutil.Params) *corev1.Service
 		for _, builder := range []builder{desiredService, headless, monitoringService} {
 			svc := builder(ctx, params)
 			// add only the non-nil to the list
@@ -73,7 +75,7 @@ func Services(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredService(ctx context.Context, params Params) *corev1.Service {
+func desiredService(ctx context.Context, params reconcileutil.Params) *corev1.Service {
 	name := naming.Service(params.Instance)
 	labels := collector.Labels(params.Instance, name, []string{})
 
@@ -135,7 +137,7 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 	}
 }
 
-func desiredTAService(params Params) corev1.Service {
+func desiredTAService(params reconcileutil.Params) corev1.Service {
 	name := naming.TAService(params.Instance)
 	labels := targetallocator.Labels(params.Instance, name)
 
@@ -158,7 +160,7 @@ func desiredTAService(params Params) corev1.Service {
 	}
 }
 
-func headless(ctx context.Context, params Params) *corev1.Service {
+func headless(ctx context.Context, params reconcileutil.Params) *corev1.Service {
 	h := desiredService(ctx, params)
 	if h == nil {
 		return nil
@@ -180,7 +182,7 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 	return h
 }
 
-func monitoringService(ctx context.Context, params Params) *corev1.Service {
+func monitoringService(ctx context.Context, params reconcileutil.Params) *corev1.Service {
 	name := naming.MonitoringService(params.Instance)
 	labels := collector.Labels(params.Instance, name, []string{})
 
@@ -214,7 +216,7 @@ func monitoringService(ctx context.Context, params Params) *corev1.Service {
 	}
 }
 
-func expectedServices(ctx context.Context, params Params, expected []corev1.Service) error {
+func expectedServices(ctx context.Context, params reconcileutil.Params, expected []corev1.Service) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -266,7 +268,7 @@ func expectedServices(ctx context.Context, params Params, expected []corev1.Serv
 	return nil
 }
 
-func deleteServices(ctx context.Context, params Params, expected []corev1.Service) error {
+func deleteServices(ctx context.Context, params reconcileutil.Params, expected []corev1.Service) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

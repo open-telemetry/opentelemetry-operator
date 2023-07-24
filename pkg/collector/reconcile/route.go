@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	routev1 "github.com/openshift/api/route/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +32,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-func desiredRoutes(_ context.Context, params Params) []routev1.Route {
+func desiredRoutes(_ context.Context, params reconcileutil.Params) []routev1.Route {
 	var tlsCfg *routev1.TLSConfig
 	switch params.Instance.Spec.Ingress.Route.Termination {
 	case v1alpha1.TLSRouteTerminationTypeInsecure:
@@ -90,7 +92,7 @@ func desiredRoutes(_ context.Context, params Params) []routev1.Route {
 }
 
 // Routes reconciles the route(s) required for the instance in the current context.
-func Routes(ctx context.Context, params Params) error {
+func Routes(ctx context.Context, params reconcileutil.Params) error {
 	if params.Instance.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
 		return nil
 	}
@@ -121,7 +123,7 @@ func Routes(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedRoutes(ctx context.Context, params Params, expected []routev1.Route) error {
+func expectedRoutes(ctx context.Context, params reconcileutil.Params, expected []routev1.Route) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -174,7 +176,7 @@ func expectedRoutes(ctx context.Context, params Params, expected []routev1.Route
 	return nil
 }
 
-func deleteRoutes(ctx context.Context, params Params, expected []routev1.Route) error {
+func deleteRoutes(ctx context.Context, params reconcileutil.Params, expected []routev1.Route) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

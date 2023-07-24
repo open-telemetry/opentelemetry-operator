@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +33,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-func desiredIngresses(_ context.Context, params Params) *networkingv1.Ingress {
+func desiredIngresses(_ context.Context, params reconcileutil.Params) *networkingv1.Ingress {
 	if params.Instance.Spec.Ingress.Type != v1alpha1.IngressTypeNginx {
 		return nil
 	}
@@ -95,7 +97,7 @@ func desiredIngresses(_ context.Context, params Params) *networkingv1.Ingress {
 }
 
 // Ingresses reconciles the ingress(s) required for the instance in the current context.
-func Ingresses(ctx context.Context, params Params) error {
+func Ingresses(ctx context.Context, params reconcileutil.Params) error {
 	isSupportedMode := true
 	if params.Instance.Spec.Mode == v1alpha1.ModeSidecar {
 		params.Log.V(3).Info("ingress settings are not supported in sidecar mode")
@@ -126,7 +128,7 @@ func Ingresses(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedIngresses(ctx context.Context, params Params, expected []networkingv1.Ingress) error {
+func expectedIngresses(ctx context.Context, params reconcileutil.Params, expected []networkingv1.Ingress) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -179,7 +181,7 @@ func expectedIngresses(ctx context.Context, params Params, expected []networking
 	return nil
 }
 
-func deleteIngresses(ctx context.Context, params Params, expected []networkingv1.Ingress) error {
+func deleteIngresses(ctx context.Context, params reconcileutil.Params, expected []networkingv1.Ingress) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -213,7 +215,7 @@ func deleteIngresses(ctx context.Context, params Params, expected []networkingv1
 	return nil
 }
 
-func servicePortsFromCfg(params Params) []corev1.ServicePort {
+func servicePortsFromCfg(params reconcileutil.Params) []corev1.ServicePort {
 	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")

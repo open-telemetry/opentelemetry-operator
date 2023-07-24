@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,7 +99,7 @@ func TestFilterPort(t *testing.T) {
 
 func TestDesiredService(t *testing.T) {
 	t.Run("should return nil service for unknown receiver and protocol", func(t *testing.T) {
-		params := Params{
+		params := reconcileutil.Params{
 			Config: config.Config{},
 			Client: k8sClient,
 			Log:    logger,

@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,7 +34,7 @@ import (
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 // ServiceAccounts reconciles the service account(s) required for the instance in the current context.
-func ServiceAccounts(ctx context.Context, params Params) error {
+func ServiceAccounts(ctx context.Context, params reconcileutil.Params) error {
 	desired := desiredServiceAccounts(params)
 
 	// first, handle the create/update parts
@@ -48,7 +50,7 @@ func ServiceAccounts(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredServiceAccounts(params Params) []corev1.ServiceAccount {
+func desiredServiceAccounts(params reconcileutil.Params) []corev1.ServiceAccount {
 	desired := []corev1.ServiceAccount{}
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar && len(params.Instance.Spec.ServiceAccount) == 0 {
 		desired = append(desired, collector.ServiceAccount(params.Instance))
@@ -59,7 +61,7 @@ func desiredServiceAccounts(params Params) []corev1.ServiceAccount {
 	return desired
 }
 
-func expectedServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
+func expectedServiceAccounts(ctx context.Context, params reconcileutil.Params, expected []corev1.ServiceAccount) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -109,7 +111,7 @@ func expectedServiceAccounts(ctx context.Context, params Params, expected []core
 	return nil
 }
 
-func deleteServiceAccounts(ctx context.Context, params Params, expected []corev1.ServiceAccount) error {
+func deleteServiceAccounts(ctx context.Context, params reconcileutil.Params, expected []corev1.ServiceAccount) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

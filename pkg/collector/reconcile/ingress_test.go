@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -35,7 +37,7 @@ const testFileIngress = "../testdata/ingress_testdata.yaml"
 
 func TestDesiredIngresses(t *testing.T) {
 	t.Run("should return nil invalid ingress type", func(t *testing.T) {
-		params := Params{
+		params := reconcileutil.Params{
 			Config: config.Config{},
 			Client: k8sClient,
 			Log:    logger,
@@ -53,7 +55,7 @@ func TestDesiredIngresses(t *testing.T) {
 	})
 
 	t.Run("should return nil unable to parse config", func(t *testing.T) {
-		params := Params{
+		params := reconcileutil.Params{
 			Config: config.Config{},
 			Client: k8sClient,
 			Log:    logger,
@@ -72,7 +74,7 @@ func TestDesiredIngresses(t *testing.T) {
 	})
 
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
-		params := Params{
+		params := reconcileutil.Params{
 			Config: config.Config{},
 			Client: k8sClient,
 			Log:    logger,

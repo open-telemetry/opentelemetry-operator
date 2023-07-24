@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +33,7 @@ import (
 // +kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 
 // DaemonSets reconciles the daemon set(s) required for the instance in the current context.
-func DaemonSets(ctx context.Context, params Params) error {
+func DaemonSets(ctx context.Context, params reconcileutil.Params) error {
 	desired := []appsv1.DaemonSet{}
 	if params.Instance.Spec.Mode == "daemonset" {
 		desired = append(desired, collector.DaemonSet(params.Config, params.Log, params.Instance))
@@ -50,7 +52,7 @@ func DaemonSets(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.DaemonSet) error {
+func expectedDaemonSets(ctx context.Context, params reconcileutil.Params, expected []appsv1.DaemonSet) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -111,7 +113,7 @@ func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.Da
 	return nil
 }
 
-func deleteDaemonSets(ctx context.Context, params Params, expected []appsv1.DaemonSet) error {
+func deleteDaemonSets(ctx context.Context, params reconcileutil.Params, expected []appsv1.DaemonSet) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

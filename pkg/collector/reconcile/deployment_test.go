@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -57,7 +59,7 @@ func TestExpectedDeployments(t *testing.T) {
 	})
 
 	t.Run("should not create target allocator deployment when targetallocator is not enabled", func(t *testing.T) {
-		paramTargetAllocator := Params{
+		paramTargetAllocator := reconcileutil.Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -126,7 +128,7 @@ func TestExpectedDeployments(t *testing.T) {
 	t.Run("should not update target allocator deployment replicas when collector max replicas is set", func(t *testing.T) {
 		replicas, maxReplicas := int32(2), int32(10)
 		oneReplica := int32(1)
-		paramMaxReplicas := Params{
+		paramMaxReplicas := reconcileutil.Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -177,7 +179,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should update target allocator deployment replicas when changed", func(t *testing.T) {
 		initialReplicas, nextReplicas := int32(1), int32(2)
-		paramReplicas := Params{
+		paramReplicas := reconcileutil.Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",

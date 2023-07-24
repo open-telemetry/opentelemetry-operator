@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +37,7 @@ import (
 
 func TestDesiredRoutes(t *testing.T) {
 	t.Run("should return nil invalid ingress type", func(t *testing.T) {
-		params := Params{
+		params := reconcileutil.Params{
 			Config: config.Config{},
 			Client: k8sClient,
 			Log:    logger,
@@ -53,7 +55,7 @@ func TestDesiredRoutes(t *testing.T) {
 	})
 
 	t.Run("should return nil unable to parse config", func(t *testing.T) {
-		params := Params{
+		params := reconcileutil.Params{
 			Config: config.Config{},
 			Client: k8sClient,
 			Log:    logger,
@@ -72,7 +74,7 @@ func TestDesiredRoutes(t *testing.T) {
 	})
 
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
-		params := Params{
+		params := reconcileutil.Params{
 			Config: config.Config{},
 			Client: k8sClient,
 			Log:    logger,

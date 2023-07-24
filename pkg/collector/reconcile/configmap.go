@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +36,7 @@ import (
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 // ConfigMaps reconciles the config map(s) required for the instance in the current context.
-func ConfigMaps(ctx context.Context, params Params) error {
+func ConfigMaps(ctx context.Context, params reconcileutil.Params) error {
 	desired := []corev1.ConfigMap{
 		desiredConfigMap(ctx, params),
 	}
@@ -60,7 +62,7 @@ func ConfigMaps(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
+func desiredConfigMap(_ context.Context, params reconcileutil.Params) corev1.ConfigMap {
 	name := naming.ConfigMap(params.Instance)
 	labels := collector.Labels(params.Instance, name, []string{})
 
@@ -82,7 +84,7 @@ func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
 	}
 }
 
-func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap, retry bool) error {
+func expectedConfigMaps(ctx context.Context, params reconcileutil.Params, expected []corev1.ConfigMap, retry bool) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -148,7 +150,7 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 	return nil
 }
 
-func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap) error {
+func deleteConfigMaps(ctx context.Context, params reconcileutil.Params, expected []corev1.ConfigMap) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

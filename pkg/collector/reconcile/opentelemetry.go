@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +35,7 @@ import (
 // Self updates this instance's self data. This should be the last item in the reconciliation, as it causes changes
 // making params.Instance obsolete. Default values should be set in the Defaulter webhook, this should only be used
 // for the Status, which can't be set by the defaulter.
-func Self(ctx context.Context, params Params) error {
+func Self(ctx context.Context, params reconcileutil.Params) error {
 	changed := params.Instance
 
 	// this field is only changed for new instances: on existing instances this

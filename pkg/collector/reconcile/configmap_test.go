@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 
 	"github.com/stretchr/testify/assert"
@@ -236,7 +238,7 @@ func TestExpectedConfigMap(t *testing.T) {
 
 	t.Run("should update collector config map", func(t *testing.T) {
 
-		param := Params{
+		param := reconcileutil.Params{
 			Config: config.New(),
 			Client: k8sClient,
 			Instance: v1alpha1.OpenTelemetryCollector{
@@ -271,7 +273,7 @@ func TestExpectedConfigMap(t *testing.T) {
 
 	t.Run("should update target allocator config map", func(t *testing.T) {
 
-		param := Params{
+		param := reconcileutil.Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",

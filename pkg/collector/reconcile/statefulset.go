@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +33,7 @@ import (
 // +kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 
 // StatefulSets reconciles the stateful set(s) required for the instance in the current context.
-func StatefulSets(ctx context.Context, params Params) error {
+func StatefulSets(ctx context.Context, params reconcileutil.Params) error {
 
 	desired := []appsv1.StatefulSet{}
 	if params.Instance.Spec.Mode == "statefulset" {
@@ -51,7 +53,7 @@ func StatefulSets(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.StatefulSet) error {
+func expectedStatefulSets(ctx context.Context, params reconcileutil.Params, expected []appsv1.StatefulSet) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -113,7 +115,7 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 	return nil
 }
 
-func deleteStatefulSets(ctx context.Context, params Params, expected []appsv1.StatefulSet) error {
+func deleteStatefulSets(ctx context.Context, params reconcileutil.Params, expected []appsv1.StatefulSet) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

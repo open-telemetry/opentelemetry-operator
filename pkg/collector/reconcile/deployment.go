@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	appsv1 "k8s.io/api/apps/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +35,7 @@ import (
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
 
 // Deployments reconciles the deployment(s) required for the instance in the current context.
-func Deployments(ctx context.Context, params Params) error {
+func Deployments(ctx context.Context, params reconcileutil.Params) error {
 	desired := []appsv1.Deployment{}
 	if params.Instance.Spec.Mode == "deployment" {
 		desired = append(desired, collector.Deployment(params.Config, params.Log, params.Instance))
@@ -56,7 +58,7 @@ func Deployments(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
+func expectedDeployments(ctx context.Context, params reconcileutil.Params, expected []appsv1.Deployment) error {
 	for _, obj := range expected {
 		desired := obj
 
@@ -118,7 +120,7 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 	return nil
 }
 
-func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
+func deleteDeployments(ctx context.Context, params reconcileutil.Params, expected []appsv1.Deployment) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

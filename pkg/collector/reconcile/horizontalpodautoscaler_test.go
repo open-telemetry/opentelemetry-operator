@@ -20,6 +20,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
@@ -162,7 +164,7 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 	})
 }
 
-func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
+func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) reconcileutil.Params {
 	configYAML, err := os.ReadFile("../testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
@@ -183,7 +185,7 @@ func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
 		logger.Error(err, "configuration.autodetect failed")
 	}
 
-	return Params{
+	return reconcileutil.Params{
 		Config: configuration,
 		Client: k8sClient,
 		Instance: v1alpha1.OpenTelemetryCollector{
