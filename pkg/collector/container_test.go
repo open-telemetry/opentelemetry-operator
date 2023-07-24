@@ -178,7 +178,7 @@ service:
 			},
 		},
 		{
-			description: "prometheus exporter ",
+			description: "prometheus exporter",
 			specConfig: `exporters:
     prometheus:
         endpoint: "0.0.0.0:9090"`,
@@ -186,8 +186,30 @@ service:
 			expectedPorts: []corev1.ContainerPort{
 				metricContainerPort,
 				{
-					Name:          "promexporter",
+					Name:          "prometheus",
 					ContainerPort: 9090,
+					Protocol:      corev1.ProtocolTCP,
+				},
+			},
+		},
+		{
+			description: "multiple prometheus exporters",
+			specConfig: `exporters:
+    prometheus/prod:
+        endpoint: "0.0.0.0:9090"
+    prometheus/dev:
+        endpoint: "0.0.0.0:9091"`,
+			specPorts: []corev1.ServicePort{},
+			expectedPorts: []corev1.ContainerPort{
+				metricContainerPort,
+				{
+					Name:          "prometheus-prod",
+					ContainerPort: 9090,
+					Protocol:      corev1.ProtocolTCP,
+				},
+				{
+					Name:          "prometheus-dev",
+					ContainerPort: 9091,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},

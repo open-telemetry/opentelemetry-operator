@@ -252,7 +252,7 @@ func getPrometheusExporterPort(exporterConfig map[interface{}]interface{}) (int3
 func getPrometheusExporterPorts(c map[interface{}]interface{}) ([]corev1.ContainerPort, []error) {
 	errors := make([]error, 0)
 	ports := make([]corev1.ContainerPort, 0)
-	if exporters, ok := c["exporters"]; ok {
+	if exporters, ok := c["exporters"]; ok && exporters != nil {
 		for e, exporterConfig := range exporters.(map[interface{}]interface{}) {
 			exporterName := e.(string)
 			if strings.Contains(exporterName, "prometheus") {
