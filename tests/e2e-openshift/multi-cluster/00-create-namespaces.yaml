@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kuttl-multi-cluster-send
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kuttl-multi-cluster-receive
