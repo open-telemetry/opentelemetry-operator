@@ -42,8 +42,12 @@ const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
 
 type Config struct {
+	ListenAddr             *string
+	KubeConfigFilePath     string
+	ClusterConfig          *rest.Config
+	RootLogger             logr.Logger
 	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
-	Config                 *promconfig.Config `yaml:"config"`
+	PromConfig             *promconfig.Config `yaml:"config"`
 	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
 	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
 	PrometheusCR           PrometheusCRConfig `yaml:"prometheus_cr,omitempty"`
@@ -52,6 +56,7 @@ type Config struct {
 }
 
 type PrometheusCRConfig struct {
+	Enabled        bool           `yaml:"enabled,omitempty"`
 	ScrapeInterval model.Duration `yaml:"scrape_interval,omitempty"`
 }
 
@@ -67,20 +72,6 @@ func (c Config) GetTargetsFilterStrategy() string {
 		return *c.FilterStrategy
 	}
 	return ""
-}
-
-type PrometheusCRWatcherConfig struct {
-	Enabled *bool
-}
-
-type CLIConfig struct {
-	ListenAddr     *string
-	ConfigFilePath *string
-	ClusterConfig  *rest.Config
-	// KubeConfigFilePath empty if in cluster configuration is in use
-	KubeConfigFilePath string
-	RootLogger         logr.Logger
-	PromCRWatcherConf  PrometheusCRWatcherConfig
 }
 
 func Load(file string) (Config, error) {
@@ -111,44 +102,50 @@ func createDefaultConfig() Config {
 	}
 }
 
-func ParseCLI() (CLIConfig, error) {
+func FromCLI() (*Config, string, error) {
+	// parse the CLI flags
+	configFilePath := pflag.String("config-file", DefaultConfigFilePath, "The path to the config file.")
+	listenAddr := pflag.String("listen-addr", ":8080", "The address where this service serves.")
+	prometheusCREnabled := pflag.Bool("enable-prometheus-cr-watcher", false, "Enable Prometheus CRs as target sources")
+	kubeconfigPath := pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
 	opts := zap.Options{}
 	opts.BindFlags(flag.CommandLine)
-	cLIConf := CLIConfig{
-		ListenAddr:     pflag.String("listen-addr", ":8080", "The address where this service serves."),
-		ConfigFilePath: pflag.String("config-file", DefaultConfigFilePath, "The path to the config file."),
-		PromCRWatcherConf: PrometheusCRWatcherConfig{
-			Enabled: pflag.Bool("enable-prometheus-cr-watcher", false, "Enable Prometheus CRs as target sources"),
-		},
-	}
-	kubeconfigPath := pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
+
 	pflag.Parse()
 
-	cLIConf.RootLogger = zap.New(zap.UseFlagOptions(&opts))
-	klog.SetLogger(cLIConf.RootLogger)
-	ctrl.SetLogger(cLIConf.RootLogger)
+	// load the config from the config file
+	config, err := Load(*configFilePath)
+	if err != nil {
+		return nil, "", err
+	}
 
+	// set the rest of the config attributes based on command-line flag values
+	config.RootLogger = zap.New(zap.UseFlagOptions(&opts))
+	klog.SetLogger(config.RootLogger)
+	ctrl.SetLogger(config.RootLogger)
+
+	config.KubeConfigFilePath = *kubeconfigPath
 	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
-	cLIConf.KubeConfigFilePath = *kubeconfigPath
 	if err != nil {
 		pathError := &fs.PathError{}
 		if ok := errors.As(err, &pathError); !ok {
-			return CLIConfig{}, err
+			return nil, "", err
 		}
 		clusterConfig, err = rest.InClusterConfig()
 		if err != nil {
-			return CLIConfig{}, err
+			return nil, "", err
 		}
-		cLIConf.KubeConfigFilePath = "" // reset as we use in cluster configuration
 	}
-	cLIConf.ClusterConfig = clusterConfig
-	return cLIConf, nil
+	config.ListenAddr = listenAddr
+	config.PrometheusCR.Enabled = *prometheusCREnabled
+	config.ClusterConfig = clusterConfig
+	return &config, *configFilePath, nil
 }
 
 // ValidateConfig validates the cli and file configs together.
-func ValidateConfig(config *Config, cliConfig *CLIConfig) error {
-	scrapeConfigsPresent := (config.Config != nil && len(config.Config.ScrapeConfigs) > 0)
-	if !(*cliConfig.PromCRWatcherConf.Enabled || scrapeConfigsPresent) {
+func ValidateConfig(config *Config) error {
+	scrapeConfigsPresent := (config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0)
+	if !(config.PrometheusCR.Enabled || scrapeConfigsPresent) {
 		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
 	}
 	return nil

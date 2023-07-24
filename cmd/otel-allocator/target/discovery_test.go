@@ -85,8 +85,8 @@ func TestDiscovery(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.Load(tt.args.file)
 			assert.NoError(t, err)
-			assert.True(t, len(cfg.Config.ScrapeConfigs) > 0)
-			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.Config)
+			assert.True(t, len(cfg.PromConfig.ScrapeConfigs) > 0)
+			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.PromConfig)
 			assert.NoError(t, err)
 
 			gotTargets := <-results
@@ -96,7 +96,7 @@ func TestDiscovery(t *testing.T) {
 
 			// check the updated scrape configs
 			expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
-			for _, scrapeConfig := range cfg.Config.ScrapeConfigs {
+			for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
 				expectedScrapeConfigs[scrapeConfig.JobName] = scrapeConfig
 			}
 			assert.Equal(t, expectedScrapeConfigs, scu.mockCfg)

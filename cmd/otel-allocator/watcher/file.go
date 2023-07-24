@@ -34,7 +34,7 @@ type FileWatcher struct {
 	closer         chan bool
 }
 
-func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (*FileWatcher, error) {
+func NewFileWatcher(logger logr.Logger, configFilePath string) (*FileWatcher, error) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		logger.Error(err, "Can't start the watcher")
@@ -43,7 +43,7 @@ func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (*FileWatcher, 
 
 	return &FileWatcher{
 		logger:         logger,
-		configFilePath: *config.ConfigFilePath,
+		configFilePath: configFilePath,
 		watcher:        fileWatcher,
 		closer:         make(chan bool),
 	}, nil
@@ -55,7 +55,7 @@ func (f *FileWatcher) LoadConfig(_ context.Context) (*promconfig.Config, error) 
 		f.logger.Error(err, "Unable to load configuration")
 		return nil, err
 	}
-	return cfg.Config, nil
+	return cfg.PromConfig, nil
 }
 
 func (f *FileWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
