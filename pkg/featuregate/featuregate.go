@@ -56,6 +56,14 @@ var (
 		"operator.collector.rewritetargetallocator",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"))
+
+	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
+	// automatically be rewritten when the target allocator is enabled.
+	UseManifestReconciliation = featuregate.GlobalRegistry().MustRegister(
+		"operator.manifeststrategy",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterFromVersion("0.82.0"),
+		featuregate.WithRegisterDescription("controls whether the operator should reconcile with the new reconcile logic"))
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

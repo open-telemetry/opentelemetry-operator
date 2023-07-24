@@ -17,7 +17,15 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	routev1 "github.com/openshift/api/route/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"sync"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
@@ -210,6 +218,14 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		Recorder: r.recorder,
 	}
 
+	if featuregate.UseManifestReconciliation.IsEnabled() {
+		err := r.doCRUD(ctx, params)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
 	if err := r.RunTasks(ctx, params); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -251,7 +267,8 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{})
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&networkingv1.Ingress{})
 
 	autoscalingVersion := r.config.AutoscalingVersion()
 	if autoscalingVersion == autodetect.AutoscalingVersionV2 {
@@ -261,4 +278,84 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 	}
 
 	return builder.Complete(r)
+}
+
+func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params reconcileutil.Params) error {
+	// Collect all objects owned by the operator, to be able to prune objects
+	// which exist in the cluster but are not managed by the operator anymore.
+	pruneObjects, err := r.findObjectsOwnedByOtelOperator(ctx, params)
+	if err != nil {
+		return err
+	}
+	managedObjects, err := manifests.BuildAll(params)
+	if err != nil {
+		return err
+	}
+	var errs []error
+	for _, obj := range managedObjects {
+		l := r.log.WithValues(
+			"object_name", obj.GetName(),
+			"object_kind", obj.GetObjectKind(),
+		)
+		desired := obj.DeepCopyObject().(client.Object)
+		mutateFn := manifests.MutateFuncFor(obj, desired)
+		op, err := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
+		if err != nil {
+			l.Error(err, "failed to configure resource")
+			errs = append(errs, err)
+			continue
+		}
+
+		l.V(1).Info(fmt.Sprintf("resource has been %s", op))
+
+		delete(pruneObjects, obj.GetUID())
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to create objects for Collector %s: %w", params.Instance.GetName(), errors.Join(errs...))
+	}
+
+	// Prune owned objects in the cluster which are not managed anymore.
+	var pruneErrs []error
+	for _, obj := range pruneObjects {
+		l := r.log.WithValues(
+			"object_name", obj.GetName(),
+			"object_kind", obj.GetObjectKind(),
+		)
+		l.Info("pruning unmanaged resource")
+
+		err = r.Delete(ctx, obj)
+		if err != nil {
+			l.Error(err, "failed to delete resource")
+			pruneErrs = append(pruneErrs, err)
+		}
+	}
+	if len(pruneErrs) > 0 {
+		return fmt.Errorf("failed to prune objects of Collector %s: %w", params.Instance.GetName(), errors.Join(pruneErrs...))
+	}
+	return nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) findObjectsOwnedByOtelOperator(ctx context.Context, params reconcileutil.Params) (map[types.UID]client.Object, error) {
+	ownedObjects := map[types.UID]client.Object{}
+	listOps := &client.ListOptions{
+		Namespace:     params.Instance.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(collector.SelectorLabels(params.Instance)),
+	}
+	ingressList := &networkingv1.IngressList{}
+	err := r.List(ctx, ingressList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("error listing ingress: %w", err)
+	}
+	for i := range ingressList.Items {
+		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
+	}
+	routesList := &routev1.RouteList{}
+	err = r.List(ctx, routesList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("error listing routes: %w", err)
+	}
+	for i := range routesList.Items {
+		ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
+	}
+	return ownedObjects, nil
 }
