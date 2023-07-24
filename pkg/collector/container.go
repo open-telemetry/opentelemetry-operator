@@ -190,7 +190,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 
 	promExporterPorts, errs := getPrometheusExporterPorts(c)
 	for _, err := range errs {
-		logger.V(2).Info("There was a problem getting the prometheus exporter port: %s",err)
+		logger.V(2).Info("There was a problem getting the prometheus exporter port: %s", err)
 	}
 	for _, promPort := range promExporterPorts {
 		ports[promPort.Name] = promPort
