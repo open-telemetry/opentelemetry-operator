@@ -235,14 +235,29 @@ func TestHeadlessService(t *testing.T) {
 }
 
 func TestMonitoringService(t *testing.T) {
-	t.Run("returned service should expose monitoring port", func(t *testing.T) {
+	t.Run("returned service should expose monitoring port in the default port", func(t *testing.T) {
 		expected := []v1.ServicePort{{
 			Name: "monitoring",
 			Port: 8888,
 		}}
 		actual := monitoringService(context.Background(), params())
 		assert.Equal(t, expected, actual.Spec.Ports)
+	})
 
+	t.Run("returned the service in a custom port", func(t *testing.T) {
+		expected := []v1.ServicePort{{
+			Name: "monitoring",
+			Port: 9090,
+		}}
+		params := params()
+		params.Instance.Spec.Config = `service:
+    telemetry:
+        metrics:
+            level: detailed
+            address: 0.0.0.0:9090`
+		actual := monitoringService(context.Background(), params)
+		assert.NotNil(t, actual)
+		assert.Equal(t, expected, actual.Spec.Ports)
 	})
 }
 
