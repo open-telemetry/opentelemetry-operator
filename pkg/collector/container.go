@@ -19,6 +19,7 @@ import (
 	"net"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
@@ -187,15 +188,12 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		Protocol:      corev1.ProtocolTCP,
 	}
 
-	promExporterPort, err := getPrometheusExporterPort(c)
-	if err != nil {
-		logger.V(2).Info("prometheus exporter port not detected")
-	} else {
-		ports["promexporter"] = corev1.ContainerPort{
-			Name:          "promexporter",
-			ContainerPort: promExporterPort,
-			Protocol:      corev1.ProtocolTCP,
-		}
+	promExporterPorts, errs := getPrometheusExporterPorts(c)
+	for _, err := range errs {
+		logger.V(2).Info("There was a problem getting the prometheus exporter port: %s",err)
+	}
+	for _, promPort := range promExporterPorts {
+		ports[promPort.Name] = promPort
 	}
 
 	return ports
@@ -235,34 +233,51 @@ func getMetricsPort(c map[interface{}]interface{}) (int32, error) {
 	return int32(i64), nil
 }
 
-func getPrometheusExporterPort(c map[interface{}]interface{}) (int32, error) {
-	// we don't need to unmarshal the whole config, just follow the keys down to
-	// the prometheus endpoint.
-	type prometheusCfg struct {
-		Endpoint string
+func getPrometheusExporterPort(exporterConfig map[interface{}]interface{}) (int32, error) {
+	var promPort int32 = 0
+	if endpoint, ok := exporterConfig["endpoint"]; ok {
+		_, port, err := net.SplitHostPort(endpoint.(string))
+		if err != nil {
+			return 0, err
+		}
+		i64, err := strconv.ParseInt(port, 10, 32)
+		if err != nil {
+			return 0, err
+		}
+		promPort = int32(i64)
 	}
-	type exportersCfg struct {
-		Prometheus prometheusCfg
-	}
-	type cfg struct {
-		Exporters exportersCfg
-	}
-	var cOut cfg
-	err := mapstructure.Decode(c, &cOut)
-	if err != nil {
-		return 0, nil
-	}
+	return promPort, nil
+}
 
-	_, port, err := net.SplitHostPort(cOut.Exporters.Prometheus.Endpoint)
-	if err != nil {
-		return 0, err
+func getPrometheusExporterPorts(c map[interface{}]interface{}) ([]corev1.ContainerPort, []error) {
+	errors := make([]error, 0)
+	ports := make([]corev1.ContainerPort, 0)
+	if exporters, ok := c["exporters"]; ok {
+		for e, exporterConfig := range exporters.(map[interface{}]interface{}) {
+			exporterName := e.(string)
+			if strings.Contains(exporterName, "prometheus") {
+				containerPort, err := getPrometheusExporterPort(exporterConfig.(map[interface{}]interface{}))
+				if err != nil {
+					errors = append(errors,
+						fmt.Errorf(
+							"there was a problem getting the port. Exporter %s",
+							exporterName,
+						),
+					)
+				}
+				ports = append(ports,
+					corev1.ContainerPort{
+						Name:          naming.PortName(exporterName),
+						ContainerPort: containerPort,
+						Protocol:      corev1.ProtocolTCP,
+					},
+				)
+			}
+		}
+	} else {
+		errors = append(errors, fmt.Errorf("no exporters specified in the configuration"))
 	}
-	i64, err := strconv.ParseInt(port, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(i64), nil
+	return ports, errors
 }
 
 func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {
