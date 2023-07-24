@@ -184,6 +184,18 @@ func monitoringService(ctx context.Context, params Params) *corev1.Service {
 	name := naming.MonitoringService(params.Instance)
 	labels := collector.Labels(params.Instance, name, []string{})
 
+	c, err := adapters.ConfigFromString(params.Instance.Spec.Config)
+	if err != nil {
+		params.Log.Error(err, "couldn't extract the configuration")
+		return nil
+	}
+
+	metricsPort, err := adapters.ConfigToMetricsPort(params.Log, c)
+	if err != nil {
+		params.Log.V(2).Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
+		metricsPort = 8888
+	}
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -196,7 +208,7 @@ func monitoringService(ctx context.Context, params Params) *corev1.Service {
 			ClusterIP: "",
 			Ports: []corev1.ServicePort{{
 				Name: "monitoring",
-				Port: 8888,
+				Port: metricsPort,
 			}},
 		},
 	}

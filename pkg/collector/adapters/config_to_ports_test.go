@@ -206,6 +206,73 @@ func TestParserFailed(t *testing.T) {
 	assert.True(t, mockParserCalled)
 }
 
+func TestConfigToMetricsPort(t *testing.T) {
+	t.Run("custom port specified", func(t *testing.T) {
+		config := map[interface{}]interface{}{
+			"service": map[interface{}]interface{}{
+				"telemetry": map[interface{}]interface{}{
+					"metrics": map[interface{}]interface{}{
+						"address": "0.0.0.0:9090",
+					},
+				},
+			},
+		}
+
+		port, err := adapters.ConfigToMetricsPort(logger, config)
+		assert.NoError(t, err)
+		assert.Equal(t, int32(9090), port)
+	})
+
+	for _, tt := range []struct {
+		desc   string
+		config map[interface{}]interface{}
+	}{
+		{
+			"bad address",
+			map[interface{}]interface{}{
+				"service": map[interface{}]interface{}{
+					"telemetry": map[interface{}]interface{}{
+						"metrics": map[interface{}]interface{}{
+							"address": "0.0.0.0",
+						},
+					},
+				},
+			},
+		},
+		{
+			"missing address",
+			map[interface{}]interface{}{
+				"service": map[interface{}]interface{}{
+					"telemetry": map[interface{}]interface{}{
+						"metrics": map[interface{}]interface{}{
+							"level": "detailed",
+						},
+					},
+				},
+			},
+		},
+		{
+			"missing metrics",
+			map[interface{}]interface{}{
+				"service": map[interface{}]interface{}{
+					"telemetry": map[interface{}]interface{}{},
+				},
+			},
+		},
+		{
+			"missing telemetry",
+			map[interface{}]interface{}{
+				"service": map[interface{}]interface{}{},
+			},
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			_, err := adapters.ConfigToMetricsPort(logger, tt.config)
+			assert.Error(t, err)
+		})
+	}
+}
+
 type mockParser struct {
 	portsFunc func() ([]corev1.ServicePort, error)
 }
