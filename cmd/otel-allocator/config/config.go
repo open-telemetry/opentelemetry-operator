@@ -16,11 +16,9 @@ package config
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -31,7 +29,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -103,29 +100,21 @@ func createDefaultConfig() Config {
 }
 
 func FromCLI() (*Config, string, error) {
-	// parse the CLI flags
-	configFilePath := pflag.String("config-file", DefaultConfigFilePath, "The path to the config file.")
-	listenAddr := pflag.String("listen-addr", ":8080", "The address where this service serves.")
-	prometheusCREnabled := pflag.Bool("enable-prometheus-cr-watcher", false, "Enable Prometheus CRs as target sources")
-	kubeconfigPath := pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
-	opts := zap.Options{}
-	opts.BindFlags(flag.CommandLine)
-
 	pflag.Parse()
 
 	// load the config from the config file
-	config, err := Load(*configFilePath)
+	config, err := Load(*configFilePathFlag)
 	if err != nil {
 		return nil, "", err
 	}
 
 	// set the rest of the config attributes based on command-line flag values
-	config.RootLogger = zap.New(zap.UseFlagOptions(&opts))
+	config.RootLogger = zap.New(zap.UseFlagOptions(&zapCmdLineOpts))
 	klog.SetLogger(config.RootLogger)
 	ctrl.SetLogger(config.RootLogger)
 
-	config.KubeConfigFilePath = *kubeconfigPath
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
+	config.KubeConfigFilePath = *kubeConfigPathFlag
+	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeConfigPathFlag)
 	if err != nil {
 		pathError := &fs.PathError{}
 		if ok := errors.As(err, &pathError); !ok {
@@ -136,10 +125,10 @@ func FromCLI() (*Config, string, error) {
 			return nil, "", err
 		}
 	}
-	config.ListenAddr = listenAddr
-	config.PrometheusCR.Enabled = *prometheusCREnabled
+	config.ListenAddr = listenAddrFlag
+	config.PrometheusCR.Enabled = *prometheusCREnabledFlag
 	config.ClusterConfig = clusterConfig
-	return &config, *configFilePath, nil
+	return &config, *configFilePathFlag, nil
 }
 
 // ValidateConfig validates the cli and file configs together.
