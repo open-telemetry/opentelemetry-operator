@@ -17,6 +17,8 @@ package instrumentation
 import (
 	"context"
 	"errors"
+	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -55,6 +57,89 @@ type languageInstrumentations struct {
 	ApacheHttpd instrumentationWithContainers
 	Go          instrumentationWithContainers
 	Sdk         instrumentationWithContainers
+}
+
+// Check if single instrumentation is configured for Pod and return which is configured.
+func (langInsts languageInstrumentations) isSingleInstrumentationEnabled() (bool, string) {
+	// Check if more than one field is not nil
+	count := 0
+	enabledInstrumentation := ""
+	value := reflect.ValueOf(langInsts)
+	for i := 0; i < value.NumField(); i++ {
+		field := value.Field(i).FieldByName("Instrumentation")
+		if !field.IsNil() {
+			count++
+			enabledInstrumentation = value.Type().Field(i).Name
+		}
+	}
+
+	if count == 1 {
+		return true, enabledInstrumentation
+	} else {
+		return false, ""
+	}
+}
+
+// Check if specific containers are provided for configured instrumentation.
+func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultipleInstrumentations() (bool, string) {
+	instrWithoutContainers := 0
+	instrWithContainers := 0
+	var allContainers []string
+
+	insts := reflect.ValueOf(langInsts)
+	for i := 0; i < insts.NumField(); i++ {
+		language := insts.Field(i)
+		instr := language.FieldByName("Instrumentation")
+		containers := language.FieldByName("Containers")
+
+		if !instr.IsNil() && containers.String() == "" {
+			instrWithoutContainers++
+		}
+
+		if !instr.IsNil() && containers.String() != "" {
+			instrWithContainers++
+		}
+
+		allContainers = append(allContainers, containers.String())
+	}
+
+	// Look for duplicated containers.
+	containerDuplicates := findDuplicatedContainers(allContainers)
+	if containerDuplicates != nil {
+		return false, fmt.Sprintf("duplicated container names detected: %s", containerDuplicates)
+	}
+
+	// Look for mixed multiple instrumentations with and without container names.
+	if instrWithoutContainers > 0 && instrWithContainers > 0 {
+		return false, "incorrect instrumentation configuration - please provide container names for all instrumentations"
+		// Look for multiple instrumentations without container names.
+	} else if instrWithoutContainers > 1 && instrWithContainers == 0 {
+		return false, "incorrect instrumentation configuration - please provide container names for all instrumentations"
+	} else if instrWithoutContainers == 0 && instrWithContainers == 0 {
+		return false, "instrumentation configuration not provided"
+	}
+
+	return true, "ok"
+}
+
+// Set containers for specific instrumentation.
+func (insts *languageInstrumentations) setInstrumentationLanguageContainers(instrumentationName string, containers string) bool {
+	instrs := reflect.ValueOf(insts)
+	instLang := instrs.Elem().FieldByName(instrumentationName)
+
+	// Check if the field exists and is a nested struct.
+	if !instLang.IsValid() || instLang.Kind() != reflect.Struct {
+		return false
+	}
+
+	containersField := instLang.FieldByName("Containers")
+	// Check if the "Containers" field exists and is assignable.
+	if !containersField.IsValid() || !containersField.CanSet() {
+		return false
+	}
+	containersField.SetString(containers)
+
+	return true
 }
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
@@ -185,7 +270,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.Sdk.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
 
 		// We check if provided annotations and instrumentations are valid
-		ok, msg := areContainerNamesConfiguredForMultipleInstrumentations(insts)
+		ok, msg := insts.areContainerNamesConfiguredForMultipleInstrumentations()
 		if !ok {
 			logger.V(1).Info("skipping instrumentation injection", "reason", msg)
 			return pod, nil
@@ -194,10 +279,10 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	} else {
 		// We use general annotation for container names
 		// only when multi instrumentation is disabled
-		singleInstrEnabled, instrName := isSingleInstrumentationEnabled(insts)
+		singleInstrEnabled, instrName := insts.isSingleInstrumentationEnabled()
 		if singleInstrEnabled {
 			generalContainerNames := annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
-			containersSet := setInstrumentationLanguageContainers(&insts, instrName, generalContainerNames)
+			containersSet := insts.setInstrumentationLanguageContainers(instrName, generalContainerNames)
 			if !containersSet {
 				logger.V(1).Info("skipping instrumentation injection, unknown instrumentation name")
 				return pod, nil

@@ -15,8 +15,6 @@
 package instrumentation
 
 import (
-	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -51,70 +49,6 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 	return false
 }
 
-// Check if single instrumentation is configured for Pod and return which is configured.
-func isSingleInstrumentationEnabled(insts languageInstrumentations) (bool, string) {
-	// Check if more than one field is not nil
-	count := 0
-	enabledInstrumentation := ""
-	value := reflect.ValueOf(insts)
-	for i := 0; i < value.NumField(); i++ {
-		field := value.Field(i).FieldByName("Instrumentation")
-		if !field.IsNil() {
-			count++
-			enabledInstrumentation = value.Type().Field(i).Name
-		}
-	}
-
-	if count == 1 {
-		return true, enabledInstrumentation
-	} else {
-		return false, ""
-	}
-}
-
-// Check if specific containers are provided for configured instrumentation.
-func areContainerNamesConfiguredForMultipleInstrumentations(langInsts languageInstrumentations) (bool, string) {
-	instrWithoutContainers := 0
-	instrWithContainers := 0
-	var allContainers []string
-
-	insts := reflect.ValueOf(langInsts)
-	for i := 0; i < insts.NumField(); i++ {
-		language := insts.Field(i)
-		instr := language.FieldByName("Instrumentation")
-		containers := language.FieldByName("Containers")
-
-		if !instr.IsNil() && containers.String() == "" {
-			instrWithoutContainers++
-		}
-
-		if !instr.IsNil() && containers.String() != "" {
-			instrWithContainers++
-		}
-
-		allContainers = append(allContainers, containers.String())
-	}
-
-	// Look for duplicated containers.
-	containerDuplicates := findDuplicatedContainers(allContainers)
-	if containerDuplicates != nil {
-		sort.Strings(containerDuplicates)
-		return false, fmt.Sprintf("duplicated container names detected: %s", containerDuplicates)
-	}
-
-	// Look for mixed multiple instrumentations with and without container names.
-	if instrWithoutContainers > 0 && instrWithContainers > 0 {
-		return false, "incorrect instrumentation configuration - please provide container names for all instrumentations"
-		// Look for multiple instrumentations without container names.
-	} else if instrWithoutContainers > 1 && instrWithContainers == 0 {
-		return false, "incorrect instrumentation configuration - please provide container names for all instrumentations"
-	} else if instrWithoutContainers == 0 && instrWithContainers == 0 {
-		return false, "instrumentation configuration not provided"
-	}
-
-	return true, "ok"
-}
-
 // Look for duplicates in the provided containers.
 func findDuplicatedContainers(ctrs []string) []string {
 	// Merge is needed because of multiple containers can be provided for single instrumentation.
@@ -141,25 +75,7 @@ func findDuplicatedContainers(ctrs []string) []string {
 		}
 	}
 
+	sort.Strings(duplicates)
+
 	return duplicates
-}
-
-// Set containers for specific instrumentation.
-func setInstrumentationLanguageContainers(insts *languageInstrumentations, instrumentationName string, containers string) bool {
-	instrs := reflect.ValueOf(insts)
-	instLang := instrs.Elem().FieldByName(instrumentationName)
-
-	// Check if the field exists and is a nested struct.
-	if !instLang.IsValid() || instLang.Kind() != reflect.Struct {
-		return false
-	}
-
-	containersField := instLang.FieldByName("Containers")
-	// Check if the "Containers" field exists and is assignable.
-	if !containersField.IsValid() || !containersField.CanSet() {
-		return false
-	}
-	containersField.SetString(containers)
-
-	return true
 }
