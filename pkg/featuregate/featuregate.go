@@ -70,13 +70,14 @@ var (
 		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"),
 		featuregate.WithRegisterFromVersion("v0.76.1"),
 	)
-  
+
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
 	// automatically be rewritten when the target allocator is enabled.
 	UseManifestReconciliation = featuregate.GlobalRegistry().MustRegister(
 		"operator.manifeststrategy",
-		featuregate.StageAlpha,
-		featuregate.WithRegisterFromVersion("0.82.0"),
+		featuregate.StageStable,
+		featuregate.WithRegisterToVersion("v0.84.0"),
+		featuregate.WithRegisterFromVersion("v0.82.0"),
 		featuregate.WithRegisterDescription("controls whether the operator should reconcile with the new reconcile logic"))
 )
 

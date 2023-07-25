@@ -177,7 +177,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func params() reconcileutil.Params {
+func deploymentParams() reconcileutil.Params {
 	return paramsWithMode(v1alpha1.ModeDeployment)
 }
 

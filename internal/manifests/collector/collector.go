@@ -32,5 +32,5 @@ func Build(params reconcileutil.Params) ([]client.Object, error) {
 	for _, route := range routes {
 		manifests = append(manifests, route)
 	}
-	return nil, nil
+	return manifests, nil
 }

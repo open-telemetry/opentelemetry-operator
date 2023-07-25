@@ -29,8 +29,6 @@ import (
 )
 
 func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
-	autoscalingVersion := cfg.AutoscalingVersion()
-
 	name := naming.Collector(otelcol)
 	labels := Labels(otelcol, name, cfg.LabelsFilter())
 	annotations := Annotations(otelcol)
@@ -48,6 +46,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		logger.Info("Autoscaler field is unset in Spec, skipping")
 		return nil
 	}
+	autoscalingVersion := cfg.AutoscalingVersion()
 
 	if otelcol.Spec.Autoscaler.MaxReplicas == nil {
 		otelcol.Spec.Autoscaler.MaxReplicas = otelcol.Spec.MaxReplicas
