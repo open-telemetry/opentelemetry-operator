@@ -52,6 +52,19 @@ var testAffinityValue = &v1.Affinity{
 	},
 }
 
+var testTopologySpreadConstraintValue = []v1.TopologySpreadConstraint{
+	{
+		MaxSkew:           1,
+		TopologyKey:       "kubernetes.io/hostname",
+		WhenUnsatisfiable: "DoNotSchedule",
+		LabelSelector: &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"foo": "bar",
+			},
+		},
+	},
+}
+
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
@@ -372,4 +385,35 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.InitContainers, 1)
+}
+
+func TestDeploymentTopologySpreadConstraints(t *testing.T) {
+	// Test default
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+	d1 := Deployment(cfg, logger, otelcol1)
+	assert.Equal(t, "my-instance-collector", d1.Name)
+	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
+
+	// Test TopologySpreadConstraints
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-topologyspreadconstraint",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TopologySpreadConstraints: testTopologySpreadConstraintValue,
+		},
+	}
+
+	cfg = config.New()
+	d2 := Deployment(cfg, logger, otelcol2)
+	assert.Equal(t, "my-instance-topologyspreadconstraint-collector", d2.Name)
+	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
+	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
+	assert.Equal(t, testTopologySpreadConstraintValue, d2.Spec.Template.Spec.TopologySpreadConstraints)
 }

@@ -16,12 +16,9 @@ package collector
 
 import (
 	"fmt"
-	"net"
 	"sort"
-	"strconv"
 
 	"github.com/go-logr/logr"
-	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -176,7 +173,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		}
 	}
 
-	metricsPort, err := getMetricsPort(c)
+	metricsPort, err := adapters.ConfigToMetricsPort(logger, c)
 	if err != nil {
 		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888
@@ -187,40 +184,6 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		Protocol:      corev1.ProtocolTCP,
 	}
 	return ports
-}
-
-// getMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
-func getMetricsPort(c map[interface{}]interface{}) (int32, error) {
-	// we don't need to unmarshal the whole config, just follow the keys down to
-	// the metrics address.
-	type metricsCfg struct {
-		Address string
-	}
-	type telemetryCfg struct {
-		Metrics metricsCfg
-	}
-	type serviceCfg struct {
-		Telemetry telemetryCfg
-	}
-	type cfg struct {
-		Service serviceCfg
-	}
-	var cOut cfg
-	err := mapstructure.Decode(c, &cOut)
-	if err != nil {
-		return 0, err
-	}
-
-	_, port, err := net.SplitHostPort(cOut.Service.Telemetry.Metrics.Address)
-	if err != nil {
-		return 0, err
-	}
-	i64, err := strconv.ParseInt(port, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(i64), nil
 }
 
 func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {
