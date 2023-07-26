@@ -50,7 +50,8 @@ func NewFileWatcher(logger logr.Logger, configFilePath string) (*FileWatcher, er
 }
 
 func (f *FileWatcher) LoadConfig(_ context.Context) (*promconfig.Config, error) {
-	cfg, err := config.Load(f.configFilePath)
+	cfg := config.CreateDefaultConfig()
+	err := config.LoadFromFile(f.configFilePath, &cfg)
 	if err != nil {
 		f.logger.Error(err, "Unable to load configuration")
 		return nil, err

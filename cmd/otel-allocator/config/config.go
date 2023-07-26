@@ -71,12 +71,33 @@ func (c Config) GetTargetsFilterStrategy() string {
 	return ""
 }
 
-func Load(file string) (Config, error) {
-	cfg := createDefaultConfig()
-	if err := unmarshal(&cfg, file); err != nil {
-		return Config{}, err
+func LoadFromFile(file string, target *Config) error {
+	return unmarshal(target, file)
+}
+
+func LoadFromCLI(target *Config) error {
+	// set the rest of the config attributes based on command-line flag values
+	target.RootLogger = zap.New(zap.UseFlagOptions(&zapCmdLineOpts))
+	klog.SetLogger(target.RootLogger)
+	ctrl.SetLogger(target.RootLogger)
+
+	target.KubeConfigFilePath = *kubeConfigPathFlag
+	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeConfigPathFlag)
+	if err != nil {
+		pathError := &fs.PathError{}
+		if ok := errors.As(err, &pathError); !ok {
+			return err
+		}
+		clusterConfig, err = rest.InClusterConfig()
+		if err != nil {
+			return err
+		}
 	}
-	return cfg, nil
+	target.ListenAddr = *listenAddrFlag
+	target.PrometheusCR.Enabled = *prometheusCREnabledFlag
+	target.ClusterConfig = clusterConfig
+
+	return nil
 }
 
 func unmarshal(cfg *Config, configFile string) error {
@@ -91,7 +112,7 @@ func unmarshal(cfg *Config, configFile string) error {
 	return nil
 }
 
-func createDefaultConfig() Config {
+func CreateDefaultConfig() Config {
 	return Config{
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
@@ -99,35 +120,21 @@ func createDefaultConfig() Config {
 	}
 }
 
-func FromCLI() (*Config, string, error) {
+func Load() (*Config, string, error) {
 	pflag.Parse()
+	config := CreateDefaultConfig()
 
 	// load the config from the config file
-	config, err := Load(*configFilePathFlag)
+	err := LoadFromFile(*configFilePathFlag, &config)
 	if err != nil {
 		return nil, "", err
 	}
 
-	// set the rest of the config attributes based on command-line flag values
-	config.RootLogger = zap.New(zap.UseFlagOptions(&zapCmdLineOpts))
-	klog.SetLogger(config.RootLogger)
-	ctrl.SetLogger(config.RootLogger)
-
-	config.KubeConfigFilePath = *kubeConfigPathFlag
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeConfigPathFlag)
+	err = LoadFromCLI(&config)
 	if err != nil {
-		pathError := &fs.PathError{}
-		if ok := errors.As(err, &pathError); !ok {
-			return nil, "", err
-		}
-		clusterConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return nil, "", err
-		}
+		return nil, "", err
 	}
-	config.ListenAddr = *listenAddrFlag
-	config.PrometheusCR.Enabled = *prometheusCREnabledFlag
-	config.ClusterConfig = clusterConfig
+
 	return &config, *configFilePathFlag, nil
 }
 

@@ -83,7 +83,8 @@ func TestDiscovery(t *testing.T) {
 	}()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := config.Load(tt.args.file)
+			cfg := config.CreateDefaultConfig()
+			err := config.LoadFromFile(tt.args.file, &cfg)
 			assert.NoError(t, err)
 			assert.True(t, len(cfg.PromConfig.ScrapeConfigs) > 0)
 			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.PromConfig)

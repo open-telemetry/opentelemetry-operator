@@ -64,7 +64,7 @@ func main() {
 		interrupts      = make(chan os.Signal, 1)
 		errChan         = make(chan error)
 	)
-	cfg, configFilePath, err := config.FromCLI()
+	cfg, configFilePath, err := config.Load()
 	if err != nil {
 		setupLog.Error(err, "Failed to parse parameters")
 		os.Exit(1)

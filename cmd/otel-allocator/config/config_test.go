@@ -99,7 +99,7 @@ func TestLoad(t *testing.T) {
 			args: args{
 				file: "./testdata/no_config.yaml",
 			},
-			want:    createDefaultConfig(),
+			want:    CreateDefaultConfig(),
 			wantErr: assert.NoError,
 		},
 		{
@@ -163,7 +163,8 @@ func TestLoad(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Load(tt.args.file)
+			got := CreateDefaultConfig()
+			err := LoadFromFile(tt.args.file, &got)
 			if !tt.wantErr(t, err, fmt.Sprintf("Load(%v)", tt.args.file)) {
 				return
 			}
