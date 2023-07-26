@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package collector
 
 import (
@@ -20,11 +34,11 @@ const (
 )
 
 func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error) {
-	return desiredService(cfg, logger, otelcol), nil
+	return desiredService(logger, otelcol), nil
 }
 
 func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error) {
-	h := desiredService(cfg, logger, otelcol)
+	h := desiredService(logger, otelcol)
 	if h == nil {
 		return h, nil
 	}
@@ -79,7 +93,7 @@ func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.O
 	}, nil
 }
 
-func desiredService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
+func desiredService(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
 	name := naming.Service(otelcol)
 	labels := Labels(otelcol, name, []string{})
 

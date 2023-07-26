@@ -30,13 +30,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 
 	routev1 "github.com/openshift/api/route/v1"
-	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -274,26 +271,4 @@ func newParams(taContainerImage string, file string) (reconcileutil.Params, erro
 		Scheme: testScheme,
 		Log:    logger,
 	}, nil
-}
-
-func createObjectIfNotExists(tb testing.TB, name string, object client.Object) {
-	tb.Helper()
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, object)
-	if errors.IsNotFound(err) {
-		err := k8sClient.Create(context.Background(), object)
-		assert.NoError(tb, err)
-	}
-}
-
-func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
-	t.Helper()
-	err := k8sClient.Get(context.Background(), namespacedName, object)
-	if errors.IsNotFound(err) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-
 }

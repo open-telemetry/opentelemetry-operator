@@ -1,12 +1,22 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package manifests
 
 import (
 	"fmt"
 	"reflect"
-
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
-
-	"github.com/pkg/errors"
 
 	"github.com/imdario/mergo"
 	routev1 "github.com/openshift/api/route/v1"
@@ -14,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -115,18 +126,14 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 
 		default:
 			t := reflect.TypeOf(existing).String()
-			return errors.New(fmt.Sprintf("missing mutate implementation for resource type: %s", t))
+			return fmt.Errorf("missing mutate implementation for resource type: %s", t)
 		}
 		return nil
 	}
 }
 
 func mergeWithOverride(dst, src interface{}) error {
-	err := mergo.Merge(dst, src, mergo.WithOverride)
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("unable to mergeWithOverride, dst: %v, src: %v", dst, src))
-	}
-	return nil
+	return mergo.Merge(dst, src, mergo.WithOverride)
 }
 
 func mutateSecret(existing, desired *corev1.Secret) {
@@ -223,7 +230,7 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 	if ok, field := hasImmutableFieldChange(existing, desired); !ok {
-		return errors.New(fmt.Sprintf("attempting to mutate immutable field: %s", field))
+		return fmt.Errorf("attempting to mutate immutable field: %s", field)
 	}
 	// StatefulSet selector is immutable so we set this value only if
 	// a new object is going to be created

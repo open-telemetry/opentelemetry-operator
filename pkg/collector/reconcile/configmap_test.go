@@ -26,7 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -58,7 +57,6 @@ func TestExpectedConfigMap(t *testing.T) {
 
 		param := reconcileutil.Params{
 			Config: config.New(),
-			Client: k8sClient,
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -70,9 +68,7 @@ func TestExpectedConfigMap(t *testing.T) {
 					UID:       instanceUID,
 				},
 			},
-			Scheme:   testScheme,
-			Log:      logger,
-			Recorder: record.NewFakeRecorder(10),
+			Log: logger,
 		}
 		cm := collector.DesiredConfigMap(param.Config, param.Log, param.Instance)
 		createObjectIfNotExists(t, "test-collector", cm)

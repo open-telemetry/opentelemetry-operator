@@ -18,10 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
-
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,7 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
 // Ingresses reconciles the ingress(s) required for the instance in the current context.
@@ -150,37 +147,4 @@ func deleteIngresses(ctx context.Context, params reconcileutil.Params, expected 
 	}
 
 	return nil
-}
-
-func servicePortsFromCfg(params reconcileutil.Params) []corev1.ServicePort {
-	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil
-	}
-
-	ports, err := adapters.ConfigToReceiverPorts(params.Log, config)
-	if err != nil {
-		params.Log.Error(err, "couldn't build the ingress for this instance")
-	}
-
-	if len(params.Instance.Spec.Ports) > 0 {
-		// we should add all the ports from the CR
-		// there are two cases where problems might occur:
-		// 1) when the port number is already being used by a receiver
-		// 2) same, but for the port name
-		//
-		// in the first case, we remove the port we inferred from the list
-		// in the second case, we rename our inferred port to something like "port-%d"
-		portNumbers, portNames := extractPortNumbersAndNames(params.Instance.Spec.Ports)
-		resultingInferredPorts := []corev1.ServicePort{}
-		for _, inferred := range ports {
-			if filtered := filterPort(params.Log, inferred, portNumbers, portNames); filtered != nil {
-				resultingInferredPorts = append(resultingInferredPorts, *filtered)
-			}
-		}
-
-		ports = append(params.Instance.Spec.Ports, resultingInferredPorts...)
-	}
-	return ports
 }

@@ -36,7 +36,6 @@ func TestDesiredIngresses(t *testing.T) {
 	t.Run("should return nil invalid ingress type", func(t *testing.T) {
 		params := reconcileutil.Params{
 			Config: config.Config{},
-			Client: k8sClient,
 			Log:    logger,
 			Instance: v1alpha1.OpenTelemetryCollector{
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
@@ -54,7 +53,6 @@ func TestDesiredIngresses(t *testing.T) {
 	t.Run("should return nil unable to parse config", func(t *testing.T) {
 		params := reconcileutil.Params{
 			Config: config.Config{},
-			Client: k8sClient,
 			Log:    logger,
 			Instance: v1alpha1.OpenTelemetryCollector{
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
@@ -73,7 +71,6 @@ func TestDesiredIngresses(t *testing.T) {
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := reconcileutil.Params{
 			Config: config.Config{},
-			Client: k8sClient,
 			Log:    logger,
 			Instance: v1alpha1.OpenTelemetryCollector{
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{

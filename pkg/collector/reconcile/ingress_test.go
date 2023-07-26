@@ -19,12 +19,12 @@ import (
 	_ "embed"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 const testFileIngress = "testdata/ingress_testdata.yaml"
@@ -111,7 +111,7 @@ func TestIngresses(t *testing.T) {
 	t.Run("supported mode and service exists", func(t *testing.T) {
 		ctx := context.Background()
 		myParams := params()
-		err := expectedServices(context.Background(), myParams, []corev1.Service{service("test-collector", params().Instance.Spec.Ports)})
+		err := expectedServices(context.Background(), myParams, []*corev1.Service{service("test-collector", params().Instance.Spec.Ports)})
 		assert.NoError(t, err)
 
 		assert.Nil(t, Ingresses(ctx, myParams))

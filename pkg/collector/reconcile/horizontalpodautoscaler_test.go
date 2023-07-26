@@ -72,8 +72,8 @@ func TestExpectedHPAVersionV2Beta2(t *testing.T) {
 		updateParms.Instance.Spec.Autoscaler.MinReplicas = &minReplicas
 		updateParms.Instance.Spec.Autoscaler.MaxReplicas = &maxReplicas
 		updateParms.Instance.Spec.Autoscaler.TargetMemoryUtilization = &memUtilization
-		updatedHPA, err := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
-		assert.NoError(t, err)
+		updatedHPA, updateErr := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
+		assert.NoError(t, updateErr)
 
 		hpaUpdateErr = expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
 		require.NoError(t, hpaUpdateErr)
@@ -135,8 +135,8 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 		updateParms.Instance.Spec.Autoscaler.MinReplicas = &minReplicas
 		updateParms.Instance.Spec.Autoscaler.MaxReplicas = &maxReplicas
 		updateParms.Instance.Spec.Autoscaler.TargetMemoryUtilization = &memUtilization
-		updatedHPA, err := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
-		assert.NoError(t, err)
+		updatedHPA, updatedHPAErr := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
+		assert.NoError(t, updatedHPAErr)
 
 		hpaUpdateErr = expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
 		require.NoError(t, hpaUpdateErr)

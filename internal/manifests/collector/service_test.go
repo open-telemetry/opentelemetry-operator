@@ -97,7 +97,6 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return nil service for unknown receiver and protocol", func(t *testing.T) {
 		params := reconcileutil.Params{
 			Config: config.Config{},
-			Client: k8sClient,
 			Log:    logger,
 			Instance: v1alpha1.OpenTelemetryCollector{
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{Config: `receivers:
@@ -107,7 +106,7 @@ func TestDesiredService(t *testing.T) {
 			},
 		}
 
-		actual := desiredService(params.Config, params.Log, params.Instance)
+		actual := desiredService(params.Log, params.Instance)
 		assert.Nil(t, actual)
 
 	})
@@ -123,7 +122,7 @@ func TestDesiredService(t *testing.T) {
 		params := deploymentParams()
 		ports := append(params.Instance.Spec.Ports, jaegerPorts)
 		expected := service("test-collector", ports)
-		actual := desiredService(params.Config, params.Log, params.Instance)
+		actual := desiredService(params.Log, params.Instance)
 
 		assert.Equal(t, expected, *actual)
 
@@ -141,7 +140,7 @@ func TestDesiredService(t *testing.T) {
 		p := paramsWithMode(v1alpha1.ModeDaemonSet)
 		ports := append(p.Instance.Spec.Ports, jaegerPorts)
 		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
-		actual := desiredService(p.Config, p.Log, p.Instance)
+		actual := desiredService(p.Log, p.Instance)
 
 		assert.Equal(t, expected, *actual)
 	})

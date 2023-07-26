@@ -119,7 +119,7 @@ func TestRoutes(t *testing.T) {
 	t.Run("supported mode and service exists", func(t *testing.T) {
 		ctx := context.Background()
 		myParams := params()
-		err := expectedServices(context.Background(), myParams, []corev1.Service{service("test-collector", params().Instance.Spec.Ports)})
+		err := expectedServices(context.Background(), myParams, []*corev1.Service{service("test-collector", params().Instance.Spec.Ports)})
 		assert.NoError(t, err)
 
 		assert.Nil(t, Routes(ctx, myParams))

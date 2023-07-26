@@ -301,10 +301,10 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params re
 		)
 		desired := obj.DeepCopyObject().(client.Object)
 		mutateFn := manifests.MutateFuncFor(obj, desired)
-		op, err := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
-		if err != nil {
-			l.Error(err, "failed to configure resource")
-			errs = append(errs, err)
+		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
+		if crudErr != nil {
+			l.Error(crudErr, "failed to configure resource")
+			errs = append(errs, crudErr)
 			continue
 		}
 
