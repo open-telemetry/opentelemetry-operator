@@ -4374,6 +4374,298 @@ func TestMutatePod(t *testing.T) {
 				})
 			},
 		},
+		{
+			name: "multi instrumentation feature gate enabled, single instrumentation annotation set, no containers",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multi-instrumentation-single-container-no-cont",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "multi-instrumentation-single-container-no-cont",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					DotNet: v1alpha1.DotNet{
+						Image: "otel/dotnet:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					Java: v1alpha1.Java{
+						Image: "otel/java:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					NodeJS: v1alpha1.NodeJS{
+						Image: "otel/nodejs:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					Python: v1alpha1.Python{
+						Image: "otel/python:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "dotnet1",
+						},
+						{
+							Name: "should-not-be-instrumented1",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: dotnetVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    dotnetInitContainerName,
+							Image:   "otel/dotnet:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      dotnetVolumeName,
+								MountPath: dotnetInstrMountPath,
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "dotnet1",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_LOG_LEVEL",
+									Value: "debug",
+								},
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerID,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerPath,
+								},
+								{
+									Name:  envDotNetStartupHook,
+									Value: dotNetStartupHookPath,
+								},
+								{
+									Name:  envDotNetAdditionalDeps,
+									Value: dotNetAdditionalDepsPath,
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
+								{
+									Name:  envDotNetSharedStore,
+									Value: dotNetSharedStorePath,
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "dotnet1",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://collector:12345",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=dotnet1,k8s.namespace.name=multi-instrumentation-single-container-no-cont,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      dotnetVolumeName,
+									MountPath: dotnetInstrMountPath,
+								},
+							},
+						},
+						{
+							Name: "should-not-be-instrumented1",
+						},
+					},
+				},
+			},
+			setFeatureGates: func(t *testing.T) {
+				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalVal))
+				})
+			},
+		},
+		{
+			name: "multi instrumentation feature gate disabled, instrumentation feature gate disabled and annotation set, multiple specific containers set",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "multi-instrumentation-single-container-spec-cont",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "multi-instrumentation-single-container-spec-cont",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					DotNet: v1alpha1.DotNet{
+						Image: "otel/dotnet:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					NodeJS: v1alpha1.NodeJS{
+						Image: "otel/nodejs:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet:               "true",
+						annotationInjectDotnetContainersName: "dotnet1",
+						annotationInjectNodeJSContainersName: "should-not-be-instrumented1",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "dotnet1",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "TEST",
+									Value: "debug",
+								},
+							},
+						},
+						{
+							Name: "should-not-be-instrumented1",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "TEST",
+									Value: "debug",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectDotNet:               "true",
+						annotationInjectDotnetContainersName: "dotnet1",
+						annotationInjectNodeJSContainersName: "should-not-be-instrumented1",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "dotnet1",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "TEST",
+									Value: "debug",
+								},
+							},
+						},
+						{
+							Name: "should-not-be-instrumented1",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "TEST",
+									Value: "debug",
+								},
+							},
+						},
+					},
+				},
+			},
+			setFeatureGates: func(t *testing.T) {
+				originalValMultiInstr := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
+				originalValDotNetInstr := featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), false))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalValMultiInstr))
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), originalValDotNetInstr))
+				})
+			},
+		},
 	}
 
 	for _, test := range tests {
