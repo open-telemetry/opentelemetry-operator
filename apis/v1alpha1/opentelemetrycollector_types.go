@@ -190,6 +190,14 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
+
+	// ObservabilitySpec defines how telemetry data gets handled.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
+	Observability ObservabilitySpec `json:"observability,omitempty"`
+
 	// TopologySpreadConstraints embedded kubernetes pod configuration option,
 	// controls how pods are spread across your cluster among failure-domains
 	// such as regions, zones, nodes, and other user-defined topology domains
@@ -369,6 +377,27 @@ type AutoscalerSpec struct {
 	// +optional
 	// TargetMemoryUtilization sets the target average memory utilization across all replicas
 	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
+}
+
+// MetricsConfigSpec defines a metrics config.
+type MetricsConfigSpec struct {
+	// EnableMetrics specifies if ServiceMonitors should be created for the OpenTelemetry Collector.
+	// The operator.observability.prometheus feature gate must be enabled to use this feature.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
+	EnableMetrics bool `json:"enableMetrics,omitempty"`
+}
+
+// ObservabilitySpec defines how telemetry data gets handled.
+type ObservabilitySpec struct {
+	// Metrics defines the metrics configuration for operands.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metrics Config"
+	Metrics MetricsConfigSpec `json:"metrics,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config. Only Liveness probe is supported currently.

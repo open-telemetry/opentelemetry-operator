@@ -2949,6 +2949,19 @@ spec:
                   This is only relevant to daemonset, statefulset, and deployment
                   mode
                 type: object
+              observability:
+                description: ObservabilitySpec defines how telemetry data gets handled.
+                properties:
+                  metrics:
+                    description: Metrics defines the metrics configuration for operands.
+                    properties:
+                      enableMetrics:
+                        description: EnableMetrics specifies if ServiceMonitors should
+                          be created for the OpenTelemetry Collector. The operator.observability.prometheus
+                          feature gate must be enabled to use this feature.
+                        type: boolean
+                    type: object
+                type: object
               podAnnotations:
                 additionalProperties:
                   type: string
