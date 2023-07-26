@@ -34,7 +34,7 @@ func TestPodAnnotations(t *testing.T) {
 
 func TestConfigMapHash(t *testing.T) {
 	instance := collectorInstance()
-	expectedConfigMap, err := ConfigMap(instance)
+	expectedConfigMap, err := DesiredConfigMap(instance)
 	require.NoError(t, err)
 	expectedConfig := expectedConfigMap.Data[targetAllocatorFilename]
 	require.NotEmpty(t, expectedConfig)

@@ -6,13 +6,11 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
 // headless label is to differentiate the headless service from the clusterIP service.
@@ -21,14 +19,14 @@ const (
 	headlessExists = "Exists"
 )
 
-func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
-	return desiredService(cfg, logger, otelcol)
+func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error) {
+	return desiredService(cfg, logger, otelcol), nil
 }
 
-func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
+func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error) {
 	h := desiredService(cfg, logger, otelcol)
 	if h == nil {
-		return nil
+		return h, nil
 	}
 
 	h.Name = naming.HeadlessService(otelcol)
@@ -44,17 +42,17 @@ func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Ope
 	h.Annotations = annotations
 
 	h.Spec.ClusterIP = "None"
-	return h
+	return h, nil
 }
 
-func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
+func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error) {
 	name := naming.MonitoringService(otelcol)
-	labels := collector.Labels(otelcol, name, []string{})
+	labels := Labels(otelcol, name, []string{})
 
 	c, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration")
-		return nil
+		return nil, nil
 	}
 
 	metricsPort, err := adapters.ConfigToMetricsPort(logger, c)
@@ -71,19 +69,19 @@ func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.O
 			Annotations: otelcol.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:  collector.SelectorLabels(otelcol),
+			Selector:  SelectorLabels(otelcol),
 			ClusterIP: "",
 			Ports: []corev1.ServicePort{{
 				Name: "monitoring",
 				Port: metricsPort,
 			}},
 		},
-	}
+	}, nil
 }
 
 func desiredService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
 	name := naming.Service(otelcol)
-	labels := collector.Labels(otelcol, name, []string{})
+	labels := Labels(otelcol, name, []string{})
 
 	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
@@ -106,7 +104,7 @@ func desiredService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Open
 		// in the first case, we remove the port we inferred from the list
 		// in the second case, we rename our inferred port to something like "port-%d"
 		portNumbers, portNames := extractPortNumbersAndNames(otelcol.Spec.Ports)
-		resultingInferredPorts := []corev1.ServicePort{}
+		var resultingInferredPorts []corev1.ServicePort
 		for _, inferred := range ports {
 			if filtered := filterPort(logger, inferred, portNumbers, portNames); filtered != nil {
 				resultingInferredPorts = append(resultingInferredPorts, *filtered)
@@ -136,7 +134,7 @@ func desiredService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Open
 		},
 		Spec: corev1.ServiceSpec{
 			InternalTrafficPolicy: &trafficPolicy,
-			Selector:              collector.SelectorLabels(otelcol),
+			Selector:              SelectorLabels(otelcol),
 			ClusterIP:             "",
 			Ports:                 ports,
 		},

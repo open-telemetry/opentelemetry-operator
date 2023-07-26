@@ -47,7 +47,7 @@ func TestDesiredIngresses(t *testing.T) {
 			},
 		}
 
-		actual := Ingress(params.Config, params.Log, params.Instance)
+		actual, _ := Ingress(params.Config, params.Log, params.Instance)
 		assert.Nil(t, actual)
 	})
 
@@ -66,7 +66,7 @@ func TestDesiredIngresses(t *testing.T) {
 			},
 		}
 
-		actual := Ingress(params.Config, params.Log, params.Instance)
+		actual, _ := Ingress(params.Config, params.Log, params.Instance)
 		assert.Nil(t, actual)
 	})
 
@@ -85,7 +85,7 @@ func TestDesiredIngresses(t *testing.T) {
 			},
 		}
 
-		actual := Ingress(params.Config, params.Log, params.Instance)
+		actual, _ := Ingress(params.Config, params.Log, params.Instance)
 		assert.Nil(t, actual)
 	})
 
@@ -109,7 +109,7 @@ func TestDesiredIngresses(t *testing.T) {
 			IngressClassName: &ingressClassName,
 		}
 
-		got := Ingress(params.Config, params.Log, params.Instance)
+		got, _ := Ingress(params.Config, params.Log, params.Instance)
 		pathType := networkingv1.PathTypePrefix
 
 		assert.NotEqual(t, &networkingv1.Ingress{

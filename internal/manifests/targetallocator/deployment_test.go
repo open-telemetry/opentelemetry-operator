@@ -46,7 +46,7 @@ func TestDeploymentNewDefault(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	d := deployment(cfg, logger, otelcol)
+	d := DesiredDeployment(cfg, logger, otelcol)
 
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", d.GetName())
@@ -70,7 +70,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	ds := deployment(cfg, logger, otelcol)
+	ds := DesiredDeployment(cfg, logger, otelcol)
 
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", ds.Name)
@@ -103,7 +103,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	}
 
 	cfg := config.New()
-	d1 := deployment(cfg, logger, otelcol1)
+	d1 := DesiredDeployment(cfg, logger, otelcol1)
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
@@ -122,7 +122,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := deployment(cfg, logger, otelcol2)
+	d2 := DesiredDeployment(cfg, logger, otelcol2)
 	assert.Equal(t, map[string]string{"node-key": "node-value"}, d2.Spec.Template.Spec.NodeSelector)
 }
 
@@ -135,7 +135,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg := config.New()
-	d1 := deployment(cfg, logger, otelcol1)
+	d1 := DesiredDeployment(cfg, logger, otelcol1)
 	assert.Equal(t, "my-instance-targetallocator", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
@@ -152,7 +152,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg = config.New()
-	d2 := deployment(cfg, logger, otelcol2)
+	d2 := DesiredDeployment(cfg, logger, otelcol2)
 	assert.Equal(t, "my-instance-topologyspreadconstraint-targetallocator", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)

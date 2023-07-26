@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
+
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 
 	routev1 "github.com/openshift/api/route/v1"
@@ -49,7 +51,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/testdata"
 )
 
 var (
@@ -183,7 +184,7 @@ func params() reconcileutil.Params {
 
 func paramsWithMode(mode v1alpha1.Mode) reconcileutil.Params {
 	replicas := int32(2)
-	configYAML, err := os.ReadFile("../testdata/test.yaml")
+	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
@@ -228,7 +229,7 @@ func newParams(taContainerImage string, file string) (reconcileutil.Params, erro
 	var err error
 
 	if file == "" {
-		configYAML, err = os.ReadFile("../testdata/test.yaml")
+		configYAML, err = os.ReadFile("testdata/test.yaml")
 	} else {
 		configYAML, err = os.ReadFile(file)
 	}

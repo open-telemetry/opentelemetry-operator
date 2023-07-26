@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
-
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,19 +26,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
 // HorizontalPodAutoscaler reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
 func HorizontalPodAutoscalers(ctx context.Context, params reconcileutil.Params) error {
-	desired := []client.Object{}
+	var desired []client.Object
 
 	// check if autoscale mode is on, e.g MaxReplicas is not nil
 	if params.Instance.Spec.MaxReplicas != nil || (params.Instance.Spec.Autoscaler != nil && params.Instance.Spec.Autoscaler.MaxReplicas != nil) {
-		if newcol := collector.HorizontalPodAutoscaler(params.Config, params.Log, params.Instance); newcol != nil {
+		if newcol, err := collector.HorizontalPodAutoscaler(params.Config, params.Log, params.Instance); err != nil {
+			return err
+		} else if newcol != nil {
 			desired = append(desired, newcol)
 		}
 	}

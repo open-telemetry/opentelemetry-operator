@@ -20,6 +20,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 
 	"github.com/stretchr/testify/assert"
@@ -37,7 +39,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
 var hpaUpdateErr error
@@ -48,7 +49,8 @@ func TestExpectedHPAVersionV2Beta2(t *testing.T) {
 	err := params.Config.AutoDetect()
 	assert.NoError(t, err)
 
-	expectedHPA := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
+	expectedHPA, err := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
+	assert.NoError(t, err)
 	t.Run("should create HPA", func(t *testing.T) {
 		err = expectedHorizontalPodAutoscalers(context.Background(), params, []client.Object{expectedHPA})
 		assert.NoError(t, err)
@@ -70,7 +72,8 @@ func TestExpectedHPAVersionV2Beta2(t *testing.T) {
 		updateParms.Instance.Spec.Autoscaler.MinReplicas = &minReplicas
 		updateParms.Instance.Spec.Autoscaler.MaxReplicas = &maxReplicas
 		updateParms.Instance.Spec.Autoscaler.TargetMemoryUtilization = &memUtilization
-		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
+		updatedHPA, err := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
+		assert.NoError(t, err)
 
 		hpaUpdateErr = expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
 		require.NoError(t, hpaUpdateErr)
@@ -109,7 +112,8 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 	err := params.Config.AutoDetect()
 	assert.NoError(t, err)
 
-	expectedHPA := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
+	expectedHPA, err := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
+	assert.NoError(t, err)
 	t.Run("should create HPA", func(t *testing.T) {
 		err = expectedHorizontalPodAutoscalers(context.Background(), params, []client.Object{expectedHPA})
 		assert.NoError(t, err)
@@ -131,7 +135,8 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 		updateParms.Instance.Spec.Autoscaler.MinReplicas = &minReplicas
 		updateParms.Instance.Spec.Autoscaler.MaxReplicas = &maxReplicas
 		updateParms.Instance.Spec.Autoscaler.TargetMemoryUtilization = &memUtilization
-		updatedHPA := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
+		updatedHPA, err := collector.HorizontalPodAutoscaler(updateParms.Config, logger, updateParms.Instance)
+		assert.NoError(t, err)
 
 		hpaUpdateErr = expectedHorizontalPodAutoscalers(context.Background(), updateParms, []client.Object{updatedHPA})
 		require.NoError(t, hpaUpdateErr)
@@ -165,7 +170,7 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 }
 
 func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) reconcileutil.Params {
-	configYAML, err := os.ReadFile("../testdata/test.yaml")
+	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}

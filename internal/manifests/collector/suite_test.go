@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
+
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 
 	routev1 "github.com/openshift/api/route/v1"
@@ -49,7 +51,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/testdata"
 )
 
 var (

@@ -13,7 +13,16 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []*routev1.Route {
+func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) ([]*routev1.Route, error) {
+	if otelcol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
+		return nil, nil
+	}
+
+	if otelcol.Spec.Mode == v1alpha1.ModeSidecar {
+		logger.V(3).Info("ingress settings are not supported in sidecar mode")
+		return nil, nil
+	}
+
 	var tlsCfg *routev1.TLSConfig
 	switch otelcol.Spec.Ingress.Route.Termination {
 	case v1alpha1.TLSRouteTerminationTypeInsecure:
@@ -25,19 +34,19 @@ func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetr
 	case v1alpha1.TLSRouteTerminationTypeReencrypt:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationReencrypt}
 	default: // NOTE: if unsupported, end here.
-		return nil
+		return nil, nil
 	}
 
 	ports := servicePortsFromCfg(logger, otelcol)
 
-	// if we have no ports, we don't need a route entry
+	// if we have no ports, we don't need a ingress entry
 	if len(ports) == 0 {
 		logger.V(1).Info(
-			"the instance's configuration didn't yield any ports to open, skipping route",
+			"the instance's configuration didn't yield any ports to open, skipping ingress",
 			"instance.name", otelcol.Name,
 			"instance.namespace", otelcol.Namespace,
 		)
-		return nil
+		return nil, nil
 	}
 
 	routes := make([]*routev1.Route, len(ports))
@@ -69,5 +78,5 @@ func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetr
 			},
 		}
 	}
-	return routes
+	return routes, nil
 }

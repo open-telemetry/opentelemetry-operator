@@ -46,7 +46,8 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		actual := Routes(params.Config, params.Log, params.Instance)
+		actual, err := Routes(params.Config, params.Log, params.Instance)
+		assert.NoError(t, err)
 		assert.Nil(t, actual)
 	})
 
@@ -65,7 +66,8 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		actual := Routes(params.Config, params.Log, params.Instance)
+		actual, err := Routes(params.Config, params.Log, params.Instance)
+		assert.NoError(t, err)
 		assert.Nil(t, actual)
 	})
 
@@ -84,7 +86,8 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		actual := Routes(params.Config, params.Log, params.Instance)
+		actual, err := Routes(params.Config, params.Log, params.Instance)
+		assert.NoError(t, err)
 		assert.Nil(t, actual)
 	})
 
@@ -109,7 +112,9 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		got := Routes(params.Config, params.Log, params.Instance)[0]
+		routes, err := Routes(params.Config, params.Log, params.Instance)
+		assert.NoError(t, err)
+		got := routes[0]
 
 		assert.NotEqual(t, &routev1.Route{
 			ObjectMeta: metav1.ObjectMeta{
@@ -145,13 +150,14 @@ func TestDesiredRoutes(t *testing.T) {
 func TestRoutes(t *testing.T) {
 	t.Run("wrong mode", func(t *testing.T) {
 		params := deploymentParams()
-		err := Routes(params.Config, params.Log, params.Instance)
+		_, err := Routes(params.Config, params.Log, params.Instance)
 		assert.Nil(t, err)
 	})
 
 	t.Run("supported mode and service exists", func(t *testing.T) {
 		params := deploymentParams()
-		assert.Nil(t, Routes(params.Config, params.Log, params.Instance))
+		_, err := Routes(params.Config, params.Log, params.Instance)
+		assert.Nil(t, err)
 	})
 
 }

@@ -31,10 +31,10 @@ var (
 
 	errNoExtensionHealthCheck = errors.New("extensions property in the configuration does not contain the expected health_check extension")
 
-	errNoServiceExtensions = errors.New("service property in the configuration doesn't contain extensions")
+	ErrNoServiceExtensions = errors.New("service property in the configuration doesn't contain extensions")
 
 	errServiceExtensionsNotSlice     = errors.New("service extensions property in the configuration does not contain valid extensions")
-	errNoServiceExtensionHealthCheck = errors.New("no healthcheck extension available in service extension configuration")
+	ErrNoServiceExtensionHealthCheck = errors.New("no healthcheck extension available in service extension configuration")
 )
 
 type probeConfiguration struct {
@@ -60,7 +60,7 @@ func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, 
 
 	serviceExtensionsProperty, withExtension := service["extensions"]
 	if !withExtension {
-		return nil, errNoServiceExtensions
+		return nil, ErrNoServiceExtensions
 	}
 
 	serviceExtensions, withExtProperty := serviceExtensionsProperty.([]interface{})
@@ -76,7 +76,7 @@ func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, 
 	}
 
 	if len(healthCheckServiceExtensions) == 0 {
-		return nil, errNoServiceExtensionHealthCheck
+		return nil, ErrNoServiceExtensionHealthCheck
 	}
 
 	extensionsProperty, ok := config["extensions"]

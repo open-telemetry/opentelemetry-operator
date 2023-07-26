@@ -19,14 +19,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"sync"
+
 	routev1 "github.com/openshift/api/route/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"sync"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 
@@ -349,13 +351,15 @@ func (r *OpenTelemetryCollectorReconciler) findObjectsOwnedByOtelOperator(ctx co
 	for i := range ingressList.Items {
 		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
 	}
-	routesList := &routev1.RouteList{}
-	err = r.List(ctx, routesList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing routes: %w", err)
-	}
-	for i := range routesList.Items {
-		ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
+	if params.Instance.Spec.Ingress.Type == v1alpha1.IngressTypeRoute {
+		routesList := &routev1.RouteList{}
+		err = r.List(ctx, routesList, listOps)
+		if err != nil {
+			return nil, fmt.Errorf("error listing routes: %w", err)
+		}
+		for i := range routesList.Items {
+			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
+		}
 	}
 	return ownedObjects, nil
 }

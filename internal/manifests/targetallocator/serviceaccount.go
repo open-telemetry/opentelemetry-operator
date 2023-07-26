@@ -18,7 +18,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 
@@ -36,7 +35,7 @@ func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
 }
 
 // ServiceAccount returns the service account for the given instance.
-func ServiceAccount(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
+func ServiceAccount(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.ServiceAccount, error) {
 	name := naming.TargetAllocatorServiceAccount(otelcol)
 	labels := Labels(otelcol, name)
 
@@ -47,5 +46,5 @@ func ServiceAccount(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Open
 			Labels:      labels,
 			Annotations: otelcol.Annotations,
 		},
-	}
+	}, nil
 }

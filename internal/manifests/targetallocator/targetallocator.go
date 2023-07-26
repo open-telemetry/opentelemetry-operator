@@ -12,12 +12,18 @@ func Build(params reconcileutil.Params) ([]client.Object, error) {
 		return nil, nil
 	}
 	objects := []reconcileutil.ObjectCreator{
+		ConfigMap,
 		Deployment,
-		ServiceAccount,
+		reconcileutil.Conformer(ServiceAccount),
 		Service,
 	}
 	for _, object := range objects {
-		manifests = append(manifests, object(params.Config, params.Log, params.Instance))
+		res, err := object(params.Config, params.Log, params.Instance)
+		if err != nil {
+			return nil, err
+		} else if res != nil && res.DeepCopyObject() != nil {
+			manifests = append(manifests, res)
+		}
 	}
 	return manifests, nil
 }

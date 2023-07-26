@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
-
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,15 +25,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 // ServiceAccounts reconciles the service account(s) required for the instance in the current context.
 func ServiceAccounts(ctx context.Context, params reconcileutil.Params) error {
-	desired := desiredServiceAccounts(params)
+	var desired []*corev1.ServiceAccount
+	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar && len(params.Instance.Spec.ServiceAccount) == 0 {
+		sa, err := collector.ServiceAccount(params.Config, params.Log, params.Instance)
+		if err != nil {
+			return err
+		}
+		desired = append(desired, sa)
+	}
+	if params.Instance.Spec.TargetAllocator.Enabled && len(params.Instance.Spec.TargetAllocator.ServiceAccount) == 0 {
+		sa, err := targetallocator.ServiceAccount(params.Config, params.Log, params.Instance)
+		if err != nil {
+			return err
+		}
+		desired = append(desired, sa)
+	}
 
 	// first, handle the create/update parts
 	if err := expectedServiceAccounts(ctx, params, desired); err != nil {
@@ -50,22 +63,11 @@ func ServiceAccounts(ctx context.Context, params reconcileutil.Params) error {
 	return nil
 }
 
-func desiredServiceAccounts(params reconcileutil.Params) []corev1.ServiceAccount {
-	desired := []corev1.ServiceAccount{}
-	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar && len(params.Instance.Spec.ServiceAccount) == 0 {
-		desired = append(desired, collector.ServiceAccount(params.Instance))
-	}
-	if params.Instance.Spec.TargetAllocator.Enabled && len(params.Instance.Spec.TargetAllocator.ServiceAccount) == 0 {
-		desired = append(desired, targetallocator.ServiceAccount(params.Instance))
-	}
-	return desired
-}
-
-func expectedServiceAccounts(ctx context.Context, params reconcileutil.Params, expected []corev1.ServiceAccount) error {
+func expectedServiceAccounts(ctx context.Context, params reconcileutil.Params, expected []*corev1.ServiceAccount) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -73,7 +75,7 @@ func expectedServiceAccounts(ctx context.Context, params reconcileutil.Params, e
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if clientErr := params.Client.Create(ctx, &desired); clientErr != nil {
+			if clientErr := params.Client.Create(ctx, desired); clientErr != nil {
 				return fmt.Errorf("failed to create: %w", clientErr)
 			}
 			params.Log.V(2).Info("created", "serviceaccount.name", desired.Name, "serviceaccount.namespace", desired.Namespace)
@@ -111,7 +113,7 @@ func expectedServiceAccounts(ctx context.Context, params reconcileutil.Params, e
 	return nil
 }
 
-func deleteServiceAccounts(ctx context.Context, params reconcileutil.Params, expected []corev1.ServiceAccount) error {
+func deleteServiceAccounts(ctx context.Context, params reconcileutil.Params, expected []*corev1.ServiceAccount) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

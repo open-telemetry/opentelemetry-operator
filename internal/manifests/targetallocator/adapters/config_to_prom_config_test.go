@@ -21,9 +21,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 
-	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExtractPromConfigFromConfig(t *testing.T) {

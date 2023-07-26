@@ -18,83 +18,20 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 )
-
-func desiredIngresses(_ context.Context, params reconcileutil.Params) *networkingv1.Ingress {
-	if params.Instance.Spec.Ingress.Type != v1alpha1.IngressTypeNginx {
-		return nil
-	}
-
-	ports := servicePortsFromCfg(params)
-
-	// if we have no ports, we don't need a ingress entry
-	if len(ports) == 0 {
-		params.Log.V(1).Info(
-			"the instance's configuration didn't yield any ports to open, skipping ingress",
-			"instance.name", params.Instance.Name,
-			"instance.namespace", params.Instance.Namespace,
-		)
-		return nil
-	}
-
-	pathType := networkingv1.PathTypePrefix
-	paths := make([]networkingv1.HTTPIngressPath, len(ports))
-	for i, p := range ports {
-		paths[i] = networkingv1.HTTPIngressPath{
-			Path:     "/" + p.Name,
-			PathType: &pathType,
-			Backend: networkingv1.IngressBackend{
-				Service: &networkingv1.IngressServiceBackend{
-					Name: naming.Service(params.Instance),
-					Port: networkingv1.ServiceBackendPort{
-						// Valid names must be non-empty and no more than 15 characters long.
-						Name: naming.Truncate(p.Name, 15),
-					},
-				},
-			},
-		}
-	}
-
-	return &networkingv1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Ingress(params.Instance),
-			Namespace:   params.Instance.Namespace,
-			Annotations: params.Instance.Spec.Ingress.Annotations,
-			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.Ingress(params.Instance),
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			},
-		},
-		Spec: networkingv1.IngressSpec{
-			TLS: params.Instance.Spec.Ingress.TLS,
-			Rules: []networkingv1.IngressRule{
-				{
-					Host: params.Instance.Spec.Ingress.Hostname,
-					IngressRuleValue: networkingv1.IngressRuleValue{
-						HTTP: &networkingv1.HTTPIngressRuleValue{
-							Paths: paths,
-						},
-					},
-				},
-			},
-			IngressClassName: params.Instance.Spec.Ingress.IngressClassName,
-		},
-	}
-}
 
 // Ingresses reconciles the ingress(s) required for the instance in the current context.
 func Ingresses(ctx context.Context, params reconcileutil.Params) error {
@@ -108,10 +45,10 @@ func Ingresses(ctx context.Context, params reconcileutil.Params) error {
 	err := params.Client.Get(ctx, nns, &corev1.Service{}) // NOTE: check if service exists.
 	serviceExists := err != nil
 
-	var desired []networkingv1.Ingress
+	var desired []*networkingv1.Ingress
 	if isSupportedMode && serviceExists {
-		if d := desiredIngresses(ctx, params); d != nil {
-			desired = append(desired, *d)
+		if d := collector.DesiredIngress(params.Config, params.Log, params.Instance); d != nil {
+			desired = append(desired, d)
 		}
 	}
 
@@ -128,11 +65,11 @@ func Ingresses(ctx context.Context, params reconcileutil.Params) error {
 	return nil
 }
 
-func expectedIngresses(ctx context.Context, params reconcileutil.Params, expected []networkingv1.Ingress) error {
+func expectedIngresses(ctx context.Context, params reconcileutil.Params, expected []*networkingv1.Ingress) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -140,7 +77,7 @@ func expectedIngresses(ctx context.Context, params reconcileutil.Params, expecte
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		clientGetErr := params.Client.Get(ctx, nns, existing)
 		if clientGetErr != nil && k8serrors.IsNotFound(clientGetErr) {
-			if err := params.Client.Create(ctx, &desired); err != nil {
+			if err := params.Client.Create(ctx, desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
 			params.Log.V(2).Info("created", "ingress.name", desired.Name, "ingress.namespace", desired.Namespace)
@@ -181,7 +118,7 @@ func expectedIngresses(ctx context.Context, params reconcileutil.Params, expecte
 	return nil
 }
 
-func deleteIngresses(ctx context.Context, params reconcileutil.Params, expected []networkingv1.Ingress) error {
+func deleteIngresses(ctx context.Context, params reconcileutil.Params, expected []*networkingv1.Ingress) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

@@ -33,7 +33,7 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 		annotations[key] = value
 	}
 
-	configMap, err := ConfigMap(instance)
+	configMap, err := DesiredConfigMap(instance)
 	if err == nil {
 		cmHash := getConfigMapSHA(configMap)
 		if cmHash != "" {
@@ -45,7 +45,7 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 }
 
 // getConfigMapSHA returns the hash of the content of the TA ConfigMap.
-func getConfigMapSHA(configMap v1.ConfigMap) string {
+func getConfigMapSHA(configMap *v1.ConfigMap) string {
 	configString, ok := configMap.Data[targetAllocatorFilename]
 	if !ok {
 		return ""

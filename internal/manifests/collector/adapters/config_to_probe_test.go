@@ -146,7 +146,7 @@ service:
 			desc: "NoHealthCheckInServiceExtensions",
 			config: `service:
   extensions: [pprof]`,
-			expectedErr: errNoServiceExtensionHealthCheck,
+			expectedErr: ErrNoServiceExtensionHealthCheck,
 		}, {
 			desc: "BadlyFormattedServiceExtensions",
 			config: `service:
@@ -159,7 +159,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]`,
-			expectedErr: errNoServiceExtensions,
+			expectedErr: ErrNoServiceExtensions,
 		}, {
 			desc: "BadlyFormattedService",
 			config: `extensions:

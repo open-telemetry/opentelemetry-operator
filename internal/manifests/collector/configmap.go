@@ -11,11 +11,15 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-func ConfigMap(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
+func ConfigMap(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (client.Object, error) {
+	return DesiredConfigMap(cfg, logger, otelcol), nil
+}
+
+func DesiredConfigMap(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.ConfigMap {
 	name := naming.ConfigMap(otelcol)
 	labels := Labels(otelcol, name, []string{})
 
-	config, err := ReplaceConfig(otelcol)
+	replacedConf, err := ReplaceConfig(otelcol)
 	if err != nil {
 		logger.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
 	}
@@ -28,7 +32,7 @@ func ConfigMap(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 			Annotations: otelcol.Annotations,
 		},
 		Data: map[string]string{
-			"collector.yaml": config,
+			"collector.yaml": replacedConf,
 		},
 	}
 }

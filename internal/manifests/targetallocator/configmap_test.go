@@ -52,7 +52,7 @@ label_selector:
 `,
 		}
 
-		actual, err := ConfigMap(collectorInstance())
+		actual, err := DesiredConfigMap(collectorInstance())
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
@@ -92,7 +92,7 @@ service_monitor_selector:
 		instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = map[string]string{
 			"release": "my-instance",
 		}
-		actual, err := ConfigMap(instance)
+		actual, err := DesiredConfigMap(instance)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
@@ -126,7 +126,7 @@ prometheus_cr:
 
 		collector := collectorInstance()
 		collector.Spec.TargetAllocator.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
-		actual, err := ConfigMap(collector)
+		actual, err := DesiredConfigMap(collector)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)

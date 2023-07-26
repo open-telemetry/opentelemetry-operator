@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
-
 	appsv1 "k8s.io/api/apps/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,7 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
 // +kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
@@ -35,7 +34,7 @@ import (
 // StatefulSets reconciles the stateful set(s) required for the instance in the current context.
 func StatefulSets(ctx context.Context, params reconcileutil.Params) error {
 
-	desired := []appsv1.StatefulSet{}
+	var desired []*appsv1.StatefulSet
 	if params.Instance.Spec.Mode == "statefulset" {
 		desired = append(desired, collector.StatefulSet(params.Config, params.Log, params.Instance))
 	}
@@ -53,11 +52,11 @@ func StatefulSets(ctx context.Context, params reconcileutil.Params) error {
 	return nil
 }
 
-func expectedStatefulSets(ctx context.Context, params reconcileutil.Params, expected []appsv1.StatefulSet) error {
+func expectedStatefulSets(ctx context.Context, params reconcileutil.Params, expected []*appsv1.StatefulSet) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -65,7 +64,7 @@ func expectedStatefulSets(ctx context.Context, params reconcileutil.Params, expe
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if clientErr := params.Client.Create(ctx, &desired); clientErr != nil {
+			if clientErr := params.Client.Create(ctx, desired); clientErr != nil {
 				return fmt.Errorf("failed to create: %w", clientErr)
 			}
 			params.Log.V(2).Info("created", "statefulset.name", desired.Name, "statefulset.namespace", desired.Namespace)
@@ -75,7 +74,7 @@ func expectedStatefulSets(ctx context.Context, params reconcileutil.Params, expe
 		}
 
 		// Check for immutable fields. If set, we cannot modify the stateful set, otherwise we will face reconciliation error.
-		if needsDeletion, fieldName := hasImmutableFieldChange(&desired, existing); needsDeletion {
+		if needsDeletion, fieldName := hasImmutableFieldChange(desired, existing); needsDeletion {
 			params.Log.V(2).Info("Immutable field change detected, trying to delete, the new collector statefulset will be created in the next reconcile cycle",
 				"field", fieldName, "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
 
@@ -115,7 +114,7 @@ func expectedStatefulSets(ctx context.Context, params reconcileutil.Params, expe
 	return nil
 }
 
-func deleteStatefulSets(ctx context.Context, params reconcileutil.Params, expected []appsv1.StatefulSet) error {
+func deleteStatefulSets(ctx context.Context, params reconcileutil.Params, expected []*appsv1.StatefulSet) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

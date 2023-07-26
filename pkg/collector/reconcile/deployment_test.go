@@ -18,8 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
-
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,17 +25,18 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
 func TestExpectedDeployments(t *testing.T) {
 	param := params()
 	expectedDeploy := collector.Deployment(param.Config, logger, param.Instance)
-	expectedTADeploy := targetallocator.Deployment(param.Config, logger, param.Instance)
+	expectedTADeploy := targetallocator.DesiredDeployment(param.Config, logger, param.Instance)
 
 	t.Run("should create collector deployment", func(t *testing.T) {
-		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		err := expectedDeployments(context.Background(), param, []*v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
@@ -48,7 +47,7 @@ func TestExpectedDeployments(t *testing.T) {
 	})
 
 	t.Run("should create target allocator deployment", func(t *testing.T) {
-		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedTADeploy})
+		err := expectedDeployments(context.Background(), param, []*v1.Deployment{expectedTADeploy})
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
@@ -94,9 +93,9 @@ func TestExpectedDeployments(t *testing.T) {
 			},
 			Log: logger,
 		}
-		expected := []v1.Deployment{}
+		expected := []*v1.Deployment{}
 		if paramTargetAllocator.Instance.Spec.TargetAllocator.Enabled {
-			expected = append(expected, targetallocator.Deployment(paramTargetAllocator.Config, paramTargetAllocator.Log, paramTargetAllocator.Instance))
+			expected = append(expected, targetallocator.DesiredDeployment(paramTargetAllocator.Config, paramTargetAllocator.Log, paramTargetAllocator.Instance))
 		}
 
 		assert.Len(t, expected, 0)
@@ -104,15 +103,15 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should update target allocator deployment when the prometheusCR is updated", func(t *testing.T) {
 		ctx := context.Background()
-		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
+		createObjectIfNotExists(t, "test-targetallocator", expectedTADeploy)
 		orgUID := expectedTADeploy.OwnerReferences[0].UID
 
 		updatedParam, err := newParams(expectedTADeploy.Spec.Template.Spec.Containers[0].Image, "")
 		assert.NoError(t, err)
 		updatedParam.Instance.Spec.TargetAllocator.PrometheusCR.Enabled = true
-		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
+		updatedDeploy := targetallocator.DesiredDeployment(updatedParam.Config, logger, updatedParam.Instance)
 
-		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		err = expectedDeployments(ctx, param, []*v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -169,8 +168,8 @@ func TestExpectedDeployments(t *testing.T) {
 			},
 			Log: logger,
 		}
-		expected := []v1.Deployment{}
-		allocator := targetallocator.Deployment(paramMaxReplicas.Config, paramMaxReplicas.Log, paramMaxReplicas.Instance)
+		expected := []*v1.Deployment{}
+		allocator := targetallocator.DesiredDeployment(paramMaxReplicas.Config, paramMaxReplicas.Log, paramMaxReplicas.Instance)
 		expected = append(expected, allocator)
 
 		assert.Len(t, expected, 1)
@@ -219,20 +218,20 @@ func TestExpectedDeployments(t *testing.T) {
 			},
 			Log: logger,
 		}
-		expected := []v1.Deployment{}
-		allocator := targetallocator.Deployment(paramReplicas.Config, paramReplicas.Log, paramReplicas.Instance)
+		expected := []*v1.Deployment{}
+		allocator := targetallocator.DesiredDeployment(paramReplicas.Config, paramReplicas.Log, paramReplicas.Instance)
 		expected = append(expected, allocator)
 
 		assert.Len(t, expected, 1)
 		assert.Equal(t, *allocator.Spec.Replicas, int32(1))
 		param.Instance.Spec.TargetAllocator.Replicas = &nextReplicas
-		finalAllocator := targetallocator.Deployment(param.Config, param.Log, param.Instance)
+		finalAllocator := targetallocator.DesiredDeployment(param.Config, param.Log, param.Instance)
 		assert.Equal(t, *finalAllocator.Spec.Replicas, int32(2))
 	})
 
 	t.Run("should update deployment", func(t *testing.T) {
-		createObjectIfNotExists(t, "test-collector", &expectedDeploy)
-		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		createObjectIfNotExists(t, "test-collector", expectedDeploy)
+		err := expectedDeployments(context.Background(), param, []*v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -246,14 +245,14 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should update target allocator deployment when the container image is updated", func(t *testing.T) {
 		ctx := context.Background()
-		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
+		createObjectIfNotExists(t, "test-targetallocator", expectedTADeploy)
 		orgUID := expectedTADeploy.OwnerReferences[0].UID
 
 		updatedParam, err := newParams("test/test-img", "")
 		assert.NoError(t, err)
-		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
+		updatedDeploy := targetallocator.DesiredDeployment(updatedParam.Config, logger, updatedParam.Instance)
 
-		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		err = expectedDeployments(ctx, param, []*v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -293,7 +292,7 @@ func TestExpectedDeployments(t *testing.T) {
 		}
 		createObjectIfNotExists(t, "dummy", &deploy)
 
-		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		err := deleteDeployments(context.Background(), param, []*v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -329,7 +328,7 @@ func TestExpectedDeployments(t *testing.T) {
 		}
 		createObjectIfNotExists(t, "dummy", &deploy)
 
-		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		err := deleteDeployments(context.Background(), param, []*v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -346,7 +345,7 @@ func TestExpectedDeployments(t *testing.T) {
 		oldDeploy.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
 		oldDeploy.Name = "update-deploy"
 
-		err := expectedDeployments(context.Background(), param, []v1.Deployment{oldDeploy})
+		err := expectedDeployments(context.Background(), param, []*v1.Deployment{oldDeploy})
 		assert.NoError(t, err)
 		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: oldDeploy.Name})
 		assert.NoError(t, err)
@@ -354,13 +353,13 @@ func TestExpectedDeployments(t *testing.T) {
 
 		newDeploy := collector.Deployment(param.Config, logger, param.Instance)
 		newDeploy.Name = oldDeploy.Name
-		err = expectedDeployments(context.Background(), param, []v1.Deployment{newDeploy})
+		err = expectedDeployments(context.Background(), param, []*v1.Deployment{newDeploy})
 		assert.NoError(t, err)
 		exists, err = populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: oldDeploy.Name})
 		assert.NoError(t, err)
 		assert.False(t, exists)
 
-		err = expectedDeployments(context.Background(), param, []v1.Deployment{newDeploy})
+		err = expectedDeployments(context.Background(), param, []*v1.Deployment{newDeploy})
 		assert.NoError(t, err)
 		actual := v1.Deployment{}
 		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldDeploy.Name})

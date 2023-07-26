@@ -17,21 +17,31 @@ package targetallocator
 import (
 	"strings"
 
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
 )
 
 const (
 	targetAllocatorFilename = "targetallocator.yaml"
 )
 
-func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, error) {
+func ConfigMap(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (client.Object, error) {
+	c, err := DesiredConfigMap(otelcol)
+	return c, err
+}
+
+func DesiredConfigMap(instance v1alpha1.OpenTelemetryCollector) (*corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(instance)
 	version := strings.Split(instance.Spec.Image, ":")
 	labels := Labels(instance, name)
@@ -45,7 +55,7 @@ func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, erro
 	// TA ConfigMap should have a single "$", as it does not support env var substitution
 	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(instance.Spec.Config)
 	if err != nil {
-		return corev1.ConfigMap{}, err
+		return &corev1.ConfigMap{}, err
 	}
 
 	taConfig := make(map[interface{}]interface{})
@@ -84,10 +94,10 @@ func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, erro
 
 	taConfigYAML, err := yaml.Marshal(taConfig)
 	if err != nil {
-		return corev1.ConfigMap{}, err
+		return &corev1.ConfigMap{}, err
 	}
 
-	return corev1.ConfigMap{
+	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   instance.Namespace,

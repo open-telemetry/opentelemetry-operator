@@ -28,7 +28,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
-func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
+func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (client.Object, error) {
 	name := naming.Collector(otelcol)
 	labels := Labels(otelcol, name, cfg.LabelsFilter())
 	annotations := Annotations(otelcol)
@@ -44,7 +44,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	// defaulting webhook should always set this, but if unset then return nil.
 	if otelcol.Spec.Autoscaler == nil {
 		logger.Info("Autoscaler field is unset in Spec, skipping")
-		return nil
+		return nil, nil
 	}
 	autoscalingVersion := cfg.AutoscalingVersion()
 
@@ -176,7 +176,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 		result = &autoscaler
 	}
 
-	return result
+	return result, nil
 }
 
 func ConvertToV2Beta2PodMetrics(v2metrics []v1alpha1.MetricSpec) []autoscalingv2beta2.MetricSpec {

@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
-
 	appsv1 "k8s.io/api/apps/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,21 +26,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
 // +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
 
 // Deployments reconciles the deployment(s) required for the instance in the current context.
 func Deployments(ctx context.Context, params reconcileutil.Params) error {
-	desired := []appsv1.Deployment{}
+	desired := []*appsv1.Deployment{}
 	if params.Instance.Spec.Mode == "deployment" {
 		desired = append(desired, collector.Deployment(params.Config, params.Log, params.Instance))
 	}
 
 	if params.Instance.Spec.TargetAllocator.Enabled {
-		desired = append(desired, targetallocator.Deployment(params.Config, params.Log, params.Instance))
+		desired = append(desired, targetallocator.DesiredDeployment(params.Config, params.Log, params.Instance))
 	}
 
 	// first, handle the create/update parts
@@ -58,11 +57,11 @@ func Deployments(ctx context.Context, params reconcileutil.Params) error {
 	return nil
 }
 
-func expectedDeployments(ctx context.Context, params reconcileutil.Params, expected []appsv1.Deployment) error {
+func expectedDeployments(ctx context.Context, params reconcileutil.Params, expected []*appsv1.Deployment) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -70,7 +69,7 @@ func expectedDeployments(ctx context.Context, params reconcileutil.Params, expec
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if clientErr := params.Client.Create(ctx, &desired); clientErr != nil {
+			if clientErr := params.Client.Create(ctx, desired); clientErr != nil {
 				return fmt.Errorf("failed to create: %w", clientErr)
 			}
 			params.Log.V(2).Info("created", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
@@ -120,7 +119,7 @@ func expectedDeployments(ctx context.Context, params reconcileutil.Params, expec
 	return nil
 }
 
-func deleteDeployments(ctx context.Context, params reconcileutil.Params, expected []appsv1.Deployment) error {
+func deleteDeployments(ctx context.Context, params reconcileutil.Params, expected []*appsv1.Deployment) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

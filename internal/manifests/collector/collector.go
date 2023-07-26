@@ -17,17 +17,26 @@ func Build(params reconcileutil.Params) ([]client.Object, error) {
 		manifests = append(manifests, DaemonSet(params.Config, params.Log, params.Instance))
 	}
 	objects := []reconcileutil.ObjectCreator{
+		ConfigMap,
 		HorizontalPodAutoscaler,
-		ServiceAccount,
-		Service,
-		HeadlessService,
-		MonitoringService,
+		reconcileutil.Conformer(ServiceAccount),
+		reconcileutil.Conformer(Service),
+		reconcileutil.Conformer(HeadlessService),
+		reconcileutil.Conformer(MonitoringService),
 		Ingress,
 	}
 	for _, object := range objects {
-		manifests = append(manifests, object(params.Config, params.Log, params.Instance))
+		res, err := object(params.Config, params.Log, params.Instance)
+		if err != nil {
+			return nil, err
+		} else if res != nil && res.DeepCopyObject() != nil {
+			manifests = append(manifests, res)
+		}
 	}
-	routes := Routes(params.Config, params.Log, params.Instance)
+	routes, err := Routes(params.Config, params.Log, params.Instance)
+	if err != nil {
+		return nil, err
+	}
 	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
 	for _, route := range routes {
 		manifests = append(manifests, route)

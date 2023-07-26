@@ -21,7 +21,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 )
 
 func errorNoComponent(component string) error {

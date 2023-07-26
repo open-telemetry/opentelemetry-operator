@@ -17,6 +17,8 @@ package collector
 import (
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -25,11 +27,14 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
+func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (client.Object, error) {
+	return DesiredIngress(cfg, logger, otelcol), nil
+}
+
+func DesiredIngress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *networkingv1.Ingress {
 	if otelcol.Spec.Ingress.Type != v1alpha1.IngressTypeNginx {
 		return nil
 	}
@@ -92,6 +97,7 @@ func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 	}
 }
 
+// TODO: what's the correct error state here? Should we error out if we can't extract the configuration?
 func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []corev1.ServicePort {
 	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {

@@ -10,14 +10,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
-func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
+func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (client.Object, error) {
 	name := naming.TAService(otelcol)
-	labels := targetallocator.Labels(otelcol, name)
+	labels := Labels(otelcol, name)
 
-	selector := targetallocator.Labels(otelcol, name)
+	selector := Labels(otelcol, name)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -33,5 +32,5 @@ func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 				TargetPort: intstr.FromInt(8080),
 			}},
 		},
-	}
+	}, nil
 }

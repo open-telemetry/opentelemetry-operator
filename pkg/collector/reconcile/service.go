@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,16 +28,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
-)
-
-// headless label is to differentiate the headless service from the clusterIP service.
-const (
-	headlessLabel  = "operator.opentelemetry.io/collector-headless-service"
-	headlessExists = "Exists"
 )
 
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -48,9 +42,12 @@ const (
 func Services(ctx context.Context, params reconcileutil.Params) error {
 	desired := []corev1.Service{}
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
-		type builder func(context.Context, reconcileutil.Params) *corev1.Service
-		for _, builder := range []builder{desiredService, headless, monitoringService} {
-			svc := builder(ctx, params)
+		type builder func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error)
+		for _, builder := range []builder{collector.Service, collector.HeadlessService, collector.MonitoringService} {
+			svc, err := builder(params.Config, params.Log, params.Instance)
+			if err != nil {
+				return err
+			}
 			// add only the non-nil to the list
 			if svc != nil {
 				desired = append(desired, *svc)
@@ -79,13 +76,13 @@ func desiredService(ctx context.Context, params reconcileutil.Params) *corev1.Se
 	name := naming.Service(params.Instance)
 	labels := collector.Labels(params.Instance, name, []string{})
 
-	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
+	configFromString, err := adapters.ConfigFromString(params.Instance.Spec.Config)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
 		return nil
 	}
 
-	ports, err := adapters.ConfigToReceiverPorts(params.Log, config)
+	ports, err := adapters.ConfigToReceiverPorts(params.Log, configFromString)
 	if err != nil {
 		params.Log.Error(err, "couldn't build the service for this instance")
 		return nil
@@ -155,62 +152,6 @@ func desiredTAService(params reconcileutil.Params) corev1.Service {
 				Name:       "targetallocation",
 				Port:       80,
 				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-}
-
-func headless(ctx context.Context, params reconcileutil.Params) *corev1.Service {
-	h := desiredService(ctx, params)
-	if h == nil {
-		return nil
-	}
-
-	h.Name = naming.HeadlessService(params.Instance)
-	h.Labels[headlessLabel] = headlessExists
-
-	// copy to avoid modifying params.Instance.Annotations
-	annotations := map[string]string{
-		"service.beta.openshift.io/serving-cert-secret-name": fmt.Sprintf("%s-tls", h.Name),
-	}
-	for k, v := range h.Annotations {
-		annotations[k] = v
-	}
-	h.Annotations = annotations
-
-	h.Spec.ClusterIP = "None"
-	return h
-}
-
-func monitoringService(ctx context.Context, params reconcileutil.Params) *corev1.Service {
-	name := naming.MonitoringService(params.Instance)
-	labels := collector.Labels(params.Instance, name, []string{})
-
-	c, err := adapters.ConfigFromString(params.Instance.Spec.Config)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration")
-		return nil
-	}
-
-	metricsPort, err := adapters.ConfigToMetricsPort(params.Log, c)
-	if err != nil {
-		params.Log.V(2).Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
-		metricsPort = 8888
-	}
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   params.Instance.Namespace,
-			Labels:      labels,
-			Annotations: params.Instance.Annotations,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector:  collector.SelectorLabels(params.Instance),
-			ClusterIP: "",
-			Ports: []corev1.ServicePort{{
-				Name: "monitoring",
-				Port: metricsPort,
 			}},
 		},
 	}

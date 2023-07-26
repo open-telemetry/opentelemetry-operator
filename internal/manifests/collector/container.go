@@ -15,6 +15,7 @@
 package collector
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -117,9 +118,13 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	var livenessProbe *corev1.Probe
-	if config, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
-		if probe, err := getLivenessProbe(config, otelcol.Spec.LivenessProbe); err == nil {
+	if configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
+		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
+		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
+			logger.Info("Extensions not configured, skipping liveness probe creation")
+		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
+			logger.Info("Healthcheck extension not configured, skipping liveness probe creation")
 		} else {
 			logger.Error(err, "Cannot create liveness probe.")
 		}
