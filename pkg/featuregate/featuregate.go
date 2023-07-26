@@ -79,6 +79,14 @@ var (
 		featuregate.WithRegisterToVersion("v0.84.0"),
 		featuregate.WithRegisterFromVersion("v0.82.0"),
 		featuregate.WithRegisterDescription("controls whether the operator should reconcile with the new reconcile logic"))
+
+	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
+	PrometheusOperatorIsAvailable = featuregate.GlobalRegistry().MustRegister(
+		"operator.observability.prometheus",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"),
+		featuregate.WithRegisterFromVersion("v0.82.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

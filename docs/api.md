@@ -3737,6 +3737,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecobservability">observability</a></b></td>
+        <td>object</td>
+        <td>
+          ObservabilitySpec defines how telemetry data gets handled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>podAnnotations</b></td>
         <td>map[string]string</td>
         <td>
@@ -8979,6 +8986,60 @@ Liveness config for the OpenTelemetry Collector except the probe handler which i
           Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.observability
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+ObservabilitySpec defines how telemetry data gets handled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecobservabilitymetrics">metrics</a></b></td>
+        <td>object</td>
+        <td>
+          Metrics defines the metrics configuration for operands.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.observability.metrics
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecobservability)</sup></sup>
+
+
+
+Metrics defines the metrics configuration for operands.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enableMetrics</b></td>
+        <td>boolean</td>
+        <td>
+          EnableMetrics specifies if ServiceMonitors should be created for the OpenTelemetry Collector. The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

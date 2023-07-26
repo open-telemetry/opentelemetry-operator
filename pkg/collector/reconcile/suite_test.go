@@ -30,6 +30,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 
 	routev1 "github.com/openshift/api/route/v1"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -79,7 +80,10 @@ func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		CRDInstallOptions: envtest.CRDInstallOptions{
-			CRDs: []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD},
+			CRDs: []*apiextensionsv1.CustomResourceDefinition{
+				testdata.OpenShiftRouteCRD,
+				testdata.ServiceMonitorCRD,
+			},
 		},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
@@ -97,6 +101,11 @@ func TestMain(m *testing.M) {
 	}
 
 	if err = v1alpha1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+
+	if err = monitoringv1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}

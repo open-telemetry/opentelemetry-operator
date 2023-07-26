@@ -109,6 +109,11 @@ func ServiceAccount(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol.Name))
 }
 
+// ServiceMonitor builds the service account name based on the instance.
+func ServiceMonitor(otelcol v1alpha1.OpenTelemetryCollector) string {
+	return DNSName(Truncate("%s-collector", 63, otelcol.Name))
+}
+
 // TargetAllocatorServiceAccount returns the TargetAllocator service account resource name.
 func TargetAllocatorServiceAccount(otelcol v1alpha1.OpenTelemetryCollector) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol.Name))

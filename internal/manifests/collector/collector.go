@@ -19,6 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func Build(params reconcileutil.Params) ([]client.Object, error) {
@@ -41,6 +42,9 @@ func Build(params reconcileutil.Params) ([]client.Object, error) {
 		reconcileutil.Conformer(HeadlessService),
 		reconcileutil.Conformer(MonitoringService),
 		Ingress,
+	}
+	if params.Instance.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+		objects = append(objects, reconcileutil.Conformer(ServiceMonitor))
 	}
 	for _, object := range objects {
 		res, err := object(params.Config, params.Log, params.Instance)
