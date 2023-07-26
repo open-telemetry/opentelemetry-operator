@@ -29,8 +29,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
-// +kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-
 // DaemonSets reconciles the daemon set(s) required for the instance in the current context.
 func DaemonSets(ctx context.Context, params reconcileutil.Params) error {
 	var desired []*appsv1.DaemonSet

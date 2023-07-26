@@ -32,8 +32,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
-// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
-
 // Services reconciles the service(s) required for the instance in the current context.
 func Services(ctx context.Context, params reconcileutil.Params) error {
 	var desired []*corev1.Service

@@ -30,8 +30,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-
 // ConfigMaps reconciles the config map(s) required for the instance in the current context.
 func ConfigMaps(ctx context.Context, params reconcileutil.Params) error {
 	desired := []*corev1.ConfigMap{

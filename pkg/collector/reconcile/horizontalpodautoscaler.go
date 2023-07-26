@@ -31,9 +31,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
-// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
-
-// HorizontalPodAutoscaler reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
+// HorizontalPodAutoscalers reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
 func HorizontalPodAutoscalers(ctx context.Context, params reconcileutil.Params) error {
 	var desired []client.Object
 

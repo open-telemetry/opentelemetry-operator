@@ -16,7 +16,7 @@ package targetallocator
 
 import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil/naming"
 )
 
 // Labels return the common labels to all TargetAllocator objects that are part of a managed OpenTelemetryCollector.

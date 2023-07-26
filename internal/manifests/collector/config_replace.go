@@ -25,8 +25,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 type targetAllocator struct {

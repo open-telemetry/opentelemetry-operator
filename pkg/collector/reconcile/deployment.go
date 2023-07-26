@@ -31,8 +31,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
-// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
-
 // Deployments reconciles the deployment(s) required for the instance in the current context.
 func Deployments(ctx context.Context, params reconcileutil.Params) error {
 	desired := []*appsv1.Deployment{}

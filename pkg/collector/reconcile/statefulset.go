@@ -29,8 +29,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
-// +kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
-
 // StatefulSets reconciles the stateful set(s) required for the instance in the current context.
 func StatefulSets(ctx context.Context, params reconcileutil.Params) error {
 

@@ -30,8 +30,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil"
 )
 
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
-
 // ServiceAccounts reconciles the service account(s) required for the instance in the current context.
 func ServiceAccounts(ctx context.Context, params reconcileutil.Params) error {
 	var desired []*corev1.ServiceAccount

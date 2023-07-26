@@ -19,7 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/reconcileutil/naming"
 )
 
 // Volumes builds the volumes for the given instance, including the config map volume.

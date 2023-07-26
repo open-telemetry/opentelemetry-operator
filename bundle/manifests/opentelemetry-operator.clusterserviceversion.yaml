@@ -31,7 +31,7 @@ metadata:
     categories: Logging & Tracing
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2023-07-05T18:15:51Z"
+    createdAt: "2023-07-26T19:27:12Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -110,43 +110,9 @@ spec:
           - ""
           resources:
           - configmaps
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - events
-          verbs:
-          - create
-          - patch
-        - apiGroups:
-          - ""
-          resources:
-          - namespaces
-          verbs:
-          - list
-          - watch
-        - apiGroups:
-          - ""
-          resources:
+          - pods
+          - secrets
           - serviceaccounts
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
           - services
           verbs:
           - create
@@ -157,21 +123,18 @@ spec:
           - update
           - watch
         - apiGroups:
-          - apps
+          - ""
           resources:
-          - daemonsets
+          - namespaces
           verbs:
-          - create
-          - delete
-          - get
           - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - apps
           resources:
+          - daemonsets
           - deployments
+          - statefulsets
           verbs:
           - create
           - delete
@@ -187,18 +150,6 @@ spec:
           verbs:
           - get
           - list
-          - watch
-        - apiGroups:
-          - apps
-          resources:
-          - statefulsets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - autoscaling

@@ -29,8 +29,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
-// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
-
 // ServiceMonitors reconciles the service monitor(s) required for the instance in the current context.
 func ServiceMonitors(ctx context.Context, params reconcileutil.Params) error {
 	if !params.Instance.Spec.Observability.Metrics.EnableMetrics || !featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
