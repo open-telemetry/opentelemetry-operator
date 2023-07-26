@@ -84,11 +84,7 @@ func (langInsts languageInstrumentations) isSingleInstrumentationEnabled() bool 
 		count++
 	}
 
-	if count == 1 {
-		return true
-	} else {
-		return false
-	}
+	return count == 1
 }
 
 // Check if specific containers are provided for configured instrumentation.
