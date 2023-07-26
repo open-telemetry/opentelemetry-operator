@@ -4439,9 +4439,8 @@ func TestSingleInstrumentationEnabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ok, msg := test.instrumentations.isSingleInstrumentationEnabled()
+			ok := test.instrumentations.isSingleInstrumentationEnabled()
 			assert.Equal(t, test.expectedStatus, ok)
-			assert.Equal(t, test.expectedMsg, msg)
 		})
 	}
 }
@@ -4530,38 +4529,33 @@ func TestInstrumentationLanguageContainersSet(t *testing.T) {
 	tests := []struct {
 		name                     string
 		instrumentations         languageInstrumentations
-		instrumentationName      string
 		containers               string
-		expectedStatus           bool
 		expectedInstrumentations languageInstrumentations
 	}{
 		{
-			name: "Set containers for specific instrumentation",
+			name: "Set containers for enabled instrumentation",
 			instrumentations: languageInstrumentations{
+				NodeJS: instrumentationWithContainers{Instrumentation: nil},
 				Python: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 			},
-			instrumentationName: "Python",
-			containers:          "python,python1",
-			expectedStatus:      true,
+			containers: "python,python1",
 			expectedInstrumentations: languageInstrumentations{
+				NodeJS: instrumentationWithContainers{Instrumentation: nil},
 				Python: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "python,python1"},
 			},
 		},
 		{
-			name:                     "Set containers for unsupported instrumentation",
+			name:                     "Set containers when all instrumentations disabled",
 			instrumentations:         languageInstrumentations{},
-			instrumentationName:      "UnknownName",
-			containers:               "cont1,cont2",
-			expectedStatus:           false,
+			containers:               "python,python1",
 			expectedInstrumentations: languageInstrumentations{},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ok := test.instrumentations.setInstrumentationLanguageContainers(test.instrumentationName, test.containers)
-			assert.Equal(t, test.expectedStatus, ok)
-			assert.Equal(t, test.instrumentations, test.expectedInstrumentations)
+			test.instrumentations.setInstrumentationLanguageContainers(test.containers)
+			assert.Equal(t, test.expectedInstrumentations, test.instrumentations)
 		})
 	}
 }
