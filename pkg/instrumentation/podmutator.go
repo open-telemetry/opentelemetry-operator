@@ -88,7 +88,7 @@ func (langInsts languageInstrumentations) isSingleInstrumentationEnabled() bool 
 }
 
 // Check if specific containers are provided for configured instrumentation.
-func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultipleInstrumentations() (bool, string) {
+func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultipleInstrumentations() (bool, error) {
 	instrWithoutContainers := 0
 	instrWithContainers := 0
 	var allContainers []string
@@ -140,20 +140,20 @@ func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultiple
 	// Look for duplicated containers.
 	containerDuplicates := findDuplicatedContainers(allContainers)
 	if containerDuplicates != nil {
-		return false, fmt.Sprintf("duplicated container names detected: %s", containerDuplicates)
+		return false, fmt.Errorf("duplicated container names detected: %s", containerDuplicates)
 	}
 
 	// Look for mixed multiple instrumentations with and without container names.
 	if instrWithoutContainers > 0 && instrWithContainers > 0 {
-		return false, "incorrect instrumentation configuration - please provide container names for all instrumentations"
+		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
 		// Look for multiple instrumentations without container names.
 	} else if instrWithoutContainers > 1 && instrWithContainers == 0 {
-		return false, "incorrect instrumentation configuration - please provide container names for all instrumentations"
+		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
 	} else if instrWithoutContainers == 0 && instrWithContainers == 0 {
-		return false, "instrumentation configuration not provided"
+		return false, fmt.Errorf("instrumentation configuration not provided")
 	}
 
-	return true, "ok"
+	return true, nil
 }
 
 // Set containers for configured instrumentation.
@@ -311,7 +311,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		// We check if provided annotations and instrumentations are valid
 		ok, msg := insts.areContainerNamesConfiguredForMultipleInstrumentations()
 		if !ok {
-			logger.V(1).Info("skipping instrumentation injection", "reason", msg)
+			logger.V(1).Error(msg, "skipping instrumentation injection")
 			return pod, nil
 		}
 	} else {
@@ -322,7 +322,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 			generalContainerNames := annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
 			insts.setInstrumentationLanguageContainers(generalContainerNames)
 		} else {
-			logger.V(1).Info("multiple injection annotations present, skipping instrumentation injection")
+			logger.V(1).Error(fmt.Errorf("multiple injection annotations present"), "skipping instrumentation injection")
 			return pod, nil
 		}
 

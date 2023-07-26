@@ -4742,7 +4742,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		name             string
 		instrumentations languageInstrumentations
 		expectedStatus   bool
-		expectedMsg      string
+		expectedMsg      error
 	}{
 		{
 			name: "Single instrumentation enabled without containers",
@@ -4751,7 +4751,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: nil},
 			},
 			expectedStatus: true,
-			expectedMsg:    "ok",
+			expectedMsg:    nil,
 		},
 		{
 			name: "Multiple instrumentations enabled with containers",
@@ -4760,7 +4760,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "nodejs"},
 			},
 			expectedStatus: true,
-			expectedMsg:    "ok",
+			expectedMsg:    nil,
 		},
 		{
 			name: "Multiple instrumentations enabled without containers",
@@ -4769,7 +4769,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 			},
 			expectedStatus: false,
-			expectedMsg:    "incorrect instrumentation configuration - please provide container names for all instrumentations",
+			expectedMsg:    fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations"),
 		},
 		{
 			name: "Multiple instrumentations enabled with containers for single instrumentation",
@@ -4778,7 +4778,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 			},
 			expectedStatus: false,
-			expectedMsg:    "incorrect instrumentation configuration - please provide container names for all instrumentations",
+			expectedMsg:    fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations"),
 		},
 		{
 			name: "Disabled instrumentations",
@@ -4786,7 +4786,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: nil},
 			},
 			expectedStatus: false,
-			expectedMsg:    "instrumentation configuration not provided",
+			expectedMsg:    fmt.Errorf("instrumentation configuration not provided"),
 		},
 		{
 			name: "Multiple instrumentations enabled with duplicated containers",
@@ -4795,7 +4795,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "app1,app,nodejs"},
 			},
 			expectedStatus: false,
-			expectedMsg:    "duplicated container names detected: [app app1]",
+			expectedMsg:    fmt.Errorf("duplicated container names detected: [app app1]"),
 		},
 		{
 			name: "Multiple instrumentations enabled with duplicated containers for single instrumentation",
@@ -4804,7 +4804,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "nodejs"},
 			},
 			expectedStatus: false,
-			expectedMsg:    "duplicated container names detected: [app]",
+			expectedMsg:    fmt.Errorf("duplicated container names detected: [app]"),
 		},
 	}
 
