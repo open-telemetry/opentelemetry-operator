@@ -39,10 +39,10 @@ const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
 
 type Config struct {
-	ListenAddr             *string
-	KubeConfigFilePath     string
-	ClusterConfig          *rest.Config
-	RootLogger             logr.Logger
+	ListenAddr             string             `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath     string             `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig          *rest.Config       `yaml:"-"`
+	RootLogger             logr.Logger        `yaml:"-"`
 	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
 	PromConfig             *promconfig.Config `yaml:"config"`
 	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
@@ -125,7 +125,7 @@ func FromCLI() (*Config, string, error) {
 			return nil, "", err
 		}
 	}
-	config.ListenAddr = listenAddrFlag
+	config.ListenAddr = *listenAddrFlag
 	config.PrometheusCR.Enabled = *prometheusCREnabledFlag
 	config.ClusterConfig = clusterConfig
 	return &config, *configFilePathFlag, nil
