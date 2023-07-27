@@ -624,6 +624,7 @@ Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-tel
 - [Benedikt Bongartz](https://github.com/frzifus), Red Hat
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
+- [Mikołaj Świątek](https://github.com/swiatekm-sumo), Sumo Logic
 
 Emeritus Approvers:
 
