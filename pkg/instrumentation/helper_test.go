@@ -15,6 +15,7 @@
 package instrumentation
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -129,17 +130,17 @@ func TestDuplicatedContainers(t *testing.T) {
 	tests := []struct {
 		name               string
 		containers         []string
-		expectedDuplicates []string
+		expectedDuplicates error
 	}{
 		{
 			name:               "No duplicates",
 			containers:         []string{"app1,app2", "app3", "app4,app5"},
-			expectedDuplicates: []string(nil),
+			expectedDuplicates: nil,
 		},
 		{
 			name:               "Duplicates in containers",
 			containers:         []string{"app1,app2", "app1", "app1,app3,app4", "app4"},
-			expectedDuplicates: []string{"app1", "app4"},
+			expectedDuplicates: fmt.Errorf("duplicated container names detected: [app1 app4]"),
 		},
 	}
 
@@ -147,6 +148,58 @@ func TestDuplicatedContainers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ok := findDuplicatedContainers(test.containers)
 			assert.Equal(t, test.expectedDuplicates, ok)
+		})
+	}
+}
+
+func TestInstrWithContainers(t *testing.T) {
+	tests := []struct {
+		name           string
+		containers     instrumentationWithContainers
+		expectedResult int
+	}{
+		{
+			name:           "No containers",
+			containers:     instrumentationWithContainers{Containers: ""},
+			expectedResult: 0,
+		},
+		{
+			name:           "With containers",
+			containers:     instrumentationWithContainers{Containers: "ct1"},
+			expectedResult: 1,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := isInstrWithContainers(test.containers)
+			assert.Equal(t, test.expectedResult, res)
+		})
+	}
+}
+
+func TestInstrWithoutContainers(t *testing.T) {
+	tests := []struct {
+		name           string
+		containers     instrumentationWithContainers
+		expectedResult int
+	}{
+		{
+			name:           "No containers",
+			containers:     instrumentationWithContainers{Containers: ""},
+			expectedResult: 1,
+		},
+		{
+			name:           "With containers",
+			containers:     instrumentationWithContainers{Containers: "ct1"},
+			expectedResult: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := isInstrWithoutContainers(test.containers)
+			assert.Equal(t, test.expectedResult, res)
 		})
 	}
 }

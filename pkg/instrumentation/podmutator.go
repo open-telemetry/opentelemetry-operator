@@ -89,67 +89,64 @@ func (langInsts languageInstrumentations) isSingleInstrumentationEnabled() bool 
 
 // Check if specific containers are provided for configured instrumentation.
 func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultipleInstrumentations() (bool, error) {
-	instrWithoutContainers := 0
-	instrWithContainers := 0
+	var instrWithoutContainers int
+	var instrWithContainers int
 	var allContainers []string
 
 	// Check for instrumentations with and without containers.
-	if langInsts.Java.Instrumentation != nil && langInsts.Java.Containers == "" {
-		instrWithoutContainers++
-	} else if langInsts.Java.Instrumentation != nil && langInsts.Java.Containers != "" {
+	if langInsts.Java.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Java)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Java)
 		allContainers = append(allContainers, langInsts.Java.Containers)
-		instrWithContainers++
 	}
-	if langInsts.NodeJS.Instrumentation != nil && langInsts.NodeJS.Containers == "" {
-		instrWithoutContainers++
-	} else if langInsts.NodeJS.Instrumentation != nil && langInsts.NodeJS.Containers != "" {
+	if langInsts.NodeJS.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.NodeJS)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.NodeJS)
 		allContainers = append(allContainers, langInsts.NodeJS.Containers)
-		instrWithContainers++
 	}
-	if langInsts.Python.Instrumentation != nil && langInsts.Python.Containers == "" {
-		instrWithoutContainers++
-	} else if langInsts.Python.Instrumentation != nil && langInsts.Python.Containers != "" {
+	if langInsts.Python.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Python)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Python)
 		allContainers = append(allContainers, langInsts.Python.Containers)
-		instrWithContainers++
 	}
-	if langInsts.DotNet.Instrumentation != nil && langInsts.DotNet.Containers == "" {
-		instrWithoutContainers++
-	} else if langInsts.DotNet.Instrumentation != nil && langInsts.DotNet.Containers != "" {
+	if langInsts.DotNet.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.DotNet)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.DotNet)
 		allContainers = append(allContainers, langInsts.DotNet.Containers)
-		instrWithContainers++
 	}
-	if langInsts.ApacheHttpd.Instrumentation != nil && langInsts.ApacheHttpd.Containers == "" {
-		instrWithoutContainers++
-	} else if langInsts.ApacheHttpd.Instrumentation != nil && langInsts.ApacheHttpd.Containers != "" {
+	if langInsts.ApacheHttpd.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.ApacheHttpd)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.ApacheHttpd)
 		allContainers = append(allContainers, langInsts.ApacheHttpd.Containers)
-		instrWithContainers++
 	}
-	if langInsts.Go.Instrumentation != nil && langInsts.Go.Containers == "" {
-		instrWithoutContainers++
-	} else if langInsts.Go.Instrumentation != nil && langInsts.Go.Containers != "" {
+	if langInsts.Go.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Go)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Go)
 		allContainers = append(allContainers, langInsts.Go.Containers)
-		instrWithContainers++
 	}
-	if langInsts.Sdk.Instrumentation != nil && langInsts.Sdk.Containers == "" {
-		instrWithoutContainers++
-	} else if langInsts.Sdk.Instrumentation != nil && langInsts.Sdk.Containers != "" {
+	if langInsts.Sdk.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Sdk)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Sdk)
 		allContainers = append(allContainers, langInsts.Sdk.Containers)
-		instrWithContainers++
 	}
 
 	// Look for duplicated containers.
 	containerDuplicates := findDuplicatedContainers(allContainers)
 	if containerDuplicates != nil {
-		return false, fmt.Errorf("duplicated container names detected: %s", containerDuplicates)
+		return false, containerDuplicates
 	}
 
 	// Look for mixed multiple instrumentations with and without container names.
 	if instrWithoutContainers > 0 && instrWithContainers > 0 {
 		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
-		// Look for multiple instrumentations without container names.
-	} else if instrWithoutContainers > 1 && instrWithContainers == 0 {
+	}
+
+	// Look for multiple instrumentations without container names.
+	if instrWithoutContainers > 1 && instrWithContainers == 0 {
 		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
-	} else if instrWithoutContainers == 0 && instrWithContainers == 0 {
+	}
+
+	if instrWithoutContainers == 0 && instrWithContainers == 0 {
 		return false, fmt.Errorf("instrumentation configuration not provided")
 	}
 

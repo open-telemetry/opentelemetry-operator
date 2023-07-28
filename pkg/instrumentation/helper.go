@@ -15,6 +15,7 @@
 package instrumentation
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -50,7 +51,7 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 }
 
 // Look for duplicates in the provided containers.
-func findDuplicatedContainers(ctrs []string) []string {
+func findDuplicatedContainers(ctrs []string) error {
 	// Merge is needed because of multiple containers can be provided for single instrumentation.
 	mergedContainers := strings.Join(ctrs, ",")
 
@@ -77,5 +78,27 @@ func findDuplicatedContainers(ctrs []string) []string {
 
 	sort.Strings(duplicates)
 
-	return duplicates
+	if duplicates != nil {
+		return fmt.Errorf("duplicated container names detected: %s", duplicates)
+	}
+
+	return nil
+}
+
+// Return positive for instrumentation with defined containers.
+func isInstrWithContainers(inst instrumentationWithContainers) int {
+	if inst.Containers != "" {
+		return 1
+	}
+
+	return 0
+}
+
+// Return positive for instrumentation without defined containers.
+func isInstrWithoutContainers(inst instrumentationWithContainers) int {
+	if inst.Containers == "" {
+		return 1
+	}
+
+	return 0
 }
