@@ -73,7 +73,7 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/go-container-names with more than 1 container"),
+			err: fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured"),
 			setFeatureGates: func(t *testing.T) {
 				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
 				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
@@ -99,7 +99,7 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container"),
+			err: fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured"),
 		},
 		{
 			name: "pod annotation takes precedence",

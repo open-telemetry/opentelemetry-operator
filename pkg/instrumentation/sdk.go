@@ -136,25 +136,24 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		goContainers := insts.Go.Containers
 
-		// Go instrumentation supports only single container instrumentation. Loop here should be replaced/improved.
-		for _, container := range strings.Split(goContainers, ",") {
-			index := getContainerIndex(container, pod)
-			pod, err = injectGoSDK(otelinst.Spec.Go, pod)
-			if err != nil {
-				i.logger.Info("Skipping Go SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
-			} else {
-				// Common env vars and config need to be applied to the agent contain.
-				pod = i.injectCommonEnvVar(otelinst, pod, len(pod.Spec.Containers)-1)
-				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, len(pod.Spec.Containers)-1, 0)
+		// Go instrumentation supports only single container instrumentation.
+		index := getContainerIndex(goContainers, pod)
+		pod, err = injectGoSDK(otelinst.Spec.Go, pod)
+		if err != nil {
+			i.logger.Info("Skipping Go SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+		} else {
+			// Common env vars and config need to be applied to the agent contain.
+			pod = i.injectCommonEnvVar(otelinst, pod, len(pod.Spec.Containers)-1)
+			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, len(pod.Spec.Containers)-1, 0)
 
-				// Ensure that after all the env var coalescing we have a value for OTEL_GO_AUTO_TARGET_EXE
-				idx := getIndexOfEnv(pod.Spec.Containers[len(pod.Spec.Containers)-1].Env, envOtelTargetExe)
-				if idx == -1 {
-					i.logger.Info("Skipping Go SDK injection", "reason", "OTEL_GO_AUTO_TARGET_EXE not set", "container", pod.Spec.Containers[index].Name)
-					pod = origPod
-				}
+			// Ensure that after all the env var coalescing we have a value for OTEL_GO_AUTO_TARGET_EXE
+			idx := getIndexOfEnv(pod.Spec.Containers[len(pod.Spec.Containers)-1].Env, envOtelTargetExe)
+			if idx == -1 {
+				i.logger.Info("Skipping Go SDK injection", "reason", "OTEL_GO_AUTO_TARGET_EXE not set", "container", pod.Spec.Containers[index].Name)
+				pod = origPod
 			}
 		}
+
 	}
 	if insts.ApacheHttpd.Instrumentation != nil {
 		otelinst := *insts.ApacheHttpd.Instrumentation
