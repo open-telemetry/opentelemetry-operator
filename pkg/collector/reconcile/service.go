@@ -74,7 +74,7 @@ func Services(ctx context.Context, params Params) error {
 }
 
 func desiredService(ctx context.Context, params Params) *corev1.Service {
-	name := naming.Service(params.Instance)
+	name := naming.Service(params.Instance.Name)
 	labels := collector.Labels(params.Instance, name, []string{})
 
 	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
@@ -121,7 +121,7 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Service(params.Instance),
+			Name:        naming.Service(params.Instance.Name),
 			Namespace:   params.Instance.Namespace,
 			Labels:      labels,
 			Annotations: params.Instance.Annotations,
@@ -136,14 +136,14 @@ func desiredService(ctx context.Context, params Params) *corev1.Service {
 }
 
 func desiredTAService(params Params) corev1.Service {
-	name := naming.TAService(params.Instance)
+	name := naming.TAService(params.Instance.Name)
 	labels := targetallocator.Labels(params.Instance, name)
 
 	selector := targetallocator.Labels(params.Instance, name)
 
 	return corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(params.Instance),
+			Name:      naming.TAService(params.Instance.Name),
 			Namespace: params.Instance.Namespace,
 			Labels:    labels,
 		},
@@ -164,7 +164,7 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 		return nil
 	}
 
-	h.Name = naming.HeadlessService(params.Instance)
+	h.Name = naming.HeadlessService(params.Instance.Name)
 	h.Labels[headlessLabel] = headlessExists
 
 	// copy to avoid modifying params.Instance.Annotations
@@ -181,7 +181,7 @@ func headless(ctx context.Context, params Params) *corev1.Service {
 }
 
 func monitoringService(ctx context.Context, params Params) *corev1.Service {
-	name := naming.MonitoringService(params.Instance)
+	name := naming.MonitoringService(params.Instance.Name)
 	labels := collector.Labels(params.Instance, name, []string{})
 
 	c, err := adapters.ConfigFromString(params.Instance.Spec.Config)

@@ -56,10 +56,9 @@ func desiredIngresses(_ context.Context, params Params) *networkingv1.Ingress {
 			PathType: &pathType,
 			Backend: networkingv1.IngressBackend{
 				Service: &networkingv1.IngressServiceBackend{
-					Name: naming.Service(params.Instance),
+					Name: naming.Service(params.Instance.Name),
 					Port: networkingv1.ServiceBackendPort{
-						// Valid names must be non-empty and no more than 15 characters long.
-						Name: naming.Truncate(p.Name, 15),
+						Name: naming.PortName(p.Name, p.Port),
 					},
 				},
 			},
@@ -68,11 +67,11 @@ func desiredIngresses(_ context.Context, params Params) *networkingv1.Ingress {
 
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Ingress(params.Instance),
+			Name:        naming.Ingress(params.Instance.Name),
 			Namespace:   params.Instance.Namespace,
 			Annotations: params.Instance.Spec.Ingress.Annotations,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.Ingress(params.Instance),
+				"app.kubernetes.io/name":       naming.Ingress(params.Instance.Name),
 				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
 				"app.kubernetes.io/managed-by": "opentelemetry-operator",
 			},

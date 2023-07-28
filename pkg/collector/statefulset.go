@@ -27,7 +27,7 @@ import (
 
 // StatefulSet builds the statefulset for the given instance.
 func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.StatefulSet {
-	name := naming.Collector(otelcol)
+	name := naming.Collector(otelcol.Name)
 	labels := Labels(otelcol, name, cfg.LabelsFilter())
 
 	annotations := Annotations(otelcol)
@@ -41,7 +41,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 			Annotations: annotations,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName: naming.Service(otelcol),
+			ServiceName: naming.Service(otelcol.Name),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: SelectorLabels(otelcol),
 			},

@@ -65,7 +65,7 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 		return nil
 	}
 
-	name := naming.Collector(*changed)
+	name := naming.Collector(changed.Name)
 
 	// Set the scale selector
 	labels := collector.Labels(*changed, name, []string{})
@@ -78,7 +78,7 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	// Set the scale replicas
 	objKey := client.ObjectKey{
 		Namespace: changed.GetNamespace(),
-		Name:      naming.Collector(*changed),
+		Name:      naming.Collector(changed.Name),
 	}
 
 	var replicas int32

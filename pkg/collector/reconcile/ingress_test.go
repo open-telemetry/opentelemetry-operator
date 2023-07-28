@@ -115,11 +115,11 @@ func TestDesiredIngresses(t *testing.T) {
 
 		assert.NotEqual(t, &networkingv1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.Ingress(params.Instance),
+				Name:        naming.Ingress(params.Instance.Name),
 				Namespace:   ns,
 				Annotations: params.Instance.Spec.Ingress.Annotations,
 				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.Ingress(params.Instance),
+					"app.kubernetes.io/name":       naming.Ingress(params.Instance.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},

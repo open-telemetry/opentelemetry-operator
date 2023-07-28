@@ -25,11 +25,8 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-)
 
-var (
-	// DNS_LABEL constraints: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
-	dnsLabelValidation = regexp.MustCompile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 // ReceiverParser is an interface that should be implemented by all receiver parsers.
@@ -159,7 +156,7 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 		}
 
 		return &corev1.ServicePort{
-			Name: portName(name, port),
+			Name: naming.PortName(name, port),
 			Port: port,
 		}
 	default:
@@ -176,22 +173,6 @@ func getAddressFromConfig(logger logr.Logger, name, key string, config map[inter
 		return nil
 	}
 	return endpoint
-}
-
-func portName(receiverName string, port int32) string {
-	if len(receiverName) > 63 {
-		return fmt.Sprintf("port-%d", port)
-	}
-
-	candidate := strings.ReplaceAll(receiverName, "/", "-")
-	candidate = strings.ReplaceAll(candidate, "_", "-")
-
-	if !dnsLabelValidation.MatchString(candidate) {
-		return fmt.Sprintf("port-%d", port)
-	}
-
-	// matches the pattern and has less than 63 chars -- the candidate name is good to go!
-	return candidate
 }
 
 func portFromEndpoint(endpoint string) (int32, error) {
