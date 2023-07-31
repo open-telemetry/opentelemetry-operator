@@ -27,9 +27,8 @@ var _ ReceiverParser = &OTLPReceiverParser{}
 const (
 	parserNameOTLP = "__otlp"
 
-	defaultOTLPGRPCPort       int32 = 4317
-	defaultOTLPHTTPLegacyPort int32 = 55681
-	defaultOTLPHTTPPort       int32 = 4318
+	defaultOTLPGRPCPort int32 = 4317
+	defaultOTLPHTTPPort int32 = 4318
 )
 
 var (
@@ -86,12 +85,6 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 					Name:        portName(fmt.Sprintf("%s-http", o.name), defaultOTLPHTTPPort),
 					Port:        defaultOTLPHTTPPort,
 					TargetPort:  intstr.FromInt(int(defaultOTLPHTTPPort)),
-					AppProtocol: &http,
-				},
-				{
-					Name:        portName(fmt.Sprintf("%s-http-legacy", o.name), defaultOTLPHTTPLegacyPort),
-					Port:        defaultOTLPHTTPLegacyPort,
-					TargetPort:  intstr.FromInt(int(defaultOTLPHTTPPort)), // we target the official port, not the legacy
 					AppProtocol: &http,
 				},
 			},

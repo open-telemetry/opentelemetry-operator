@@ -28,11 +28,6 @@ spec:
     port: 4318
     protocol: TCP
     targetPort: 4318
-  - appProtocol: http
-    name: otlp-http-legacy
-    port: 55681
-    protocol: TCP
-    targetPort: 4318
 
 ---
 
@@ -55,10 +50,5 @@ spec:
   - appProtocol: http
     name: otlp-http
     port: 4318
-    protocol: TCP
-    targetPort: 4318
-  - appProtocol: http
-    name: otlp-http-legacy
-    port: 55681
     protocol: TCP
     targetPort: 4318
