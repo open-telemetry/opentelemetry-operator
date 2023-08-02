@@ -85,7 +85,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	// test
 	ports, err := adapters.ConfigToReceiverPorts(logger, config)
 	assert.NoError(t, err)
-	assert.Len(t, ports, 11)
+	assert.Len(t, ports, 10)
 
 	// verify
 	httpAppProtocol := "http"
@@ -104,7 +104,6 @@ func TestExtractPortsFromConfig(t *testing.T) {
 		{Name: "otlp-2-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: 55555},
 		{Name: "otlp-grpc", AppProtocol: &grpcAppProtocol, Port: 4317, TargetPort: targetPort4317},
 		{Name: "otlp-http", AppProtocol: &httpAppProtocol, Port: 4318, TargetPort: targetPort4318},
-		{Name: "otlp-http-legacy", AppProtocol: &httpAppProtocol, Port: 55681, TargetPort: targetPort4318},
 		{Name: "zipkin", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: 9411},
 	}
 	assert.ElementsMatch(t, expectedPorts, ports)
