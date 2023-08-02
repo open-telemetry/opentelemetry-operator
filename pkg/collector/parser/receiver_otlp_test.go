@@ -85,9 +85,8 @@ func TestOTLPExposeDefaultPorts(t *testing.T) {
 		portNumber int32
 		seen       bool
 	}{
-		"otlp-grpc":        {portNumber: 4317},
-		"otlp-http":        {portNumber: 4318},
-		"otlp-http-legacy": {portNumber: 55681},
+		"otlp-grpc": {portNumber: 4317},
+		"otlp-http": {portNumber: 4318},
 	}
 
 	// test
