@@ -25,8 +25,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 )
 
 func TestExpectedDeployments(t *testing.T) {
@@ -35,7 +36,7 @@ func TestExpectedDeployments(t *testing.T) {
 	expectedTADeploy := targetallocator.Deployment(param.Config, logger, param.Instance)
 
 	t.Run("should create collector deployment", func(t *testing.T) {
-		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		err := expectedDeployments(context.Background(), param, []*v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
@@ -46,7 +47,7 @@ func TestExpectedDeployments(t *testing.T) {
 	})
 
 	t.Run("should create target allocator deployment", func(t *testing.T) {
-		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedTADeploy})
+		err := expectedDeployments(context.Background(), param, []*v1.Deployment{expectedTADeploy})
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: "test-targetallocator"})
@@ -57,7 +58,7 @@ func TestExpectedDeployments(t *testing.T) {
 	})
 
 	t.Run("should not create target allocator deployment when targetallocator is not enabled", func(t *testing.T) {
-		paramTargetAllocator := Params{
+		paramTargetAllocator := manifests.Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -92,7 +93,7 @@ func TestExpectedDeployments(t *testing.T) {
 			},
 			Log: logger,
 		}
-		expected := []v1.Deployment{}
+		expected := []*v1.Deployment{}
 		if paramTargetAllocator.Instance.Spec.TargetAllocator.Enabled {
 			expected = append(expected, targetallocator.Deployment(paramTargetAllocator.Config, paramTargetAllocator.Log, paramTargetAllocator.Instance))
 		}
@@ -102,7 +103,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should update target allocator deployment when the prometheusCR is updated", func(t *testing.T) {
 		ctx := context.Background()
-		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
+		createObjectIfNotExists(t, "test-targetallocator", expectedTADeploy)
 		orgUID := expectedTADeploy.OwnerReferences[0].UID
 
 		updatedParam, err := newParams(expectedTADeploy.Spec.Template.Spec.Containers[0].Image, "")
@@ -110,7 +111,7 @@ func TestExpectedDeployments(t *testing.T) {
 		updatedParam.Instance.Spec.TargetAllocator.PrometheusCR.Enabled = true
 		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
 
-		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		err = expectedDeployments(ctx, param, []*v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -126,7 +127,7 @@ func TestExpectedDeployments(t *testing.T) {
 	t.Run("should not update target allocator deployment replicas when collector max replicas is set", func(t *testing.T) {
 		replicas, maxReplicas := int32(2), int32(10)
 		oneReplica := int32(1)
-		paramMaxReplicas := Params{
+		paramMaxReplicas := manifests.Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -167,7 +168,7 @@ func TestExpectedDeployments(t *testing.T) {
 			},
 			Log: logger,
 		}
-		expected := []v1.Deployment{}
+		expected := []*v1.Deployment{}
 		allocator := targetallocator.Deployment(paramMaxReplicas.Config, paramMaxReplicas.Log, paramMaxReplicas.Instance)
 		expected = append(expected, allocator)
 
@@ -177,7 +178,7 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should update target allocator deployment replicas when changed", func(t *testing.T) {
 		initialReplicas, nextReplicas := int32(1), int32(2)
-		paramReplicas := Params{
+		paramReplicas := manifests.Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -217,7 +218,7 @@ func TestExpectedDeployments(t *testing.T) {
 			},
 			Log: logger,
 		}
-		expected := []v1.Deployment{}
+		expected := []*v1.Deployment{}
 		allocator := targetallocator.Deployment(paramReplicas.Config, paramReplicas.Log, paramReplicas.Instance)
 		expected = append(expected, allocator)
 
@@ -229,8 +230,8 @@ func TestExpectedDeployments(t *testing.T) {
 	})
 
 	t.Run("should update deployment", func(t *testing.T) {
-		createObjectIfNotExists(t, "test-collector", &expectedDeploy)
-		err := expectedDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		createObjectIfNotExists(t, "test-collector", expectedDeploy)
+		err := expectedDeployments(context.Background(), param, []*v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -244,14 +245,14 @@ func TestExpectedDeployments(t *testing.T) {
 
 	t.Run("should update target allocator deployment when the container image is updated", func(t *testing.T) {
 		ctx := context.Background()
-		createObjectIfNotExists(t, "test-targetallocator", &expectedTADeploy)
+		createObjectIfNotExists(t, "test-targetallocator", expectedTADeploy)
 		orgUID := expectedTADeploy.OwnerReferences[0].UID
 
 		updatedParam, err := newParams("test/test-img", "")
 		assert.NoError(t, err)
 		updatedDeploy := targetallocator.Deployment(updatedParam.Config, logger, updatedParam.Instance)
 
-		err = expectedDeployments(ctx, param, []v1.Deployment{updatedDeploy})
+		err = expectedDeployments(ctx, param, []*v1.Deployment{updatedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -291,7 +292,7 @@ func TestExpectedDeployments(t *testing.T) {
 		}
 		createObjectIfNotExists(t, "dummy", &deploy)
 
-		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		err := deleteDeployments(context.Background(), param, []*v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -327,7 +328,7 @@ func TestExpectedDeployments(t *testing.T) {
 		}
 		createObjectIfNotExists(t, "dummy", &deploy)
 
-		err := deleteDeployments(context.Background(), param, []v1.Deployment{expectedDeploy})
+		err := deleteDeployments(context.Background(), param, []*v1.Deployment{expectedDeploy})
 		assert.NoError(t, err)
 
 		actual := v1.Deployment{}
@@ -344,7 +345,7 @@ func TestExpectedDeployments(t *testing.T) {
 		oldDeploy.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
 		oldDeploy.Name = "update-deploy"
 
-		err := expectedDeployments(context.Background(), param, []v1.Deployment{oldDeploy})
+		err := expectedDeployments(context.Background(), param, []*v1.Deployment{oldDeploy})
 		assert.NoError(t, err)
 		exists, err := populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: oldDeploy.Name})
 		assert.NoError(t, err)
@@ -352,13 +353,13 @@ func TestExpectedDeployments(t *testing.T) {
 
 		newDeploy := collector.Deployment(param.Config, logger, param.Instance)
 		newDeploy.Name = oldDeploy.Name
-		err = expectedDeployments(context.Background(), param, []v1.Deployment{newDeploy})
+		err = expectedDeployments(context.Background(), param, []*v1.Deployment{newDeploy})
 		assert.NoError(t, err)
 		exists, err = populateObjectIfExists(t, &v1.Deployment{}, types.NamespacedName{Namespace: "default", Name: oldDeploy.Name})
 		assert.NoError(t, err)
 		assert.False(t, exists)
 
-		err = expectedDeployments(context.Background(), param, []v1.Deployment{newDeploy})
+		err = expectedDeployments(context.Background(), param, []*v1.Deployment{newDeploy})
 		assert.NoError(t, err)
 		actual := v1.Deployment{}
 		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldDeploy.Name})

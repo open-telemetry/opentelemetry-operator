@@ -26,15 +26,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
-
-func TestDesiredServiceMonitors(t *testing.T) {
-	params := params()
-
-	actual := desiredServiceMonitors(context.Background(), params)
-	assert.NotNil(t, actual)
-}
 
 func TestExpectedServiceMonitors(t *testing.T) {
 	originalVal := featuregate.PrometheusOperatorIsAvailable.IsEnabled()
@@ -50,7 +44,7 @@ func TestExpectedServiceMonitors(t *testing.T) {
 		err := expectedServiceMonitors(
 			context.Background(),
 			p,
-			[]monitoringv1.ServiceMonitor{servicemonitor("test-collector")},
+			[]*monitoringv1.ServiceMonitor{servicemonitor("test-collector")},
 		)
 		assert.NoError(t, err)
 
@@ -66,14 +60,16 @@ func TestDeleteServiceMonitors(t *testing.T) {
 	t.Run("should delete excess service monitors", func(t *testing.T) {
 		name := "sm-to-delete"
 		deleteServiceMonitor := servicemonitor(name)
-		createObjectIfNotExists(t, name, &deleteServiceMonitor)
+		createObjectIfNotExists(t, name, deleteServiceMonitor)
 
 		exists, err := populateObjectIfExists(t, &monitoringv1.ServiceMonitor{}, types.NamespacedName{Namespace: "default", Name: name})
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		desired := desiredServiceMonitors(context.Background(), params())
-		err = deleteServiceMonitors(context.Background(), params(), desired)
+		p := params()
+		desired, err := collector.ServiceMonitor(p.Config, p.Log, p.Instance)
+		assert.NoError(t, err)
+		err = deleteServiceMonitors(context.Background(), params(), []*monitoringv1.ServiceMonitor{desired})
 		assert.NoError(t, err)
 
 		exists, err = populateObjectIfExists(t, &v1.Service{}, types.NamespacedName{Namespace: "default", Name: name})
@@ -82,8 +78,8 @@ func TestDeleteServiceMonitors(t *testing.T) {
 	})
 }
 
-func servicemonitor(name string) monitoringv1.ServiceMonitor {
-	return monitoringv1.ServiceMonitor{
+func servicemonitor(name string) *monitoringv1.ServiceMonitor {
+	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "default",

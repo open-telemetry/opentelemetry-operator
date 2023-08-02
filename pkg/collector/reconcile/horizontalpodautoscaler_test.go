@@ -20,6 +20,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
@@ -35,7 +38,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
 var hpaUpdateErr error
@@ -47,6 +49,7 @@ func TestExpectedHPAVersionV2Beta2(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedHPA := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
+
 	t.Run("should create HPA", func(t *testing.T) {
 		err = expectedHorizontalPodAutoscalers(context.Background(), params, []client.Object{expectedHPA})
 		assert.NoError(t, err)
@@ -108,6 +111,7 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedHPA := collector.HorizontalPodAutoscaler(params.Config, logger, params.Instance)
+
 	t.Run("should create HPA", func(t *testing.T) {
 		err = expectedHorizontalPodAutoscalers(context.Background(), params, []client.Object{expectedHPA})
 		assert.NoError(t, err)
@@ -162,8 +166,8 @@ func TestExpectedHPAVersionV2(t *testing.T) {
 	})
 }
 
-func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
-	configYAML, err := os.ReadFile("../testdata/test.yaml")
+func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) manifests.Params {
+	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
@@ -183,7 +187,7 @@ func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion) Params {
 		logger.Error(err, "configuration.autodetect failed")
 	}
 
-	return Params{
+	return manifests.Params{
 		Config: configuration,
 		Client: k8sClient,
 		Instance: v1alpha1.OpenTelemetryCollector{

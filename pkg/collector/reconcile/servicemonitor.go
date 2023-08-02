@@ -20,24 +20,29 @@ import (
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
 
 // ServiceMonitors reconciles the service monitor(s) required for the instance in the current context.
-func ServiceMonitors(ctx context.Context, params Params) error {
+func ServiceMonitors(ctx context.Context, params manifests.Params) error {
 	if !params.Instance.Spec.Observability.Metrics.EnableMetrics || !featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		return nil
 	}
 
-	desired := desiredServiceMonitors(ctx, params)
+	var desired []*monitoringv1.ServiceMonitor
+	if sm, err := collector.ServiceMonitor(params.Config, params.Log, params.Instance); err != nil {
+		return err
+	} else {
+		desired = append(desired, sm)
+	}
 
 	// first, handle the create/update parts
 	if err := expectedServiceMonitors(ctx, params, desired); err != nil {
@@ -52,41 +57,11 @@ func ServiceMonitors(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredServiceMonitors(_ context.Context, params Params) []monitoringv1.ServiceMonitor {
-	col := params.Instance
-	return []monitoringv1.ServiceMonitor{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: col.Namespace,
-				Name:      naming.ServiceMonitor(col.Name),
-				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.ServiceMonitor(params.Instance.Name),
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-				},
-			},
-			Spec: monitoringv1.ServiceMonitorSpec{
-				Endpoints: []monitoringv1.Endpoint{{
-					Port: "monitoring",
-				}},
-				NamespaceSelector: monitoringv1.NamespaceSelector{
-					MatchNames: []string{col.Namespace},
-				},
-				Selector: metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
-				},
-			},
-		},
-	}
-}
-
-func expectedServiceMonitors(ctx context.Context, params Params, expected []monitoringv1.ServiceMonitor) error {
+func expectedServiceMonitors(ctx context.Context, params manifests.Params, expected []*monitoringv1.ServiceMonitor) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -94,7 +69,7 @@ func expectedServiceMonitors(ctx context.Context, params Params, expected []moni
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if err = params.Client.Create(ctx, &desired); err != nil {
+			if err = params.Client.Create(ctx, desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
 			params.Log.V(2).Info("created", "servicemonitor.name", desired.Name, "servicemonitor.namespace", desired.Namespace)
@@ -134,7 +109,7 @@ func expectedServiceMonitors(ctx context.Context, params Params, expected []moni
 	return nil
 }
 
-func deleteServiceMonitors(ctx context.Context, params Params, expected []monitoringv1.ServiceMonitor) error {
+func deleteServiceMonitors(ctx context.Context, params manifests.Params, expected []*monitoringv1.ServiceMonitor) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

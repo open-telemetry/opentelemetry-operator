@@ -25,14 +25,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 // +kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 
 // DaemonSets reconciles the daemon set(s) required for the instance in the current context.
-func DaemonSets(ctx context.Context, params Params) error {
-	desired := []appsv1.DaemonSet{}
+func DaemonSets(ctx context.Context, params manifests.Params) error {
+	var desired []*appsv1.DaemonSet
 	if params.Instance.Spec.Mode == "daemonset" {
 		desired = append(desired, collector.DaemonSet(params.Config, params.Log, params.Instance))
 	}
@@ -50,11 +51,11 @@ func DaemonSets(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.DaemonSet) error {
+func expectedDaemonSets(ctx context.Context, params manifests.Params, expected []*appsv1.DaemonSet) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -62,7 +63,7 @@ func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.Da
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if clientErr := params.Client.Create(ctx, &desired); clientErr != nil {
+			if clientErr := params.Client.Create(ctx, desired); clientErr != nil {
 				return fmt.Errorf("failed to create: %w", clientErr)
 			}
 			params.Log.V(2).Info("created", "daemonset.name", desired.Name, "daemonset.namespace", desired.Namespace)
@@ -111,7 +112,7 @@ func expectedDaemonSets(ctx context.Context, params Params, expected []appsv1.Da
 	return nil
 }
 
-func deleteDaemonSets(ctx context.Context, params Params, expected []appsv1.DaemonSet) error {
+func deleteDaemonSets(ctx context.Context, params manifests.Params, expected []*appsv1.DaemonSet) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
