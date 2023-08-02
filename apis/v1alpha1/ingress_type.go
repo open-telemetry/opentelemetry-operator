@@ -46,3 +46,18 @@ const (
 	// and re-encrypt using a new certificate.
 	TLSRouteTerminationTypeReencrypt TLSRouteTerminationType = "reencrypt"
 )
+
+// IngressRuleType defines how the collector receivers will be exposed in the Ingress.
+//
+// +kubebuilder:validation:Enum=path;subdomain
+type IngressRuleType string
+
+const (
+	// IngressRuleTypePath configures Ingress to use single host with multiple paths.
+	// This configuration might require additional ingress setting to rewrite paths.
+	IngressRuleTypePath IngressRuleType = "path"
+
+	// IngressRuleTypeSubdomain configures Ingress to use multiple hosts - one for each exposed
+	// receiver port. The port name is used as a subdomain for the host defined in the Ingress e.g. otlp-http.example.com.
+	IngressRuleTypeSubdomain IngressRuleType = "subdomain"
+)

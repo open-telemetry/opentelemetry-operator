@@ -2650,6 +2650,16 @@ spec:
                         - reencrypt
                         type: string
                     type: object
+                  ruleType:
+                    description: RuleType defines how Ingress exposes collector receivers.
+                      IngressRuleTypePath ("path") exposes each receiver port on a
+                      unique path on single domain defined in Hostname. IngressRuleTypeSubdomain
+                      ("subdomain") exposes each receiver port on a unique subdomain
+                      of Hostname. Default is IngressRuleTypePath ("path").
+                    enum:
+                    - path
+                    - subdomain
+                    type: string
                   tls:
                     description: TLS configuration.
                     items:
@@ -2678,7 +2688,8 @@ spec:
                       type: object
                     type: array
                   type:
-                    description: 'Type default value is: "" Supported types are: ingress'
+                    description: 'Type default value is: "" Supported types are: ingress,
+                      route'
                     enum:
                     - ingress
                     - route

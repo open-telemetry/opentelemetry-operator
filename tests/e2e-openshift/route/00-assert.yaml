@@ -3,6 +3,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: simplest-collector
+status:
+  readyReplicas: 1
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
@@ -21,7 +23,7 @@ metadata:
     name: simplest
 spec:
   host: otlp-grpc.example.com
-  path: /otlp-grpc
+  path: /
   port:
     targetPort: otlp-grpc
   to:

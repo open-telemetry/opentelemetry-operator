@@ -109,6 +109,9 @@ func (r *OpenTelemetryCollector) Default() {
 	if r.Spec.Ingress.Type == IngressTypeRoute && r.Spec.Ingress.Route.Termination == "" {
 		r.Spec.Ingress.Route.Termination = TLSRouteTerminationTypeEdge
 	}
+	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Ingress.RuleType == "" {
+		r.Spec.Ingress.RuleType = IngressRuleTypePath
+	}
 }
 
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -247,6 +250,9 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		return fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
+	}
+	if r.Spec.Ingress.RuleType == IngressRuleTypeSubdomain && (r.Spec.Ingress.Hostname == "" || r.Spec.Ingress.Hostname == "*") {
+		return fmt.Errorf("a valid Ingress hostname has to be defined for subdomain ruleType")
 	}
 
 	if r.Spec.LivenessProbe != nil {

@@ -8439,6 +8439,15 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ruleType</b></td>
+        <td>enum</td>
+        <td>
+          RuleType defines how Ingress exposes collector receivers. IngressRuleTypePath ("path") exposes each receiver port on a unique path on single domain defined in Hostname. IngressRuleTypeSubdomain ("subdomain") exposes each receiver port on a unique subdomain of Hostname. Default is IngressRuleTypePath ("path").<br/>
+          <br/>
+            <i>Enum</i>: path, subdomain<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingresstlsindex">tls</a></b></td>
         <td>[]object</td>
         <td>
@@ -8449,7 +8458,7 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         <td><b>type</b></td>
         <td>enum</td>
         <td>
-          Type default value is: "" Supported types are: ingress<br/>
+          Type default value is: "" Supported types are: ingress, route<br/>
           <br/>
             <i>Enum</i>: ingress, route<br/>
         </td>
