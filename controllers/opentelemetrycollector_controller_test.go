@@ -37,8 +37,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -254,14 +254,14 @@ func TestContinueOnRecoverableFailure(t *testing.T) {
 		Tasks: []controllers.Task{
 			{
 				Name: "should-fail",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					return errors.New("should fail")
 				},
 				BailOnError: false,
 			},
 			{
 				Name: "should-be-called",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					taskCalled = true
 					return nil
 				},
@@ -270,7 +270,7 @@ func TestContinueOnRecoverableFailure(t *testing.T) {
 	})
 
 	// test
-	err := reconciler.RunTasks(context.Background(), reconcile.Params{})
+	err := reconciler.RunTasks(context.Background(), manifests.Params{})
 
 	// verify
 	assert.NoError(t, err)
@@ -291,7 +291,7 @@ func TestBreakOnUnrecoverableError(t *testing.T) {
 		Tasks: []controllers.Task{
 			{
 				Name: "should-fail",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					taskCalled = true
 					return expectedErr
 				},
@@ -299,7 +299,7 @@ func TestBreakOnUnrecoverableError(t *testing.T) {
 			},
 			{
 				Name: "should-not-be-called",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					assert.Fail(t, "should not have been called")
 					return nil
 				},
@@ -341,7 +341,7 @@ func TestSkipWhenInstanceDoesNotExist(t *testing.T) {
 		Tasks: []controllers.Task{
 			{
 				Name: "should-not-be-called",
-				Do: func(context.Context, reconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					assert.Fail(t, "should not have been called")
 					return nil
 				},

@@ -26,15 +26,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
-// HorizontalPodAutoscaler reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
-func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
-	desired := []client.Object{}
+// HorizontalPodAutoscalers reconciles HorizontalPodAutoscalers if autoscale is true and replicas is nil.
+func HorizontalPodAutoscalers(ctx context.Context, params manifests.Params) error {
+	var desired []client.Object
 
 	// check if autoscale mode is on, e.g MaxReplicas is not nil
 	if params.Instance.Spec.MaxReplicas != nil || (params.Instance.Spec.Autoscaler != nil && params.Instance.Spec.Autoscaler.MaxReplicas != nil) {
@@ -56,7 +57,7 @@ func HorizontalPodAutoscalers(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
+func expectedHorizontalPodAutoscalers(ctx context.Context, params manifests.Params, expected []client.Object) error {
 	autoscalingVersion := params.Config.AutoscalingVersion()
 	var existing client.Object
 	if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
@@ -111,7 +112,7 @@ func expectedHorizontalPodAutoscalers(ctx context.Context, params Params, expect
 	return nil
 }
 
-func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object, desired client.Object) {
+func setAutoscalerSpec(params manifests.Params, autoscalingVersion autodetect.AutoscalingVersion, updated client.Object, desired client.Object) {
 	one := int32(1)
 	if params.Instance.Spec.Autoscaler.MaxReplicas != nil {
 		if autoscalingVersion == autodetect.AutoscalingVersionV2Beta2 {
@@ -140,7 +141,7 @@ func setAutoscalerSpec(params Params, autoscalingVersion autodetect.AutoscalingV
 	}
 }
 
-func deleteHorizontalPodAutoscalers(ctx context.Context, params Params, expected []client.Object) error {
+func deleteHorizontalPodAutoscalers(ctx context.Context, params manifests.Params, expected []client.Object) error {
 	autoscalingVersion := params.Config.AutoscalingVersion()
 
 	opts := []client.ListOption{

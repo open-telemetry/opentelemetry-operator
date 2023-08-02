@@ -18,13 +18,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
 func TestExpectedDaemonsets(t *testing.T) {
@@ -32,7 +32,7 @@ func TestExpectedDaemonsets(t *testing.T) {
 	expectedDs := collector.DaemonSet(param.Config, logger, param.Instance)
 
 	t.Run("should create Daemonset", func(t *testing.T) {
-		err := expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		err := expectedDaemonSets(context.Background(), param, []*v1.DaemonSet{expectedDs})
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &v1.DaemonSet{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
@@ -42,8 +42,8 @@ func TestExpectedDaemonsets(t *testing.T) {
 
 	})
 	t.Run("should update Daemonset", func(t *testing.T) {
-		createObjectIfNotExists(t, "test-collector", &expectedDs)
-		err := expectedDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		createObjectIfNotExists(t, "test-collector", expectedDs)
+		err := expectedDaemonSets(context.Background(), param, []*v1.DaemonSet{expectedDs})
 		assert.NoError(t, err)
 
 		actual := v1.DaemonSet{}
@@ -83,7 +83,7 @@ func TestExpectedDaemonsets(t *testing.T) {
 
 		createObjectIfNotExists(t, "dummy", &ds)
 
-		err := deleteDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		err := deleteDaemonSets(context.Background(), param, []*v1.DaemonSet{expectedDs})
 		assert.NoError(t, err)
 
 		actual := v1.DaemonSet{}
@@ -121,7 +121,7 @@ func TestExpectedDaemonsets(t *testing.T) {
 
 		createObjectIfNotExists(t, "dummy", &ds)
 
-		err := deleteDaemonSets(context.Background(), param, []v1.DaemonSet{expectedDs})
+		err := deleteDaemonSets(context.Background(), param, []*v1.DaemonSet{expectedDs})
 		assert.NoError(t, err)
 
 		actual := v1.DaemonSet{}
@@ -138,7 +138,7 @@ func TestExpectedDaemonsets(t *testing.T) {
 		oldDs.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
 		oldDs.Name = "update-ds"
 
-		err := expectedDaemonSets(context.Background(), param, []v1.DaemonSet{oldDs})
+		err := expectedDaemonSets(context.Background(), param, []*v1.DaemonSet{oldDs})
 		assert.NoError(t, err)
 		exists, err := populateObjectIfExists(t, &v1.DaemonSet{}, types.NamespacedName{Namespace: "default", Name: oldDs.Name})
 		assert.NoError(t, err)
@@ -146,13 +146,13 @@ func TestExpectedDaemonsets(t *testing.T) {
 
 		newDs := collector.DaemonSet(param.Config, logger, param.Instance)
 		newDs.Name = oldDs.Name
-		err = expectedDaemonSets(context.Background(), param, []v1.DaemonSet{newDs})
+		err = expectedDaemonSets(context.Background(), param, []*v1.DaemonSet{newDs})
 		assert.NoError(t, err)
 		exists, err = populateObjectIfExists(t, &v1.DaemonSet{}, types.NamespacedName{Namespace: "default", Name: oldDs.Name})
 		assert.NoError(t, err)
 		assert.False(t, exists)
 
-		err = expectedDaemonSets(context.Background(), param, []v1.DaemonSet{newDs})
+		err = expectedDaemonSets(context.Background(), param, []*v1.DaemonSet{newDs})
 		assert.NoError(t, err)
 		actual := v1.DaemonSet{}
 		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldDs.Name})
