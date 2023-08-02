@@ -66,7 +66,7 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
 		// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 		// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
-		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance))
+		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 		if getCfgPromErr != nil {
 			return "", getCfgPromErr
 		}
@@ -84,7 +84,7 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 
 	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
-	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService(instance))
+	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
 	if err != nil {
 		return "", err
 	}

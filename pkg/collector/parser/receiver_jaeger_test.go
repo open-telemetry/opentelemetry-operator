@@ -88,10 +88,10 @@ func TestJaegerExposeDefaultPorts(t *testing.T) {
 		portNumber        int32
 		seen              bool
 	}{
-		"jaeger-grpc":           {portNumber: 14250, transportProtocol: corev1.ProtocolTCP},
-		"jaeger-thrift-http":    {portNumber: 14268, transportProtocol: corev1.ProtocolTCP},
-		"jaeger-thrift-compact": {portNumber: 6831, transportProtocol: corev1.ProtocolUDP},
-		"jaeger-thrift-binary":  {portNumber: 6832, transportProtocol: corev1.ProtocolUDP},
+		"jaeger-grpc": {portNumber: 14250, transportProtocol: corev1.ProtocolTCP},
+		"port-14268":  {portNumber: 14268, transportProtocol: corev1.ProtocolTCP},
+		"port-6831":   {portNumber: 6831, transportProtocol: corev1.ProtocolUDP},
+		"port-6832":   {portNumber: 6832, transportProtocol: corev1.ProtocolUDP},
 	}
 
 	// test

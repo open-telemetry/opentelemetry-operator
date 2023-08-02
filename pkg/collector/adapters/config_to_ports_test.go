@@ -96,11 +96,11 @@ func TestExtractPortsFromConfig(t *testing.T) {
 
 	expectedPorts := []corev1.ServicePort{
 		{Name: "examplereceiver", Port: 12345},
-		{Name: "examplereceiver-settings", Port: 12346},
-		{Name: "jaeger-custom-thrift-http", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: 15268, TargetPort: targetPortZero},
+		{Name: "port-12346", Port: 12346},
+		{Name: "port-15268", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: 15268, TargetPort: targetPortZero},
 		{Name: "jaeger-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: 14250},
-		{Name: "jaeger-thrift-binary", Protocol: "UDP", Port: 6833},
-		{Name: "jaeger-thrift-compact", Protocol: "UDP", Port: 6831},
+		{Name: "port-6833", Protocol: "UDP", Port: 6833},
+		{Name: "port-6831", Protocol: "UDP", Port: 6831},
 		{Name: "otlp-2-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: 55555},
 		{Name: "otlp-grpc", AppProtocol: &grpcAppProtocol, Port: 4317, TargetPort: targetPort4317},
 		{Name: "otlp-http", AppProtocol: &httpAppProtocol, Port: 4318, TargetPort: targetPort4318},

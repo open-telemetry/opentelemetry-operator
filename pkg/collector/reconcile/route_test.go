@@ -115,11 +115,11 @@ func TestDesiredRoutes(t *testing.T) {
 
 		assert.NotEqual(t, &routev1.Route{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.Route(params.Instance, ""),
+				Name:        naming.Route(params.Instance.Name, ""),
 				Namespace:   ns,
 				Annotations: params.Instance.Spec.Ingress.Annotations,
 				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.Route(params.Instance, ""),
+					"app.kubernetes.io/name":       naming.Route(params.Instance.Name, ""),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},

@@ -31,13 +31,13 @@ import (
 func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
 	autoscalingVersion := cfg.AutoscalingVersion()
 
-	name := naming.Collector(otelcol)
+	name := naming.Collector(otelcol.Name)
 	labels := Labels(otelcol, name, cfg.LabelsFilter())
 	annotations := Annotations(otelcol)
 	var result client.Object
 
 	objectMeta := metav1.ObjectMeta{
-		Name:        naming.HorizontalPodAutoscaler(otelcol),
+		Name:        naming.HorizontalPodAutoscaler(otelcol.Name),
 		Namespace:   otelcol.Namespace,
 		Labels:      labels,
 		Annotations: annotations,
@@ -96,7 +96,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
 					APIVersion: v1alpha1.GroupVersion.String(),
 					Kind:       "OpenTelemetryCollector",
-					Name:       naming.OpenTelemetryCollector(otelcol),
+					Name:       naming.OpenTelemetryCollector(otelcol.Name),
 				},
 				MinReplicas: otelcol.Spec.Autoscaler.MinReplicas,
 				MaxReplicas: *otelcol.Spec.Autoscaler.MaxReplicas,
@@ -153,7 +153,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
 					APIVersion: v1alpha1.GroupVersion.String(),
 					Kind:       "OpenTelemetryCollector",
-					Name:       naming.OpenTelemetryCollector(otelcol),
+					Name:       naming.OpenTelemetryCollector(otelcol.Name),
 				},
 				MinReplicas: otelcol.Spec.Autoscaler.MinReplicas,
 				MaxReplicas: *otelcol.Spec.Autoscaler.MaxReplicas,

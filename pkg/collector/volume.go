@@ -29,7 +29,7 @@ func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev
 		Name: naming.ConfigMapVolume(),
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: naming.ConfigMap(otelcol)},
+				LocalObjectReference: corev1.LocalObjectReference{Name: naming.ConfigMap(otelcol.Name)},
 				Items: []corev1.KeyToPath{{
 					Key:  cfg.CollectorConfigMapEntry(),
 					Path: cfg.CollectorConfigMapEntry(),

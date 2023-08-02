@@ -21,6 +21,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -38,7 +40,7 @@ func TestReceiverPortNames(t *testing.T) {
 		{"name starting with invalid char", "-my-receiver", "port-123", 123},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
-			assert.Equal(t, tt.expected, portName(tt.candidate, int32(tt.port)))
+			assert.Equal(t, tt.expected, naming.PortName(tt.candidate, int32(tt.port)))
 		})
 	}
 }

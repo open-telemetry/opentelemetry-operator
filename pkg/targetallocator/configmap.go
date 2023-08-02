@@ -32,7 +32,7 @@ const (
 )
 
 func ConfigMap(instance v1alpha1.OpenTelemetryCollector) (corev1.ConfigMap, error) {
-	name := naming.TAConfigMap(instance)
+	name := naming.TAConfigMap(instance.Name)
 	version := strings.Split(instance.Spec.Image, ":")
 	labels := Labels(instance, name)
 	if len(version) > 1 {
