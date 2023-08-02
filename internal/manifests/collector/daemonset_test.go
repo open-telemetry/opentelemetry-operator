@@ -303,3 +303,30 @@ func TestDaemonSetInitContainer(t *testing.T) {
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.InitContainers, 1)
 }
+
+func TestDaemonSetAdditionalContainer(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			AdditionalContainers: []v1.Container{
+				{
+					Name: "test",
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	d := DaemonSet(cfg, logger, otelcol)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
+	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
+}

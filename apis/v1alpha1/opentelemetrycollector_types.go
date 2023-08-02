@@ -213,6 +213,9 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
 
+	// AdditionalContainers allows injecting containers to run as sidecars in the pod definition.
+	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
+
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
 	// +optional
