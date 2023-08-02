@@ -19,9 +19,9 @@ import (
 	"net"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -176,7 +176,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		}
 	}
 
-	metricsPort, err := getMetricsPort(c)
+	metricsPort, err := adapters.ConfigToMetricsPort(logger, c)
 	if err != nil {
 		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888
@@ -186,41 +186,63 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		ContainerPort: metricsPort,
 		Protocol:      corev1.ProtocolTCP,
 	}
+
+	promExporterPorts, errs := getPrometheusExporterPorts(c)
+	for _, err := range errs {
+		logger.V(2).Info("There was a problem getting the prometheus exporter port: %s", err)
+	}
+	for _, promPort := range promExporterPorts {
+		ports[promPort.Name] = promPort
+	}
+
 	return ports
 }
 
-// getMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
-func getMetricsPort(c map[interface{}]interface{}) (int32, error) {
-	// we don't need to unmarshal the whole config, just follow the keys down to
-	// the metrics address.
-	type metricsCfg struct {
-		Address string
+func getPrometheusExporterPort(exporterConfig map[interface{}]interface{}) (int32, error) {
+	var promPort int32 = 0
+	if endpoint, ok := exporterConfig["endpoint"]; ok {
+		_, port, err := net.SplitHostPort(endpoint.(string))
+		if err != nil {
+			return 0, err
+		}
+		i64, err := strconv.ParseInt(port, 10, 32)
+		if err != nil {
+			return 0, err
+		}
+		promPort = int32(i64)
 	}
-	type telemetryCfg struct {
-		Metrics metricsCfg
-	}
-	type serviceCfg struct {
-		Telemetry telemetryCfg
-	}
-	type cfg struct {
-		Service serviceCfg
-	}
-	var cOut cfg
-	err := mapstructure.Decode(c, &cOut)
-	if err != nil {
-		return 0, err
-	}
+	return promPort, nil
+}
 
-	_, port, err := net.SplitHostPort(cOut.Service.Telemetry.Metrics.Address)
-	if err != nil {
-		return 0, err
+func getPrometheusExporterPorts(c map[interface{}]interface{}) ([]corev1.ContainerPort, []error) {
+	errors := make([]error, 0)
+	ports := make([]corev1.ContainerPort, 0)
+	if exporters, ok := c["exporters"]; ok && exporters != nil {
+		for e, exporterConfig := range exporters.(map[interface{}]interface{}) {
+			exporterName := e.(string)
+			if strings.Contains(exporterName, "prometheus") {
+				containerPort, err := getPrometheusExporterPort(exporterConfig.(map[interface{}]interface{}))
+				if err != nil {
+					errors = append(errors,
+						fmt.Errorf(
+							"there was a problem getting the port. Exporter %s",
+							exporterName,
+						),
+					)
+				}
+				ports = append(ports,
+					corev1.ContainerPort{
+						Name:          naming.PortName(exporterName),
+						ContainerPort: containerPort,
+						Protocol:      corev1.ProtocolTCP,
+					},
+				)
+			}
+		}
+	} else {
+		errors = append(errors, fmt.Errorf("no exporters specified in the configuration"))
 	}
-	i64, err := strconv.ParseInt(port, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(i64), nil
+	return ports, errors
 }
 
 func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {
