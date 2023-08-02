@@ -91,7 +91,7 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 					AppProtocol: &http,
 				},
 				{
-					Name:        portName(fmt.Sprintf("%s-http-legacy", o.name), defaultOTLPHTTPLegacyPort),
+					Name:        naming.PortName(fmt.Sprintf("%s-http-legacy", o.name), defaultOTLPHTTPLegacyPort),
 					Port:        defaultOTLPHTTPLegacyPort,
 					TargetPort:  intstr.FromInt(int(defaultOTLPHTTPPort)), // we target the official port, not the legacy
 					AppProtocol: &http,
