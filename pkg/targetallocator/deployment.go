@@ -27,7 +27,7 @@ import (
 
 // Deployment builds the deployment for the given instance.
 func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) appsv1.Deployment {
-	name := naming.TargetAllocator(otelcol)
+	name := naming.TargetAllocator(otelcol.Name)
 	labels := Labels(otelcol, name)
 	annotations := Annotations(otelcol)
 

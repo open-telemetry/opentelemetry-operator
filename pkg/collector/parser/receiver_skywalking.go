@@ -20,6 +20,8 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 var _ ReceiverParser = &SkywalkingReceiverParser{}
@@ -66,7 +68,7 @@ func (o *SkywalkingReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			name: grpc,
 			defaultPorts: []corev1.ServicePort{
 				{
-					Name:        portName(fmt.Sprintf("%s-grpc", o.name), defaultSkywalkingGRPCPort),
+					Name:        naming.PortName(fmt.Sprintf("%s-grpc", o.name), defaultSkywalkingGRPCPort),
 					Port:        defaultSkywalkingGRPCPort,
 					TargetPort:  intstr.FromInt(int(defaultSkywalkingGRPCPort)),
 					AppProtocol: &grpc,
@@ -77,7 +79,7 @@ func (o *SkywalkingReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			name: http,
 			defaultPorts: []corev1.ServicePort{
 				{
-					Name:        portName(fmt.Sprintf("%s-http", o.name), defaultSkywalkingHTTPPort),
+					Name:        naming.PortName(fmt.Sprintf("%s-http", o.name), defaultSkywalkingHTTPPort),
 					Port:        defaultSkywalkingHTTPPort,
 					TargetPort:  intstr.FromInt(int(defaultSkywalkingHTTPPort)),
 					AppProtocol: &http,

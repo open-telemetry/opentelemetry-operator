@@ -61,7 +61,7 @@ func ConfigMaps(ctx context.Context, params Params) error {
 }
 
 func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
-	name := naming.ConfigMap(params.Instance)
+	name := naming.ConfigMap(params.Instance.Name)
 	labels := collector.Labels(params.Instance, name, []string{})
 
 	config, err := ReplaceConfig(params.Instance)

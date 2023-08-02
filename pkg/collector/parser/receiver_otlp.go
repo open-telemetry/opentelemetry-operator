@@ -20,6 +20,8 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 var _ ReceiverParser = &OTLPReceiverParser{}
@@ -71,7 +73,7 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			name: grpc,
 			defaultPorts: []corev1.ServicePort{
 				{
-					Name:        portName(fmt.Sprintf("%s-grpc", o.name), defaultOTLPGRPCPort),
+					Name:        naming.PortName(fmt.Sprintf("%s-grpc", o.name), defaultOTLPGRPCPort),
 					Port:        defaultOTLPGRPCPort,
 					TargetPort:  intstr.FromInt(int(defaultOTLPGRPCPort)),
 					AppProtocol: &grpc,
@@ -82,7 +84,7 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			name: http,
 			defaultPorts: []corev1.ServicePort{
 				{
-					Name:        portName(fmt.Sprintf("%s-http", o.name), defaultOTLPHTTPPort),
+					Name:        naming.PortName(fmt.Sprintf("%s-http", o.name), defaultOTLPHTTPPort),
 					Port:        defaultOTLPHTTPPort,
 					TargetPort:  intstr.FromInt(int(defaultOTLPHTTPPort)),
 					AppProtocol: &http,

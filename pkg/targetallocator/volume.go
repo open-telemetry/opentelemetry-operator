@@ -28,7 +28,7 @@ func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev
 		Name: naming.TAConfigMapVolume(),
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: naming.TAConfigMap(otelcol)},
+				LocalObjectReference: corev1.LocalObjectReference{Name: naming.TAConfigMap(otelcol.Name)},
 				Items: []corev1.KeyToPath{
 					{
 						Key:  cfg.TargetAllocatorConfigMapEntry(),

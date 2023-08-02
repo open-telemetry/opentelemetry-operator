@@ -61,11 +61,11 @@ func desiredRoutes(_ context.Context, params Params) []routev1.Route {
 	for i, p := range ports {
 		routes[i] = routev1.Route{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.Route(params.Instance, p.Name),
+				Name:        naming.Route(params.Instance.Name, p.Name),
 				Namespace:   params.Instance.Namespace,
 				Annotations: params.Instance.Spec.Ingress.Annotations,
 				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.Route(params.Instance, p.Name),
+					"app.kubernetes.io/name":       naming.Route(params.Instance.Name, p.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
@@ -75,11 +75,10 @@ func desiredRoutes(_ context.Context, params Params) []routev1.Route {
 				Path: "/" + p.Name,
 				To: routev1.RouteTargetReference{
 					Kind: "Service",
-					Name: naming.Service(params.Instance),
+					Name: naming.Service(params.Instance.Name),
 				},
 				Port: &routev1.RoutePort{
-					// Valid names must be non-empty and no more than 15 characters long.
-					TargetPort: intstr.FromString(naming.Truncate(p.Name, 15)),
+					TargetPort: intstr.FromString(naming.PortName(p.Name, p.Port)),
 				},
 				WildcardPolicy: routev1.WildcardPolicyNone,
 				TLS:            tlsCfg,

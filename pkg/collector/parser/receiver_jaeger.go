@@ -19,6 +19,8 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 var _ ReceiverParser = &JaegerReceiverParser{}
@@ -104,7 +106,7 @@ func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			// if not, we use the default port
 			if protocolPort == nil {
 				protocolPort = &corev1.ServicePort{
-					Name: portName(nameWithProtocol, protocol.defaultPort),
+					Name: naming.PortName(nameWithProtocol, protocol.defaultPort),
 					Port: protocol.defaultPort,
 				}
 			}

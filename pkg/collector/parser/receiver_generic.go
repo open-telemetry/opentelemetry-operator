@@ -17,6 +17,8 @@ package parser
 import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 const parserNameGeneric = "__generic"
@@ -59,7 +61,7 @@ func (g *GenericReceiver) Ports() ([]corev1.ServicePort, error) {
 	if g.defaultPort > 0 {
 		return []corev1.ServicePort{{
 			Port:        g.defaultPort,
-			Name:        portName(g.name, g.defaultPort),
+			Name:        naming.PortName(g.name, g.defaultPort),
 			Protocol:    g.defaultProtocol,
 			AppProtocol: g.defaultAppProtocol,
 		}}, nil

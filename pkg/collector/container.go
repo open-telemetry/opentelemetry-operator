@@ -232,7 +232,7 @@ func getPrometheusExporterPorts(c map[interface{}]interface{}) ([]corev1.Contain
 				}
 				ports = append(ports,
 					corev1.ContainerPort{
-						Name:          naming.PortName(exporterName),
+						Name:          naming.PortName(exporterName, containerPort),
 						ContainerPort: containerPort,
 						Protocol:      corev1.ProtocolTCP,
 					},

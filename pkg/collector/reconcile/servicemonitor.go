@@ -58,9 +58,9 @@ func desiredServiceMonitors(_ context.Context, params Params) []monitoringv1.Ser
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: col.Namespace,
-				Name:      naming.ServiceMonitor(col),
+				Name:      naming.ServiceMonitor(col.Name),
 				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.ServiceMonitor(params.Instance),
+					"app.kubernetes.io/name":       naming.ServiceMonitor(params.Instance.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
