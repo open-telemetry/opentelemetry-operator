@@ -26,6 +26,7 @@ var (
 )
 
 // PortName defines the port name used in services, ingresses and routes.
+// The port name in pod and ingress spec has to be maximum 15 characters long.
 func PortName(receiverName string, port int32) string {
 	if len(receiverName) > 15 {
 		return fmt.Sprintf("port-%d", port)
