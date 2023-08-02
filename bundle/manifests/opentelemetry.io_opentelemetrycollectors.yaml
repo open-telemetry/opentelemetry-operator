@@ -38,6 +38,10 @@ spec:
     - jsonPath: .status.image
       name: Image
       type: string
+    - description: Management State
+      jsonPath: .spec.managementState
+      name: Management
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -2921,6 +2925,14 @@ spec:
                     format: int32
                     type: integer
                 type: object
+              managementState:
+                default: Managed
+                description: ManagementState defines if the CR should be managed by
+                  the operator or not. Default is managed.
+                enum:
+                - Managed
+                - Unmanaged
+                type: string
               maxReplicas:
                 description: 'MaxReplicas sets an upper bound to the autoscaling feature.
                   If MaxReplicas is set autoscaling is enabled. Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas"
