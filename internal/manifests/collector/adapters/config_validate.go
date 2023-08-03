@@ -21,25 +21,33 @@ import (
 // Following Otel Doc: Configuring a receiver does not enable it. The receivers are enabled via pipelines within the service section.
 // GetEnabledReceivers returns all enabled receivers as a true flag set. If it can't find any receiver, it will return a nil interface.
 func GetEnabledReceivers(_ logr.Logger, config map[interface{}]interface{}) map[interface{}]bool {
-	cfgReceivers, ok := config["receivers"]
-	if !ok {
-		return nil
-	}
-	receivers, ok := cfgReceivers.(map[interface{}]interface{})
-	if !ok {
-		return nil
-	}
-	availableReceivers := map[interface{}]bool{}
+	return getEnabledComponents(config, "receivers")
+}
 
-	for recvID := range receivers {
+func GetEnabledExporters(_ logr.Logger, config map[interface{}]interface{}) map[interface{}]bool {
+	return getEnabledComponents(config, "exporters")
+}
+
+func getEnabledComponents(config map[interface{}]interface{}, componentType string) map[interface{}]bool {
+	cfgComponents, ok := config[componentType]
+	if !ok {
+		return nil
+	}
+	components, ok := cfgComponents.(map[interface{}]interface{})
+	if !ok {
+		return nil
+	}
+	availableComponents := map[interface{}]bool{}
+
+	for compID := range components {
 
 		//Safe Cast
-		receiverID, withReceiver := recvID.(string)
-		if !withReceiver {
+		componentID, withComponent := compID.(string)
+		if !withComponent {
 			return nil
 		}
-		//Getting all receivers present in the receivers section and setting them to false.
-		availableReceivers[receiverID] = false
+		//Getting all components present in the components (exporters,receivers...) section and setting them to false.
+		availableComponents[componentID] = false
 	}
 
 	cfgService, withService := config["service"].(map[interface{}]interface{})
@@ -77,29 +85,29 @@ func GetEnabledReceivers(_ logr.Logger, config map[interface{}]interface{}) map[
 					return nil
 				}
 				for pipSpecID, pipSpecCfg := range pipelineDesc {
-					if pipSpecID.(string) == "receivers" {
+					if pipSpecID.(string) == componentType {
 						receiversList, ok := pipSpecCfg.([]interface{})
 						if !ok {
 							continue
 						}
 						// If receiversList is empty means that we haven't any enabled Receiver.
 						if len(receiversList) == 0 {
-							availableReceivers = nil
+							availableComponents = nil
 						} else {
 							// All enabled receivers will be set as true
-							for _, recKey := range receiversList {
+							for _, comKey := range receiversList {
 								//Safe Cast
-								receiverKey, ok := recKey.(string)
+								receiverKey, ok := comKey.(string)
 								if !ok {
 									return nil
 								}
-								availableReceivers[receiverKey] = true
+								availableComponents[receiverKey] = true
 							}
 						}
 						//Removing all non-enabled receivers
-						for recID, recKey := range availableReceivers {
-							if !(recKey) {
-								delete(availableReceivers, recID)
+						for comID, comKey := range availableComponents {
+							if !(comKey) {
+								delete(availableComponents, comID)
 							}
 						}
 					}
@@ -107,5 +115,5 @@ func GetEnabledReceivers(_ logr.Logger, config map[interface{}]interface{}) map[
 			}
 		}
 	}
-	return availableReceivers
+	return availableComponents
 }

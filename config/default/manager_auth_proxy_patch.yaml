@@ -11,6 +11,7 @@ spec:
       containers:
       - name: kube-rbac-proxy
         image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
+        imagePullPolicy: Always
         args:
         - "--secure-listen-address=0.0.0.0:8443"
         - "--upstream=http://127.0.0.1:8080/"
@@ -31,6 +32,7 @@ spec:
         args:
         - "--metrics-addr=127.0.0.1:8080"
         - "--enable-leader-election"
-        - "--zap-log-level=info"
+        - "--zap-log-level=debug"
         - "--zap-time-encoding=rfc3339nano"
+        - "--collector-image=ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:latest"
         - "--feature-gates=+operator.autoinstrumentation.go"
