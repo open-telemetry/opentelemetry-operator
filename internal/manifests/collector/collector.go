@@ -15,6 +15,8 @@
 package collector
 
 import (
+	"reflect"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -53,7 +55,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		res, err := factory(params.Config, params.Log, params.Instance)
 		if err != nil {
 			return nil, err
-		} else if res != nil {
+		} else if res != nil && !reflect.ValueOf(res).IsNil() {
 			// because of pointer semantics, res is still nil-able here as this is an interface pointer
 			// read here for details:
 			// https://github.com/open-telemetry/opentelemetry-operator/pull/1965#discussion_r1281705719

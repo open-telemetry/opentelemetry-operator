@@ -35,6 +35,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -213,15 +215,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	params := manifests.Params{
-		Config:   r.config,
-		Client:   r.Client,
-		Instance: instance,
-		Log:      log,
-		Scheme:   r.scheme,
-		Recorder: r.recorder,
-	}
-
+	params := r.GetParams(instance)
 	if err := r.RunTasks(ctx, params); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -246,8 +240,34 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 			}
 		}
 	}
-
 	return nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
+	return manifests.Params{
+		Config:   r.config,
+		Client:   r.Client,
+		Instance: instance,
+		Log:      r.log,
+		Scheme:   r.scheme,
+		Recorder: r.recorder,
+	}
+}
+
+func (r *OpenTelemetryCollectorReconciler) BuildAll(params manifests.Params) ([]client.Object, error) {
+	builders := []manifests.Builder{
+		collector.Build,
+		targetallocator.Build,
+	}
+	var resources []client.Object
+	for _, builder := range builders {
+		objs, err := builder(params)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, objs...)
+	}
+	return resources, nil
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
