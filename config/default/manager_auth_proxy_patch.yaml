@@ -32,7 +32,6 @@ spec:
         args:
         - "--metrics-addr=127.0.0.1:8080"
         - "--enable-leader-election"
-        - "--zap-log-level=debug"
+        - "--zap-log-level=info"
         - "--zap-time-encoding=rfc3339nano"
-        - "--collector-image=ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:latest"
         - "--feature-gates=+operator.autoinstrumentation.go"
