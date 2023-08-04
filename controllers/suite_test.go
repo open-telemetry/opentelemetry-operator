@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/testdata"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
 	// +kubebuilder:scaffold:imports
 )
 

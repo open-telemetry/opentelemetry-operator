@@ -55,6 +55,12 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 	for i := range list.Items {
 		original := list.Items[i]
 		itemLogger := u.Log.WithValues("name", original.Name, "namespace", original.Namespace)
+
+		if original.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
+			itemLogger.Info("skipping upgrade because instance is not managed")
+			continue
+		}
+
 		if original.Spec.UpgradeStrategy == v1alpha1.UpgradeStrategyNone {
 			itemLogger.Info("skipping instance upgrade due to UpgradeStrategy")
 			continue

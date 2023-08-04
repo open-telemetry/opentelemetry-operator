@@ -18,277 +18,28 @@ import (
 	"context"
 	"testing"
 
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
-
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
-	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 )
-
-func TestDesiredConfigMap(t *testing.T) {
-	expectedLables := map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/instance":   "default.test",
-		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/version":    "0.47.0",
-	}
-
-	t.Run("should return expected collector config map", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
-		expectedLables["app.kubernetes.io/name"] = "test-collector"
-		expectedLables["app.kubernetes.io/version"] = "0.47.0"
-
-		expectedData := map[string]string{
-			"collector.yaml": `processors:
-receivers:
-  jaeger:
-    protocols:
-      grpc:
-  prometheus:
-    config:
-      scrape_configs:
-      - job_name: otel-collector
-        scrape_interval: 10s
-        static_configs:
-          - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
-
-exporters:
-  logging:
-
-service:
-  pipelines:
-    metrics:
-      receivers: [prometheus, jaeger]
-      processors: []
-      exporters: [logging]`,
-		}
-
-		actual := desiredConfigMap(context.Background(), params())
-
-		assert.Equal(t, "test-collector", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-
-	})
-
-	t.Run("should return expected collector config map with http_sd_config", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
-		expectedLables["app.kubernetes.io/name"] = "test-collector"
-
-		expectedData := map[string]string{
-			"collector.yaml": `exporters:
-  logging: null
-processors: null
-receivers:
-  jaeger:
-    protocols:
-      grpc: null
-  prometheus:
-    config:
-      scrape_configs:
-      - http_sd_configs:
-        - url: http://test-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
-        job_name: otel-collector
-        scrape_interval: 10s
-service:
-  pipelines:
-    metrics:
-      exporters:
-      - logging
-      processors: []
-      receivers:
-      - prometheus
-      - jaeger
-`,
-		}
-
-		param := params()
-		param.Instance.Spec.TargetAllocator.Enabled = true
-		actual := desiredConfigMap(context.Background(), param)
-
-		assert.Equal(t, "test-collector", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-
-	})
-
-	t.Run("should return expected escaped collector config map with http_sd_config", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
-		expectedLables["app.kubernetes.io/name"] = "test-collector"
-		expectedLables["app.kubernetes.io/version"] = "latest"
-
-		expectedData := map[string]string{
-			"collector.yaml": `exporters:
-  logging: null
-processors: null
-receivers:
-  prometheus:
-    config:
-      scrape_configs:
-      - http_sd_configs:
-        - url: http://test-targetallocator:80/jobs/serviceMonitor%2Ftest%2Ftest%2F0/targets?collector_id=$POD_NAME
-        job_name: serviceMonitor/test/test/0
-    target_allocator:
-      collector_id: ${POD_NAME}
-      endpoint: http://test-targetallocator:80
-      http_sd_config:
-        refresh_interval: 60s
-      interval: 30s
-service:
-  pipelines:
-    metrics:
-      exporters:
-      - logging
-      processors: []
-      receivers:
-      - prometheus
-`,
-		}
-
-		param, err := newParams("test/test-img", "../testdata/http_sd_config_servicemonitor_test_ta_set.yaml")
-		assert.NoError(t, err)
-		param.Instance.Spec.TargetAllocator.Enabled = true
-		actual := desiredConfigMap(context.Background(), param)
-
-		assert.Equal(t, "test-collector", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-
-		// Reset the value
-		expectedLables["app.kubernetes.io/version"] = "0.47.0"
-
-	})
-
-	t.Run("should return expected escaped collector config map with target_allocator config block", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
-		expectedLables["app.kubernetes.io/name"] = "test-collector"
-		expectedLables["app.kubernetes.io/version"] = "latest"
-		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
-		assert.NoError(t, err)
-
-		expectedData := map[string]string{
-			"collector.yaml": `exporters:
-  logging: null
-processors: null
-receivers:
-  prometheus:
-    config: {}
-    target_allocator:
-      collector_id: ${POD_NAME}
-      endpoint: http://test-targetallocator:80
-      interval: 30s
-service:
-  pipelines:
-    metrics:
-      exporters:
-      - logging
-      processors: []
-      receivers:
-      - prometheus
-`,
-		}
-
-		param, err := newParams("test/test-img", "../testdata/http_sd_config_servicemonitor_test.yaml")
-		assert.NoError(t, err)
-		param.Instance.Spec.TargetAllocator.Enabled = true
-		actual := desiredConfigMap(context.Background(), param)
-
-		assert.Equal(t, "test-collector", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-
-		// Reset the value
-		expectedLables["app.kubernetes.io/version"] = "0.47.0"
-		err = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
-		assert.NoError(t, err)
-
-	})
-
-	t.Run("should return expected target allocator config map", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
-
-		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: least-weighted
-config:
-  scrape_configs:
-  - job_name: otel-collector
-    scrape_interval: 10s
-    static_configs:
-    - targets:
-      - 0.0.0.0:8888
-      - 0.0.0.0:9999
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.test
-  app.kubernetes.io/managed-by: opentelemetry-operator
-`,
-		}
-
-		actual, err := desiredTAConfigMap(params())
-		assert.NoError(t, err)
-
-		assert.Equal(t, "test-targetallocator", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-
-	})
-	t.Run("should return expected target allocator config map with label selectors", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "test-targetallocator"
-
-		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: least-weighted
-config:
-  scrape_configs:
-  - job_name: otel-collector
-    scrape_interval: 10s
-    static_configs:
-    - targets:
-      - 0.0.0.0:8888
-      - 0.0.0.0:9999
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.test
-  app.kubernetes.io/managed-by: opentelemetry-operator
-pod_monitor_selector:
-  release: test
-service_monitor_selector:
-  release: test
-`,
-		}
-		p := params()
-		p.Instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = map[string]string{
-			"release": "test",
-		}
-		p.Instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = map[string]string{
-			"release": "test",
-		}
-		actual, err := desiredTAConfigMap(p)
-		assert.NoError(t, err)
-
-		assert.Equal(t, "test-targetallocator", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-
-	})
-
-}
 
 func TestExpectedConfigMap(t *testing.T) {
 	t.Run("should create collector and target allocator config maps", func(t *testing.T) {
-		configMap, err := desiredTAConfigMap(params())
+		param := params()
+		configMap, err := targetallocator.ConfigMap(param.Config, param.Log, param.Instance)
 		assert.NoError(t, err)
-		err = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{desiredConfigMap(context.Background(), params()), configMap}, true)
+
+		err = expectedConfigMaps(context.Background(), params(), []*v1.ConfigMap{collector.ConfigMap(param.Config, param.Log, param.Instance), configMap}, true)
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
@@ -304,9 +55,8 @@ func TestExpectedConfigMap(t *testing.T) {
 
 	t.Run("should update collector config map", func(t *testing.T) {
 
-		param := Params{
+		param := manifests.Params{
 			Config: config.New(),
-			Client: k8sClient,
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -318,14 +68,14 @@ func TestExpectedConfigMap(t *testing.T) {
 					UID:       instanceUID,
 				},
 			},
-			Scheme:   testScheme,
-			Log:      logger,
-			Recorder: record.NewFakeRecorder(10),
+			Log: logger,
 		}
-		cm := desiredConfigMap(context.Background(), param)
-		createObjectIfNotExists(t, "test-collector", &cm)
+		cm := collector.ConfigMap(param.Config, param.Log, param.Instance)
+		createObjectIfNotExists(t, "test-collector", cm)
 
-		err := expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{desiredConfigMap(context.Background(), params())}, true)
+		param = params()
+
+		err := expectedConfigMaps(context.Background(), params(), []*v1.ConfigMap{collector.ConfigMap(param.Config, param.Log, param.Instance)}, true)
 		assert.NoError(t, err)
 
 		actual := v1.ConfigMap{}
@@ -339,8 +89,7 @@ func TestExpectedConfigMap(t *testing.T) {
 
 	t.Run("should update target allocator config map", func(t *testing.T) {
 
-		param := Params{
-			Client: k8sClient,
+		param := manifests.Params{
 			Instance: v1alpha1.OpenTelemetryCollector{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "opentelemetry.io",
@@ -368,16 +117,15 @@ func TestExpectedConfigMap(t *testing.T) {
 					Config: "",
 				},
 			},
-			Scheme: testScheme,
-			Log:    logger,
 		}
-		cm, err := desiredTAConfigMap(param)
+		cm, err := targetallocator.ConfigMap(param.Config, param.Log, param.Instance)
 		assert.EqualError(t, err, "no receivers available as part of the configuration")
-		createObjectIfNotExists(t, "test-targetallocator", &cm)
+		createObjectIfNotExists(t, "test-targetallocator", cm)
 
-		configMap, err := desiredTAConfigMap(params())
+		newParam := params()
+		configMap, err := targetallocator.ConfigMap(newParam.Config, newParam.Log, newParam.Instance)
 		assert.NoError(t, err)
-		err = expectedConfigMaps(context.Background(), params(), []v1.ConfigMap{configMap}, true)
+		err = expectedConfigMaps(context.Background(), params(), []*v1.ConfigMap{configMap}, true)
 		assert.NoError(t, err)
 
 		actual := v1.ConfigMap{}
@@ -395,6 +143,7 @@ func TestExpectedConfigMap(t *testing.T) {
 			"app.kubernetes.io/instance":   "default.test",
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 			"app.kubernetes.io/component":  "opentelemetry-collector",
+			"app.kubernetes.io/part-of":    "opentelemetry",
 		}
 		taConfig["config"] = promConfig["config"]
 		taConfig["allocation_strategy"] = "least-weighted"
@@ -419,8 +168,8 @@ func TestExpectedConfigMap(t *testing.T) {
 
 		exists, _ := populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-delete-collector"})
 		assert.True(t, exists)
-
-		err := deleteConfigMaps(context.Background(), params(), []v1.ConfigMap{desiredConfigMap(context.Background(), params())})
+		param := params()
+		err := deleteConfigMaps(context.Background(), params(), []*v1.ConfigMap{collector.ConfigMap(param.Config, param.Log, param.Instance)})
 		assert.NoError(t, err)
 
 		exists, _ = populateObjectIfExists(t, &v1.ConfigMap{}, types.NamespacedName{Namespace: "default", Name: "test-delete-collector"})

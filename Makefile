@@ -176,6 +176,11 @@ generate: controller-gen api-docs
 e2e:
 	$(KUTTL) test
 
+# end-to-end-test for PrometheusCR E2E tests
+.PHONY: e2e-prometheuscr
+e2e-prometheuscr:
+	$(KUTTL) test --config kuttl-test-prometheuscr.yaml
+
 # end-to-end-test for testing upgrading
 .PHONY: e2e-upgrade
 e2e-upgrade: undeploy
@@ -197,8 +202,13 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-openshift-routes load-image-all deploy
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server load-image-all deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+
+.PHONY: enable-prometheus-feature-flag
+enable-prometheus-feature-flag:
+	$(SED) -i "s#--feature-gates=+operator.autoinstrumentation.go#--feature-gates=+operator.autoinstrumentation.go,+operator.observability.prometheus#g" config/default/manager_auth_proxy_patch.yaml
+
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -238,9 +248,9 @@ endif
 install-metrics-server:
 	./hack/install-metrics-server.sh
 
-.PHONY: install-openshift-routes
-install-openshift-routes:
-	./hack/install-openshift-routes.sh
+.PHONY: install-prometheus-operator
+install-prometheus-operator:
+	./hack/install-prometheus-operator.sh
 
 .PHONY: load-image-all
 load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge

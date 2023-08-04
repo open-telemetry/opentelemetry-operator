@@ -18,14 +18,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
 func TestExpectedStatefulsets(t *testing.T) {
@@ -33,7 +33,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 	expectedSs := collector.StatefulSet(param.Config, logger, param.Instance)
 
 	t.Run("should create StatefulSet", func(t *testing.T) {
-		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		err := expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
 		actual := v1.StatefulSet{}
@@ -45,8 +45,8 @@ func TestExpectedStatefulsets(t *testing.T) {
 
 	})
 	t.Run("should update statefulset", func(t *testing.T) {
-		createObjectIfNotExists(t, "test-collector", &expectedSs)
-		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		createObjectIfNotExists(t, "test-collector", expectedSs)
+		err := expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
 		actual := v1.StatefulSet{}
@@ -86,7 +86,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 
 		createObjectIfNotExists(t, "dummy", &ds)
 
-		err := deleteStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		err := deleteStatefulSets(context.Background(), param, []*v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
 		actual := v1.StatefulSet{}
@@ -124,7 +124,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 
 		createObjectIfNotExists(t, "dummy", &ds)
 
-		err := deleteStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		err := deleteStatefulSets(context.Background(), param, []*v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
 		actual := v1.StatefulSet{}
@@ -141,7 +141,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 		oldSs.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
 		oldSs.Name = "update-selector"
 
-		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{oldSs})
+		err := expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{oldSs})
 		assert.NoError(t, err)
 		exists, err := populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
 		assert.NoError(t, err)
@@ -149,13 +149,13 @@ func TestExpectedStatefulsets(t *testing.T) {
 
 		newSs := collector.StatefulSet(param.Config, logger, param.Instance)
 		newSs.Name = oldSs.Name
-		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{newSs})
+		err = expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{newSs})
 		assert.NoError(t, err)
 		exists, err = populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
 		assert.NoError(t, err)
 		assert.False(t, exists)
 
-		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{newSs})
+		err = expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{newSs})
 		assert.NoError(t, err)
 		actual := v1.StatefulSet{}
 		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
@@ -169,7 +169,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 		oldSs := collector.StatefulSet(param.Config, logger, param.Instance)
 		oldSs.Name = "update-volumeclaimtemplates"
 
-		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{oldSs})
+		err := expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{oldSs})
 		assert.NoError(t, err)
 		exists, err := populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
 		assert.NoError(t, err)
@@ -191,13 +191,13 @@ func TestExpectedStatefulsets(t *testing.T) {
 			}}}
 		newSs.Name = oldSs.Name
 
-		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{newSs})
+		err = expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{newSs})
 		assert.NoError(t, err)
 		exists, err = populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
 		assert.NoError(t, err)
 		assert.False(t, exists)
 
-		err = expectedStatefulSets(context.Background(), param, []v1.StatefulSet{newSs})
+		err = expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{newSs})
 		assert.NoError(t, err)
 		actual := v1.StatefulSet{}
 		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldSs.Name})

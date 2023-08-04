@@ -18,20 +18,21 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
 )
 
 func TestExpectedServiceAccounts(t *testing.T) {
 	t.Run("should create multiple service accounts", func(t *testing.T) {
-		desired := collector.ServiceAccount(params().Instance)
-		allocatorDesired := targetallocator.ServiceAccount(params().Instance)
-		err := expectedServiceAccounts(context.Background(), params(), []v1.ServiceAccount{desired, allocatorDesired})
+		param := params()
+		desired := collector.ServiceAccount(param.Config, param.Log, param.Instance)
+		allocatorDesired := targetallocator.ServiceAccount(param.Config, param.Log, param.Instance)
+		err := expectedServiceAccounts(context.Background(), params(), []*v1.ServiceAccount{desired, allocatorDesired})
 		assert.NoError(t, err)
 
 		exists, err := populateObjectIfExists(t, &v1.ServiceAccount{}, types.NamespacedName{Namespace: "default", Name: "test-collector"})
@@ -56,7 +57,9 @@ func TestExpectedServiceAccounts(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		err = expectedServiceAccounts(context.Background(), params(), []v1.ServiceAccount{collector.ServiceAccount(params().Instance)})
+		param := params()
+		desired := collector.ServiceAccount(param.Config, param.Log, param.Instance)
+		err = expectedServiceAccounts(context.Background(), params(), []*v1.ServiceAccount{desired})
 		assert.NoError(t, err)
 
 		actual := v1.ServiceAccount{}
@@ -83,7 +86,9 @@ func TestDeleteServiceAccounts(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		err = deleteServiceAccounts(context.Background(), params(), []v1.ServiceAccount{collector.ServiceAccount(params().Instance)})
+		param := params()
+		desired := collector.ServiceAccount(param.Config, param.Log, param.Instance)
+		err = deleteServiceAccounts(context.Background(), params(), []*v1.ServiceAccount{desired})
 		assert.NoError(t, err)
 
 		exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, types.NamespacedName{Namespace: "default", Name: "test-delete-collector"})
@@ -107,7 +112,9 @@ func TestDeleteServiceAccounts(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		err = deleteServiceAccounts(context.Background(), params(), []v1.ServiceAccount{collector.ServiceAccount(params().Instance)})
+		param := params()
+		desired := collector.ServiceAccount(param.Config, param.Log, param.Instance)
+		err = deleteServiceAccounts(context.Background(), params(), []*v1.ServiceAccount{desired})
 		assert.NoError(t, err)
 
 		exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, types.NamespacedName{Namespace: "default", Name: "test-delete-collector"})
@@ -116,31 +123,4 @@ func TestDeleteServiceAccounts(t *testing.T) {
 
 	})
 
-}
-
-func TestDesiredServiceAccounts(t *testing.T) {
-	t.Run("should not create any service account", func(t *testing.T) {
-		params := params()
-		params.Instance.Spec.ServiceAccount = "existing-collector-sa"
-		params.Instance.Spec.TargetAllocator.Enabled = true
-		params.Instance.Spec.TargetAllocator.ServiceAccount = "existing-allocator-sa"
-		desired := desiredServiceAccounts(params)
-		assert.Len(t, desired, 0)
-	})
-
-	t.Run("should create collector service account", func(t *testing.T) {
-		params := params()
-		desired := desiredServiceAccounts(params)
-		assert.Len(t, desired, 1)
-		assert.Equal(t, collector.ServiceAccount(params.Instance), desired[0])
-	})
-
-	t.Run("should create targetallocator service account", func(t *testing.T) {
-		params := params()
-		params.Instance.Spec.ServiceAccount = "existing-collector-sa"
-		params.Instance.Spec.TargetAllocator.Enabled = true
-		desired := desiredServiceAccounts(params)
-		assert.Len(t, desired, 1)
-		assert.Equal(t, targetallocator.ServiceAccount(params.Instance), desired[0])
-	})
 }

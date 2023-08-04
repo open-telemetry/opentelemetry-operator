@@ -28,6 +28,8 @@ spec:
     enabled: true
     serviceAccount: ta
     image: "local/opentelemetry-operator-targetallocator:e2e"
+    prometheusCR:
+      enabled: true
   config: |
     receivers:
       jaeger:
@@ -42,9 +44,9 @@ spec:
               scrape_interval: 10s
               static_configs:
                 - targets: [ '0.0.0.0:8888' ]
-    
+
     processors:
-    
+
     exporters:
       logging:
     service:

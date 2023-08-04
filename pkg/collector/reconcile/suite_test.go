@@ -25,7 +25,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
+
 	routev1 "github.com/openshift/api/route/v1"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -37,7 +41,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,7 +50,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/testdata"
 )
 
 var (
@@ -60,8 +62,6 @@ var (
 	logger = logf.Log.WithName("unit-tests")
 
 	instanceUID = uuid.NewUUID()
-	err         error
-	cfg         *rest.Config
 )
 
 const (
@@ -76,13 +76,16 @@ func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		CRDInstallOptions: envtest.CRDInstallOptions{
-			CRDs: []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD},
+			CRDs: []*apiextensionsv1.CustomResourceDefinition{
+				testdata.OpenShiftRouteCRD,
+				testdata.ServiceMonitorCRD,
+			},
 		},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
 		},
 	}
-	cfg, err = testEnv.Start()
+	cfg, err := testEnv.Start()
 	if err != nil {
 		fmt.Printf("failed to start testEnv: %v", err)
 		os.Exit(1)
@@ -94,6 +97,11 @@ func TestMain(m *testing.M) {
 	}
 
 	if err = v1alpha1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+
+	if err = monitoringv1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}
@@ -175,17 +183,17 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func params() Params {
+func params() manifests.Params {
 	return paramsWithMode(v1alpha1.ModeDeployment)
 }
 
-func paramsWithMode(mode v1alpha1.Mode) Params {
+func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 	replicas := int32(2)
-	configYAML, err := os.ReadFile("../testdata/test.yaml")
+	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	return Params{
+	return manifests.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
 		Client: k8sClient,
 		Instance: v1alpha1.OpenTelemetryCollector{
@@ -220,23 +228,23 @@ func paramsWithMode(mode v1alpha1.Mode) Params {
 	}
 }
 
-func newParams(taContainerImage string, file string) (Params, error) {
+func newParams(taContainerImage string, file string) (manifests.Params, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
 
 	if file == "" {
-		configYAML, err = os.ReadFile("../testdata/test.yaml")
+		configYAML, err = os.ReadFile("testdata/test.yaml")
 	} else {
 		configYAML, err = os.ReadFile(file)
 	}
 	if err != nil {
-		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
+		return manifests.Params{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}
 
 	cfg := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
 
-	return Params{
+	return manifests.Params{
 		Config: cfg,
 		Client: k8sClient,
 		Instance: v1alpha1.OpenTelemetryCollector{
