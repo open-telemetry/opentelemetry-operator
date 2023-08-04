@@ -66,9 +66,9 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				ConfigMaps: []string{"configmap-test"},
-			},
-		}
+			ConfigMaps: []string{"configmap-test"},
+		},
+	}
 	cfg := config.New()
 
 	// test
