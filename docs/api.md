@@ -3640,6 +3640,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>configMaps</b></td>
+        <td>[]string</td>
+        <td>
+          ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetry object, which shall be mounted into the Collector Pods. Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
