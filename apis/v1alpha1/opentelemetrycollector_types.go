@@ -89,7 +89,7 @@ type OpenTelemetryCollectorSpec struct {
 	//
 	// +required
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default:=Managed
+	// +kubebuilder:default:=managed
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
 	// Resources to set on the OpenTelemetry Collector pods.
 	// +optional
