@@ -2927,8 +2927,8 @@ spec:
                 description: ManagementState defines if the CR should be managed by
                   the operator or not. Default is managed.
                 enum:
-                - Managed
-                - Unmanaged
+                - managed
+                - unmanaged
                 type: string
               maxReplicas:
                 description: 'MaxReplicas sets an upper bound to the autoscaling feature.
