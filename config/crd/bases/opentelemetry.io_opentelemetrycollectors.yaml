@@ -2923,7 +2923,7 @@ spec:
                     type: integer
                 type: object
               managementState:
-                default: Managed
+                default: managed
                 description: ManagementState defines if the CR should be managed by
                   the operator or not. Default is managed.
                 enum:
