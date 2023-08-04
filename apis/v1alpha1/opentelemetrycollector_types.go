@@ -213,7 +213,20 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
 
-	// AdditionalContainers allows injecting containers to run as sidecars in the pod definition.
+	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
+	// These sidecar containers can be used to authentication proxies, logging shipping sidecars, agents for shipping
+	// to metrics to their cloud, or in general sidecars that do not support automatic injection. This option only
+	// applies to Deployment, DaemonSet, and StatefulSet deployments of the collector. It does not apply to the sidecar
+	// method. More info:
+	// https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
+	//
+	// Container names managed by the operator:
+	// * `otc-container`
+	//
+	// Overriding containers managed by the operator is outside the scope of what the maintainers will support and by
+	// doing so, you wil accept the risk of it breaking things.
+	//
+	// +optional
 	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
