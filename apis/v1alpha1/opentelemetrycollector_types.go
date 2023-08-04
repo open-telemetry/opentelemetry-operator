@@ -227,6 +227,11 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only relevant to statefulset, and deployment mode
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+
+	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetry
+	// object, which shall be mounted into the Collector Pods.
+	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
+	ConfigMaps []string `json:"configMaps,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
