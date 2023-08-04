@@ -3708,8 +3708,8 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>
           ManagementState defines if the CR should be managed by the operator or not. Default is managed.<br/>
           <br/>
-            <i>Enum</i>: Managed, Unmanaged<br/>
-            <i>Default</i>: Managed<br/>
+            <i>Enum</i>: managed, unmanaged<br/>
+            <i>Default</i>: managed<br/>
         </td>
         <td>false</td>
       </tr><tr>
