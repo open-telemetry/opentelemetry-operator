@@ -39,15 +39,14 @@ func ServiceMonitors(ctx context.Context, params manifests.Params) error {
 
 	var desired []*monitoringv1.ServiceMonitor
 
-	if params.Instance.Spec.Observability.Metrics.EnableMetrics {
-		if sm, err := collector.ServiceMonitor(params.Config, params.Log, params.Instance); err != nil {
-			return err
-		} else {
-			desired = append(desired, sm)
-		}
+	sm, err := collector.ServiceMonitor(params.Config, params.Log, params.Instance)
+	if err != nil {
+		return err
 	}
 
-	desired = append(desired, collector.ServiceMonitorFromConfig(params.Config, params.Log, params.Instance)...)
+	if sm != nil {
+		desired = append(desired, sm)
+	}
 
 	// first, handle the create/update parts
 	if err := expectedServiceMonitors(ctx, params, desired); err != nil {

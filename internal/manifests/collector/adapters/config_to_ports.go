@@ -45,19 +45,19 @@ var (
 // ConfigToExporterPorts converts the incoming configuration object into a set of service ports required by the exporters.
 func ConfigToExporterPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
 	// now, we gather which ports we might need to open
-	// for that, we get all the receivers and check their `endpoint` properties,
+	// for that, we get all the exporters and check their `endpoint` properties,
 	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
-	// ${instance.Name}-${receiver.name}-${receiver.qualifier}
-	// the receiver-name is typically the node name from the receivers map
-	// the receiver-qualifier is what comes after the slash in the receiver name, but typically nil
+	// ${instance.Name}-${exporter.name}-${exporter.qualifier}
+	// the exporter-name is typically the node name from the exporters map
+	// the exporter-qualifier is what comes after the slash in the exporter name, but typically nil
 	// examples:
 	// ```yaml
 	// exporters:
-	//   examplereceiver:
+	//   exampleexporter:
 	//     endpoint: 0.0.0.0:12345
-	//   examplereceiver/settings:
+	//   exampleexporter/settings:
 	//     endpoint: 0.0.0.0:12346
-	// in this case, we have two ports, named: "examplereceiver" and "examplereceiver-settings"
+	// in this case, we have two ports, named: "exampleexporter" and "exampleexporter-settings"
 	exportersProperty, ok := config["exporters"]
 	if !ok {
 		return nil, ErrNoExporters

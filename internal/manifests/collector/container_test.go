@@ -81,18 +81,18 @@ service:
 		specPorts     []corev1.ServicePort
 		expectedPorts []corev1.ContainerPort
 	}{
-		// {
-		// 	description:   "bad spec config",
-		// 	specConfig:    "🦄",
-		// 	specPorts:     nil,
-		// 	expectedPorts: []corev1.ContainerPort{},
-		// },
-		// {
-		// 	description:   "couldn't build ports from spec config",
-		// 	specConfig:    "",
-		// 	specPorts:     nil,
-		// 	expectedPorts: []corev1.ContainerPort{metricContainerPort},
-		// },
+		{
+			description:   "bad spec config",
+			specConfig:    "🦄",
+			specPorts:     nil,
+			expectedPorts: []corev1.ContainerPort{},
+		},
+		{
+			description:   "couldn't build ports from spec config",
+			specConfig:    "",
+			specPorts:     nil,
+			expectedPorts: []corev1.ContainerPort{metricContainerPort},
+		},
 		{
 			description: "ports in spec Config",
 			specConfig:  goodConfig,
