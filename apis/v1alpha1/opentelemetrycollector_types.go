@@ -23,17 +23,17 @@ import (
 
 // ManagementStateType defines the type for CR management states.
 //
-// +kubebuilder:validation:Enum=Managed;Unmanaged
+// +kubebuilder:validation:Enum=managed;unmanaged
 type ManagementStateType string
 
 const (
 	// ManagementStateManaged when the OpenTelemetryCollector custom resource should be
 	// reconciled by the operator.
-	ManagementStateManaged ManagementStateType = "Managed"
+	ManagementStateManaged ManagementStateType = "managed"
 
 	// ManagementStateUnmanaged when the OpenTelemetryCollector custom resource should not be
 	// reconciled by the operator.
-	ManagementStateUnmanaged ManagementStateType = "Unmanaged"
+	ManagementStateUnmanaged ManagementStateType = "unmanaged"
 )
 
 // Ingress is used to specify how OpenTelemetry Collector is exposed. This
@@ -89,7 +89,7 @@ type OpenTelemetryCollectorSpec struct {
 	//
 	// +required
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default:=Managed
+	// +kubebuilder:default:=managed
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
 	// Resources to set on the OpenTelemetry Collector pods.
 	// +optional

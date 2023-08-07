@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  managementState: Unmanaged
+  managementState: unmanaged
   config: |
     receivers:
       otlp:

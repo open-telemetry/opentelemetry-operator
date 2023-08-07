@@ -44,5 +44,9 @@ spec:
   - name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
 status:
   phase: Running
