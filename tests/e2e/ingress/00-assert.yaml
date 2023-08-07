@@ -38,10 +38,3 @@ spec:
               name: otlp-http
         path: /otlp-http
         pathType: Prefix
-      - backend:
-          service:
-            name: simplest-collector
-            port:
-              name: otlp-http-legac
-        path: /otlp-http-legacy
-        pathType: Prefix

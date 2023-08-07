@@ -182,6 +182,19 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 		}
 	}
+
+	pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext)
+
+	return pod
+}
+
+func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityContext *corev1.SecurityContext) corev1.Pod {
+	for i, initContainer := range pod.Spec.InitContainers {
+		if initContainer.Name == initContainerName {
+			pod.Spec.InitContainers[i].SecurityContext = securityContext
+		}
+	}
+
 	return pod
 }
 

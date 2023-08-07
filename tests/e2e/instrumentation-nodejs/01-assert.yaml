@@ -42,6 +42,10 @@ spec:
   - name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation-nodejs
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
     resources:
       limits:
         cpu: "500m"

@@ -3703,6 +3703,16 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>managementState</b></td>
+        <td>enum</td>
+        <td>
+          ManagementState defines if the CR should be managed by the operator or not. Default is managed.<br/>
+          <br/>
+            <i>Enum</i>: managed, unmanaged<br/>
+            <i>Default</i>: managed<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>maxReplicas</b></td>
         <td>integer</td>
         <td>

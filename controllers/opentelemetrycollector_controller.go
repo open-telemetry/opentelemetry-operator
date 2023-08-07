@@ -34,6 +34,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -53,7 +54,7 @@ type OpenTelemetryCollectorReconciler struct {
 
 // Task represents a reconciliation task to be executed by the reconciler.
 type Task struct {
-	Do          func(context.Context, reconcile.Params) error
+	Do          func(context.Context, manifests.Params) error
 	Name        string
 	BailOnError bool
 }
@@ -206,7 +207,13 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params := reconcile.Params{
+	if instance.Spec.ManagementState != v1alpha1.ManagementStateManaged {
+		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
+		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
+		return ctrl.Result{}, nil
+	}
+
+	params := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
 		Instance: instance,
@@ -223,7 +230,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 }
 
 // RunTasks runs all the tasks associated with this reconciler.
-func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params reconcile.Params) error {
+func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params manifests.Params) error {
 	r.muTasks.RLock()
 	defer r.muTasks.RUnlock()
 	for _, task := range r.tasks {

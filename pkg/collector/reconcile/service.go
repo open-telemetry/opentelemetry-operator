@@ -21,43 +21,35 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
-)
-
-// headless label is to differentiate the headless service from the clusterIP service.
-const (
-	headlessLabel  = "operator.opentelemetry.io/collector-headless-service"
-	headlessExists = "Exists"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 )
 
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 
 // Services reconciles the service(s) required for the instance in the current context.
-func Services(ctx context.Context, params Params) error {
-	desired := []corev1.Service{}
+func Services(ctx context.Context, params manifests.Params) error {
+	var desired []*corev1.Service
 	if params.Instance.Spec.Mode != v1alpha1.ModeSidecar {
-		type builder func(context.Context, Params) *corev1.Service
-		for _, builder := range []builder{desiredService, headless, monitoringService} {
-			svc := builder(ctx, params)
+		type builder func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service
+		for _, builder := range []builder{collector.Service, collector.HeadlessService, collector.MonitoringService} {
+			svc := builder(params.Config, params.Log, params.Instance)
 			// add only the non-nil to the list
 			if svc != nil {
-				desired = append(desired, *svc)
+				desired = append(desired, svc)
 			}
 		}
 	}
 
 	if params.Instance.Spec.TargetAllocator.Enabled {
-		desired = append(desired, desiredTAService(params))
+		desired = append(desired, targetallocator.Service(params.Config, params.Log, params.Instance))
 	}
 
 	// first, handle the create/update parts
@@ -73,152 +65,11 @@ func Services(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredService(ctx context.Context, params Params) *corev1.Service {
-	name := naming.Service(params.Instance)
-	labels := collector.Labels(params.Instance, name, []string{})
-
-	config, err := adapters.ConfigFromString(params.Instance.Spec.Config)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil
-	}
-
-	ports, err := adapters.ConfigToReceiverPorts(params.Log, config)
-	if err != nil {
-		params.Log.Error(err, "couldn't build the service for this instance")
-		return nil
-	}
-
-	if len(params.Instance.Spec.Ports) > 0 {
-		// we should add all the ports from the CR
-		// there are two cases where problems might occur:
-		// 1) when the port number is already being used by a receiver
-		// 2) same, but for the port name
-		//
-		// in the first case, we remove the port we inferred from the list
-		// in the second case, we rename our inferred port to something like "port-%d"
-		portNumbers, portNames := extractPortNumbersAndNames(params.Instance.Spec.Ports)
-		resultingInferredPorts := []corev1.ServicePort{}
-		for _, inferred := range ports {
-			if filtered := filterPort(params.Log, inferred, portNumbers, portNames); filtered != nil {
-				resultingInferredPorts = append(resultingInferredPorts, *filtered)
-			}
-		}
-
-		ports = append(params.Instance.Spec.Ports, resultingInferredPorts...)
-	}
-
-	// if we have no ports, we don't need a service
-	if len(ports) == 0 {
-		params.Log.V(1).Info("the instance's configuration didn't yield any ports to open, skipping service", "instance.name", params.Instance.Name, "instance.namespace", params.Instance.Namespace)
-		return nil
-	}
-
-	trafficPolicy := corev1.ServiceInternalTrafficPolicyCluster
-	if params.Instance.Spec.Mode == v1alpha1.ModeDaemonSet {
-		trafficPolicy = corev1.ServiceInternalTrafficPolicyLocal
-	}
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Service(params.Instance),
-			Namespace:   params.Instance.Namespace,
-			Labels:      labels,
-			Annotations: params.Instance.Annotations,
-		},
-		Spec: corev1.ServiceSpec{
-			InternalTrafficPolicy: &trafficPolicy,
-			Selector:              collector.SelectorLabels(params.Instance),
-			ClusterIP:             "",
-			Ports:                 ports,
-		},
-	}
-}
-
-func desiredTAService(params Params) corev1.Service {
-	name := naming.TAService(params.Instance)
-	labels := targetallocator.Labels(params.Instance, name)
-
-	selector := targetallocator.Labels(params.Instance, name)
-
-	return corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(params.Instance),
-			Namespace: params.Instance.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: selector,
-			Ports: []corev1.ServicePort{{
-				Name:       "targetallocation",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-}
-
-func headless(ctx context.Context, params Params) *corev1.Service {
-	h := desiredService(ctx, params)
-	if h == nil {
-		return nil
-	}
-
-	h.Name = naming.HeadlessService(params.Instance)
-	h.Labels[headlessLabel] = headlessExists
-
-	// copy to avoid modifying params.Instance.Annotations
-	annotations := map[string]string{
-		"service.beta.openshift.io/serving-cert-secret-name": fmt.Sprintf("%s-tls", h.Name),
-	}
-	for k, v := range h.Annotations {
-		annotations[k] = v
-	}
-	h.Annotations = annotations
-
-	h.Spec.ClusterIP = "None"
-	return h
-}
-
-func monitoringService(ctx context.Context, params Params) *corev1.Service {
-	name := naming.MonitoringService(params.Instance)
-	labels := collector.Labels(params.Instance, name, []string{})
-
-	c, err := adapters.ConfigFromString(params.Instance.Spec.Config)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration")
-		return nil
-	}
-
-	metricsPort, err := adapters.ConfigToMetricsPort(params.Log, c)
-	if err != nil {
-		params.Log.V(2).Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
-		metricsPort = 8888
-	}
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   params.Instance.Namespace,
-			Labels:      labels,
-			Annotations: params.Instance.Annotations,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector:  collector.SelectorLabels(params.Instance),
-			ClusterIP: "",
-			Ports: []corev1.ServicePort{{
-				Name: "monitoring",
-				Port: metricsPort,
-			}},
-		},
-	}
-}
-
-func expectedServices(ctx context.Context, params Params, expected []corev1.Service) error {
+func expectedServices(ctx context.Context, params manifests.Params, expected []*corev1.Service) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -226,7 +77,7 @@ func expectedServices(ctx context.Context, params Params, expected []corev1.Serv
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if clientErr := params.Client.Create(ctx, &desired); clientErr != nil {
+			if clientErr := params.Client.Create(ctx, desired); clientErr != nil {
 				return fmt.Errorf("failed to create: %w", clientErr)
 			}
 			params.Log.V(2).Info("created", "service.name", desired.Name, "service.namespace", desired.Namespace)
@@ -266,7 +117,7 @@ func expectedServices(ctx context.Context, params Params, expected []corev1.Serv
 	return nil
 }
 
-func deleteServices(ctx context.Context, params Params, expected []corev1.Service) error {
+func deleteServices(ctx context.Context, params manifests.Params, expected []*corev1.Service) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -298,42 +149,4 @@ func deleteServices(ctx context.Context, params Params, expected []corev1.Servic
 	}
 
 	return nil
-}
-
-func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {
-	if portNumbers[candidate.Port] {
-		return nil
-	}
-
-	// do we have the port name there already?
-	if portNames[candidate.Name] {
-		// there's already a port with the same name! do we have a 'port-%d' already?
-		fallbackName := fmt.Sprintf("port-%d", candidate.Port)
-		if portNames[fallbackName] {
-			// that wasn't expected, better skip this port
-			logger.V(2).Info("a port name specified in the CR clashes with an inferred port name, and the fallback port name clashes with another port name! Skipping this port.",
-				"inferred-port-name", candidate.Name,
-				"fallback-port-name", fallbackName,
-			)
-			return nil
-		}
-
-		candidate.Name = fallbackName
-		return &candidate
-	}
-
-	// this port is unique, return as is
-	return &candidate
-}
-
-func extractPortNumbersAndNames(ports []corev1.ServicePort) (map[int32]bool, map[string]bool) {
-	numbers := map[int32]bool{}
-	names := map[string]bool{}
-
-	for _, port := range ports {
-		numbers[port.Port] = true
-		names[port.Name] = true
-	}
-
-	return numbers, names
 }
