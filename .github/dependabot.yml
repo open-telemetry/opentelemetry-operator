@@ -11,8 +11,11 @@ updates:
           - "golang.org/x/*"
       prometheus:
         patterns:
+          - "github.com/prometheus-operator/prometheus-operator"
           - "github.com/prometheus-operator/prometheus-operator/*"
+          - "github.com/prometheus/prometheus"
           - "github.com/prometheus/prometheus/*"
+          - "github.com/prometheus/client_go"
           - "github.com/prometheus/client_go/*"
       kubernetes:
         patterns:
@@ -28,8 +31,11 @@ updates:
           - "golang.org/x/*"
       prometheus:
         patterns:
+          - "github.com/prometheus-operator/prometheus-operator"
           - "github.com/prometheus-operator/prometheus-operator/*"
+          - "github.com/prometheus/prometheus"
           - "github.com/prometheus/prometheus/*"
+          - "github.com/prometheus/client_go"
           - "github.com/prometheus/client_go/*"
       kubernetes:
         patterns:
@@ -45,8 +51,11 @@ updates:
           - "golang.org/x/*"
       prometheus:
         patterns:
+          - "github.com/prometheus-operator/prometheus-operator"
           - "github.com/prometheus-operator/prometheus-operator/*"
+          - "github.com/prometheus/prometheus"
           - "github.com/prometheus/prometheus/*"
+          - "github.com/prometheus/client_go"
           - "github.com/prometheus/client_go/*"
       kubernetes:
         patterns:
