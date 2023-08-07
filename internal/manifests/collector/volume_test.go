@@ -66,7 +66,15 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			ConfigMaps: []string{"configmap-test"},
+			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
+					Name: "configmap-test",
+					MountPath: "/var/conf/",
+				},
+				{
+					Name: "configmap-test2",
+					MountPath: "/var/conf/",
+				},
+			},
 		},
 	}
 	cfg := config.New()
@@ -75,8 +83,9 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	volumes := Volumes(cfg, otelcol)
 
 	// verify
-	assert.Len(t, volumes, 2)
+	assert.Len(t, volumes, 3)
 
 	// check if the volume with the configmap prefix is mounted after defining the config map.
 	assert.Equal(t, "configmap_configmap-test", volumes[1].Name)
+	assert.Equal(t, "configmap_configmap-test2", volumes[2].Name)
 }

@@ -43,13 +43,13 @@ func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev
 	}
 
 	if len(otelcol.Spec.ConfigMaps) > 0 {
-		for _, cfgMap := range otelcol.Spec.ConfigMaps {
+		for keyCfgMap := range otelcol.Spec.ConfigMaps {
 			volumes = append(volumes, corev1.Volume{
-				Name: "configmap_" + cfgMap,
+				Name: "configmap_" + otelcol.Spec.ConfigMaps[keyCfgMap].Name,
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cfgMap,
+							Name: otelcol.Spec.ConfigMaps[keyCfgMap].Name,
 						},
 					},
 				},

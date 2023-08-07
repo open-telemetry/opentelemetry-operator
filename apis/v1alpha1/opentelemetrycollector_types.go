@@ -228,10 +228,10 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
-	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetry
+	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
-	ConfigMaps []string `json:"configMaps,omitempty"`
+	ConfigMaps []ConfigMapsSpec `json:"configmaps,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
@@ -474,6 +474,11 @@ type MetricSpec struct {
 	Pods *autoscalingv2.PodsMetricSource `json:"pods,omitempty"`
 }
 
+type ConfigMapsSpec struct {
+	// Configmap defines name and path where the configMaps should be mounted.
+	Name      string `json:"name,omitempty"`
+	MountPath string `json:"mountpath,omitempty"`
+}
 func init() {
 	SchemeBuilder.Register(&OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
 }

@@ -107,6 +107,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		},
 	})
 
+	if len(otelcol.Spec.ConfigMaps) > 0 {
+		for keyCfgMap := range otelcol.Spec.ConfigMaps {
+			volumeMounts = append(volumeMounts, corev1.VolumeMount{
+				Name: otelcol.Spec.ConfigMaps[keyCfgMap].Name,
+				MountPath: otelcol.Spec.ConfigMaps[keyCfgMap].MountPath+"/"+otelcol.Spec.ConfigMaps[keyCfgMap].Name,
+			})
+		}
+	}
+
 	if otelcol.Spec.TargetAllocator.Enabled {
 		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
 		// added by default by the Prometheus operator's config generator.
