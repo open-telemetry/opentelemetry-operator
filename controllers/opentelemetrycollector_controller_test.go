@@ -39,6 +39,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -157,7 +158,6 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 
 	// cleanup
 	require.NoError(t, k8sClient.Delete(context.Background(), created))
-
 }
 
 func TestNewStatefulSetObjectsOnReconciliation(t *testing.T) {
@@ -281,7 +281,7 @@ func TestBreakOnUnrecoverableError(t *testing.T) {
 	// prepare
 	cfg := config.New()
 	taskCalled := false
-	expectedErr := errors.New("should fail")
+	expectedErr := errors.New("failed to create objects")
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{
 		Client: k8sClient,
@@ -322,8 +322,12 @@ func TestBreakOnUnrecoverableError(t *testing.T) {
 	_, err = reconciler.Reconcile(context.Background(), req)
 
 	// verify
-	assert.Equal(t, expectedErr, err)
-	assert.True(t, taskCalled)
+	assert.ErrorContains(t, err, expectedErr.Error())
+
+	// We always expect an error
+	if !featuregate.UseManifestReconciliation.IsEnabled() {
+		assert.True(t, taskCalled)
+	}
 
 	// cleanup
 	assert.NoError(t, k8sClient.Delete(context.Background(), created))

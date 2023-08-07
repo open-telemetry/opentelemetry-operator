@@ -17,17 +17,22 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/go-logr/logr"
+	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -216,6 +221,15 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	params := r.GetParams(instance)
+
+	if featuregate.UseManifestReconciliation.IsEnabled() {
+		err := r.doCRUD(ctx, params)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
 	if err := r.RunTasks(ctx, params); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -268,6 +282,88 @@ func (r *OpenTelemetryCollectorReconciler) BuildAll(params manifests.Params) ([]
 		resources = append(resources, objs...)
 	}
 	return resources, nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params manifests.Params) error {
+	// Collect all objects owned by the operator, to be able to prune objects
+	// which exist in the cluster but are not managed by the operator anymore.
+	pruneObjects, err := r.findObjectsOwnedByOtelOperator(ctx, params)
+	if err != nil {
+		return err
+	}
+	managedObjects, err := r.BuildAll(params)
+	if err != nil {
+		return err
+	}
+	var errs []error
+	for _, obj := range managedObjects {
+		l := r.log.WithValues(
+			"object_name", obj.GetName(),
+			"object_kind", obj.GetObjectKind(),
+		)
+		desired := obj.DeepCopyObject().(client.Object)
+		mutateFn := manifests.MutateFuncFor(obj, desired)
+		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
+		if crudErr != nil {
+			l.Error(crudErr, "failed to configure resource")
+			errs = append(errs, crudErr)
+			continue
+		}
+
+		l.V(1).Info(fmt.Sprintf("resource has been %s", op))
+
+		delete(pruneObjects, obj.GetUID())
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to create objects for Collector %s: %w", params.Instance.GetName(), errors.Join(errs...))
+	}
+
+	// Prune owned objects in the cluster which are not managed anymore.
+	var pruneErrs []error
+	for _, obj := range pruneObjects {
+		l := r.log.WithValues(
+			"object_name", obj.GetName(),
+			"object_kind", obj.GetObjectKind(),
+		)
+		l.Info("pruning unmanaged resource")
+
+		err = r.Delete(ctx, obj)
+		if err != nil {
+			l.Error(err, "failed to delete resource")
+			pruneErrs = append(pruneErrs, err)
+		}
+	}
+	if len(pruneErrs) > 0 {
+		return fmt.Errorf("failed to prune objects of Collector %s: %w", params.Instance.GetName(), errors.Join(pruneErrs...))
+	}
+	return nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) findObjectsOwnedByOtelOperator(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
+	ownedObjects := map[types.UID]client.Object{}
+	listOps := &client.ListOptions{
+		Namespace:     params.Instance.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(collector.SelectorLabels(params.Instance)),
+	}
+	ingressList := &networkingv1.IngressList{}
+	err := r.List(ctx, ingressList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("error listing ingress: %w", err)
+	}
+	for i := range ingressList.Items {
+		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
+	}
+	if params.Instance.Spec.Ingress.Type == v1alpha1.IngressTypeRoute {
+		routesList := &routev1.RouteList{}
+		err = r.List(ctx, routesList, listOps)
+		if err != nil {
+			return nil, fmt.Errorf("error listing routes: %w", err)
+		}
+		for i := range routesList.Items {
+			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
+		}
+	}
+	return ownedObjects, nil
 }
 
 // SetupWithManager tells the manager what our controller is interested in.

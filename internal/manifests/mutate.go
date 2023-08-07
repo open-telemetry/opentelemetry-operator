@@ -241,7 +241,7 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 }
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
-	if ok, field := hasImmutableFieldChange(existing, desired); !ok {
+	if hasChange, field := hasImmutableFieldChange(existing, desired); hasChange {
 		return fmt.Errorf("attempting to mutate immutable field: %s", field)
 	}
 	// StatefulSet selector is immutable so we set this value only if

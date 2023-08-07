@@ -7,6 +7,7 @@ retract v1.51.0
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/go-logr/logr v1.2.4
+	github.com/imdario/mergo v0.3.13
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.66.0
@@ -57,6 +58,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/envoyproxy/go-control-plane v0.11.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.1 // indirect
+	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -95,7 +97,6 @@ require (
 	github.com/hashicorp/nomad/api v0.0.0-20230605233119-67e39d5d248f // indirect
 	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/hetznercloud/hcloud-go v1.45.1 // indirect
-	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/ionos-cloud/sdk-go/v6 v6.1.7 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
