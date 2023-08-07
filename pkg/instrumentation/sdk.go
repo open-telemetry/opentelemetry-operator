@@ -71,6 +71,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext)
 			}
 		}
 	}
@@ -89,6 +90,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext)
 			}
 		}
 	}
@@ -107,6 +109,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext)
 			}
 		}
 	}
@@ -125,6 +128,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext)
 			}
 		}
 	}
@@ -145,6 +149,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			// Common env vars and config need to be applied to the agent contain.
 			pod = i.injectCommonEnvVar(otelinst, pod, len(pod.Spec.Containers)-1)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, len(pod.Spec.Containers)-1, 0)
+			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext)
 
 			// Ensure that after all the env var coalescing we have a value for OTEL_GO_AUTO_TARGET_EXE
 			idx := getIndexOfEnv(pod.Spec.Containers[len(pod.Spec.Containers)-1].Env, envOtelTargetExe)
@@ -153,7 +158,6 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 				pod = origPod
 			}
 		}
-
 	}
 	if insts.ApacheHttpd.Instrumentation != nil {
 		otelinst := *insts.ApacheHttpd.Instrumentation
@@ -168,6 +172,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext)
 		}
 	}
 	if insts.Sdk.Instrumentation != nil {
@@ -180,10 +185,9 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			index := getContainerIndex(container, pod)
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext)
 		}
 	}
-
-	pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext)
 
 	return pod
 }
