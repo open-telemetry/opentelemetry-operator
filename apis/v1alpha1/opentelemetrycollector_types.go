@@ -479,6 +479,7 @@ type ConfigMapsSpec struct {
 	Name      string `json:"name,omitempty"`
 	MountPath string `json:"mountpath,omitempty"`
 }
+
 func init() {
 	SchemeBuilder.Register(&OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
 }
