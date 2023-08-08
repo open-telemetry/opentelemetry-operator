@@ -30,6 +30,14 @@ import (
 
 // ServiceMonitor returns the service monitor for the given instance.
 func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*monitoringv1.ServiceMonitor, error) {
+	if !otelcol.Spec.Observability.Metrics.EnableMetrics {
+		logger.V(2).Info("Metrics disabled for this OTEL Collector",
+			"otelcol.name", otelcol.Name,
+			"otelcol.namespace", otelcol.Namespace,
+		)
+		return nil, nil
+	}
+
 	sm := monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: otelcol.Namespace,
@@ -53,22 +61,13 @@ func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Open
 		},
 	}
 
-	endpoints := []monitoringv1.Endpoint{}
-
-	if otelcol.Spec.Observability.Metrics.EnableMetrics {
-		// Get metrics from the OTEL Collector
-		endpoints = append(endpoints, monitoringv1.Endpoint{
+	endpoints := []monitoringv1.Endpoint{
+		{
 			Port: "monitoring",
-		})
+		},
 	}
 
-	endpoints = append(endpoints, endpointsFromConfig(logger, otelcol)...)
-
-	if len(endpoints) > 0 {
-		sm.Spec.Endpoints = endpoints
-	} else {
-		return nil, nil
-	}
+	sm.Spec.Endpoints = append(endpoints, endpointsFromConfig(logger, otelcol)...)
 	return &sm, nil
 }
 

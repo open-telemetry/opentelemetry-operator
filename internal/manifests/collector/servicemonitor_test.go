@@ -38,11 +38,13 @@ func TestDesiredServiceMonitors(t *testing.T) {
 
 	params, err = newParams("", "testdata/prometheus-exporter.yaml")
 	assert.NoError(t, err)
+	params.Instance.Spec.Observability.Metrics.EnableMetrics = true
 	actual, err = ServiceMonitor(params.Config, params.Log, params.Instance)
 	assert.NoError(t, err)
 	assert.NotNil(t, actual)
 	assert.Equal(t, fmt.Sprintf("%s-collector", params.Instance.Name), actual.Name)
 	assert.Equal(t, params.Instance.Namespace, actual.Namespace)
-	assert.Equal(t, "prometheus-dev", actual.Spec.Endpoints[0].Port)
-	assert.Equal(t, "prometheus-prod", actual.Spec.Endpoints[1].Port)
+	assert.Equal(t, "monitoring", actual.Spec.Endpoints[0].Port)
+	assert.Equal(t, "prometheus-dev", actual.Spec.Endpoints[1].Port)
+	assert.Equal(t, "prometheus-prod", actual.Spec.Endpoints[2].Port)
 }
