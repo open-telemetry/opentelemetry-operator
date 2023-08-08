@@ -2,27 +2,25 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
+  namespace: create-sm-prometheus
 spec:
   observability:
     metrics:
-      enableMetrics: true
+      enableMetrics: false
   config: |
     receivers:
-      jaeger:
-        protocols:
-          grpc:
       otlp:
         protocols:
           grpc:
           http:
-    processors:
 
     exporters:
-      logging:
+      prometheus/prod:
+        endpoint: 0.0.0.0:9091
 
     service:
       pipelines:
-        traces:
-          receivers: [jaeger,otlp]
+        metrics:
+          receivers: [otlp]
           processors: []
-          exporters: [logging]
+          exporters: [prometheus/prod]

@@ -4,6 +4,9 @@ metadata:
   name: simplest
   namespace: create-sm-prometheus
 spec:
+  observability:
+    metrics:
+      enableMetrics: true
   config: |
     receivers:
       otlp:

@@ -9,6 +9,7 @@ metadata:
   namespace: create-sm-prometheus
 spec:
   endpoints:
+  - port: monitoring
   - port: prometheus-dev
   - port: prometheus-prod
   namespaceSelector:
@@ -43,3 +44,21 @@ spec:
     port: 8884
     protocol: TCP
     targetPort: 8884
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: create-sm-prometheus.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-collector-monitoring
+    app.kubernetes.io/part-of: opentelemetry
+  name: simplest-collector-monitoring
+  namespace: create-sm-prometheus
+spec:
+  ports:
+  - name: monitoring
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
