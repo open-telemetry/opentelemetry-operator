@@ -9,42 +9,8 @@ metadata:
   namespace: create-sm-prometheus
 spec:
   endpoints:
-  - metricRelabelings:
-    - action: replace
-      regex: instance
-      replacement: service.instance.id
-    - action: replace
-      regex: job
-      replacement: k8s.job.name
-    port: prometheus-dev
-    relabelings:
-    - action: replace
-      regex: pod
-      replacement: k8s.pod.name
-    - action: replace
-      regex: container
-      replacement: k8s.container.name
-    - action: replace
-      regex: endpoint
-      replacement: k8s.node.name
-  - metricRelabelings:
-    - action: replace
-      regex: instance
-      replacement: service.instance.id
-    - action: replace
-      regex: job
-      replacement: k8s.job.name
-    port: prometheus-prod
-    relabelings:
-    - action: replace
-      regex: pod
-      replacement: k8s.pod.name
-    - action: replace
-      regex: container
-      replacement: k8s.container.name
-    - action: replace
-      regex: endpoint
-      replacement: k8s.node.name
+  - port: prometheus-dev
+  - port: prometheus-prod
   namespaceSelector:
     matchNames:
     - create-sm-prometheus
