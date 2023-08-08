@@ -33,6 +33,7 @@ metadata:
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     createdAt: "2023-08-08T13:26:23Z"
 =======
     createdAt: "2023-08-04T17:33:49Z"
@@ -40,6 +41,9 @@ metadata:
 =======
     createdAt: "2023-08-04T20:52:54Z"
 >>>>>>> f4f0bf8 (Addressing code review comments: Improving the godoc comment, adding changelog file)
+=======
+    createdAt: "2023-08-08T21:23:14Z"
+>>>>>>> 960c0ca (Adding in an assertion that the additional container equals input)
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3

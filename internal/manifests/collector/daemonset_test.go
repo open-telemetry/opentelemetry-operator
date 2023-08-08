@@ -329,4 +329,5 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
+	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[0])
 }
