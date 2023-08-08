@@ -215,7 +215,7 @@ type OpenTelemetryCollectorSpec struct {
 
 	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
 	// These sidecar containers can be used for authentication proxies, logging shipping sidecars, agents for shipping
-	// to metrics to their cloud, or in general sidecars that do not support automatic injection. This option only
+	// metrics to their cloud, or in general sidecars that do not support automatic injection. This option only
 	// applies to Deployment, DaemonSet, and StatefulSet deployments of the collector. It does not apply to the sidecar
 	// method. More info:
 	// https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
