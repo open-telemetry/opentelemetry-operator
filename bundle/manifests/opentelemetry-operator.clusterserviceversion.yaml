@@ -27,7 +27,7 @@ metadata:
           }
         }
       ]
-    capabilities: Basic Install
+    capabilities: Deep Insights
     categories: Logging & Tracing
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
