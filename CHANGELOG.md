@@ -3,6 +3,49 @@ Changes by Version
 
 <!-- next version -->
 
+## 0.82.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Remove legacy OTLP HTTP port (#1954)
+
+### 💡 Enhancements 💡
+
+- `operator`: Expose the Prometheus exporter port in the OpenTelemetry Collector container when it is used in the configuration. (#1689)
+- `operator`: Add the ability to the operator to create Service Monitors for the OpenTelemetry Collectors in order to gather the metrics they are generating (#1768)
+- `target allocator`: Add support for environment variables in target allocator config.
+ (#1773)
+- `operator`: Add a GitHub Actions Workflow to build and publish the operator bundle images (#1879)
+- `operator`: Add a new field called `managementState` in the OpenTelemetry Collector CRD. (#1881)
+- `operator`: When an user specifies the monitoring port for their collector in the configuration, the monitoring service uses that port. (#1931)
+- `operator`: Add support for TopologySpreadConstraints & nodeSelector on collector and target allocator (#1899)
+- `autoinstrumentation`: Bump dotnet dependency to 1.0.0-rc.1 (#1978)
+- `autoinstrumentation`: Bump opentelemetry-go-instrumentation image to v0.2.2-alpha (#1915)
+- `autoinstrumentation`: Bumps java autoinstrumentation version to 1.28.0 (#1918)
+- `autoinstrumentaion`: Bump NodeJS dependencies to 1.15.1/0.41.1 (#1977)
+- `autoinstrumentation`: Bump python packages to 1.19.0/0.40b0 (#1930)
+- `target allocator`: Restart target allocator when its configuration changes (#1882)
+- `target allocator`: Make the Target Allocator default scrape interval for Prometheus CRs configurable (#1925)
+  Note that this only works for Prometheus CRs, raw Prometheus configuration from the receiver uses its own settings.
+- `operator`: Set securityContext on injected initContainer based on existing containers. (#1084, #1058)
+- `Documentation`: Update OTel Operator and Target Allocator readmes. (#1952)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fix port name matching between ingress/route and service. All ports are truncated to 15 characters. If the port name is longer it is changed to port-%d pattern. (#1954)
+- `operator`: Fix for issue #1893 (#1905)
+
+### Components
+
+* [OpenTelemetry Collector - v0.82.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.82.0)
+* [OpenTelemetry Contrib - v0.82.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.82.0)
+* [Java auto-instrumentation - 1.28.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.28.0)
+* [.NET auto-instrumentation - 1.0.0-rc.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.0.0-rc.1)
+* [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
+* [Python - 0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.40b0)
+* [Go - v0.2.2-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.2-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+
 ## 0.81.0
 
 ### 💡 Enhancements 💡
