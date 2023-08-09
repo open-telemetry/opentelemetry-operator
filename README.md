@@ -83,7 +83,7 @@ The default and only other acceptable value for `.Spec.UpgradeStrategy` is `auto
 
 ### Deployment modes
 
-The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the Collector should run as a [`DaemonSet`](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/), [`Sidecar`](https://kubernetes.io/docs/concepts/workloads/pods/#workload-resources-for-managing-pods), [`StatefulSet`](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) or [`Deployment`](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) (default). 
+The `CustomResource` for the `OpenTelemetryCollector` exposes a property named `.Spec.Mode`, which can be used to specify whether the Collector should run as a [`DaemonSet`](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/), [`Sidecar`](https://kubernetes.io/docs/concepts/workloads/pods/#workload-resources-for-managing-pods), [`StatefulSet`](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) or [`Deployment`](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) (default).
 
 See below for examples of each deployment mode:
 - [`Deployment`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/ingress/00-install.yaml)
@@ -231,7 +231,7 @@ Valid values for `propagators` are defined by the [OpenTelemetry Specification f
 
 The value for `sampler.type` is added to the `OTEL_TRACES_SAMPLER` envrionment variable.
 Valid values for `sampler.type` are defined by the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler).
-The value for `sampler.argument` is added to the `OTEL_TRACES_SAMPLER_ARG` environment variable. Valid values for `sampler.argument` will depend on the chosen sampler. See the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER_ARG](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler_arg) for more details.  
+The value for `sampler.argument` is added to the `OTEL_TRACES_SAMPLER_ARG` environment variable. Valid values for `sampler.argument` will depend on the chosen sampler. See the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER_ARG](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler_arg) for more details.
 
 The above CR can be queried by `kubectl get otelinst`.
 
@@ -529,7 +529,7 @@ spec:
               replacement: $$1
             - action: labelmap
               regex: label_(.+)
-              replacement: $$1 
+              replacement: $$1
 
     exporters:
       logging:
@@ -561,7 +561,7 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
               replacement: $$1
             - action: labelmap
               regex: label_(.+)
-              replacement: $$1 
+              replacement: $$1
 
     exporters:
       logging:
@@ -591,7 +591,7 @@ The OpenTelemetry Operator will also convert the Target Allocator's Prometheus c
           replacement: $1
         - action: labelmap
           regex: label_(.+)
-          replacement: $1 
+          replacement: $1
 ```
 Note that in this case, the Operator replaces "$$" with a single "$" in the replacement keys. This is because the collector supports environment variable substitution, whereas the TA (Target Allocator) does not. Therefore, to ensure compatibility, the TA configuration should only contain a single "$" symbol.
 
@@ -677,6 +677,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.82.0                | v1.19 to v1.27       | v1                  |
 | v0.81.0                | v1.19 to v1.27       | v1                  |
 | v0.80.0                | v1.19 to v1.27       | v1                  |
 | v0.79.0                | v1.19 to v1.27       | v1                  |
@@ -699,7 +700,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.61.0                | v1.19 to v1.25       | v1                  |
 | v0.60.0                | v1.19 to v1.25       | v1                  |
 | v0.59.0                | v1.19 to v1.24       | v1                  |
-| v0.58.0                | v1.19 to v1.24       | v1                  |
 
 ## Contributing and Developing
 
