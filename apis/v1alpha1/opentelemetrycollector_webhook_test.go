@@ -605,6 +605,20 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 			expectedErr: "the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect",
 		},
+		{
+			name: "invalid AdditionalContainers",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeSidecar,
+					AdditionalContainers: []v1.Container{
+						{
+							Name: "test",
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'AdditionalContainers'",
+		},
 	}
 
 	for _, test := range tests {

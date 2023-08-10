@@ -155,6 +155,10 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
 	}
 
+	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
+		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
+	}
+
 	// validate target allocation
 	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
 		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
