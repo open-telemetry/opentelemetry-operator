@@ -71,3 +71,13 @@ updates:
     directory: /
     schedule:
       interval: daily
+
+  - package-ecosystem: docker
+    directory: /cmd/otel-allocator
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /cmd/operator-opamp-bridge
+    schedule:
+      interval: daily
