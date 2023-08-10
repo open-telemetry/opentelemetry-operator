@@ -53,7 +53,7 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            ServiceAccountName(otelcol),
 					InitContainers:                otelcol.Spec.InitContainers,
-					Containers:                    []corev1.Container{Container(cfg, logger, otelcol, true)},
+					Containers:                    append(otelcol.Spec.AdditionalContainers, Container(cfg, logger, otelcol, true)),
 					Volumes:                       Volumes(cfg, otelcol),
 					DNSPolicy:                     getDNSPolicy(otelcol),
 					HostNetwork:                   otelcol.Spec.HostNetwork,
