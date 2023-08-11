@@ -1,9 +1,7 @@
 # Build the otel-allocator binary
-FROM golang:1.20-alpine as builder
+FROM golang:1.21 as builder
 
 WORKDIR /app
-
-RUN apk --no-cache add ca-certificates
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./
@@ -15,13 +13,9 @@ COPY . .
 # Build the Go app
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
-######## Start a new stage from scratch #######
-FROM scratch
-
-WORKDIR /root/
-
-# Copy the certs from the builder
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:nonroot
 
 # Copy the pre-built binary file from the previous stage
 COPY --from=builder /app/main .
