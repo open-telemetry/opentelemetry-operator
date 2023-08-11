@@ -414,3 +414,31 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 	assert.NotEmpty(t, s2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.Equal(t, testTopologySpreadConstraintValue, s2.Spec.Template.Spec.TopologySpreadConstraints)
 }
+
+func TestStatefulSetAdditionalContainers(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			AdditionalContainers: []v1.Container{
+				{
+					Name: "test",
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	s := StatefulSet(cfg, logger, otelcol)
+	assert.Equal(t, "my-instance-collector", s.Name)
+	assert.Equal(t, "my-instance-collector", s.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", s.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", s.Annotations["prometheus.io/path"])
+	assert.Len(t, s.Spec.Template.Spec.Containers, 2)
+	assert.Equal(t, v1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[0])
+}
