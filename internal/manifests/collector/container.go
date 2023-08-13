@@ -220,7 +220,8 @@ func getPrometheusExporterPorts(c map[interface{}]interface{}) ([]corev1.Contain
 	if exporters, ok := c["exporters"]; ok && exporters != nil {
 		for e, exporterConfig := range exporters.(map[interface{}]interface{}) {
 			exporterName := e.(string)
-			if strings.Contains(exporterName, "prometheus") {
+			// Note that receivers, processors, exporters and/or pipelines are defined via component identifiers in type[/name] format (e.g. otlp or otlp/2). Components of a given type can be defined more than once as long as the identifiers are unique.
+			if strings.Split(exporterName, "/")[0] == "prometheus" {
 				containerPort, err := getPrometheusExporterPort(exporterConfig.(map[interface{}]interface{}))
 				if err != nil {
 					errors = append(errors,
