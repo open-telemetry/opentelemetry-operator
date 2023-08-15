@@ -301,7 +301,16 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 			"object_name", obj.GetName(),
 			"object_kind", obj.GetObjectKind(),
 		)
+		// check if it needs to be deleted (selector change or VCT change)
 		desired := obj.DeepCopyObject().(client.Object)
+		hasImmutableChange, changingField := manifests.HasImmutableChange(obj, desired)
+		if hasImmutableChange {
+			l.Info("%s has immutable field %s changing, deleting to recreate", desired.GetName(), changingField)
+			err := r.Client.Delete(ctx, obj)
+			if err != nil {
+				return err
+			}
+		}
 		mutateFn := manifests.MutateFuncFor(obj, desired)
 		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
 		if crudErr != nil {

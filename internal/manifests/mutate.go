@@ -30,6 +30,32 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// HasImmutableChange informs a client if an immutable change is being made to an object.
+func HasImmutableChange(existing, desired client.Object) (bool, string) {
+	switch existing.(type) {
+	case *appsv1.Deployment:
+		dpl := existing.(*appsv1.Deployment)
+		wantDpl := desired.(*appsv1.Deployment)
+		if dpl.CreationTimestamp.IsZero() {
+			return false, ""
+		}
+		return dpl.Spec.Selector != wantDpl.Spec.Selector, "Spec.Selector"
+	case *appsv1.DaemonSet:
+		dpl := existing.(*appsv1.DaemonSet)
+		wantDpl := desired.(*appsv1.DaemonSet)
+		if dpl.CreationTimestamp.IsZero() {
+			return false, ""
+		}
+		return dpl.Spec.Selector != wantDpl.Spec.Selector, "Spec.Selector"
+	case *appsv1.StatefulSet:
+		exStateful := existing.(*appsv1.StatefulSet)
+		desStateful := desired.(*appsv1.StatefulSet)
+		return hasImmutableFieldChange(exStateful, desStateful)
+	default:
+		return false, ""
+	}
+}
+
 // MutateFuncFor returns a mutate function based on the
 // existing resource's concrete type. It supports currently
 // only the following types or else panics:
@@ -217,7 +243,6 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 		existing.Spec.Selector = desired.Spec.Selector
 	}
 
-	// TODO: is there anything wrong with doing this?
 	if err := mergeWithOverride(&existing.Spec, desired.Spec); err != nil {
 		return err
 	}
@@ -251,12 +276,12 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 	}
 	existing.Spec.PodManagementPolicy = desired.Spec.PodManagementPolicy
 	existing.Spec.Replicas = desired.Spec.Replicas
-	// TODO: I don't think we can do this...
-	//for i := range existing.Spec.VolumeClaimTemplates {
-	//	existing.Spec.VolumeClaimTemplates[i].TypeMeta = desired.Spec.VolumeClaimTemplates[i].TypeMeta
-	//	existing.Spec.VolumeClaimTemplates[i].ObjectMeta = desired.Spec.VolumeClaimTemplates[i].ObjectMeta
-	//	existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
-	//}
+
+	for i := range existing.Spec.VolumeClaimTemplates {
+		existing.Spec.VolumeClaimTemplates[i].TypeMeta = desired.Spec.VolumeClaimTemplates[i].TypeMeta
+		existing.Spec.VolumeClaimTemplates[i].ObjectMeta = desired.Spec.VolumeClaimTemplates[i].ObjectMeta
+		existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
+	}
 	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
 		return err
 	}
@@ -264,6 +289,9 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 }
 
 func hasImmutableFieldChange(existing, desired *appsv1.StatefulSet) (bool, string) {
+	if existing.CreationTimestamp.IsZero() {
+		return false, ""
+	}
 	if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
 		return true, "Spec.Selector"
 	}
