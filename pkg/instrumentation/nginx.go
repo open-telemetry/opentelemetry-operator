@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -249,6 +250,13 @@ func getNginxOtelConfig(pod corev1.Pod, nginxSpec v1alpha1.Nginx, index int, ote
 	}
 	serviceName := chooseServiceName(pod, resourceMap, index)
 	serviceNamespace := pod.GetNamespace()
+	if len(serviceNamespace) == 0 {
+		serviceNamespace = resourceMap[string(semconv.K8SNamespaceNameKey)]
+		if len(serviceNamespace) == 0 {
+			serviceNamespace = "nginx"
+		}
+	}
+
 	// Namespace name override TBD
 
 	attrMap := map[string]string{
