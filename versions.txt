@@ -35,3 +35,7 @@ autoinstrumentation-go=v0.2.2-alpha
 # Represents the current release of Apache HTTPD instrumentation.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-apache-httpd=1.0.3
+
+# Represents the current release of Apache HTTPD instrumentation.
+# Should match autoinstrumentation/apache-httpd/version.txt
+autoinstrumentation-nginx=1.0.3

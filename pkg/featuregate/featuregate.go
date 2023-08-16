@@ -61,6 +61,12 @@ var (
 		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTPD auto-instrumentation"),
 		featuregate.WithRegisterFromVersion("v0.80.0"),
 	)
+	EnableNginxAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.nginx",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("controls whether the operator supports Nginx auto-instrumentation"),
+		featuregate.WithRegisterFromVersion("v0.82.0"),
+	)
 
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
 	// automatically be rewritten when the target allocator is enabled.
