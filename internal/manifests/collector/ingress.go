@@ -45,22 +45,12 @@ func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 		return nil
 	}
 
-	pathType := networkingv1.PathTypePrefix
-	paths := make([]networkingv1.HTTPIngressPath, len(ports))
-	for i, p := range ports {
-		paths[i] = networkingv1.HTTPIngressPath{
-			Path:     "/" + p.Name,
-			PathType: &pathType,
-			Backend: networkingv1.IngressBackend{
-				Service: &networkingv1.IngressServiceBackend{
-					Name: naming.Service(otelcol.Name),
-					Port: networkingv1.ServiceBackendPort{
-						// Valid names must be non-empty and no more than 15 characters long.
-						Name: naming.Truncate(p.Name, 15),
-					},
-				},
-			},
-		}
+	var rules []networkingv1.IngressRule
+	switch otelcol.Spec.Ingress.RuleType {
+	case v1alpha1.IngressRuleTypePath, "":
+		rules = []networkingv1.IngressRule{createPathIngressRules(otelcol.Name, otelcol.Spec.Ingress.Hostname, ports)}
+	case v1alpha1.IngressRuleTypeSubdomain:
+		rules = createSubdomainIngressRules(otelcol.Name, otelcol.Spec.Ingress.Hostname, ports)
 	}
 
 	return &networkingv1.Ingress{
@@ -75,20 +65,75 @@ func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 			},
 		},
 		Spec: networkingv1.IngressSpec{
-			TLS: otelcol.Spec.Ingress.TLS,
-			Rules: []networkingv1.IngressRule{
-				{
-					Host: otelcol.Spec.Ingress.Hostname,
-					IngressRuleValue: networkingv1.IngressRuleValue{
-						HTTP: &networkingv1.HTTPIngressRuleValue{
-							Paths: paths,
+			TLS:              otelcol.Spec.Ingress.TLS,
+			Rules:            rules,
+			IngressClassName: otelcol.Spec.Ingress.IngressClassName,
+		},
+	}
+}
+
+func createPathIngressRules(otelcol string, hostname string, ports []corev1.ServicePort) networkingv1.IngressRule {
+	pathType := networkingv1.PathTypePrefix
+	paths := make([]networkingv1.HTTPIngressPath, len(ports))
+	for i, port := range ports {
+		portName := naming.PortName(port.Name, port.Port)
+		paths[i] = networkingv1.HTTPIngressPath{
+			Path:     "/" + port.Name,
+			PathType: &pathType,
+			Backend: networkingv1.IngressBackend{
+				Service: &networkingv1.IngressServiceBackend{
+					Name: naming.Service(otelcol),
+					Port: networkingv1.ServiceBackendPort{
+						Name: portName,
+					},
+				},
+			},
+		}
+	}
+	return networkingv1.IngressRule{
+		Host: hostname,
+		IngressRuleValue: networkingv1.IngressRuleValue{
+			HTTP: &networkingv1.HTTPIngressRuleValue{
+				Paths: paths,
+			},
+		},
+	}
+}
+
+func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1.ServicePort) []networkingv1.IngressRule {
+	var rules []networkingv1.IngressRule
+	pathType := networkingv1.PathTypePrefix
+	for _, port := range ports {
+		portName := naming.PortName(port.Name, port.Port)
+
+		host := fmt.Sprintf("%s.%s", portName, hostname)
+		// This should not happen due to validation in the webhook.
+		if hostname == "" || hostname == "*" {
+			host = portName
+		}
+		rules = append(rules, networkingv1.IngressRule{
+			Host: host,
+			IngressRuleValue: networkingv1.IngressRuleValue{
+				HTTP: &networkingv1.HTTPIngressRuleValue{
+					Paths: []networkingv1.HTTPIngressPath{
+						{
+							Path:     "/",
+							PathType: &pathType,
+							Backend: networkingv1.IngressBackend{
+								Service: &networkingv1.IngressServiceBackend{
+									Name: naming.Service(otelcol),
+									Port: networkingv1.ServiceBackendPort{
+										Name: portName,
+									},
+								},
+							},
 						},
 					},
 				},
 			},
-			IngressClassName: otelcol.Spec.Ingress.IngressClassName,
-		},
+		})
 	}
+	return rules
 }
 
 // TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972

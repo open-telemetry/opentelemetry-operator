@@ -48,8 +48,14 @@ const (
 // SEE: OpenTelemetryCollector.spec.ports[index].
 type Ingress struct {
 	// Type default value is: ""
-	// Supported types are: ingress
+	// Supported types are: ingress, route
 	Type IngressType `json:"type,omitempty"`
+
+	// RuleType defines how Ingress exposes collector receivers.
+	// IngressRuleTypePath ("path") exposes each receiver port on a unique path on single domain defined in Hostname.
+	// IngressRuleTypeSubdomain ("subdomain") exposes each receiver port on a unique subdomain of Hostname.
+	// Default is IngressRuleTypePath ("path").
+	RuleType IngressRuleType `json:"ruleType,omitempty"`
 
 	// Hostname by which the ingress proxy can be reached.
 	// +optional
