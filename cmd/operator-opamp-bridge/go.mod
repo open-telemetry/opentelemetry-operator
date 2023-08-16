@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge
 
-go 1.21
+go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.4

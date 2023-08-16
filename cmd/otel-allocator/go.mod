@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator
 
-go 1.21
+go 1.20
 
 require (
 	github.com/buraksezer/consistent v0.10.0
