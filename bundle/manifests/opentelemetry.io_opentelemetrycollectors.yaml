@@ -3682,8 +3682,7 @@ spec:
                       enableMetrics:
                         description: EnableMetrics specifies if ServiceMonitor should
                           be created for the OpenTelemetry Collector and Prometheus
-                          Exporters. The operator.observability.prometheus feature
-                          gate must be enabled to use this feature.
+                          Exporters. The operator.observability.
                         type: boolean
                     type: object
                 type: object
