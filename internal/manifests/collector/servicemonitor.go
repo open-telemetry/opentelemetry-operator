@@ -56,6 +56,7 @@ func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Open
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name),
 				},
 			},
 		},

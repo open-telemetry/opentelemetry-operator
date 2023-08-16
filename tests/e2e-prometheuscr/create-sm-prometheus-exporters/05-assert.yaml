@@ -18,3 +18,4 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/instance: create-sm-prometheus.simplest
