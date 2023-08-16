@@ -306,9 +306,9 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 		hasImmutableChange, changingField := manifests.HasImmutableChange(obj, desired)
 		if hasImmutableChange {
 			l.Info("%s has immutable field %s changing, deleting to recreate", desired.GetName(), changingField)
-			err := r.Client.Delete(ctx, obj)
-			if err != nil {
-				return err
+			delErr := r.Client.Delete(ctx, obj)
+			if delErr != nil {
+				return delErr
 			}
 		}
 		mutateFn := manifests.MutateFuncFor(obj, desired)

@@ -158,6 +158,13 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 
 	// cleanup
 	require.NoError(t, k8sClient.Delete(context.Background(), created))
+
+	// cleanup the deployment deliberately, otherwise a local tester will always fail as there is no gc event.
+	list := &appsv1.DeploymentList{}
+	err = k8sClient.List(context.Background(), list, opts...)
+	assert.NoError(t, err)
+	assert.Len(t, list.Items, 1)
+	require.NoError(t, k8sClient.Delete(context.Background(), list.Items[0].DeepCopy()))
 }
 
 func TestNewStatefulSetObjectsOnReconciliation(t *testing.T) {
