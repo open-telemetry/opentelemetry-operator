@@ -216,10 +216,10 @@ service:
 		},
 		{
 			description: "prometheus RW exporter",
-			specConfig:  `exporters:
+			specConfig: `exporters:
     prometheusremotewrite/prometheus:
         endpoint: http://prometheus-server.monitoring/api/v1/write`,
-			specPorts:   []corev1.ServicePort{},
+			specPorts:     []corev1.ServicePort{},
 			expectedPorts: []corev1.ContainerPort{metricContainerPort},
 		},
 		{
