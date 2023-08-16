@@ -106,6 +106,15 @@ func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 		return nil
 	}
 
+	// set appProtocol to h2c for grpc ports on OpenShift.
+	// OpenShift uses HA proxy that uses appProtocol for its configuration.
+	for i, _ := range ports {
+		h2c := "h2c"
+		if otelcol.Spec.Ingress.Type == v1alpha1.IngressTypeRoute && ports[i].AppProtocol != nil && *(ports[i].AppProtocol) == "grpc" {
+			ports[i].AppProtocol = &h2c
+		}
+	}
+
 	if len(otelcol.Spec.Ports) > 0 {
 		// we should add all the ports from the CR
 		// there are two cases where problems might occur:
