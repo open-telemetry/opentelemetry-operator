@@ -75,14 +75,18 @@ func LoadFromFile(file string, target *Config) error {
 	return unmarshal(target, file)
 }
 
-func LoadFromCLI(target *Config) error {
+func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
+	var err error
 	// set the rest of the config attributes based on command-line flag values
 	target.RootLogger = zap.New(zap.UseFlagOptions(&zapCmdLineOpts))
 	klog.SetLogger(target.RootLogger)
 	ctrl.SetLogger(target.RootLogger)
 
-	target.KubeConfigFilePath = *kubeConfigPathFlag
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeConfigPathFlag)
+	target.KubeConfigFilePath, err = getKubeConfigFilePath(flagSet)
+	if err != nil {
+		return err
+	}
+	clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
 	if err != nil {
 		pathError := &fs.PathError{}
 		if ok := errors.As(err, &pathError); !ok {
@@ -93,9 +97,17 @@ func LoadFromCLI(target *Config) error {
 			return err
 		}
 	}
-	target.ListenAddr = *listenAddrFlag
-	target.PrometheusCR.Enabled = *prometheusCREnabledFlag
 	target.ClusterConfig = clusterConfig
+
+	target.ListenAddr, err = getListenAddr(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.PrometheusCR.Enabled, err = getPrometheusCREnabled(flagSet)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -121,21 +133,32 @@ func CreateDefaultConfig() Config {
 }
 
 func Load() (*Config, string, error) {
-	pflag.Parse()
+	var err error
+
+	flagSet := getFlagSet(pflag.ExitOnError)
+	err = flagSet.Parse(os.Args)
+	if err != nil {
+		return nil, "", err
+	}
+
 	config := CreateDefaultConfig()
 
 	// load the config from the config file
-	err := LoadFromFile(*configFilePathFlag, &config)
+	configFilePath, err := getConfigFilePath(flagSet)
+	if err != nil {
+		return nil, "", err
+	}
+	err = LoadFromFile(configFilePath, &config)
 	if err != nil {
 		return nil, "", err
 	}
 
-	err = LoadFromCLI(&config)
+	err = LoadFromCLI(&config, flagSet)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return &config, *configFilePathFlag, nil
+	return &config, configFilePath, nil
 }
 
 // ValidateConfig validates the cli and file configs together.

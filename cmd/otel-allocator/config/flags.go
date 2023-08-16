@@ -23,23 +23,42 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-// Flag definitions.
-var (
-	configFilePathFlag      *string
-	listenAddrFlag          *string
-	prometheusCREnabledFlag *bool
-	kubeConfigPathFlag      *string
-	zapCmdLineOpts          zap.Options
+// Flag names.
+const (
+	targetAllocatorName         = "target-allocator"
+	configFilePathFlagName      = "config-file"
+	listenAddrFlagName          = "listen-addr"
+	prometheusCREnabledFlagName = "enable-prometheus-cr-watcher"
+	kubeConfigPathFlagName      = "kubeconfig-path"
 )
 
-func initFlags() {
-	configFilePathFlag = pflag.String("config-file", DefaultConfigFilePath, "The path to the config file.")
-	listenAddrFlag = pflag.String("listen-addr", ":8080", "The address where this service serves.")
-	prometheusCREnabledFlag = pflag.Bool("enable-prometheus-cr-watcher", false, "Enable Prometheus CRs as target sources")
-	kubeConfigPathFlag = pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
-	zapCmdLineOpts.BindFlags(flag.CommandLine)
+// We can't bind this flag to our FlagSet, so we need to handle it separately.
+var zapCmdLineOpts zap.Options
+
+func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
+	flagSet := pflag.NewFlagSet(targetAllocatorName, errorHandling)
+	flagSet.String(configFilePathFlagName, DefaultConfigFilePath, "The path to the config file.")
+	flagSet.String(listenAddrFlagName, ":8080", "The address where this service serves.")
+	flagSet.Bool(prometheusCREnabledFlagName, false, "Enable Prometheus CRs as target sources")
+	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
+	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
+	zapCmdLineOpts.BindFlags(zapFlagSet)
+	flagSet.AddGoFlagSet(zapFlagSet)
+	return flagSet
 }
 
-func init() {
-	initFlags()
+func getConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
+	return flagSet.GetString(configFilePathFlagName)
+}
+
+func getKubeConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
+	return flagSet.GetString(kubeConfigPathFlagName)
+}
+
+func getListenAddr(flagSet *pflag.FlagSet) (string, error) {
+	return flagSet.GetString(listenAddrFlagName)
+}
+
+func getPrometheusCREnabled(flagSet *pflag.FlagSet) (bool, error) {
+	return flagSet.GetBool(prometheusCREnabledFlagName)
 }

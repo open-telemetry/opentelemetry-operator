@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -66,9 +67,10 @@ func main() {
 	)
 	cfg, configFilePath, err := config.Load()
 	if err != nil {
-		setupLog.Error(err, "Failed to parse parameters")
+		fmt.Printf("Failed to load config: %v", err)
 		os.Exit(1)
 	}
+	ctrl.SetLogger(cfg.RootLogger)
 
 	if validationErr := config.ValidateConfig(cfg); validationErr != nil {
 		setupLog.Error(validationErr, "Invalid configuration")
