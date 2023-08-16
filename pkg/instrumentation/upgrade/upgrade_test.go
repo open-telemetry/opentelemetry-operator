@@ -63,6 +63,7 @@ func TestUpgrade(t *testing.T) {
 				v1alpha1.AnnotationDefaultAutoInstrumentationDotNet:      "dotnet:1",
 				v1alpha1.AnnotationDefaultAutoInstrumentationGo:          "go:1",
 				v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd: "apache-httpd:1",
+				v1alpha1.AnnotationDefaultAutoInstrumentationNginx:       "nginx:1",
 			},
 		},
 		Spec: v1alpha1.InstrumentationSpec{
@@ -78,6 +79,7 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "dotnet:1", inst.Spec.DotNet.Image)
 	assert.Equal(t, "go:1", inst.Spec.Go.Image)
 	assert.Equal(t, "apache-httpd:1", inst.Spec.ApacheHttpd.Image)
+	assert.Equal(t, "nginx:1", inst.Spec.Nginx.Image)
 	err = k8sClient.Create(context.Background(), inst)
 	require.NoError(t, err)
 
@@ -89,6 +91,7 @@ func TestUpgrade(t *testing.T) {
 		DefaultAutoInstDotNet:      "dotnet:2",
 		DefaultAutoInstGo:          "go:2",
 		DefaultAutoInstApacheHttpd: "apache-httpd:2",
+		DefaultAutoInstNginx:       "nginx:2",
 		Client:                     k8sClient,
 	}
 	err = up.ManagedInstances(context.Background())
@@ -112,4 +115,6 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "go:2", updated.Spec.Go.Image)
 	assert.Equal(t, "apache-httpd:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd])
 	assert.Equal(t, "apache-httpd:2", updated.Spec.ApacheHttpd.Image)
+	assert.Equal(t, "nginx:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNginx])
+	assert.Equal(t, "nginx:2", updated.Spec.Nginx.Image)
 }
