@@ -38,7 +38,7 @@ var (
 	// ErrReceiversNotAMap indicates that the receivers property isn't a map of values.
 	ErrReceiversNotAMap = errors.New("receivers property in the configuration doesn't contain valid receivers")
 
-	// ErrExportersNotAMap indicates that the receivers property isn't a map of values.
+	// ErrExportersNotAMap indicates that the exporters property isn't a map of values.
 	ErrExportersNotAMap = errors.New("exporters property in the configuration doesn't contain valid exporters")
 )
 
