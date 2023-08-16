@@ -86,7 +86,7 @@ func TestDesiredIngresses(t *testing.T) {
 		assert.Nil(t, actual)
 	})
 
-	t.Run("should return nil unable to do something else", func(t *testing.T) {
+	t.Run("path per port", func(t *testing.T) {
 		var (
 			ns               = "test"
 			hostname         = "example.com"
@@ -172,5 +172,109 @@ func TestDesiredIngresses(t *testing.T) {
 			},
 		}, got)
 	})
+	t.Run("subdomain per port", func(t *testing.T) {
+		var (
+			ns               = "test"
+			hostname         = "example.com"
+			ingressClassName = "nginx"
+		)
 
+		params, err := newParams("something:tag", testFileIngress)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		params.Instance.Namespace = ns
+		params.Instance.Spec.Ingress = v1alpha1.Ingress{
+			Type:             v1alpha1.IngressTypeNginx,
+			RuleType:         v1alpha1.IngressRuleTypeSubdomain,
+			Hostname:         hostname,
+			Annotations:      map[string]string{"some.key": "some.value"},
+			IngressClassName: &ingressClassName,
+		}
+
+		got := Ingress(params.Config, params.Log, params.Instance)
+		pathType := networkingv1.PathTypePrefix
+
+		assert.NotEqual(t, &networkingv1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        naming.Ingress(params.Instance.Name),
+				Namespace:   ns,
+				Annotations: params.Instance.Spec.Ingress.Annotations,
+				Labels: map[string]string{
+					"app.kubernetes.io/name":       naming.Ingress(params.Instance.Name),
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
+					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				},
+			},
+			Spec: networkingv1.IngressSpec{
+				IngressClassName: &ingressClassName,
+				Rules: []networkingv1.IngressRule{
+					{
+						Host: "another-port." + hostname,
+						IngressRuleValue: networkingv1.IngressRuleValue{
+							HTTP: &networkingv1.HTTPIngressRuleValue{
+								Paths: []networkingv1.HTTPIngressPath{
+									{
+										Path:     "/",
+										PathType: &pathType,
+										Backend: networkingv1.IngressBackend{
+											Service: &networkingv1.IngressServiceBackend{
+												Name: "test-collector",
+												Port: networkingv1.ServiceBackendPort{
+													Name: "another-port",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Host: "otlp-grpc." + hostname,
+						IngressRuleValue: networkingv1.IngressRuleValue{
+							HTTP: &networkingv1.HTTPIngressRuleValue{
+								Paths: []networkingv1.HTTPIngressPath{
+									{
+										Path:     "/",
+										PathType: &pathType,
+										Backend: networkingv1.IngressBackend{
+											Service: &networkingv1.IngressServiceBackend{
+												Name: "test-collector",
+												Port: networkingv1.ServiceBackendPort{
+													Name: "otlp-grpc",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Host: "otlp-test-grpc." + hostname,
+						IngressRuleValue: networkingv1.IngressRuleValue{
+							HTTP: &networkingv1.HTTPIngressRuleValue{
+								Paths: []networkingv1.HTTPIngressPath{
+									{
+										Path:     "/",
+										PathType: &pathType,
+										Backend: networkingv1.IngressBackend{
+											Service: &networkingv1.IngressServiceBackend{
+												Name: "test-collector",
+												Port: networkingv1.ServiceBackendPort{
+													Name: "otlp-test-grpc",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, got)
+	})
 }

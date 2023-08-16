@@ -619,6 +619,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 			expectedErr: "the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'AdditionalContainers'",
 		},
+		{
+			name: "missing ingress hostname for subdomain ruleType",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Ingress: Ingress{
+						RuleType: IngressRuleTypeSubdomain,
+					},
+				},
+			},
+			expectedErr: "a valid Ingress hostname has to be defined for subdomain ruleType",
+		},
 	}
 
 	for _, test := range tests {
