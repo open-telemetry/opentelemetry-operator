@@ -14,7 +14,7 @@ spec:
         app: my-nginx
       annotations:
         sidecar.opentelemetry.io/inject: "true"
-        instrumentation.opentelemetry.io/inject-nginx-httpd: "true"
+        instrumentation.opentelemetry.io/inject-nginx: "true"
         instrumentation.opentelemetry.io/container-names: "myrabbit"
     spec:
       containers:
