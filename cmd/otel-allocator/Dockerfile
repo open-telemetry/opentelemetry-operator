@@ -1,5 +1,5 @@
 # Build the otel-allocator binary
-FROM golang:1.20-alpine as builder
+FROM golang:1.21-alpine as builder
 
 WORKDIR /app
 

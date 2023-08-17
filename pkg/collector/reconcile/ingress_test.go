@@ -59,10 +59,7 @@ func TestExpectedIngresses(t *testing.T) {
 		err = params.Client.Get(ctx, nns, got)
 		assert.NoError(t, err)
 
-		gotHostname := got.Spec.Rules[0].Host
-		if gotHostname != expectHostname {
-			t.Errorf("host name is not up-to-date. expect: %s, got: %s", expectHostname, gotHostname)
-		}
+		assert.Equal(t, "something-else.com", got.Spec.Rules[0].Host)
 
 		if v, ok := got.Annotations["blub"]; !ok || v != "blob" {
 			t.Error("annotations are not up-to-date. Missing entry or value is invalid.")

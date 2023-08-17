@@ -37,7 +37,7 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true"
+CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=200"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -309,7 +309,7 @@ GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
-GOLANGCI_LINT_VERSION ?= v1.51.2
+GOLANGCI_LINT_VERSION ?= v1.54.0
 
 
 .PHONY: kustomize
