@@ -41,7 +41,7 @@ const (
 	nginxAgentConfDirFull        = nginxAgentDirectory + nginxAgentConfigDirectory
 	nginxAttributesEnvVar        = "OTEL_NGINX_AGENT_CONF"
 	nginxServiceInstanceId       = "<<SID-PLACEHOLDER>>"
-	nginxServiceInstanceIdEnvVar = "NGINX_SERVICE_INSTANCE_ID"
+	nginxServiceInstanceIdEnvVar = "OTEL_NGINX_SERVICE_INSTANCE_ID"
 	nginxVersionEnvVar           = "NGINX_VERSION"
 	nginxLibraryPathEnv          = "LD_LIBRARY_PATH"
 )
@@ -155,43 +155,56 @@ export %[4]s=$( { nginx -v ; } 2>&1 ) && echo ${%[4]s##*/} > %[3]s/version.txt
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}})
 
-		nginxAgentScriptTemplate :=
+		// Each line of the script MUST end with \n !
+		nginxAgentI13nScript :=
 			`
-cp -ar /opt/opentelemetry/* %[2]s &&
-export %[4]s=%[1]scat %[3]s/version.txt%[1]s &&
-export agentLogDir=$(echo "%[2]s/logs" | sed 's,/,\\/,g') && 
-cat %[2]s/conf/appdynamics_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > %[2]s/conf/appdynamics_sdk_log4cxx.xml && 
-echo "$%[6]s" > %[3]s/opentelemetry_agent.conf && 
-sed -i "s,%[7]s,%[8]s,g" %[3]s/opentelemetry_agent.conf &&
-sed -i "1s,^,load_module %[2]s/WebServerModule/Nginx/${NGINX_VERSION}/ngx_http_opentelemetry_module.so;\n,g" %[3]s/%[5]s && 
-sed -i "1s,^,env OTEL_RESOURCE_ATTRIBUTES;\n,g" %[3]s/%[5]s && 
-mv %[3]s/opentelemetry_agent.conf  %[3]s/conf.d &&
-ls -l %[3]s &&
-ls -l %[2]s
-`
+NGINX_AGENT_DIR_FULL=$1	\n
+NGINX_AGENT_CONF_DIR_FULL=$2 \n
+NGINX_CONFIG_FILE=$3 \n
+NGINX_SID_PLACEHOLDER=$4 \n
+NGINX_SID_VALUE=$5 \n
+echo "Input Parameters: $@" \n
+set -x \n
+\n
+cp -ar /opt/opentelemetry/* ${NGINX_AGENT_DIR_FULL} \n
+\n
+NGINX_VERSION=$(cat ${NGINX_AGENT_CONF_DIR_FULL}/version.txt) \n
+NGINX_AGENT_LOG_DIR=$(echo "${NGINX_AGENT_DIR_FULL}/logs" | sed 's,/,\\/,g') \n
+\n
+cat ${NGINX_AGENT_DIR_FULL}/conf/appdynamics_sdk_log4cxx.xml.template | sed 's,__agent_log_dir__,'${NGINX_AGENT_LOG_DIR}',g'  > ${NGINX_AGENT_DIR_FULL}/conf/appdynamics_sdk_log4cxx.xml \n
+echo -e $OTEL_NGINX_AGENT_CONF > ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \n
+sed -i "s,${NGINX_SID_PLACEHOLDER},${OTEL_NGINX_SERVICE_INSTANCE_ID},g" ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \n
+sed -i "1s,^,load_module ${NGINX_AGENT_DIR_FULL}/WebServerModule/Nginx/${NGINX_VERSION}/ngx_http_opentelemetry_module.so;\\n,g" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \n
+sed -i "1s,^,env OTEL_RESOURCE_ATTRIBUTES;\\n,g" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \n
+mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR_FULL}/conf.d \n
+		`
 
-		nginxAgentCommands := prepareCommandFromTemplate(nginxAgentScriptTemplate,
-			"`",
-			nginxAgentDirFull,                      // OTEL_WEBSERVER_AGENT_DIR
-			nginxAgentConfDirFull,                  // OTEL_WEBSERVER_CONFIG_DIR
-			nginxVersionEnvVar,                     // NGINX_VERSION
-			getNginxConfFile(nginxSpec.ConfigFile), // /etc/nginx/nginx.conf -> nginx.conf by default
-			nginxAttributesEnvVar,                  // OTEL_NGINX_AGENT_CONF
-			nginxServiceInstanceId,                 // <<SID-PLACEHOLDER>>
-			pod.GetName()+pod.GetGenerateName()+"a", // SID
-		)
+		nginxAgentI13nCommand := "echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/nginx_instrumentation.sh && " +
+			"chmod +x /opt/nginx_instrumentation.sh && " +
+			"cat /opt/nginx_instrumentation.sh && " +
+			fmt.Sprintf("/opt/nginx_instrumentation.sh \"%s\" \"%s\" \"%s\" \"%s\"",
+				nginxAgentDirFull,
+				nginxAgentConfDirFull,
+				getNginxConfFile(nginxSpec.ConfigFile),
+				nginxServiceInstanceId,
+			)
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:    nginxAgentInitContainerName,
 			Image:   nginxSpec.Image,
 			Command: []string{"/bin/sh", "-c"},
-			Args:    []string{nginxAgentCommands},
+			Args:    []string{nginxAgentI13nCommand},
 			Env: []corev1.EnvVar{
 				{
 					Name:  nginxAttributesEnvVar,
 					Value: getNginxOtelConfig(pod, nginxSpec, index, otlpEndpoint, resourceMap),
 				},
-				{Name: nginxServiceInstanceIdEnvVar,
+				{
+					Name:  "OTEL_NGINX_I13N_SCRIPT",
+					Value: nginxAgentI13nScript,
+				},
+				{
+					Name: nginxServiceInstanceIdEnvVar,
 					ValueFrom: &corev1.EnvVarSource{
 						FieldRef: &corev1.ObjectFieldSelector{
 							FieldPath: "metadata.name",

@@ -1443,6 +1443,10 @@ func TestInjectNginx(t *testing.T) {
 									Value: "NginxModuleEnabled ON;\nNginxModuleOtelExporterEndpoint http://otlp-endpoint:4317;\nNginxModuleOtelMaxQueueSize 4096;\nNginxModuleOtelSpanExporter otlp;\nNginxModuleResolveBackends ON;\nNginxModuleServiceInstanceId <<SID-PLACEHOLDER>>;\nNginxModuleServiceName my-nginx-6c44bcbdd;\nNginxModuleServiceNamespace nginx;\nNginxModuleTraceAsError ON;\n",
 								},
 								{
+									Name:  "OTEL_NGINX_I13N_SCRIPT",
+									Value: nginxSdkInitContainerI13nScript,
+								},
+								{
 									Name: nginxServiceInstanceIdEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
