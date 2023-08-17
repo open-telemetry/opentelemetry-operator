@@ -214,6 +214,38 @@ service:
 				},
 			},
 		},
+		{
+			description: "prometheus RW exporter",
+			specConfig: `exporters:
+    prometheusremotewrite/prometheus:
+        endpoint: http://prometheus-server.monitoring/api/v1/write`,
+			specPorts:     []corev1.ServicePort{},
+			expectedPorts: []corev1.ContainerPort{metricContainerPort},
+		},
+		{
+			description: "multiple prometheus exporters and prometheus RW exporter",
+			specConfig: `exporters:
+    prometheus/prod:
+        endpoint: "0.0.0.0:9090"
+    prometheus/dev:
+        endpoint: "0.0.0.0:9091"
+    prometheusremotewrite/prometheus:
+        endpoint: http://prometheus-server.monitoring/api/v1/write`,
+			specPorts: []corev1.ServicePort{},
+			expectedPorts: []corev1.ContainerPort{
+				metricContainerPort,
+				{
+					Name:          "prometheus-prod",
+					ContainerPort: 9090,
+					Protocol:      corev1.ProtocolTCP,
+				},
+				{
+					Name:          "prometheus-dev",
+					ContainerPort: 9091,
+					Protocol:      corev1.ProtocolTCP,
+				},
+			},
+		},
 	}
 
 	for _, testCase := range tests {
