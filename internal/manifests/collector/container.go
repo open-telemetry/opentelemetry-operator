@@ -220,7 +220,7 @@ func getPrometheusExporterPorts(c map[interface{}]interface{}) ([]corev1.Contain
 	if exporters, ok := c["exporters"]; ok && exporters != nil {
 		for e, exporterConfig := range exporters.(map[interface{}]interface{}) {
 			exporterName := e.(string)
-			if strings.Contains(exporterName, "prometheus") {
+			if exporterName == "prometheus" || strings.HasPrefix(exporterName, "prometheus/") {
 				containerPort, err := getPrometheusExporterPort(exporterConfig.(map[interface{}]interface{}))
 				if err != nil {
 					errors = append(errors,
@@ -229,6 +229,7 @@ func getPrometheusExporterPorts(c map[interface{}]interface{}) ([]corev1.Contain
 							exporterName,
 						),
 					)
+					continue
 				}
 				ports = append(ports,
 					corev1.ContainerPort{

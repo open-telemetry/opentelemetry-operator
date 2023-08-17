@@ -214,6 +214,23 @@ service:
 				},
 			},
 		},
+		{
+			description: "prometheus and prometheusremotewrite exporters",
+			specConfig: `exporters:
+    prometheus:
+        endpoint: "0.0.0.0:9090"
+    prometheusremotewrite:
+        endpoint: "https://example.com/api/v1/write"`,
+			specPorts: []corev1.ServicePort{},
+			expectedPorts: []corev1.ContainerPort{
+				metricContainerPort,
+				{
+					Name:          "prometheus",
+					ContainerPort: 9090,
+					Protocol:      corev1.ProtocolTCP,
+				},
+			},
+		},
 	}
 
 	for _, testCase := range tests {
