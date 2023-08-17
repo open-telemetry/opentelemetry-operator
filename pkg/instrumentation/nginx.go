@@ -62,7 +62,7 @@ const (
 	6) Inject mounting of volumes / files into appropriate directories in the application container
 */
 
-func injectNginxSDK(logger logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
+func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
 
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[index]
