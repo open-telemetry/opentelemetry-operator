@@ -793,6 +793,11 @@ spec:
                             resources required.
                           type: object
                       type: object
+                    restartPolicy:
+                      description: RestartPolicy defines the restart behavior of individual
+                        containers in a pod. This field may only be set for init containers,
+                        and the only allowed value is "Always".
+                      type: string
                     securityContext:
                       description: SecurityContext defines the security options the
                         container should be run with. If set, the fields of SecurityContext
@@ -3069,6 +3074,11 @@ spec:
                             resources required.
                           type: object
                       type: object
+                    restartPolicy:
+                      description: RestartPolicy defines the restart behavior of individual
+                        containers in a pod. This field may only be set for init containers,
+                        and the only allowed value is "Always".
+                      type: string
                     securityContext:
                       description: SecurityContext defines the security options the
                         container should be run with. If set, the fields of SecurityContext
@@ -3826,10 +3836,10 @@ spec:
                   description: ServicePort contains information on service's port.
                   properties:
                     appProtocol:
-                      description: The application protocol for this port. This field
-                        follows standard Kubernetes label syntax. Un-prefixed names
-                        are reserved for IANA standard service names (as per RFC-6335
-                        and https://www.iana.
+                      description: The application protocol for this port. This is
+                        used as a hint for implementations to offer richer behavior
+                        for protocols that they understand. This field follows standard
+                        Kubernetes label syntax.
                       type: string
                     name:
                       description: The name of this port within the service. This
@@ -4720,6 +4730,18 @@ spec:
                           items:
                             type: string
                           type: array
+                        allocatedResourceStatuses:
+                          additionalProperties:
+                            description: When a controller receives persistentvolume
+                              claim update with ClaimResourceStatus for a resource
+                              that it does not recognizes, then it should ignore that
+                              update and let other controllers handle it.
+                            type: string
+                          description: allocatedResourceStatuses stores status of
+                            resource being resized for the given PVC. Key names follow
+                            standard Kubernetes label syntax.
+                          type: object
+                          x-kubernetes-map-type: granular
                         allocatedResources:
                           additionalProperties:
                             anyOf:
@@ -4727,10 +4749,9 @@ spec:
                             - type: string
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             x-kubernetes-int-or-string: true
-                          description: allocatedResources is the storage resource
-                            within AllocatedResources tracks the capacity allocated
-                            to a PVC. It may be larger than the actual capacity when
-                            a volume expansion operation is requested.
+                          description: allocatedResources tracks the resources allocated
+                            to a PVC including its capacity. Key names follow standard
+                            Kubernetes label syntax.
                           type: object
                         capacity:
                           additionalProperties:
@@ -4782,12 +4803,6 @@ spec:
                           type: array
                         phase:
                           description: phase represents the current phase of PersistentVolumeClaim.
-                          type: string
-                        resizeStatus:
-                          description: resizeStatus stores status of resize operation.
-                            ResizeStatus is not set by default but when expansion
-                            is complete resizeStatus is set to empty string by resize
-                            controller or kubelet.
                           type: string
                       type: object
                   type: object
