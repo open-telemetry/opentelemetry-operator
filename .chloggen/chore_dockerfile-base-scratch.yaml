@@ -5,10 +5,10 @@ change_type: enhancement
 component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Add support for TopologySpreadConstraints & nodeSelector on collector and target allocator
+note: Use scratch as the base image for operator
 
 # One or more tracking issues related to the change
-issues: [1899]
+issues: [2011]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.

@@ -23,7 +23,7 @@ metadata:
     name: simplest
 spec:
   rules:
-  - host: example.com
+  - host: otlp-grpc.test.otel
     http:
       paths:
       - backend:
@@ -31,12 +31,15 @@ spec:
             name: simplest-collector
             port:
               name: otlp-grpc
-        path: /otlp-grpc
+        path: /
         pathType: Prefix
-      - backend:
-          service:
-            name: simplest-collector
-            port:
-              name: otlp-http
-        path: /otlp-http
-        pathType: Prefix
+  - host: otlp-http.test.otel
+    http:
+      paths:
+        - backend:
+            service:
+              name: simplest-collector
+              port:
+                name: otlp-http
+          path: /
+          pathType: Prefix

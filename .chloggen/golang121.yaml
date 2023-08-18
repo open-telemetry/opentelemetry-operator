@@ -5,10 +5,10 @@ change_type: enhancement
 component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Expose the Prometheus exporter port in the OpenTelemetry Collector container when it is used in the configuration.
+note: Bump Golang to 1.21
 
 # One or more tracking issues related to the change
-issues: [1689]
+issues: [2009]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.

@@ -48,8 +48,14 @@ const (
 // SEE: OpenTelemetryCollector.spec.ports[index].
 type Ingress struct {
 	// Type default value is: ""
-	// Supported types are: ingress
+	// Supported types are: ingress, route
 	Type IngressType `json:"type,omitempty"`
+
+	// RuleType defines how Ingress exposes collector receivers.
+	// IngressRuleTypePath ("path") exposes each receiver port on a unique path on single domain defined in Hostname.
+	// IngressRuleTypeSubdomain ("subdomain") exposes each receiver port on a unique subdomain of Hostname.
+	// Default is IngressRuleTypePath ("path").
+	RuleType IngressRuleType `json:"ruleType,omitempty"`
 
 	// Hostname by which the ingress proxy can be reached.
 	// +optional
@@ -212,6 +218,22 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
+
+	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
+	// These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping
+	// metrics to their cloud, or in general sidecars that do not support automatic injection. This option only
+	// applies to Deployment, DaemonSet, and StatefulSet deployment modes of the collector. It does not apply to the sidecar
+	// deployment mode. More info about sidecars:
+	// https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
+	//
+	// Container names managed by the operator:
+	// * `otc-container`
+	//
+	// Overriding containers managed by the operator is outside the scope of what the maintainers will support and by
+	// doing so, you wil accept the risk of it breaking things.
+	//
+	// +optional
+	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//

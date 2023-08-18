@@ -5,10 +5,10 @@ change_type: enhancement
 component: autoinstrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Bump dotnet dependency to 1.0.0-rc.1
+note: Bump OpenTelemetry .NET Automatic Instrumentation to 1.0.0-rc.2
 
 # One or more tracking issues related to the change
-issues: [1978]
+issues: [2030]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
