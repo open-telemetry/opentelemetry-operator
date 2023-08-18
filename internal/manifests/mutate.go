@@ -15,6 +15,7 @@
 package manifests
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -28,6 +29,10 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+)
+
+var (
+	ImmutableChangeErr = errors.New("immutable field change attempted")
 )
 
 // HasImmutableChange informs a client if an immutable change is being made to an object.
@@ -237,6 +242,9 @@ func mutateService(existing, desired *corev1.Service) error {
 }
 
 func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
+	if !existing.CreationTimestamp.IsZero() && existing.Spec.Selector != desired.Spec.Selector {
+		return ImmutableChangeErr
+	}
 	// Daemonset selector is immutable so we set this value only if
 	// a new object is going to be created
 	if existing.CreationTimestamp.IsZero() {
@@ -250,6 +258,9 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 }
 
 func mutateDeployment(existing, desired *appsv1.Deployment) error {
+	if !existing.CreationTimestamp.IsZero() && existing.Spec.Selector != desired.Spec.Selector {
+		return ImmutableChangeErr
+	}
 	// Deployment selector is immutable so we set this value only if
 	// a new object is going to be created
 	if existing.CreationTimestamp.IsZero() {
@@ -266,8 +277,8 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 }
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
-	if hasChange, field := hasImmutableFieldChange(existing, desired); hasChange {
-		return fmt.Errorf("attempting to mutate immutable field: %s", field)
+	if hasChange, _ := hasImmutableFieldChange(existing, desired); hasChange {
+		return ImmutableChangeErr
 	}
 	// StatefulSet selector is immutable so we set this value only if
 	// a new object is going to be created

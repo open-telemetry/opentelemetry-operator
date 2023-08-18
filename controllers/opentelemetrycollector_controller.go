@@ -301,19 +301,17 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 			"object_name", obj.GetName(),
 			"object_kind", obj.GetObjectKind(),
 		)
-		// check if it needs to be deleted (selector change or VCT change)
 		desired := obj.DeepCopyObject().(client.Object)
-		hasImmutableChange, changingField := manifests.HasImmutableChange(obj, desired)
-		if hasImmutableChange {
-			l.Info("%s has immutable field %s changing, deleting to recreate", desired.GetName(), changingField)
+		mutateFn := manifests.MutateFuncFor(obj, desired)
+		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
+		if crudErr != nil && crudErr == manifests.ImmutableChangeErr {
+			l.Info("detected immutable field change, trying to delete, new object will be created on next reconcile", "obj", obj.GetName())
 			delErr := r.Client.Delete(ctx, obj)
 			if delErr != nil {
 				return delErr
 			}
-		}
-		mutateFn := manifests.MutateFuncFor(obj, desired)
-		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
-		if crudErr != nil {
+			continue
+		} else if crudErr != nil {
 			l.Error(crudErr, "failed to configure resource")
 			errs = append(errs, crudErr)
 			continue
