@@ -28,7 +28,6 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -42,11 +41,6 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-const (
-	defaultCollectorImage    = "default-collector"
-	defaultTaAllocationImage = "default-ta-allocator"
-)
-
 var (
 	k8sClient  client.Client
 	testEnv    *envtest.Environment
@@ -55,8 +49,6 @@ var (
 	cancel     context.CancelFunc
 	err        error
 	cfg        *rest.Config
-
-	instanceUID = uuid.NewUUID()
 )
 
 func TestMain(m *testing.M) {
