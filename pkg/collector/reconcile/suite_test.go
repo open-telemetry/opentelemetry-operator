@@ -300,5 +300,4 @@ func populateObjectIfExists(t testing.TB, object client.Object, namespacedName t
 		return false, err
 	}
 	return true, nil
-
 }

@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -61,10 +62,11 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 	)
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{
-		Client: k8sClient,
-		Log:    logger,
-		Scheme: testScheme,
-		Config: cfg,
+		Client:   k8sClient,
+		Log:      logger,
+		Scheme:   testScheme,
+		Recorder: record.NewFakeRecorder(10),
+		Config:   cfg,
 	})
 	require.NoError(t, cfg.AutoDetect())
 	created := &v1alpha1.OpenTelemetryCollector{
@@ -172,10 +174,11 @@ func TestNewStatefulSetObjectsOnReconciliation(t *testing.T) {
 	cfg := config.New(config.WithAutoDetect(mockAutoDetector))
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{
-		Client: k8sClient,
-		Log:    logger,
-		Scheme: testScheme,
-		Config: cfg,
+		Client:   k8sClient,
+		Log:      logger,
+		Scheme:   testScheme,
+		Recorder: record.NewFakeRecorder(10),
+		Config:   cfg,
 	})
 	created := &v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{

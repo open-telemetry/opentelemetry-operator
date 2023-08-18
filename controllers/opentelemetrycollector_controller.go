@@ -42,6 +42,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/status"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -224,10 +225,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 
 	if featuregate.UseManifestReconciliation.IsEnabled() {
 		err := r.doCRUD(ctx, params)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
+		return status.HandleReconcileStatus(ctx, log, params, err)
 	}
 
 	if err := r.RunTasks(ctx, params); err != nil {
