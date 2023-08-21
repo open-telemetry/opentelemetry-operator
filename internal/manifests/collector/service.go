@@ -100,11 +100,7 @@ func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 		return nil
 	}
 
-	ports, err := adapters.ConfigToReceiverPorts(logger, configFromString)
-	if err != nil {
-		logger.Error(err, "couldn't build the service for this instance")
-		return nil
-	}
+	ports := adapters.ConfigToPorts(logger, configFromString)
 
 	if len(otelcol.Spec.Ports) > 0 {
 		// we should add all the ports from the CR
