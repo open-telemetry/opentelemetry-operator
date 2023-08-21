@@ -1,0 +1,65 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: create-sm-prometheus.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-collector
+  name: simplest-collector
+  namespace: create-sm-prometheus
+spec:
+  endpoints:
+  - port: monitoring
+  - port: prometheus-dev
+  - port: prometheus-prod
+  namespaceSelector:
+    matchNames:
+    - create-sm-prometheus
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/instance: create-sm-prometheus.simplest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simplest-collector
+  namespace: create-sm-prometheus
+spec:
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  - name: prometheus-dev
+    port: 8885
+    protocol: TCP
+    targetPort: 8885
+  - name: prometheus-prod
+    port: 8884
+    protocol: TCP
+    targetPort: 8884
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: create-sm-prometheus.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-collector-monitoring
+    app.kubernetes.io/part-of: opentelemetry
+  name: simplest-collector-monitoring
+  namespace: create-sm-prometheus
+spec:
+  ports:
+  - name: monitoring
+    port: 8888
+    protocol: TCP
+    targetPort: 8888

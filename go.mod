@@ -14,6 +14,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/collector/featuregate v0.77.0
+	go.opentelemetry.io/collector/semconv v0.82.0
 	go.opentelemetry.io/otel v1.16.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.0
