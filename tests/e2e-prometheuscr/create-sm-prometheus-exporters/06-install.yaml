@@ -21,12 +21,9 @@ spec:
       prometheus/dev:
         endpoint: 0.0.0.0:8885
 
-    prometheusremotewrite/prometheus:
-        endpoint: http://prometheus-server.monitoring/api/v1/write
-
     service:
       pipelines:
         metrics:
           receivers: [otlp]
           processors: []
-          exporters: [prometheus/dev, prometheus/prod, prometheusremotewrite/prometheus]
+          exporters: [prometheus/dev]

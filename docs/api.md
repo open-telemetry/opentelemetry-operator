@@ -3983,6 +3983,13 @@ A single application container that you want to run within a pod.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          RestartPolicy defines the restart behavior of individual containers in a pod. This field may only be set for init containers, and the only allowed value is "Always".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontext">securityContext</a></b></td>
         <td>object</td>
         <td>
@@ -8625,6 +8632,13 @@ A single application container that you want to run within a pod.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          RestartPolicy defines the restart behavior of individual containers in a pod. This field may only be set for init containers, and the only allowed value is "Always".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontext">securityContext</a></b></td>
         <td>object</td>
         <td>
@@ -11694,7 +11708,7 @@ ServicePort contains information on service's port.
         <td><b>appProtocol</b></td>
         <td>string</td>
         <td>
-          The application protocol for this port. This field follows standard Kubernetes label syntax. Un-prefixed names are reserved for IANA standard service names (as per RFC-6335 and https://www.iana.<br/>
+          The application protocol for this port. This is used as a hint for implementations to offer richer behavior for protocols that they understand. This field follows standard Kubernetes label syntax.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13346,10 +13360,17 @@ status represents the current information/status of a persistent volume claim. R
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>allocatedResourceStatuses</b></td>
+        <td>map[string]string</td>
+        <td>
+          allocatedResourceStatuses stores status of resource being resized for the given PVC. Key names follow standard Kubernetes label syntax.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>allocatedResources</b></td>
         <td>map[string]int or string</td>
         <td>
-          allocatedResources is the storage resource within AllocatedResources tracks the capacity allocated to a PVC. It may be larger than the actual capacity when a volume expansion operation is requested.<br/>
+          allocatedResources tracks the resources allocated to a PVC including its capacity. Key names follow standard Kubernetes label syntax.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13371,13 +13392,6 @@ status represents the current information/status of a persistent volume claim. R
         <td>string</td>
         <td>
           phase represents the current phase of PersistentVolumeClaim.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>resizeStatus</b></td>
-        <td>string</td>
-        <td>
-          resizeStatus stores status of resize operation. ResizeStatus is not set by default but when expansion is complete resizeStatus is set to empty string by resize controller or kubelet.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
