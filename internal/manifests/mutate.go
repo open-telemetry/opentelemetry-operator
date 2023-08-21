@@ -37,32 +37,6 @@ var (
 	ImmutableChangeErr = errors.New("immutable field change attempted")
 )
 
-// HasImmutableChange informs a client if an immutable change is being made to an object.
-func HasImmutableChange(existing, desired client.Object) (bool, string) {
-	switch existing.(type) {
-	case *appsv1.Deployment:
-		dpl := existing.(*appsv1.Deployment)
-		wantDpl := desired.(*appsv1.Deployment)
-		if dpl.CreationTimestamp.IsZero() {
-			return false, ""
-		}
-		return dpl.Spec.Selector != wantDpl.Spec.Selector, "Spec.Selector"
-	case *appsv1.DaemonSet:
-		dpl := existing.(*appsv1.DaemonSet)
-		wantDpl := desired.(*appsv1.DaemonSet)
-		if dpl.CreationTimestamp.IsZero() {
-			return false, ""
-		}
-		return dpl.Spec.Selector != wantDpl.Spec.Selector, "Spec.Selector"
-	case *appsv1.StatefulSet:
-		exStateful := existing.(*appsv1.StatefulSet)
-		desStateful := desired.(*appsv1.StatefulSet)
-		return hasImmutableFieldChange(exStateful, desStateful)
-	default:
-		return false, ""
-	}
-}
-
 // MutateFuncFor returns a mutate function based on the
 // existing resource's concrete type. It supports currently
 // only the following types or else panics:
@@ -266,7 +240,7 @@ func mutateService(existing, desired *corev1.Service) error {
 }
 
 func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
-	if !existing.CreationTimestamp.IsZero() && existing.Spec.Selector != desired.Spec.Selector {
+	if !existing.CreationTimestamp.IsZero() && !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
 		return ImmutableChangeErr
 	}
 	// Daemonset selector is immutable so we set this value only if
@@ -282,7 +256,7 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 }
 
 func mutateDeployment(existing, desired *appsv1.Deployment) error {
-	if !existing.CreationTimestamp.IsZero() && existing.Spec.Selector != desired.Spec.Selector {
+	if !existing.CreationTimestamp.IsZero() && !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
 		return ImmutableChangeErr
 	}
 	// Deployment selector is immutable so we set this value only if

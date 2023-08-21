@@ -303,7 +303,7 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 		mutateFn := manifests.MutateFuncFor(obj, desired)
 		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
 		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
-			l.Info("detected immutable field change, trying to delete, new object will be created on next reconcile", "obj", obj.GetName())
+			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "obj", obj.GetName())
 			delErr := r.Client.Delete(ctx, obj)
 			if delErr != nil {
 				return delErr
