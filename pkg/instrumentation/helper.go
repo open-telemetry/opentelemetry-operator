@@ -15,6 +15,7 @@
 package instrumentation
 
 import (
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -35,10 +36,17 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 			return true
 		}
 	}
-	// Go uses a side car
+	// Go uses a sidecar
 	for _, cont := range pod.Spec.Containers {
 		if cont.Name == sideCarName {
 			return true
+		}
+		for _, envVar := range cont.Env {
+			// This environment variable is set in the operator when injecting
+			// the instrumentation
+			if envVar.Name == constants.EnvPodName {
+				return true
+			}
 		}
 	}
 	return false
