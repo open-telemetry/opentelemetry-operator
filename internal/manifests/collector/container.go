@@ -17,10 +17,7 @@ package collector
 import (
 	"errors"
 	"fmt"
-	"net"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -156,10 +153,8 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		logger.Error(err, "couldn't extract the configuration")
 		return ports
 	}
-	ps, err := adapters.ConfigToReceiverPorts(logger, c)
-	if err != nil {
-		logger.Error(err, "couldn't build container ports from configuration")
-	} else {
+	ps := adapters.ConfigToPorts(logger, c)
+	if len(ps) > 0 {
 		for _, p := range ps {
 			truncName := naming.Truncate(p.Name, maxPortLen)
 			if p.Name != truncName {
@@ -192,63 +187,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		Protocol:      corev1.ProtocolTCP,
 	}
 
-	promExporterPorts, errs := getPrometheusExporterPorts(c)
-	for _, err := range errs {
-		logger.V(2).Info("There was a problem getting the prometheus exporter port: %s", err)
-	}
-	for _, promPort := range promExporterPorts {
-		ports[promPort.Name] = promPort
-	}
-
 	return ports
-}
-
-func getPrometheusExporterPort(exporterConfig map[interface{}]interface{}) (int32, error) {
-	var promPort int32 = 0
-	if endpoint, ok := exporterConfig["endpoint"]; ok {
-		_, port, err := net.SplitHostPort(endpoint.(string))
-		if err != nil {
-			return 0, err
-		}
-		i64, err := strconv.ParseInt(port, 10, 32)
-		if err != nil {
-			return 0, err
-		}
-		promPort = int32(i64)
-	}
-	return promPort, nil
-}
-
-func getPrometheusExporterPorts(c map[interface{}]interface{}) ([]corev1.ContainerPort, []error) {
-	errors := make([]error, 0)
-	ports := make([]corev1.ContainerPort, 0)
-	if exporters, ok := c["exporters"]; ok && exporters != nil {
-		for e, exporterConfig := range exporters.(map[interface{}]interface{}) {
-			exporterName := e.(string)
-			// Note that receivers, processors, exporters and/or pipelines are defined via component identifiers in type[/name] format (e.g. otlp or otlp/2). Components of a given type can be defined more than once as long as the identifiers are unique.
-			if strings.Split(exporterName, "/")[0] == "prometheus" {
-				containerPort, err := getPrometheusExporterPort(exporterConfig.(map[interface{}]interface{}))
-				if err != nil {
-					errors = append(errors,
-						fmt.Errorf(
-							"there was a problem getting the port. Exporter %s",
-							exporterName,
-						),
-					)
-				}
-				ports = append(ports,
-					corev1.ContainerPort{
-						Name:          naming.PortName(exporterName, containerPort),
-						ContainerPort: containerPort,
-						Protocol:      corev1.ProtocolTCP,
-					},
-				)
-			}
-		}
-	} else {
-		errors = append(errors, fmt.Errorf("no exporters specified in the configuration"))
-	}
-	return ports, errors
 }
 
 func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {

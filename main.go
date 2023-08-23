@@ -40,6 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -189,16 +190,19 @@ func main() {
 	optionsTlSOptsFuncs := []func(*tls.Config){
 		func(config *tls.Config) { tlsConfigSetting(config, tlsOpt) },
 	}
-	var namespaces []string
+	var namespaces map[string]cache.Config
 	if strings.Contains(watchNamespace, ",") {
-		namespaces = strings.Split(watchNamespace, ",")
-	} else {
-		namespaces = []string{watchNamespace}
+		namespaces = map[string]cache.Config{}
+		for _, ns := range strings.Split(watchNamespace, ",") {
+			namespaces[ns] = cache.Config{}
+		}
 	}
 
 	mgrOptions := ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "9f7554c3.opentelemetry.io",
@@ -211,7 +215,7 @@ func main() {
 			TLSOpts: optionsTlSOptsFuncs,
 		}),
 		Cache: cache.Options{
-			Namespaces: namespaces,
+			DefaultNamespaces: namespaces,
 		},
 	}
 

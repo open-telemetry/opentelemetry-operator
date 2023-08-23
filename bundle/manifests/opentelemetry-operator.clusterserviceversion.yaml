@@ -31,13 +31,13 @@ metadata:
     categories: Logging & Tracing
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2023-08-09T22:53:11Z"
+    createdAt: "2023-08-18T14:30:49Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.82.0
+  name: opentelemetry-operator.v0.83.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -83,9 +83,9 @@ spec:
       - description: Metrics defines the metrics configuration for operands.
         displayName: Metrics Config
         path: observability.metrics
-      - description: EnableMetrics specifies if ServiceMonitors should be created
-          for the OpenTelemetry Collector. The operator.observability.prometheus feature
-          gate must be enabled to use this feature.
+      - description: EnableMetrics specifies if ServiceMonitor should be created for
+          the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.prometheus
+          feature gate must be enabled to use this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       version: v1alpha1
@@ -332,7 +332,7 @@ spec:
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
                 - --feature-gates=+operator.autoinstrumentation.go
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.82.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.83.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -439,7 +439,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.82.0
+  version: 0.83.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

@@ -3,6 +3,43 @@ Changes by Version
 
 <!-- next version -->
 
+## 0.83.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Make sure OTLP export can report data to OTLP ingress/route without additional configuration (#1967)
+  The ingress can be configured to create a single host with multiple paths or 
+  multiple hosts with subdomains (one per receiver port).
+  The path from OpenShift route was removed.
+  The port names are truncate to 15 characters. Users with custom receivers
+  which create ports with longer name might need to update their configuration.
+  
+
+### 💡 Enhancements 💡
+
+- `operator`: Add `AdditionalContainers` to the collector spec allowing to configure sidecar containers. This only applies to Deployment/StatefulSet/DeamonSet deployment modes of the collector. (#1987)
+- `operator`: Add flag to enable support for the pprof server in the operator. (#1997)
+- `operator`: Set the level 4 of capabilities in the CSV for the OpenTelemetry Operator. (#2002)
+- `autoinstrumentation`: Bump OpenTelemetry .NET Automatic Instrumentation to 1.0.0-rc.2 (#2030)
+- `operator`: Use scratch as the base image for operator (#2011)
+- `operator`: Bump Golang to 1.21 (#2009)
+- `operator`: Daemonsets can be instrumented so the generated servicename should use their name for better discoverability (#2015)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: fixes bug introduced in v0.82.0 where Prometheus exporters weren't being generated correctly (#2016)
+
+### Components
+
+* [OpenTelemetry Collector - v0.83.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.83.0)
+* [OpenTelemetry Contrib - v0.83.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.83.0)
+* [Java auto-instrumentation - 1.29.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.29.0)
+* [.NET auto-instrumentation - 1.0.0-rc.2](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.0.0-rc.2)
+* [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
+* [Python - 0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.40b0)
+* [Go - v0.2.2-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.2-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+
 ## 0.82.0
 
 ### 🛑 Breaking changes 🛑

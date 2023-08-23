@@ -26,7 +26,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -179,7 +179,7 @@ func TestParserFailed(t *testing.T) {
 			return nil, errors.New("mocked error")
 		},
 	}
-	parser.Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ReceiverParser {
+	receiver.Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) receiver.ReceiverParser {
 		return mockParser
 	})
 

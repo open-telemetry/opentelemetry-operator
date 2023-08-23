@@ -426,7 +426,7 @@ type AutoscalerSpec struct {
 
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
-	// EnableMetrics specifies if ServiceMonitors should be created for the OpenTelemetry Collector.
+	// EnableMetrics specifies if ServiceMonitor should be created for the OpenTelemetry Collector and Prometheus Exporters.
 	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional

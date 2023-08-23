@@ -24,16 +24,90 @@ import (
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+	exporterParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/exporter"
+	receiverParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
 var (
+	// ErrNoExporters indicates that there are no exporters in the configuration.
+	ErrNoExporters = errors.New("no exporters available as part of the configuration")
+
 	// ErrNoReceivers indicates that there are no receivers in the configuration.
 	ErrNoReceivers = errors.New("no receivers available as part of the configuration")
 
 	// ErrReceiversNotAMap indicates that the receivers property isn't a map of values.
 	ErrReceiversNotAMap = errors.New("receivers property in the configuration doesn't contain valid receivers")
+
+	// ErrExportersNotAMap indicates that the exporters property isn't a map of values.
+	ErrExportersNotAMap = errors.New("exporters property in the configuration doesn't contain valid exporters")
 )
+
+// ConfigToExporterPorts converts the incoming configuration object into a set of service ports required by the exporters.
+func ConfigToExporterPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
+	// now, we gather which ports we might need to open
+	// for that, we get all the exporters and check their `endpoint` properties,
+	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
+	// ${instance.Name}-${exporter.name}-${exporter.qualifier}
+	// the exporter-name is typically the node name from the exporters map
+	// the exporter-qualifier is what comes after the slash in the exporter name, but typically nil
+	// examples:
+	// ```yaml
+	// exporters:
+	//   exampleexporter:
+	//     endpoint: 0.0.0.0:12345
+	//   exampleexporter/settings:
+	//     endpoint: 0.0.0.0:12346
+	// in this case, we have two ports, named: "exampleexporter" and "exampleexporter-settings"
+	exportersProperty, ok := config["exporters"]
+	if !ok {
+		return nil, ErrNoExporters
+	}
+	expEnabled := GetEnabledExporters(logger, config)
+	if expEnabled == nil {
+		return nil, ErrExportersNotAMap
+	}
+	exporters, ok := exportersProperty.(map[interface{}]interface{})
+	if !ok {
+		return nil, ErrExportersNotAMap
+	}
+
+	ports := []corev1.ServicePort{}
+	for key, val := range exporters {
+		// This check will pass only the enabled exporters,
+		// then only the related ports will be opened.
+		if !expEnabled[key] {
+			continue
+		}
+		exporter, ok := val.(map[interface{}]interface{})
+		if !ok {
+			logger.Info("exporter doesn't seem to be a map of properties", "exporter", key)
+			exporter = map[interface{}]interface{}{}
+		}
+
+		exprtName := key.(string)
+		exprtParser, err := exporterParser.For(logger, exprtName, exporter)
+		if err != nil {
+			logger.V(2).Info("no parser found for '%s'", exprtName)
+			continue
+		}
+
+		exprtPorts, err := exprtParser.Ports()
+		if err != nil {
+			logger.Error(err, "parser for '%s' has returned an error: %w", exprtName, err)
+			continue
+		}
+
+		if len(exprtPorts) > 0 {
+			ports = append(ports, exprtPorts...)
+		}
+	}
+
+	sort.Slice(ports, func(i, j int) bool {
+		return ports[i].Name < ports[j].Name
+	})
+
+	return ports, nil
+}
 
 // ConfigToReceiverPorts converts the incoming configuration object into a set of service ports required by the receivers.
 func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
@@ -78,7 +152,7 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 		}
 
 		rcvrName := key.(string)
-		rcvrParser := parser.For(logger, rcvrName, receiver)
+		rcvrParser := receiverParser.For(logger, rcvrName, receiver)
 
 		rcvrPorts, err := rcvrParser.Ports()
 		if err != nil {
@@ -99,6 +173,25 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 	})
 
 	return ports, nil
+}
+
+func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) []corev1.ServicePort {
+	ports, err := ConfigToReceiverPorts(logger, config)
+	if err != nil {
+		logger.Error(err, "there was a problem while getting the ports from the receivers")
+	}
+
+	exporterPorts, err := ConfigToExporterPorts(logger, config)
+	if err != nil {
+		logger.Error(err, "there was a problem while getting the ports from the exporters")
+	}
+	ports = append(ports, exporterPorts...)
+
+	sort.Slice(ports, func(i, j int) bool {
+		return ports[i].Name < ports[j].Name
+	})
+
+	return ports
 }
 
 // ConfigToMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
