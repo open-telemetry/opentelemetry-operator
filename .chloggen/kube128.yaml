@@ -8,7 +8,7 @@ component: operator
 note: Run end-to-end tests on Kubernetes 1.28
 
 # One or more tracking issues related to the change
-issues: []
+issues: [2047]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
