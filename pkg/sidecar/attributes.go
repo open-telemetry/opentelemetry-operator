@@ -42,7 +42,7 @@ func getResourceAttributesEnv(ns corev1.Namespace, podReferences podReferences) 
 	var envvars []corev1.EnvVar
 
 	attributes := map[attribute.Key]string{
-		semconv.K8SPodNameKey:       fmt.Sprintf("$(%s)", constants.EnvPodNameSidecar),
+		semconv.K8SPodNameKey:       fmt.Sprintf("$(%s)", constants.EnvPodName),
 		semconv.K8SPodUIDKey:        fmt.Sprintf("$(%s)", constants.EnvPodUID),
 		semconv.K8SNodeNameKey:      fmt.Sprintf("$(%s)", constants.EnvNodeName),
 		semconv.K8SNamespaceNameKey: ns.Name,
@@ -59,7 +59,7 @@ func getResourceAttributesEnv(ns corev1.Namespace, podReferences podReferences) 
 	}
 
 	envvars = append(envvars, corev1.EnvVar{
-		Name: constants.EnvPodNameSidecar,
+		Name: constants.EnvPodName,
 		ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.name",

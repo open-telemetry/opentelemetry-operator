@@ -38,7 +38,7 @@ func TestGetAttributesEnvNoPodReferences(t *testing.T) {
 
 	expectedEnv := []corev1.EnvVar{
 		{
-			Name: constants.EnvPodNameSidecar,
+			Name: constants.EnvPodName,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.name",
@@ -68,7 +68,7 @@ func TestGetAttributesEnvNoPodReferences(t *testing.T) {
 				semconv.K8SNodeNameKey,
 				constants.EnvNodeName,
 				semconv.K8SPodNameKey,
-				constants.EnvPodNameSidecar,
+				constants.EnvPodName,
 				semconv.K8SPodUIDKey,
 				constants.EnvPodUID,
 			),
@@ -102,7 +102,7 @@ func TestGetAttributesEnvWithPodReferences(t *testing.T) {
 
 	expectedEnv := []corev1.EnvVar{
 		{
-			Name: constants.EnvPodNameSidecar,
+			Name: constants.EnvPodName,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.name",
@@ -134,7 +134,7 @@ func TestGetAttributesEnvWithPodReferences(t *testing.T) {
 				semconv.K8SNodeNameKey,
 				constants.EnvNodeName,
 				semconv.K8SPodNameKey,
-				constants.EnvPodNameSidecar,
+				constants.EnvPodName,
 				semconv.K8SPodUIDKey,
 				constants.EnvPodUID,
 				semconv.K8SReplicaSetNameKey,
@@ -164,7 +164,7 @@ func TestHasResourceAttributeEnvVar(t *testing.T) {
 						semconv.K8SNodeNameKey,
 						constants.EnvNodeName,
 						semconv.K8SPodNameKey,
-						constants.EnvPodNameSidecar,
+						constants.EnvPodName,
 						semconv.K8SPodUIDKey,
 						constants.EnvPodUID,
 						semconv.K8SReplicaSetNameKey,

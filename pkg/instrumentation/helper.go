@@ -15,8 +15,10 @@
 package instrumentation
 
 import (
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 // Calculate if we already inject InitContainers.
@@ -36,16 +38,22 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 			return true
 		}
 	}
-	// Go uses a sidecar
+
 	for _, cont := range pod.Spec.Containers {
+		// Go uses a sidecar
 		if cont.Name == sideCarName {
 			return true
 		}
-		for _, envVar := range cont.Env {
-			// This environment variable is set in the operator when injecting
-			// the instrumentation
-			if envVar.Name == constants.EnvPodName {
-				return true
+
+		// This environment variable is set in the sidecar and in the
+		// collector containers. We look for it in any container that is not
+		// the sidecar container to check if we already injected the
+		// instrumentation or not
+		if cont.Name != naming.Container() {
+			for _, envVar := range cont.Env {
+				if envVar.Name == constants.EnvNodeName {
+					return true
+				}
 			}
 		}
 	}
