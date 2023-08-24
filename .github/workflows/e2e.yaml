@@ -28,7 +28,8 @@ jobs:
        - "1.19"
        - "1.27"
        group:
-         - e2e e2e-upgrade
+         - e2e
+         - e2e-upgrade
          - e2e-prometheuscr
          - e2e-autoscale
 
