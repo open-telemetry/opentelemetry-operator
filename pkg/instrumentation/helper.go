@@ -31,7 +31,10 @@ func isInitContainerMissing(pod corev1.Pod) bool {
 // Checks if Pod is already instrumented by checking Instrumentation InitContainer presence.
 func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 	for _, cont := range pod.Spec.InitContainers {
-		if cont.Name == initContainerName {
+		if cont.Name == initContainerName || 
+			// Apache-HTTPD auto-instrumentation
+			cont.Name == apacheAgentInitContainerName ||
+			cont.Name == apacheAgentCloneContainerName {
 			return true
 		}
 	}

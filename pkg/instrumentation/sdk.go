@@ -157,7 +157,10 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityContext *corev1.SecurityContext) corev1.Pod {
 	for i, initContainer := range pod.Spec.InitContainers {
-		if initContainer.Name == initContainerName {
+		if initContainer.Name == initContainerName ||
+			// Apache HTTPD auto-instrumentation
+			initContainer.Name == apacheAgentInitContainerName ||
+			initContainer.Name == apacheAgentCloneContainerName {
 			pod.Spec.InitContainers[i].SecurityContext = securityContext
 		}
 	}
