@@ -22,10 +22,12 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -37,19 +39,22 @@ type instPodMutator struct {
 	Client      client.Client
 	sdkInjector *sdkInjector
 	Logger      logr.Logger
+	Recorder    record.EventRecorder
 }
 
 type languageInstrumentations struct {
-	Java   *v1alpha1.Instrumentation
-	NodeJS *v1alpha1.Instrumentation
-	Python *v1alpha1.Instrumentation
-	DotNet *v1alpha1.Instrumentation
-	Sdk    *v1alpha1.Instrumentation
+	Java        *v1alpha1.Instrumentation
+	NodeJS      *v1alpha1.Instrumentation
+	Python      *v1alpha1.Instrumentation
+	DotNet      *v1alpha1.Instrumentation
+	ApacheHttpd *v1alpha1.Instrumentation
+	Go          *v1alpha1.Instrumentation
+	Sdk         *v1alpha1.Instrumentation
 }
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
+func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder) *instPodMutator {
 	return &instPodMutator{
 		Logger: logger,
 		Client: client,
@@ -57,6 +62,7 @@ func NewMutator(logger logr.Logger, client client.Client) *instPodMutator {
 			logger: logger,
 			client: client,
 		},
+		Recorder: recorder,
 	}
 }
 
@@ -81,28 +87,72 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.Java = inst
+	if featuregate.EnableJavaAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.Java = inst
+	} else {
+		logger.Error(nil, "support for Java auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Java auto instrumentation is not enabled")
+	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNodeJS); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.NodeJS = inst
+	if featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.NodeJS = inst
+	} else {
+		logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
+	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPython); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.Python = inst
+	if featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.Python = inst
+	} else {
+		logger.Error(nil, "support for Python auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
+	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDotNet); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.DotNet = inst
+	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.DotNet = inst
+	} else {
+		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
+	}
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectGo); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if featuregate.EnableGoAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.Go = inst
+	} else {
+		logger.Error(err, "support for Go auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Go auto instrumentation is not enabled")
+	}
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectApacheHttpd); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.ApacheHttpd = inst
+	} else {
+		logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Apache HTTPD auto instrumentation is not enabled")
+	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
@@ -111,7 +161,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.Sdk = inst
 
-	if insts.Java == nil && insts.NodeJS == nil && insts.Python == nil && insts.DotNet == nil && insts.Sdk == nil {
+	if insts.Java == nil && insts.NodeJS == nil && insts.Python == nil && insts.DotNet == nil && insts.Go == nil && insts.ApacheHttpd == nil && insts.Sdk == nil {
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}

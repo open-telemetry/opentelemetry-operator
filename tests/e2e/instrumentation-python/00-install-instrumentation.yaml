@@ -25,6 +25,6 @@ spec:
       - name: OTEL_LOG_LEVEL
         value: "debug"
       - name: OTEL_TRACES_EXPORTER
-        value: otlp_proto_http
+        value: otlp
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://localhost:4317
+        value: http://localhost:4318

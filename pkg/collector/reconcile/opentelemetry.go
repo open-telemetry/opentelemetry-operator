@@ -18,6 +18,11 @@ package reconcile
 import (
 	"context"
 	"fmt"
+	"strconv"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,14 +30,12 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
 // Self updates this instance's self data. This should be the last item in the reconciliation, as it causes changes
 // making params.Instance obsolete. Default values should be set in the Defaulter webhook, this should only be used
 // for the Status, which can't be set by the defaulter.
-func Self(ctx context.Context, params Params) error {
+func Self(ctx context.Context, params manifests.Params) error {
 	changed := params.Instance
 
 	// this field is only changed for new instances: on existing instances this
@@ -64,11 +67,10 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 		return nil
 	}
 
-	name := naming.Collector(*changed)
+	name := naming.Collector(changed.Name)
 
 	// Set the scale selector
-	labels := collector.Labels(*changed, []string{})
-	labels["app.kubernetes.io/name"] = name
+	labels := collector.Labels(*changed, name, []string{})
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return fmt.Errorf("failed to get selector for labelSelector: %w", err)
@@ -78,10 +80,14 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 	// Set the scale replicas
 	objKey := client.ObjectKey{
 		Namespace: changed.GetNamespace(),
-		Name:      naming.Collector(*changed),
+		Name:      naming.Collector(changed.Name),
 	}
 
 	var replicas int32
+	var readyReplicas int32
+	var statusReplicas string
+	var statusImage string
+
 	switch mode { // nolint:exhaustive
 	case v1alpha1.ModeDeployment:
 		obj := &appsv1.Deployment{}
@@ -89,6 +95,9 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 			return fmt.Errorf("failed to get deployment status.replicas: %w", err)
 		}
 		replicas = obj.Status.Replicas
+		readyReplicas = obj.Status.ReadyReplicas
+		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
+		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 
 	case v1alpha1.ModeStatefulSet:
 		obj := &appsv1.StatefulSet{}
@@ -96,8 +105,20 @@ func updateScaleSubResourceStatus(ctx context.Context, cli client.Client, change
 			return fmt.Errorf("failed to get statefulSet status.replicas: %w", err)
 		}
 		replicas = obj.Status.Replicas
+		readyReplicas = obj.Status.ReadyReplicas
+		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
+		statusImage = obj.Spec.Template.Spec.Containers[0].Image
+
+	case v1alpha1.ModeDaemonSet:
+		obj := &appsv1.DaemonSet{}
+		if err := cli.Get(ctx, objKey, obj); err != nil {
+			return fmt.Errorf("failed to get daemonSet status.replicas: %w", err)
+		}
+		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 	}
 	changed.Status.Scale.Replicas = replicas
+	changed.Status.Image = statusImage
+	changed.Status.Scale.StatusReplicas = statusReplicas
 
 	return nil
 }

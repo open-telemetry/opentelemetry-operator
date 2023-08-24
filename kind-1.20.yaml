@@ -2,4 +2,17 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
-  image: kindest/node:v1.20.15@sha256:2d93744654696ea4270c04ec83e7940177295aac99223b224b052c79d4e7693e
+  image: kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394
+  kubeadmConfigPatches:
+    - |
+      kind: InitConfiguration
+      nodeRegistration:
+       kubeletExtraArgs:
+         node-labels: "ingress-ready=true"
+  extraPortMappings:
+    - containerPort: 80
+      hostPort: 80
+      protocol: TCP
+    - containerPort: 443
+      hostPort: 443
+      protocol: TCP

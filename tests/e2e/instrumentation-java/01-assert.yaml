@@ -44,5 +44,16 @@ spec:
   - name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "64Mi"
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
 status:
   phase: Running

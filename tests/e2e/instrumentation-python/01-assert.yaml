@@ -13,11 +13,17 @@ spec:
     - name: OTEL_LOG_LEVEL
       value: "debug"
     - name: OTEL_TRACES_EXPORTER
-      value: otlp_proto_http
+      value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
+      value: http://localhost:4318
     - name: PYTHONPATH
       value: "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation"
+    - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_METRICS_PROTOCOL
+      value: http/protobuf
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
       value: "20"
     - name: OTEL_TRACES_SAMPLER
@@ -40,5 +46,16 @@ spec:
   - name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "32Mi"
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
 status:
   phase: Running

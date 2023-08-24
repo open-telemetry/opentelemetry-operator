@@ -18,32 +18,28 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator"
-	ta "github.com/open-telemetry/opentelemetry-operator/pkg/targetallocator/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 )
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 // ConfigMaps reconciles the config map(s) required for the instance in the current context.
-func ConfigMaps(ctx context.Context, params Params) error {
-	desired := []corev1.ConfigMap{
-		desiredConfigMap(ctx, params),
+func ConfigMaps(ctx context.Context, params manifests.Params) error {
+	desired := []*corev1.ConfigMap{
+		collector.ConfigMap(params.Config, params.Log, params.Instance),
 	}
 
 	if params.Instance.Spec.TargetAllocator.Enabled {
-		cm, err := desiredTAConfigMap(params)
+		cm, err := targetallocator.ConfigMap(params.Config, params.Log, params.Instance)
 		if err != nil {
 			return fmt.Errorf("failed to parse config: %w", err)
 		}
@@ -63,89 +59,20 @@ func ConfigMaps(ctx context.Context, params Params) error {
 	return nil
 }
 
-func desiredConfigMap(_ context.Context, params Params) corev1.ConfigMap {
-	name := naming.ConfigMap(params.Instance)
-	version := strings.Split(params.Instance.Spec.Image, ":")
-	labels := collector.Labels(params.Instance, []string{})
-	labels["app.kubernetes.io/name"] = name
-	if len(version) > 1 {
-		labels["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
-		labels["app.kubernetes.io/version"] = "latest"
-	}
-	config, err := ReplaceConfig(params)
-	if err != nil {
-		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", err)
-	}
-
-	return corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   params.Instance.Namespace,
-			Labels:      labels,
-			Annotations: params.Instance.Annotations,
-		},
-		Data: map[string]string{
-			"collector.yaml": config,
-		},
-	}
-}
-
-func desiredTAConfigMap(params Params) (corev1.ConfigMap, error) {
-	name := naming.TAConfigMap(params.Instance)
-	version := strings.Split(params.Instance.Spec.Image, ":")
-	labels := targetallocator.Labels(params.Instance)
-	labels["app.kubernetes.io/name"] = name
-	if len(version) > 1 {
-		labels["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
-		labels["app.kubernetes.io/version"] = "latest"
-	}
-
-	promConfig, err := ta.ConfigToPromConfig(params.Instance.Spec.Config)
-	if err != nil {
-		return corev1.ConfigMap{}, err
-	}
-
-	taConfig := make(map[interface{}]interface{})
-	taConfig["label_selector"] = map[string]string{
-		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/component":  "opentelemetry-collector",
-	}
-	taConfig["config"] = promConfig
-	taConfigYAML, err := yaml.Marshal(taConfig)
-	if err != nil {
-		return corev1.ConfigMap{}, err
-	}
-
-	return corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   params.Instance.Namespace,
-			Labels:      labels,
-			Annotations: params.Instance.Annotations,
-		},
-		Data: map[string]string{
-			"targetallocator.yaml": string(taConfigYAML),
-		},
-	}, nil
-}
-
-func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap, retry bool) error {
+func expectedConfigMaps(ctx context.Context, params manifests.Params, expected []*corev1.ConfigMap, retry bool) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
 		existing := &corev1.ConfigMap{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
-		err := params.Client.Get(ctx, nns, existing)
-		if err != nil && errors.IsNotFound(err) {
-			if err := params.Client.Create(ctx, &desired); err != nil {
-				if errors.IsAlreadyExists(err) && retry {
+		clientGetErr := params.Client.Get(ctx, nns, existing)
+		if clientGetErr != nil && errors.IsNotFound(clientGetErr) {
+			if clientCreateErr := params.Client.Create(ctx, desired); clientCreateErr != nil {
+				if errors.IsAlreadyExists(clientCreateErr) && retry {
 					// let's try again? we probably had multiple updates at one, and now it exists already
 					if err := expectedConfigMaps(ctx, params, expected, false); err != nil {
 						// somethin else happened now...
@@ -155,12 +82,12 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 					// we succeeded in the retry, exit this attempt
 					return nil
 				}
-				return fmt.Errorf("failed to create: %w", err)
+				return fmt.Errorf("failed to create: %w", clientCreateErr)
 			}
 			params.Log.V(2).Info("created", "configmap.name", desired.Name, "configmap.namespace", desired.Namespace)
 			continue
-		} else if err != nil {
-			return fmt.Errorf("failed to get: %w", err)
+		} else if clientGetErr != nil {
+			return fmt.Errorf("failed to get: %w", clientGetErr)
 		}
 
 		// it exists already, merge the two if the end result isn't identical to the existing one
@@ -188,7 +115,7 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
-		if configMapChanged(&desired, existing) {
+		if configMapChanged(desired, existing) {
 			params.Recorder.Event(updated, "Normal", "ConfigUpdate ", fmt.Sprintf("OpenTelemetry Config changed - %s/%s", desired.Namespace, desired.Name))
 		}
 
@@ -198,7 +125,7 @@ func expectedConfigMaps(ctx context.Context, params Params, expected []corev1.Co
 	return nil
 }
 
-func deleteConfigMaps(ctx context.Context, params Params, expected []corev1.ConfigMap) error {
+func deleteConfigMaps(ctx context.Context, params manifests.Params, expected []*corev1.ConfigMap) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

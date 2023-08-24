@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -31,10 +30,11 @@ func TestInjectDotNetSDK(t *testing.T) {
 		v1alpha1.DotNet
 		pod      corev1.Pod
 		expected corev1.Pod
+		err      error
 	}{
 		{
-			name:   "DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS not defined",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{{Name: "OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS", Value: "AspNet,HttpClient,SqlClient"}}},
+			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS, OTEL_DOTNET_AUTO_HOME not defined",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -61,6 +61,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{
@@ -73,8 +74,16 @@ func TestInjectDotNetSDK(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS",
-									Value: "AspNet,HttpClient,SqlClient",
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerID,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerPath,
 								},
 								{
 									Name:  envDotNetStartupHook,
@@ -85,6 +94,10 @@ func TestInjectDotNetSDK(t *testing.T) {
 									Value: dotNetAdditionalDepsPath,
 								},
 								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
+								{
 									Name:  envDotNetSharedStore,
 									Value: dotNetSharedStorePath,
 								},
@@ -93,15 +106,28 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			err: nil,
 		},
 		{
-			name:   "DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE defined",
+			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE defined",
 			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
 							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: "/foo:/bar",
+								},
 								{
 									Name:  envDotNetStartupHook,
 									Value: "/foo:/bar",
@@ -150,6 +176,18 @@ func TestInjectDotNetSDK(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: "/foo:/bar",
+								},
+								{
 									Name:  envDotNetStartupHook,
 									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetStartupHookPath),
 								},
@@ -161,11 +199,16 @@ func TestInjectDotNetSDK(t *testing.T) {
 									Name:  envDotNetSharedStore,
 									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetSharedStorePath),
 								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
 							},
 						},
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name:   "DOTNET_STARTUP_HOOKS defined as ValueFrom",
@@ -198,6 +241,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetStartupHook),
 		},
 		{
 			name:   "DOTNET_ADDITIONAL_DEPS defined as ValueFrom",
@@ -230,6 +274,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetAdditionalDeps),
 		},
 		{
 			name:   "DOTNET_SHARED_STORE defined as ValueFrom",
@@ -262,13 +307,67 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetSharedStore),
+		},
+		{
+			name:   "OTEL_DOTNET_AUTO_HOME already set in the container",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: "/otel-dotnet-auto",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: "/otel-dotnet-auto",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the container"),
+		},
+		{
+			name:   "OTEL_DOTNET_AUTO_HOME already set in the .NET instrumentation spec",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{{Name: envDotNetOTelAutoHome, Value: dotNetOTelAutoHomePath}}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectDotNetSDK(logr.Discard(), test.DotNet, test.pod, 0)
+			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

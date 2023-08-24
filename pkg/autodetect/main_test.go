@@ -26,17 +26,16 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 	for _, tt := range []struct {
 		apiGroupList *metav1.APIGroupList
-		expected     platform.Platform
+		expected     autodetect.OpenShiftRoutesAvailability
 	}{
 		{
 			&metav1.APIGroupList{},
-			platform.Kubernetes,
+			autodetect.OpenShiftRoutesNotAvailable,
 		},
 		{
 			&metav1.APIGroupList{
@@ -46,7 +45,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 					},
 				},
 			},
-			platform.OpenShift,
+			autodetect.OpenShiftRoutesAvailable,
 		},
 	} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -64,27 +63,22 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 		require.NoError(t, err)
 
 		// test
-		plt, err := autoDetect.Platform()
+		ora, err := autoDetect.OpenShiftRoutesAvailability()
 
 		// verify
 		assert.NoError(t, err)
-		assert.Equal(t, tt.expected, plt)
+		assert.Equal(t, tt.expected, ora)
 	}
 }
 
-func TestUnknownPlatformOnError(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer server.Close()
+func TestAutoscalingVersionToString(t *testing.T) {
+	assert.Equal(t, "v2", autodetect.AutoscalingVersionV2.String())
+	assert.Equal(t, "v2beta2", autodetect.AutoscalingVersionV2Beta2.String())
+	assert.Equal(t, "unknown", autodetect.AutoscalingVersionUnknown.String())
+}
 
-	autoDetect, err := autodetect.New(&rest.Config{Host: server.URL})
-	require.NoError(t, err)
-
-	// test
-	plt, err := autoDetect.Platform()
-
-	// verify
-	assert.Error(t, err)
-	assert.Equal(t, platform.Unknown, plt)
+func TestToAutoScalingVersion(t *testing.T) {
+	assert.Equal(t, autodetect.AutoscalingVersionV2, autodetect.ToAutoScalingVersion("v2"))
+	assert.Equal(t, autodetect.AutoscalingVersionV2Beta2, autodetect.ToAutoScalingVersion("v2beta2"))
+	assert.Equal(t, autodetect.AutoscalingVersionUnknown, autodetect.ToAutoScalingVersion("fred"))
 }

@@ -19,20 +19,22 @@ import (
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 // +kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 
 // StatefulSets reconciles the stateful set(s) required for the instance in the current context.
-func StatefulSets(ctx context.Context, params Params) error {
+func StatefulSets(ctx context.Context, params manifests.Params) error {
 
-	desired := []appsv1.StatefulSet{}
+	var desired []*appsv1.StatefulSet
 	if params.Instance.Spec.Mode == "statefulset" {
 		desired = append(desired, collector.StatefulSet(params.Config, params.Log, params.Instance))
 	}
@@ -50,11 +52,11 @@ func StatefulSets(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.StatefulSet) error {
+func expectedStatefulSets(ctx context.Context, params manifests.Params, expected []*appsv1.StatefulSet) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -62,13 +64,24 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if err := params.Client.Create(ctx, &desired); err != nil {
-				return fmt.Errorf("failed to create: %w", err)
+			if clientErr := params.Client.Create(ctx, desired); clientErr != nil {
+				return fmt.Errorf("failed to create: %w", clientErr)
 			}
 			params.Log.V(2).Info("created", "statefulset.name", desired.Name, "statefulset.namespace", desired.Namespace)
 			continue
 		} else if err != nil {
 			return fmt.Errorf("failed to get: %w", err)
+		}
+
+		// Check for immutable fields. If set, we cannot modify the stateful set, otherwise we will face reconciliation error.
+		if needsDeletion, fieldName := hasImmutableFieldChange(desired, existing); needsDeletion {
+			params.Log.V(2).Info("Immutable field change detected, trying to delete, the new collector statefulset will be created in the next reconcile cycle",
+				"field", fieldName, "statefulset.name", existing.Name, "statefulset.namespace", existing.Namespace)
+
+			if err := params.Client.Delete(ctx, existing); err != nil {
+				return fmt.Errorf("failed to delete statefulset: %w", err)
+			}
+			continue
 		}
 
 		// it exists already, merge the two if the end result isn't identical to the existing one
@@ -90,9 +103,6 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 			updated.ObjectMeta.Labels[k] = v
 		}
 
-		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
-		updated.Spec.Selector = existing.Spec.Selector.DeepCopy()
-
 		patch := client.MergeFrom(existing)
 		if err := params.Client.Patch(ctx, updated, patch); err != nil {
 			return fmt.Errorf("failed to apply changes: %w", err)
@@ -104,7 +114,7 @@ func expectedStatefulSets(ctx context.Context, params Params, expected []appsv1.
 	return nil
 }
 
-func deleteStatefulSets(ctx context.Context, params Params, expected []appsv1.StatefulSet) error {
+func deleteStatefulSets(ctx context.Context, params manifests.Params, expected []*appsv1.StatefulSet) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{
@@ -136,4 +146,44 @@ func deleteStatefulSets(ctx context.Context, params Params, expected []appsv1.St
 	}
 
 	return nil
+}
+
+func hasImmutableFieldChange(desired, existing *appsv1.StatefulSet) (bool, string) {
+	if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+		return true, "Spec.Selector"
+	}
+
+	if hasVolumeClaimsTemplatesChanged(desired, existing) {
+		return true, "Spec.VolumeClaimTemplates"
+	}
+
+	return false, ""
+}
+
+// hasVolumeClaimsTemplatesChanged if volume claims template change has been detected.
+// We need to do this manually due to some fields being automatically filled by the API server
+// and these needs to be excluded from the comparison to prevent false positives.
+func hasVolumeClaimsTemplatesChanged(desired, existing *appsv1.StatefulSet) bool {
+	if len(desired.Spec.VolumeClaimTemplates) != len(existing.Spec.VolumeClaimTemplates) {
+		return true
+	}
+
+	for i := range desired.Spec.VolumeClaimTemplates {
+		// VolumeMode is automatically set by the API server, so if it is not set in the CR, assume it's the same as the existing one.
+		if desired.Spec.VolumeClaimTemplates[i].Spec.VolumeMode == nil || *desired.Spec.VolumeClaimTemplates[i].Spec.VolumeMode == "" {
+			desired.Spec.VolumeClaimTemplates[i].Spec.VolumeMode = existing.Spec.VolumeClaimTemplates[i].Spec.VolumeMode
+		}
+
+		if desired.Spec.VolumeClaimTemplates[i].Name != existing.Spec.VolumeClaimTemplates[i].Name {
+			return true
+		}
+		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Annotations, existing.Spec.VolumeClaimTemplates[i].Annotations) {
+			return true
+		}
+		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Spec, existing.Spec.VolumeClaimTemplates[i].Spec) {
+			return true
+		}
+	}
+
+	return false
 }

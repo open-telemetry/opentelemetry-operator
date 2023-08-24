@@ -16,4 +16,4 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: k8s.gcr.io/echoserver:1.4
+        image: registry.k8s.io/echoserver:1.10

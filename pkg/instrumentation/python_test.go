@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -31,6 +30,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		v1alpha1.Python
 		pod      corev1.Pod
 		expected corev1.Pod
+		err      error
 	}{
 		{
 			name:   "PYTHONPATH not defined",
@@ -78,17 +78,30 @@ func TestInjectPythonSDK(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp_proto_http",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Value: "http/protobuf",
 								},
 							},
 						},
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name:   "PYTHONPATH defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: v1alpha1.Python{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -122,6 +135,7 @@ func TestInjectPythonSDK(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{
@@ -139,13 +153,26 @@ func TestInjectPythonSDK(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp_proto_http",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Value: "http/protobuf",
 								},
 							},
 						},
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name:   "OTEL_TRACES_EXPORTER defined",
@@ -202,11 +229,98 @@ func TestInjectPythonSDK(t *testing.T) {
 									Name:  "PYTHONPATH",
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Value: "http/protobuf",
+								},
 							},
 						},
 					},
 				},
 			},
+			err: nil,
+		},
+		{
+			name:   "OTEL_METRICS_EXPORTER defined",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "somebackend",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: volumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    initContainerName,
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      volumeName,
+								MountPath: "/otel-auto-instrumentation",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      volumeName,
+									MountPath: "/otel-auto-instrumentation",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "somebackend",
+								},
+								{
+									Name:  "PYTHONPATH",
+									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Value: "http/protobuf",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
 		},
 		{
 			name:   "PYTHONPATH defined as ValueFrom",
@@ -239,13 +353,15 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envPythonPath),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectPythonSDK(logr.Discard(), test.Python, test.pod, 0)
+			pod, err := injectPythonSDK(test.Python, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

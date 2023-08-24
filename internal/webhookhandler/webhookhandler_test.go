@@ -32,8 +32,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 )
 
@@ -131,8 +131,8 @@ func TestShouldInjectSidecar(t *testing.T) {
 			}()
 
 			for i := range tt.otelcols {
-				err := k8sClient.Create(context.Background(), &tt.otelcols[i])
-				require.NoError(t, err)
+				clientErr := k8sClient.Create(context.Background(), &tt.otelcols[i])
+				require.NoError(t, clientErr)
 			}
 
 			encoded, err := json.Marshal(tt.pod)
@@ -150,12 +150,8 @@ func TestShouldInjectSidecar(t *testing.T) {
 
 			// the webhook handler
 			cfg := config.New()
-			decoder, err := admission.NewDecoder(scheme.Scheme)
-			require.NoError(t, err)
-
-			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
-			err = injector.InjectDecoder(decoder)
-			require.NoError(t, err)
+			decoder := admission.NewDecoder(scheme.Scheme)
+			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 
 			// test
 			res := injector.Handle(context.Background(), req)
@@ -163,11 +159,10 @@ func TestShouldInjectSidecar(t *testing.T) {
 			// verify
 			assert.True(t, res.Allowed)
 			assert.Nil(t, res.AdmissionResponse.Result)
-			assert.Len(t, res.Patches, 3)
+			assert.Len(t, res.Patches, 2)
 
 			expectedMap := map[string]bool{
 				"/metadata/labels": false, // add a new label
-				"/spec/volumes":    false, // add a new volume with the configmap
 				"/spec/containers": false, // replace the containers, adding one new container
 			}
 			for _, patch := range res.Patches {
@@ -354,8 +349,8 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 			}()
 
 			for i := range tt.otelcols {
-				err := k8sClient.Create(context.Background(), &tt.otelcols[i])
-				require.NoError(t, err)
+				clientErr := k8sClient.Create(context.Background(), &tt.otelcols[i])
+				require.NoError(t, clientErr)
 			}
 
 			encoded, err := json.Marshal(tt.pod)
@@ -373,11 +368,8 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 
 			// the webhook handler
 			cfg := config.New()
-			decoder, err := admission.NewDecoder(scheme.Scheme)
-			require.NoError(t, err)
-
-			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
-			err = injector.InjectDecoder(decoder)
+			decoder := admission.NewDecoder(scheme.Scheme)
+			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 			require.NoError(t, err)
 
 			// test
@@ -434,12 +426,8 @@ func TestFailOnInvalidRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// prepare
 			cfg := config.New()
-			decoder, err := admission.NewDecoder(scheme.Scheme)
-			require.NoError(t, err)
-
-			injector := NewWebhookHandler(cfg, logger, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
-			err = injector.InjectDecoder(decoder)
-			require.NoError(t, err)
+			decoder := admission.NewDecoder(scheme.Scheme)
+			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
 
 			// test
 			res := injector.Handle(context.Background(), tt.req)

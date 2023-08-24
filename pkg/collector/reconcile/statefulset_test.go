@@ -18,13 +18,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
 )
 
 func TestExpectedStatefulsets(t *testing.T) {
@@ -32,7 +33,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 	expectedSs := collector.StatefulSet(param.Config, logger, param.Instance)
 
 	t.Run("should create StatefulSet", func(t *testing.T) {
-		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		err := expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
 		actual := v1.StatefulSet{}
@@ -44,8 +45,8 @@ func TestExpectedStatefulsets(t *testing.T) {
 
 	})
 	t.Run("should update statefulset", func(t *testing.T) {
-		createObjectIfNotExists(t, "test-collector", &expectedSs)
-		err := expectedStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		createObjectIfNotExists(t, "test-collector", expectedSs)
+		err := expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
 		actual := v1.StatefulSet{}
@@ -85,7 +86,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 
 		createObjectIfNotExists(t, "dummy", &ds)
 
-		err := deleteStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		err := deleteStatefulSets(context.Background(), param, []*v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
 		actual := v1.StatefulSet{}
@@ -123,7 +124,7 @@ func TestExpectedStatefulsets(t *testing.T) {
 
 		createObjectIfNotExists(t, "dummy", &ds)
 
-		err := deleteStatefulSets(context.Background(), param, []v1.StatefulSet{expectedSs})
+		err := deleteStatefulSets(context.Background(), param, []*v1.StatefulSet{expectedSs})
 		assert.NoError(t, err)
 
 		actual := v1.StatefulSet{}
@@ -131,5 +132,78 @@ func TestExpectedStatefulsets(t *testing.T) {
 
 		assert.True(t, exists)
 
+	})
+
+	t.Run("change Spec.Selector should recreate statefulset", func(t *testing.T) {
+
+		oldSs := collector.StatefulSet(param.Config, logger, param.Instance)
+		oldSs.Spec.Selector.MatchLabels["app.kubernetes.io/version"] = "latest"
+		oldSs.Spec.Template.Labels["app.kubernetes.io/version"] = "latest"
+		oldSs.Name = "update-selector"
+
+		err := expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{oldSs})
+		assert.NoError(t, err)
+		exists, err := populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		newSs := collector.StatefulSet(param.Config, logger, param.Instance)
+		newSs.Name = oldSs.Name
+		err = expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{newSs})
+		assert.NoError(t, err)
+		exists, err = populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+		err = expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{newSs})
+		assert.NoError(t, err)
+		actual := v1.StatefulSet{}
+		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, newSs.Spec.Selector.MatchLabels, actual.Spec.Selector.MatchLabels)
+	})
+
+	t.Run("change Spec.VolumeClaimTemplates should recreate statefulset", func(t *testing.T) {
+
+		oldSs := collector.StatefulSet(param.Config, logger, param.Instance)
+		oldSs.Name = "update-volumeclaimtemplates"
+
+		err := expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{oldSs})
+		assert.NoError(t, err)
+		exists, err := populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		newSs := collector.StatefulSet(param.Config, logger, param.Instance)
+		// Add a new vpersistent volume claim to test stateful set will be recreated.
+		volumeModeFilesystem := corev1.PersistentVolumeFilesystem
+		newSs.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default-volume",
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
+				VolumeMode:  &volumeModeFilesystem,
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{"storage": resource.MustParse("50Mi")},
+				},
+			}}}
+		newSs.Name = oldSs.Name
+
+		err = expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{newSs})
+		assert.NoError(t, err)
+		exists, err = populateObjectIfExists(t, &v1.StatefulSet{}, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+		err = expectedStatefulSets(context.Background(), param, []*v1.StatefulSet{newSs})
+		assert.NoError(t, err)
+		actual := v1.StatefulSet{}
+		exists, err = populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: oldSs.Name})
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Len(t, actual.Spec.VolumeClaimTemplates, 1)
+		assert.Equal(t, newSs.Spec.VolumeClaimTemplates[0].Spec, actual.Spec.VolumeClaimTemplates[0].Spec)
 	})
 }

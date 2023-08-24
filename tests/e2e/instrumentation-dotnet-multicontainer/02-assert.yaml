@@ -16,12 +16,18 @@ spec:
     env:
     - name: OTEL_LOG_LEVEL
       value: "debug"
-    - name: OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS
-      value: AspNet,HttpClient,SqlClient
+    - name: CORECLR_ENABLE_PROFILING
+      value: "1"
+    - name: CORECLR_PROFILER
+      value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
+    - name: CORECLR_PROFILER_PATH
+      value: /otel-auto-instrumentation/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
     - name: DOTNET_STARTUP_HOOKS
-      value: "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+      value: /otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
     - name: DOTNET_ADDITIONAL_DEPS
-      value: ./otel-auto-instrumentation/AdditionalDeps
+      value: /otel-auto-instrumentation/AdditionalDeps
+    - name: OTEL_DOTNET_AUTO_HOME
+      value: /otel-auto-instrumentation
     - name: DOTNET_SHARED_STORE
       value: /otel-auto-instrumentation/store
     - name: OTEL_TRACES_EXPORTER
@@ -41,7 +47,7 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
     - name: OTEL_PROPAGATORS
-      value: jaeger,b3
+      value: jaeger,b3multi
     - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount

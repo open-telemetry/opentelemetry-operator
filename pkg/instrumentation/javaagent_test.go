@@ -15,9 +15,9 @@
 package instrumentation
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -30,6 +30,7 @@ func TestInjectJavaagent(t *testing.T) {
 		v1alpha1.Java
 		pod      corev1.Pod
 		expected corev1.Pod
+		err      error
 	}{
 		{
 			name: "JAVA_TOOL_OPTIONS not defined",
@@ -80,10 +81,11 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name: "JAVA_TOOL_OPTIONS defined",
-			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			Java: v1alpha1.Java{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -117,6 +119,7 @@ func TestInjectJavaagent(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{
@@ -137,6 +140,7 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name: "JAVA_TOOL_OPTIONS defined as ValueFrom",
@@ -169,13 +173,15 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envJavaToolsOptions),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectJavaagent(logr.Discard(), test.Java, test.pod, 0)
+			pod, err := injectJavaagent(test.Java, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

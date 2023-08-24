@@ -14,7 +14,13 @@ spec:
     - name: PYTHONPATH
       value: /otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation
     - name: OTEL_TRACES_EXPORTER
-      value: otlp_proto_http
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_METRICS_PROTOCOL
+      value: http/protobuf
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
@@ -41,7 +47,13 @@ spec:
     - name: PYTHONPATH
       value: /otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation
     - name: OTEL_TRACES_EXPORTER
-      value: otlp_proto_http
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_METRICS_PROTOCOL
+      value: http/protobuf
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT

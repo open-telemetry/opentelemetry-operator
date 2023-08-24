@@ -20,11 +20,7 @@ spec:
     endpoint: http://localhost:4317
   propagators:
     - jaeger
-    - b3
+    - b3multi
   sampler:
     type: parentbased_traceidratio
     argument: "0.25"
-  dotnet:
-    env:
-    - name: OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS
-      value: AspNet,HttpClient

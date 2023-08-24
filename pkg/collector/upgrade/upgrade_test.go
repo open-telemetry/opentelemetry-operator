@@ -48,7 +48,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 		t.Run("spec.UpgradeStrategy = "+string(tt.strategy), func(t *testing.T) {
 			// prepare
 			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-			existing := makeOtelcol(nsn)
+			existing := makeOtelcol(nsn, v1alpha1.ManagementStateManaged)
 			err := k8sClient.Create(context.Background(), &existing)
 			require.NoError(t, err)
 
@@ -84,42 +84,56 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 }
 
 func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
-	// prepare
-	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	existing := makeOtelcol(nsn)
-	existing.Status.Version = "0.8.0"
+	for _, tt := range []struct {
+		desc      string
+		v         string
+		expectedV string
+	}{
+		{"upgrade-routine", "0.8.0", "0.10.0"},     // we don't have a 0.10.0 upgrade, but we have a 0.9.0
+		{"no-upgrade-routine", "0.61.1", "0.62.0"}, // No upgrade routines between these two versions
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			// prepare
+			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
+			existing := makeOtelcol(nsn, v1alpha1.ManagementStateManaged)
+			existing.Status.Version = tt.v
 
-	currentV := version.Get()
-	currentV.OpenTelemetryCollector = "0.10.0" // we don't have a 0.10.0 upgrade, but we have a 0.9.0
-	up := &upgrade.VersionUpgrade{
-		Log:      logger,
-		Version:  currentV,
-		Client:   k8sClient,
-		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+			currentV := version.Get()
+			currentV.OpenTelemetryCollector = tt.expectedV
+			up := &upgrade.VersionUpgrade{
+				Log:      logger,
+				Version:  currentV,
+				Client:   k8sClient,
+				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+			}
+			// test
+			res, err := up.ManagedInstance(context.Background(), existing)
+
+			// verify
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedV, res.Status.Version)
+		})
 	}
-	// test
-	res, err := up.ManagedInstance(context.Background(), existing)
-
-	// verify
-	assert.NoError(t, err)
-	assert.Equal(t, "0.10.0", res.Status.Version)
 }
 
 func TestVersionsShouldNotBeChanged(t *testing.T) {
+	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	for _, tt := range []struct {
 		desc            string
 		v               string
 		expectedV       string
 		failureExpected bool
+		managementState v1alpha1.ManagementStateType
 	}{
-		{"new-instance", "", "", false},
-		{"newer-than-our-newest", "100.0.0", "100.0.0", false},
-		{"unparseable", "unparseable", "unparseable", true},
+		{"new-instance", "", "", false, v1alpha1.ManagementStateManaged},
+		{"newer-than-our-newest", "100.0.0", "100.0.0", false, v1alpha1.ManagementStateManaged},
+		{"unparseable", "unparseable", "unparseable", true, v1alpha1.ManagementStateManaged},
+		// Ignore unmanaged instances
+		{"unmanaged-instance", "1.0.0", "1.0.0", false, v1alpha1.ManagementStateUnmanaged},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// prepare
-			nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-			existing := makeOtelcol(nsn)
+			existing := makeOtelcol(nsn, tt.managementState)
 			existing.Status.Version = tt.v
 
 			currentV := version.Get()
@@ -146,8 +160,11 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 	}
 }
 
-func makeOtelcol(nsn types.NamespacedName) v1alpha1.OpenTelemetryCollector {
+func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementStateType) v1alpha1.OpenTelemetryCollector {
 	return v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ManagementState: managementState,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,

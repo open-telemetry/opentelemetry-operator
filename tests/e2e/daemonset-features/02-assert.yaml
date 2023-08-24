@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset-collector
+spec:
+  template:
+    spec:
+       hostNetwork: true
+       containers:
+       - args:
+         - --config=/conf/collector.yaml
+         name: otc-container

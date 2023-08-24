@@ -2,7 +2,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: manager-role
 rules:
 - apiGroups:
@@ -121,6 +120,30 @@ rules:
   - list
   - update
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - opentelemetry.io
   resources:
   - instrumentations
@@ -135,8 +158,6 @@ rules:
   resources:
   - opentelemetrycollectors
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch
@@ -158,3 +179,16 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  - routes/custom-host
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

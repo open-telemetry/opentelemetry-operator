@@ -21,7 +21,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -49,32 +49,32 @@ func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 		// Change tls config key from tls_settings to tls in otlp.protocols.grpc
 		if strings.HasPrefix(k1.(string), "otlp") {
-			otlpConfig, ok := v1.(map[interface{}]interface{})
-			if !ok {
+			otlpConfig, withOTLP := v1.(map[interface{}]interface{})
+			if !withOTLP {
 				// no otlpConfig? no need to fail because of that
 				return otelcol, nil
 			}
 			for k2, v2 := range otlpConfig {
 				// protocols config
 				if k2 == "protocols" {
-					protocConfig, ok := v2.(map[interface{}]interface{})
-					if !ok {
+					protocConfig, withProtocConfig := v2.(map[interface{}]interface{})
+					if !withProtocConfig {
 						// no protocolConfig? no need to fail because of that
 						return otelcol, nil
 					}
 					for k3, v3 := range protocConfig {
 						// grpc config
 						if k3 == "grpc" || k3 == "http" {
-							grpcHttpConfig, ok := v3.(map[interface{}]interface{})
-							if !ok {
-								// no grpcHttpConfig? no need to fail because of that
+							grpcHTTPConfig, withHTTPConfig := v3.(map[interface{}]interface{})
+							if !withHTTPConfig {
+								// no grpcHTTPConfig? no need to fail because of that
 								return otelcol, nil
 							}
-							for k4, v4 := range grpcHttpConfig {
+							for k4, v4 := range grpcHTTPConfig {
 								// change tls_settings to tls
 								if k4.(string) == "tls_settings" {
-									grpcHttpConfig["tls"] = v4
-									delete(grpcHttpConfig, "tls_settings")
+									grpcHTTPConfig["tls"] = v4
+									delete(grpcHTTPConfig, "tls_settings")
 									existing := &corev1.ConfigMap{}
 									updated := existing.DeepCopy()
 									u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", k3, k1))

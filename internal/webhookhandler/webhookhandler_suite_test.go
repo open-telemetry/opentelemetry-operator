@@ -28,10 +28,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	// +kubebuilder:scaffold:imports
@@ -43,6 +46,8 @@ var (
 	testScheme *runtime.Scheme = scheme.Scheme
 	ctx        context.Context
 	cancel     context.CancelFunc
+	err        error
+	cfg        *rest.Config
 )
 
 func TestMain(m *testing.M) {
@@ -55,13 +60,13 @@ func TestMain(m *testing.M) {
 			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
 		},
 	}
-	cfg, err := testEnv.Start()
+	cfg, err = testEnv.Start()
 	if err != nil {
 		fmt.Printf("failed to start testEnv: %v", err)
 		os.Exit(1)
 	}
 
-	if err := v1alpha1.AddToScheme(testScheme); err != nil {
+	if err = v1alpha1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}
@@ -75,20 +80,24 @@ func TestMain(m *testing.M) {
 
 	// start webhook server using Manager
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             testScheme,
-		Host:               webhookInstallOptions.LocalServingHost,
-		Port:               webhookInstallOptions.LocalServingPort,
-		CertDir:            webhookInstallOptions.LocalServingCertDir,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
+	mgr, mgrErr := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:         testScheme,
+		LeaderElection: false,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
 	})
-	if err != nil {
-		fmt.Printf("failed to start webhook server: %v", err)
+	if mgrErr != nil {
+		fmt.Printf("failed to start webhook server: %v", mgrErr)
 		os.Exit(1)
 	}
 
-	if err := (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
@@ -119,9 +128,9 @@ func TestMain(m *testing.M) {
 			return true
 		}, func() error {
 			// #nosec G402
-			conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
-			if err != nil {
-				return err
+			conn, tlsErr := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+			if tlsErr != nil {
+				return tlsErr
 			}
 			_ = conn.Close()
 			return nil

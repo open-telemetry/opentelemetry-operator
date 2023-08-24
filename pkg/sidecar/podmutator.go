@@ -79,7 +79,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// which instance should it talk to?
 	otelcol, err := p.getCollectorInstance(ctx, ns, annValue)
 	if err != nil {
-		if err == errMultipleInstancesPossible || err == errNoInstancesAvailable || err == errInstanceNotSidecar {
+		if errors.Is(err, errMultipleInstancesPossible) || errors.Is(err, errNoInstancesAvailable) || errors.Is(err, errInstanceNotSidecar) {
 			// we still allow the pod to be created, but we log a message to the operator's logs
 			logger.Error(err, "failed to select an OpenTelemetry Collector instance for this pod's sidecar")
 			return pod, nil
@@ -106,7 +106,14 @@ func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.
 	}
 
 	otelcol := v1alpha1.OpenTelemetryCollector{}
-	err := p.client.Get(ctx, types.NamespacedName{Name: ann, Namespace: ns.Name}, &otelcol)
+	var nsnOtelcol types.NamespacedName
+	instNamespace, instName, namespaced := strings.Cut(ann, "/")
+	if namespaced {
+		nsnOtelcol = types.NamespacedName{Name: instName, Namespace: instNamespace}
+	} else {
+		nsnOtelcol = types.NamespacedName{Name: ann, Namespace: ns.Name}
+	}
+	err := p.client.Get(ctx, nsnOtelcol, &otelcol)
 	if err != nil {
 		return otelcol, err
 	}

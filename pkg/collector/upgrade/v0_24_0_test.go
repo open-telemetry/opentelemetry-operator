@@ -41,8 +41,6 @@ func TestHealthCheckEndpointMigration(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Config: `extensions:
-  health_check:
-  health_check/1: ""
   health_check/2:
     endpoint: "localhost:13133"
   health_check/3:
@@ -64,8 +62,6 @@ func TestHealthCheckEndpointMigration(t *testing.T) {
 
 	// verify
 	assert.Equal(t, `extensions:
-  health_check:
-  health_check/1: ""
   health_check/2:
     endpoint: localhost:13133
   health_check/3:

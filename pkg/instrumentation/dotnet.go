@@ -15,28 +15,54 @@
 package instrumentation
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 const (
-	envDotNetAdditionalDeps  = "DOTNET_ADDITIONAL_DEPS"
-	envDotNetSharedStore     = "DOTNET_SHARED_STORE"
-	envDotNetStartupHook     = "DOTNET_STARTUP_HOOKS"
-	dotNetAdditionalDepsPath = "./otel-auto-instrumentation/AdditionalDeps"
-	dotNetSharedStorePath    = "/otel-auto-instrumentation/store"
-	dotNetStartupHookPath    = "/otel-auto-instrumentation/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	envDotNetCoreClrEnableProfiling     = "CORECLR_ENABLE_PROFILING"
+	envDotNetCoreClrProfiler            = "CORECLR_PROFILER"
+	envDotNetCoreClrProfilerPath        = "CORECLR_PROFILER_PATH"
+	envDotNetAdditionalDeps             = "DOTNET_ADDITIONAL_DEPS"
+	envDotNetSharedStore                = "DOTNET_SHARED_STORE"
+	envDotNetStartupHook                = "DOTNET_STARTUP_HOOKS"
+	envDotNetOTelAutoHome               = "OTEL_DOTNET_AUTO_HOME"
+	dotNetCoreClrEnableProfilingEnabled = "1"
+	dotNetCoreClrProfilerID             = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
+	dotNetCoreClrProfilerPath           = "/otel-auto-instrumentation/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so"
+	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation/AdditionalDeps"
+	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation"
+	dotNetSharedStorePath               = "/otel-auto-instrumentation/store"
+	dotNetStartupHookPath               = "/otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 )
 
-func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) corev1.Pod {
-	// caller checks if there is at least one container
-	container := pod.Spec.Containers[index]
+func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, error) {
 
-	// inject env vars
+	// caller checks if there is at least one container.
+	container := &pod.Spec.Containers[index]
+
+	err := validateContainerEnv(container.Env, envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore)
+	if err != nil {
+		return pod, err
+	}
+
+	// check if OTEL_DOTNET_AUTO_HOME env var is already set in the container
+	// if it is already set, then we assume that .NET Auto-instrumentation is already configured for this container
+	if getIndexOfEnv(container.Env, envDotNetOTelAutoHome) > -1 {
+		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the container")
+	}
+
+	// check if OTEL_DOTNET_AUTO_HOME env var is already set in the .NET instrumentatiom spec
+	// if it is already set, then we assume that .NET Auto-instrumentation is already configured for this container
+	if getIndexOfEnv(dotNetSpec.Env, envDotNetOTelAutoHome) > -1 {
+		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec")
+	}
+
+	// inject .NET instrumentation spec env vars.
 	for _, env := range dotNetSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -44,57 +70,31 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 		}
 	}
 
-	idx := getIndexOfEnv(container.Env, envDotNetStartupHook)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetStartupHook,
-			Value: dotNetStartupHookPath,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines DOTNET_STARTUP_HOOKS env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetStartupHookPath)
-	}
+	const (
+		doNotConcatEnvValues = false
+		concatEnvValues      = true
+	)
 
-	idx = getIndexOfEnv(container.Env, envDotNetAdditionalDeps)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetAdditionalDeps,
-			Value: dotNetAdditionalDepsPath,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines DOTNET_ADDITIONAL_DEPS env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetAdditionalDepsPath)
-	}
+	setDotNetEnvVar(container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues)
 
-	idx = getIndexOfEnv(container.Env, envDotNetSharedStore)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envDotNetSharedStore,
-			Value: dotNetSharedStorePath,
-		})
-	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping DotNet SDK injection, the container defines DOTNET_SHARED_STORE env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, dotNetSharedStorePath)
-	}
+	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, doNotConcatEnvValues)
+
+	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, dotNetCoreClrProfilerPath, doNotConcatEnvValues)
+
+	setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues)
+
+	setDotNetEnvVar(container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues)
+
+	setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues)
+
+	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volumeName,
 		MountPath: "/otel-auto-instrumentation",
 	})
 
-	// We just inject Volumes and init containers for the first processed container
+	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: volumeName,
@@ -103,16 +103,32 @@ func injectDotNetSDK(logger logr.Logger, dotNetSpec v1alpha1.DotNet, pod corev1.
 			}})
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:    initContainerName,
-			Image:   dotNetSpec.Image,
-			Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			Name:      initContainerName,
+			Image:     dotNetSpec.Image,
+			Command:   []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			Resources: dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volumeName,
 				MountPath: "/otel-auto-instrumentation",
 			}},
 		})
 	}
+	return pod, nil
+}
 
-	pod.Spec.Containers[index] = container
-	return pod
+// setDotNetEnvVar function sets env var to the container if not exist already.
+// value of concatValues should be set to true if the env var supports multiple values separated by :.
+// If it is set to false, the original container's env var value has priority.
+func setDotNetEnvVar(container *corev1.Container, envVarName string, envVarValue string, concatValues bool) {
+	idx := getIndexOfEnv(container.Env, envVarName)
+	if idx < 0 {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envVarName,
+			Value: envVarValue,
+		})
+		return
+	}
+	if concatValues {
+		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, envVarValue)
+	}
 }

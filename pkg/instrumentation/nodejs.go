@@ -15,7 +15,6 @@
 package instrumentation
 
 import (
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -26,11 +25,16 @@ const (
 	nodeRequireArgument = " --require /otel-auto-instrumentation/autoinstrumentation.js"
 )
 
-func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) corev1.Pod {
-	// caller checks if there is at least one container
+func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
+	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
-	// inject env vars
+	err := validateContainerEnv(container.Env, envNodeOptions)
+	if err != nil {
+		return pod, err
+	}
+
+	// inject NodeJS instrumentation spec env vars.
 	for _, env := range nodeJSSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -45,14 +49,7 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 			Value: nodeRequireArgument,
 		})
 	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping NodeJS SDK injection, the container defines NODE_OPTIONS env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-
 		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
-
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
@@ -69,15 +66,15 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 			}})
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:    initContainerName,
-			Image:   nodeJSSpec.Image,
-			Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			Name:      initContainerName,
+			Image:     nodeJSSpec.Image,
+			Command:   []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			Resources: nodeJSSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volumeName,
 				MountPath: "/otel-auto-instrumentation",
 			}},
 		})
 	}
-
-	return pod
+	return pod, nil
 }

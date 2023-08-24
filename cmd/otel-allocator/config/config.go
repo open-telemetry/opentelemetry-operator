@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package config
 
 import (
@@ -5,11 +19,12 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
@@ -22,17 +37,36 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-// ErrInvalidYAML represents an error in the format of the original YAML configuration file.
-var (
-	ErrInvalidYAML = errors.New("couldn't parse the loadbalancer configuration")
-)
-
 const DefaultResyncTime = 5 * time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
+const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
 
 type Config struct {
-	LabelSelector map[string]string  `yaml:"label_selector,omitempty"`
-	Config        *promconfig.Config `yaml:"config"`
+	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
+	Config                 *promconfig.Config `yaml:"config"`
+	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
+	PrometheusCR           PrometheusCRConfig `yaml:"prometheus_cr,omitempty"`
+	PodMonitorSelector     map[string]string  `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector map[string]string  `yaml:"service_monitor_selector,omitempty"`
+}
+
+type PrometheusCRConfig struct {
+	ScrapeInterval model.Duration `yaml:"scrape_interval,omitempty"`
+}
+
+func (c Config) GetAllocationStrategy() string {
+	if c.AllocationStrategy != nil {
+		return *c.AllocationStrategy
+	}
+	return "least-weighted"
+}
+
+func (c Config) GetTargetsFilterStrategy() string {
+	if c.FilterStrategy != nil {
+		return *c.FilterStrategy
+	}
+	return ""
 }
 
 type PrometheusCRWatcherConfig struct {
@@ -50,7 +84,7 @@ type CLIConfig struct {
 }
 
 func Load(file string) (Config, error) {
-	var cfg Config
+	cfg := createDefaultConfig()
 	if err := unmarshal(&cfg, file); err != nil {
 		return Config{}, err
 	}
@@ -59,7 +93,7 @@ func Load(file string) (Config, error) {
 
 func unmarshal(cfg *Config, configFile string) error {
 
-	yamlFile, err := ioutil.ReadFile(configFile)
+	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
 	}
@@ -67,6 +101,14 @@ func unmarshal(cfg *Config, configFile string) error {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
 	return nil
+}
+
+func createDefaultConfig() Config {
+	return Config{
+		PrometheusCR: PrometheusCRConfig{
+			ScrapeInterval: DefaultCRScrapeInterval,
+		},
+	}
 }
 
 func ParseCLI() (CLIConfig, error) {
@@ -89,7 +131,8 @@ func ParseCLI() (CLIConfig, error) {
 	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
 	cLIConf.KubeConfigFilePath = *kubeconfigPath
 	if err != nil {
-		if _, ok := err.(*fs.PathError); !ok {
+		pathError := &fs.PathError{}
+		if ok := errors.As(err, &pathError); !ok {
 			return CLIConfig{}, err
 		}
 		clusterConfig, err = rest.InClusterConfig()
@@ -100,4 +143,13 @@ func ParseCLI() (CLIConfig, error) {
 	}
 	cLIConf.ClusterConfig = clusterConfig
 	return cLIConf, nil
+}
+
+// ValidateConfig validates the cli and file configs together.
+func ValidateConfig(config *Config, cliConfig *CLIConfig) error {
+	scrapeConfigsPresent := (config.Config != nil && len(config.Config.ScrapeConfigs) > 0)
+	if !(*cliConfig.PromCRWatcherConf.Enabled || scrapeConfigsPresent) {
+		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
+	}
+	return nil
 }
