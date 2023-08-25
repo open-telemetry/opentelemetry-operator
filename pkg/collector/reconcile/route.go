@@ -17,9 +17,7 @@ package reconcile
 import (
 	"context"
 	"fmt"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/handlers/openshift"
 
 	routev1 "github.com/openshift/api/route/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 // Routes reconciles the route(s) required for the instance in the current context.
@@ -44,7 +44,17 @@ func Routes(ctx context.Context, params manifests.Params) error {
 
 	var desired []*routev1.Route
 	if isSupportedMode {
-		if r := collector.Routes(params.Config, params.Log, params.Instance); r != nil {
+		basedomain := ""
+		if params.Instance.Spec.Ingress.Hostname == "" {
+			domain, err := openshift.GetOpenShiftBaseDomain(context.Background(), params.Client)
+			if err != nil {
+				params.Recorder.Event(&params.Instance, "Error", "Normal", "Failed to get basedomain for Route. Set the ingress hostname in CR")
+			} else {
+				basedomain = domain
+			}
+		}
+
+		if r := collector.Routes(params.Config, params.Log, params.Instance, basedomain); r != nil {
 			desired = append(desired, r...)
 		}
 	}

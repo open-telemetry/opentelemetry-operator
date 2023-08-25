@@ -18,16 +18,17 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	routev1 "github.com/openshift/api/route/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	routev1 "github.com/openshift/api/route/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []*routev1.Route {
+// Routes returns route objects for a collector instance.
+// The basedomain has to be set only if spec.Ingress.Hostname is empty.
+func Routes(_ config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, basedomain string) []*routev1.Route {
 	if otelcol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
 		return nil
 	}
@@ -61,6 +62,10 @@ func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetr
 			"instance.namespace", otelcol.Namespace,
 		)
 		return nil
+	}
+
+	if otelcol.Spec.Ingress.Hostname == "" {
+		otelcol.Spec.Ingress.Hostname = basedomain
 	}
 
 	routes := make([]*routev1.Route, len(ports))

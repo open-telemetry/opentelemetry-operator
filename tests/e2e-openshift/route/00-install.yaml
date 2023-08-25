@@ -7,7 +7,6 @@ spec:
   mode: "deployment"
   ingress:
     type: route
-    hostname: "example.com"
     annotations:
       something.com: "true"
     route:

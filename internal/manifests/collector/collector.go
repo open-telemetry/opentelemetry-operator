@@ -15,9 +15,12 @@
 package collector
 
 import (
+	"context"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/handlers/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -60,7 +63,18 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
-	routes := Routes(params.Config, params.Log, params.Instance)
+
+	baseDomain := ""
+	if params.Instance.Spec.Ingress.Hostname == "" {
+		domain, err := openshift.GetOpenShiftBaseDomain(context.Background(), params.Client)
+		if err != nil {
+			params.Recorder.Event(&params.Instance, "Error", "Normal", "Failed to get basedomain for Route.")
+		} else {
+			params.Instance.Spec.Ingress.Hostname = domain
+		}
+	}
+
+	routes := Routes(params.Config, params.Log, params.Instance, baseDomain)
 	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
 	for _, route := range routes {
 		resourceManifests = append(resourceManifests, route)
