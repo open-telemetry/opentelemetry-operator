@@ -29,6 +29,7 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -299,6 +300,15 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 			"object_name", obj.GetName(),
 			"object_kind", obj.GetObjectKind(),
 		)
+
+		if isNamespaceScoped(obj) {
+			if err := ctrl.SetControllerReference(&params.Instance, obj, params.Scheme); err != nil {
+				l.Error(err, "failed to set controller owner reference to resource")
+				errs = append(errs, err)
+				continue
+			}
+		}
+
 		desired := obj.DeepCopyObject().(client.Object)
 		mutateFn := manifests.MutateFuncFor(obj, desired)
 		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
@@ -342,6 +352,15 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 		return fmt.Errorf("failed to prune objects of Collector %s: %w", params.Instance.GetName(), errors.Join(pruneErrs...))
 	}
 	return nil
+}
+
+func isNamespaceScoped(obj client.Object) bool {
+	switch obj.(type) {
+	case *rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding:
+		return false
+	default:
+		return true
+	}
 }
 
 func (r *OpenTelemetryCollectorReconciler) findObjectsOwnedByOtelOperator(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
