@@ -302,9 +302,9 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 		)
 
 		if isNamespaceScoped(obj) {
-			if err := ctrl.SetControllerReference(&params.Instance, obj, params.Scheme); err != nil {
-				l.Error(err, "failed to set controller owner reference to resource")
-				errs = append(errs, err)
+			if setErr := ctrl.SetControllerReference(&params.Instance, obj, params.Scheme); err != nil {
+				l.Error(setErr, "failed to set controller owner reference to resource")
+				errs = append(errs, setErr)
 				continue
 			}
 		}

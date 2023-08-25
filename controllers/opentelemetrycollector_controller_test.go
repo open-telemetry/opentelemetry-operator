@@ -294,10 +294,11 @@ func TestBreakOnUnrecoverableError(t *testing.T) {
 	expectedErr := errors.New("failed to create objects")
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewReconciler(controllers.Params{
-		Client: k8sClient,
-		Log:    logger,
-		Scheme: scheme.Scheme,
-		Config: cfg,
+		Client:   k8sClient,
+		Log:      logger,
+		Scheme:   scheme.Scheme,
+		Config:   cfg,
+		Recorder: record.NewFakeRecorder(10),
 		Tasks: []controllers.Task{
 			{
 				Name: "should-fail",
