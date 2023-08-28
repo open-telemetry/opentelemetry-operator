@@ -3703,9 +3703,9 @@ spec:
                   attached to Collector and Target Allocator pods.
                 type: object
               podSecurityContext:
-                description: PodSecurityContext holds pod-level security attributes
-                  and common container settings. Some fields are also present in container.securityContext.  Field
-                  values of container.
+                description: PodSecurityContext configures the pod security context
+                  for the opentelemetry-collector pod, when running as a deployment,
+                  daemonset, or statefulset.
                 properties:
                   fsGroup:
                     description: "A special supplemental group that applies to all
@@ -3928,8 +3928,8 @@ spec:
                     type: object
                 type: object
               securityContext:
-                description: SecurityContext will be set as the container security
-                  context.
+                description: SecurityContext configures the container security context
+                  for the opentelemetry-collector container.
                 properties:
                   allowPrivilegeEscalation:
                     description: AllowPrivilegeEscalation controls whether a process
