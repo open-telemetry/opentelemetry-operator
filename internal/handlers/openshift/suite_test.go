@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controllers_test
+package openshift
 
 import (
 	"context"
@@ -63,7 +63,7 @@ func TestMain(m *testing.M) {
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
 		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.OpenShiftIngressControllerCRD, testdata.OpenShiftConfigDNSCRD},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "config", "webhook")},
+			Paths: []string{filepath.Join("../../..", "config", "webhook")},
 		},
 	}
 	cfg, err = testEnv.Start()

@@ -74,7 +74,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(routev1.AddToScheme(scheme))
 	utilruntime.Must(routev1.Install(scheme))
 	utilruntime.Must(openshiftoperatorv1.Install(scheme))
 	utilruntime.Must(configv1.Install(scheme))

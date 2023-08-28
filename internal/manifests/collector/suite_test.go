@@ -88,7 +88,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = routev1.AddToScheme(testScheme); err != nil {
+	if err = routev1.Install(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}
