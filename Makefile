@@ -194,7 +194,7 @@ e2e-autoscale:
 # end-to-end-test for testing OpenShift cases
 .PHONY: e2e-openshift
 e2e-openshift:
-	$(KUTTL) test --config kuttl-test-openshift.yaml --test route
+	$(KUTTL) test --config kuttl-test-openshift.yaml
 
 .PHONY: e2e-log-operator
 e2e-log-operator:
