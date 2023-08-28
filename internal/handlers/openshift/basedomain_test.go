@@ -37,7 +37,6 @@ func TestDomain(t *testing.T) {
 	clusterDNS := &configv1.DNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "cluster",
-			//Namespace: "openshift-ingress-operator",
 		},
 		Spec: configv1.DNSSpec{
 			BaseDomain: "test.crc",
