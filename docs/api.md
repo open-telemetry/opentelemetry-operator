@@ -3764,7 +3764,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecpodsecuritycontext">podSecurityContext</a></b></td>
         <td>object</td>
         <td>
-          PodSecurityContext holds pod-level security attributes and common container settings. Some fields are also present in container.securityContext.  Field values of container.<br/>
+          PodSecurityContext configures the pod security context for the opentelemetry-collector pod, when running as a deployment, daemonset, or statefulset.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3801,7 +3801,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecsecuritycontext">securityContext</a></b></td>
         <td>object</td>
         <td>
-          SecurityContext will be set as the container security context.<br/>
+          SecurityContext configures the container security context for the opentelemetry-collector container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11422,7 +11422,7 @@ Metrics defines the metrics configuration for operands.
 
 
 
-PodSecurityContext holds pod-level security attributes and common container settings. Some fields are also present in container.securityContext.  Field values of container.
+PodSecurityContext configures the pod security context for the opentelemetry-collector pod, when running as a deployment, daemonset, or statefulset.
 
 <table>
     <thead>
@@ -11821,7 +11821,7 @@ ResourceClaim references one entry in PodSpec.ResourceClaims.
 
 
 
-SecurityContext will be set as the container security context.
+SecurityContext configures the container security context for the opentelemetry-collector container.
 
 <table>
     <thead>
