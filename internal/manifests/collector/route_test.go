@@ -17,6 +17,7 @@ package collector
 import (
 	_ "embed"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	routev1 "github.com/openshift/api/route/v1"
@@ -136,6 +137,26 @@ func TestDesiredRoutes(t *testing.T) {
 				},
 			},
 		}, got)
+	})
+	t.Run("basedomain is used", func(t *testing.T) {
+		params, err := newParams("something:tag", testFileIngress)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		params.Instance.Namespace = "test"
+		params.Instance.Spec.Ingress = v1alpha1.Ingress{
+			Type: v1alpha1.IngressTypeRoute,
+			Route: v1alpha1.OpenShiftRoute{
+				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			},
+		}
+
+		routes := Routes(params.Config, params.Log, params.Instance, "basedomain")
+		require.Equal(t, 3, len(routes))
+		assert.Equal(t, "web.basedomain", routes[0].Spec.Host)
+		assert.Equal(t, "otlp-grpc.basedomain", routes[1].Spec.Host)
+		assert.Equal(t, "otlp-test-grpc.basedomain", routes[2].Spec.Host)
 	})
 }
 
