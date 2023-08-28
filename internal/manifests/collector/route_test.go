@@ -17,11 +17,11 @@ package collector
 import (
 	_ "embed"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
