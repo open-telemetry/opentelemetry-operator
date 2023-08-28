@@ -41,7 +41,7 @@ func TestExpectedRoutes(t *testing.T) {
 		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 		params.Instance.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 
-		routes := collector.Routes(params.Config, params.Log, params.Instance)
+		routes := collector.Routes(params.Config, params.Log, params.Instance, "")
 		err = expectedRoutes(ctx, params, routes)
 		assert.NoError(t, err)
 
@@ -55,7 +55,7 @@ func TestExpectedRoutes(t *testing.T) {
 		params.Instance.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
 		params.Instance.Spec.Ingress.Hostname = expectHostname
 
-		routes = collector.Routes(params.Config, params.Log, params.Instance)
+		routes = collector.Routes(params.Config, params.Log, params.Instance, "")
 		err = expectedRoutes(ctx, params, routes)
 		assert.NoError(t, err)
 
@@ -85,7 +85,7 @@ func TestDeleteRoutes(t *testing.T) {
 		}
 		myParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 
-		routes := collector.Routes(myParams.Config, myParams.Log, myParams.Instance)
+		routes := collector.Routes(myParams.Config, myParams.Log, myParams.Instance, "")
 		err = expectedRoutes(ctx, myParams, routes)
 		assert.NoError(t, err)
 

@@ -44,7 +44,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		actual := Routes(params.Config, params.Log, params.Instance)
+		actual := Routes(params.Config, params.Log, params.Instance, "")
 		assert.Nil(t, actual)
 	})
 
@@ -62,7 +62,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		actual := Routes(params.Config, params.Log, params.Instance)
+		actual := Routes(params.Config, params.Log, params.Instance, "")
 		assert.Nil(t, actual)
 	})
 
@@ -80,7 +80,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		actual := Routes(params.Config, params.Log, params.Instance)
+		actual := Routes(params.Config, params.Log, params.Instance, "")
 		assert.Nil(t, actual)
 	})
 
@@ -105,7 +105,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		routes := Routes(params.Config, params.Log, params.Instance)
+		routes := Routes(params.Config, params.Log, params.Instance, "")
 		got := routes[0]
 
 		assert.NotEqual(t, &routev1.Route{
@@ -142,13 +142,13 @@ func TestDesiredRoutes(t *testing.T) {
 func TestRoutes(t *testing.T) {
 	t.Run("wrong mode", func(t *testing.T) {
 		params := deploymentParams()
-		routes := Routes(params.Config, params.Log, params.Instance)
+		routes := Routes(params.Config, params.Log, params.Instance, "")
 		assert.Nil(t, routes)
 	})
 
 	t.Run("supported mode and service exists", func(t *testing.T) {
 		params := deploymentParams()
-		routes := Routes(params.Config, params.Log, params.Instance)
+		routes := Routes(params.Config, params.Log, params.Instance, "")
 		assert.Nil(t, routes)
 	})
 
