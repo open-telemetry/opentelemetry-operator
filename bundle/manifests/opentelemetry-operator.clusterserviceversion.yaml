@@ -28,7 +28,7 @@ metadata:
         }
       ]
     capabilities: Deep Insights
-    categories: Logging & Tracing
+    categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
     createdAt: "2023-08-18T14:30:49Z"
