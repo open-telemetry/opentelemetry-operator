@@ -26,9 +26,10 @@ jobs:
        # should be compatible with them.
        kube-version:
        - "1.19"
-       - "1.27"
+       - "1.28"
        group:
-         - e2e e2e-upgrade
+         - e2e
+         - e2e-upgrade
          - e2e-prometheuscr
          - e2e-autoscale
 
