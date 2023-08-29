@@ -19,6 +19,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 func TestInitContainerMissing(t *testing.T) {
@@ -89,6 +91,40 @@ func TestAutoInstrumentationInjected(t *testing.T) {
 						},
 						{
 							Name: initContainerName,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "AutoInstrumentation_Already_Inject_go",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{},
+					Containers: []corev1.Container{
+						{
+							Name: sideCarName,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "AutoInstrumentation_Already_Inject_no_init_containers",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{},
+					Containers: []corev1.Container{
+						{
+							Name: "my-app",
+							Env: []corev1.EnvVar{
+								{
+									Name:  constants.EnvNodeName,
+									Value: "value",
+								},
+							},
 						},
 					},
 				},
