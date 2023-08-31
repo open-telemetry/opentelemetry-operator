@@ -22,6 +22,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
+var defaultSize = resource.MustParse("150Mi")
+
 // Calculate if we already inject InitContainers.
 func isInitContainerMissing(pod corev1.Pod) bool {
 	for _, initContainer := range pod.Spec.InitContainers {
@@ -62,7 +64,6 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 }
 
 func volumeSize(quantity *resource.Quantity) *resource.Quantity {
-	defaultSize := resource.MustParse("150Mi")
 	if quantity == nil {
 		return &defaultSize
 	}
