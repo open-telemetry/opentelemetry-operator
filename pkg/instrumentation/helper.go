@@ -16,10 +16,13 @@ package instrumentation
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
+
+var defaultSize = resource.MustParse("150Mi")
 
 // Calculate if we already inject InitContainers.
 func isInitContainerMissing(pod corev1.Pod) bool {
@@ -61,4 +64,11 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 		}
 	}
 	return false
+}
+
+func volumeSize(quantity *resource.Quantity) *resource.Quantity {
+	if quantity == nil {
+		return &defaultSize
+	}
+	return quantity
 }

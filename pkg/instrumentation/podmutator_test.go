@@ -133,7 +133,9 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "opentelemetry-auto-instrumentation",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -402,7 +404,9 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "opentelemetry-auto-instrumentation",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -660,7 +664,9 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "opentelemetry-auto-instrumentation",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -926,7 +932,9 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "opentelemetry-auto-instrumentation",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -1414,13 +1422,17 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "otel-apache-conf-dir",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 						{
 							Name: "otel-apache-agent",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},

@@ -49,13 +49,17 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 						{
 							Name: apacheAgentConfigVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 						{
 							Name: apacheAgentVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -138,13 +142,17 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 						{
 							Name: apacheAgentConfigVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 						{
 							Name: apacheAgentVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -228,13 +236,17 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 						{
 							Name: apacheAgentConfigVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 						{
 							Name: apacheAgentVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -323,13 +335,17 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 						{
 							Name: apacheAgentConfigVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 						{
 							Name: apacheAgentVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -430,13 +446,17 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 						{
 							Name: apacheAgentConfigVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 						{
 							Name: apacheAgentVolume,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},

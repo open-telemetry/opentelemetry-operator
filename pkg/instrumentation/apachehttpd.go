@@ -79,7 +79,9 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: apacheAgentConfigVolume,
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: volumeSize(apacheSpec.VolumeSizeLimit),
+				},
 			}})
 
 		apacheConfDir := getApacheConfDir(apacheSpec.ConfigPath)
@@ -136,7 +138,9 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: apacheAgentVolume,
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: volumeSize(apacheSpec.VolumeSizeLimit),
+				},
 			}})
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
