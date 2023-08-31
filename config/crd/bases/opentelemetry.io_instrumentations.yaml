@@ -326,6 +326,14 @@ spec:
                     description: Apache HTTPD server version. One of 2.4 or 2.2. Default
                       is 2.4
                     type: string
+                  volumeLimitSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: VolumeSizeLimit defines size limit for volume used
+                      for auto-instrumentation. The default size is 150Mi.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
               dotnet:
                 description: DotNet defines configuration for DotNet auto-instrumentation.
@@ -485,6 +493,14 @@ spec:
                           resources required.
                         type: object
                     type: object
+                  volumeLimitSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: VolumeSizeLimit defines size limit for volume used
+                      for auto-instrumentation. The default size is 150Mi.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
               env:
                 description: Env defines common env vars.
@@ -754,6 +770,14 @@ spec:
                           resources required.
                         type: object
                     type: object
+                  volumeLimitSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: VolumeSizeLimit defines size limit for volume used
+                      for auto-instrumentation. The default size is 150Mi.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
               java:
                 description: Java defines configuration for java auto-instrumentation.
@@ -914,6 +938,14 @@ spec:
                           resources required.
                         type: object
                     type: object
+                  volumeLimitSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: VolumeSizeLimit defines size limit for volume used
+                      for auto-instrumentation. The default size is 150Mi.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
               nginx:
                 description: Nginx defines configuration for Nginx auto-instrumentation.
@@ -1186,6 +1218,14 @@ spec:
                           resources required.
                         type: object
                     type: object
+                  volumeLimitSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: VolumeSizeLimit defines size limit for volume used
+                      for auto-instrumentation. The default size is 150Mi.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
               nodejs:
                 description: NodeJS defines configuration for nodejs auto-instrumentation.
@@ -1345,6 +1385,14 @@ spec:
                           resources required.
                         type: object
                     type: object
+                  volumeLimitSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: VolumeSizeLimit defines size limit for volume used
+                      for auto-instrumentation. The default size is 150Mi.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
               propagators:
                 description: Propagators defines inter-process context propagation
@@ -1521,6 +1569,14 @@ spec:
                           resources required.
                         type: object
                     type: object
+                  volumeLimitSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: VolumeSizeLimit defines size limit for volume used
+                      for auto-instrumentation. The default size is 150Mi.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
               resource:
                 description: Resource defines the configuration for the resource attributes,
