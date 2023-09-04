@@ -13,4 +13,4 @@ issues: [2074]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext: If the ingeress hostname is not specified OpenShift route hostname is set to `<port-name>-<otel-cr-name>-route-<otel-cr-namespace>-basedomain`.
+subtext: If the Ingress hostname is not specified OpenShift route hostname is set to `<port-name>-<otel-cr-name>-route-<otel-cr-namespace>-basedomain`.
