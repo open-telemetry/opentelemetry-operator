@@ -208,8 +208,13 @@ e2e-log-operator:
 	kubectl get deploy -A
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server load-image-all deploy
-	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server load-image-all deploy instrumentation-e2e-apps
+	APACHE_E2E=$(IMG_PREFIX)/apachehttpd-test:e2e TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+
+.PHONY: build-instrumentation-e2e-apps
+instrumentation-e2e-apps:
+	docker buildx build --load --platform linux/${ARCH} -t $(IMG_PREFIX)/apachehttpd-test:e2e tests/instrumentation-e2e-apps/apache-httpd/apache-httpd
+	kind load --name $(KIND_CLUSTER_NAME) docker-image $(IMG_PREFIX)/apachehttpd-test:e2e
 
 .PHONY: enable-prometheus-feature-flag
 enable-prometheus-feature-flag:
