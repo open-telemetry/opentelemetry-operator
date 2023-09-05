@@ -26,7 +26,10 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -38,6 +41,17 @@ import (
 func Self(ctx context.Context, params manifests.Params) error {
 	changed := params.Instance
 
+	up := &collectorupgrade.VersionUpgrade{
+		Log:      params.Log,
+		Version:  version.Get(),
+		Client:   params.Client,
+		Recorder: record.NewFakeRecorder(collectorupgrade.RecordBufferSize),
+	}
+	changed, err := up.ManagedInstance(ctx, changed)
+	if err != nil {
+		return fmt.Errorf("failed to upgrade the OpenTelemetry CR: %w", err)
+	}
+
 	// this field is only changed for new instances: on existing instances this
 	// field is reconciled when the operator is first started, i.e. during
 	// the upgrade mechanism
@@ -46,7 +60,7 @@ func Self(ctx context.Context, params manifests.Params) error {
 		changed.Status.Version = version.OpenTelemetryCollector()
 	}
 
-	if err := updateScaleSubResourceStatus(ctx, params.Client, &changed); err != nil {
+	if err = updateScaleSubResourceStatus(ctx, params.Client, &changed); err != nil {
 		return fmt.Errorf("failed to update the scale subresource status for the OpenTelemetry CR: %w", err)
 	}
 
