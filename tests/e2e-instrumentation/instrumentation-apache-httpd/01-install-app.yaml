@@ -15,6 +15,10 @@ spec:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-apache-httpd: "true"
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
       containers:
       - name: myapp
         image: docker.io/chrlic/apache-test@sha256:fad58c6ce7a4f477b455bece2a1980741fa6f81cef1e1093a3b72f9b2ffa7b8e
