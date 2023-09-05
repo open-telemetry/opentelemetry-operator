@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Read version
         run: echo "VERSION=$(cat autoinstrumentation/dotnet/version.txt)" >> $GITHUB_ENV

@@ -104,6 +104,7 @@ func expectedServices(ctx context.Context, params manifests.Params, expected []*
 		}
 		updated.Spec.Ports = desired.Spec.Ports
 		updated.Spec.Selector = desired.Spec.Selector
+		updated.Spec.InternalTrafficPolicy = desired.Spec.InternalTrafficPolicy
 
 		patch := client.MergeFrom(existing)
 

@@ -78,6 +78,22 @@ func TestExpectedServices(t *testing.T) {
 		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
 		assert.Equal(t, "Newest", actual.Spec.Selector["app.kubernetes.io/version"])
 	})
+	t.Run("should update service on internal traffic policy change", func(t *testing.T) {
+		serviceInstance := service("test-collector", params().Instance.Spec.Ports)
+		createObjectIfNotExists(t, "test-collector", serviceInstance)
+
+		newService := serviceWithInternalTrafficPolicy("test-collector", params().Instance.Spec.Ports, v1.ServiceInternalTrafficPolicyLocal)
+		err := expectedServices(context.Background(), params(), []*v1.Service{newService})
+		assert.NoError(t, err)
+
+		actual := v1.Service{}
+		exists, err := populateObjectIfExists(t, &actual, types.NamespacedName{Namespace: "default", Name: "test-collector"})
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+		assert.Equal(t, instanceUID, actual.OwnerReferences[0].UID)
+		assert.Equal(t, v1.ServiceInternalTrafficPolicyLocal, *actual.Spec.InternalTrafficPolicy)
+	})
 }
 
 func TestDeleteServices(t *testing.T) {
