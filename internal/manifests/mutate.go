@@ -275,8 +275,8 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 }
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
-	if hasChange, _ := hasImmutableFieldChange(existing, desired); hasChange {
-		return ImmutableChangeErr
+	if hasChange, field := hasImmutableFieldChange(existing, desired); hasChange {
+		return fmt.Errorf("%s is being changed, %w", field, ImmutableChangeErr)
 	}
 	// StatefulSet selector is immutable so we set this value only if
 	// a new object is going to be created
@@ -302,7 +302,7 @@ func hasImmutableFieldChange(existing, desired *appsv1.StatefulSet) (bool, strin
 		return false, ""
 	}
 	if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-		return true, "Spec.Selector"
+		return true, fmt.Sprintf("Spec.Selector: desired: %s existing: %s", desired.Spec.Selector, existing.Spec.Selector)
 	}
 
 	if hasVolumeClaimsTemplatesChanged(desired, existing) {
