@@ -20,8 +20,8 @@ ARG version
 
 WORKDIR /autoinstrumentation
 
-ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$version/opentelemetry-dotnet-instrumentation-linux-glibc.zip .
-ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$version/opentelemetry-dotnet-instrumentation-linux-musl.zip .
+RUN wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$version/opentelemetry-dotnet-instrumentation-linux-glibc.zip
+RUN wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$version/opentelemetry-dotnet-instrumentation-linux-musl.zip
 
 RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc.zip
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip "linux-musl-x64/*" -d .
