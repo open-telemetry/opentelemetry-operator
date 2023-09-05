@@ -26,4 +26,6 @@ RUN wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/
 RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc.zip
 RUN unzip opentelemetry-dotnet-instrumentation-linux-musl.zip "linux-musl-x64/*" -d .
 
+RUN rm opentelemetry-dotnet-instrumentation-linux-glibc.zip opentelemetry-dotnet-instrumentation-linux-musl.zip
+
 RUN chmod -R go+r .
