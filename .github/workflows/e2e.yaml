@@ -29,6 +29,7 @@ jobs:
        - "1.28"
        group:
          - e2e
+         - e2e-instrumentation
          - e2e-upgrade
          - e2e-prometheuscr
          - e2e-autoscale
