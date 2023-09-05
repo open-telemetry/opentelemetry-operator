@@ -12,7 +12,7 @@ jobs:
       with:
         go-version: "1.21"
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator"
