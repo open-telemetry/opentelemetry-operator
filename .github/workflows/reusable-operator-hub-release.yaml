@@ -37,13 +37,13 @@ jobs:
               --force
 
       - name: Checkout operatorhub repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: opentelemetrybot/${{ inputs.repo }}
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
 
       - name: Checkout opentelemetry-operator to tmp/ directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: open-telemetry/opentelemetry-operator
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
