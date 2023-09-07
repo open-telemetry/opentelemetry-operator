@@ -325,12 +325,10 @@ func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
 				Name:      "configmap-test",
 				MountPath: "/var/conf",
-			},
-				{
-					Name:      "configmap-test2",
-					MountPath: "/var/conf/dir",
-				},
-			},
+			}, {
+				Name:      "configmap-test2",
+				MountPath: "/var/conf/dir",
+			}},
 		},
 	}
 	cfg := config.New()

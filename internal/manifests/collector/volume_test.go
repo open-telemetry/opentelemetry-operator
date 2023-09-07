@@ -69,11 +69,10 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
 				Name:      "configmap-test",
 				MountPath: "/var/conf",
-			},
-				{
-					Name:      "configmap-test2",
-					MountPath: "/var/conf",
-				}},
+			}, {
+				Name:      "configmap-test2",
+				MountPath: "/var/conf",
+			}},
 		},
 	}
 	cfg := config.New()
