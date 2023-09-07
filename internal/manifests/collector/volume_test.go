@@ -84,6 +84,6 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	assert.Len(t, volumes, 3)
 
 	// check if the volume with the configmap prefix is mounted after defining the config map.
-	assert.Equal(t, "configmap_configmap-test", volumes[1].Name)
-	assert.Equal(t, "configmap_configmap-test2", volumes[2].Name)
+	assert.Equal(t, "configmap-configmap-test", volumes[1].Name)
+	assert.Equal(t, "configmap-configmap-test2", volumes[2].Name)
 }
