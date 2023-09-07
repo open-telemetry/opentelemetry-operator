@@ -48,7 +48,9 @@ func TestInjectNodeJSSDK(t *testing.T) {
 						{
 							Name: volumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -106,7 +108,9 @@ func TestInjectNodeJSSDK(t *testing.T) {
 						{
 							Name: volumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},

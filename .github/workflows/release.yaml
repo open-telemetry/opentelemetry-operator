@@ -10,9 +10,9 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: "1.20"
+        go-version: "1.21"
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator"

@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: create-sm-prometheus.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-collector
+  name: simplest-collector
+  namespace: create-sm-prometheus
+spec:
+  endpoints:
+  - port: monitoring
+  - port: prometheus-dev
+  namespaceSelector:
+    matchNames:
+    - create-sm-prometheus
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/instance: create-sm-prometheus.simplest

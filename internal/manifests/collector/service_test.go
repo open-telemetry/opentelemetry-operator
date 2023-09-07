@@ -128,6 +128,24 @@ func TestDesiredService(t *testing.T) {
 
 	})
 
+	t.Run("on OpenShift gRPC appProtocol should be h2c", func(t *testing.T) {
+		h2c := "h2c"
+		jaegerPort := v1.ServicePort{
+			Name:        "jaeger-grpc",
+			Protocol:    "TCP",
+			Port:        14250,
+			AppProtocol: &h2c,
+		}
+
+		params := deploymentParams()
+		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+		actual := Service(params.Config, params.Log, params.Instance)
+
+		ports := append(params.Instance.Spec.Ports, jaegerPort)
+		expected := service("test-collector", ports)
+		assert.Equal(t, expected, *actual)
+	})
+
 	t.Run("should return service with local internal traffic policy", func(t *testing.T) {
 
 		grpc := "grpc"
@@ -144,7 +162,6 @@ func TestDesiredService(t *testing.T) {
 
 		assert.Equal(t, expected, *actual)
 	})
-
 }
 
 func TestHeadlessService(t *testing.T) {
