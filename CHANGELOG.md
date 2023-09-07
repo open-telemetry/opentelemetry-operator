@@ -3,6 +3,23 @@ Changes by Version
 
 <!-- next version -->
 
+## 0.84.0
+
+### 💡 Enhancements 💡
+
+- `operator`: Create ServiceMonitors when the Prometheus exporters are used. (#1963)
+- `operator`: Run end-to-end tests on Kubernetes 1.28 (#2047)
+- `operator`: Limit auto-instrumentation emptydir volume size (#2044)
+- `operator`: Make OpenShift routes work with missing hostname (#2074)
+  If the Ingress hostname is not specified OpenShift route hostname is set to `<port-name>-<otel-cr-name>-route-<otel-cr-namespace>-basedomain`.
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Avoid running the auto-instrumentation pod mutator for pods already auto-instrumented (#1366)
+- `autoinstrumentation`: Allow the usage of the Apache HTTPD autoinstrumentation to be run as non-root user. Change the files permission to allow their copy from a non-root user. (#2068)
+- `operator`: Fixes reconciling otel-collector service's internal traffic policy changes. (#2061)
+- `operator`: Make OpenShift Route work with gRPC receivers by using h2c appProtocol (#1969)
+
 ## 0.83.0
 
 ### 🛑 Breaking changes 🛑
