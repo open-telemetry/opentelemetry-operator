@@ -107,7 +107,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	if len(otelcol.Spec.ConfigMaps) > 0 {
 		for keyCfgMap := range otelcol.Spec.ConfigMaps {
 			volumeMounts = append(volumeMounts, corev1.VolumeMount{
-				Name:      "configmap-" + otelcol.Spec.ConfigMaps[keyCfgMap].Name,
+				Name:      naming.ConfigMapExtra() + otelcol.Spec.ConfigMaps[keyCfgMap].Name,
 				MountPath: otelcol.Spec.ConfigMaps[keyCfgMap].MountPath + "/" + otelcol.Spec.ConfigMaps[keyCfgMap].Name,
 			})
 		}

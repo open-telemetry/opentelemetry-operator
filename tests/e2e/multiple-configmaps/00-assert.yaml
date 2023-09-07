@@ -23,18 +23,18 @@ spec:
   template:
     spec:
       volumes:
-        - name: otc-interal
+        - name: otc-internal
           configMap:
-            name: otel-collector
+            name: simplest-with-configmaps-collector
             items:
               - key: collector.yaml
                 path: collector.yaml
             defaultMode: 420
-        - name: mount-test1
+        - name: configmap-mount-test1
           configMap:
             name: mount-test1
             defaultMode: 420
-        - name: mount-test2
+        - name: configmap-mount-test2
           configMap:
             name: mount-test2
             defaultMode: 420
