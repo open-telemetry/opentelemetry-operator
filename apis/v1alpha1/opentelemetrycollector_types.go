@@ -123,10 +123,25 @@ type OpenTelemetryCollectorSpec struct {
 	//
 	// +optional
 	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
-	// SecurityContext will be set as the container security context.
+	// SecurityContext configures the container security context for
+	// the opentelemetry-collector container.
+	//
+	// In deployment, daemonset, or statefulset mode, this controls
+	// the security context settings for the primary application
+	// container.
+	//
+	// In sidecar mode, this controls the security context for the
+	// injected sidecar container.
+	//
 	// +optional
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
-
+	// PodSecurityContext configures the pod security context for the
+	// opentelemetry-collector pod, when running as a deployment, daemonset,
+	// or statefulset.
+	//
+	// In sidecar mode, the opentelemetry-operator will ignore this setting.
+	//
+	// +optional
 	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
 	// PodAnnotations is the set of annotations that will be attached to
 	// Collector and Target Allocator pods.

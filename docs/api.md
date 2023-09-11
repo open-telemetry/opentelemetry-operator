@@ -231,6 +231,13 @@ ApacheHttpd defines configuration for Apache HTTPD auto-instrumentation.
           Apache HTTPD server version. One of 2.4 or 2.2. Default is 2.4<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -831,6 +838,13 @@ DotNet defines configuration for DotNet auto-instrumentation.
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1462,6 +1476,13 @@ Go defines configuration for Go auto-instrumentation.
           Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -1816,6 +1837,13 @@ Java defines configuration for java auto-instrumentation.
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2186,6 +2214,13 @@ Nginx defines configuration for Nginx auto-instrumentation.
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2790,6 +2825,13 @@ NodeJS defines configuration for nodejs auto-instrumentation.
           Resources describes the compute resource requirements.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -3144,6 +3186,13 @@ Python defines configuration for python auto-instrumentation.
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3764,7 +3813,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecpodsecuritycontext">podSecurityContext</a></b></td>
         <td>object</td>
         <td>
-          PodSecurityContext holds pod-level security attributes and common container settings. Some fields are also present in container.securityContext.  Field values of container.<br/>
+          PodSecurityContext configures the pod security context for the opentelemetry-collector pod, when running as a deployment, daemonset, or statefulset.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3801,7 +3850,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecsecuritycontext">securityContext</a></b></td>
         <td>object</td>
         <td>
-          SecurityContext will be set as the container security context.<br/>
+          SecurityContext configures the container security context for the opentelemetry-collector container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11422,7 +11471,7 @@ Metrics defines the metrics configuration for operands.
 
 
 
-PodSecurityContext holds pod-level security attributes and common container settings. Some fields are also present in container.securityContext.  Field values of container.
+PodSecurityContext configures the pod security context for the opentelemetry-collector pod, when running as a deployment, daemonset, or statefulset.
 
 <table>
     <thead>
@@ -11821,7 +11870,7 @@ ResourceClaim references one entry in PodSpec.ResourceClaims.
 
 
 
-SecurityContext will be set as the container security context.
+SecurityContext configures the container security context for the opentelemetry-collector container.
 
 <table>
     <thead>

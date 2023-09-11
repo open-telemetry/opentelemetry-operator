@@ -176,6 +176,12 @@ generate: controller-gen api-docs
 e2e:
 	$(KUTTL) test
 
+
+# instrumentation end-to-tests
+.PHONY: e2e-instrumentation
+e2e-instrumentation:
+	$(KUTTL) test --config kuttl-test-instrumentation.yaml
+
 # end-to-end-test for PrometheusCR E2E tests
 .PHONY: e2e-prometheuscr
 e2e-prometheuscr:

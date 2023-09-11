@@ -18,7 +18,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.67.1
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
-	github.com/prometheus/prometheus v0.46.0
+	github.com/prometheus/prometheus v0.47.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v2 v2.4.0
@@ -26,7 +26,7 @@ require (
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
 	k8s.io/klog/v2 v2.100.1
-	sigs.k8s.io/controller-runtime v0.16.0
+	sigs.k8s.io/controller-runtime v0.16.1
 )
 
 require (
@@ -158,7 +158,7 @@ require (
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.11.0 // indirect
-	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.19 // indirect
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.20 // indirect
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
@@ -196,7 +196,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.28.0 // indirect
-	k8s.io/component-base v0.28.0 // indirect
+	k8s.io/component-base v0.28.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	k8s.io/utils v0.0.0-20230711102312-30195339c3c7 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
