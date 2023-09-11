@@ -26,7 +26,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
@@ -45,7 +44,7 @@ func Self(ctx context.Context, params manifests.Params) error {
 		Log:      params.Log,
 		Version:  version.Get(),
 		Client:   params.Client,
-		Recorder: record.NewFakeRecorder(collectorupgrade.RecordBufferSize),
+		Recorder: params.Recorder,
 	}
 	changed, err := up.ManagedInstance(ctx, changed)
 	if err != nil {
