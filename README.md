@@ -255,7 +255,7 @@ instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
 .NET:
-.NET auto-instrumentation also honors an annotation that will be used to set the .NET runtime versions. There are two versions supported `linux-glibc` and `linux-musl`.
+.NET auto-instrumentation also honors an annotation that will be used to set the .NET runtime version. There are two versions supported `linux-glibc` and `linux-musl`.
 By default `linux-glibc` is used.
 ```bash
 instrumentation.opentelemetry.io/inject-dotnet: "true"

@@ -911,7 +911,7 @@ func TestMutatePod(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						annotationInjectDotNet:  "true",
-						annotationDotNetRuntime: dotNetMuslLinuxRuntime,
+						annotationDotNetRuntime: dotNetRuntimeLinuxMusl,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -926,7 +926,7 @@ func TestMutatePod(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						annotationInjectDotNet:  "true",
-						annotationDotNetRuntime: dotNetMuslLinuxRuntime,
+						annotationDotNetRuntime: dotNetRuntimeLinuxMusl,
 					},
 				},
 				Spec: corev1.PodSpec{

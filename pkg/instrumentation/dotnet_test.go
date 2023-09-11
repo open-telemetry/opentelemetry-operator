@@ -377,7 +377,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationDotNetRuntime: dotNetGlibcLinuxRuntime,
+						annotationDotNetRuntime: dotNetRuntimeLinuxGlibc,
 					},
 				},
 			},
@@ -448,7 +448,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationDotNetRuntime: dotNetGlibcLinuxRuntime,
+						annotationDotNetRuntime: dotNetRuntimeLinuxGlibc,
 					},
 				},
 			},
@@ -465,7 +465,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationDotNetRuntime: dotNetMuslLinuxRuntime,
+						annotationDotNetRuntime: dotNetRuntimeLinuxMusl,
 					},
 				},
 			},
@@ -536,7 +536,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationDotNetRuntime: dotNetMuslLinuxRuntime,
+						annotationDotNetRuntime: dotNetRuntimeLinuxMusl,
 					},
 				},
 			},

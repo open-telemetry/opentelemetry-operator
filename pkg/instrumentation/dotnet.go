@@ -39,8 +39,12 @@ const (
 	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation"
 	dotNetSharedStorePath               = "/otel-auto-instrumentation/store"
 	dotNetStartupHookPath               = "/otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
-	dotNetGlibcLinuxRuntime             = "linux-glibc"
-	dotNetMuslLinuxRuntime              = "linux-musl"
+)
+
+// Supported .NET runtime versions, can be set by instrumentation.opentelemetry.io/inject-dotnet.
+const (
+	dotNetRuntimeLinuxGlibc = "linux-glibc"
+	dotNetRuntimeLinuxMusl  = "linux-musl"
 )
 
 func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, error) {
@@ -67,11 +71,10 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 
 	runtime := pod.Annotations[annotationDotNetRuntime]
 	coreClrProfilerPath := ""
-
 	switch runtime {
-	case "", dotNetGlibcLinuxRuntime:
+	case "", dotNetRuntimeLinuxGlibc:
 		coreClrProfilerPath = dotNetCoreClrProfilerGlibcPath
-	case dotNetMuslLinuxRuntime:
+	case dotNetRuntimeLinuxMusl:
 		coreClrProfilerPath = dotNetCoreClrProfilerMuslPath
 	default:
 		return pod, errors.New("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value is not supported")
