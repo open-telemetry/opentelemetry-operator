@@ -910,7 +910,8 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectDotNet: "true",
+						annotationInjectDotNet:  "true",
+						annotationDotNetRuntime: dotNetMuslLinuxRuntime,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -924,7 +925,8 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectDotNet: "true",
+						annotationInjectDotNet:  "true",
+						annotationDotNetRuntime: dotNetMuslLinuxRuntime,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -971,7 +973,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  envDotNetCoreClrProfilerPath,
-									Value: dotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerMuslPath,
 								},
 								{
 									Name:  envDotNetStartupHook,

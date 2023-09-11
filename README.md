@@ -254,9 +254,13 @@ Python:
 instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
-DotNet:
+.NET:
+.NET auto-instrumentation also honors an annotation that will be used to set the .NET runtime versions. There are two versions supported `linux-glibc` and `linux-musl`.
+By default `linux-glibc` is used.
 ```bash
 instrumentation.opentelemetry.io/inject-dotnet: "true"
+instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-glibc" # for Linux glibc based images, this is default value and can be omitted
+instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl"  # for Linux musl based images
 ```
 
 Go:
