@@ -305,7 +305,7 @@ func hasImmutableFieldChange(existing, desired *appsv1.StatefulSet) (bool, strin
 		return true, fmt.Sprintf("Spec.Selector: desired: %s existing: %s", desired.Spec.Selector, existing.Spec.Selector)
 	}
 
-	if hasVolumeClaimsTemplatesChanged(desired, existing) {
+	if hasVolumeClaimsTemplatesChanged(existing, desired) {
 		return true, "Spec.VolumeClaimTemplates"
 	}
 
