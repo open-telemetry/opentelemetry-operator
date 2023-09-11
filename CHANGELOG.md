@@ -2,11 +2,11 @@ Changes by Version
 ==================
 
 <!-- next version -->
-
 ## 0.84.0
 
 ### 💡 Enhancements 💡
 
+- `autoinstrumentation`: Bump dotnet instrumentation version to 1.0.0 (#2096)
 - `operator`: Create ServiceMonitors when the Prometheus exporters are used. (#1963)
 - `operator`: Run end-to-end tests on Kubernetes 1.28 (#2047)
 - `operator`: Limit auto-instrumentation emptydir volume size (#2044)
