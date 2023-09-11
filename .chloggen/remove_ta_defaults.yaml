@@ -13,4 +13,4 @@ issues: [1914]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: To preserve the old behaviour for the case when the requests/limits were not explicitely set during the deployment, make sure to set the requests/limits of 100m/200m for CPU and 250Mi/500Mi for memory.
