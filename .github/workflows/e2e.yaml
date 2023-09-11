@@ -38,7 +38,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: "1.21"
+        go-version: "~1.21.1"
 
     - name: Setup kind
       env:
@@ -46,7 +46,7 @@ jobs:
       run: go install sigs.k8s.io/kind@v${KIND_VERSION}
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: "install kuttl"
       run: ./hack/install-kuttl.sh
