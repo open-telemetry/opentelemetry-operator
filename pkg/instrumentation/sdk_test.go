@@ -31,6 +31,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
+var defaultVolumeLimitSize = resource.MustParse("150Mi")
+
 var testResourceRequirements = corev1.ResourceRequirements{
 	Limits: corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -522,7 +524,9 @@ func TestInjectJava(t *testing.T) {
 				{
 					Name: javaVolumeName,
 					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
 					},
 				},
 			},
@@ -624,7 +628,9 @@ func TestInjectNodeJS(t *testing.T) {
 				{
 					Name: nodejsVolumeName,
 					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
 					},
 				},
 			},
@@ -726,7 +732,9 @@ func TestInjectPython(t *testing.T) {
 				{
 					Name: pythonVolumeName,
 					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
 					},
 				},
 			},
@@ -842,7 +850,9 @@ func TestInjectDotNet(t *testing.T) {
 				{
 					Name: dotnetVolumeName,
 					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							SizeLimit: &defaultVolumeLimitSize,
+						},
 					},
 				},
 			},
@@ -1261,13 +1271,17 @@ func TestInjectApacheHttpd(t *testing.T) {
 						{
 							Name: "otel-apache-conf-dir",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 						{
 							Name: "otel-apache-agent",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},

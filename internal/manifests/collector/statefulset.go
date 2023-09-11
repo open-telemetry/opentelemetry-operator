@@ -53,7 +53,7 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 				Spec: corev1.PodSpec{
 					ServiceAccountName:        ServiceAccountName(otelcol),
 					InitContainers:            otelcol.Spec.InitContainers,
-					Containers:                []corev1.Container{Container(cfg, logger, otelcol, true)},
+					Containers:                append(otelcol.Spec.AdditionalContainers, Container(cfg, logger, otelcol, true)),
 					Volumes:                   Volumes(cfg, otelcol),
 					DNSPolicy:                 getDNSPolicy(otelcol),
 					HostNetwork:               otelcol.Spec.HostNetwork,

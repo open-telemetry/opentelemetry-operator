@@ -16,6 +16,7 @@ package collector
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -23,12 +24,21 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// ServiceMonitor returns the service account for the given instance.
+// ServiceMonitor returns the service monitor for the given instance.
 func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*monitoringv1.ServiceMonitor, error) {
-	return &monitoringv1.ServiceMonitor{
+	if !otelcol.Spec.Observability.Metrics.EnableMetrics {
+		logger.V(2).Info("Metrics disabled for this OTEL Collector",
+			"otelcol.name", otelcol.Name,
+			"otelcol.namespace", otelcol.Namespace,
+		)
+		return nil, nil
+	}
+
+	sm := monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: otelcol.Namespace,
 			Name:      naming.ServiceMonitor(otelcol.Name),
@@ -39,17 +49,51 @@ func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Open
 			},
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
-			Endpoints: []monitoringv1.Endpoint{{
-				Port: "monitoring",
-			}},
+			Endpoints: []monitoringv1.Endpoint{},
 			NamespaceSelector: monitoringv1.NamespaceSelector{
 				MatchNames: []string{otelcol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name),
 				},
 			},
 		},
-	}, nil
+	}
+
+	endpoints := []monitoringv1.Endpoint{
+		{
+			Port: "monitoring",
+		},
+	}
+
+	sm.Spec.Endpoints = append(endpoints, endpointsFromConfig(logger, otelcol)...)
+	return &sm, nil
+}
+
+func endpointsFromConfig(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []monitoringv1.Endpoint {
+	c, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	if err != nil {
+		logger.V(2).Error(err, "Error while parsing the configuration")
+		return []monitoringv1.Endpoint{}
+	}
+
+	exporterPorts, err := adapters.ConfigToExporterPorts(logger, c)
+	if err != nil {
+		logger.Error(err, "couldn't build service monitors from configuration")
+		return []monitoringv1.Endpoint{}
+	}
+
+	endpoints := []monitoringv1.Endpoint{}
+
+	for _, port := range exporterPorts {
+		if strings.Contains(port.Name, "prometheus") {
+			e := monitoringv1.Endpoint{
+				Port: port.Name,
+			}
+			endpoints = append(endpoints, e)
+		}
+	}
+	return endpoints
 }

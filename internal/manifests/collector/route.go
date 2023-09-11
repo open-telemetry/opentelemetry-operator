@@ -65,6 +65,12 @@ func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetr
 
 	routes := make([]*routev1.Route, len(ports))
 	for i, p := range ports {
+		portName := naming.PortName(p.Name, p.Port)
+		host := ""
+		if otelcol.Spec.Ingress.Hostname != "" {
+			host = fmt.Sprintf("%s.%s", portName, otelcol.Spec.Ingress.Hostname)
+		}
+
 		routes[i] = &routev1.Route{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        naming.Route(otelcol.Name, p.Name),
@@ -77,15 +83,13 @@ func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetr
 				},
 			},
 			Spec: routev1.RouteSpec{
-				Host: p.Name + "." + otelcol.Spec.Ingress.Hostname,
-				Path: "/" + p.Name,
+				Host: host,
 				To: routev1.RouteTargetReference{
 					Kind: "Service",
 					Name: naming.Service(otelcol.Name),
 				},
 				Port: &routev1.RoutePort{
-					// Valid names must be non-empty and no more than 15 characters long.
-					TargetPort: intstr.FromString(naming.Truncate(p.Name, 15)),
+					TargetPort: intstr.FromString(portName),
 				},
 				WildcardPolicy: routev1.WildcardPolicyNone,
 				TLS:            tlsCfg,

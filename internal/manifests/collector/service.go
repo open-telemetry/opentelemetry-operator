@@ -16,6 +16,7 @@ package collector
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -100,10 +101,15 @@ func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 		return nil
 	}
 
-	ports, err := adapters.ConfigToReceiverPorts(logger, configFromString)
-	if err != nil {
-		logger.Error(err, "couldn't build the service for this instance")
-		return nil
+	ports := adapters.ConfigToPorts(logger, configFromString)
+
+	// set appProtocol to h2c for grpc ports on OpenShift.
+	// OpenShift uses HA proxy that uses appProtocol for its configuration.
+	for i := range ports {
+		h2c := "h2c"
+		if otelcol.Spec.Ingress.Type == v1alpha1.IngressTypeRoute && ports[i].AppProtocol != nil && strings.EqualFold(*ports[i].AppProtocol, "grpc") {
+			ports[i].AppProtocol = &h2c
+		}
 	}
 
 	if len(otelcol.Spec.Ports) > 0 {

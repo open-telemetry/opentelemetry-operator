@@ -48,8 +48,14 @@ const (
 // SEE: OpenTelemetryCollector.spec.ports[index].
 type Ingress struct {
 	// Type default value is: ""
-	// Supported types are: ingress
+	// Supported types are: ingress, route
 	Type IngressType `json:"type,omitempty"`
+
+	// RuleType defines how Ingress exposes collector receivers.
+	// IngressRuleTypePath ("path") exposes each receiver port on a unique path on single domain defined in Hostname.
+	// IngressRuleTypeSubdomain ("subdomain") exposes each receiver port on a unique subdomain of Hostname.
+	// Default is IngressRuleTypePath ("path").
+	RuleType IngressRuleType `json:"ruleType,omitempty"`
 
 	// Hostname by which the ingress proxy can be reached.
 	// +optional
@@ -117,10 +123,25 @@ type OpenTelemetryCollectorSpec struct {
 	//
 	// +optional
 	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
-	// SecurityContext will be set as the container security context.
+	// SecurityContext configures the container security context for
+	// the opentelemetry-collector container.
+	//
+	// In deployment, daemonset, or statefulset mode, this controls
+	// the security context settings for the primary application
+	// container.
+	//
+	// In sidecar mode, this controls the security context for the
+	// injected sidecar container.
+	//
 	// +optional
 	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
-
+	// PodSecurityContext configures the pod security context for the
+	// opentelemetry-collector pod, when running as a deployment, daemonset,
+	// or statefulset.
+	//
+	// In sidecar mode, the opentelemetry-operator will ignore this setting.
+	//
+	// +optional
 	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
 	// PodAnnotations is the set of annotations that will be attached to
 	// Collector and Target Allocator pods.
@@ -212,6 +233,22 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
+
+	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
+	// These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping
+	// metrics to their cloud, or in general sidecars that do not support automatic injection. This option only
+	// applies to Deployment, DaemonSet, and StatefulSet deployment modes of the collector. It does not apply to the sidecar
+	// deployment mode. More info about sidecars:
+	// https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
+	//
+	// Container names managed by the operator:
+	// * `otc-container`
+	//
+	// Overriding containers managed by the operator is outside the scope of what the maintainers will support and by
+	// doing so, you wil accept the risk of it breaking things.
+	//
+	// +optional
+	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
@@ -404,7 +441,7 @@ type AutoscalerSpec struct {
 
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
-	// EnableMetrics specifies if ServiceMonitors should be created for the OpenTelemetry Collector.
+	// EnableMetrics specifies if ServiceMonitor should be created for the OpenTelemetry Collector and Prometheus Exporters.
 	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional

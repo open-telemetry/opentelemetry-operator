@@ -48,7 +48,9 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{
 							Name: "opentelemetry-auto-instrumentation-dotnet",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -151,7 +153,9 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{
 							Name: "opentelemetry-auto-instrumentation-dotnet",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},

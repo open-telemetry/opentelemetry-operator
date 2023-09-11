@@ -48,7 +48,9 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name: pythonVolumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -122,7 +124,9 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name: "opentelemetry-auto-instrumentation-python",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -197,7 +201,9 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name: pythonVolumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -271,7 +277,9 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name: "opentelemetry-auto-instrumentation-python",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
