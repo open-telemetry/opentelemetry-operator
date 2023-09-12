@@ -77,7 +77,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 	case dotNetRuntimeLinuxMusl:
 		coreClrProfilerPath = dotNetCoreClrProfilerMuslPath
 	default:
-		return pod, errors.New("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value is not supported")
+		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value '%s' is not supported", runtime)
 	}
 
 	// inject .NET instrumentation spec env vars.

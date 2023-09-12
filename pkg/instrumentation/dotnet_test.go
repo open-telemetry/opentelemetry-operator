@@ -569,7 +569,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value is not supported"),
+			err: fmt.Errorf("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value 'not-supported' is not supported"),
 		},
 	}
 
