@@ -58,35 +58,28 @@ var (
 
 type check func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector)
 
+func newParamsAssertNoErr(t *testing.T, taContainerImage string, file string) manifests.Params {
+	p, err := newParams(taContainerImage, file)
+	assert.NoError(t, err)
+	if len(taContainerImage) == 0 {
+		p.Instance.Spec.TargetAllocator.Enabled = false
+	}
+	return p
+}
+
 func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	deploymentExtraPorts := paramsWithModeAndReplicas(v1alpha1.ModeDeployment, 3)
 	deploymentExtraPorts.Instance.Spec.Ports = append(deploymentExtraPorts.Instance.Spec.Ports, extraPorts)
-	taParams, err := newParams(baseTaImage, promFile)
-	assert.NoError(t, err)
-	updatedTaParams, updatedErr := newParams(baseTaImage, updatedPromFile)
-	assert.NoError(t, updatedErr)
-	updatedTaParamImage, updatedImageErr := newParams(updatedTaImage, updatedPromFile)
-	assert.NoError(t, updatedImageErr)
-	ingressParams, ingressErr := newParams("something:tag", testFileIngress)
-	assert.NoError(t, ingressErr)
-	ingressParams.Instance.Spec.TargetAllocator.Enabled = false
+	ingressParams := newParamsAssertNoErr(t, "", testFileIngress)
 	ingressParams.Instance.Spec.Ingress.Type = "ingress"
-	updatedIngressParams, updatedIngressErr := newParams("something:tag", testFileIngress)
-	assert.NoError(t, updatedIngressErr)
-	updatedIngressParams.Instance.Spec.TargetAllocator.Enabled = false
+	updatedIngressParams := newParamsAssertNoErr(t, "", testFileIngress)
 	updatedIngressParams.Instance.Spec.Ingress.Type = "ingress"
 	updatedIngressParams.Instance.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
 	updatedIngressParams.Instance.Spec.Ingress.Hostname = expectHostname
-	invalidTAConf, invalidTAErr := newParams("something:tag", testFileIngress)
-	assert.NoError(t, invalidTAErr)
-	routeParams, routeErr := newParams("something:tag", testFileIngress)
-	assert.NoError(t, routeErr)
-	routeParams.Instance.Spec.TargetAllocator.Enabled = false
+	routeParams := newParamsAssertNoErr(t, "", testFileIngress)
 	routeParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 	routeParams.Instance.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
-	updatedRouteParams, updateRouteErr := newParams("something:tag", testFileIngress)
-	assert.NoError(t, updateRouteErr)
-	updatedRouteParams.Instance.Spec.TargetAllocator.Enabled = false
+	updatedRouteParams := newParamsAssertNoErr(t, "", testFileIngress)
 	updatedRouteParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 	updatedRouteParams.Instance.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 	updatedRouteParams.Instance.Spec.Ingress.Hostname = expectHostname
@@ -179,7 +172,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		{
 			name: "invalid prometheus configuration",
 			args: args{
-				params:  invalidTAConf,
+				params:  newParamsAssertNoErr(t, baseTaImage, testFileIngress),
 				updates: []manifests.Params{},
 			},
 			want: []want{
@@ -376,8 +369,12 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		{
 			name: "stateful should update collector with TA",
 			args: args{
-				params:  paramsWithMode(v1alpha1.ModeStatefulSet),
-				updates: []manifests.Params{taParams, updatedTaParams, updatedTaParamImage},
+				params: paramsWithMode(v1alpha1.ModeStatefulSet),
+				updates: []manifests.Params{
+					newParamsAssertNoErr(t, baseTaImage, promFile),
+					newParamsAssertNoErr(t, baseTaImage, updatedPromFile),
+					newParamsAssertNoErr(t, updatedTaImage, updatedPromFile),
+				},
 			},
 			want: []want{
 				{
@@ -420,7 +417,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 							assert.True(t, exists)
 
-							promConfig, err := ta.ConfigToPromConfig(taParams.Instance.Spec.Config)
+							promConfig, err := ta.ConfigToPromConfig(newParamsAssertNoErr(t, baseTaImage, promFile).Instance.Spec.Config)
 							assert.NoError(t, err)
 
 							taConfig := make(map[interface{}]interface{})

@@ -135,58 +135,8 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	}
 
 	if len(r.tasks) == 0 {
-		r.tasks = []Task{
-			{
-				reconcile.ConfigMaps,
-				"config maps",
-				true,
-			},
-			{
-				reconcile.ServiceAccounts,
-				"service accounts",
-				true,
-			},
-			{
-				reconcile.Services,
-				"services",
-				true,
-			},
-			{
-				reconcile.Deployments,
-				"deployments",
-				true,
-			},
-			{
-				reconcile.HorizontalPodAutoscalers,
-				"horizontal pod autoscalers",
-				true,
-			},
-			{
-				reconcile.DaemonSets,
-				"daemon sets",
-				true,
-			},
-			{
-				reconcile.StatefulSets,
-				"stateful sets",
-				true,
-			},
-			{
-				reconcile.Ingresses,
-				"ingresses",
-				true,
-			},
-			{
-				reconcile.ServiceMonitors,
-				"service monitors",
-				true,
-			},
-			{
-				reconcile.Self,
-				"opentelemetry",
-				true,
-			},
-		}
+		// TODO: put this in line with the rest of how we generate manifests
+		// https://github.com/open-telemetry/opentelemetry-operator/issues/2108
 		r.config.RegisterOpenShiftRoutesChangeCallback(r.onOpenShiftRoutesChange)
 	}
 	return r
@@ -223,17 +173,12 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	params := r.GetParams(instance)
-
-	if featuregate.UseManifestReconciliation.IsEnabled() {
-		err := r.doCRUD(ctx, params)
-		return status.HandleReconcileStatus(ctx, log, params, err)
-	}
-
 	if err := r.RunTasks(ctx, params); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	err := r.doCRUD(ctx, params)
+	return status.HandleReconcileStatus(ctx, log, params, err)
 }
 
 // RunTasks runs all the tasks associated with this reconciler.

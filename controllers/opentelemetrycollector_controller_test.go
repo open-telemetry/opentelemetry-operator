@@ -40,7 +40,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -285,63 +284,6 @@ func TestContinueOnRecoverableFailure(t *testing.T) {
 	// verify
 	assert.NoError(t, err)
 	assert.True(t, taskCalled)
-}
-
-func TestBreakOnUnrecoverableError(t *testing.T) {
-	// prepare
-	cfg := config.New()
-	taskCalled := false
-	expectedErr := errors.New("failed to create objects")
-	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewReconciler(controllers.Params{
-		Client:   k8sClient,
-		Log:      logger,
-		Scheme:   scheme.Scheme,
-		Config:   cfg,
-		Recorder: record.NewFakeRecorder(10),
-		Tasks: []controllers.Task{
-			{
-				Name: "should-fail",
-				Do: func(context.Context, manifests.Params) error {
-					taskCalled = true
-					return expectedErr
-				},
-				BailOnError: true,
-			},
-			{
-				Name: "should-not-be-called",
-				Do: func(context.Context, manifests.Params) error {
-					assert.Fail(t, "should not have been called")
-					return nil
-				},
-			},
-		},
-	})
-	created := &v1alpha1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      nsn.Name,
-			Namespace: nsn.Namespace,
-		},
-	}
-	err := k8sClient.Create(context.Background(), created)
-	require.NoError(t, err)
-
-	// test
-	req := k8sreconcile.Request{
-		NamespacedName: nsn,
-	}
-	_, err = reconciler.Reconcile(context.Background(), req)
-
-	// verify
-	assert.ErrorContains(t, err, expectedErr.Error())
-
-	// We always expect an error
-	if !featuregate.UseManifestReconciliation.IsEnabled() {
-		assert.True(t, taskCalled)
-	}
-
-	// cleanup
-	assert.NoError(t, k8sClient.Delete(context.Background(), created))
 }
 
 func TestSkipWhenInstanceDoesNotExist(t *testing.T) {
