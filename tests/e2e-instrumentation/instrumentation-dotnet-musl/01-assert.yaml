@@ -4,6 +4,7 @@ metadata:
   annotations:
     sidecar.opentelemetry.io/inject: "true"
     instrumentation.opentelemetry.io/inject-dotnet: "true"
+    instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl"
   labels:
     app: my-pod-with-sidecar
 spec:
@@ -15,7 +16,7 @@ spec:
     - name: CORECLR_PROFILER
       value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
     - name: CORECLR_PROFILER_PATH
-      value: /otel-auto-instrumentation/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      value: /otel-auto-instrumentation/linux-musl-x64/OpenTelemetry.AutoInstrumentation.Native.so
     - name: DOTNET_STARTUP_HOOKS
       value: /otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
     - name: DOTNET_ADDITIONAL_DEPS
