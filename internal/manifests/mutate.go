@@ -43,11 +43,19 @@ var (
 // - ConfigMap
 // - Service
 // - ServiceAccount
+// - ClusterRole
+// - ClusterRoleBinding
+// - Role
+// - RoleBinding
 // - Deployment
 // - DaemonSet
 // - StatefulSet
+// - ServiceMonitor
+// - Ingress
+// - HorizontalPodAutoscaler
 // - Route
-// - Secret.
+// - Secret
+// In order for the operator to reconcile other types, they must be added here.
 func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 	return func() error {
 		existingAnnotations := existing.GetAnnotations()

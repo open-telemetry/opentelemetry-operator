@@ -130,5 +130,4 @@ func TestServiceMonitors(t *testing.T) {
 		err := ServiceMonitors(ctx, p)
 		assert.Nil(t, err)
 	})
-
 }

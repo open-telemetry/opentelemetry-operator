@@ -122,11 +122,11 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
 		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
-			logger.Info("Extensions not configured, skipping liveness probe creation")
+			logger.Info("extensions not configured, skipping liveness probe creation")
 		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
-			logger.Info("Healthcheck extension not configured, skipping liveness probe creation")
+			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
 		} else {
-			logger.Error(err, "Cannot create liveness probe.")
+			logger.Error(err, "cannot create liveness probe.")
 		}
 	}
 
