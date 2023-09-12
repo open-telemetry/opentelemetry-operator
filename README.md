@@ -373,7 +373,7 @@ ApacheHttpD:
 instrumentation.opentelemetry.io/apache-httpd-container-names: "apache1,apache2"
 ```
 
-Sdk:
+SDK:
 ```bash
 instrumentation.opentelemetry.io/sdk-container-names: "app1,app2"
 ```
@@ -415,7 +415,7 @@ spec:
 
 In the above case, `myapp` and `myapp2` containers will be instrumented using Java and `myapp3` using Python instrumentation.
 
-**NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first pod should be the only pod you want instrumented.
+**NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first container should be the only you want to instrument.
 
 **NOTE**: This type of instrumentation **does not** allow to instrument a container with multiple language instrumentations.
 
