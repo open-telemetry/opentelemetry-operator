@@ -44,8 +44,8 @@ spec:
             - name: otc-internal
               mountPath: /conf
             - name: configmap-mount-test1
-              mountPath: /var/conf/mount-test1
+              mountPath: /var/conf/configmap-mount-test1
             - name: configmap-mount-test2
-              mountPath: /var/conf/mount-test2
+              mountPath: /var/conf/dir/configmap-mount-test2
 status:
   readyReplicas: 1

@@ -68,10 +68,10 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
 				Name:      "configmap-test",
-				MountPath: "/var/conf",
+				MountPath: "/",
 			}, {
 				Name:      "configmap-test2",
-				MountPath: "/var/conf",
+				MountPath: "/dir",
 			}},
 		},
 	}

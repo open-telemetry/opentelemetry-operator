@@ -324,10 +324,10 @@ func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
 				Name:      "test",
-				MountPath: "/var/conf",
+				MountPath: "/",
 			}, {
 				Name:      "test2",
-				MountPath: "/var/conf/dir",
+				MountPath: "/dir",
 			}},
 		},
 	}
@@ -339,9 +339,9 @@ func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 	// verify
 	assert.Len(t, c.VolumeMounts, 3)
 	assert.Equal(t, "configmap-test", c.VolumeMounts[1].Name)
-	assert.Equal(t, "/var/conf/test", c.VolumeMounts[1].MountPath)
-	assert.Equal(t, "/var/conf/dir/test2", c.VolumeMounts[2].MountPath)
+	assert.Equal(t, "/var/conf/configmap-test", c.VolumeMounts[1].MountPath)
 	assert.Equal(t, "configmap-test2", c.VolumeMounts[2].Name)
+	assert.Equal(t, "/var/conf/dir/configmap-test2", c.VolumeMounts[2].MountPath)
 }
 
 func TestContainerCustomSecurityContext(t *testing.T) {

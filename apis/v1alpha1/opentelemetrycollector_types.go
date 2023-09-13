@@ -513,8 +513,8 @@ type MetricSpec struct {
 
 type ConfigMapsSpec struct {
 	// Configmap defines name and path where the configMaps should be mounted.
-	Name      string `json:"name,omitempty"`
-	MountPath string `json:"mountpath,omitempty"`
+	Name      string `json:"name"`
+	MountPath string `json:"mountpath"`
 }
 
 func init() {

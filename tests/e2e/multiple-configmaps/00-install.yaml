@@ -22,9 +22,9 @@ spec:
   mode: "deployment"
   configmaps:
     - name: mount-test1
-      mountpath: /var/conf
+      mountpath: /
     - name: mount-test2
-      mountpath: /var/conf
+      mountpath: /dir
   config: |
     receivers:
       otlp:

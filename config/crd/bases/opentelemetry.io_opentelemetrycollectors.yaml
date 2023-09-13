@@ -2129,6 +2129,9 @@ spec:
                       description: Configmap defines name and path where the configMaps
                         should be mounted.
                       type: string
+                  required:
+                  - mountpath
+                  - name
                   type: object
                 type: array
               env:
