@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/publish-operator-bundle.yaml'
       - 'bundle.Dockerfile'
+      - 'bundle/**'
     branches:
       - main
     tags:
@@ -24,7 +25,7 @@ jobs:
         with:
           images: |
             otel/opentelemetry-operator-bundle
-            ghcr.io/${{ github.repository }}/opentelemetry-operator-bundle
+            ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator-bundle
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
