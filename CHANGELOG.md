@@ -20,6 +20,16 @@ Changes by Version
 - `operator`: Fixes reconciling otel-collector service's internal traffic policy changes. (#2061)
 - `operator`: Make OpenShift Route work with gRPC receivers by using h2c appProtocol (#1969)
 
+### Components
+
+* [OpenTelemetry Collector - v0.84.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.84.0)
+* [OpenTelemetry Contrib - v0.84.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.84.0)
+* [Java auto-instrumentation - 1.29.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.29.0)
+* [.NET auto-instrumentation - 1.0.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.0.0)
+* [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
+* [Python - 0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.40b0)
+* [Go - v0.2.2-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.2-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 ## 0.83.0
 
 ### 🛑 Breaking changes 🛑
