@@ -8111,14 +8111,14 @@ target specifies the target value for the given metric
         <td>
           <br/>
         </td>
-        <td>false</td>
+        <td>true</td>
       </tr><tr>
         <td><b>name</b></td>
         <td>string</td>
         <td>
           Configmap defines name and path where the configMaps should be mounted.<br/>
         </td>
-        <td>false</td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
