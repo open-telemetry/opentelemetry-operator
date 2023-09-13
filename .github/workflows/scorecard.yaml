@@ -17,7 +17,7 @@ env:
 jobs:
   scorecard-tests:
     name: test on k8s
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         kube-version:
@@ -54,7 +54,7 @@ jobs:
         run: make scorecard-tests
 
   scorecard-tests-check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: always()
     needs: [scorecard-tests]
     steps:
