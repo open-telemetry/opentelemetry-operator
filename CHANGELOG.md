@@ -1,8 +1,36 @@
 Changes by Version
 ==================
-
 <!-- next version -->
+## 0.84.0
 
+### 💡 Enhancements 💡
+
+- `autoinstrumentation`: Bump dotnet instrumentation version to 1.0.0 (#2096)
+- `operator`: Remove default cpu and mem requests and limits from target allocator to match otel-collector behaviour (#1914)
+  To preserve the old behaviour for the case when the requests/limits were not explicitely set during the deployment, make sure to set the requests/limits of 100m/200m for CPU and 250Mi/500Mi for memory.
+- `operator`: Create ServiceMonitors when the Prometheus exporters are used. (#1963)
+- `operator`: Run end-to-end tests on Kubernetes 1.28 (#2047)
+- `operator`: Limit auto-instrumentation emptydir volume size (#2044)
+- `operator`: Make OpenShift routes work with missing hostname (#2074)
+  If the Ingress hostname is not specified OpenShift route hostname is set to `<port-name>-<otel-cr-name>-route-<otel-cr-namespace>-basedomain`.
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Avoid running the auto-instrumentation pod mutator for pods already auto-instrumented (#1366)
+- `autoinstrumentation`: Allow the usage of the Apache HTTPD autoinstrumentation to be run as non-root user. Change the files permission to allow their copy from a non-root user. (#2068)
+- `operator`: Fixes reconciling otel-collector service's internal traffic policy changes. (#2061)
+- `operator`: Make OpenShift Route work with gRPC receivers by using h2c appProtocol (#1969)
+
+### Components
+
+* [OpenTelemetry Collector - v0.84.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.84.0)
+* [OpenTelemetry Contrib - v0.84.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.84.0)
+* [Java auto-instrumentation - 1.29.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.29.0)
+* [.NET auto-instrumentation - 1.0.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.0.0)
+* [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
+* [Python - 0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.40b0)
+* [Go - v0.2.2-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.2-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 ## 0.83.0
 
 ### 🛑 Breaking changes 🛑
