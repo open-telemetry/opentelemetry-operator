@@ -1,12 +1,12 @@
 Changes by Version
 ==================
-
-<!-- next version -->
 ## 0.84.0
 
 ### 💡 Enhancements 💡
 
 - `autoinstrumentation`: Bump dotnet instrumentation version to 1.0.0 (#2096)
+- `operator`: Remove default cpu and mem requests and limits from target allocator to match otel-collector behaviour (#1914)
+  To preserve the old behaviour for the case when the requests/limits were not explicitely set during the deployment, make sure to set the requests/limits of 100m/200m for CPU and 250Mi/500Mi for memory.
 - `operator`: Create ServiceMonitors when the Prometheus exporters are used. (#1963)
 - `operator`: Run end-to-end tests on Kubernetes 1.28 (#2047)
 - `operator`: Limit auto-instrumentation emptydir volume size (#2044)
