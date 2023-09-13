@@ -142,22 +142,17 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	return r
 }
 
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="apps",resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=configmaps;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
-
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
-// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
-// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
 func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -181,7 +176,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	params := r.GetParams(instance)
+	params := r.getParams(instance)
 	if err := r.RunTasks(ctx, params); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -210,7 +205,7 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 	return nil
 }
 
-func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
+func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
 	return manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -221,6 +216,7 @@ func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1alpha1.OpenTelem
 	}
 }
 
+// BuildAll returns the generation and collected errors of all manifests for a given instance.
 func (r *OpenTelemetryCollectorReconciler) BuildAll(params manifests.Params) ([]client.Object, error) {
 	builders := []manifests.Builder{
 		collector.Build,
@@ -240,7 +236,7 @@ func (r *OpenTelemetryCollectorReconciler) BuildAll(params manifests.Params) ([]
 func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params manifests.Params) error {
 	// Collect all objects owned by the operator, to be able to prune objects
 	// which exist in the cluster but are not managed by the operator anymore.
-	pruneObjects, err := r.findObjectsOwnedByOtelOperator(ctx, params)
+	pruneObjects, err := r.findObjectsOwnedByOtelOperator(ctx, params.Instance)
 	if err != nil {
 		return err
 	}
@@ -317,11 +313,11 @@ func isNamespaceScoped(obj client.Object) bool {
 	}
 }
 
-func (r *OpenTelemetryCollectorReconciler) findObjectsOwnedByOtelOperator(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
+func (r *OpenTelemetryCollectorReconciler) findObjectsOwnedByOtelOperator(ctx context.Context, instance v1alpha1.OpenTelemetryCollector) (map[types.UID]client.Object, error) {
 	ownedObjects := map[types.UID]client.Object{}
 	listOps := &client.ListOptions{
-		Namespace:     params.Instance.GetNamespace(),
-		LabelSelector: labels.SelectorFromSet(collector.SelectorLabels(params.Instance)),
+		Namespace:     instance.GetNamespace(),
+		LabelSelector: labels.SelectorFromSet(collector.SelectorLabels(instance)),
 	}
 	ingressList := &networkingv1.IngressList{}
 	err := r.List(ctx, ingressList, listOps)
@@ -331,7 +327,7 @@ func (r *OpenTelemetryCollectorReconciler) findObjectsOwnedByOtelOperator(ctx co
 	for i := range ingressList.Items {
 		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
 	}
-	if params.Instance.Spec.Ingress.Type == v1alpha1.IngressTypeRoute {
+	if instance.Spec.Ingress.Type == v1alpha1.IngressTypeRoute {
 		routesList := &routev1.RouteList{}
 		err = r.List(ctx, routesList, listOps)
 		if err != nil {

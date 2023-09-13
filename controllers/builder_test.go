@@ -589,7 +589,7 @@ service:
 				Log:    logr.Discard(),
 				Config: cfg,
 			})
-			params := reconciler.GetParams(tt.args.instance)
+			params := reconciler.getParams(tt.args.instance)
 			got, err := reconciler.BuildAll(params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("BuildAll() error = %v, wantErr %v", err, tt.wantErr)
