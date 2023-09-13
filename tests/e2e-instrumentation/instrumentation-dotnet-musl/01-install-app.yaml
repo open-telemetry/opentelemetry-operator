@@ -14,7 +14,7 @@ spec:
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-dotnet: "true"
-        instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl"
+        instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl-x64"
     spec:
       securityContext:
         runAsUser: 1000

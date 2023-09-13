@@ -41,10 +41,10 @@ const (
 	dotNetStartupHookPath               = "/otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 )
 
-// Supported .NET runtime versions, can be set by instrumentation.opentelemetry.io/inject-dotnet.
+// Supported .NET runtime identifiers (https://learn.microsoft.com/en-us/dotnet/core/rid-catalog), can be set by instrumentation.opentelemetry.io/inject-dotnet.
 const (
-	dotNetRuntimeLinuxGlibc = "linux-glibc"
-	dotNetRuntimeLinuxMusl  = "linux-musl"
+	dotNetRuntimeLinuxGlibc = "linux-x64"
+	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
 func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, error) {

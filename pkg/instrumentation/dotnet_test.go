@@ -367,7 +367,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec"),
 		},
 		{
-			name:   "runtime linux-glibc",
+			name:   "runtime linux-x64",
 			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -455,7 +455,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 			err: nil,
 		},
 		{
-			name:   "runtime linux-musl",
+			name:   "runtime linux-musl-x64",
 			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
