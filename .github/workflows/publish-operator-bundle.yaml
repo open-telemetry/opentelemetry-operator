@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/publish-operator-bundle.yaml'
       - 'bundle.Dockerfile'
+      - 'bundle/**'
     branches:
       - main
     tags:
