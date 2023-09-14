@@ -28,9 +28,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/dotnet-test:e2e
-          tags: |
-            type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
+          images: ghcr.io/open-telemetry/opentelemetry-operator/dotnet-test
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -57,8 +55,5 @@ jobs:
           context: tests/instrumentation-e2e-apps/dotnet
           platforms: linux/arm64,linux/amd64
           push: ${{ github.event_name == 'push' }}
-          build-args: version=${{ env.VERSION }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
