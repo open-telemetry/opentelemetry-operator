@@ -47,7 +47,8 @@ func Self(ctx context.Context, params manifests.Params) error {
 	}
 	changed, err := up.ManagedInstance(ctx, changed)
 	if err != nil {
-		return fmt.Errorf("failed to upgrade the OpenTelemetry CR: %w", err)
+		// don't fail to allow setting the status
+		params.Log.Error(err, "failed to upgrade the OpenTelemetry CR")
 	}
 
 	// this field is only changed for new instances: on existing instances this
