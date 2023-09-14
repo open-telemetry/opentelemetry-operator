@@ -63,7 +63,7 @@ type InstrumentationSpec struct {
 	DotNet DotNet `json:"dotnet,omitempty"`
 
 	// Go defines configuration for Go auto-instrumentation.
-	// When using Go auto-instrumenetation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the
+	// When using Go auto-instrumentation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the
 	// Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation.
 	// Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.
 	// +optional
