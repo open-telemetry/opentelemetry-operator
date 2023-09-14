@@ -28,7 +28,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/apachehttpd-test:e2e
+          images: ghcr.io/open-telemetry/opentelemetry-operator/apachehttpd-test
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
