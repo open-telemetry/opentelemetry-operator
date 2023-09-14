@@ -18,8 +18,6 @@ import (
 	"fmt"
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -70,19 +68,6 @@ func (r *OpenTelemetryCollector) Default() {
 	}
 	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Replicas == nil {
 		r.Spec.TargetAllocator.Replicas = &one
-	}
-
-	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Resources.Limits == nil {
-		r.Spec.TargetAllocator.Resources.Limits = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("200m"),
-			corev1.ResourceMemory: resource.MustParse("500Mi"),
-		}
-	}
-	if r.Spec.TargetAllocator.Enabled && r.Spec.TargetAllocator.Resources.Requests == nil {
-		r.Spec.TargetAllocator.Resources.Requests = corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-			corev1.ResourceMemory: resource.MustParse("250Mi"),
-		}
 	}
 
 	if r.Spec.MaxReplicas != nil || (r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil) {
