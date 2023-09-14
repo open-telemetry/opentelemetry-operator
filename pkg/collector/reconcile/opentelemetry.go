@@ -30,6 +30,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
 
 // Self updates this instance's self data. This should be the last item in the reconciliation, as it causes changes
@@ -37,6 +38,18 @@ import (
 // for the Status, which can't be set by the defaulter.
 func Self(ctx context.Context, params manifests.Params) error {
 	changed := params.Instance
+
+	up := &collectorupgrade.VersionUpgrade{
+		Log:      params.Log,
+		Version:  version.Get(),
+		Client:   params.Client,
+		Recorder: params.Recorder,
+	}
+	changed, err := up.ManagedInstance(ctx, changed)
+	if err != nil {
+		// don't fail to allow setting the status
+		params.Log.Error(err, "failed to upgrade the OpenTelemetry CR")
+	}
 
 	// this field is only changed for new instances: on existing instances this
 	// field is reconciled when the operator is first started, i.e. during
@@ -46,7 +59,7 @@ func Self(ctx context.Context, params manifests.Params) error {
 		changed.Status.Version = version.OpenTelemetryCollector()
 	}
 
-	if err := updateScaleSubResourceStatus(ctx, params.Client, &changed); err != nil {
+	if err = updateScaleSubResourceStatus(ctx, params.Client, &changed); err != nil {
 		return fmt.Errorf("failed to update the scale subresource status for the OpenTelemetry CR: %w", err)
 	}
 
