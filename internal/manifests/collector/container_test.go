@@ -74,7 +74,7 @@ service:
   pipelines:
     metrics:
       receivers: [examplereceiver]
-      exporters: [logging]
+      exporters: [debug]
 `
 
 	tests := []struct {
