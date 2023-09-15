@@ -37,7 +37,7 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
-func NewPrometheusCRWatcher(logger logr.Logger, cfg *allocatorconfig.Config) (*PrometheusCRWatcher, error) {
+func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
 	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
 	if err != nil {
 		return nil, err
