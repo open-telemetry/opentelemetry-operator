@@ -3689,6 +3689,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecconfigmapsindex">configmaps</a></b></td>
+        <td>[]object</td>
+        <td>
+          ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector object, which shall be mounted into the Collector Pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -8078,6 +8085,40 @@ target specifies the target value for the given metric
           value is the target value of the metric (as a quantity).<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.configmaps[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>mountpath</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Configmap defines name and path where the configMaps should be mounted.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

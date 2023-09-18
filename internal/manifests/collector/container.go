@@ -16,6 +16,7 @@ package collector
 
 import (
 	"fmt"
+	"path"
 	"sort"
 
 	"github.com/go-logr/logr"
@@ -103,6 +104,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 			},
 		},
 	})
+
+	if len(otelcol.Spec.ConfigMaps) > 0 {
+		for keyCfgMap := range otelcol.Spec.ConfigMaps {
+			volumeMounts = append(volumeMounts, corev1.VolumeMount{
+				Name:      naming.ConfigMapExtra(otelcol.Spec.ConfigMaps[keyCfgMap].Name),
+				MountPath: path.Join("/var/conf", otelcol.Spec.ConfigMaps[keyCfgMap].MountPath, naming.ConfigMapExtra(otelcol.Spec.ConfigMaps[keyCfgMap].Name)),
+			})
+		}
+	}
 
 	if otelcol.Spec.TargetAllocator.Enabled {
 		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
