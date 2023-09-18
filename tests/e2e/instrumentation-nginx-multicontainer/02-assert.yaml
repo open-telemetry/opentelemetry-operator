@@ -8,6 +8,10 @@ metadata:
   labels:
     app: my-nginx
 spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 2000
   containers:
   - env:
     - name: LD_LIBRARY_PATH

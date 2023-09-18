@@ -17,6 +17,10 @@ spec:
         instrumentation.opentelemetry.io/inject-nginx: "true"
         instrumentation.opentelemetry.io/container-names: "myapp,myrabbit"
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
       containers:
       - name: myapp
         image: nginx:1.23.1
@@ -68,7 +72,7 @@ data:
         listen       8765;
         server_name  localhost;
         location / {
-          root   /usr/share/nginx/html; #Change this line
+          root   /usr/share/nginx/html;
           index  index.html index.htm;
         }
 
