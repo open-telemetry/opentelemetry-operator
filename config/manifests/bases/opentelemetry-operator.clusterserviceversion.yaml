@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Deep Insights
-    categories: Logging & Tracing
+    categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"
@@ -63,9 +63,9 @@ spec:
       - description: Metrics defines the metrics configuration for operands.
         displayName: Metrics Config
         path: observability.metrics
-      - description: EnableMetrics specifies if ServiceMonitors should be created
-          for the OpenTelemetry Collector. The operator.observability.prometheus feature
-          gate must be enabled to use this feature.
+      - description: EnableMetrics specifies if ServiceMonitor should be created for
+          the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.prometheus
+          feature gate must be enabled to use this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       version: v1alpha1

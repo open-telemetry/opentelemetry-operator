@@ -22,10 +22,31 @@ metadata:
     kind: OpenTelemetryCollector
     name: simplest
 spec:
-  host: otlp-grpc.example.com
-  path: /
   port:
     targetPort: otlp-grpc
+  to:
+    kind: Service
+    name: simplest-collector
+  wildcardPolicy: None
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    something.com: "true"
+  labels:
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otlp-http-simplest-route
+  name: otlp-http-simplest-route
+  ownerReferences:
+    - apiVersion: opentelemetry.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: OpenTelemetryCollector
+      name: simplest
+spec:
+  port:
+    targetPort: otlp-http
   to:
     kind: Service
     name: simplest-collector

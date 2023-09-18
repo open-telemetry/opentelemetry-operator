@@ -33,14 +33,18 @@ import (
 
 // ServiceMonitors reconciles the service monitor(s) required for the instance in the current context.
 func ServiceMonitors(ctx context.Context, params manifests.Params) error {
-	if !params.Instance.Spec.Observability.Metrics.EnableMetrics || !featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if !featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		return nil
 	}
 
 	var desired []*monitoringv1.ServiceMonitor
-	if sm, err := collector.ServiceMonitor(params.Config, params.Log, params.Instance); err != nil {
+
+	sm, err := collector.ServiceMonitor(params.Config, params.Log, params.Instance)
+	if err != nil {
 		return err
-	} else {
+	}
+
+	if sm != nil {
 		desired = append(desired, sm)
 	}
 

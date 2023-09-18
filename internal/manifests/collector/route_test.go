@@ -21,6 +21,7 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -136,6 +137,47 @@ func TestDesiredRoutes(t *testing.T) {
 				},
 			},
 		}, got)
+	})
+	t.Run("hostname is set", func(t *testing.T) {
+		params, err := newParams("something:tag", testFileIngress)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		params.Instance.Namespace = "test"
+		params.Instance.Spec.Ingress = v1alpha1.Ingress{
+			Hostname: "example.com",
+			Type:     v1alpha1.IngressTypeRoute,
+			Route: v1alpha1.OpenShiftRoute{
+				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			},
+		}
+
+		routes := Routes(params.Config, params.Log, params.Instance)
+		require.Equal(t, 3, len(routes))
+		assert.Equal(t, "web.example.com", routes[0].Spec.Host)
+		assert.Equal(t, "otlp-grpc.example.com", routes[1].Spec.Host)
+		assert.Equal(t, "otlp-test-grpc.example.com", routes[2].Spec.Host)
+	})
+	t.Run("hostname is not set", func(t *testing.T) {
+		params, err := newParams("something:tag", testFileIngress)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		params.Instance.Namespace = "test"
+		params.Instance.Spec.Ingress = v1alpha1.Ingress{
+			Type: v1alpha1.IngressTypeRoute,
+			Route: v1alpha1.OpenShiftRoute{
+				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			},
+		}
+
+		routes := Routes(params.Config, params.Log, params.Instance)
+		require.Equal(t, 3, len(routes))
+		assert.Equal(t, "", routes[0].Spec.Host)
+		assert.Equal(t, "", routes[1].Spec.Host)
+		assert.Equal(t, "", routes[2].Spec.Host)
 	})
 }
 

@@ -20,6 +20,7 @@ FROM alpine:latest
 
 COPY --from=agent /opt/opentelemetry/agent/opentelemetry-webserver-sdk /opt/opentelemetry
 
+RUN chmod 775 -R /opt/opentelemetry/
 RUN chmod a+w /opt/opentelemetry/logs
 
 CMD ["cat", "Just delivering the Opentelemetry Apache/Nginx agent"]

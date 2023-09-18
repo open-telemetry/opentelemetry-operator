@@ -177,6 +177,12 @@ generate: controller-gen api-docs
 e2e:
 	$(KUTTL) test
 
+
+# instrumentation end-to-tests
+.PHONY: e2e-instrumentation
+e2e-instrumentation:
+	$(KUTTL) test --config kuttl-test-instrumentation.yaml
+
 # end-to-end-test for PrometheusCR E2E tests
 .PHONY: e2e-prometheuscr
 e2e-prometheuscr:
@@ -426,7 +432,7 @@ api-docs: crdoc kustomize
 .PHONY: chlog-install
 chlog-install: $(CHLOGGEN)
 $(CHLOGGEN): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install go.opentelemetry.io/build-tools/chloggen@v0.3.0
+	GOBIN=$(LOCALBIN) go install go.opentelemetry.io/build-tools/chloggen@v0.11.0
 
 FILENAME?=$(shell git branch --show-current)
 .PHONY: chlog-new
