@@ -30,6 +30,11 @@ func ConfigMapVolume() string {
 	return "otc-internal"
 }
 
+// ConfigMapExtra returns the prefix to use for the extras mounted configmaps in the pod.
+func ConfigMapExtra(extraConfigMapName string) string {
+	return DNSName(Truncate("configmap-%s", 63, extraConfigMapName))
+}
+
 // TAConfigMapVolume returns the name to use for the config map's volume in the TargetAllocator pod.
 func TAConfigMapVolume() string {
 	return "ta-internal"
