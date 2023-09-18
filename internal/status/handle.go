@@ -37,7 +37,7 @@ const (
 // HandleReconcileStatus handles updating the status of the CRDs managed by the operator.
 // TODO: make the status more useful https://github.com/open-telemetry/opentelemetry-operator/issues/1972
 func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, err error) (ctrl.Result, error) {
-	log.Info("updating collector status")
+	log.V(2).Info("updating collector status")
 	if err != nil {
 		params.Recorder.Event(&params.Instance, eventTypeWarning, reasonError, err.Error())
 		return ctrl.Result{}, err

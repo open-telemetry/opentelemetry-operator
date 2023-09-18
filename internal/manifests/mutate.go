@@ -56,14 +56,20 @@ var (
 // - Route
 // - Secret
 // In order for the operator to reconcile other types, they must be added here.
+// The function returned takes no arguments but instead uses the existing and desired inputs here. Existing is expected
+// to be set by the controller-runtime package through a client get call.
 func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 	return func() error {
+		// Get the existing annotations and override any conflicts with the desired annotations
+		// This will preserve any annotations on the existing set.
 		existingAnnotations := existing.GetAnnotations()
 		if err := mergeWithOverride(&existingAnnotations, desired.GetAnnotations()); err != nil {
 			return err
 		}
 		existing.SetAnnotations(existingAnnotations)
 
+		// Get the existing labels and override any conflicts with the desired labels
+		// This will preserve any labels on the existing set.
 		existingLabels := existing.GetLabels()
 		if err := mergeWithOverride(&existingLabels, desired.GetLabels()); err != nil {
 			return err

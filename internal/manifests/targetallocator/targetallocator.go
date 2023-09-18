@@ -36,7 +36,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		res, err := factory(params.Config, params.Log, params.Instance)
 		if err != nil {
 			return nil, err
-		} else if manifests.ShouldCreateObject(res) {
+		} else if manifests.ObjectIsNotNil(res) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}

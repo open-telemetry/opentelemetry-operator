@@ -45,6 +45,10 @@ const (
 	baseTaImage    = "something:tag"
 	updatedTaImage = "another:tag"
 	expectHostname = "something-else.com"
+	labelName      = "something"
+	labelVal       = "great"
+	annotationName = "io.opentelemetry/test"
+	annotationVal  = "true"
 )
 
 var (
@@ -68,6 +72,13 @@ func newParamsAssertNoErr(t *testing.T, taContainerImage string, file string) ma
 }
 
 func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
+	addedMetadataDeployment := paramsWithMode(v1alpha1.ModeDeployment)
+	addedMetadataDeployment.Instance.Labels = map[string]string{
+		labelName: labelVal,
+	}
+	addedMetadataDeployment.Instance.Annotations = map[string]string{
+		annotationName: annotationVal,
+	}
 	deploymentExtraPorts := paramsWithModeAndReplicas(v1alpha1.ModeDeployment, 3)
 	deploymentExtraPorts.Instance.Spec.Ports = append(deploymentExtraPorts.Instance.Spec.Ports, extraPorts)
 	ingressParams := newParamsAssertNoErr(t, "", testFileIngress)
@@ -107,7 +118,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		{
 			name: "deployment collector",
 			args: args{
-				params:  paramsWithMode(v1alpha1.ModeDeployment),
+				params:  addedMetadataDeployment,
 				updates: []manifests.Params{deploymentExtraPorts},
 			},
 			want: []want{
@@ -119,7 +130,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(appliedInstance, naming.Collector))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Equal(t, *d.Spec.Replicas, int32(2))
+							assert.Equal(t, int32(2), *d.Spec.Replicas)
+							assert.Contains(t, d.Annotations, annotationName)
+							assert.Contains(t, d.Labels, labelName)
 							exists, err = populateObjectIfExists(t, &v1.Service{}, namespacedObjectName(appliedInstance, naming.Service))
 							assert.NoError(t, err)
 							assert.True(t, exists)
@@ -140,6 +153,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Equal(t, int32(3), *d.Spec.Replicas)
+							// confirm that we don't remove annotations and labels even if we don't set them
+							assert.Contains(t, d.Annotations, annotationName)
+							assert.Contains(t, d.Labels, labelName)
 							actual := v1.Service{}
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.Service))
 							assert.NoError(t, err)

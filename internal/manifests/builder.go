@@ -42,9 +42,9 @@ func Factory[T client.Object](f ManifestFactory[T]) K8sManifestFactory {
 	}
 }
 
-// ShouldCreateObject ensures that we only create an object IFF it isn't nil
+// ObjectIsNotNil ensures that we only create an object IFF it isn't nil,
 // and it's concrete type isn't nil either. This works around the Go type system
 // by using reflection to verify its concrete type isn't nil.
-func ShouldCreateObject(obj client.Object) bool {
+func ObjectIsNotNil(obj client.Object) bool {
 	return obj != nil && !reflect.ValueOf(obj).IsNil()
 }
