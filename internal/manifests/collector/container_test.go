@@ -318,6 +318,32 @@ func TestContainerCustomVolumes(t *testing.T) {
 	assert.Equal(t, "custom-volume-mount", c.VolumeMounts[1].Name)
 }
 
+func TestContainerCustomConfigMapsVolumes(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
+				Name:      "test",
+				MountPath: "/",
+			}, {
+				Name:      "test2",
+				MountPath: "/dir",
+			}},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	assert.Len(t, c.VolumeMounts, 3)
+	assert.Equal(t, "configmap-test", c.VolumeMounts[1].Name)
+	assert.Equal(t, "/var/conf/configmap-test", c.VolumeMounts[1].MountPath)
+	assert.Equal(t, "configmap-test2", c.VolumeMounts[2].Name)
+	assert.Equal(t, "/var/conf/dir/configmap-test2", c.VolumeMounts[2].MountPath)
+}
+
 func TestContainerCustomSecurityContext(t *testing.T) {
 	// default config without security context
 	c1 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{Spec: v1alpha1.OpenTelemetryCollectorSpec{}}, true)

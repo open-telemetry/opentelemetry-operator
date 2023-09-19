@@ -20,6 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
@@ -85,7 +86,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 								},
 								{
 									Name:  envDotNetCoreClrProfilerPath,
-									Value: dotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerGlibcPath,
 								},
 								{
 									Name:  envDotNetStartupHook,
@@ -364,6 +365,211 @@ func TestInjectDotNetSDK(t *testing.T) {
 				},
 			},
 			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec"),
+		},
+		{
+			name:   "runtime linux-x64",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationDotNetRuntime: dotNetRuntimeLinuxGlibc,
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: volumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    initContainerName,
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      volumeName,
+								MountPath: "/otel-auto-instrumentation",
+							}},
+							Resources: testResourceRequirements,
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      volumeName,
+									MountPath: "/otel-auto-instrumentation",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerID,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerGlibcPath,
+								},
+								{
+									Name:  envDotNetStartupHook,
+									Value: dotNetStartupHookPath,
+								},
+								{
+									Name:  envDotNetAdditionalDeps,
+									Value: dotNetAdditionalDepsPath,
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
+								{
+									Name:  envDotNetSharedStore,
+									Value: dotNetSharedStorePath,
+								},
+							},
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationDotNetRuntime: dotNetRuntimeLinuxGlibc,
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "runtime linux-musl-x64",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationDotNetRuntime: dotNetRuntimeLinuxMusl,
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: volumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    initContainerName,
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      volumeName,
+								MountPath: "/otel-auto-instrumentation",
+							}},
+							Resources: testResourceRequirements,
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      volumeName,
+									MountPath: "/otel-auto-instrumentation",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerID,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerMuslPath,
+								},
+								{
+									Name:  envDotNetStartupHook,
+									Value: dotNetStartupHookPath,
+								},
+								{
+									Name:  envDotNetAdditionalDeps,
+									Value: dotNetAdditionalDepsPath,
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
+								{
+									Name:  envDotNetSharedStore,
+									Value: dotNetSharedStorePath,
+								},
+							},
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationDotNetRuntime: dotNetRuntimeLinuxMusl,
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "runtime not-supported",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationDotNetRuntime: "not-supported",
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationDotNetRuntime: "not-supported",
+					},
+				},
+			},
+			err: fmt.Errorf("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value 'not-supported' is not supported"),
 		},
 	}
 

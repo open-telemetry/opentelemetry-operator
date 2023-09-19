@@ -31,6 +31,7 @@ const (
 	annotationInjectPython                    = "instrumentation.opentelemetry.io/inject-python"
 	annotationInjectPythonContainersName      = "instrumentation.opentelemetry.io/python-container-names"
 	annotationInjectDotNet                    = "instrumentation.opentelemetry.io/inject-dotnet"
+	annotationDotNetRuntime                   = "instrumentation.opentelemetry.io/otel-dotnet-auto-runtime"
 	annotationInjectDotnetContainersName      = "instrumentation.opentelemetry.io/dotnet-container-names"
 	annotationInjectGo                        = "instrumentation.opentelemetry.io/inject-go"
 	annotationInjectGoContainersName          = "instrumentation.opentelemetry.io/go-container-names"
