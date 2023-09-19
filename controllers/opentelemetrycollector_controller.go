@@ -122,43 +122,43 @@ func (r *OpenTelemetryCollectorReconciler) removeRouteTask(ora autodetect.OpenSh
 func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params manifests.Params) error {
 	// Collect all objects owned by the operator, to be able to prune objects
 	// which exist in the cluster but are not managed by the operator anymore.
-	expectedObjects, err := r.BuildAll(params)
+	desiredObjects, err := r.BuildAll(params)
 	if err != nil {
 		return err
 	}
 	var errs []error
-	for _, expected := range expectedObjects {
+	for _, desired := range desiredObjects {
 		l := r.log.WithValues(
-			"object_name", expected.GetName(),
-			"object_kind", expected.GetObjectKind(),
+			"object_name", desired.GetName(),
+			"object_kind", desired.GetObjectKind(),
 		)
-		if isNamespaceScoped(expected) {
-			if setErr := ctrl.SetControllerReference(&params.Instance, expected, params.Scheme); setErr != nil {
-				l.Error(setErr, "failed to set controller owner reference to resource")
+		if isNamespaceScoped(desired) {
+			if setErr := ctrl.SetControllerReference(&params.Instance, desired, params.Scheme); setErr != nil {
+				l.Error(setErr, "failed to set controller owner reference to desired")
 				errs = append(errs, setErr)
 				continue
 			}
 		}
 
-		// expected is an object the controller runtime will hydrate for us as the existing object
-		// we obtain the desired by deep copying the expected object because it's the most convenient way
-		desired := expected.DeepCopyObject().(client.Object)
-		mutateFn := manifests.MutateFuncFor(expected, desired)
-		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, expected, mutateFn)
+		// existing is an object the controller runtime will hydrate for us
+		// we obtain the existing object by deep copying the desired object because it's the most convenient way
+		existing := desired.DeepCopyObject().(client.Object)
+		mutateFn := manifests.MutateFuncFor(existing, desired)
+		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, existing, mutateFn)
 		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
-			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "obj", expected.GetName())
-			delErr := r.Client.Delete(ctx, expected)
+			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "existing", existing.GetName())
+			delErr := r.Client.Delete(ctx, existing)
 			if delErr != nil {
 				return delErr
 			}
 			continue
 		} else if crudErr != nil {
-			l.Error(crudErr, "failed to configure resource")
+			l.Error(crudErr, "failed to configure desired")
 			errs = append(errs, crudErr)
 			continue
 		}
 
-		l.V(1).Info(fmt.Sprintf("resource has been %s", op))
+		l.V(1).Info(fmt.Sprintf("desired has been %s", op))
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to create objects for Collector %s: %w", params.Instance.GetName(), errors.Join(errs...))
