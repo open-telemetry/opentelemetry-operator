@@ -22,18 +22,14 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
-	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -126,35 +122,32 @@ func (r *OpenTelemetryCollectorReconciler) removeRouteTask(ora autodetect.OpenSh
 func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params manifests.Params) error {
 	// Collect all objects owned by the operator, to be able to prune objects
 	// which exist in the cluster but are not managed by the operator anymore.
-	pruneObjects, err := r.findObjectsOwnedByOtelOperator(ctx, params.Instance)
-	if err != nil {
-		return err
-	}
-	managedObjects, err := r.BuildAll(params)
+	expectedObjects, err := r.BuildAll(params)
 	if err != nil {
 		return err
 	}
 	var errs []error
-	for _, obj := range managedObjects {
+	for _, expected := range expectedObjects {
 		l := r.log.WithValues(
-			"object_name", obj.GetName(),
-			"object_kind", obj.GetObjectKind(),
+			"object_name", expected.GetName(),
+			"object_kind", expected.GetObjectKind(),
 		)
-
-		if isNamespaceScoped(obj) {
-			if setErr := ctrl.SetControllerReference(&params.Instance, obj, params.Scheme); setErr != nil {
+		if isNamespaceScoped(expected) {
+			if setErr := ctrl.SetControllerReference(&params.Instance, expected, params.Scheme); setErr != nil {
 				l.Error(setErr, "failed to set controller owner reference to resource")
 				errs = append(errs, setErr)
 				continue
 			}
 		}
 
-		desired := obj.DeepCopyObject().(client.Object)
-		mutateFn := manifests.MutateFuncFor(obj, desired)
-		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, obj, mutateFn)
+		// expected is an object the controller runtime will hydrate for us as the existing object
+		// we obtain the desired by deep copying the expected object because it's the most convenient way
+		desired := expected.DeepCopyObject().(client.Object)
+		mutateFn := manifests.MutateFuncFor(expected, desired)
+		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, expected, mutateFn)
 		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
-			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "obj", obj.GetName())
-			delErr := r.Client.Delete(ctx, obj)
+			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "obj", expected.GetName())
+			delErr := r.Client.Delete(ctx, expected)
 			if delErr != nil {
 				return delErr
 			}
@@ -166,30 +159,9 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 		}
 
 		l.V(1).Info(fmt.Sprintf("resource has been %s", op))
-
-		delete(pruneObjects, obj.GetUID())
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to create objects for Collector %s: %w", params.Instance.GetName(), errors.Join(errs...))
-	}
-
-	// Prune owned objects in the cluster which are not managed anymore.
-	var pruneErrs []error
-	for _, obj := range pruneObjects {
-		l := r.log.WithValues(
-			"object_name", obj.GetName(),
-			"object_kind", obj.GetObjectKind(),
-		)
-		l.Info("pruning unmanaged resource")
-
-		err = r.Delete(ctx, obj)
-		if err != nil {
-			l.Error(err, "failed to delete resource")
-			pruneErrs = append(pruneErrs, err)
-		}
-	}
-	if len(pruneErrs) > 0 {
-		return fmt.Errorf("failed to prune objects of Collector %s: %w", params.Instance.GetName(), errors.Join(pruneErrs...))
 	}
 	return nil
 }
@@ -201,33 +173,6 @@ func isNamespaceScoped(obj client.Object) bool {
 	default:
 		return true
 	}
-}
-
-func (r *OpenTelemetryCollectorReconciler) findObjectsOwnedByOtelOperator(ctx context.Context, instance v1alpha1.OpenTelemetryCollector) (map[types.UID]client.Object, error) {
-	ownedObjects := map[types.UID]client.Object{}
-	listOps := &client.ListOptions{
-		Namespace:     instance.GetNamespace(),
-		LabelSelector: labels.SelectorFromSet(collector.SelectorLabels(instance)),
-	}
-	ingressList := &networkingv1.IngressList{}
-	err := r.List(ctx, ingressList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing ingress: %w", err)
-	}
-	for i := range ingressList.Items {
-		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
-	}
-	if instance.Spec.Ingress.Type == v1alpha1.IngressTypeRoute {
-		routesList := &routev1.RouteList{}
-		err = r.List(ctx, routesList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("error listing routes: %w", err)
-		}
-		for i := range routesList.Items {
-			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
-		}
-	}
-	return ownedObjects, nil
 }
 
 func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
