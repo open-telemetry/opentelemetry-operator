@@ -43,7 +43,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 
 	// defaulting webhook should always set this, but if unset then return nil.
 	if otelcol.Spec.Autoscaler == nil {
-		logger.Info("Autoscaler field is unset in Spec, skipping")
+		logger.Info("hpa field is unset in Spec, skipping autoscaler creation")
 		return nil
 	}
 	autoscalingVersion := cfg.AutoscalingVersion()
