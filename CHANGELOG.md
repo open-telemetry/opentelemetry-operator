@@ -1,6 +1,31 @@
 Changes by Version
 ==================
 <!-- next version -->
+
+## 0.85.0
+
+### 💡 Enhancements 💡
+
+- `autoinstrumentation`: .NET Automatic Instrumentation support for Alpine-based images (#1849)
+- `operator`: Allow the collector CRD to specify a list of configmaps to mount (#1819)
+- `autoinstrumentation`: Bump Go auto-instrumentation support to v0.3.0-alpha. (#2123)
+- `operator`: Introduces a new method of reconciliation to reduce duplication and complexity (#1959)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Run the upgrade mechanism when there is a change in an instance to ensure it is upgraded. This is useful for cases where the instance uses the unmanaged state, the operator is upgraded and the instance changes to use a managed state. (#1890)
+
+### Components
+
+* [OpenTelemetry Collector - v0.85.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.85.0)
+* [OpenTelemetry Contrib - v0.85.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.85.0)
+* [Java auto-instrumentation - 1.30.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.30.0)
+* [.NET auto-instrumentation - 1.0.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.0.0)
+* [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
+* [Python - 0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.40b0)
+* [Go - v0.3.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.3.0-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+
 ## 0.84.0
 
 ### 💡 Enhancements 💡
