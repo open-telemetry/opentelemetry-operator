@@ -1,4 +1,4 @@
-FROM golang:1.21.1 as builder
+FROM golang:1.21-alpine as builder
 
 COPY main.go .
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -o app main.go
