@@ -31,6 +31,8 @@ import (
 )
 
 // Routes reconciles the route(s) required for the instance in the current context.
+// TODO: This functionality should be put with the rest of reconciliation logic in the mutate.go
+// https://github.com/open-telemetry/opentelemetry-operator/issues/2108
 func Routes(ctx context.Context, params manifests.Params) error {
 	if params.Instance.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
 		return nil

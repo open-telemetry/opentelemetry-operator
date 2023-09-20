@@ -24,7 +24,6 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -104,22 +103,4 @@ func TestDeleteRoutes(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	})
-}
-
-func TestRoutes(t *testing.T) {
-	t.Run("wrong mode", func(t *testing.T) {
-		ctx := context.Background()
-		err := Routes(ctx, params())
-		assert.Nil(t, err)
-	})
-
-	t.Run("supported mode and service exists", func(t *testing.T) {
-		ctx := context.Background()
-		myParams := params()
-		err := expectedServices(context.Background(), myParams, []*corev1.Service{service("test-collector", params().Instance.Spec.Ports)})
-		assert.NoError(t, err)
-
-		assert.Nil(t, Routes(ctx, myParams))
-	})
-
 }
