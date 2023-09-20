@@ -28,7 +28,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/golang-test
+          images: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-golang
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
