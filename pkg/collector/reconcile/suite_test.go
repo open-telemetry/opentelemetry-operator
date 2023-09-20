@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO: This file can be deleted when Routes is removed from this package.
+// https://github.com/open-telemetry/opentelemetry-operator/issues/2108
 package reconcile
 
 import (
@@ -27,7 +29,6 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -68,6 +69,7 @@ var (
 const (
 	defaultCollectorImage    = "default-collector"
 	defaultTaAllocationImage = "default-ta-allocator"
+	testFileIngress          = "testdata/ingress_testdata.yaml"
 )
 
 func TestMain(m *testing.M) {
@@ -286,15 +288,6 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 	}, nil
 }
 
-func createObjectIfNotExists(tb testing.TB, name string, object client.Object) {
-	tb.Helper()
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, object)
-	if errors.IsNotFound(err) {
-		err := k8sClient.Create(context.Background(), object)
-		assert.NoError(tb, err)
-	}
-}
-
 func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
 	t.Helper()
 	err := k8sClient.Get(context.Background(), namespacedName, object)
@@ -305,5 +298,4 @@ func populateObjectIfExists(t testing.TB, object client.Object, namespacedName t
 		return false, err
 	}
 	return true, nil
-
 }
