@@ -95,9 +95,8 @@ func findDuplicatedContainers(ctrs []string) error {
 		}
 	}
 
-	sort.Strings(duplicates)
-
 	if duplicates != nil {
+		sort.Strings(duplicates)
 		return fmt.Errorf("duplicated container names detected: %s", duplicates)
 	}
 
