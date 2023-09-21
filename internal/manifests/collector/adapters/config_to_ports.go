@@ -80,7 +80,7 @@ func ConfigToExporterPorts(logger logr.Logger, config map[interface{}]interface{
 		}
 		exporter, ok := val.(map[interface{}]interface{})
 		if !ok {
-			logger.Info("exporter doesn't seem to be a map of properties", "exporter", key)
+			logger.V(2).Info("exporter doesn't seem to be a map of properties", "exporter", key)
 			exporter = map[interface{}]interface{}{}
 		}
 
