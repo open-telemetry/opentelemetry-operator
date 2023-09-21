@@ -37,13 +37,13 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
-func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliConfig allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
-	mClient, err := monitoringclient.NewForConfig(cliConfig.ClusterConfig)
+func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
+	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	clientset, err := kubernetes.NewForConfig(cliConfig.ClusterConfig)
+	clientset, err := kubernetes.NewForConfig(cfg.ClusterConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliC
 		informers:              monitoringInformers,
 		stopChannel:            make(chan struct{}),
 		configGenerator:        generator,
-		kubeConfigPath:         cliConfig.KubeConfigFilePath,
+		kubeConfigPath:         cfg.KubeConfigFilePath,
 		serviceMonitorSelector: servMonSelector,
 		podMonitorSelector:     podMonSelector,
 	}, nil
