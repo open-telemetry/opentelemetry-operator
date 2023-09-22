@@ -284,7 +284,7 @@ func (w *PrometheusCRWatcher) addStoreAssetsForPodMonitor(
 	for i, endp := range podMetricsEndps {
 		objKey := fmt.Sprintf("podMonitor/%s/%s/%d", pmNamespace, pmName, i)
 
-		if err = store.AddBearerToken(ctx, pmNamespace, endp.BearerTokenSecret, objKey); err != nil {
+		if err = store.AddBearerToken(ctx, pmNamespace, &endp.BearerTokenSecret, objKey); err != nil {
 			break
 		}
 
