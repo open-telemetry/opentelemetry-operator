@@ -51,6 +51,19 @@ var testAffinityValue = &v1.Affinity{
 	},
 }
 
+var testTopologySpreadConstraintValue = []v1.TopologySpreadConstraint{
+	{
+		MaxSkew:           1,
+		TopologyKey:       "kubernetes.io/hostname",
+		WhenUnsatisfiable: "DoNotSchedule",
+		LabelSelector: &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"foo": "bar",
+			},
+		},
+	},
+}
+
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	opampBridge := v1alpha1.OpAMPBridge{
@@ -115,6 +128,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	d := Deployment(cfg, logger, opampBridge)
 
 	// verify
+	assert.Len(t, d.Spec.Template.Annotations, 1)
 	assert.Equal(t, "my-instance-opamp-bridge", d.Name)
 	assert.Equal(t, testPodAnnotationValues, d.Spec.Template.Annotations)
 }
@@ -290,4 +304,35 @@ func TestDeploymentAffinity(t *testing.T) {
 	d2 := Deployment(cfg, logger, opampBridge2)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
+}
+
+func TestDeploymentTopologySpreadConstraints(t *testing.T) {
+	// Test default
+	opampBridge1 := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+	d1 := Deployment(cfg, logger, opampBridge1)
+	assert.Equal(t, "my-instance-opamp-bridge", d1.Name)
+	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
+
+	// Test TopologySpreadConstraints
+	opampBridge2 := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-topologyspreadconstraint",
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{
+			TopologySpreadConstraints: testTopologySpreadConstraintValue,
+		},
+	}
+
+	cfg = config.New()
+	d2 := Deployment(cfg, logger, opampBridge2)
+	assert.Equal(t, "my-instance-topologyspreadconstraint-opamp-bridge", d2.Name)
+	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
+	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
+	assert.Equal(t, testTopologySpreadConstraintValue, d2.Spec.Template.Spec.TopologySpreadConstraints)
 }

@@ -12,36 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-<<<<<<<< HEAD:pkg/reconcile/collector/opentelemetry_test.go
-package collector
-========
-package targetallocator
->>>>>>>> 88bfe1c03a50b54dc5d66640c3213ee658548719:internal/manifests/targetallocator/volume_test.go
+package opampbridge
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func TestVolumeNewDefault(t *testing.T) {
-	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
-	cfg := config.New()
+// Volumes builds the volumes for the given instance, including the config map volume.
+func Volumes(cfg config.Config, opampBridge v1alpha1.OpAMPBridge) []corev1.Volume {
+	volumes := []corev1.Volume{{
+		Name: naming.OpAMPBridgeConfigMapVolume(),
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: naming.OpAMPBridgeConfigMap(opampBridge.Name)},
+				Items: []corev1.KeyToPath{
+					{
+						Key:  cfg.OperatorOpAMPBridgeConfigMapEntry(),
+						Path: cfg.OperatorOpAMPBridgeConfigMapEntry(),
+					},
+				},
+			},
+		},
+	}}
 
-	// test
-	volumes := Volumes(cfg, otelcol)
-
-	// verify
-	assert.Len(t, volumes, 1)
-
-	// check if the number of elements in the volume source items list is 1
-	assert.Len(t, volumes[0].VolumeSource.ConfigMap.Items, 1)
-
-	// check that it's the ta-internal volume, with the config map
-	assert.Equal(t, naming.TAConfigMapVolume(), volumes[0].Name)
+	return volumes
 }

@@ -15,29 +15,29 @@
 package opampbridge
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// Volumes builds the volumes for the given instance, including the config map volume.
-func Volumes(cfg config.Config, opampBridge v1alpha1.OpAMPBridge) []corev1.Volume {
-	volumes := []corev1.Volume{{
-		Name: naming.OpAMPBridgeConfigMapVolume(),
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: naming.OpAMPBridgeConfigMap(opampBridge)},
-				Items: []corev1.KeyToPath{
-					{
-						Key:  cfg.OperatorOpAMPBridgeConfigMapEntry(),
-						Path: cfg.OperatorOpAMPBridgeConfigMapEntry(),
-					},
-				},
-			},
-		},
-	}}
+func TestVolumeNewDefault(t *testing.T) {
+	// prepare
+	opampBridge := v1alpha1.OpAMPBridge{}
+	cfg := config.New()
 
-	return volumes
+	// test
+	volumes := Volumes(cfg, opampBridge)
+
+	// verify
+	assert.Len(t, volumes, 1)
+
+	// check if the number of elements in the volume source items list is 1
+	assert.Len(t, volumes[0].VolumeSource.ConfigMap.Items, 1)
+
+	// check that it's the opamp-bridge-internal volume, with the config map
+	assert.Equal(t, naming.OpAMPBridgeConfigMapVolume(), volumes[0].Name)
 }

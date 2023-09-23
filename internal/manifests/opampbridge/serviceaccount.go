@@ -19,25 +19,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
 func ServiceAccountName(instance v1alpha1.OpAMPBridge) string {
 	if len(instance.Spec.ServiceAccount) == 0 {
-		return naming.OpAMPBridgeServiceAccount(instance)
+		return naming.OpAMPBridgeServiceAccount(instance.Name)
 	}
 	return instance.Spec.ServiceAccount
 }
 
 // ServiceAccount returns the service account for the given instance.
 func ServiceAccount(opampBridge v1alpha1.OpAMPBridge) corev1.ServiceAccount {
-	labels := Labels(opampBridge, []string{})
-	labels["app.kubernetes.io/name"] = naming.OpAMPBridgeServiceAccount(opampBridge)
+	name := naming.OpAMPBridgeServiceAccount(opampBridge.Name)
+	labels := Labels(opampBridge, name, []string{})
 
 	return corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.OpAMPBridgeServiceAccount(opampBridge),
+			Name:        name,
 			Namespace:   opampBridge.Namespace,
 			Labels:      labels,
 			Annotations: opampBridge.Annotations,

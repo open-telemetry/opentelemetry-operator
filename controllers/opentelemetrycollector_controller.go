@@ -41,6 +41,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/status"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -100,7 +101,7 @@ func (r *OpenTelemetryCollectorReconciler) addRouteTask(ora autodetect.OpenShift
 	defer r.muTasks.Unlock()
 	// if exists and openshift routes are available
 	if routesIdx == -1 && ora == autodetect.OpenShiftRoutesAvailable {
-		r.tasks = append([]Task{{collectorreconcile.Routes, "routes", true}}, r.tasks...)
+		r.tasks = append([]Task{{reconcile.Routes, "routes", true}}, r.tasks...)
 	}
 	return nil
 }

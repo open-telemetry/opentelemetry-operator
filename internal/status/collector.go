@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-<<<<<<<< HEAD:pkg/reconcile/collector/opentelemetry.go
-// Package reconcile contains reconciliation logic for OpenTelemetry Collector components.
-package collector
-========
 package status
->>>>>>>> 88bfe1c03a50b54dc5d66640c3213ee658548719:internal/status/collector.go
 
 import (
 	"context"

@@ -26,8 +26,8 @@ func TAConfigMap(otelcol string) string {
 }
 
 // OpAMPBridgeConfigMap builds the name for the config map used in the OpAMPBridge containers.
-func OpAMPBridgeConfigMap(opampBridge v1alpha1.OpAMPBridge) string {
-	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge.Name))
+func OpAMPBridgeConfigMap(opampBridge string) string {
+	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
 }
 
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
@@ -91,8 +91,8 @@ func TargetAllocator(otelcol string) string {
 }
 
 // OpAMPBridge returns the OpAMPBridge deployment resource name.
-func OpAMPBridge(opampBridge v1alpha1.OpAMPBridge) string {
-	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge.Name))
+func OpAMPBridge(opampBridge string) string {
+	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
 }
 
 // HeadlessService builds the name for the headless service based on the instance.
@@ -126,8 +126,8 @@ func TAService(otelcol string) string {
 }
 
 // OpAMPBridgeService returns the name to use for the OpAMPBridge service.
-func OpAMPBridgeService(opampBridge v1alpha1.OpAMPBridge) string {
-	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge.Name))
+func OpAMPBridgeService(opampBridge string) string {
+	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
 }
 
 // ServiceAccount builds the service account name based on the instance.
@@ -146,6 +146,6 @@ func TargetAllocatorServiceAccount(otelcol string) string {
 }
 
 // OpAMPBridgeServiceAccount builds the service account name based on the instance.
-func OpAMPBridgeServiceAccount(opampBridge v1alpha1.OpAMPBridge) string {
-	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge.Name))
+func OpAMPBridgeServiceAccount(opampBridge string) string {
+	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
 }

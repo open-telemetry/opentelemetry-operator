@@ -29,6 +29,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	opampbridgereconcile "github.com/open-telemetry/opentelemetry-operator/pkg/reconcile/opampbridge"
 )
 
@@ -54,7 +55,7 @@ type OpAMPBridgeReconcilerParams struct {
 
 // OpAMPBridgeReconcilerTask represents a reconciliation task to be executed by the OpAMPBridgeReconciler.
 type OpAMPBridgeReconcilerTask struct {
-	Do          func(context.Context, opampbridgereconcile.Params) error
+	Do          func(context.Context, manifests.OpAMPBridgeParams) error
 	Name        string
 	BailOnError bool
 }
@@ -67,35 +68,6 @@ func NewOpAMPBridgeReconciler(params OpAMPBridgeReconcilerParams) *OpAMPBridgeRe
 		recorder: params.Recorder,
 		tasks:    params.Tasks,
 		config:   params.Config,
-	}
-	if len(reconciler.tasks) == 0 {
-		reconciler.tasks = []OpAMPBridgeReconcilerTask{
-			{
-				opampbridgereconcile.ConfigMaps,
-				"config maps",
-				true,
-			},
-			{
-				opampbridgereconcile.ServiceAccounts,
-				"service accounts",
-				true,
-			},
-			{
-				opampbridgereconcile.Services,
-				"services",
-				true,
-			},
-			{
-				opampbridgereconcile.Deployments,
-				"deployments",
-				true,
-			},
-			{
-				opampbridgereconcile.Self,
-				"opamp bridge",
-				true,
-			},
-		}
 	}
 	return reconciler
 }

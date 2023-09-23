@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-<<<<<<<< HEAD:pkg/reconcile/collector/opentelemetry_test.go
-package collector
-========
 package targetallocator
->>>>>>>> 88bfe1c03a50b54dc5d66640c3213ee658548719:internal/manifests/targetallocator/volume_test.go
 
 import (
 	"testing"

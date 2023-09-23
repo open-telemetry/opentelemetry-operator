@@ -22,17 +22,17 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Deployment builds the deployment for the given instance.
 func Deployment(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAMPBridge) appsv1.Deployment {
-	labels := Labels(opampBridge, cfg.LabelsFilter())
-	labels["app.kubernetes.io/name"] = naming.OpAMPBridge(opampBridge)
+	name := naming.OpAMPBridge(opampBridge.Name)
+	labels := Labels(opampBridge, name, cfg.LabelsFilter())
 
 	return appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.OpAMPBridge(opampBridge),
+			Name:      name,
 			Namespace: opampBridge.Namespace,
 			Labels:    labels,
 		},
@@ -47,16 +47,17 @@ func Deployment(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAM
 					Annotations: opampBridge.Spec.PodAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: ServiceAccountName(opampBridge),
-					Containers:         []corev1.Container{Container(cfg, logger, opampBridge)},
-					Volumes:            Volumes(cfg, opampBridge),
-					DNSPolicy:          getDNSPolicy(opampBridge),
-					HostNetwork:        opampBridge.Spec.HostNetwork,
-					Tolerations:        opampBridge.Spec.Tolerations,
-					NodeSelector:       opampBridge.Spec.NodeSelector,
-					SecurityContext:    opampBridge.Spec.PodSecurityContext,
-					PriorityClassName:  opampBridge.Spec.PriorityClassName,
-					Affinity:           opampBridge.Spec.Affinity,
+					ServiceAccountName:        ServiceAccountName(opampBridge),
+					Containers:                []corev1.Container{Container(cfg, logger, opampBridge)},
+					Volumes:                   Volumes(cfg, opampBridge),
+					DNSPolicy:                 getDNSPolicy(opampBridge),
+					HostNetwork:               opampBridge.Spec.HostNetwork,
+					Tolerations:               opampBridge.Spec.Tolerations,
+					NodeSelector:              opampBridge.Spec.NodeSelector,
+					SecurityContext:           opampBridge.Spec.PodSecurityContext,
+					PriorityClassName:         opampBridge.Spec.PriorityClassName,
+					Affinity:                  opampBridge.Spec.Affinity,
+					TopologySpreadConstraints: opampBridge.Spec.TopologySpreadConstraints,
 				},
 			},
 		},

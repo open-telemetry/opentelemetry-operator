@@ -20,7 +20,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Container builds a container for the given OpAMPBridge.
@@ -39,20 +39,27 @@ func Container(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAMP
 		volumeMounts = append(volumeMounts, opampBridge.Spec.VolumeMounts...)
 	}
 
-	envVars := []corev1.EnvVar{}
-
-	if len(opampBridge.Spec.Env) > 0 {
-		envVars = append(envVars, opampBridge.Spec.Env...)
+	var envVars = opampBridge.Spec.Env
+	if opampBridge.Spec.Env == nil {
+		envVars = []corev1.EnvVar{}
 	}
 
-	envVars = append(envVars, corev1.EnvVar{
-		Name: "OTELCOL_NAMESPACE",
-		ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.namespace",
+	idx := -1
+	for i := range envVars {
+		if envVars[i].Name == "OTELCOL_NAMESPACE" {
+			idx = i
+		}
+	}
+	if idx == -1 {
+		envVars = append(envVars, corev1.EnvVar{
+			Name: "OTELCOL_NAMESPACE",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.namespace",
+				},
 			},
-		},
-	})
+		})
+	}
 
 	return corev1.Container{
 		Name:            naming.OpAMPBridgeContainer(),

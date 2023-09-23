@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-<<<<<<<< HEAD:pkg/reconcile/collector/params.go
-package collector
-========
 package manifests
->>>>>>>> 88bfe1c03a50b54dc5d66640c3213ee658548719:internal/manifests/params.go
 
 import (
 	"github.com/go-logr/logr"
@@ -28,12 +24,22 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-// Params holds the reconciliation-specific parameters.
+// Params holds the reconciliation-specific parameters for collector.
 type Params struct {
 	Client   client.Client
 	Recorder record.EventRecorder
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	Instance v1alpha1.OpenTelemetryCollector
+	Config   config.Config
+}
+
+// OpAMPBridgeParams holds the reconciliation-specific parameters for opamp-bridge.
+type OpAMPBridgeParams struct {
+	Client   client.Client
+	Recorder record.EventRecorder
+	Scheme   *runtime.Scheme
+	Log      logr.Logger
+	Instance v1alpha1.OpAMPBridge
 	Config   config.Config
 }

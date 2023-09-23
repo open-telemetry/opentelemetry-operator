@@ -23,12 +23,17 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
+const (
+	opampBridgeName      = "my-instance"
+	opampBridgeNamespace = "my-ns"
+)
+
 func TestLabelsCommonSet(t *testing.T) {
 	// prepare
 	opampBridge := v1alpha1.OpAMPBridge{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-instance",
-			Namespace: "my-ns",
+			Name:      opampBridgeName,
+			Namespace: opampBridgeNamespace,
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
 			Image: "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
@@ -36,7 +41,7 @@ func TestLabelsCommonSet(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(opampBridge, []string{})
+	labels := Labels(opampBridge, opampBridgeName, []string{})
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "0.69.0", labels["app.kubernetes.io/version"])
@@ -48,8 +53,8 @@ func TestLabelsTagUnset(t *testing.T) {
 	// prepare
 	opampBridge := v1alpha1.OpAMPBridge{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-instance",
-			Namespace: "my-ns",
+			Name:      opampBridgeName,
+			Namespace: opampBridgeNamespace,
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
 			Image: "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge",
@@ -57,7 +62,7 @@ func TestLabelsTagUnset(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(opampBridge, []string{})
+	labels := Labels(opampBridge, opampBridgeName, []string{})
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "latest", labels["app.kubernetes.io/version"])
@@ -69,16 +74,20 @@ func TestLabelsPropagateDown(t *testing.T) {
 	// prepare
 	opampBridge := v1alpha1.OpAMPBridge{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{"myapp": "mycomponent"},
+			Labels: map[string]string{
+				"myapp":                  "mycomponent",
+				"app.kubernetes.io/name": "test",
+			},
 		},
 	}
 
 	// test
-	labels := Labels(opampBridge, []string{})
+	labels := Labels(opampBridge, opampBridgeName, []string{})
 
 	// verify
-	assert.Len(t, labels, 6)
+	assert.Len(t, labels, 7)
 	assert.Equal(t, "mycomponent", labels["myapp"])
+	assert.Equal(t, "test", labels["app.kubernetes.io/name"])
 }
 
 func TestSelectorLabels(t *testing.T) {
@@ -108,7 +117,7 @@ func TestLabelsFilter(t *testing.T) {
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	labels := Labels(opampBridge, []string{".*.bar.io"})
+	labels := Labels(opampBridge, opampBridgeName, []string{".*.bar.io"})
 
 	// verify
 	assert.Len(t, labels, 6)
