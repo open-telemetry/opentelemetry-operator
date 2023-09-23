@@ -27,17 +27,17 @@ metadata:
           }
         }
       ]
-    capabilities: Basic Install
-    categories: Logging & Tracing
+    capabilities: Deep Insights
+    categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2023-04-10T17:45:14Z"
+    createdAt: "2023-09-20T15:05:15Z"
     description: Provides the OpenTelemetry components, including the Collector
-    operators.operatorframework.io/builder: operator-sdk-v1.27.0
+    operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.75.0
+  name: opentelemetry-operator.v0.85.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -94,6 +94,18 @@ spec:
       - kind: StatefulSets
         name: ""
         version: apps/v1
+      specDescriptors:
+      - description: ObservabilitySpec defines how telemetry data gets handled.
+        displayName: Observability
+        path: observability
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: observability.metrics
+      - description: EnableMetrics specifies if ServiceMonitor should be created for
+          the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.prometheus
+          feature gate must be enabled to use this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: observability.metrics.enableMetrics
       version: v1alpha1
   description: |-
     OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
@@ -116,6 +128,8 @@ spec:
           - ""
           resources:
           - configmaps
+          - serviceaccounts
+          - services
           verbs:
           - create
           - delete
@@ -139,45 +153,11 @@ spec:
           - list
           - watch
         - apiGroups:
-          - ""
-          resources:
-          - serviceaccounts
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - services
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
           - apps
           resources:
           - daemonsets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - apps
-          resources:
           - deployments
+          - statefulsets
           verbs:
           - create
           - delete
@@ -193,18 +173,6 @@ spec:
           verbs:
           - get
           - list
-          - watch
-        - apiGroups:
-          - apps
-          resources:
-          - statefulsets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - autoscaling
@@ -227,6 +195,18 @@ spec:
           - get
           - list
           - update
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - networking.k8s.io
           resources:
@@ -351,7 +331,8 @@ spec:
                 - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.75.0
+                - --feature-gates=+operator.autoinstrumentation.go
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.85.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -382,7 +363,7 @@ spec:
                 - --upstream=http://127.0.0.1:8080/
                 - --logtostderr=true
                 - --v=0
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
                 name: kube-rbac-proxy
                 ports:
                 - containerPort: 8443
@@ -458,7 +439,7 @@ spec:
   maturity: alpha
   provider:
     name: OpenTelemetry Community
-  version: 0.75.0
+  version: 0.85.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

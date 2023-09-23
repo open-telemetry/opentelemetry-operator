@@ -4,3 +4,4 @@ artifactsDir: ./tests/_build/artifacts/
 testDirs:
   - ./tests/e2e/
 timeout: 150
+parallel: 4

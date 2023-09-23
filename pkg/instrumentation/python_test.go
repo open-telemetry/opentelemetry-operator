@@ -48,7 +48,9 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name: volumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -101,7 +103,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "PYTHONPATH defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: v1alpha1.Python{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -122,7 +124,9 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name: volumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -135,6 +139,7 @@ func TestInjectPythonSDK(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{
@@ -196,7 +201,9 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name: volumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -270,7 +277,9 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name: volumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},

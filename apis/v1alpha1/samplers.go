@@ -35,6 +35,8 @@ const (
 	ParentBasedTraceIDRatio SamplerType = "parentbased_traceidratio"
 	// JaegerRemote represents JaegerRemoteSampler.
 	JaegerRemote SamplerType = "jaeger_remote"
+	// ParentBasedJaegerRemote represents ParentBased(root=JaegerRemoteSampler).
+	ParentBasedJaegerRemote SamplerType = "parentbased_jaeger_remote"
 	// XRay represents AWS X-Ray Centralized Sampling.
 	XRaySampler SamplerType = "xray"
 )

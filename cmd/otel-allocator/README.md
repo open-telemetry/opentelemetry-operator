@@ -1,14 +1,25 @@
 # Target Allocator
 
-The TargetAllocator is an optional separately deployed component of an OpenTelemetry Collector setup, which is used to
-distribute targets of the PrometheusReceiver on all deployed Collector instances. The release version matches the
+Target Allocator is an optional component of the OpenTelemetry Collector [Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) (CR). The release version matches the
 operator's most recent release as well.
 
-In essence, Prometheus Receiver configs are overridden with a http_sd_configs directive that points to the
-Allocator, these are then loadbalanced/sharded to the collectors. The Prometheus Receiver configs that are overridden
-are what will be distributed with the same name. In addition to picking up receiver configs, the TargetAllocator
-can discover targets via Prometheus CRs (currently ServiceMonitor, PodMonitor) which it presents as scrape configs
-and jobs on the `/scrape_configs` and `/jobs` endpoints respectively.
+In a nutshell, the TA is a mechanism for decoupling the service discovery and metric collection functions of Prometheus such that they can be scaled independently. The Collector manages Prometheus metrics without needing to install Prometheus. The TA manages the configuration of the Collector's [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md).
+
+The TA serves two functions:
+* Even distribution of Prometheus targets among a pool of Collectors
+* Discovery of Prometheus Custom Resources
+
+## Even Distribution of Prometheus Targets
+
+The Target Allocator's first job is to discover targets to scrape and collectors to allocate targets to. Then it can distribute the targets it discovers among the collectors. This means that the OTel Collectors collect the metrics instead of a Prometheus [scraper](https://uzxmx.github.io/prometheus-scrape-internals.html). Metrics are ingested by the OTel Collectors by way of the [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md).
+
+## Discovery of Prometheus Custom Resources
+
+The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitor and the PodMonitor don’t do any scraping themselves; their purpose is to inform the Target Allocator (or Prometheus) to add a new job to their scrape configuration. These metrics are then ingested by way of the Prometheus Receiver on the OpenTelemetry Collector.
+
+Even though Prometheus is not required to be installed in your Kubernetes cluster to use the Target Allocator for Prometheus CR discovery, the TA does require that the ServiceMonitor and PodMonitor be installed. These CRs are bundled with Prometheus Operator; however, they can be installed standalone as well.
+
+The easiest way to do this is by going to the [Prometheus Operator’s Releases page](https://github.com/prometheus-operator/prometheus-operator/releases), grabbing a copy of the latest `bundle.yaml` file (for example, [this one](https://github.com/prometheus-operator/prometheus-operator/releases/download/v0.66.0/bundle.yaml)), and stripping out all of the YAML except the ServiceMonitor and PodMonitor YAML definitions.
 
 # Usage
 The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
@@ -44,14 +55,21 @@ spec:
           exporters: [logging]
 ```
 
+In essence, Prometheus Receiver configs are overridden with a `http_sd_config` directive that points to the
+Allocator, these are then loadbalanced/sharded to the Collectors. The [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) configs that are overridden
+are what will be distributed with the same name.
+
 ## PrometheusCR specifics
+
 TargetAllocator discovery of PrometheusCRs can be turned on by setting
-`.spec.targetAllocator.prometheusCR.enabled` to `true`
+`.spec.targetAllocator.prometheusCR.enabled` to `true`, which it presents as scrape configs
+and jobs on the `/scrape_configs` and `/jobs` endpoints respectively.
 
 The CRs can be filtered by labels as documented here: [api.md#opentelemetrycollectorspectargetallocatorprometheuscr](../../docs/api.md#opentelemetrycollectorspectargetallocatorprometheuscr)
 
-The prometheus receiver in the deployed collector also has to know where the Allocator service exists. This is done by a
-OpenTelemetry Collector operator specific config.
+The Prometheus Receiver in the deployed Collector also has to know where the Allocator service exists. This is done by a
+OpenTelemetry Collector Operator-specific config.
+
 ```yaml
   config: |
     receivers:
@@ -64,15 +82,13 @@ OpenTelemetry Collector operator specific config.
           interval: 30s
           collector_id: "${POD_NAME}"
 ```
-Upstream documentation here: [Prometheusreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#opentelemetry-operator)
+
+Upstream documentation here: [PrometheusReceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#opentelemetry-operator)
 
 The TargetAllocator service is named based on the OpenTelemetryCollector CR name. `collector_id` should be unique per
 collector instance, such as the pod name. The `POD_NAME` environment variable is convenient since this is supplied
 to collector instance pods by default.
 
-The Prometheus CRDs also have to exist for the Allocator to pick them up. The best place to get them is from
-prometheus-operator: [Releases](https://github.com/prometheus-operator/prometheus-operator/releases). Only the CRDs for
-CRs that the Allocator watches for need to be deployed. They can be picked out from the bundle.yaml file.
 
 ### RBAC
 The ServiceAccount that the TargetAllocator runs as, has to have access to the CRs. A role like this will provide that
@@ -115,7 +131,7 @@ rules:
   - discovery.k8s.io
   resources:
   - endpointslices
-  verbs: ["get", "list", watch"]
+  verbs: ["get", "list", "watch"]
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -137,6 +153,12 @@ the `targetAllocator:` part of the OpenTelemetryCollector CR.
 ```
 **Note**: The Collector part of this same CR *also* has a serviceAccount key which only affects the collector and *not*
 the TargetAllocator.
+
+### Service / Pod monitor endpoint credentials
+
+If your service or pod monitor endpoints require credentials or other supported form of authentication (bearer token, basic auth, OAuth2 etc.), you need to ensure that the collector has access to this information. Due to some limitations in how the endpoints configuration is handled, target allocator currently does **not** support credentials provided via secrets. It is only possible to provide credentials in a file (for more details see issue https://github.com/open-telemetry/opentelemetry-operator/issues/1669).
+
+In order to ensure your endpoints can be scraped, your collector instance needs to have the particular secret mounted as a file at the correct path.
 
 
 # Design

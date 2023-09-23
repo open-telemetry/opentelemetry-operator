@@ -23,9 +23,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
-	collectorreconcile "github.com/open-telemetry/opentelemetry-operator/pkg/reconcile/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 const (
@@ -35,7 +34,7 @@ const (
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
-	otelColCfg, err := collectorreconcile.ReplaceConfig(otelcol)
+	otelColCfg, err := collector.ReplaceConfig(otelcol)
 	if err != nil {
 		return pod, err
 	}
@@ -47,6 +46,7 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCo
 	if !hasResourceAttributeEnvVar(container.Env) {
 		container.Env = append(container.Env, attributes...)
 	}
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, otelcol.Spec.InitContainers...)
 	pod.Spec.Containers = append(pod.Spec.Containers, container)
 	pod.Spec.Volumes = append(pod.Spec.Volumes, otelcol.Spec.Volumes...)
 

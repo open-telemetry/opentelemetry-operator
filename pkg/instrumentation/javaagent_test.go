@@ -48,7 +48,9 @@ func TestInjectJavaagent(t *testing.T) {
 						{
 							Name: volumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -85,7 +87,7 @@ func TestInjectJavaagent(t *testing.T) {
 		},
 		{
 			name: "JAVA_TOOL_OPTIONS defined",
-			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			Java: v1alpha1.Java{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -106,7 +108,9 @@ func TestInjectJavaagent(t *testing.T) {
 						{
 							Name: volumeName,
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
@@ -119,6 +123,7 @@ func TestInjectJavaagent(t *testing.T) {
 								Name:      volumeName,
 								MountPath: "/otel-auto-instrumentation",
 							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{

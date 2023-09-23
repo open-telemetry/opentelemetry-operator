@@ -91,7 +91,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b><a href="#instrumentationspecapachehttpd">apacheHttpd</a></b></td>
         <td>object</td>
         <td>
-          Apache defines configuration for Apache HTTPD auto-instrumentation.<br/>
+          ApacheHttpd defines configuration for Apache HTTPD auto-instrumentation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -105,7 +105,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b><a href="#instrumentationspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines common env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
+          Env defines common env vars.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -116,10 +116,24 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecgo">go</a></b></td>
+        <td>object</td>
+        <td>
+          Go defines configuration for Go auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecjava">java</a></b></td>
         <td>object</td>
         <td>
           Java defines configuration for java auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginx">nginx</a></b></td>
+        <td>object</td>
+        <td>
+          Nginx defines configuration for Nginx auto-instrumentation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -166,7 +180,7 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
 
 
 
-Apache defines configuration for Apache HTTPD auto-instrumentation.
+ApacheHttpd defines configuration for Apache HTTPD auto-instrumentation.
 
 <table>
     <thead>
@@ -181,7 +195,7 @@ Apache defines configuration for Apache HTTPD auto-instrumentation.
         <td><b><a href="#instrumentationspecapachehttpdattrsindex">attrs</a></b></td>
         <td>[]object</td>
         <td>
-          Attrs defines Apache HTTPD agent specific attributes. The precedence is: `agent default attributes` > `instrument spec attributes` . Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module<br/>
+          Attrs defines Apache HTTPD agent specific attributes. The precedence is: `agent default attributes` > `instrument spec attributes` . Attributes are documented at https://github.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -195,7 +209,7 @@ Apache defines configuration for Apache HTTPD auto-instrumentation.
         <td><b><a href="#instrumentationspecapachehttpdenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines Apache HTTPD specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
+          Env defines Apache HTTPD specific env vars.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -206,10 +220,24 @@ Apache defines configuration for Apache HTTPD auto-instrumentation.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>version</b></td>
         <td>string</td>
         <td>
           Apache HTTPD server version. One of 2.4 or 2.2. Default is 2.4<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -243,7 +271,7 @@ EnvVar represents an environment variable present in a Container.
         <td><b>value</b></td>
         <td>string</td>
         <td>
-          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -284,14 +312,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td><b><a href="#instrumentationspecapachehttpdattrsindexvaluefromfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#instrumentationspecapachehttpdattrsindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -351,7 +379,7 @@ Selects a key of a ConfigMap.
 
 
 
-Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 <table>
     <thead>
@@ -385,7 +413,7 @@ Selects a field of the pod: supports metadata.name, metadata.namespace, `metadat
 
 
 
-Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
 
 <table>
     <thead>
@@ -489,7 +517,7 @@ EnvVar represents an environment variable present in a Container.
         <td><b>value</b></td>
         <td>string</td>
         <td>
-          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -530,14 +558,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td><b><a href="#instrumentationspecapachehttpdenvindexvaluefromfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#instrumentationspecapachehttpdenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -597,7 +625,7 @@ Selects a key of a ConfigMap.
 
 
 
-Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 <table>
     <thead>
@@ -631,7 +659,7 @@ Selects a field of the pod: supports metadata.name, metadata.namespace, `metadat
 
 
 
-Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
 
 <table>
     <thead>
@@ -708,6 +736,75 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.apacheHttpd.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpd)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecapachehttpdresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.dotnet
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -728,7 +825,7 @@ DotNet defines configuration for DotNet auto-instrumentation.
         <td><b><a href="#instrumentationspecdotnetenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines DotNet specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
+          Env defines DotNet specific env vars.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -736,6 +833,20 @@ DotNet defines configuration for DotNet auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with DotNet SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -769,7 +880,7 @@ EnvVar represents an environment variable present in a Container.
         <td><b>value</b></td>
         <td>string</td>
         <td>
-          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -810,14 +921,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td><b><a href="#instrumentationspecdotnetenvindexvaluefromfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#instrumentationspecdotnetenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -877,7 +988,7 @@ Selects a key of a ConfigMap.
 
 
 
-Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 <table>
     <thead>
@@ -911,7 +1022,7 @@ Selects a field of the pod: supports metadata.name, metadata.namespace, `metadat
 
 
 
-Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
 
 <table>
     <thead>
@@ -988,6 +1099,75 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.dotnet.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecdotnet)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecdotnetresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecdotnetresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.env[index]
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -1015,7 +1195,7 @@ EnvVar represents an environment variable present in a Container.
         <td><b>value</b></td>
         <td>string</td>
         <td>
-          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1056,14 +1236,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td><b><a href="#instrumentationspecenvindexvaluefromfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#instrumentationspecenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1123,7 +1303,7 @@ Selects a key of a ConfigMap.
 
 
 
-Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 <table>
     <thead>
@@ -1157,7 +1337,7 @@ Selects a field of the pod: supports metadata.name, metadata.namespace, `metadat
 
 
 
-Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
 
 <table>
     <thead>
@@ -1261,6 +1441,369 @@ Exporter defines exporter configuration.
 </table>
 
 
+### Instrumentation.spec.go
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+Go defines configuration for Go auto-instrumentation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecgoenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          Env defines Go specific env vars.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image is a container image with Go SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index]
+<sup><sup>[↩ Parent](#instrumentationspecgo)</sup></sup>
+
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindex)</sup></sup>
+
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgoenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.env[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecgoenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecgo)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecgoresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecgoresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.java
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -1281,7 +1824,7 @@ Java defines configuration for java auto-instrumentation.
         <td><b><a href="#instrumentationspecjavaenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines java specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
+          Env defines java specific env vars.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1289,6 +1832,20 @@ Java defines configuration for java auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with javaagent auto-instrumentation JAR.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavaresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1322,7 +1879,7 @@ EnvVar represents an environment variable present in a Container.
         <td><b>value</b></td>
         <td>string</td>
         <td>
-          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1363,14 +1920,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td><b><a href="#instrumentationspecjavaenvindexvaluefromfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#instrumentationspecjavaenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1430,7 +1987,7 @@ Selects a key of a ConfigMap.
 
 
 
-Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 <table>
     <thead>
@@ -1464,7 +2021,7 @@ Selects a field of the pod: supports metadata.name, metadata.namespace, `metadat
 
 
 
-Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
 
 <table>
     <thead>
@@ -1541,6 +2098,698 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.java.resources
+<sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecjavaresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.resources.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecjavaresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+Nginx defines configuration for Nginx auto-instrumentation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnginxattrsindex">attrs</a></b></td>
+        <td>[]object</td>
+        <td>
+          Attrs defines Nginx agent specific attributes. The precedence order is: `agent default attributes` > `instrument spec attributes` . Attributes are documented at https://github.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>configFile</b></td>
+        <td>string</td>
+        <td>
+          Location of Nginx configuration file. Needed only if different from default "/etx/nginx/nginx.conf"<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          Env defines Nginx specific env vars.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image is a container image with Nginx SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.attrs[index]
+<sup><sup>[↩ Parent](#instrumentationspecnginx)</sup></sup>
+
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxattrsindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.attrs[index].valueFrom
+<sup><sup>[↩ Parent](#instrumentationspecnginxattrsindex)</sup></sup>
+
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnginxattrsindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxattrsindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxattrsindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxattrsindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.attrs[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecnginxattrsindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.attrs[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#instrumentationspecnginxattrsindexvaluefrom)</sup></sup>
+
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.attrs[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#instrumentationspecnginxattrsindexvaluefrom)</sup></sup>
+
+
+
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.attrs[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecnginxattrsindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.env[index]
+<sup><sup>[↩ Parent](#instrumentationspecnginx)</sup></sup>
+
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxenvindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.env[index].valueFrom
+<sup><sup>[↩ Parent](#instrumentationspecnginxenvindex)</sup></sup>
+
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnginxenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxenvindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.env[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecnginxenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.env[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#instrumentationspecnginxenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.env[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#instrumentationspecnginxenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.env[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#instrumentationspecnginxenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecnginx)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnginxresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecnginxresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.nodejs
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -1561,7 +2810,7 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         <td><b><a href="#instrumentationspecnodejsenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines nodejs specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
+          Env defines nodejs specific env vars.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1569,6 +2818,20 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with NodeJS SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1602,7 +2865,7 @@ EnvVar represents an environment variable present in a Container.
         <td><b>value</b></td>
         <td>string</td>
         <td>
-          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1643,14 +2906,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td><b><a href="#instrumentationspecnodejsenvindexvaluefromfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#instrumentationspecnodejsenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1710,7 +2973,7 @@ Selects a key of a ConfigMap.
 
 
 
-Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 <table>
     <thead>
@@ -1744,7 +3007,7 @@ Selects a field of the pod: supports metadata.name, metadata.namespace, `metadat
 
 
 
-Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
 
 <table>
     <thead>
@@ -1821,6 +3084,75 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.nodejs.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecnodejs)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnodejsresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecnodejsresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.python
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -1841,7 +3173,7 @@ Python defines configuration for python auto-instrumentation.
         <td><b><a href="#instrumentationspecpythonenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines python specific env vars. There are four layers for env vars' definitions and the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`. If the former var had been defined, then the other vars would be ignored.<br/>
+          Env defines python specific env vars.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1849,6 +3181,20 @@ Python defines configuration for python auto-instrumentation.
         <td>string</td>
         <td>
           Image is a container image with Python SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonresourcerequirements">resourceRequirements</a></b></td>
+        <td>object</td>
+        <td>
+          Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeLimitSize</b></td>
+        <td>int or string</td>
+        <td>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1882,7 +3228,7 @@ EnvVar represents an environment variable present in a Container.
         <td><b>value</b></td>
         <td>string</td>
         <td>
-          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1923,14 +3269,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td><b><a href="#instrumentationspecpythonenvindexvaluefromfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#instrumentationspecpythonenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1990,7 +3336,7 @@ Selects a key of a ConfigMap.
 
 
 
-Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 <table>
     <thead>
@@ -2024,7 +3370,7 @@ Selects a field of the pod: supports metadata.name, metadata.namespace, `metadat
 
 
 
-Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
 
 <table>
     <thead>
@@ -2101,6 +3447,75 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+### Instrumentation.spec.python.resourceRequirements
+<sup><sup>[↩ Parent](#instrumentationspecpython)</sup></sup>
+
+
+
+Resources describes the compute resource requirements.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecpythonresourcerequirementsclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.resourceRequirements.claims[index]
+<sup><sup>[↩ Parent](#instrumentationspecpythonresourcerequirements)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.resource
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -2155,7 +3570,7 @@ Sampler defines sampling configuration.
         <td><b>argument</b></td>
         <td>string</td>
         <td>
-          Argument defines sampler argument. The value depends on the sampler type. For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25. The value will be set in the OTEL_TRACES_SAMPLER_ARG env var.<br/>
+          Argument defines sampler argument. The value depends on the sampler type. For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7874,6 +9289,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindex">additionalContainers</a></b></td>
+        <td>[]object</td>
+        <td>
+          AdditionalContainers allows injecting additional containers into the Collector's pod definition.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecaffinity">affinity</a></b></td>
         <td>object</td>
         <td>
@@ -7899,6 +9321,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>string</td>
         <td>
           Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecconfigmapsindex">configmaps</a></b></td>
+        <td>[]object</td>
+        <td>
+          ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector object, which shall be mounted into the Collector Pods.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7944,10 +9373,34 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindex">initContainers</a></b></td>
+        <td>[]object</td>
+        <td>
+          InitContainers allows injecting initContainers to the Collector's pod definition.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspeclifecycle">lifecycle</a></b></td>
         <td>object</td>
         <td>
           Actions that the management system should take in response to container lifecycle events. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspeclivenessprobe">livenessProbe</a></b></td>
+        <td>object</td>
+        <td>
+          Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>managementState</b></td>
+        <td>enum</td>
+        <td>
+          ManagementState defines if the CR should be managed by the operator or not. Default is managed.<br/>
+          <br/>
+            <i>Enum</i>: managed, unmanaged<br/>
+            <i>Default</i>: managed<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7963,7 +9416,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1 Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1 Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -7985,6 +9438,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecobservability">observability</a></b></td>
+        <td>object</td>
+        <td>
+          ObservabilitySpec defines how telemetry data gets handled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>podAnnotations</b></td>
         <td>map[string]string</td>
         <td>
@@ -7995,14 +9455,14 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecpodsecuritycontext">podSecurityContext</a></b></td>
         <td>object</td>
         <td>
-          PodSecurityContext holds pod-level security attributes and common container settings. Some fields are also present in container.securityContext.  Field values of container.securityContext take precedence over field values of PodSecurityContext.<br/>
+          PodSecurityContext configures the pod security context for the opentelemetry-collector pod, when running as a deployment, daemonset, or statefulset.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecportsindex">ports</a></b></td>
         <td>[]object</td>
         <td>
-          Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator will attempt to infer the required ports by parsing the .Spec.Config property but this property can be used to open additional ports that can't be inferred by the operator, like for custom receivers.<br/>
+          Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator will attempt to infer the required ports by parsing the .Spec.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8032,7 +9492,7 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecsecuritycontext">securityContext</a></b></td>
         <td>object</td>
         <td>
-          SecurityContext will be set as the container security context.<br/>
+          SecurityContext configures the container security context for the opentelemetry-collector container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8066,6 +9526,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectopologyspreadconstraintsindex">topologySpreadConstraints</a></b></td>
+        <td>[]object</td>
+        <td>
+          TopologySpreadConstraints embedded kubernetes pod configuration option, controls how pods are spread across your cluster among failure-domains such as regions, zones, nodes, and other user-defined top<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>upgradeStrategy</b></td>
         <td>enum</td>
         <td>
@@ -8093,6 +9560,2355 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>[]object</td>
         <td>
           Volumes represents which volumes to use in the underlying collector deployment(s).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+A single application container that you want to run within a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the container specified as a DNS_LABEL. Each container in a pod must have a unique name (DNS_LABEL). Cannot be updated.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>args</b></td>
+        <td>[]string</td>
+        <td>
+          Arguments to the entrypoint. The container image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Entrypoint array. Not executed within a shell. The container image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          List of environment variables to set in the container. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexenvfromindex">envFrom</a></b></td>
+        <td>[]object</td>
+        <td>
+          List of sources to populate environment variables in the container. The keys defined within a source must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Container image name. More info: https://kubernetes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>imagePullPolicy</b></td>
+        <td>string</td>
+        <td>
+          Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated. More info: https://kubernetes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecycle">lifecycle</a></b></td>
+        <td>object</td>
+        <td>
+          Actions that the management system should take in response to container lifecycle events. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlivenessprobe">livenessProbe</a></b></td>
+        <td>object</td>
+        <td>
+          Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexportsindex">ports</a></b></td>
+        <td>[]object</td>
+        <td>
+          List of ports to expose from the container. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default "0.0.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexreadinessprobe">readinessProbe</a></b></td>
+        <td>object</td>
+        <td>
+          Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexresizepolicyindex">resizePolicy</a></b></td>
+        <td>[]object</td>
+        <td>
+          Resources resize policy for the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          RestartPolicy defines the restart behavior of individual containers in a pod. This field may only be set for init containers, and the only allowed value is "Always".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontext">securityContext</a></b></td>
+        <td>object</td>
+        <td>
+          SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexstartupprobe">startupProbe</a></b></td>
+        <td>object</td>
+        <td>
+          StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stdin</b></td>
+        <td>boolean</td>
+        <td>
+          Whether this container should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the container will always result in EOF. Default is false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stdinOnce</b></td>
+        <td>boolean</td>
+        <td>
+          Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationMessagePath</b></td>
+        <td>string</td>
+        <td>
+          Optional: Path at which the file to which the container's termination message will be written is mounted into the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationMessagePolicy</b></td>
+        <td>string</td>
+        <td>
+          Indicate how the termination message should be populated. File will use the contents of terminationMessagePath to populate the container status message on both success and failure.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tty</b></td>
+        <td>boolean</td>
+        <td>
+          Whether this container should allocate a TTY for itself, also requires 'stdin' to be true. Default is false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexvolumedevicesindex">volumeDevices</a></b></td>
+        <td>[]object</td>
+        <td>
+          volumeDevices is the list of block devices to be used by the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexvolumemountsindex">volumeMounts</a></b></td>
+        <td>[]object</td>
+        <td>
+          Pod volumes to mount into the container's filesystem. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>workingDir</b></td>
+        <td>string</td>
+        <td>
+          Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].env[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexenvindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].env[index].valueFrom
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexenvindex)</sup></sup>
+
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexenvindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].env[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].env[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].env[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].env[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].envFrom[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+EnvFromSource represents the source of a set of ConfigMaps
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexenvfromindexconfigmapref">configMapRef</a></b></td>
+        <td>object</td>
+        <td>
+          The ConfigMap to select from<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>prefix</b></td>
+        <td>string</td>
+        <td>
+          An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexenvfromindexsecretref">secretRef</a></b></td>
+        <td>object</td>
+        <td>
+          The Secret to select from<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].envFrom[index].configMapRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexenvfromindex)</sup></sup>
+
+
+
+The ConfigMap to select from
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].envFrom[index].secretRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexenvfromindex)</sup></sup>
+
+
+
+The Secret to select from
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+Actions that the management system should take in response to container lifecycle events. Cannot be updated.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecyclepoststart">postStart</a></b></td>
+        <td>object</td>
+        <td>
+          PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecycleprestop">preStop</a></b></td>
+        <td>object</td>
+        <td>
+          PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.postStart
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecycle)</sup></sup>
+
+
+
+PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecyclepoststartexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecyclepoststarthttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecyclepoststarttcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.postStart.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecyclepoststart)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.postStart.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecyclepoststart)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecyclepoststarthttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.postStart.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecyclepoststarthttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.postStart.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecyclepoststart)</sup></sup>
+
+
+
+Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.preStop
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecycle)</sup></sup>
+
+
+
+PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecycleprestopexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecycleprestophttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecycleprestoptcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.preStop.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecycleprestop)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.preStop.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecycleprestop)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlifecycleprestophttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.preStop.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecycleprestophttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].lifecycle.preStop.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlifecycleprestop)</sup></sup>
+
+
+
+Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].livenessProbe
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlivenessprobeexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlivenessprobegrpc">grpc</a></b></td>
+        <td>object</td>
+        <td>
+          GRPC specifies an action involving a GRPC port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlivenessprobehttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlivenessprobetcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          TCPSocket specifies an action involving a TCP port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].livenessProbe.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlivenessprobe)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].livenessProbe.grpc
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlivenessprobe)</sup></sup>
+
+
+
+GRPC specifies an action involving a GRPC port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port number of the gRPC service. Number must be in the range 1 to 65535.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>service</b></td>
+        <td>string</td>
+        <td>
+          Service is the name of the service to place in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].livenessProbe.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlivenessprobe)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexlivenessprobehttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].livenessProbe.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlivenessprobehttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].livenessProbe.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexlivenessprobe)</sup></sup>
+
+
+
+TCPSocket specifies an action involving a TCP port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].ports[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+ContainerPort represents a network port in a single container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>containerPort</b></td>
+        <td>integer</td>
+        <td>
+          Number of port to expose on the pod's IP address. This must be a valid port number, 0 < x < 65536.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>hostIP</b></td>
+        <td>string</td>
+        <td>
+          What host IP to bind the external port to.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostPort</b></td>
+        <td>integer</td>
+        <td>
+          Number of port to expose on the host. If specified, this must be a valid port number, 0 < x < 65536. If HostNetwork is specified, this must match ContainerPort. Most containers do not need this.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          If specified, this must be an IANA_SVC_NAME and unique within the pod. Each named port in a pod must have a unique name. Name for the port that can be referred to by services.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol for port. Must be UDP, TCP, or SCTP. Defaults to "TCP".<br/>
+          <br/>
+            <i>Default</i>: TCP<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].readinessProbe
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexreadinessprobeexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexreadinessprobegrpc">grpc</a></b></td>
+        <td>object</td>
+        <td>
+          GRPC specifies an action involving a GRPC port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexreadinessprobehttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexreadinessprobetcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          TCPSocket specifies an action involving a TCP port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].readinessProbe.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexreadinessprobe)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].readinessProbe.grpc
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexreadinessprobe)</sup></sup>
+
+
+
+GRPC specifies an action involving a GRPC port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port number of the gRPC service. Number must be in the range 1 to 65535.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>service</b></td>
+        <td>string</td>
+        <td>
+          Service is the name of the service to place in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].readinessProbe.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexreadinessprobe)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexreadinessprobehttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].readinessProbe.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexreadinessprobehttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].readinessProbe.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexreadinessprobe)</sup></sup>
+
+
+
+TCPSocket specifies an action involving a TCP port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].resizePolicy[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+ContainerResizePolicy represents resource resize policy for the container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resourceName</b></td>
+        <td>string</td>
+        <td>
+          Name of the resource to which this resource resize policy applies. Supported values: cpu, memory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          Restart policy to apply when specified resource is resized. If not specified, it defaults to NotRequired.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].resources
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].resources.claims[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].securityContext
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>allowPrivilegeEscalation</b></td>
+        <td>boolean</td>
+        <td>
+          AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontextcapabilities">capabilities</a></b></td>
+        <td>object</td>
+        <td>
+          The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime. Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privileged</b></td>
+        <td>boolean</td>
+        <td>
+          Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host. Defaults to false. Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>procMount</b></td>
+        <td>string</td>
+        <td>
+          procMount denotes the type of proc mount to use for the containers. The default is DefaultProcMount which uses the container runtime defaults for readonly paths and masked paths.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>readOnlyRootFilesystem</b></td>
+        <td>boolean</td>
+        <td>
+          Whether this container has a read-only root filesystem. Default is false. Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsGroup</b></td>
+        <td>integer</td>
+        <td>
+          The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in PodSecurityContext.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsNonRoot</b></td>
+        <td>boolean</td>
+        <td>
+          Indicates that the container must run as a non-root user.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsUser</b></td>
+        <td>integer</td>
+        <td>
+          The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in PodSecurityContext.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontextselinuxoptions">seLinuxOptions</a></b></td>
+        <td>object</td>
+        <td>
+          The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontextseccompprofile">seccompProfile</a></b></td>
+        <td>object</td>
+        <td>
+          The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontextwindowsoptions">windowsOptions</a></b></td>
+        <td>object</td>
+        <td>
+          The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].securityContext.capabilities
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexsecuritycontext)</sup></sup>
+
+
+
+The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime. Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>add</b></td>
+        <td>[]string</td>
+        <td>
+          Added capabilities<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>drop</b></td>
+        <td>[]string</td>
+        <td>
+          Removed capabilities<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].securityContext.seLinuxOptions
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexsecuritycontext)</sup></sup>
+
+
+
+The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>level</b></td>
+        <td>string</td>
+        <td>
+          Level is SELinux level label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>role</b></td>
+        <td>string</td>
+        <td>
+          Role is a SELinux role label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type is a SELinux type label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>string</td>
+        <td>
+          User is a SELinux user label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].securityContext.seccompProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexsecuritycontext)</sup></sup>
+
+
+
+The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of seccomp profile will be applied. Valid options are: 
+ Localhost - a profile defined in a file on the node should be used.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].securityContext.windowsOptions
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexsecuritycontext)</sup></sup>
+
+
+
+The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>gmsaCredentialSpec</b></td>
+        <td>string</td>
+        <td>
+          GMSACredentialSpec is where the GMSA admission webhook (https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the GMSA credential spec named by the GMSACredentialSpecName field.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>gmsaCredentialSpecName</b></td>
+        <td>string</td>
+        <td>
+          GMSACredentialSpecName is the name of the GMSA credential spec to use.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostProcess</b></td>
+        <td>boolean</td>
+        <td>
+          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsUserName</b></td>
+        <td>string</td>
+        <td>
+          The UserName in Windows to run the entrypoint of the container process. Defaults to the user specified in image metadata if unspecified. May also be set in PodSecurityContext.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].startupProbe
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexstartupprobeexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexstartupprobegrpc">grpc</a></b></td>
+        <td>object</td>
+        <td>
+          GRPC specifies an action involving a GRPC port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexstartupprobehttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexstartupprobetcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          TCPSocket specifies an action involving a TCP port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].startupProbe.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexstartupprobe)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].startupProbe.grpc
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexstartupprobe)</sup></sup>
+
+
+
+GRPC specifies an action involving a GRPC port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port number of the gRPC service. Number must be in the range 1 to 65535.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>service</b></td>
+        <td>string</td>
+        <td>
+          Service is the name of the service to place in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].startupProbe.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexstartupprobe)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexstartupprobehttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].startupProbe.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexstartupprobehttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].startupProbe.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexstartupprobe)</sup></sup>
+
+
+
+TCPSocket specifies an action involving a TCP port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].volumeDevices[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+volumeDevice describes a mapping of a raw block device within a container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>devicePath</b></td>
+        <td>string</td>
+        <td>
+          devicePath is the path inside of the container that the device will be mapped to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name must match the name of a persistentVolumeClaim in the pod<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].volumeMounts[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindex)</sup></sup>
+
+
+
+VolumeMount describes a mounting of a Volume within a container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>mountPath</b></td>
+        <td>string</td>
+        <td>
+          Path within the container at which the volume should be mounted.  Must not contain ':'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          This must match the Name of a Volume.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>mountPropagation</b></td>
+        <td>string</td>
+        <td>
+          mountPropagation determines how mounts are propagated from the host to container and the other way around. When not set, MountPropagationNone is used. This field is beta in 1.10.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>readOnly</b></td>
+        <td>boolean</td>
+        <td>
+          Mounted read-only if true, read-write otherwise (false or unspecified). Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>subPath</b></td>
+        <td>string</td>
+        <td>
+          Path within the volume from which the container's volume should be mounted. Defaults to "" (volume's root).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>subPathExpr</b></td>
+        <td>string</td>
+        <td>
+          Expanded path within the volume from which the container's volume should be mounted.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8160,14 +11976,14 @@ Describes node affinity scheduling rules for the pod.
         <td><b><a href="#opentelemetrycollectorspecaffinitynodeaffinitypreferredduringschedulingignoredduringexecutionindex">preferredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding "weight" to the sum if the node matches the corresponding matchExpressions; the node(s) with the highest sum are the most preferred.<br/>
+          The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecaffinitynodeaffinityrequiredduringschedulingignoredduringexecution">requiredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>object</td>
         <td>
-          If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to an update), the system may or may not try to eventually evict the pod from its node.<br/>
+          If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8278,7 +12094,7 @@ A node selector requirement is a selector that contains values, a key, and an op
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.<br/>
+          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8319,7 +12135,7 @@ A node selector requirement is a selector that contains values, a key, and an op
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.<br/>
+          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8331,7 +12147,7 @@ A node selector requirement is a selector that contains values, a key, and an op
 
 
 
-If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to an update), the system may or may not try to eventually evict the pod from its node.
+If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node.
 
 <table>
     <thead>
@@ -8421,7 +12237,7 @@ A node selector requirement is a selector that contains values, a key, and an op
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.<br/>
+          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8462,7 +12278,7 @@ A node selector requirement is a selector that contains values, a key, and an op
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.<br/>
+          An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8489,14 +12305,14 @@ Describes pod affinity scheduling rules (e.g. co-locate this pod in the same nod
         <td><b><a href="#opentelemetrycollectorspecaffinitypodaffinitypreferredduringschedulingignoredduringexecutionindex">preferredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.<br/>
+          The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecaffinitypodaffinityrequiredduringschedulingignoredduringexecutionindex">requiredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
+          If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8559,7 +12375,7 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td><b>topologyKey</b></td>
         <td>string</td>
         <td>
-          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.<br/>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose <br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -8573,14 +12389,14 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td><b><a href="#opentelemetrycollectorspecaffinitypodaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.<br/>
+          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>namespaces</b></td>
         <td>[]string</td>
         <td>
-          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8614,7 +12430,7 @@ A label query over a set of resources, in this case pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8655,7 +12471,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8667,7 +12483,7 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.
+A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field.
 
 <table>
     <thead>
@@ -8689,7 +12505,7 @@ A label query over the set of namespaces that the term applies to. The term is a
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8730,7 +12546,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8742,7 +12558,7 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key <topologyKey> matches that of any node on which a pod of the set of pods is running
+Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-locate
 
 <table>
     <thead>
@@ -8757,7 +12573,7 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
         <td><b>topologyKey</b></td>
         <td>string</td>
         <td>
-          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.<br/>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose <br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -8771,14 +12587,14 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
         <td><b><a href="#opentelemetrycollectorspecaffinitypodaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.<br/>
+          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>namespaces</b></td>
         <td>[]string</td>
         <td>
-          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8812,7 +12628,7 @@ A label query over a set of resources, in this case pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8853,7 +12669,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8865,7 +12681,7 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.
+A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field.
 
 <table>
     <thead>
@@ -8887,7 +12703,7 @@ A label query over the set of namespaces that the term applies to. The term is a
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8928,7 +12744,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8955,14 +12771,14 @@ Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the
         <td><b><a href="#opentelemetrycollectorspecaffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindex">preferredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.<br/>
+          The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecaffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindex">requiredDuringSchedulingIgnoredDuringExecution</a></b></td>
         <td>[]object</td>
         <td>
-          If the anti-affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the anti-affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
+          If the anti-affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9025,7 +12841,7 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td><b>topologyKey</b></td>
         <td>string</td>
         <td>
-          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.<br/>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose <br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -9039,14 +12855,14 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td><b><a href="#opentelemetrycollectorspecaffinitypodantiaffinitypreferredduringschedulingignoredduringexecutionindexpodaffinitytermnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.<br/>
+          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>namespaces</b></td>
         <td>[]string</td>
         <td>
-          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9080,7 +12896,7 @@ A label query over a set of resources, in this case pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9121,7 +12937,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9133,7 +12949,7 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.
+A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field.
 
 <table>
     <thead>
@@ -9155,7 +12971,7 @@ A label query over the set of namespaces that the term applies to. The term is a
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9196,7 +13012,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9208,7 +13024,7 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key <topologyKey> matches that of any node on which a pod of the set of pods is running
+Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-locate
 
 <table>
     <thead>
@@ -9223,7 +13039,7 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
         <td><b>topologyKey</b></td>
         <td>string</td>
         <td>
-          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.<br/>
+          This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose <br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -9237,14 +13053,14 @@ Defines a set of pods (namely those matching the labelSelector relative to the g
         <td><b><a href="#opentelemetrycollectorspecaffinitypodantiaffinityrequiredduringschedulingignoredduringexecutionindexnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.<br/>
+          A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>namespaces</b></td>
         <td>[]string</td>
         <td>
-          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
+          namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9278,7 +13094,7 @@ A label query over a set of resources, in this case pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9319,7 +13135,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9331,7 +13147,7 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field. null selector and null or empty namespaces list means "this pod's namespace". An empty selector ({}) matches all namespaces.
+A label query over the set of namespaces that the term applies to. The term is applied to the union of the namespaces selected by this field and the ones listed in the namespaces field.
 
 <table>
     <thead>
@@ -9353,7 +13169,7 @@ A label query over the set of namespaces that the term applies to. The term is a
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9394,7 +13210,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9431,6 +13247,13 @@ Autoscaler specifies the pod autoscaling configuration to use for the OpenTeleme
           MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindex">metrics</a></b></td>
+        <td>[]object</td>
+        <td>
+          Metrics is meant to provide a customizable way to configure HPA metrics. currently the only supported custom metrics is type=Pod.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9484,14 +13307,14 @@ HorizontalPodAutoscalerBehavior configures the scaling behavior of the target in
         <td><b><a href="#opentelemetrycollectorspecautoscalerbehaviorscaledown">scaleDown</a></b></td>
         <td>object</td>
         <td>
-          scaleDown is scaling policy for scaling Down. If not set, the default value is to allow to scale down to minReplicas pods, with a 300 second stabilization window (i.e., the highest recommendation for the last 300sec is used).<br/>
+          scaleDown is scaling policy for scaling Down. If not set, the default value is to allow to scale down to minReplicas pods, with a 300 second stabilization window (i.e.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecautoscalerbehaviorscaleup">scaleUp</a></b></td>
         <td>object</td>
         <td>
-          scaleUp is scaling policy for scaling Up. If not set, the default value is the higher of: * increase no more than 4 pods per 60 seconds * double the number of pods per 60 seconds No stabilization is used.<br/>
+          scaleUp is scaling policy for scaling Up.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9503,7 +13326,7 @@ HorizontalPodAutoscalerBehavior configures the scaling behavior of the target in
 
 
 
-scaleDown is scaling policy for scaling Down. If not set, the default value is to allow to scale down to minReplicas pods, with a 300 second stabilization window (i.e., the highest recommendation for the last 300sec is used).
+scaleDown is scaling policy for scaling Down. If not set, the default value is to allow to scale down to minReplicas pods, with a 300 second stabilization window (i.e.
 
 <table>
     <thead>
@@ -9532,7 +13355,7 @@ scaleDown is scaling policy for scaling Down. If not set, the default value is t
         <td><b>stabilizationWindowSeconds</b></td>
         <td>integer</td>
         <td>
-          StabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down. StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour). If not set, use the default values: - For scale up: 0 (i.e. no stabilization is done). - For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
+          stabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9561,7 +13384,7 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
         <td><b>periodSeconds</b></td>
         <td>integer</td>
         <td>
-          PeriodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
+          periodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9570,14 +13393,14 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          Type is used to specify the scaling policy.<br/>
+          type is used to specify the scaling policy.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>value</b></td>
         <td>integer</td>
         <td>
-          Value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
+          value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9591,7 +13414,7 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
 
 
 
-scaleUp is scaling policy for scaling Up. If not set, the default value is the higher of: * increase no more than 4 pods per 60 seconds * double the number of pods per 60 seconds No stabilization is used.
+scaleUp is scaling policy for scaling Up.
 
 <table>
     <thead>
@@ -9620,7 +13443,7 @@ scaleUp is scaling policy for scaling Up. If not set, the default value is the h
         <td><b>stabilizationWindowSeconds</b></td>
         <td>integer</td>
         <td>
-          StabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down. StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour). If not set, use the default values: - For scale up: 0 (i.e. no stabilization is done). - For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
+          stabilizationWindowSeconds is the number of seconds for which past recommendations should be considered while scaling up or scaling down.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9649,7 +13472,7 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
         <td><b>periodSeconds</b></td>
         <td>integer</td>
         <td>
-          PeriodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
+          periodSeconds specifies the window of time for which the policy should hold true. PeriodSeconds must be greater than zero and less than or equal to 1800 (30 min).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9658,16 +13481,277 @@ HPAScalingPolicy is a single policy which must hold true for a specified past in
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          Type is used to specify the scaling policy.<br/>
+          type is used to specify the scaling policy.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>value</b></td>
         <td>integer</td>
         <td>
-          Value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
+          value contains the amount of change which is permitted by the policy. It must be greater than zero<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscaler)</sup></sup>
+
+
+
+MetricSpec defines a subset of metrics to be defined for the HPA's metric array more metric type can be supported as needed. See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          MetricSourceType indicates the type of metric.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpods">pods</a></b></td>
+        <td>object</td>
+        <td>
+          PodsMetricSource indicates how to scale on a metric describing each pod in the current scale target (for example, transactions-processed-per-second).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindex)</sup></sup>
+
+
+
+PodsMetricSource indicates how to scale on a metric describing each pod in the current scale target (for example, transactions-processed-per-second).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpodsmetric">metric</a></b></td>
+        <td>object</td>
+        <td>
+          metric identifies the target metric by name and selector<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpodstarget">target</a></b></td>
+        <td>object</td>
+        <td>
+          target specifies the target value for the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.metric
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpods)</sup></sup>
+
+
+
+metric identifies the target metric by name and selector
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name is the name of the given metric<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpodsmetricselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the metrics server for more specific metrics scopi<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.metric.selector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpodsmetric)</sup></sup>
+
+
+
+selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the metrics server for more specific metrics scopi
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecautoscalermetricsindexpodsmetricselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.metric.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpodsmetricselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.autoscaler.metrics[index].pods.target
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecautoscalermetricsindexpods)</sup></sup>
+
+
+
+target specifies the target value for the given metric
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type represents whether the metric type is Utilization, Value, or AverageValue<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>averageUtilization</b></td>
+        <td>integer</td>
+        <td>
+          averageUtilization is the target value of the average of the resource metric across all relevant pods, represented as a percentage of the requested value of the resource for the pods.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>averageValue</b></td>
+        <td>int or string</td>
+        <td>
+          averageValue is the target value of the average of the metric across all relevant pods (as a quantity)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>int or string</td>
+        <td>
+          value is the target value of the metric (as a quantity).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.configmaps[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>mountpath</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Configmap defines name and path where the configMaps should be mounted.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -9701,7 +13785,7 @@ EnvVar represents an environment variable present in a Container.
         <td><b>value</b></td>
         <td>string</td>
         <td>
-          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".<br/>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9742,14 +13826,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td><b><a href="#opentelemetrycollectorspecenvindexvaluefromfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
         <td>object</td>
         <td>
-          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9809,7 +13893,7 @@ Selects a key of a ConfigMap.
 
 
 
-Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 <table>
     <thead>
@@ -9843,7 +13927,7 @@ Selects a field of the pod: supports metadata.name, metadata.namespace, `metadat
 
 
 
-Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
 
 <table>
     <thead>
@@ -10074,6 +14158,15 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ruleType</b></td>
+        <td>enum</td>
+        <td>
+          RuleType defines how Ingress exposes collector receivers. IngressRuleTypePath ("path") exposes each receiver port on a unique path on single domain defined in Hostname.<br/>
+          <br/>
+            <i>Enum</i>: path, subdomain<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingresstlsindex">tls</a></b></td>
         <td>[]object</td>
         <td>
@@ -10084,7 +14177,7 @@ Ingress is used to specify how OpenTelemetry Collector is exposed. This function
         <td><b>type</b></td>
         <td>enum</td>
         <td>
-          Type default value is: "" Supported types are: ingress<br/>
+          Type default value is: "" Supported types are: ingress, route<br/>
           <br/>
             <i>Enum</i>: ingress, route<br/>
         </td>
@@ -10127,7 +14220,7 @@ Route is an OpenShift specific section that is only considered when type "route"
 
 
 
-IngressTLS describes the transport layer security associated with an Ingress.
+IngressTLS describes the transport layer security associated with an ingress.
 
 <table>
     <thead>
@@ -10142,14 +14235,2363 @@ IngressTLS describes the transport layer security associated with an Ingress.
         <td><b>hosts</b></td>
         <td>[]string</td>
         <td>
-          Hosts are a list of hosts included in the TLS certificate. The values in this list must match the name/s used in the tlsSecret. Defaults to the wildcard host setting for the loadbalancer controller fulfilling this Ingress, if left unspecified.<br/>
+          hosts is a list of hosts included in the TLS certificate. The values in this list must match the name/s used in the tlsSecret.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>secretName</b></td>
         <td>string</td>
         <td>
-          SecretName is the name of the secret used to terminate TLS traffic on port 443. Field is left optional to allow TLS routing based on SNI hostname alone. If the SNI host in a listener conflicts with the "Host" header field used by an IngressRule, the SNI host is used for termination and value of the Host header is used for routing.<br/>
+          secretName is the name of the secret used to terminate TLS traffic on port 443. Field is left optional to allow TLS routing based on SNI hostname alone.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+A single application container that you want to run within a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the container specified as a DNS_LABEL. Each container in a pod must have a unique name (DNS_LABEL). Cannot be updated.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>args</b></td>
+        <td>[]string</td>
+        <td>
+          Arguments to the entrypoint. The container image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Entrypoint array. Not executed within a shell. The container image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          List of environment variables to set in the container. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexenvfromindex">envFrom</a></b></td>
+        <td>[]object</td>
+        <td>
+          List of sources to populate environment variables in the container. The keys defined within a source must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Container image name. More info: https://kubernetes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>imagePullPolicy</b></td>
+        <td>string</td>
+        <td>
+          Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated. More info: https://kubernetes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecycle">lifecycle</a></b></td>
+        <td>object</td>
+        <td>
+          Actions that the management system should take in response to container lifecycle events. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlivenessprobe">livenessProbe</a></b></td>
+        <td>object</td>
+        <td>
+          Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexportsindex">ports</a></b></td>
+        <td>[]object</td>
+        <td>
+          List of ports to expose from the container. Not specifying a port here DOES NOT prevent that port from being exposed. Any port which is listening on the default "0.0.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexreadinessprobe">readinessProbe</a></b></td>
+        <td>object</td>
+        <td>
+          Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexresizepolicyindex">resizePolicy</a></b></td>
+        <td>[]object</td>
+        <td>
+          Resources resize policy for the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          RestartPolicy defines the restart behavior of individual containers in a pod. This field may only be set for init containers, and the only allowed value is "Always".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontext">securityContext</a></b></td>
+        <td>object</td>
+        <td>
+          SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexstartupprobe">startupProbe</a></b></td>
+        <td>object</td>
+        <td>
+          StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stdin</b></td>
+        <td>boolean</td>
+        <td>
+          Whether this container should allocate a buffer for stdin in the container runtime. If this is not set, reads from stdin in the container will always result in EOF. Default is false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>stdinOnce</b></td>
+        <td>boolean</td>
+        <td>
+          Whether the container runtime should close the stdin channel after it has been opened by a single attach. When stdin is true the stdin stream will remain open across multiple attach sessions.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationMessagePath</b></td>
+        <td>string</td>
+        <td>
+          Optional: Path at which the file to which the container's termination message will be written is mounted into the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationMessagePolicy</b></td>
+        <td>string</td>
+        <td>
+          Indicate how the termination message should be populated. File will use the contents of terminationMessagePath to populate the container status message on both success and failure.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tty</b></td>
+        <td>boolean</td>
+        <td>
+          Whether this container should allocate a TTY for itself, also requires 'stdin' to be true. Default is false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexvolumedevicesindex">volumeDevices</a></b></td>
+        <td>[]object</td>
+        <td>
+          volumeDevices is the list of block devices to be used by the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexvolumemountsindex">volumeMounts</a></b></td>
+        <td>[]object</td>
+        <td>
+          Pod volumes to mount into the container's filesystem. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>workingDir</b></td>
+        <td>string</td>
+        <td>
+          Container's working directory. If not specified, the container runtime's default will be used, which might be configured in the container image. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].env[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexenvindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].env[index].valueFrom
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexenvindex)</sup></sup>
+
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexenvindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].env[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].env[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].env[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].env[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].envFrom[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+EnvFromSource represents the source of a set of ConfigMaps
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexenvfromindexconfigmapref">configMapRef</a></b></td>
+        <td>object</td>
+        <td>
+          The ConfigMap to select from<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>prefix</b></td>
+        <td>string</td>
+        <td>
+          An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexenvfromindexsecretref">secretRef</a></b></td>
+        <td>object</td>
+        <td>
+          The Secret to select from<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].envFrom[index].configMapRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexenvfromindex)</sup></sup>
+
+
+
+The ConfigMap to select from
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].envFrom[index].secretRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexenvfromindex)</sup></sup>
+
+
+
+The Secret to select from
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+Actions that the management system should take in response to container lifecycle events. Cannot be updated.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecyclepoststart">postStart</a></b></td>
+        <td>object</td>
+        <td>
+          PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecycleprestop">preStop</a></b></td>
+        <td>object</td>
+        <td>
+          PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.postStart
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecycle)</sup></sup>
+
+
+
+PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecyclepoststartexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecyclepoststarthttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecyclepoststarttcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.postStart.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecyclepoststart)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.postStart.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecyclepoststart)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecyclepoststarthttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.postStart.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecyclepoststarthttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.postStart.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecyclepoststart)</sup></sup>
+
+
+
+Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.preStop
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecycle)</sup></sup>
+
+
+
+PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecycleprestopexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecycleprestophttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecycleprestoptcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.preStop.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecycleprestop)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.preStop.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecycleprestop)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlifecycleprestophttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.preStop.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecycleprestophttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].lifecycle.preStop.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlifecycleprestop)</sup></sup>
+
+
+
+Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].livenessProbe
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlivenessprobeexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlivenessprobegrpc">grpc</a></b></td>
+        <td>object</td>
+        <td>
+          GRPC specifies an action involving a GRPC port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlivenessprobehttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlivenessprobetcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          TCPSocket specifies an action involving a TCP port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].livenessProbe.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlivenessprobe)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].livenessProbe.grpc
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlivenessprobe)</sup></sup>
+
+
+
+GRPC specifies an action involving a GRPC port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port number of the gRPC service. Number must be in the range 1 to 65535.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>service</b></td>
+        <td>string</td>
+        <td>
+          Service is the name of the service to place in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].livenessProbe.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlivenessprobe)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexlivenessprobehttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].livenessProbe.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlivenessprobehttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].livenessProbe.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexlivenessprobe)</sup></sup>
+
+
+
+TCPSocket specifies an action involving a TCP port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].ports[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+ContainerPort represents a network port in a single container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>containerPort</b></td>
+        <td>integer</td>
+        <td>
+          Number of port to expose on the pod's IP address. This must be a valid port number, 0 < x < 65536.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>hostIP</b></td>
+        <td>string</td>
+        <td>
+          What host IP to bind the external port to.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostPort</b></td>
+        <td>integer</td>
+        <td>
+          Number of port to expose on the host. If specified, this must be a valid port number, 0 < x < 65536. If HostNetwork is specified, this must match ContainerPort. Most containers do not need this.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          If specified, this must be an IANA_SVC_NAME and unique within the pod. Each named port in a pod must have a unique name. Name for the port that can be referred to by services.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>string</td>
+        <td>
+          Protocol for port. Must be UDP, TCP, or SCTP. Defaults to "TCP".<br/>
+          <br/>
+            <i>Default</i>: TCP<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].readinessProbe
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexreadinessprobeexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexreadinessprobegrpc">grpc</a></b></td>
+        <td>object</td>
+        <td>
+          GRPC specifies an action involving a GRPC port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexreadinessprobehttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexreadinessprobetcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          TCPSocket specifies an action involving a TCP port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].readinessProbe.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexreadinessprobe)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].readinessProbe.grpc
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexreadinessprobe)</sup></sup>
+
+
+
+GRPC specifies an action involving a GRPC port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port number of the gRPC service. Number must be in the range 1 to 65535.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>service</b></td>
+        <td>string</td>
+        <td>
+          Service is the name of the service to place in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].readinessProbe.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexreadinessprobe)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexreadinessprobehttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].readinessProbe.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexreadinessprobehttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].readinessProbe.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexreadinessprobe)</sup></sup>
+
+
+
+TCPSocket specifies an action involving a TCP port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].resizePolicy[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+ContainerResizePolicy represents resource resize policy for the container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resourceName</b></td>
+        <td>string</td>
+        <td>
+          Name of the resource to which this resource resize policy applies. Supported values: cpu, memory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>restartPolicy</b></td>
+        <td>string</td>
+        <td>
+          Restart policy to apply when specified resource is resized. If not specified, it defaults to NotRequired.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].resources
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].resources.claims[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].securityContext
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+SecurityContext defines the security options the container should be run with. If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>allowPrivilegeEscalation</b></td>
+        <td>boolean</td>
+        <td>
+          AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontextcapabilities">capabilities</a></b></td>
+        <td>object</td>
+        <td>
+          The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime. Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privileged</b></td>
+        <td>boolean</td>
+        <td>
+          Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host. Defaults to false. Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>procMount</b></td>
+        <td>string</td>
+        <td>
+          procMount denotes the type of proc mount to use for the containers. The default is DefaultProcMount which uses the container runtime defaults for readonly paths and masked paths.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>readOnlyRootFilesystem</b></td>
+        <td>boolean</td>
+        <td>
+          Whether this container has a read-only root filesystem. Default is false. Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsGroup</b></td>
+        <td>integer</td>
+        <td>
+          The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in PodSecurityContext.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsNonRoot</b></td>
+        <td>boolean</td>
+        <td>
+          Indicates that the container must run as a non-root user.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsUser</b></td>
+        <td>integer</td>
+        <td>
+          The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in PodSecurityContext.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontextselinuxoptions">seLinuxOptions</a></b></td>
+        <td>object</td>
+        <td>
+          The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontextseccompprofile">seccompProfile</a></b></td>
+        <td>object</td>
+        <td>
+          The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontextwindowsoptions">windowsOptions</a></b></td>
+        <td>object</td>
+        <td>
+          The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].securityContext.capabilities
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexsecuritycontext)</sup></sup>
+
+
+
+The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime. Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>add</b></td>
+        <td>[]string</td>
+        <td>
+          Added capabilities<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>drop</b></td>
+        <td>[]string</td>
+        <td>
+          Removed capabilities<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].securityContext.seLinuxOptions
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexsecuritycontext)</sup></sup>
+
+
+
+The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>level</b></td>
+        <td>string</td>
+        <td>
+          Level is SELinux level label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>role</b></td>
+        <td>string</td>
+        <td>
+          Role is a SELinux role label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type is a SELinux type label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>user</b></td>
+        <td>string</td>
+        <td>
+          User is a SELinux user label that applies to the container.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].securityContext.seccompProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexsecuritycontext)</sup></sup>
+
+
+
+The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of seccomp profile will be applied. Valid options are: 
+ Localhost - a profile defined in a file on the node should be used.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].securityContext.windowsOptions
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexsecuritycontext)</sup></sup>
+
+
+
+The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>gmsaCredentialSpec</b></td>
+        <td>string</td>
+        <td>
+          GMSACredentialSpec is where the GMSA admission webhook (https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the GMSA credential spec named by the GMSACredentialSpecName field.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>gmsaCredentialSpecName</b></td>
+        <td>string</td>
+        <td>
+          GMSACredentialSpecName is the name of the GMSA credential spec to use.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostProcess</b></td>
+        <td>boolean</td>
+        <td>
+          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>runAsUserName</b></td>
+        <td>string</td>
+        <td>
+          The UserName in Windows to run the entrypoint of the container process. Defaults to the user specified in image metadata if unspecified. May also be set in PodSecurityContext.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].startupProbe
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+StartupProbe indicates that the Pod has successfully initialized. If specified, no other probes are executed until this completes successfully.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexstartupprobeexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies the action to take.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexstartupprobegrpc">grpc</a></b></td>
+        <td>object</td>
+        <td>
+          GRPC specifies an action involving a GRPC port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexstartupprobehttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies the http request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexstartupprobetcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          TCPSocket specifies an action involving a TCP port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].startupProbe.exec
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexstartupprobe)</sup></sup>
+
+
+
+Exec specifies the action to take.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].startupProbe.grpc
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexstartupprobe)</sup></sup>
+
+
+
+GRPC specifies an action involving a GRPC port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port number of the gRPC service. Number must be in the range 1 to 65535.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>service</b></td>
+        <td>string</td>
+        <td>
+          Service is the name of the service to place in the gRPC HealthCheckRequest (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].startupProbe.httpGet
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexstartupprobe)</sup></sup>
+
+
+
+HTTPGet specifies the http request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set "Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexstartupprobehttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host. Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].startupProbe.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexstartupprobehttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].startupProbe.tcpSocket
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexstartupprobe)</sup></sup>
+
+
+
+TCPSocket specifies an action involving a TCP port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].volumeDevices[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+volumeDevice describes a mapping of a raw block device within a container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>devicePath</b></td>
+        <td>string</td>
+        <td>
+          devicePath is the path inside of the container that the device will be mapped to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          name must match the name of a persistentVolumeClaim in the pod<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].volumeMounts[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindex)</sup></sup>
+
+
+
+VolumeMount describes a mounting of a Volume within a container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>mountPath</b></td>
+        <td>string</td>
+        <td>
+          Path within the container at which the volume should be mounted.  Must not contain ':'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          This must match the Name of a Volume.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>mountPropagation</b></td>
+        <td>string</td>
+        <td>
+          mountPropagation determines how mounts are propagated from the host to container and the other way around. When not set, MountPropagationNone is used. This field is beta in 1.10.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>readOnly</b></td>
+        <td>boolean</td>
+        <td>
+          Mounted read-only if true, read-write otherwise (false or unspecified). Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>subPath</b></td>
+        <td>string</td>
+        <td>
+          Path within the volume from which the container's volume should be mounted. Defaults to "" (volume's root).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>subPathExpr</b></td>
+        <td>string</td>
+        <td>
+          Expanded path within the volume from which the container's volume should be mounted.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10176,14 +16618,14 @@ Actions that the management system should take in response to container lifecycl
         <td><b><a href="#opentelemetrycollectorspeclifecyclepoststart">postStart</a></b></td>
         <td>object</td>
         <td>
-          PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy. Other management of the container blocks until the hook completes. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
+          PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspeclifecycleprestop">preStop</a></b></td>
         <td>object</td>
         <td>
-          PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc. The handler is not called if the container crashes or exits. The Pod's termination grace period countdown begins before the PreStop hook is executed. Regardless of the outcome of the handler, the container will eventually terminate within the Pod's termination grace period (unless delayed by finalizers). Other management of the container blocks until the hook completes or until the termination grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
+          PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10195,7 +16637,7 @@ Actions that the management system should take in response to container lifecycl
 
 
 
-PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy. Other management of the container blocks until the hook completes. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
+PostStart is called immediately after a container is created. If the handler fails, the container is terminated and restarted according to its restart policy.
 
 <table>
     <thead>
@@ -10224,7 +16666,7 @@ PostStart is called immediately after a container is created. If the handler fai
         <td><b><a href="#opentelemetrycollectorspeclifecyclepoststarttcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
-          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility. There are no validation of this field and lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10251,7 +16693,7 @@ Exec specifies the action to take.
         <td><b>command</b></td>
         <td>[]string</td>
         <td>
-          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem. The command is simply exec'd, it is not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use a shell, you need to explicitly call out to that shell. Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10333,7 +16775,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -10352,7 +16794,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
 
 
 
-Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility. There are no validation of this field and lifecycle hooks will fail in runtime when tcp handler is specified.
+Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.
 
 <table>
     <thead>
@@ -10386,7 +16828,7 @@ Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the ba
 
 
 
-PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc. The handler is not called if the container crashes or exits. The Pod's termination grace period countdown begins before the PreStop hook is executed. Regardless of the outcome of the handler, the container will eventually terminate within the Pod's termination grace period (unless delayed by finalizers). Other management of the container blocks until the hook completes or until the termination grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
+PreStop is called immediately before a container is terminated due to an API request or management event such as liveness/startup probe failure, preemption, resource contention, etc.
 
 <table>
     <thead>
@@ -10415,7 +16857,7 @@ PreStop is called immediately before a container is terminated due to an API req
         <td><b><a href="#opentelemetrycollectorspeclifecycleprestoptcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
-          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility. There are no validation of this field and lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+          Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10442,7 +16884,7 @@ Exec specifies the action to take.
         <td><b>command</b></td>
         <td>[]string</td>
         <td>
-          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem. The command is simply exec'd, it is not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use a shell, you need to explicitly call out to that shell. Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
+          Command is the command line to execute inside the container, the working directory for the command  is root ('/') in the container's filesystem.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10524,7 +16966,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The header field name<br/>
+          The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -10543,7 +16985,7 @@ HTTPHeader describes a custom header to be used in HTTP probes
 
 
 
-Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility. There are no validation of this field and lifecycle hooks will fail in runtime when tcp handler is specified.
+Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the backward compatibility.
 
 <table>
     <thead>
@@ -10572,12 +17014,140 @@ Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept for the ba
 </table>
 
 
+### OpenTelemetryCollector.spec.livenessProbe
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated. Defaults to 0 seconds. Minimum value is 0. More info: https://kubernetes.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.observability
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+ObservabilitySpec defines how telemetry data gets handled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecobservabilitymetrics">metrics</a></b></td>
+        <td>object</td>
+        <td>
+          Metrics defines the metrics configuration for operands.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.observability.metrics
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecobservability)</sup></sup>
+
+
+
+Metrics defines the metrics configuration for operands.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enableMetrics</b></td>
+        <td>boolean</td>
+        <td>
+          EnableMetrics specifies if ServiceMonitor should be created for the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.podSecurityContext
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
 
 
 
-PodSecurityContext holds pod-level security attributes and common container settings. Some fields are also present in container.securityContext.  Field values of container.securityContext take precedence over field values of PodSecurityContext.
+PodSecurityContext configures the pod security context for the opentelemetry-collector pod, when running as a deployment, daemonset, or statefulset.
 
 <table>
     <thead>
@@ -10593,8 +17163,7 @@ PodSecurityContext holds pod-level security attributes and common container sett
         <td>integer</td>
         <td>
           A special supplemental group that applies to all containers in a pod. Some volume types allow the Kubelet to change the ownership of that volume to be owned by the pod: 
- 1. The owning GID will be the FSGroup 2. The setgid bit is set (new files created in the volume will be owned by FSGroup) 3. The permission bits are OR'd with rw-rw---- 
- If unset, the Kubelet will not modify the ownership and permissions of any volume. Note that this field cannot be set when spec.os.name is windows.<br/>
+ 1.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -10603,14 +17172,14 @@ PodSecurityContext holds pod-level security attributes and common container sett
         <td><b>fsGroupChangePolicy</b></td>
         <td>string</td>
         <td>
-          fsGroupChangePolicy defines behavior of changing ownership and permission of the volume before being exposed inside Pod. This field will only apply to volume types which support fsGroup based ownership(and permissions). It will have no effect on ephemeral volume types such as: secret, configmaps and emptydir. Valid values are "OnRootMismatch" and "Always". If not specified, "Always" is used. Note that this field cannot be set when spec.os.name is windows.<br/>
+          fsGroupChangePolicy defines behavior of changing ownership and permission of the volume before being exposed inside Pod.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>runAsGroup</b></td>
         <td>integer</td>
         <td>
-          The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container. Note that this field cannot be set when spec.os.name is windows.<br/>
+          The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -10619,14 +17188,14 @@ PodSecurityContext holds pod-level security attributes and common container sett
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+          Indicates that the container must run as a non-root user.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>runAsUser</b></td>
         <td>integer</td>
         <td>
-          The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container. Note that this field cannot be set when spec.os.name is windows.<br/>
+          The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -10635,7 +17204,7 @@ PodSecurityContext holds pod-level security attributes and common container sett
         <td><b><a href="#opentelemetrycollectorspecpodsecuritycontextselinuxoptions">seLinuxOptions</a></b></td>
         <td>object</td>
         <td>
-          The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container. Note that this field cannot be set when spec.os.name is windows.<br/>
+          The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10649,21 +17218,21 @@ PodSecurityContext holds pod-level security attributes and common container sett
         <td><b>supplementalGroups</b></td>
         <td>[]integer</td>
         <td>
-          A list of groups applied to the first process run in each container, in addition to the container's primary GID, the fsGroup (if specified), and group memberships defined in the container image for the uid of the container process. If unspecified, no additional groups are added to any container. Note that group memberships defined in the container image for the uid of the container process are still effective, even if they are not included in this list. Note that this field cannot be set when spec.os.name is windows.<br/>
+          A list of groups applied to the first process run in each container, in addition to the container's primary GID, the fsGroup (if specified), and group memberships defined in the container image for th<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecpodsecuritycontextsysctlsindex">sysctls</a></b></td>
         <td>[]object</td>
         <td>
-          Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch. Note that this field cannot be set when spec.os.name is windows.<br/>
+          Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch. Note that this field cannot be set when spec.os.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecpodsecuritycontextwindowsoptions">windowsOptions</a></b></td>
         <td>object</td>
         <td>
-          The Windows specific settings applied to all containers. If unspecified, the options within a container's SecurityContext will be used. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence. Note that this field cannot be set when spec.os.name is linux.<br/>
+          The Windows specific settings applied to all containers. If unspecified, the options within a container's SecurityContext will be used.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10675,7 +17244,7 @@ PodSecurityContext holds pod-level security attributes and common container sett
 
 
 
-The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence for that container. Note that this field cannot be set when spec.os.name is windows.
+The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.
 
 <table>
     <thead>
@@ -10739,14 +17308,14 @@ The seccomp options to use by the containers in this pod. Note that this field c
         <td>string</td>
         <td>
           type indicates which kind of seccomp profile will be applied. Valid options are: 
- Localhost - a profile defined in a file on the node should be used. RuntimeDefault - the container runtime default profile should be used. Unconfined - no profile should be applied.<br/>
+ Localhost - a profile defined in a file on the node should be used.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>localhostProfile</b></td>
         <td>string</td>
         <td>
-          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work. Must be a descending path, relative to the kubelet's configured seccomp profile location. Must only be set if type is "Localhost".<br/>
+          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10792,7 +17361,7 @@ Sysctl defines a kernel parameter to be set
 
 
 
-The Windows specific settings applied to all containers. If unspecified, the options within a container's SecurityContext will be used. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence. Note that this field cannot be set when spec.os.name is linux.
+The Windows specific settings applied to all containers. If unspecified, the options within a container's SecurityContext will be used.
 
 <table>
     <thead>
@@ -10821,14 +17390,14 @@ The Windows specific settings applied to all containers. If unspecified, the opt
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container. This field is alpha-level and will only be honored by components that enable the WindowsHostProcessContainers feature flag. Setting this field without the feature flag will result in errors when validating the Pod. All of a Pod's containers must have the same effective HostProcess value (it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).  In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>runAsUserName</b></td>
         <td>string</td>
         <td>
-          The UserName in Windows to run the entrypoint of the container process. Defaults to the user specified in image metadata if unspecified. May also be set in PodSecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+          The UserName in Windows to run the entrypoint of the container process. Defaults to the user specified in image metadata if unspecified. May also be set in PodSecurityContext.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10864,21 +17433,21 @@ ServicePort contains information on service's port.
         <td><b>appProtocol</b></td>
         <td>string</td>
         <td>
-          The application protocol for this port. This field follows standard Kubernetes label syntax. Un-prefixed names are reserved for IANA standard service names (as per RFC-6335 and https://www.iana.org/assignments/service-names). Non-standard protocols should use prefixed names such as mycompany.com/my-custom-protocol.<br/>
+          The application protocol for this port. This is used as a hint for implementations to offer richer behavior for protocols that they understand. This field follows standard Kubernetes label syntax.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The name of this port within the service. This must be a DNS_LABEL. All ports within a ServiceSpec must have unique names. When considering the endpoints for a Service, this must match the 'name' field in the EndpointPort. Optional if only one ServicePort is defined on this service.<br/>
+          The name of this port within the service. This must be a DNS_LABEL. All ports within a ServiceSpec must have unique names.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>nodePort</b></td>
         <td>integer</td>
         <td>
-          The port on each node on which this service is exposed when type is NodePort or LoadBalancer.  Usually assigned by the system. If a value is specified, in-range, and not in use it will be used, otherwise the operation will fail.  If not specified, a port will be allocated if this Service requires one.  If this field is specified when creating a Service which does not need it, creation will fail. This field will be wiped when updating a Service to no longer need it (e.g. changing type from NodePort to ClusterIP). More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport<br/>
+          The port on each node on which this service is exposed when type is NodePort or LoadBalancer.  Usually assigned by the system.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -10896,7 +17465,7 @@ ServicePort contains information on service's port.
         <td><b>targetPort</b></td>
         <td>int or string</td>
         <td>
-          Number or name of the port to access on the pods targeted by the service. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME. If this is a string, it will be looked up as a named port in the target Pod's container ports. If this is not specified, the value of the 'port' field is used (an identity map). This field is ignored for services with clusterIP=None, and should be omitted or set equal to the 'port' field. More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service<br/>
+          Number or name of the port to access on the pods targeted by the service. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10924,8 +17493,7 @@ Resources to set on the OpenTelemetry Collector pods.
         <td>[]object</td>
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
- This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable. It can only be set for containers.<br/>
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10939,7 +17507,7 @@ Resources to set on the OpenTelemetry Collector pods.
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10978,7 +17546,7 @@ ResourceClaim references one entry in PodSpec.ResourceClaims.
 
 
 
-SecurityContext will be set as the container security context.
+SecurityContext configures the container security context for the opentelemetry-collector container.
 
 <table>
     <thead>
@@ -10993,7 +17561,7 @@ SecurityContext will be set as the container security context.
         <td><b>allowPrivilegeEscalation</b></td>
         <td>boolean</td>
         <td>
-          AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process. AllowPrivilegeEscalation is true always when the container is: 1) run as Privileged 2) has CAP_SYS_ADMIN Note that this field cannot be set when spec.os.name is windows.<br/>
+          AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11014,7 +17582,7 @@ SecurityContext will be set as the container security context.
         <td><b>procMount</b></td>
         <td>string</td>
         <td>
-          procMount denotes the type of proc mount to use for the containers. The default is DefaultProcMount which uses the container runtime defaults for readonly paths and masked paths. This requires the ProcMountType feature flag to be enabled. Note that this field cannot be set when spec.os.name is windows.<br/>
+          procMount denotes the type of proc mount to use for the containers. The default is DefaultProcMount which uses the container runtime defaults for readonly paths and masked paths.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11028,7 +17596,7 @@ SecurityContext will be set as the container security context.
         <td><b>runAsGroup</b></td>
         <td>integer</td>
         <td>
-          The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence. Note that this field cannot be set when spec.os.name is windows.<br/>
+          The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in PodSecurityContext.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -11037,14 +17605,14 @@ SecurityContext will be set as the container security context.
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user. If true, the Kubelet will validate the image at runtime to ensure that it does not run as UID 0 (root) and fail to start the container if it does. If unset or false, no such validation will be performed. May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+          Indicates that the container must run as a non-root user.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>runAsUser</b></td>
         <td>integer</td>
         <td>
-          The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence. Note that this field cannot be set when spec.os.name is windows.<br/>
+          The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in PodSecurityContext.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -11053,21 +17621,21 @@ SecurityContext will be set as the container security context.
         <td><b><a href="#opentelemetrycollectorspecsecuritycontextselinuxoptions">seLinuxOptions</a></b></td>
         <td>object</td>
         <td>
-          The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence. Note that this field cannot be set when spec.os.name is windows.<br/>
+          The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecsecuritycontextseccompprofile">seccompProfile</a></b></td>
         <td>object</td>
         <td>
-          The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options. Note that this field cannot be set when spec.os.name is windows.<br/>
+          The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecsecuritycontextwindowsoptions">windowsOptions</a></b></td>
         <td>object</td>
         <td>
-          The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence. Note that this field cannot be set when spec.os.name is linux.<br/>
+          The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11113,7 +17681,7 @@ The capabilities to add/drop when running containers. Defaults to the default se
 
 
 
-The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence. Note that this field cannot be set when spec.os.name is windows.
+The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.
 
 <table>
     <thead>
@@ -11161,7 +17729,7 @@ The SELinux context to be applied to the container. If unspecified, the containe
 
 
 
-The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options. Note that this field cannot be set when spec.os.name is windows.
+The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options.
 
 <table>
     <thead>
@@ -11177,14 +17745,14 @@ The seccomp options to use by this container. If seccomp options are provided at
         <td>string</td>
         <td>
           type indicates which kind of seccomp profile will be applied. Valid options are: 
- Localhost - a profile defined in a file on the node should be used. RuntimeDefault - the container runtime default profile should be used. Unconfined - no profile should be applied.<br/>
+ Localhost - a profile defined in a file on the node should be used.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>localhostProfile</b></td>
         <td>string</td>
         <td>
-          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work. Must be a descending path, relative to the kubelet's configured seccomp profile location. Must only be set if type is "Localhost".<br/>
+          localhostProfile indicates a profile defined in a file on the node should be used. The profile must be preconfigured on the node to work.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11196,7 +17764,7 @@ The seccomp options to use by this container. If seccomp options are provided at
 
 
 
-The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence. Note that this field cannot be set when spec.os.name is linux.
+The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used.
 
 <table>
     <thead>
@@ -11225,14 +17793,14 @@ The Windows specific settings applied to all containers. If unspecified, the opt
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container. This field is alpha-level and will only be honored by components that enable the WindowsHostProcessContainers feature flag. Setting this field without the feature flag will result in errors when validating the Pod. All of a Pod's containers must have the same effective HostProcess value (it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).  In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>runAsUserName</b></td>
         <td>string</td>
         <td>
-          The UserName in Windows to run the entrypoint of the container process. Defaults to the user specified in image metadata if unspecified. May also be set in PodSecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+          The UserName in Windows to run the entrypoint of the container process. Defaults to the user specified in image metadata if unspecified. May also be set in PodSecurityContext.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11272,10 +17840,17 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindex">env</a></b></td>
+        <td>[]object</td>
+        <td>
+          ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be consumed in the config file for the TargetAllocator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>filterStrategy</b></td>
         <td>string</td>
         <td>
-          FilterStrategy determines how to filter targets before allocating them among the collectors. The only current option is relabel-config (drops targets based on prom relabel_config). Filtering is disabled by default.<br/>
+          FilterStrategy determines how to filter targets before allocating them among the collectors. The only current option is relabel-config (drops targets based on prom relabel_config).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11286,19 +17861,33 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>nodeSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          NodeSelector to schedule OpenTelemetry TargetAllocator pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscr">prometheusCR</a></b></td>
         <td>object</td>
         <td>
-          PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval. All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.<br/>
+          PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
-          Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy that can be run in a high availability mode is consistent-hashing.<br/>
+          Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value other than 1 if a strategy that allows for high availability is chosen.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Resources to set on the OpenTelemetryTargetAllocator containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11306,6 +17895,259 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td>string</td>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set, the operator will not automatically create a ServiceAccount for the TargetAllocator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatortopologyspreadconstraintsindex">topologySpreadConstraints</a></b></td>
+        <td>[]object</td>
+        <td>
+          TopologySpreadConstraints embedded kubernetes pod configuration option, controls how pods are spread across your cluster among failure-domains such as regions, zones, nodes, and other user-defined top<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
+
+
+
+EnvVar represents an environment variable present in a Container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefrom">valueFrom</a></b></td>
+        <td>object</td>
+        <td>
+          Source for the environment variable's value. Cannot be used if value is not empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindex)</sup></sup>
+
+
+
+Source for the environment variable's value. Cannot be used if value is not empty.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefromconfigmapkeyref">configMapKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a ConfigMap.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefromfieldref">fieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefromresourcefieldref">resourceFieldRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorenvindexvaluefromsecretkeyref">secretKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a secret in the pod's namespace<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom.configMapKeyRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a ConfigMap.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom.fieldRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>fieldPath</b></td>
+        <td>string</td>
+        <td>
+          Path of the field to select in the specified API version.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiVersion</b></td>
+        <td>string</td>
+        <td>
+          Version of the schema the FieldPath is written in terms of, defaults to "v1".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom.resourceFieldRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>resource</b></td>
+        <td>string</td>
+        <td>
+          Required: resource to select<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>containerName</b></td>
+        <td>string</td>
+        <td>
+          Container name: required for volumes, optional for env vars<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>divisor</b></td>
+        <td>int or string</td>
+        <td>
+          Specifies the output format of the exposed resources, defaults to "1"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.env[index].valueFrom.secretKeyRef
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorenvindexvaluefrom)</sup></sup>
+
+
+
+Selects a key of a secret in the pod's namespace
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11317,7 +18159,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
 
 
 
-PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval. All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
+PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
 
 <table>
     <thead>
@@ -11339,14 +18181,249 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         <td><b>podMonitorSelector</b></td>
         <td>map[string]string</td>
         <td>
-          PodMonitors to be selected for target discovery. This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a PodMonitor's meta labels. The requirements are ANDed.<br/>
+          PodMonitors to be selected for target discovery. This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a PodMonitor's meta labels.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scrapeInterval</b></td>
+        <td>string</td>
+        <td>
+          Interval between consecutive scrapes. Equivalent to the same setting on the Prometheus CRD. 
+ Default: "30s"<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>serviceMonitorSelector</b></td>
         <td>map[string]string</td>
         <td>
-          ServiceMonitors to be selected for target discovery. This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a ServiceMonitor's meta labels. The requirements are ANDed.<br/>
+          ServiceMonitors to be selected for target discovery. This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a ServiceMonitor's meta labels.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.resources
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
+
+
+
+Resources to set on the OpenTelemetryTargetAllocator containers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.resources.claims[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.topologySpreadConstraints[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
+
+
+
+TopologySpreadConstraint specifies how to spread matching pods among the given topology.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxSkew</b></td>
+        <td>integer</td>
+        <td>
+          MaxSkew describes the degree to which pods may be unevenly distributed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>topologyKey</b></td>
+        <td>string</td>
+        <td>
+          TopologyKey is the key of node labels. Nodes that have a label with this key and identical values are considered to be in the same topology.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>whenUnsatisfiable</b></td>
+        <td>string</td>
+        <td>
+          WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy the spread constraint. - DoNotSchedule (default) tells the scheduler not to schedule it.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatortopologyspreadconstraintsindexlabelselector">labelSelector</a></b></td>
+        <td>object</td>
+        <td>
+          LabelSelector is used to find matching pods. Pods that match this label selector are counted to determine the number of pods in their corresponding topology domain.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select the pods over which spreading will be calculated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minDomains</b></td>
+        <td>integer</td>
+        <td>
+          MinDomains indicates a minimum number of eligible domains.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeAffinityPolicy</b></td>
+        <td>string</td>
+        <td>
+          NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector when calculating pod topology spread skew.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeTaintsPolicy</b></td>
+        <td>string</td>
+        <td>
+          NodeTaintsPolicy indicates how we will treat node taints when calculating pod topology spread skew.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.topologySpreadConstraints[index].labelSelector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatortopologyspreadconstraintsindex)</sup></sup>
+
+
+
+LabelSelector is used to find matching pods. Pods that match this label selector are counted to determine the number of pods in their corresponding topology domain.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatortopologyspreadconstraintsindexlabelselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.topologySpreadConstraints[index].labelSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatortopologyspreadconstraintsindexlabelselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11387,14 +18464,14 @@ The pod this Toleration is attached to tolerates any taint that matches the trip
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          Operator represents a key's relationship to the value. Valid operators are Exists and Equal. Defaults to Equal. Exists is equivalent to wildcard for value, so that a pod can tolerate all taints of a particular category.<br/>
+          Operator represents a key's relationship to the value. Valid operators are Exists and Equal. Defaults to Equal.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>tolerationSeconds</b></td>
         <td>integer</td>
         <td>
-          TolerationSeconds represents the period of time the toleration (which must be of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default, it is not set, which means tolerate the taint forever (do not evict). Zero and negative values will be treated as 0 (evict immediately) by the system.<br/>
+          TolerationSeconds represents the period of time the toleration (which must be of effect NoExecute, otherwise this field is ignored) tolerates the taint.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -11404,6 +18481,161 @@ The pod this Toleration is attached to tolerates any taint that matches the trip
         <td>string</td>
         <td>
           Value is the taint value the toleration matches to. If the operator is Exists, the value should be empty, otherwise just a regular string.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.topologySpreadConstraints[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+TopologySpreadConstraint specifies how to spread matching pods among the given topology.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxSkew</b></td>
+        <td>integer</td>
+        <td>
+          MaxSkew describes the degree to which pods may be unevenly distributed.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>topologyKey</b></td>
+        <td>string</td>
+        <td>
+          TopologyKey is the key of node labels. Nodes that have a label with this key and identical values are considered to be in the same topology.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>whenUnsatisfiable</b></td>
+        <td>string</td>
+        <td>
+          WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy the spread constraint. - DoNotSchedule (default) tells the scheduler not to schedule it.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectopologyspreadconstraintsindexlabelselector">labelSelector</a></b></td>
+        <td>object</td>
+        <td>
+          LabelSelector is used to find matching pods. Pods that match this label selector are counted to determine the number of pods in their corresponding topology domain.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabelKeys</b></td>
+        <td>[]string</td>
+        <td>
+          MatchLabelKeys is a set of pod label keys to select the pods over which spreading will be calculated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minDomains</b></td>
+        <td>integer</td>
+        <td>
+          MinDomains indicates a minimum number of eligible domains.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeAffinityPolicy</b></td>
+        <td>string</td>
+        <td>
+          NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector when calculating pod topology spread skew.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>nodeTaintsPolicy</b></td>
+        <td>string</td>
+        <td>
+          NodeTaintsPolicy indicates how we will treat node taints when calculating pod topology spread skew.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.topologySpreadConstraints[index].labelSelector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectopologyspreadconstraintsindex)</sup></sup>
+
+
+
+LabelSelector is used to find matching pods. Pods that match this label selector are counted to determine the number of pods in their corresponding topology domain.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectopologyspreadconstraintsindexlabelselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.topologySpreadConstraints[index].labelSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectopologyspreadconstraintsindexlabelselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11430,14 +18662,14 @@ PersistentVolumeClaim is a user's request for and claim to a persistent volume
         <td><b>apiVersion</b></td>
         <td>string</td>
         <td>
-          APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources<br/>
+          APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>kind</b></td>
         <td>string</td>
         <td>
-          Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds<br/>
+          Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11547,21 +18779,21 @@ spec defines the desired characteristics of a volume requested by a pod author. 
         <td><b><a href="#opentelemetrycollectorspecvolumeclaimtemplatesindexspecdatasource">dataSource</a></b></td>
         <td>object</td>
         <td>
-          dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+          dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecvolumeclaimtemplatesindexspecdatasourceref">dataSourceRef</a></b></td>
         <td>object</td>
         <td>
-          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn't specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn't set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecvolumeclaimtemplatesindexspecresources">resources</a></b></td>
         <td>object</td>
         <td>
-          resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements that are lower than previous value but must still be higher than capacity recorded in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+          resources represents the minimum resources the volume should have.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11601,7 +18833,7 @@ spec defines the desired characteristics of a volume requested by a pod author. 
 
 
 
-dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.
 
 <table>
     <thead>
@@ -11642,7 +18874,7 @@ dataSource field can be used to specify either: * An existing VolumeSnapshot obj
 
 
 
-dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn't specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn't set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired.
 
 <table>
     <thead>
@@ -11678,7 +18910,7 @@ dataSourceRef specifies the object from which to populate the volume with data, 
         <td><b>namespace</b></td>
         <td>string</td>
         <td>
-          Namespace is the namespace of resource being referenced Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details. (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+          Namespace is the namespace of resource being referenced Note that when a namespace is specified, a gateway.networking.k8s.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11690,7 +18922,7 @@ dataSourceRef specifies the object from which to populate the volume with data, 
 
 
 
-resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements that are lower than previous value but must still be higher than capacity recorded in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+resources represents the minimum resources the volume should have.
 
 <table>
     <thead>
@@ -11706,8 +18938,7 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td>[]object</td>
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
- This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable. It can only be set for containers.<br/>
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11721,7 +18952,7 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11782,7 +19013,7 @@ selector is a label query over volumes to consider for binding.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11823,7 +19054,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11854,10 +19085,17 @@ status represents the current information/status of a persistent volume claim. R
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>allocatedResourceStatuses</b></td>
+        <td>map[string]string</td>
+        <td>
+          allocatedResourceStatuses stores status of resource being resized for the given PVC. Key names follow standard Kubernetes label syntax.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>allocatedResources</b></td>
         <td>map[string]int or string</td>
         <td>
-          allocatedResources is the storage resource within AllocatedResources tracks the capacity allocated to a PVC. It may be larger than the actual capacity when a volume expansion operation is requested. For storage quota, the larger value from allocatedResources and PVC.spec.resources is used. If allocatedResources is not set, PVC.spec.resources alone is used for quota calculation. If a volume expansion capacity request is lowered, allocatedResources is only lowered if there are no expansion operations in progress and if the actual volume capacity is equal or lower than the requested capacity. This is an alpha field and requires enabling RecoverVolumeExpansionFailure feature.<br/>
+          allocatedResources tracks the resources allocated to a PVC including its capacity. Key names follow standard Kubernetes label syntax.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11881,13 +19119,6 @@ status represents the current information/status of a persistent volume claim. R
           phase represents the current phase of PersistentVolumeClaim.<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b>resizeStatus</b></td>
-        <td>string</td>
-        <td>
-          resizeStatus stores status of resize operation. ResizeStatus is not set by default but when expansion is complete resizeStatus is set to empty string by resize controller or kubelet. This is an alpha field and requires enabling RecoverVolumeExpansionFailure feature.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -11897,7 +19128,7 @@ status represents the current information/status of a persistent volume claim. R
 
 
 
-PersistentVolumeClaimCondition contails details about state of pvc
+PersistentVolumeClaimCondition contains details about state of pvc
 
 <table>
     <thead>
@@ -11951,7 +19182,7 @@ PersistentVolumeClaimCondition contails details about state of pvc
         <td><b>reason</b></td>
         <td>string</td>
         <td>
-          reason is a unique, this should be a short, machine understandable string that gives the reason for condition's last transition. If it reports "ResizeStarted" that means the underlying persistent volume is being resized.<br/>
+          reason is a unique, this should be a short, machine understandable string that gives the reason for condition's last transition.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12013,7 +19244,7 @@ VolumeMount describes a mounting of a Volume within a container.
         <td><b>subPathExpr</b></td>
         <td>string</td>
         <td>
-          Expanded path within the volume from which the container's volume should be mounted. Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment. Defaults to "" (volume's root). SubPathExpr and SubPath are mutually exclusive.<br/>
+          Expanded path within the volume from which the container's volume should be mounted.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12047,7 +19278,7 @@ Volume represents a named volume in a pod that may be accessed by any container 
         <td><b><a href="#opentelemetrycollectorspecvolumesindexawselasticblockstore">awsElasticBlockStore</a></b></td>
         <td>object</td>
         <td>
-          awsElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore<br/>
+          awsElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12110,11 +19341,7 @@ Volume represents a named volume in a pod that may be accessed by any container 
         <td><b><a href="#opentelemetrycollectorspecvolumesindexephemeral">ephemeral</a></b></td>
         <td>object</td>
         <td>
-          ephemeral represents a volume that is handled by a cluster storage driver. The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts, and deleted when the pod is removed. 
- Use this if: a) the volume is only needed while the pod runs, b) features of normal volumes like restoring from snapshot or capacity tracking are needed, c) the storage driver is specified through a storage class, and d) the storage driver supports dynamic volume provisioning through a PersistentVolumeClaim (see EphemeralVolumeSource for more information on the connection between this volume type and PersistentVolumeClaim). 
- Use PersistentVolumeClaim or one of the vendor-specific APIs for volumes that persist for longer than the lifecycle of an individual pod. 
- Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to be used that way - see the documentation of the driver for more information. 
- A pod can use both types of ephemeral volumes and persistent volumes at the same time.<br/>
+          ephemeral represents a volume that is handled by a cluster storage driver.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12142,14 +19369,14 @@ Volume represents a named volume in a pod that may be accessed by any container 
         <td><b><a href="#opentelemetrycollectorspecvolumesindexgcepersistentdisk">gcePersistentDisk</a></b></td>
         <td>object</td>
         <td>
-          gcePersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk<br/>
+          gcePersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecvolumesindexgitrepo">gitRepo</a></b></td>
         <td>object</td>
         <td>
-          gitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.<br/>
+          gitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12163,7 +19390,7 @@ Volume represents a named volume in a pod that may be accessed by any container 
         <td><b><a href="#opentelemetrycollectorspecvolumesindexhostpath">hostPath</a></b></td>
         <td>object</td>
         <td>
-          hostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. This is generally used for system agents or other privileged things that are allowed to see the host machine. Most containers will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath --- TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not mount host directories as read/write.<br/>
+          hostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12184,7 +19411,7 @@ Volume represents a named volume in a pod that may be accessed by any container 
         <td><b><a href="#opentelemetrycollectorspecvolumesindexpersistentvolumeclaim">persistentVolumeClaim</a></b></td>
         <td>object</td>
         <td>
-          persistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims<br/>
+          persistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12259,7 +19486,7 @@ Volume represents a named volume in a pod that may be accessed by any container 
 
 
 
-awsElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
+awsElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.
 
 <table>
     <thead>
@@ -12281,14 +19508,14 @@ awsElasticBlockStore represents an AWS Disk resource that is attached to a kubel
         <td><b>fsType</b></td>
         <td>string</td>
         <td>
-          fsType is the filesystem type of the volume that you want to mount. Tip: Ensure that the filesystem type is supported by the host operating system. Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
+          fsType is the filesystem type of the volume that you want to mount. Tip: Ensure that the filesystem type is supported by the host operating system. Examples: "ext4", "xfs", "ntfs".<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>partition</b></td>
         <td>integer</td>
         <td>
-          partition is the partition in the volume that you want to mount. If omitted, the default is to mount by volume name. Examples: For volume /dev/sda1, you specify the partition as "1". Similarly, the volume partition for /dev/sda is "0" (or you can leave the property empty).<br/>
+          partition is the partition in the volume that you want to mount. If omitted, the default is to mount by volume name. Examples: For volume /dev/sda1, you specify the partition as "1".<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -12352,7 +19579,7 @@ azureDisk represents an Azure Data Disk mount on the host and bind mount to the 
         <td><b>kind</b></td>
         <td>string</td>
         <td>
-          kind expected values are Shared: multiple blob disks per storage account  Dedicated: single blob disk per storage account  Managed: azure managed data disk (only in managed availability set). defaults to shared<br/>
+          kind expected values are Shared: multiple blob disks per storage account  Dedicated: single blob disk per storage account  Managed: azure managed data disk (only in managed availability set).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12523,7 +19750,7 @@ cinder represents a cinder volume attached and mounted on kubelets host machine.
         <td><b>fsType</b></td>
         <td>string</td>
         <td>
-          fsType is the filesystem type to mount. Must be a filesystem type supported by the host operating system. Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified. More info: https://examples.k8s.io/mysql-cinder-pd/README.md<br/>
+          fsType is the filesystem type to mount. Must be a filesystem type supported by the host operating system. Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12591,7 +19818,7 @@ configMap represents a configMap that should populate this volume
         <td><b>defaultMode</b></td>
         <td>integer</td>
         <td>
-          defaultMode is optional: mode bits used to set permissions on created files by default. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          defaultMode is optional: mode bits used to set permissions on created files by default. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -12600,7 +19827,7 @@ configMap represents a configMap that should populate this volume
         <td><b><a href="#opentelemetrycollectorspecvolumesindexconfigmapitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
-          items if unspecified, each key-value pair in the Data field of the referenced ConfigMap will be projected into the volume as a file whose name is the key and content is the value. If specified, the listed keys will be projected into the specified paths, and unlisted keys will not be present. If a key is specified which is not present in the ConfigMap, the volume setup will error unless it is marked optional. Paths must be relative and may not contain the '..' path or start with '..'.<br/>
+          items if unspecified, each key-value pair in the Data field of the referenced ConfigMap will be projected into the volume as a file whose name is the key and content is the value.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12655,7 +19882,7 @@ Maps a string key to a path within a volume.
         <td><b>mode</b></td>
         <td>integer</td>
         <td>
-          mode is Optional: mode bits used to set permissions on this file. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          mode is Optional: mode bits used to set permissions on this file. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -12698,7 +19925,7 @@ csi (Container Storage Interface) represents ephemeral storage that is handled b
         <td><b><a href="#opentelemetrycollectorspecvolumesindexcsinodepublishsecretref">nodePublishSecretRef</a></b></td>
         <td>object</td>
         <td>
-          nodePublishSecretRef is a reference to the secret object containing sensitive information to pass to the CSI driver to complete the CSI NodePublishVolume and NodeUnpublishVolume calls. This field is optional, and  may be empty if no secret is required. If the secret object contains more than one secret, all secret references are passed.<br/>
+          nodePublishSecretRef is a reference to the secret object containing sensitive information to pass to the CSI driver to complete the CSI NodePublishVolume and NodeUnpublishVolume calls.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12724,7 +19951,7 @@ csi (Container Storage Interface) represents ephemeral storage that is handled b
 
 
 
-nodePublishSecretRef is a reference to the secret object containing sensitive information to pass to the CSI driver to complete the CSI NodePublishVolume and NodeUnpublishVolume calls. This field is optional, and  may be empty if no secret is required. If the secret object contains more than one secret, all secret references are passed.
+nodePublishSecretRef is a reference to the secret object containing sensitive information to pass to the CSI driver to complete the CSI NodePublishVolume and NodeUnpublishVolume calls.
 
 <table>
     <thead>
@@ -12766,7 +19993,7 @@ downwardAPI represents downward API about the pod that should populate this volu
         <td><b>defaultMode</b></td>
         <td>integer</td>
         <td>
-          Optional: mode bits to use on created files by default. Must be a Optional: mode bits used to set permissions on created files by default. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          Optional: mode bits to use on created files by default. Must be a Optional: mode bits used to set permissions on created files by default.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -12816,7 +20043,7 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td><b>mode</b></td>
         <td>integer</td>
         <td>
-          Optional: mode bits used to set permissions on this file, must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          Optional: mode bits used to set permissions on this file, must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -12927,14 +20154,14 @@ emptyDir represents a temporary directory that shares a pod's lifetime. More inf
         <td><b>medium</b></td>
         <td>string</td>
         <td>
-          medium represents what type of storage medium should back this directory. The default is "" which means to use the node's default medium. Must be an empty string (default) or Memory. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
+          medium represents what type of storage medium should back this directory. The default is "" which means to use the node's default medium. Must be an empty string (default) or Memory.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>sizeLimit</b></td>
         <td>int or string</td>
         <td>
-          sizeLimit is the total amount of local storage required for this EmptyDir volume. The size limit is also applicable for memory medium. The maximum usage on memory medium EmptyDir would be the minimum value between the SizeLimit specified here and the sum of memory limits of all containers in a pod. The default is nil which means that the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir<br/>
+          sizeLimit is the total amount of local storage required for this EmptyDir volume. The size limit is also applicable for memory medium.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12946,11 +20173,7 @@ emptyDir represents a temporary directory that shares a pod's lifetime. More inf
 
 
 
-ephemeral represents a volume that is handled by a cluster storage driver. The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts, and deleted when the pod is removed. 
- Use this if: a) the volume is only needed while the pod runs, b) features of normal volumes like restoring from snapshot or capacity tracking are needed, c) the storage driver is specified through a storage class, and d) the storage driver supports dynamic volume provisioning through a PersistentVolumeClaim (see EphemeralVolumeSource for more information on the connection between this volume type and PersistentVolumeClaim). 
- Use PersistentVolumeClaim or one of the vendor-specific APIs for volumes that persist for longer than the lifecycle of an individual pod. 
- Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to be used that way - see the documentation of the driver for more information. 
- A pod can use both types of ephemeral volumes and persistent volumes at the same time.
+ephemeral represents a volume that is handled by a cluster storage driver.
 
 <table>
     <thead>
@@ -12965,10 +20188,7 @@ ephemeral represents a volume that is handled by a cluster storage driver. The v
         <td><b><a href="#opentelemetrycollectorspecvolumesindexephemeralvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>
-          Will be used to create a stand-alone PVC to provision the volume. The pod in which this EphemeralVolumeSource is embedded will be the owner of the PVC, i.e. the PVC will be deleted together with the pod.  The name of the PVC will be `<pod name>-<volume name>` where `<volume name>` is the name from the `PodSpec.Volumes` array entry. Pod validation will reject the pod if the concatenated name is not valid for a PVC (for example, too long). 
- An existing PVC with that name that is not owned by the pod will *not* be used for the pod to avoid using an unrelated volume by mistake. Starting the pod is then blocked until the unrelated PVC is removed. If such a pre-created PVC is meant to be used by the pod, the PVC has to updated with an owner reference to the pod once the pod exists. Normally this should not be necessary, but it may be useful when manually reconstructing a broken cluster. 
- This field is read-only and no changes will be made by Kubernetes to the PVC after it has been created. 
- Required, must not be nil.<br/>
+          Will be used to create a stand-alone PVC to provision the volume. The pod in which this EphemeralVolumeSource is embedded will be the owner of the PVC, i.e.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12980,10 +20200,7 @@ ephemeral represents a volume that is handled by a cluster storage driver. The v
 
 
 
-Will be used to create a stand-alone PVC to provision the volume. The pod in which this EphemeralVolumeSource is embedded will be the owner of the PVC, i.e. the PVC will be deleted together with the pod.  The name of the PVC will be `<pod name>-<volume name>` where `<volume name>` is the name from the `PodSpec.Volumes` array entry. Pod validation will reject the pod if the concatenated name is not valid for a PVC (for example, too long). 
- An existing PVC with that name that is not owned by the pod will *not* be used for the pod to avoid using an unrelated volume by mistake. Starting the pod is then blocked until the unrelated PVC is removed. If such a pre-created PVC is meant to be used by the pod, the PVC has to updated with an owner reference to the pod once the pod exists. Normally this should not be necessary, but it may be useful when manually reconstructing a broken cluster. 
- This field is read-only and no changes will be made by Kubernetes to the PVC after it has been created. 
- Required, must not be nil.
+Will be used to create a stand-alone PVC to provision the volume. The pod in which this EphemeralVolumeSource is embedded will be the owner of the PVC, i.e.
 
 <table>
     <thead>
@@ -12998,7 +20215,7 @@ Will be used to create a stand-alone PVC to provision the volume. The pod in whi
         <td><b><a href="#opentelemetrycollectorspecvolumesindexephemeralvolumeclaimtemplatespec">spec</a></b></td>
         <td>object</td>
         <td>
-          The specification for the PersistentVolumeClaim. The entire content is copied unchanged into the PVC that gets created from this template. The same fields as in a PersistentVolumeClaim are also valid here.<br/>
+          The specification for the PersistentVolumeClaim. The entire content is copied unchanged into the PVC that gets created from this template.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -13017,7 +20234,7 @@ Will be used to create a stand-alone PVC to provision the volume. The pod in whi
 
 
 
-The specification for the PersistentVolumeClaim. The entire content is copied unchanged into the PVC that gets created from this template. The same fields as in a PersistentVolumeClaim are also valid here.
+The specification for the PersistentVolumeClaim. The entire content is copied unchanged into the PVC that gets created from this template.
 
 <table>
     <thead>
@@ -13039,21 +20256,21 @@ The specification for the PersistentVolumeClaim. The entire content is copied un
         <td><b><a href="#opentelemetrycollectorspecvolumesindexephemeralvolumeclaimtemplatespecdatasource">dataSource</a></b></td>
         <td>object</td>
         <td>
-          dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+          dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecvolumesindexephemeralvolumeclaimtemplatespecdatasourceref">dataSourceRef</a></b></td>
         <td>object</td>
         <td>
-          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn't specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn't set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecvolumesindexephemeralvolumeclaimtemplatespecresources">resources</a></b></td>
         <td>object</td>
         <td>
-          resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements that are lower than previous value but must still be higher than capacity recorded in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+          resources represents the minimum resources the volume should have.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13093,7 +20310,7 @@ The specification for the PersistentVolumeClaim. The entire content is copied un
 
 
 
-dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.
 
 <table>
     <thead>
@@ -13134,7 +20351,7 @@ dataSource field can be used to specify either: * An existing VolumeSnapshot obj
 
 
 
-dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn't specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn't set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired.
 
 <table>
     <thead>
@@ -13170,7 +20387,7 @@ dataSourceRef specifies the object from which to populate the volume with data, 
         <td><b>namespace</b></td>
         <td>string</td>
         <td>
-          Namespace is the namespace of resource being referenced Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details. (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+          Namespace is the namespace of resource being referenced Note that when a namespace is specified, a gateway.networking.k8s.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13182,7 +20399,7 @@ dataSourceRef specifies the object from which to populate the volume with data, 
 
 
 
-resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements that are lower than previous value but must still be higher than capacity recorded in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+resources represents the minimum resources the volume should have.
 
 <table>
     <thead>
@@ -13198,8 +20415,7 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td>[]object</td>
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
- This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable. It can only be set for containers.<br/>
+ This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13213,7 +20429,7 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13274,7 +20490,7 @@ selector is a label query over volumes to consider for binding.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13315,7 +20531,7 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13397,7 +20613,7 @@ fc represents a Fibre Channel resource that is attached to a kubelet's host mach
         <td><b>fsType</b></td>
         <td>string</td>
         <td>
-          fsType is the filesystem type to mount. Must be a filesystem type supported by the host operating system. Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified. TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
+          fsType is the filesystem type to mount. Must be a filesystem type supported by the host operating system. Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13482,7 +20698,7 @@ flexVolume represents a generic volume resource that is provisioned/attached usi
         <td><b><a href="#opentelemetrycollectorspecvolumesindexflexvolumesecretref">secretRef</a></b></td>
         <td>object</td>
         <td>
-          secretRef is Optional: secretRef is reference to the secret object containing sensitive information to pass to the plugin scripts. This may be empty if no secret object is specified. If the secret object contains more than one secret, all secrets are passed to the plugin scripts.<br/>
+          secretRef is Optional: secretRef is reference to the secret object containing sensitive information to pass to the plugin scripts. This may be empty if no secret object is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13494,7 +20710,7 @@ flexVolume represents a generic volume resource that is provisioned/attached usi
 
 
 
-secretRef is Optional: secretRef is reference to the secret object containing sensitive information to pass to the plugin scripts. This may be empty if no secret object is specified. If the secret object contains more than one secret, all secrets are passed to the plugin scripts.
+secretRef is Optional: secretRef is reference to the secret object containing sensitive information to pass to the plugin scripts. This may be empty if no secret object is specified.
 
 <table>
     <thead>
@@ -13555,7 +20771,7 @@ flocker represents a Flocker volume attached to a kubelet's host machine. This d
 
 
 
-gcePersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
+gcePersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.
 
 <table>
     <thead>
@@ -13577,14 +20793,14 @@ gcePersistentDisk represents a GCE Disk resource that is attached to a kubelet's
         <td><b>fsType</b></td>
         <td>string</td>
         <td>
-          fsType is filesystem type of the volume that you want to mount. Tip: Ensure that the filesystem type is supported by the host operating system. Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
+          fsType is filesystem type of the volume that you want to mount. Tip: Ensure that the filesystem type is supported by the host operating system. Examples: "ext4", "xfs", "ntfs".<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>partition</b></td>
         <td>integer</td>
         <td>
-          partition is the partition in the volume that you want to mount. If omitted, the default is to mount by volume name. Examples: For volume /dev/sda1, you specify the partition as "1". Similarly, the volume partition for /dev/sda is "0" (or you can leave the property empty). More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk<br/>
+          partition is the partition in the volume that you want to mount. If omitted, the default is to mount by volume name. Examples: For volume /dev/sda1, you specify the partition as "1".<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -13605,7 +20821,7 @@ gcePersistentDisk represents a GCE Disk resource that is attached to a kubelet's
 
 
 
-gitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.
+gitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated.
 
 <table>
     <thead>
@@ -13627,7 +20843,7 @@ gitRepo represents a git repository at a particular revision. DEPRECATED: GitRep
         <td><b>directory</b></td>
         <td>string</td>
         <td>
-          directory is the target directory name. Must not contain or start with '..'.  If '.' is supplied, the volume directory will be the git repository.  Otherwise, if specified, the volume will contain the git repository in the subdirectory with the given name.<br/>
+          directory is the target directory name. Must not contain or start with '..'.  If '.' is supplied, the volume directory will be the git repository.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13687,7 +20903,7 @@ glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
 
 
 
-hostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. This is generally used for system agents or other privileged things that are allowed to see the host machine. Most containers will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath --- TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not mount host directories as read/write.
+hostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container.
 
 <table>
     <thead>
@@ -13773,14 +20989,14 @@ iscsi represents an ISCSI Disk resource that is attached to a kubelet's host mac
         <td><b>fsType</b></td>
         <td>string</td>
         <td>
-          fsType is the filesystem type of the volume that you want to mount. Tip: Ensure that the filesystem type is supported by the host operating system. Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
+          fsType is the filesystem type of the volume that you want to mount. Tip: Ensure that the filesystem type is supported by the host operating system. Examples: "ext4", "xfs", "ntfs".<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>initiatorName</b></td>
         <td>string</td>
         <td>
-          initiatorName is the custom iSCSI Initiator Name. If initiatorName is specified with iscsiInterface simultaneously, new iSCSI interface <target portal>:<volume name> will be created for the connection.<br/>
+          initiatorName is the custom iSCSI Initiator Name.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13888,7 +21104,7 @@ nfs represents an NFS mount on the host that shares a pod's lifetime More info: 
 
 
 
-persistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims
+persistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.
 
 <table>
     <thead>
@@ -14012,7 +21228,7 @@ projected items for all in one resources secrets, configmaps, and downward API
         <td><b>defaultMode</b></td>
         <td>integer</td>
         <td>
-          defaultMode are the mode bits used to set permissions on created files by default. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          defaultMode are the mode bits used to set permissions on created files by default. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -14096,7 +21312,7 @@ configMap information about the configMap data to project
         <td><b><a href="#opentelemetrycollectorspecvolumesindexprojectedsourcesindexconfigmapitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
-          items if unspecified, each key-value pair in the Data field of the referenced ConfigMap will be projected into the volume as a file whose name is the key and content is the value. If specified, the listed keys will be projected into the specified paths, and unlisted keys will not be present. If a key is specified which is not present in the ConfigMap, the volume setup will error unless it is marked optional. Paths must be relative and may not contain the '..' path or start with '..'.<br/>
+          items if unspecified, each key-value pair in the Data field of the referenced ConfigMap will be projected into the volume as a file whose name is the key and content is the value.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14151,7 +21367,7 @@ Maps a string key to a path within a volume.
         <td><b>mode</b></td>
         <td>integer</td>
         <td>
-          mode is Optional: mode bits used to set permissions on this file. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          mode is Optional: mode bits used to set permissions on this file. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -14221,7 +21437,7 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td><b>mode</b></td>
         <td>integer</td>
         <td>
-          Optional: mode bits used to set permissions on this file, must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          Optional: mode bits used to set permissions on this file, must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -14332,7 +21548,7 @@ secret information about the secret data to project
         <td><b><a href="#opentelemetrycollectorspecvolumesindexprojectedsourcesindexsecretitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
-          items if unspecified, each key-value pair in the Data field of the referenced Secret will be projected into the volume as a file whose name is the key and content is the value. If specified, the listed keys will be projected into the specified paths, and unlisted keys will not be present. If a key is specified which is not present in the Secret, the volume setup will error unless it is marked optional. Paths must be relative and may not contain the '..' path or start with '..'.<br/>
+          items if unspecified, each key-value pair in the Data field of the referenced Secret will be projected into the volume as a file whose name is the key and content is the value.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14387,7 +21603,7 @@ Maps a string key to a path within a volume.
         <td><b>mode</b></td>
         <td>integer</td>
         <td>
-          mode is Optional: mode bits used to set permissions on this file. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          mode is Optional: mode bits used to set permissions on this file. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -14423,14 +21639,14 @@ serviceAccountToken is information about the serviceAccountToken data to project
         <td><b>audience</b></td>
         <td>string</td>
         <td>
-          audience is the intended audience of the token. A recipient of a token must identify itself with an identifier specified in the audience of the token, and otherwise should reject the token. The audience defaults to the identifier of the apiserver.<br/>
+          audience is the intended audience of the token. A recipient of a token must identify itself with an identifier specified in the audience of the token, and otherwise should reject the token.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>expirationSeconds</b></td>
         <td>integer</td>
         <td>
-          expirationSeconds is the requested duration of validity of the service account token. As the token approaches expiration, the kubelet volume plugin will proactively rotate the service account token. The kubelet will start trying to rotate the token if the token is older than 80 percent of its time to live or if the token is older than 24 hours.Defaults to 1 hour and must be at least 10 minutes.<br/>
+          expirationSeconds is the requested duration of validity of the service account token. As the token approaches expiration, the kubelet volume plugin will proactively rotate the service account token.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -14535,7 +21751,7 @@ rbd represents a Rados Block Device mount on the host that shares a pod's lifeti
         <td><b>fsType</b></td>
         <td>string</td>
         <td>
-          fsType is the filesystem type of the volume that you want to mount. Tip: Ensure that the filesystem type is supported by the host operating system. Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
+          fsType is the filesystem type of the volume that you want to mount. Tip: Ensure that the filesystem type is supported by the host operating system. Examples: "ext4", "xfs", "ntfs".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14741,7 +21957,7 @@ secret represents a secret that should populate this volume. More info: https://
         <td><b>defaultMode</b></td>
         <td>integer</td>
         <td>
-          defaultMode is Optional: mode bits used to set permissions on created files by default. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          defaultMode is Optional: mode bits used to set permissions on created files by default. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -14750,7 +21966,7 @@ secret represents a secret that should populate this volume. More info: https://
         <td><b><a href="#opentelemetrycollectorspecvolumesindexsecretitemsindex">items</a></b></td>
         <td>[]object</td>
         <td>
-          items If unspecified, each key-value pair in the Data field of the referenced Secret will be projected into the volume as a file whose name is the key and content is the value. If specified, the listed keys will be projected into the specified paths, and unlisted keys will not be present. If a key is specified which is not present in the Secret, the volume setup will error unless it is marked optional. Paths must be relative and may not contain the '..' path or start with '..'.<br/>
+          items If unspecified, each key-value pair in the Data field of the referenced Secret will be projected into the volume as a file whose name is the key and content is the value.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14805,7 +22021,7 @@ Maps a string key to a path within a volume.
         <td><b>mode</b></td>
         <td>integer</td>
         <td>
-          mode is Optional: mode bits used to set permissions on this file. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511. YAML accepts both octal and decimal values, JSON requires decimal values for mode bits. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.<br/>
+          mode is Optional: mode bits used to set permissions on this file. Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -14862,7 +22078,7 @@ storageOS represents a StorageOS volume attached and mounted on Kubernetes nodes
         <td><b>volumeNamespace</b></td>
         <td>string</td>
         <td>
-          volumeNamespace specifies the scope of the volume within StorageOS.  If no namespace is specified then the Pod's namespace will be used.  This allows the Kubernetes name scoping to be mirrored within StorageOS for tighter integration. Set VolumeName to any name to override the default behaviour. Set to "default" if you are not using namespaces within StorageOS. Namespaces that do not pre-exist within StorageOS will be created.<br/>
+          volumeNamespace specifies the scope of the volume within StorageOS.  If no namespace is specified then the Pod's namespace will be used.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14961,6 +22177,13 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image indicates the container image to use for the OpenTelemetry Collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>messages</b></td>
         <td>[]string</td>
         <td>
@@ -15024,6 +22247,13 @@ Scale is the OpenTelemetryCollector's scale subresource status.
         <td>string</td>
         <td>
           The selector used to match the OpenTelemetryCollector's deployment or statefulSet pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>statusReplicas</b></td>
+        <td>string</td>
+        <td>
+          StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition / Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels matc<br/>
         </td>
         <td>false</td>
       </tr></tbody>

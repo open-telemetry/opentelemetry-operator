@@ -29,24 +29,26 @@ import (
 type Option func(c *options)
 
 type options struct {
-	autoDetect                        autodetect.AutoDetect
-	version                           version.Version
-	logger                            logr.Logger
-	autoInstrumentationDotNetImage    string
-	autoInstrumentationJavaImage      string
-	autoInstrumentationNodeJSImage    string
-	autoInstrumentationPythonImage    string
-	collectorImage                    string
-	collectorConfigMapEntry           string
-	targetAllocatorConfigMapEntry     string
-	operatorOpAMPBridgeConfigMapEntry string
-	targetAllocatorImage              string
-	operatorOpAMPBridgeImage          string
-	onOpenShiftRoutesChange           changeHandler
-	labelsFilter                      []string
-	openshiftRoutes                   openshiftRoutesStore
-	hpaVersion                        hpaVersionStore
-	autoDetectFrequency               time.Duration
+	autoDetect                          autodetect.AutoDetect
+	version                             version.Version
+	logger                              logr.Logger
+	autoInstrumentationDotNetImage      string
+	autoInstrumentationGoImage          string
+	autoInstrumentationJavaImage        string
+	autoInstrumentationNodeJSImage      string
+	autoInstrumentationPythonImage      string
+	autoInstrumentationApacheHttpdImage string
+	collectorImage                      string
+	collectorConfigMapEntry             string
+	targetAllocatorConfigMapEntry       string
+	operatorOpAMPBridgeConfigMapEntry   string
+	targetAllocatorImage                string
+	operatorOpAMPBridgeImage            string
+	onOpenShiftRoutesChange             changeHandler
+	labelsFilter                        []string
+	openshiftRoutes                     openshiftRoutesStore
+	hpaVersion                          hpaVersionStore
+	autoDetectFrequency                 time.Duration
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -135,6 +137,18 @@ func WithAutoInstrumentationPythonImage(s string) Option {
 func WithAutoInstrumentationDotNetImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationDotNetImage = s
+	}
+}
+
+func WithAutoInstrumentationGoImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationGoImage = s
+	}
+}
+
+func WithAutoInstrumentationApacheHttpdImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationApacheHttpdImage = s
 	}
 }
 

@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mount-test1
+data:
+  export.ini: |
+    - EXPORT=true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mount-test2
+data:
+  otel.ini: |
+    - OTEL_ENDPOINT=localhost
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest-with-configmaps
+spec:
+  mode: "deployment"
+  configmaps:
+    - name: mount-test1
+      mountpath: /
+    - name: mount-test2
+      mountpath: /dir
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    exporters:
+      logging:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [logging]

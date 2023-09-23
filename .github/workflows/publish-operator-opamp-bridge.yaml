@@ -13,10 +13,10 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Read version
         run: |
@@ -25,9 +25,11 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge
+          images: |
+            otel/operator-opamp-bridge
+            ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -35,10 +37,10 @@ jobs:
             type=ref,event=branch
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Cache Docker layers
         uses: actions/cache@v3
@@ -48,15 +50,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      - name: Log into Docker.io
+        uses: docker/login-action@v3
+        if: ${{ github.event_name == 'push' }}
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Login to GitHub Package Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
+        if: ${{ github.event_name == 'push' }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: cmd/operator-opamp-bridge
           platforms: linux/amd64,linux/arm64

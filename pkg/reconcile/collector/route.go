@@ -18,79 +18,22 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+
 	routev1 "github.com/openshift/api/route/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/naming"
 )
 
-func desiredRoutes(_ context.Context, params Params) []routev1.Route {
-	var tlsCfg *routev1.TLSConfig
-	switch params.Instance.Spec.Ingress.Route.Termination {
-	case v1alpha1.TLSRouteTerminationTypeInsecure:
-		// NOTE: insecure, no tls cfg.
-	case v1alpha1.TLSRouteTerminationTypeEdge:
-		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationEdge}
-	case v1alpha1.TLSRouteTerminationTypePassthrough:
-		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationPassthrough}
-	case v1alpha1.TLSRouteTerminationTypeReencrypt:
-		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationReencrypt}
-	default: // NOTE: if unsupported, end here.
-		return nil
-	}
-
-	ports := servicePortsFromCfg(params)
-
-	// if we have no ports, we don't need a route entry
-	if len(ports) == 0 {
-		params.Log.V(1).Info(
-			"the instance's configuration didn't yield any ports to open, skipping route",
-			"instance.name", params.Instance.Name,
-			"instance.namespace", params.Instance.Namespace,
-		)
-		return nil
-	}
-
-	routes := make([]routev1.Route, len(ports))
-	for i, p := range ports {
-		routes[i] = routev1.Route{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.Route(params.Instance, p.Name),
-				Namespace:   params.Instance.Namespace,
-				Annotations: params.Instance.Spec.Ingress.Annotations,
-				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.Route(params.Instance, p.Name),
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-				},
-			},
-			Spec: routev1.RouteSpec{
-				Host: p.Name + "." + params.Instance.Spec.Ingress.Hostname,
-				Path: "/" + p.Name,
-				To: routev1.RouteTargetReference{
-					Kind: "Service",
-					Name: naming.Service(params.Instance),
-				},
-				Port: &routev1.RoutePort{
-					// Valid names must be non-empty and no more than 15 characters long.
-					TargetPort: intstr.FromString(naming.Truncate(p.Name, 15)),
-				},
-				WildcardPolicy: routev1.WildcardPolicyNone,
-				TLS:            tlsCfg,
-			},
-		}
-	}
-	return routes
-}
-
 // Routes reconciles the route(s) required for the instance in the current context.
-func Routes(ctx context.Context, params Params) error {
+// TODO: This functionality should be put with the rest of reconciliation logic in the mutate.go
+// https://github.com/open-telemetry/opentelemetry-operator/issues/2108
+func Routes(ctx context.Context, params manifests.Params) error {
 	if params.Instance.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
 		return nil
 	}
@@ -101,9 +44,9 @@ func Routes(ctx context.Context, params Params) error {
 		isSupportedMode = false
 	}
 
-	var desired []routev1.Route
+	var desired []*routev1.Route
 	if isSupportedMode {
-		if r := desiredRoutes(ctx, params); r != nil {
+		if r := collector.Routes(params.Config, params.Log, params.Instance); r != nil {
 			desired = append(desired, r...)
 		}
 	}
@@ -121,11 +64,11 @@ func Routes(ctx context.Context, params Params) error {
 	return nil
 }
 
-func expectedRoutes(ctx context.Context, params Params, expected []routev1.Route) error {
+func expectedRoutes(ctx context.Context, params manifests.Params, expected []*routev1.Route) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -133,7 +76,7 @@ func expectedRoutes(ctx context.Context, params Params, expected []routev1.Route
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if err = params.Client.Create(ctx, &desired); err != nil {
+			if err = params.Client.Create(ctx, desired); err != nil {
 				return fmt.Errorf("failed to create: %w", err)
 			}
 			params.Log.V(2).Info("created", "route.name", desired.Name, "route.namespace", desired.Namespace)
@@ -174,7 +117,7 @@ func expectedRoutes(ctx context.Context, params Params, expected []routev1.Route
 	return nil
 }
 
-func deleteRoutes(ctx context.Context, params Params, expected []routev1.Route) error {
+func deleteRoutes(ctx context.Context, params manifests.Params, expected []*routev1.Route) error {
 	opts := []client.ListOption{
 		client.InNamespace(params.Instance.Namespace),
 		client.MatchingLabels(map[string]string{

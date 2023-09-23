@@ -3,6 +3,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: simplest-collector
+status:
+  readyReplicas: 1
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -37,11 +39,4 @@ spec:
             port:
               name: otlp-http
         path: /otlp-http
-        pathType: Prefix
-      - backend:
-          service:
-            name: simplest-collector
-            port:
-              name: otlp-http-legac
-        path: /otlp-http-legacy
         pathType: Prefix

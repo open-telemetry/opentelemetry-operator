@@ -83,10 +83,11 @@ func TestDiscovery(t *testing.T) {
 	}()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := config.Load(tt.args.file)
+			cfg := config.CreateDefaultConfig()
+			err := config.LoadFromFile(tt.args.file, &cfg)
 			assert.NoError(t, err)
-			assert.True(t, len(cfg.Config.ScrapeConfigs) > 0)
-			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.Config)
+			assert.True(t, len(cfg.PromConfig.ScrapeConfigs) > 0)
+			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.PromConfig)
 			assert.NoError(t, err)
 
 			gotTargets := <-results
@@ -96,7 +97,7 @@ func TestDiscovery(t *testing.T) {
 
 			// check the updated scrape configs
 			expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
-			for _, scrapeConfig := range cfg.Config.ScrapeConfigs {
+			for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
 				expectedScrapeConfigs[scrapeConfig.JobName] = scrapeConfig
 			}
 			assert.Equal(t, expectedScrapeConfigs, scu.mockCfg)
@@ -332,6 +333,23 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 
 		})
 	}
+}
+
+func TestDiscovery_NoConfig(t *testing.T) {
+	scu := &mockScrapeConfigUpdater{mockCfg: map[string]*promconfig.ScrapeConfig{}}
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
+	defer close(manager.close)
+	defer cancelFunc()
+
+	go func() {
+		err := d.Run()
+		assert.NoError(t, err)
+	}()
+	// check the updated scrape configs
+	expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
+	assert.Equal(t, expectedScrapeConfigs, scu.mockCfg)
 }
 
 func BenchmarkApplyScrapeConfig(b *testing.B) {

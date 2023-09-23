@@ -48,7 +48,10 @@ func TestLoad(t *testing.T) {
 					"app.kubernetes.io/instance":   "default.test",
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
-				Config: &promconfig.Config{
+				PrometheusCR: PrometheusCRConfig{
+					ScrapeInterval: model.Duration(time.Second * 60),
+				},
+				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
 						ScrapeTimeout:      model.Duration(10 * time.Second),
@@ -92,6 +95,14 @@ func TestLoad(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
+			name: "no config",
+			args: args{
+				file: "./testdata/no_config.yaml",
+			},
+			want:    CreateDefaultConfig(),
+			wantErr: assert.NoError,
+		},
+		{
 			name: "service monitor pod monitor selector",
 			args: args{
 				file: "./testdata/pod_service_selector_test.yaml",
@@ -101,7 +112,10 @@ func TestLoad(t *testing.T) {
 					"app.kubernetes.io/instance":   "default.test",
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
-				Config: &promconfig.Config{
+				PrometheusCR: PrometheusCRConfig{
+					ScrapeInterval: DefaultCRScrapeInterval,
+				},
+				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
 						ScrapeTimeout:      model.Duration(10 * time.Second),
@@ -149,11 +163,58 @@ func TestLoad(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Load(tt.args.file)
+			got := CreateDefaultConfig()
+			err := LoadFromFile(tt.args.file, &got)
 			if !tt.wantErr(t, err, fmt.Sprintf("Load(%v)", tt.args.file)) {
 				return
 			}
 			assert.Equalf(t, tt.want, got, "Load(%v)", tt.args.file)
+		})
+	}
+}
+
+func TestValidateConfig(t *testing.T) {
+	testCases := []struct {
+		name        string
+		fileConfig  Config
+		expectedErr error
+	}{
+		{
+			name:        "promCR enabled, no Prometheus config",
+			fileConfig:  Config{PromConfig: nil, PrometheusCR: PrometheusCRConfig{Enabled: true}},
+			expectedErr: nil,
+		},
+		{
+			name:        "promCR disabled, no Prometheus config",
+			fileConfig:  Config{PromConfig: nil},
+			expectedErr: fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
+		},
+		{
+			name:        "promCR disabled, Prometheus config present, no scrapeConfigs",
+			fileConfig:  Config{PromConfig: &promconfig.Config{}},
+			expectedErr: fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
+		},
+		{
+			name: "promCR disabled, Prometheus config present, scrapeConfigs present",
+			fileConfig: Config{
+				PromConfig: &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "promCR enabled, Prometheus config present, scrapeConfigs present",
+			fileConfig: Config{
+				PromConfig:   &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				PrometheusCR: PrometheusCRConfig{Enabled: true},
+			},
+			expectedErr: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := ValidateConfig(&tc.fileConfig)
+			assert.Equal(t, tc.expectedErr, err)
 		})
 	}
 }
