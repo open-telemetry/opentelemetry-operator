@@ -5,10 +5,10 @@ change_type: enhancement
 component: autoinstrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Bump Go auto-instrumentation support to v0.3.0-alpha.
+note: Bump OpenTelemetry .NET Automatic Instrumentation to 1.0.1
 
 # One or more tracking issues related to the change
-issues: [2123]
+issues: [2142]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.

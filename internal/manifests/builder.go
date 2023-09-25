@@ -15,6 +15,8 @@
 package manifests
 
 import (
+	"reflect"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -38,4 +40,11 @@ func Factory[T client.Object](f ManifestFactory[T]) K8sManifestFactory {
 	return func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (client.Object, error) {
 		return f(cfg, logger, otelcol)
 	}
+}
+
+// ObjectIsNotNil ensures that we only create an object IFF it isn't nil,
+// and it's concrete type isn't nil either. This works around the Go type system
+// by using reflection to verify its concrete type isn't nil.
+func ObjectIsNotNil(obj client.Object) bool {
+	return obj != nil && !reflect.ValueOf(obj).IsNil()
 }

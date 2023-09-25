@@ -33,11 +33,18 @@ const (
 	envDotNetOTelAutoHome               = "OTEL_DOTNET_AUTO_HOME"
 	dotNetCoreClrEnableProfilingEnabled = "1"
 	dotNetCoreClrProfilerID             = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
-	dotNetCoreClrProfilerPath           = "/otel-auto-instrumentation/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so"
+	dotNetCoreClrProfilerGlibcPath      = "/otel-auto-instrumentation/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so"
+	dotNetCoreClrProfilerMuslPath       = "/otel-auto-instrumentation/linux-musl-x64/OpenTelemetry.AutoInstrumentation.Native.so"
 	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation/AdditionalDeps"
 	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation"
 	dotNetSharedStorePath               = "/otel-auto-instrumentation/store"
 	dotNetStartupHookPath               = "/otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+)
+
+// Supported .NET runtime identifiers (https://learn.microsoft.com/en-us/dotnet/core/rid-catalog), can be set by instrumentation.opentelemetry.io/inject-dotnet.
+const (
+	dotNetRuntimeLinuxGlibc = "linux-x64"
+	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
 func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, error) {
@@ -62,6 +69,17 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec")
 	}
 
+	runtime := pod.Annotations[annotationDotNetRuntime]
+	coreClrProfilerPath := ""
+	switch runtime {
+	case "", dotNetRuntimeLinuxGlibc:
+		coreClrProfilerPath = dotNetCoreClrProfilerGlibcPath
+	case dotNetRuntimeLinuxMusl:
+		coreClrProfilerPath = dotNetCoreClrProfilerMuslPath
+	default:
+		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value '%s' is not supported", runtime)
+	}
+
 	// inject .NET instrumentation spec env vars.
 	for _, env := range dotNetSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
@@ -79,7 +97,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 
 	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, doNotConcatEnvValues)
 
-	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, dotNetCoreClrProfilerPath, doNotConcatEnvValues)
+	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, doNotConcatEnvValues)
 
 	setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues)
 
