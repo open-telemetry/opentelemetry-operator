@@ -24,12 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-golang
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -54,6 +48,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
+          tags: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-golang:latest
           context: tests/instrumentation-e2e-apps/golang
           platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
           push: ${{ github.event_name == 'push' }}
