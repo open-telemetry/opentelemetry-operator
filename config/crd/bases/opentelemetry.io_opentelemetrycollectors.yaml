@@ -2117,6 +2117,23 @@ spec:
                   configuration. Refer to the OpenTelemetry Collector documentation
                   for details.
                 type: string
+              configmaps:
+                description: ConfigMaps is a list of ConfigMaps in the same namespace
+                  as the OpenTelemetryCollector object, which shall be mounted into
+                  the Collector Pods.
+                items:
+                  properties:
+                    mountpath:
+                      type: string
+                    name:
+                      description: Configmap defines name and path where the configMaps
+                        should be mounted.
+                      type: string
+                  required:
+                  - mountpath
+                  - name
+                  type: object
+                type: array
               env:
                 description: ENV vars to set on the OpenTelemetry Collector's Pods.
                   These can then in certain cases be consumed in the config file for

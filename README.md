@@ -254,9 +254,14 @@ Python:
 instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
-DotNet:
+.NET:
+.NET auto-instrumentation also honors an annotation that will be used to set the .NET [Runtime Identifiers](https://learn.microsoft.com/en-us/dotnet/core/rid-catalog)(RIDs).
+Currently, only two RIDs are supported: `linux-x64` and `linux-musl-x64`.
+By default `linux-x64` is used.
 ```bash
 instrumentation.opentelemetry.io/inject-dotnet: "true"
+instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-x64" # for Linux glibc based images, this is default value and can be omitted
+instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl-x64"  # for Linux musl based images
 ```
 
 Go:
@@ -617,6 +622,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.85.0                | v1.19 to v1.28       | v1                  |
 | v0.84.0                | v1.19 to v1.28       | v1                  |
 | v0.83.0                | v1.19 to v1.27       | v1                  |
 | v0.82.0                | v1.19 to v1.27       | v1                  |
@@ -639,7 +645,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.64.1                | v1.19 to v1.25       | v1                  |
 | v0.63.1                | v1.19 to v1.25       | v1                  |
 | v0.62.1                | v1.19 to v1.25       | v1                  |
-| v0.61.0                | v1.19 to v1.25       | v1                  |
 
 ## Contributing and Developing
 

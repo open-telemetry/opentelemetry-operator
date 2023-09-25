@@ -888,7 +888,7 @@ func TestInjectDotNet(t *testing.T) {
 						},
 						{
 							Name:  envDotNetCoreClrProfilerPath,
-							Value: dotNetCoreClrProfilerPath,
+							Value: dotNetCoreClrProfilerGlibcPath,
 						},
 						{
 							Name:  envDotNetStartupHook,
