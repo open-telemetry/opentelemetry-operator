@@ -15,7 +15,9 @@
 package collector
 
 import (
+	"errors"
 	"fmt"
+	"path"
 	"sort"
 
 	"github.com/go-logr/logr"
@@ -104,6 +106,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		},
 	})
 
+	if len(otelcol.Spec.ConfigMaps) > 0 {
+		for keyCfgMap := range otelcol.Spec.ConfigMaps {
+			volumeMounts = append(volumeMounts, corev1.VolumeMount{
+				Name:      naming.ConfigMapExtra(otelcol.Spec.ConfigMaps[keyCfgMap].Name),
+				MountPath: path.Join("/var/conf", otelcol.Spec.ConfigMaps[keyCfgMap].MountPath, naming.ConfigMapExtra(otelcol.Spec.ConfigMaps[keyCfgMap].Name)),
+			})
+		}
+	}
+
 	if otelcol.Spec.TargetAllocator.Enabled {
 		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
 		// added by default by the Prometheus operator's config generator.
@@ -117,11 +128,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	var livenessProbe *corev1.Probe
-	if config, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
-		if probe, err := getLivenessProbe(config, otelcol.Spec.LivenessProbe); err == nil {
+	if configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
+		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
+		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
+			logger.Info("extensions not configured, skipping liveness probe creation")
+		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
+			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
 		} else {
-			logger.Error(err, "Cannot create liveness probe.")
+			logger.Error(err, "cannot create liveness probe.")
 		}
 	}
 

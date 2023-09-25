@@ -61,3 +61,29 @@ func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 	// check that it's the otc-internal volume, with the config map
 	assert.Equal(t, "my-volume", volumes[1].Name)
 }
+
+func TestVolumeWithMoreConfigMaps(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
+				Name:      "configmap-test",
+				MountPath: "/",
+			}, {
+				Name:      "configmap-test2",
+				MountPath: "/dir",
+			}},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	volumes := Volumes(cfg, otelcol)
+
+	// verify
+	assert.Len(t, volumes, 3)
+
+	// check if the volume with the configmap prefix is mounted after defining the config map.
+	assert.Equal(t, "configmap-configmap-test", volumes[1].Name)
+	assert.Equal(t, "configmap-configmap-test2", volumes[2].Name)
+}
