@@ -214,6 +214,13 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, nil
 	}
 
+	// If the Pod is marked for deletion we skip adding instrumentation to it because we change immutable fields (env).
+	// see https://github.com/open-telemetry/opentelemetry-operator/issues/1417.
+	if pod.DeletionTimestamp != nil {
+		logger.Info("Skipping pod instrumentation - marked for deletion")
+		return pod, nil
+	}
+
 	var inst *v1alpha1.Instrumentation
 	var err error
 
