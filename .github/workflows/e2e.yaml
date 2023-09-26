@@ -2,9 +2,9 @@ name: "End-to-end tests"
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -12,7 +12,7 @@ concurrency:
 
 env:
   CURRENT_KIND_VERSION: 0.20.0
-  LEGACY_KIND_VERSION: 0.17.0 # for K8s versions latest kind doesn't support anymore
+  LEGACY_KIND_VERSION: 0.17.0  # for K8s versions latest kind doesn't support anymore  
 
 jobs:
   e2e-tests:
@@ -21,46 +21,46 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The e2e tests are run on the lowest and highest supported k8s version.
-        # All Kubernetes version in between expose the same APIs, hence the operator
-        # should be compatible with them.
-        kube-version:
-          - "1.23"
-          - "1.28"
-        group:
-          - e2e
-          - e2e-instrumentation
-          - e2e-upgrade
-          - e2e-prometheuscr
-          - e2e-autoscale
+       # The e2e tests are run on the lowest and highest supported k8s version.
+       # All Kubernetes version in between expose the same APIs, hence the operator
+       # should be compatible with them.
+       kube-version:
+       - "1.23"
+       - "1.28"
+       group:
+         - e2e
+         - e2e-instrumentation
+         - e2e-upgrade
+         - e2e-prometheuscr
+         - e2e-autoscale
 
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "~1.21.1"
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: "~1.21.1"
 
-      - name: Setup kind
-        env:
-          KIND_VERSION: ${{ matrix.kube_version >= 1.21 && env.KIND_VERSION || env.LEGACY_KIND_VERSION }}
-        run: go install sigs.k8s.io/kind@v${KIND_VERSION}
+    - name: Setup kind
+      env:
+        KIND_VERSION: ${{ matrix.kube_version >= 1.21 && env.KIND_VERSION || env.LEGACY_KIND_VERSION }}
+      run: go install sigs.k8s.io/kind@v${KIND_VERSION}
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v4
 
-      - name: "install kuttl"
-        run: ./hack/install-kuttl.sh
+    - name: "install kuttl"
+      run: ./hack/install-kuttl.sh
 
-      - name: "run tests"
-        env:
-          KUBE_VERSION: ${{ matrix.kube-version }}
-        run: make prepare-e2e ${{ matrix.group }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
+    - name: "run tests"
+      env:
+        KUBE_VERSION: ${{ matrix.kube-version }}
+      run: make prepare-e2e ${{ matrix.group }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
 
-      - name: "log operator if failed"
-        if: ${{ failure() }}
-        env:
-          KUBE_VERSION: ${{ matrix.kube-version }}
-        run: make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
+    - name: "log operator if failed"
+      if: ${{ failure() }}
+      env:
+        KUBE_VERSION: ${{ matrix.kube-version }}
+      run: make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
 
   e2e-tests-check:
     runs-on: ubuntu-22.04
