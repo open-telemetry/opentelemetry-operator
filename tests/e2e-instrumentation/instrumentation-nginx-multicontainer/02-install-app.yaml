@@ -38,10 +38,10 @@ spec:
         imagePullPolicy: Always
         resources:
           limits:
-            cpu: "1"
+            cpu: 500m
             memory: 500Mi
           requests:
-            cpu: 250m
+            cpu: 100m
             memory: 100Mi
       - name: myrabbit
         image: rabbitmq
