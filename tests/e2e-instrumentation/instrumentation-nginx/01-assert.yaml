@@ -52,6 +52,6 @@ spec:
     name: otel-agent-source-container-clone
   - name: otel-agent-attach-nginx
     args:
-    - echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/nginx_instrumentation.sh && chmod +x /opt/nginx_instrumentation.sh && cat /opt/nginx_instrumentation.sh && /opt/nginx_instrumentation.sh "/opt/opentelemetry-webserver/agent" "/opt/opentelemetry-webserver/source-conf" "nginx.conf" "<<SID-PLACEHOLDER>>"
+    - echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && chmod +x /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && cat /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh "/opt/opentelemetry-webserver/agent" "/opt/opentelemetry-webserver/source-conf" "nginx.conf" "<<SID-PLACEHOLDER>>"
 status:
   phase: Running
