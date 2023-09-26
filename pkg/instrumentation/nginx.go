@@ -179,10 +179,10 @@ sed -i "1s,^,env OTEL_RESOURCE_ATTRIBUTES;\\n,g" ${NGINX_AGENT_CONF_DIR_FULL}/${
 mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR_FULL}/conf.d \n
 		`
 
-		nginxAgentI13nCommand := "echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/nginx_instrumentation.sh && " +
-			"chmod +x /opt/nginx_instrumentation.sh && " +
-			"cat /opt/nginx_instrumentation.sh && " +
-			fmt.Sprintf("/opt/nginx_instrumentation.sh \"%s\" \"%s\" \"%s\" \"%s\"",
+		nginxAgentI13nCommand := "echo -e $OTEL_NGINX_I13N_SCRIPT > " + nginxAgentDirFull + "/nginx_instrumentation.sh && " +
+			"chmod +x " + nginxAgentDirFull + "/nginx_instrumentation.sh && " +
+			"cat " + nginxAgentDirFull + "/nginx_instrumentation.sh && " +
+			fmt.Sprintf(nginxAgentDirFull+"/nginx_instrumentation.sh \"%s\" \"%s\" \"%s\" \"%s\"",
 				nginxAgentDirFull,
 				nginxAgentConfDirFull,
 				getNginxConfFile(nginxSpec.ConfigFile),

@@ -23,7 +23,7 @@ spec:
         fsGroup: 2000
       containers:
       - name: myapp
-        image: nginx:1.23.1
+        image: nginxinc/nginx-unprivileged:1.23.1
         imagePullPolicy: Always
         ports:
         - containerPort: 8765
