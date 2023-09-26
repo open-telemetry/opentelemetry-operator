@@ -223,6 +223,7 @@ mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR
 					MountPath: nginxAgentConfDirFull,
 				},
 			},
+			SecurityContext: pod.Spec.Containers[index].SecurityContext,
 		})
 
 		found := false
