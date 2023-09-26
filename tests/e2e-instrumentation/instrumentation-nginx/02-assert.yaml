@@ -8,9 +8,6 @@ metadata:
     app: my-nginx
 spec:
   containers:
-    securityContext:
-      runAsUser: 1000
-      runAsGroup: 3000
   - env:
     - name: LD_LIBRARY_PATH
       value: /opt:/opt/opentelemetry-webserver/agent/sdk_lib/lib
@@ -36,7 +33,10 @@ spec:
       value: '0.25'
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
-    volumeMounts:
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 3000
+     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
     - name: otel-nginx-agent
       mountPath: /opt/opentelemetry-webserver/agent
