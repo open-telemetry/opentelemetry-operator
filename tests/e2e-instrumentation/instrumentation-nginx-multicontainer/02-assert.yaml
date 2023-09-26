@@ -29,7 +29,7 @@ spec:
       valueFrom:
         fieldRef:
           apiVersion: v1
-          fieldPath: spec.nodeName`
+          fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_TRACES_SAMPLER
