@@ -36,7 +36,7 @@ spec:
     securityContext:
       runAsUser: 1000
       runAsGroup: 3000
-     volumeMounts:
+    volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
     - name: otel-nginx-agent
       mountPath: /opt/opentelemetry-webserver/agent
