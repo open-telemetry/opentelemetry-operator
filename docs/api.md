@@ -3854,6 +3854,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>runValidation</b></td>
+        <td>boolean</td>
+        <td>
+          RunValidation enables the operator to automatically run the collector's validate command as an initContainer to prevent the rollout of potentially bad configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecsecuritycontext">securityContext</a></b></td>
         <td>object</td>
         <td>
