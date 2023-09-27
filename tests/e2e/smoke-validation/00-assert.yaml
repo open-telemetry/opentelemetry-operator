@@ -18,16 +18,6 @@ spec:
     port: 14250
     protocol: TCP
     targetPort: 14250
-  - appProtocol: grpc
-    name: otlp-grpc
-    port: 4317
-    protocol: TCP
-    targetPort: 4317
-  - appProtocol: http
-    name: otlp-http
-    port: 4318
-    protocol: TCP
-    targetPort: 4318
 
 ---
 
@@ -42,13 +32,3 @@ spec:
     port: 14250
     protocol: TCP
     targetPort: 14250
-  - appProtocol: grpc
-    name: otlp-grpc
-    port: 4317
-    protocol: TCP
-    targetPort: 4317
-  - appProtocol: http
-    name: otlp-http
-    port: 4318
-    protocol: TCP
-    targetPort: 4318
