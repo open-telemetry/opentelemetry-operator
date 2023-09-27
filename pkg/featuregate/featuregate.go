@@ -63,7 +63,7 @@ var (
 	)
 	EnableNginxAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.nginx",
-		featuregate.StageBeta,
+		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator supports Nginx auto-instrumentation"),
 		featuregate.WithRegisterFromVersion("v0.86.0"),
 	)

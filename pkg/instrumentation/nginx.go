@@ -88,6 +88,11 @@ func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, ind
 		nginxConfFile := getNginxConfFile(nginxSpec.ConfigFile)
 		nginxConfDir := getNginxConfDir(nginxSpec.ConfigFile)
 
+		// from original Nginx container, we need
+		// 1) original configuration files, which then get modified in the instrumentation process
+		// 2) version of Nginx to select the proper version of OTel modules.
+		//    - run Nginx with -v to get the version
+		//    - store the version into a file where instrumentation initContainer can pick it up
 		nginxCloneScriptTemplate :=
 			`
 cp -r %[2]s/* %[3]s &&
@@ -154,6 +159,19 @@ export %[4]s=$( { nginx -v ; } 2>&1 ) && echo ${%[4]s##*/} > %[3]s/version.txt
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}})
+
+		// Following is the template for a shell script, which does the actual instrumentation
+		// It does following:
+		// 1) Copies Nginx OTel modules from the webserver agent image
+		// 2) Picks-up the Nginx version stored by the clone of original container (see comment there)
+		// 3) Finds out which directory to use for logs
+		// 4) Configures the directory in logging configuration file of OTel modules
+		// 5) Creates a configuration file for OTel modules
+		// 6) In that configuration file, set SID parameter to pod name (in env var OTEL_NGINX_SERVICE_INSTANCE_ID)
+		// 7) In Nginx config file, inject directive to load OTel module
+		// 8) In Nginx config file, enable use of env var OTEL_RESOURCE_ATTRIBUTES in Nginx process
+		//    (by default, env vars are hidden to Nginx process, they need to be enabled specifically)
+		// 9) Move OTel module configuration file to Nginx configuration directory.
 
 		// Each line of the script MUST end with \n !
 		nginxAgentI13nScript :=
