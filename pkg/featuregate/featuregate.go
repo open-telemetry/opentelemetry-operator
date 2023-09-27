@@ -65,7 +65,7 @@ var (
 		"operator.autoinstrumentation.nginx",
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports Nginx auto-instrumentation"),
-		featuregate.WithRegisterFromVersion("v0.85.0"),
+		featuregate.WithRegisterFromVersion("v0.86.0"),
 	)
 
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
