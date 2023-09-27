@@ -97,6 +97,10 @@ type OpenTelemetryCollectorSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=managed
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
+	// RunValidation enables the operator to automatically run the collector's validate command
+	// as an initContainer to prevent the rollout of potentially bad configuration.
+	// +optional
+	RunValidation bool `json:"runValidation,omitempty"`
 	// Resources to set on the OpenTelemetry Collector pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`

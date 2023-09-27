@@ -3941,6 +3941,11 @@ spec:
                       resources required.
                     type: object
                 type: object
+              runValidation:
+                description: RunValidation enables the operator to automatically run
+                  the collector's validate command as an initContainer to prevent
+                  the rollout of potentially bad configuration.
+                type: boolean
               securityContext:
                 description: SecurityContext configures the container security context
                   for the opentelemetry-collector container.
