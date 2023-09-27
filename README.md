@@ -442,7 +442,7 @@ If a language is enabled by default its gate only needs to be supplied when disa
 | DotNet        | `operator.autoinstrumentation.dotnet`       | enabled       |
 | ApacheHttpD   | `operator.autoinstrumentation.apache-httpd` | enabled       |
 | Go            | `operator.autoinstrumentation.go`           | disabled      |
-| Nginx         | `operator.autoinstrumentation.nginx`        | enabled       |
+| Nginx         | `operator.autoinstrumentation.nginx`        | disabled      |
 
 Language not specified in the table are always supported and cannot be disabled.
 
