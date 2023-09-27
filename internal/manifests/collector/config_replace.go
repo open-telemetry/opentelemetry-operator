@@ -45,15 +45,15 @@ type Config struct {
 func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
-		return instance.Spec.Config, nil
+		return instance.Spec.ConfigSpec.String(), nil
 	}
 
-	config, err := adapters.ConfigFromString(instance.Spec.Config)
+	config, err := adapters.ConfigFromString(instance.Spec.ConfigSpec.String())
 	if err != nil {
 		return "", err
 	}
 
-	promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(instance.Spec.Config)
+	promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(instance.Spec.ConfigSpec.String())
 	if getCfgPromErr != nil {
 		return "", getCfgPromErr
 	}

@@ -38,7 +38,7 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 		}
 	}
 	// make sure sha256 for configMap is always calculated
-	annotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	annotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.ConfigSpec.String())
 
 	return annotations
 }
@@ -61,7 +61,7 @@ func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string 
 	}
 
 	// make sure sha256 for configMap is always calculated
-	podAnnotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	podAnnotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.ConfigSpec.String())
 
 	return podAnnotations
 }

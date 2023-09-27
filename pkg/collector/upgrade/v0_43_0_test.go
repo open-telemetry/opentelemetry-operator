@@ -125,7 +125,7 @@ service:
       address: :8988
       level: detailed
 `
-	existing.Spec.Config = configWithMetrics
+	existing.Spec.Config = *v1alpha1.MustParseConfigSpec(configWithMetrics)
 	existing.Spec.Args = map[string]string{
 		"--metrics-addr":   ":8988",
 		"--metrics-level":  "detailed",

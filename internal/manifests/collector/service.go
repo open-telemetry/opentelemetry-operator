@@ -60,7 +60,7 @@ func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.O
 	name := naming.MonitoringService(otelcol.Name)
 	labels := Labels(otelcol, name, []string{})
 
-	c, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	c, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 	// TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration")
@@ -95,7 +95,7 @@ func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 	name := naming.Service(otelcol.Name)
 	labels := Labels(otelcol, name, []string{})
 
-	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	configFromString, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration from the context")
 		return nil

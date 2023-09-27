@@ -26,11 +26,11 @@ import (
 
 func upgrade0_57_2(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 
-	if len(otelcol.Spec.Config) == 0 {
+	if len(otelcol.Spec.ConfigSpec.String()) == 0 {
 		return otelcol, nil
 	}
 
-	otelCfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	otelCfg, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.57.2, failed to parse configuration: %w", err)
 	}
@@ -57,7 +57,7 @@ func upgrade0_57_2(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 						return otelcol, fmt.Errorf("couldn't upgrade to v0.57.2, failed to marshall back configuration: %w", err)
 					}
 
-					otelcol.Spec.Config = string(res)
+					otelcol.Spec.ConfigSpec = *v1alpha1.MustParseConfigSpec(string(res))
 					u.Recorder.Event(otelcol, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.57.2 has deprecated port for healthcheck extension %q", keyExt))
 				}
 			default:

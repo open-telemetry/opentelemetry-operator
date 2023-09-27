@@ -73,7 +73,7 @@ func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Open
 }
 
 func endpointsFromConfig(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []monitoringv1.Endpoint {
-	c, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	c, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 	if err != nil {
 		logger.V(2).Error(err, "Error while parsing the configuration")
 		return []monitoringv1.Endpoint{}

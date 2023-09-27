@@ -25,7 +25,7 @@ import (
 )
 
 func upgrade0_41_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	cfg, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.41.0, failed to parse configuration: %w", err)
 	}

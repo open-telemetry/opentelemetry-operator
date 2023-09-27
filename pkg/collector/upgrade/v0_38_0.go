@@ -45,7 +45,7 @@ func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	}
 
 	if len(foundLoggingArgs) > 0 {
-		cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
+		cfg, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 		if err != nil {
 			return otelcol, fmt.Errorf("couldn't upgrade to v0.38.0, failed to parse configuration: %w", err)
 		}
@@ -89,7 +89,7 @@ func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		if err != nil {
 			return otelcol, fmt.Errorf("couldn't upgrade to v0.38.0, failed to marshall back configuration: %w", err)
 		}
-		otelcol.Spec.Config = string(res)
+		otelcol.Spec.ConfigSpec = *v1alpha1.MustParseConfigSpec(string(res))
 		keys := reflect.ValueOf(foundLoggingArgs).MapKeys()
 		// sort keys to get always the same message
 		sort.Slice(keys, func(i, j int) bool {

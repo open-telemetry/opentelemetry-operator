@@ -27,7 +27,7 @@ import (
 )
 
 func upgrade0_39_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	cfg, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.39.0, failed to parse configuration: %w", err)
 	}
@@ -119,7 +119,7 @@ func updateConfig(otelcol *v1alpha1.OpenTelemetryCollector, cfg map[interface{}]
 	}
 
 	// Note: This is a hack to drop null occurrences from our config parsing above in upgrade routine
-	otelcol.Spec.Config = strings.ReplaceAll(string(res), " null", "")
+	otelcol.Spec.ConfigSpec = *v1alpha1.MustParseConfigSpec(strings.ReplaceAll(string(res), " null", ""))
 
 	return otelcol, nil
 }

@@ -45,7 +45,7 @@ func ConfigMap(cfg config.Config, logger logr.Logger, instance v1alpha1.OpenTele
 
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA ConfigMap should have a single "$", as it does not support env var substitution
-	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(instance.Spec.Config)
+	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(instance.Spec.ConfigSpec.String())
 	if err != nil {
 		return &corev1.ConfigMap{}, err
 	}

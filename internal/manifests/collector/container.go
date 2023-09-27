@@ -43,7 +43,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	// build container ports from service ports
-	ports := getConfigContainerPorts(logger, otelcol.Spec.Config)
+	ports := getConfigContainerPorts(logger, otelcol.Spec.ConfigSpec.String())
 	for _, p := range otelcol.Spec.Ports {
 		ports[p.Name] = corev1.ContainerPort{
 			Name:          p.Name,
@@ -129,7 +129,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	var livenessProbe *corev1.Probe
-	if configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
+	if configFromString, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String()); err == nil {
 		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
 		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {

@@ -138,7 +138,7 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 
 // TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
 func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []corev1.ServicePort {
-	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	configFromString, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration from the context")
 		return nil

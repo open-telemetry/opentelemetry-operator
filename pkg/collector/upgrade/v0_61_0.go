@@ -24,11 +24,11 @@ import (
 )
 
 func upgrade0_61_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-	if len(otelcol.Spec.Config) == 0 {
+	if len(otelcol.Spec.ConfigSpec.String()) == 0 {
 		return otelcol, nil
 	}
 
-	otelCfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	otelCfg, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.61.0, failed to parse configuration: %w", err)
 	}

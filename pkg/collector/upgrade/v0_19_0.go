@@ -27,11 +27,11 @@ import (
 )
 
 func upgrade0_19_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-	if len(otelcol.Spec.Config) == 0 {
+	if len(otelcol.Spec.ConfigSpec.String()) == 0 {
 		return otelcol, nil
 	}
 
-	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	cfg, err := adapters.ConfigFromString(otelcol.Spec.ConfigSpec.String())
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.19.0, failed to parse configuration: %w", err)
 	}
@@ -123,6 +123,6 @@ func upgrade0_19_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.19.0, failed to marshall back configuration: %w", err)
 	}
 
-	otelcol.Spec.Config = string(res)
+	otelcol.Spec.ConfigSpec = *v1alpha1.MustParseConfigSpec(string(res))
 	return otelcol, nil
 }
