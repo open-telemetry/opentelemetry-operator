@@ -10,9 +10,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-env:
-  CURRENT_KIND_VERSION: 0.20.0
-
 jobs:
   scorecard-tests:
     name: test on k8s
@@ -32,7 +29,7 @@ jobs:
 
       - name: Setup kind
         env:
-          KIND_VERSION: ${{ env.KIND_VERSION }}
+          KIND_VERSION: "0.20.0"
         run: go install sigs.k8s.io/kind@v${KIND_VERSION}
 
       - name: Check out code into the Go module directory
