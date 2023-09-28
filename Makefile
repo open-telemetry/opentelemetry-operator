@@ -197,6 +197,11 @@ e2e-upgrade: undeploy
 e2e-autoscale:
 	$(KUTTL) test --config kuttl-test-autoscale.yaml
 
+# end-to-end-test for testing pdb support
+.PHONY: e2e-pdb
+e2e-pdb:
+	$(KUTTL) test --config kuttl-test-pdb.yaml
+
 # end-to-end-test for testing OpenShift cases
 .PHONY: e2e-openshift
 e2e-openshift:

@@ -29,8 +29,10 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	switch params.Instance.Spec.Mode {
 	case v1alpha1.ModeDeployment:
 		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(Deployment))
+		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(PodDisruptionBudget))
 	case v1alpha1.ModeStatefulSet:
 		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(StatefulSet))
+		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(PodDisruptionBudget))
 	case v1alpha1.ModeDaemonSet:
 		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(DaemonSet))
 	case v1alpha1.ModeSidecar:
