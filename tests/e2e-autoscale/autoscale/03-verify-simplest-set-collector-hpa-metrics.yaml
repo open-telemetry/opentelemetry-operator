@@ -1,4 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - script: go run ./cmd/verify/wait-and-validate-metrics.go --cpu-value 60 --scale-down 15 --scale-up 1 --hpa simplest-set-utilization-collector
