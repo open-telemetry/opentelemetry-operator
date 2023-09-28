@@ -28,6 +28,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
 )
 
@@ -97,7 +98,11 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// we should add the sidecar.
 	logger.V(1).Info("injecting sidecar into pod", "otelcol-namespace", otelcol.Namespace, "otelcol-name", otelcol.Name)
 
-	return add(p.config, p.logger, otelcol, pod, attributes)
+	otelcolConfig, err := manifests.NewOtelConfig(&otelcol)
+	if err != nil {
+		logger.Error(err, "there was a problem parsing the configuration")
+	}
+	return add(p.config, p.logger, otelcol, otelcolConfig, pod, attributes)
 }
 
 func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.OpenTelemetryCollector, error) {

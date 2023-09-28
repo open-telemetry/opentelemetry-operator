@@ -26,19 +26,19 @@ import (
 
 type Builder func(params Params) ([]client.Object, error)
 
-type ManifestFactory[T client.Object] func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (T, error)
-type SimpleManifestFactory[T client.Object] func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) T
+type ManifestFactory[T client.Object] func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig OtelConfig) (T, error)
+type SimpleManifestFactory[T client.Object] func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig OtelConfig) T
 type K8sManifestFactory ManifestFactory[client.Object]
 
 func FactoryWithoutError[T client.Object](f SimpleManifestFactory[T]) K8sManifestFactory {
-	return func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (client.Object, error) {
-		return f(cfg, logger, otelcol), nil
+	return func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig OtelConfig) (client.Object, error) {
+		return f(cfg, logger, otelcol, otelColConfig), nil
 	}
 }
 
 func Factory[T client.Object](f ManifestFactory[T]) K8sManifestFactory {
-	return func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (client.Object, error) {
-		return f(cfg, logger, otelcol)
+	return func(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig OtelConfig) (client.Object, error) {
+		return f(cfg, logger, otelcol, otelColConfig)
 	}
 }
 

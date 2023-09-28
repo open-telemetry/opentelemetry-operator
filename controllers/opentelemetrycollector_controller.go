@@ -176,7 +176,13 @@ func isNamespaceScoped(obj client.Object) bool {
 }
 
 func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
+	otelCfg, err:= manifests.NewOtelConfig(&instance)
+	if err!= nil {
+		r.log.Error(err, "there was a problem while parsing the config")
+	}
+
 	return manifests.Params{
+		OtelConfig: otelCfg,
 		Config:   r.config,
 		Client:   r.Client,
 		Instance: instance,

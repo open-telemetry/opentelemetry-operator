@@ -33,7 +33,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.FactoryWithoutError(Service),
 	}
 	for _, factory := range resourceFactories {
-		res, err := factory(params.Config, params.Log, params.Instance)
+		res, err := factory(params.Config, params.Log, params.Instance, params.OtelConfig)
 		if err != nil {
 			return nil, err
 		} else if manifests.ObjectIsNotNil(res) {

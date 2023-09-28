@@ -23,6 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -33,8 +34,8 @@ const (
 )
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
-func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
-	otelColCfg, err := collector.ReplaceConfig(otelcol)
+func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector,  otelCfg manifests.OtelConfig, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
+	otelColCfg, err := collector.ReplaceConfig(otelcol, otelCfg)
 	if err != nil {
 		return pod, err
 	}

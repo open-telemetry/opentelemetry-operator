@@ -49,7 +49,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
 	}
 	for _, factory := range manifestFactories {
-		res, err := factory(params.Config, params.Log, params.Instance)
+		res, err := factory(params.Config, params.Log, params.Instance, params.OtelConfig)
 		if err != nil {
 			return nil, err
 		} else if manifests.ObjectIsNotNil(res) {

@@ -22,15 +22,16 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *appsv1.Deployment {
+func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig manifests.OtelConfig) *appsv1.Deployment {
 	name := naming.TargetAllocator(otelcol.Name)
 	labels := Labels(otelcol, name)
 
-	configMap, err := ConfigMap(cfg, logger, otelcol)
+	configMap, err := ConfigMap(cfg, logger, otelcol, otelColConfig)
 	if err != nil {
 		logger.Info("failed to construct target allocator config map for annotations")
 		configMap = nil

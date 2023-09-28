@@ -24,6 +24,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -33,7 +34,7 @@ const (
 	targetAllocatorFilename = "targetallocator.yaml"
 )
 
-func ConfigMap(cfg config.Config, logger logr.Logger, instance v1alpha1.OpenTelemetryCollector) (*corev1.ConfigMap, error) {
+func ConfigMap(cfg config.Config, logger logr.Logger, instance v1alpha1.OpenTelemetryCollector, otelColConfig manifests.OtelConfig) (*corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(instance.Name)
 	version := strings.Split(instance.Spec.Image, ":")
 	labels := Labels(instance, name)

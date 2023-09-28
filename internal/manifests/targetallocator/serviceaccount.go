@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -35,7 +36,7 @@ func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
 }
 
 // ServiceAccount returns the service account for the given instance.
-func ServiceAccount(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.ServiceAccount {
+func ServiceAccount(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig manifests.OtelConfig) *corev1.ServiceAccount {
 	name := naming.TargetAllocatorServiceAccount(otelcol.Name)
 	labels := Labels(otelcol, name)
 

@@ -24,6 +24,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -34,8 +35,8 @@ const (
 	headlessExists = "Exists"
 )
 
-func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
-	h := Service(cfg, logger, otelcol)
+func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig manifests.OtelConfig) *corev1.Service {
+	h := Service(cfg, logger, otelcol, otelColConfig)
 	if h == nil {
 		return h
 	}
@@ -56,7 +57,7 @@ func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Ope
 	return h
 }
 
-func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
+func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig manifests.OtelConfig) *corev1.Service {
 	name := naming.MonitoringService(otelcol.Name)
 	labels := Labels(otelcol, name, []string{})
 
@@ -91,7 +92,7 @@ func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.O
 	}
 }
 
-func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
+func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig manifests.OtelConfig) *corev1.Service {
 	name := naming.Service(otelcol.Name)
 	labels := Labels(otelcol, name, []string{})
 

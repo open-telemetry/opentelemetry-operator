@@ -22,6 +22,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -42,10 +43,10 @@ type Config struct {
 	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
 }
 
-func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
+func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector, otelCfg manifests.OtelConfig) (string, error) {
 	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
-		return instance.Spec.ConfigSpec.String(), nil
+		return otelCfg.String(), nil
 	}
 
 	config, err := adapters.ConfigFromString(instance.Spec.ConfigSpec.String())

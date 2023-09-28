@@ -21,14 +21,15 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func ConfigMap(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.ConfigMap {
+func ConfigMap(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig manifests.OtelConfig) *corev1.ConfigMap {
 	name := naming.ConfigMap(otelcol.Name)
 	labels := Labels(otelcol, name, []string{})
 
-	replacedConf, err := ReplaceConfig(otelcol)
+	replacedConf, err := ReplaceConfig(otelcol, otelColConfig)
 	if err != nil {
 		logger.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
 	}

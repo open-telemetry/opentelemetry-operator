@@ -22,11 +22,12 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // DaemonSet builds the deployment for the given instance.
-func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *appsv1.DaemonSet {
+func DaemonSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig manifests.OtelConfig) *appsv1.DaemonSet {
 	name := naming.Collector(otelcol.Name)
 	labels := Labels(otelcol, name, cfg.LabelsFilter())
 

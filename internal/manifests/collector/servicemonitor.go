@@ -24,12 +24,13 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // ServiceMonitor returns the service monitor for the given instance.
-func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*monitoringv1.ServiceMonitor, error) {
+func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, otelColConfig manifests.OtelConfig) (*monitoringv1.ServiceMonitor, error) {
 	if !otelcol.Spec.Observability.Metrics.EnableMetrics {
 		logger.V(2).Info("Metrics disabled for this OTEL Collector",
 			"otelcol.name", otelcol.Name,
