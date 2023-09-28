@@ -60,7 +60,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 	metrics := []autoscalingv2.MetricSpec{}
 
 	if otelcol.Spec.Autoscaler.TargetMemoryUtilization != nil {
-		utilizationTarget := autoscalingv2.MetricSpec{
+		memoryTarget := autoscalingv2.MetricSpec{
 			Type: autoscalingv2.ResourceMetricSourceType,
 			Resource: &autoscalingv2.ResourceMetricSource{
 				Name: corev1.ResourceMemory,
@@ -70,11 +70,11 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				},
 			},
 		}
-		metrics = append(metrics, utilizationTarget)
+		metrics = append(metrics, memoryTarget)
 	}
 
 	if otelcol.Spec.Autoscaler.TargetCPUUtilization != nil {
-		targetCPUUtilization := autoscalingv2.MetricSpec{
+		cpuTarget := autoscalingv2.MetricSpec{
 			Type: autoscalingv2.ResourceMetricSourceType,
 			Resource: &autoscalingv2.ResourceMetricSource{
 				Name: corev1.ResourceCPU,
@@ -84,7 +84,7 @@ func HorizontalPodAutoscaler(cfg config.Config, logger logr.Logger, otelcol v1al
 				},
 			},
 		}
-		metrics = append(metrics, targetCPUUtilization)
+		metrics = append(metrics, cpuTarget)
 	}
 
 	autoscaler := autoscalingv2.HorizontalPodAutoscaler{
