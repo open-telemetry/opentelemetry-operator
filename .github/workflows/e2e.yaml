@@ -12,7 +12,6 @@ concurrency:
 
 env:
   CURRENT_KIND_VERSION: 0.20.0
-  LEGACY_KIND_VERSION: 0.17.0  # for K8s versions latest kind doesn't support anymore  
 
 jobs:
   e2e-tests:
@@ -42,7 +41,7 @@ jobs:
 
     - name: Setup kind
       env:
-        KIND_VERSION: ${{ matrix.kube_version >= 1.21 && env.KIND_VERSION || env.LEGACY_KIND_VERSION }}
+        KIND_VERSION: ${{ env.KIND_VERSION }}
       run: go install sigs.k8s.io/kind@v${KIND_VERSION}
 
     - name: Check out code into the Go module directory
