@@ -2,7 +2,6 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: max-integer-collector
-  namespace: create-pdbs
 spec:
   selector:
     matchLabels:
@@ -17,7 +16,6 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: max-string-collector
-  namespace: create-pdbs
 spec:
   selector:
     matchLabels:
@@ -32,7 +30,6 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: min-integer-collector
-  namespace: create-pdbs
 spec:
   selector:
     matchLabels:
@@ -47,7 +44,6 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: min-string-collector
-  namespace: create-pdbs
 spec:
   selector:
     matchLabels:
