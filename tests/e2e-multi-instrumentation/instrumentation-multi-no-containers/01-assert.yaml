@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-nodejs: "true"
+    instrumentation.opentelemetry.io/inject-python: "true"
+    sidecar.opentelemetry.io/inject: "true"
+  labels:
+    app: pod-multi-instr-no-containers
+spec:
+  containers:
+    - name: nodejsapp
+      env:
+        - name: TEST
+          value: test
+    - name: pythonapp
+      env:
+        - name: TEST
+          value: test
+    - name: otc-container
+status:
+  phase: Running
