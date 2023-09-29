@@ -28,8 +28,11 @@ const (
 	envOtelMetricsExporter             = "OTEL_METRICS_EXPORTER"
 	envOtelExporterOTLPTracesProtocol  = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
 	envOtelExporterOTLPMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"
-	pythonPathPrefix                   = "/otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation"
-	pythonPathSuffix                   = "/otel-auto-instrumentation"
+	pythonPathPrefix                   = "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation"
+	pythonPathSuffix                   = "/otel-auto-instrumentation-python"
+	pythonInstrMountPath               = "/otel-auto-instrumentation-python"
+	pythonVolumeName                   = volumeName + "-python"
+	pythonInitContainerName            = initContainerName + "-python"
 )
 
 func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
@@ -96,14 +99,14 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      volumeName,
-		MountPath: "/otel-auto-instrumentation",
+		Name:      pythonVolumeName,
+		MountPath: pythonInstrMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container.
-	if isInitContainerMissing(pod) {
+	if isInitContainerMissing(pod, pythonInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: volumeName,
+			Name: pythonVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
 					SizeLimit: volumeSize(pythonSpec.VolumeSizeLimit),
@@ -111,13 +114,13 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 			}})
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:      initContainerName,
+			Name:      pythonInitContainerName,
 			Image:     pythonSpec.Image,
-			Command:   []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			Command:   []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
 			Resources: pythonSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      volumeName,
-				MountPath: "/otel-auto-instrumentation",
+				Name:      pythonVolumeName,
+				MountPath: pythonInstrMountPath,
 			}},
 		})
 	}

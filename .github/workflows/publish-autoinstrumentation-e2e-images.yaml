@@ -18,44 +18,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  apachehttpd:
-    runs-on: ubuntu-20.04
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/open-telemetry/opentelemetry-operator/apachehttpd-test
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
-      - name: Login to GitHub Package Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          context: tests/instrumentation-e2e-apps/apache-httpd
-          platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
-          push: ${{ github.event_name == 'push' }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+  golang:
+    uses: ./.github/workflows/reusable-publish-autoinstrumentation-e2e-images.yaml
+    with:
+      language: golang
+      platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+  apache-httpd:
+    uses: ./.github/workflows/reusable-publish-autoinstrumentation-e2e-images.yaml
+    with:
+      language: apache-httpd
+      platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le

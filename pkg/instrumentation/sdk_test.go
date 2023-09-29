@@ -501,7 +501,7 @@ func TestInjectJava(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		Java: &inst,
+		Java: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
 	}
 	inj := sdkInjector{
 		logger: logr.Discard(),
@@ -517,12 +517,12 @@ func TestInjectJava(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		})
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: volumeName,
+					Name: javaVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -532,12 +532,12 @@ func TestInjectJava(t *testing.T) {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Name:    initContainerName,
+					Name:    javaInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+					Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      volumeName,
-						MountPath: "/otel-auto-instrumentation",
+						Name:      javaVolumeName,
+						MountPath: javaInstrMountPath,
 					}},
 					Resources: testResourceRequirements,
 				},
@@ -548,8 +548,8 @@ func TestInjectJava(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      volumeName,
-							MountPath: "/otel-auto-instrumentation",
+							Name:      javaVolumeName,
+							MountPath: javaInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -605,7 +605,7 @@ func TestInjectNodeJS(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		NodeJS: &inst,
+		NodeJS: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
 	}
 	inj := sdkInjector{
 		logger: logr.Discard(),
@@ -621,12 +621,12 @@ func TestInjectNodeJS(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		})
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: volumeName,
+					Name: nodejsVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -636,12 +636,12 @@ func TestInjectNodeJS(t *testing.T) {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Name:    initContainerName,
+					Name:    nodejsInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      volumeName,
-						MountPath: "/otel-auto-instrumentation",
+						Name:      nodejsVolumeName,
+						MountPath: nodejsInstrMountPath,
 					}},
 					Resources: testResourceRequirements,
 				},
@@ -652,8 +652,8 @@ func TestInjectNodeJS(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      volumeName,
-							MountPath: "/otel-auto-instrumentation",
+							Name:      nodejsVolumeName,
+							MountPath: nodejsInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -708,7 +708,7 @@ func TestInjectPython(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		Python: &inst,
+		Python: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
 	}
 
 	inj := sdkInjector{
@@ -725,12 +725,12 @@ func TestInjectPython(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		})
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: volumeName,
+					Name: pythonVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -740,12 +740,12 @@ func TestInjectPython(t *testing.T) {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Name:    initContainerName,
+					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      volumeName,
-						MountPath: "/otel-auto-instrumentation",
+						Name:      pythonVolumeName,
+						MountPath: pythonInstrMountPath,
 					}},
 				},
 			},
@@ -755,8 +755,8 @@ func TestInjectPython(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      volumeName,
-							MountPath: "/otel-auto-instrumentation",
+							Name:      pythonVolumeName,
+							MountPath: pythonInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -827,7 +827,7 @@ func TestInjectDotNet(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		DotNet: &inst,
+		DotNet: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
 	}
 	inj := sdkInjector{
 		logger: logr.Discard(),
@@ -843,12 +843,12 @@ func TestInjectDotNet(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		})
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
 				{
-					Name: volumeName,
+					Name: dotnetVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							SizeLimit: &defaultVolumeLimitSize,
@@ -858,12 +858,12 @@ func TestInjectDotNet(t *testing.T) {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Name:    initContainerName,
+					Name:    dotnetInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+					Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
-						Name:      volumeName,
-						MountPath: "/otel-auto-instrumentation",
+						Name:      dotnetVolumeName,
+						MountPath: dotnetInstrMountPath,
 					}},
 				},
 			},
@@ -873,8 +873,8 @@ func TestInjectDotNet(t *testing.T) {
 					Image: "app:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      volumeName,
-							MountPath: "/otel-auto-instrumentation",
+							Name:      dotnetVolumeName,
+							MountPath: dotnetInstrMountPath,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -955,12 +955,13 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "shared process namespace disabled",
 			insts: languageInstrumentations{
-				Go: &v1alpha1.Instrumentation{
+				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{
 					Spec: v1alpha1.InstrumentationSpec{
 						Go: v1alpha1.Go{
 							Image: "otel/go:1",
 						},
 					},
+				},
 				},
 			},
 			pod: corev1.Pod{
@@ -987,12 +988,13 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "OTEL_GO_AUTO_TARGET_EXE not set",
 			insts: languageInstrumentations{
-				Go: &v1alpha1.Instrumentation{
+				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{
 					Spec: v1alpha1.InstrumentationSpec{
 						Go: v1alpha1.Go{
 							Image: "otel/go:1",
 						},
 					},
+				},
 				},
 			},
 			pod: corev1.Pod{
@@ -1017,7 +1019,7 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "OTEL_GO_AUTO_TARGET_EXE set by inst",
 			insts: languageInstrumentations{
-				Go: &v1alpha1.Instrumentation{
+				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{
 					Spec: v1alpha1.InstrumentationSpec{
 						Go: v1alpha1.Go{
 							Image: "otel/go:1",
@@ -1029,6 +1031,7 @@ func TestInjectGo(t *testing.T) {
 							},
 						},
 					},
+				},
 				},
 			},
 			pod: corev1.Pod{
@@ -1114,10 +1117,13 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "OTEL_GO_AUTO_TARGET_EXE set by annotation",
 			insts: languageInstrumentations{
-				Go: &v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						Go: v1alpha1.Go{
-							Image: "otel/go:1",
+				Go: instrumentationWithContainers{
+					Containers: "",
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Go: v1alpha1.Go{
+								Image: "otel/go:1",
+							},
 						},
 					},
 				},
@@ -1219,7 +1225,7 @@ func TestInjectGo(t *testing.T) {
 			inj := sdkInjector{
 				logger: logr.Discard(),
 			}
-			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, "")
+			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1236,15 +1242,18 @@ func TestInjectApacheHttpd(t *testing.T) {
 		{
 			name: "injection enabled, exporter set",
 			insts: languageInstrumentations{
-				ApacheHttpd: &v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						ApacheHttpd: v1alpha1.ApacheHttpd{
-							Image: "img:1",
-						},
-						Exporter: v1alpha1.Exporter{
-							Endpoint: "https://collector:4318",
+				ApacheHttpd: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							ApacheHttpd: v1alpha1.ApacheHttpd{
+								Image: "img:1",
+							},
+							Exporter: v1alpha1.Exporter{
+								Endpoint: "https://collector:4318",
+							},
 						},
 					},
+					Containers: "",
 				},
 			},
 			pod: corev1.Pod{
@@ -1372,7 +1381,8 @@ func TestInjectApacheHttpd(t *testing.T) {
 			inj := sdkInjector{
 				logger: logr.Discard(),
 			}
-			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, "")
+
+			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1387,7 +1397,7 @@ func TestInjectSdkOnly(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		Sdk: &inst,
+		Sdk: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
 	}
 
 	inj := sdkInjector{
@@ -1404,7 +1414,7 @@ func TestInjectSdkOnly(t *testing.T) {
 					},
 				},
 			},
-		}, "")
+		})
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{

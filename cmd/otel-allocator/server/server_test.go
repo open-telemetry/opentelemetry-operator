@@ -154,7 +154,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tt.args.allocator, &listenAddr)
+			s := NewServer(logger, tt.args.allocator, listenAddr)
 			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{"test-collector": {Name: "test-collector"}})
 			tt.args.allocator.SetTargets(tt.args.cMap)
 			request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/%s/targets?collector_id=%s", tt.args.job, tt.args.collector), nil)
@@ -445,7 +445,7 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, nil, &listenAddr)
+			s := NewServer(logger, nil, listenAddr)
 			assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 
 			request := httptest.NewRequest("GET", "/scrape_configs", nil)
@@ -518,7 +518,7 @@ func TestServer_JobHandler(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
 			a := &mockAllocator{targetItems: tc.targetItems}
-			s := NewServer(logger, a, &listenAddr)
+			s := NewServer(logger, a, listenAddr)
 			request := httptest.NewRequest("GET", "/jobs", nil)
 			w := httptest.NewRecorder()
 

@@ -1,5 +1,0 @@
----
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-commands:
-- script: ./tests/e2e-openshift/otlp-metrics-traces/check_metrics.sh
