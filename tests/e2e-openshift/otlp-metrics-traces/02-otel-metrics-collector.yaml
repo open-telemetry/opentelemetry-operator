@@ -7,10 +7,9 @@ metadata:
   namespace: kuttl-otlp-metrics
 spec:
   mode: deployment
-  ports:
-  - name: promexporter
-    port: 8889
-    protocol: TCP
+  observability:
+    metrics:
+      enableMetrics: true
   config: |
     receivers:
       otlp:
@@ -19,10 +18,10 @@ spec:
           http:
     processors:
     exporters:
-      jaeger:
-        endpoint: jaeger-allinone-collector-headless.kuttl-otlp-metrics.svc:14250
+      otlp:
+        endpoint: jaeger-allinone-collector-headless.kuttl-otlp-metrics.svc:4317
         tls:
-          ca_file: "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+          insecure: true
       prometheus:
         endpoint: 0.0.0.0:8889
         resource_to_telemetry_conversion:
@@ -32,7 +31,7 @@ spec:
         traces:
           receivers: [otlp]
           processors: []
-          exporters: [jaeger]
+          exporters: [otlp]
         metrics:
           receivers: [otlp]
           processors: []
