@@ -51,7 +51,7 @@ func TestLoad(t *testing.T) {
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: model.Duration(time.Second * 60),
 				},
-				Config: &promconfig.Config{
+				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
 						ScrapeTimeout:      model.Duration(10 * time.Second),
@@ -99,7 +99,7 @@ func TestLoad(t *testing.T) {
 			args: args{
 				file: "./testdata/no_config.yaml",
 			},
-			want:    createDefaultConfig(),
+			want:    CreateDefaultConfig(),
 			wantErr: assert.NoError,
 		},
 		{
@@ -115,7 +115,7 @@ func TestLoad(t *testing.T) {
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: DefaultCRScrapeInterval,
 				},
-				Config: &promconfig.Config{
+				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
 						ScrapeTimeout:      model.Duration(10 * time.Second),
@@ -163,7 +163,8 @@ func TestLoad(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Load(tt.args.file)
+			got := CreateDefaultConfig()
+			err := LoadFromFile(tt.args.file, &got)
 			if !tt.wantErr(t, err, fmt.Sprintf("Load(%v)", tt.args.file)) {
 				return
 			}
@@ -173,45 +174,38 @@ func TestLoad(t *testing.T) {
 }
 
 func TestValidateConfig(t *testing.T) {
-	enabled := true
-	disabled := false
 	testCases := []struct {
 		name        string
-		cliConfig   CLIConfig
 		fileConfig  Config
 		expectedErr error
 	}{
 		{
 			name:        "promCR enabled, no Prometheus config",
-			cliConfig:   CLIConfig{PromCRWatcherConf: PrometheusCRWatcherConfig{Enabled: &enabled}},
-			fileConfig:  Config{Config: nil},
+			fileConfig:  Config{PromConfig: nil, PrometheusCR: PrometheusCRConfig{Enabled: true}},
 			expectedErr: nil,
 		},
 		{
 			name:        "promCR disabled, no Prometheus config",
-			cliConfig:   CLIConfig{PromCRWatcherConf: PrometheusCRWatcherConfig{Enabled: &disabled}},
-			fileConfig:  Config{Config: nil},
+			fileConfig:  Config{PromConfig: nil},
 			expectedErr: fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
 		},
 		{
 			name:        "promCR disabled, Prometheus config present, no scrapeConfigs",
-			cliConfig:   CLIConfig{PromCRWatcherConf: PrometheusCRWatcherConfig{Enabled: &disabled}},
-			fileConfig:  Config{Config: &promconfig.Config{}},
+			fileConfig:  Config{PromConfig: &promconfig.Config{}},
 			expectedErr: fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
 		},
 		{
-			name:      "promCR disabled, Prometheus config present, scrapeConfigs present",
-			cliConfig: CLIConfig{PromCRWatcherConf: PrometheusCRWatcherConfig{Enabled: &disabled}},
+			name: "promCR disabled, Prometheus config present, scrapeConfigs present",
 			fileConfig: Config{
-				Config: &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				PromConfig: &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
 			},
 			expectedErr: nil,
 		},
 		{
-			name:      "promCR enabled, Prometheus config present, scrapeConfigs present",
-			cliConfig: CLIConfig{PromCRWatcherConf: PrometheusCRWatcherConfig{Enabled: &enabled}},
+			name: "promCR enabled, Prometheus config present, scrapeConfigs present",
 			fileConfig: Config{
-				Config: &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				PromConfig:   &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				PrometheusCR: PrometheusCRConfig{Enabled: true},
 			},
 			expectedErr: nil,
 		},
@@ -219,7 +213,7 @@ func TestValidateConfig(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := ValidateConfig(&tc.fileConfig, &tc.cliConfig)
+			err := ValidateConfig(&tc.fileConfig)
 			assert.Equal(t, tc.expectedErr, err)
 		})
 	}

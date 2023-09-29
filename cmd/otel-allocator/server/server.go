@@ -71,7 +71,7 @@ type Server struct {
 	scrapeConfigResponse []byte
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr *string) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string) *Server {
 	s := &Server{
 		logger:         log,
 		allocator:      allocator,
@@ -90,7 +90,7 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr *stri
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	registerPprof(router.Group("/debug/pprof/"))
 
-	s.server = &http.Server{Addr: *listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
+	s.server = &http.Server{Addr: listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
 	return s
 }
 

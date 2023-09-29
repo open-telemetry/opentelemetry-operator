@@ -15,9 +15,11 @@
 package collector_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -407,6 +409,26 @@ func TestContainerDefaultEnvVars(t *testing.T) {
 	// verify
 	assert.Len(t, c.Env, 1)
 	assert.Equal(t, c.Env[0].Name, "POD_NAME")
+}
+
+func TestContainerProxyEnvVars(t *testing.T) {
+	err := os.Setenv("NO_PROXY", "localhost")
+	require.NoError(t, err)
+	defer os.Unsetenv("NO_PROXY")
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	require.Len(t, c.Env, 3)
+	assert.Equal(t, "POD_NAME", c.Env[0].Name)
+	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[1])
+	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[2])
 }
 
 func TestContainerResourceRequirements(t *testing.T) {
