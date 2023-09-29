@@ -62,6 +62,12 @@ var (
 		featuregate.WithRegisterFromVersion("v0.80.0"),
 	)
 
+	EnableMultiInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.multi-instrumentation",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterFromVersion("0.86.0"),
+		featuregate.WithRegisterDescription("controls whether the operator supports multi instrumentation"))
+
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
 	// automatically be rewritten when the target allocator is enabled.
 	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
