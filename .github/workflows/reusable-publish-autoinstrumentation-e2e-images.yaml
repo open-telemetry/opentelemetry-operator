@@ -1,4 +1,4 @@
-name: Reusable - Create operator hub pull request
+name: Reusable - Publish autoinstrumentation E2E images
 
 on:
   workflow_call:
