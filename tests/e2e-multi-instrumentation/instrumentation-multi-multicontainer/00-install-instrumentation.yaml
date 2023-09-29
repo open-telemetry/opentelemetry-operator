@@ -1,0 +1,40 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: multi
+spec:
+  env:
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
+  exporter:
+    endpoint: http://localhost:4317
+  propagators:
+    - jaeger
+    - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.25"
+  java:
+    env:
+      - name: OTEL_SERVICE_NAME
+        value: "javaapp"
+  python:
+    env:
+      - name: OTEL_SERVICE_NAME
+        value: "pythonapp"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://localhost:4318
+  nodejs:
+    env:
+      - name: OTEL_SERVICE_NAME
+        value: "nodejsapp"
+  dotnet:
+    env:
+      - name: OTEL_SERVICE_NAME
+        value: "dotnetapp"
+  go:
+    env:
+      - name: OTEL_SERVICE_NAME
+        value: "goapp"
