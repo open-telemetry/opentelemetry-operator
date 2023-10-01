@@ -15,20 +15,21 @@
 package collector
 
 import (
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // StatefulSet builds the statefulset for the given instance.
-func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *appsv1.StatefulSet {
+func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
+	otelcol := params.OtelCol
+	logger := params.Log
+
 	name := naming.Collector(otelcol.Name)
-	labels := Labels(otelcol, name, cfg.LabelsFilter())
+	labels := Labels(otelcol, name, params.Config.LabelsFilter())
 
 	annotations := Annotations(otelcol)
 	podAnnotations := PodAnnotations(otelcol)
@@ -53,8 +54,8 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 				Spec: corev1.PodSpec{
 					ServiceAccountName:        ServiceAccountName(otelcol),
 					InitContainers:            otelcol.Spec.InitContainers,
-					Containers:                append(otelcol.Spec.AdditionalContainers, Container(cfg, logger, otelcol, true)),
-					Volumes:                   Volumes(cfg, otelcol),
+					Containers:                append(otelcol.Spec.AdditionalContainers, Container(params.Config, logger, otelcol, true)),
+					Volumes:                   Volumes(params.Config, otelcol),
 					DNSPolicy:                 getDNSPolicy(otelcol),
 					HostNetwork:               otelcol.Spec.HostNetwork,
 					Tolerations:               otelcol.Spec.Tolerations,

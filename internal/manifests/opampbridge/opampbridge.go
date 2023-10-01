@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package targetallocator
+package opampbridge
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,15 +20,12 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
-// Build creates the manifest for the TargetAllocator resource.
+// Build creates the manifest for the OpAMPBridge resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
-	if !params.OtelCol.Spec.TargetAllocator.Enabled {
-		return resourceManifests, nil
-	}
 	resourceFactories := []manifests.K8sManifestFactory{
-		manifests.Factory(ConfigMap),
 		manifests.FactoryWithoutError(Deployment),
+		manifests.Factory(ConfigMap),
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.FactoryWithoutError(Service),
 	}

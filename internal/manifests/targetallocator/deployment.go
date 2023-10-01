@@ -15,22 +15,23 @@
 package targetallocator
 
 import (
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *appsv1.Deployment {
+func Deployment(params manifests.Params) *appsv1.Deployment {
+	otelcol := params.OtelCol
+	logger := params.Log
+
 	name := naming.TargetAllocator(otelcol.Name)
 	labels := Labels(otelcol, name)
 
-	configMap, err := ConfigMap(cfg, logger, otelcol)
+	configMap, err := ConfigMap(params)
 	if err != nil {
 		logger.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
@@ -55,8 +56,8 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:        ServiceAccountName(otelcol),
-					Containers:                []corev1.Container{Container(cfg, logger, otelcol)},
-					Volumes:                   Volumes(cfg, otelcol),
+					Containers:                []corev1.Container{Container(params.Config, logger, otelcol)},
+					Volumes:                   Volumes(params.Config, otelcol),
 					NodeSelector:              otelcol.Spec.TargetAllocator.NodeSelector,
 					TopologySpreadConstraints: otelcol.Spec.TargetAllocator.TopologySpreadConstraints,
 				},

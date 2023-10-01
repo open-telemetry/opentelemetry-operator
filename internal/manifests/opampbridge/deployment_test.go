@@ -23,6 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 var testTolerationValues = []v1.Toleration{
@@ -77,8 +78,14 @@ func TestDeploymentNewDefault(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge,
+		Log:         logger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, opampBridge)
+	d := Deployment(params)
 
 	// verify
 	assert.Equal(t, "my-instance-opamp-bridge", d.Name)
@@ -124,8 +131,14 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge,
+		Log:         logger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, opampBridge)
+	d := Deployment(params)
 
 	// verify
 	assert.Len(t, d.Spec.Template.Annotations, 1)
@@ -153,7 +166,13 @@ func TestDeploymentPodSecurityContext(t *testing.T) {
 
 	cfg := config.New()
 
-	d := Deployment(cfg, logger, opampBridge)
+	params := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge,
+		Log:         logger,
+	}
+
+	d := Deployment(params)
 
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
@@ -170,7 +189,13 @@ func TestDeploymentHostNetwork(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, opampBridge1)
+	params1 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge1,
+		Log:         logger,
+	}
+
+	d1 := Deployment(params1)
 
 	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
@@ -187,7 +212,13 @@ func TestDeploymentHostNetwork(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, opampBridge2)
+	params2 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge2,
+		Log:         logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -208,7 +239,13 @@ func TestDeploymentFilterLabels(t *testing.T) {
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
 
-	d := Deployment(cfg, logger, opampBridge)
+	params := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge,
+		Log:         logger,
+	}
+
+	d := Deployment(params)
 
 	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
@@ -226,7 +263,13 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, opampBridge1)
+	params1 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge1,
+		Log:         logger,
+	}
+
+	d1 := Deployment(params1)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
@@ -245,7 +288,13 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, opampBridge2)
+	params2 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge2,
+		Log:         logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
@@ -258,7 +307,13 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, opampBridge1)
+	params1 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge1,
+		Log:         logger,
+	}
+
+	d1 := Deployment(params1)
 	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
@@ -274,7 +329,13 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, opampBridge2)
+	params2 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge2,
+		Log:         logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
 
@@ -287,7 +348,13 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, opampBridge1)
+	params1 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge1,
+		Log:         logger,
+	}
+
+	d1 := Deployment(params1)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
 	opampBridge2 := v1alpha1.OpAMPBridge{
@@ -301,7 +368,13 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, opampBridge2)
+	params2 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge2,
+		Log:         logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
@@ -315,7 +388,14 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg := config.New()
-	d1 := Deployment(cfg, logger, opampBridge1)
+
+	params1 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge1,
+		Log:         logger,
+	}
+
+	d1 := Deployment(params1)
 	assert.Equal(t, "my-instance-opamp-bridge", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
@@ -330,7 +410,14 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg = config.New()
-	d2 := Deployment(cfg, logger, opampBridge2)
+
+	params2 := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge2,
+		Log:         logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.Equal(t, "my-instance-topologyspreadconstraint-opamp-bridge", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)

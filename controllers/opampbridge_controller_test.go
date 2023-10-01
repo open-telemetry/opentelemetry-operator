@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -36,8 +37,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	opampbridgereconcile "github.com/open-telemetry/opentelemetry-operator/pkg/reconcile/opampbridge"
 )
 
 var opampBridgeLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
@@ -58,10 +59,11 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 	)
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
-		Client: k8sClient,
-		Log:    logger,
-		Scheme: testScheme,
-		Config: cfg,
+		Client:   k8sClient,
+		Log:      logger,
+		Scheme:   testScheme,
+		Recorder: record.NewFakeRecorder(10),
+		Config:   cfg,
 	})
 	require.NoError(t, cfg.AutoDetect())
 	created := &v1alpha1.OpAMPBridge{
@@ -93,6 +95,7 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 		client.MatchingLabels(map[string]string{
 			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", nsn.Namespace, nsn.Name),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
 		}),
 	}
 
@@ -134,14 +137,14 @@ func TestContinueOnRecoverableFailure_OpAMPBridge(t *testing.T) {
 		Tasks: []controllers.OpAMPBridgeReconcilerTask{
 			{
 				Name: "should-fail",
-				Do: func(context.Context, opampbridgereconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					return errors.New("should fail")
 				},
 				BailOnError: false,
 			},
 			{
 				Name: "should-be-called",
-				Do: func(context.Context, opampbridgereconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					taskCalled = true
 					return nil
 				},
@@ -150,7 +153,7 @@ func TestContinueOnRecoverableFailure_OpAMPBridge(t *testing.T) {
 	})
 
 	// test
-	err := reconciler.RunTasks(context.Background(), opampbridgereconcile.Params{})
+	err := reconciler.RunTasks(context.Background(), manifests.Params{})
 
 	// verify
 	assert.NoError(t, err)
@@ -171,7 +174,7 @@ func TestBreakOnUnrecoverableError_OpAMPBridge(t *testing.T) {
 		Tasks: []controllers.OpAMPBridgeReconcilerTask{
 			{
 				Name: "should-fail",
-				Do: func(context.Context, opampbridgereconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					taskCalled = true
 					return expectedErr
 				},
@@ -179,7 +182,7 @@ func TestBreakOnUnrecoverableError_OpAMPBridge(t *testing.T) {
 			},
 			{
 				Name: "should-not-be-called",
-				Do: func(context.Context, opampbridgereconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					assert.Fail(t, "should not have been called")
 					return nil
 				},
@@ -226,7 +229,7 @@ func TestSkipWhenInstanceDoesNotExist_OpAMPBridge(t *testing.T) {
 		Tasks: []controllers.OpAMPBridgeReconcilerTask{
 			{
 				Name: "should-not-be-called",
-				Do: func(context.Context, opampbridgereconcile.Params) error {
+				Do: func(context.Context, manifests.Params) error {
 					assert.Fail(t, "should not have been called")
 					return nil
 				},

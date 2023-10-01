@@ -17,17 +17,19 @@ package collector
 import (
 	"fmt"
 
-	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []*routev1.Route {
+func Routes(params manifests.Params) []*routev1.Route {
+	otelcol := params.OtelCol
+	logger := params.Log
+
 	if otelcol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
 		return nil
 	}
@@ -80,6 +82,7 @@ func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetr
 					"app.kubernetes.io/name":       naming.Route(otelcol.Name, p.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/component":  "opentelemetry-collector",
 				},
 			},
 			Spec: routev1.RouteSpec{

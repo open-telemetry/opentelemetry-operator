@@ -27,7 +27,6 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -39,7 +38,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
-	"github.com/open-telemetry/opentelemetry-operator/internal/status"
+	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -133,7 +132,7 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 			"object_kind", desired.GetObjectKind(),
 		)
 		if isNamespaceScoped(desired) {
-			if setErr := ctrl.SetControllerReference(&params.Instance, desired, params.Scheme); setErr != nil {
+			if setErr := ctrl.SetControllerReference(&params.OtelCol, desired, params.Scheme); setErr != nil {
 				l.Error(setErr, "failed to set controller owner reference to desired")
 				errs = append(errs, setErr)
 				continue
@@ -161,25 +160,16 @@ func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params ma
 		l.V(1).Info(fmt.Sprintf("desired has been %s", op))
 	}
 	if len(errs) > 0 {
-		return fmt.Errorf("failed to create objects for Collector %s: %w", params.Instance.GetName(), errors.Join(errs...))
+		return fmt.Errorf("failed to create objects for Collector %s: %w", params.OtelCol.GetName(), errors.Join(errs...))
 	}
 	return nil
-}
-
-func isNamespaceScoped(obj client.Object) bool {
-	switch obj.(type) {
-	case *rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding:
-		return false
-	default:
-		return true
-	}
 }
 
 func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
 	return manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
-		Instance: instance,
+		OtelCol:  instance,
 		Log:      r.log,
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
@@ -245,7 +235,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	err := r.doCRUD(ctx, params)
-	return status.HandleReconcileStatus(ctx, log, params, err)
+	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
 // RunTasks runs all the tasks associated with this reconciler.
@@ -256,7 +246,7 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 		if err := task.Do(ctx, params); err != nil {
 			// If we get an error that occurs because a pod is being terminated, then exit this loop
 			if apierrors.IsForbidden(err) && apierrors.HasStatusCause(err, corev1.NamespaceTerminatingCause) {
-				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.Instance.Namespace)
+				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.OtelCol.Namespace)
 				return nil
 			}
 			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))

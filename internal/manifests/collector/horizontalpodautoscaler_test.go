@@ -26,6 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
@@ -84,7 +85,13 @@ func TestHPA(t *testing.T) {
 				configuration := config.New(config.WithAutoDetect(mockAutoDetector))
 				err := configuration.AutoDetect()
 				assert.NoError(t, err)
-				raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
+
+				params := manifests.Params{
+					Config:  configuration,
+					OtelCol: otelcol,
+					Log:     logger,
+				}
+				raw := HorizontalPodAutoscaler(params)
 
 				if configuration.AutoscalingVersion() == autodetect.AutoscalingVersionV2Beta2 {
 					hpa := raw.(*autoscalingv2beta2.HorizontalPodAutoscaler)

@@ -16,11 +16,13 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -30,7 +32,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	opampbridgereconcile "github.com/open-telemetry/opentelemetry-operator/pkg/reconcile/opampbridge"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/opampbridge"
+	opampbridgeStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/opampbridge"
 )
 
 // OpAMPBridgeReconciler reconciles a OpAMPBridge object.
@@ -55,9 +58,76 @@ type OpAMPBridgeReconcilerParams struct {
 
 // OpAMPBridgeReconcilerTask represents a reconciliation task to be executed by the OpAMPBridgeReconciler.
 type OpAMPBridgeReconcilerTask struct {
-	Do          func(context.Context, manifests.OpAMPBridgeParams) error
+	Do          func(context.Context, manifests.Params) error
 	Name        string
 	BailOnError bool
+}
+
+func (r *OpAMPBridgeReconciler) doCRUD(ctx context.Context, params manifests.Params) error {
+	// Collect all objects owned by the operator, to be able to prune objects
+	// which exist in the cluster but are not managed by the operator anymore.
+	desiredObjects, err := r.BuildAll(params)
+	if err != nil {
+		return err
+	}
+	var errs []error
+	for _, desired := range desiredObjects {
+		l := r.log.WithValues(
+			"object_name", desired.GetName(),
+			"object_kind", desired.GetObjectKind(),
+		)
+		if isNamespaceScoped(desired) {
+			if setErr := ctrl.SetControllerReference(&params.OpAMPBridge, desired, params.Scheme); setErr != nil {
+				l.Error(setErr, "failed to set controller owner reference to desired")
+				errs = append(errs, setErr)
+				continue
+			}
+		}
+
+		// existing is an object the controller runtime will hydrate for us
+		// we obtain the existing object by deep copying the desired object because it's the most convenient way
+		existing := desired.DeepCopyObject().(client.Object)
+		mutateFn := manifests.MutateFuncFor(existing, desired)
+		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, existing, mutateFn)
+		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
+			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "existing", existing.GetName())
+			delErr := r.Client.Delete(ctx, existing)
+			if delErr != nil {
+				return delErr
+			}
+			continue
+		} else if crudErr != nil {
+			l.Error(crudErr, "failed to configure desired")
+			errs = append(errs, crudErr)
+			continue
+		}
+
+		l.V(1).Info(fmt.Sprintf("desired has been %s", op))
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to create objects for OpAMPBridge %s: %w", params.OpAMPBridge.GetName(), errors.Join(errs...))
+	}
+	return nil
+}
+
+func isNamespaceScoped(obj client.Object) bool {
+	switch obj.(type) {
+	case *rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding:
+		return false
+	default:
+		return true
+	}
+}
+
+func (r *OpAMPBridgeReconciler) getParams(instance v1alpha1.OpAMPBridge) manifests.Params {
+	return manifests.Params{
+		Config:      r.config,
+		Client:      r.Client,
+		OpAMPBridge: instance,
+		Log:         r.log,
+		Scheme:      r.scheme,
+		Recorder:    r.recorder,
+	}
 }
 
 func NewOpAMPBridgeReconciler(params OpAMPBridgeReconcilerParams) *OpAMPBridgeReconciler {
@@ -93,25 +163,19 @@ func (r *OpAMPBridgeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params := opampbridgereconcile.Params{
-		Client:   r.Client,
-		Recorder: r.recorder,
-		Scheme:   r.scheme,
-		Log:      r.log,
-		Instance: instance,
-		Config:   r.config,
-	}
+	params := r.getParams(instance)
 	if err := r.RunTasks(ctx, params); err != nil {
 		return ctrl.Result{}, err
 	}
-	return ctrl.Result{}, nil
+	err := r.doCRUD(ctx, params)
+	return opampbridgeStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
-func (r *OpAMPBridgeReconciler) RunTasks(ctx context.Context, params opampbridgereconcile.Params) error {
+func (r *OpAMPBridgeReconciler) RunTasks(ctx context.Context, params manifests.Params) error {
 	for _, task := range r.tasks {
 		if err := task.Do(ctx, params); err != nil {
 			if apierrors.IsForbidden(err) && apierrors.HasStatusCause(err, corev1.NamespaceTerminatingCause) {
-				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.Instance.Namespace)
+				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.OpAMPBridge.Namespace)
 				return nil
 			}
 			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
@@ -121,6 +185,22 @@ func (r *OpAMPBridgeReconciler) RunTasks(ctx context.Context, params opampbridge
 		}
 	}
 	return nil
+}
+
+// BuildAll returns the generation and collected errors of all manifests for a given instance.
+func (r *OpAMPBridgeReconciler) BuildAll(params manifests.Params) ([]client.Object, error) {
+	builders := []manifests.Builder{
+		opampbridge.Build,
+	}
+	var resources []client.Object
+	for _, builder := range builders {
+		objs, err := builder(params)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, objs...)
+	}
+	return resources, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

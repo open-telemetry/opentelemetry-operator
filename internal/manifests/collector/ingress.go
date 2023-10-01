@@ -23,12 +23,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *networkingv1.Ingress {
+func Ingress(params manifests.Params) *networkingv1.Ingress {
+	otelcol := params.OtelCol
+	logger := params.Log
+
 	if otelcol.Spec.Ingress.Type != v1alpha1.IngressTypeNginx {
 		return nil
 	}

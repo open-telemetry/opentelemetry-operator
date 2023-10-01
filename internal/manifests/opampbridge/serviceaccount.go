@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -31,11 +32,13 @@ func ServiceAccountName(instance v1alpha1.OpAMPBridge) string {
 }
 
 // ServiceAccount returns the service account for the given instance.
-func ServiceAccount(opampBridge v1alpha1.OpAMPBridge) corev1.ServiceAccount {
+func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
+	opampBridge := params.OpAMPBridge
+
 	name := naming.OpAMPBridgeServiceAccount(opampBridge.Name)
 	labels := Labels(opampBridge, name, []string{})
 
-	return corev1.ServiceAccount{
+	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   opampBridge.Namespace,

@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -40,7 +41,16 @@ var (
 	pathTypePrefix = networkingv1.PathTypePrefix
 )
 
-func TestBuildAll(t *testing.T) {
+var (
+	opampbridgeSelectorLabels = map[string]string{
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
+		"app.kubernetes.io/instance":   "test.test",
+	}
+)
+
+func TestBuildAll_Collector(t *testing.T) {
 	var goodConfig = `receivers:
   examplereceiver:
     endpoint: "0.0.0.0:12345"
@@ -586,6 +596,216 @@ service:
 				config.WithTargetAllocatorImage("default-ta-allocator"),
 			)
 			reconciler := NewReconciler(Params{
+				Log:    logr.Discard(),
+				Config: cfg,
+			})
+			params := reconciler.getParams(tt.args.instance)
+			got, err := reconciler.BuildAll(params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("BuildAll() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestBuildAll_OpAMPBridge(t *testing.T) {
+	one := int32(1)
+	type args struct {
+		instance v1alpha1.OpAMPBridge
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []client.Object
+		wantErr bool
+	}{
+		{
+			name: "base case",
+			args: args{
+				instance: v1alpha1.OpAMPBridge{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+					},
+					Spec: v1alpha1.OpAMPBridgeSpec{
+						Replicas:          &one,
+						Image:             "test",
+						Endpoint:          "ws://opamp-server:4320/v1/opamp",
+						Protocol:          "wss",
+						Capabilities:      []v1alpha1.OpAMPBridgeCapability{v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig, v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig, v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces, v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics, v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs, v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand, v1alpha1.OpAMPBridgeCapabilityReportsHealth, v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig},
+						ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"logging"}},
+					},
+				},
+			},
+			want: []client.Object{
+				&appsv1.Deployment{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-opamp-bridge",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-opamp-bridge",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &one,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: opampbridgeSelectorLabels,
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
+									"app.kubernetes.io/instance":   "test.test",
+									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/name":       "test-opamp-bridge",
+									"app.kubernetes.io/part-of":    "opentelemetry",
+									"app.kubernetes.io/version":    "latest",
+								},
+							},
+							Spec: corev1.PodSpec{
+								Volumes: []corev1.Volume{
+									{
+										Name: "opamp-bridge-internal",
+										VolumeSource: corev1.VolumeSource{
+											ConfigMap: &corev1.ConfigMapVolumeSource{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: "test-opamp-bridge",
+												},
+												Items: []corev1.KeyToPath{
+													{
+														Key:  "remoteconfiguration.yaml",
+														Path: "remoteconfiguration.yaml",
+													},
+												},
+											},
+										},
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  "opamp-bridge-container",
+										Image: "test",
+										Env: []corev1.EnvVar{
+											{
+												Name: "OTELCOL_NAMESPACE",
+												ValueFrom: &corev1.EnvVarSource{
+													FieldRef: &corev1.ObjectFieldSelector{
+														FieldPath: "metadata.namespace",
+													},
+												},
+											},
+										},
+										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      "opamp-bridge-internal",
+												MountPath: "/conf",
+											},
+										},
+									},
+								},
+								DNSPolicy:          "ClusterFirst",
+								ServiceAccountName: "test-opamp-bridge",
+							},
+						},
+					},
+				},
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-opamp-bridge",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-opamp-bridge",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: nil,
+					},
+					Data: map[string]string{
+						"remoteconfiguration.yaml": `capabilities:
+- AcceptsRemoteConfig
+- ReportsEffectiveConfig
+- ReportsOwnTraces
+- ReportsOwnMetrics
+- ReportsOwnLogs
+- AcceptsOpAMPConnectionSettings
+- AcceptsOtherConnectionSettings
+- AcceptsRestartCommand
+- ReportsHealth
+- ReportsRemoteConfig
+components_allowed:
+  exporters:
+  - logging
+  processors:
+  - memory_limiter
+  receivers:
+  - otlp
+endpoint: ws://opamp-server:4320/v1/opamp
+protocol: wss
+`},
+				},
+				&corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-opamp-bridge",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-opamp-bridge",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: nil,
+					},
+				},
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-opamp-bridge",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-opamp-bridge",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: nil,
+					},
+					Spec: corev1.ServiceSpec{
+						Ports: []corev1.ServicePort{
+							{
+								Name:       "opamp-bridge",
+								Port:       80,
+								TargetPort: intstr.FromInt(8080),
+							},
+						},
+						Selector: opampbridgeSelectorLabels,
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.New(
+				config.WithOperatorOpAMPBridgeImage("default-collector"),
+				config.WithTargetAllocatorImage("default-ta-allocator"),
+				config.WithOperatorOpAMPBridgeImage("default-opamp-bridge"),
+			)
+			reconciler := NewOpAMPBridgeReconciler(OpAMPBridgeReconcilerParams{
 				Log:    logr.Discard(),
 				Config: cfg,
 			})

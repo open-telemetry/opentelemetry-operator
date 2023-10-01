@@ -15,22 +15,23 @@
 package opampbridge
 
 import (
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAMPBridge) appsv1.Deployment {
-	name := naming.OpAMPBridge(opampBridge.Name)
-	labels := Labels(opampBridge, name, cfg.LabelsFilter())
+func Deployment(params manifests.Params) *appsv1.Deployment {
+	opampBridge := params.OpAMPBridge
+	logger := params.Log
 
-	return appsv1.Deployment{
+	name := naming.OpAMPBridge(opampBridge.Name)
+	labels := Labels(opampBridge, name, params.Config.LabelsFilter())
+
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: opampBridge.Namespace,
@@ -48,8 +49,8 @@ func Deployment(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAM
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:        ServiceAccountName(opampBridge),
-					Containers:                []corev1.Container{Container(cfg, logger, opampBridge)},
-					Volumes:                   Volumes(cfg, opampBridge),
+					Containers:                []corev1.Container{Container(params.Config, logger, opampBridge)},
+					Volumes:                   Volumes(params.Config, opampBridge),
 					DNSPolicy:                 getDNSPolicy(opampBridge),
 					HostNetwork:               opampBridge.Spec.HostNetwork,
 					Tolerations:               opampBridge.Spec.Tolerations,

@@ -12,39 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package collector
+package opampbridge
 
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
-func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
-	if len(instance.Spec.ServiceAccount) == 0 {
-		return naming.ServiceAccount(instance.Name)
-	}
+func Service(params manifests.Params) *corev1.Service {
+	opampBridge := params.OpAMPBridge
 
-	return instance.Spec.ServiceAccount
-}
+	name := naming.OpAMPBridgeService(opampBridge.Name)
+	labels := Labels(opampBridge, name, []string{})
+	selector := SelectorLabels(opampBridge)
 
-// ServiceAccount returns the service account for the given instance.
-func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
-	otelcol := params.OtelCol
+	ports := []corev1.ServicePort{{
+		Name:       "opamp-bridge",
+		Port:       80,
+		TargetPort: intstr.FromInt(8080),
+	}}
 
-	name := naming.ServiceAccount(otelcol.Name)
-	labels := Labels(otelcol, name, []string{})
+	ports = append(params.OpAMPBridge.Spec.Ports, ports...)
 
-	return &corev1.ServiceAccount{
+	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   otelcol.Namespace,
-			Labels:      labels,
-			Annotations: otelcol.Annotations,
+			Name:      name,
+			Namespace: params.OpAMPBridge.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: selector,
+			Ports:    ports,
 		},
 	}
 }

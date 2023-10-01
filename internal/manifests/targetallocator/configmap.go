@@ -17,13 +17,12 @@ package targetallocator
 import (
 	"strings"
 
-	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -33,10 +32,12 @@ const (
 	targetAllocatorFilename = "targetallocator.yaml"
 )
 
-func ConfigMap(cfg config.Config, logger logr.Logger, instance v1alpha1.OpenTelemetryCollector) (*corev1.ConfigMap, error) {
-	name := naming.TAConfigMap(instance.Name)
-	version := strings.Split(instance.Spec.Image, ":")
-	labels := Labels(instance, name)
+func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
+	otelcol := params.OtelCol
+
+	name := naming.TAConfigMap(otelcol.Name)
+	version := strings.Split(otelcol.Spec.Image, ":")
+	labels := Labels(otelcol, name)
 	if len(version) > 1 {
 		labels["app.kubernetes.io/version"] = version[len(version)-1]
 	} else {
@@ -45,39 +46,39 @@ func ConfigMap(cfg config.Config, logger logr.Logger, instance v1alpha1.OpenTele
 
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA ConfigMap should have a single "$", as it does not support env var substitution
-	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(instance.Spec.Config)
+	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(otelcol.Spec.Config)
 	if err != nil {
 		return &corev1.ConfigMap{}, err
 	}
 
 	taConfig := make(map[interface{}]interface{})
 	prometheusCRConfig := make(map[interface{}]interface{})
-	taConfig["label_selector"] = collector.SelectorLabels(instance)
+	taConfig["label_selector"] = collector.SelectorLabels(otelcol)
 	// We only take the "config" from the returned object, if it's present
 	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
 		taConfig["config"] = prometheusConfig
 	}
 
-	if len(instance.Spec.TargetAllocator.AllocationStrategy) > 0 {
-		taConfig["allocation_strategy"] = instance.Spec.TargetAllocator.AllocationStrategy
+	if len(otelcol.Spec.TargetAllocator.AllocationStrategy) > 0 {
+		taConfig["allocation_strategy"] = otelcol.Spec.TargetAllocator.AllocationStrategy
 	} else {
 		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
 	}
 
-	if len(instance.Spec.TargetAllocator.FilterStrategy) > 0 {
-		taConfig["filter_strategy"] = instance.Spec.TargetAllocator.FilterStrategy
+	if len(otelcol.Spec.TargetAllocator.FilterStrategy) > 0 {
+		taConfig["filter_strategy"] = otelcol.Spec.TargetAllocator.FilterStrategy
 	}
 
-	if instance.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Size() > 0 {
-		prometheusCRConfig["scrape_interval"] = instance.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Duration
+	if otelcol.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Size() > 0 {
+		prometheusCRConfig["scrape_interval"] = otelcol.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Duration
 	}
 
-	if instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
-		taConfig["service_monitor_selector"] = &instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
+	if otelcol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
+		taConfig["service_monitor_selector"] = &otelcol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
 	}
 
-	if instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
-		taConfig["pod_monitor_selector"] = &instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
+	if otelcol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
+		taConfig["pod_monitor_selector"] = &otelcol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
 	}
 
 	if len(prometheusCRConfig) > 0 {
@@ -92,9 +93,9 @@ func ConfigMap(cfg config.Config, logger logr.Logger, instance v1alpha1.OpenTele
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   instance.Namespace,
+			Namespace:   otelcol.Namespace,
 			Labels:      labels,
-			Annotations: instance.Annotations,
+			Annotations: otelcol.Annotations,
 		},
 		Data: map[string]string{
 			targetAllocatorFilename: string(taConfigYAML),

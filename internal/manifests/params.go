@@ -24,22 +24,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-// Params holds the reconciliation-specific parameters for collector.
+// Params holds the reconciliation-specific parameters.
 type Params struct {
-	Client   client.Client
-	Recorder record.EventRecorder
-	Scheme   *runtime.Scheme
-	Log      logr.Logger
-	Instance v1alpha1.OpenTelemetryCollector
-	Config   config.Config
-}
-
-// OpAMPBridgeParams holds the reconciliation-specific parameters for opamp-bridge.
-type OpAMPBridgeParams struct {
-	Client   client.Client
-	Recorder record.EventRecorder
-	Scheme   *runtime.Scheme
-	Log      logr.Logger
-	Instance v1alpha1.OpAMPBridge
-	Config   config.Config
+	Client      client.Client
+	Recorder    record.EventRecorder
+	Scheme      *runtime.Scheme
+	Log         logr.Logger
+	OtelCol     v1alpha1.OpenTelemetryCollector
+	OpAMPBridge v1alpha1.OpAMPBridge
+	Config      config.Config
 }

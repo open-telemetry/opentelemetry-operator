@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -34,13 +34,13 @@ const (
 	headlessExists = "Exists"
 )
 
-func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
-	h := Service(cfg, logger, otelcol)
+func HeadlessService(params manifests.Params) *corev1.Service {
+	h := Service(params)
 	if h == nil {
 		return h
 	}
 
-	h.Name = naming.HeadlessService(otelcol.Name)
+	h.Name = naming.HeadlessService(params.OtelCol.Name)
 	h.Labels[headlessLabel] = headlessExists
 
 	// copy to avoid modifying otelcol.Annotations
@@ -56,7 +56,10 @@ func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Ope
 	return h
 }
 
-func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
+func MonitoringService(params manifests.Params) *corev1.Service {
+	otelcol := params.OtelCol
+	logger := params.Log
+
 	name := naming.MonitoringService(otelcol.Name)
 	labels := Labels(otelcol, name, []string{})
 
@@ -91,7 +94,10 @@ func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.O
 	}
 }
 
-func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
+func Service(params manifests.Params) *corev1.Service {
+	otelcol := params.OtelCol
+	logger := params.Log
+
 	name := naming.Service(otelcol.Name)
 	labels := Labels(otelcol, name, []string{})
 

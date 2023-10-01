@@ -1,0 +1,74 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package opampbridge
+
+import (
+	"strings"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
+	opampBridge := params.OpAMPBridge
+
+	name := naming.OpAMPBridgeConfigMap(opampBridge.Name)
+	version := strings.Split(opampBridge.Spec.Image, ":")
+	labels := Labels(opampBridge, name, []string{})
+
+	if len(version) > 1 {
+		labels["app.kubernetes.io/version"] = version[len(version)-1]
+	} else {
+		labels["app.kubernetes.io/version"] = "latest"
+	}
+
+	config := make(map[interface{}]interface{})
+
+	if len(opampBridge.Spec.Endpoint) > 0 {
+		config["endpoint"] = opampBridge.Spec.Endpoint
+	}
+
+	if len(opampBridge.Spec.Protocol) > 0 {
+		config["protocol"] = opampBridge.Spec.Protocol
+	}
+
+	if opampBridge.Spec.Capabilities != nil {
+		config["capabilities"] = opampBridge.Spec.Capabilities
+	}
+
+	if opampBridge.Spec.ComponentsAllowed != nil {
+		config["components_allowed"] = opampBridge.Spec.ComponentsAllowed
+	}
+
+	configYAML, err := yaml.Marshal(config)
+	if err != nil {
+		return &corev1.ConfigMap{}, err
+	}
+
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   opampBridge.Namespace,
+			Labels:      labels,
+			Annotations: opampBridge.Annotations,
+		},
+		Data: map[string]string{
+			"remoteconfiguration.yaml": string(configYAML),
+		},
+	}, nil
+}

@@ -12,71 +12,77 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package opampbridge
+package reconcile
 
 import (
 	"context"
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+
+	routev1 "github.com/openshift/api/route/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/opampbridge"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-// +kubebuilder:rbac:groups="apps",resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// Routes reconciles the route(s) required for the instance in the current context.
+// TODO: This functionality should be put with the rest of reconciliation logic in the mutate.go
+// https://github.com/open-telemetry/opentelemetry-operator/issues/2108
+func Routes(ctx context.Context, params manifests.Params) error {
+	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
+		return nil
+	}
 
-// Deployments reconciles the deployment(s) required for the instance in the current context.
-func Deployments(ctx context.Context, params Params) error {
-	desired := []appsv1.Deployment{}
-	desired = append(desired, opampbridge.Deployment(params.Config, params.Log, params.Instance))
+	isSupportedMode := true
+	if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
+		params.Log.V(3).Info("ingress settings are not supported in sidecar mode")
+		isSupportedMode = false
+	}
+
+	var desired []*routev1.Route
+	if isSupportedMode {
+		if r := collector.Routes(params); r != nil {
+			desired = append(desired, r...)
+		}
+	}
 
 	// first, handle the create/update parts
-	if err := expectedDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the expected deployments: %w", err)
+	if err := expectedRoutes(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the expected routes: %w", err)
 	}
 
 	// then, delete the extra objects
-	if err := deleteDeployments(ctx, params, desired); err != nil {
-		return fmt.Errorf("failed to reconcile the deployments to be deleted: %w", err)
+	if err := deleteRoutes(ctx, params, desired); err != nil {
+		return fmt.Errorf("failed to reconcile the routes to be deleted: %w", err)
 	}
 
 	return nil
 }
 
-func expectedDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
+func expectedRoutes(ctx context.Context, params manifests.Params, expected []*routev1.Route) error {
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, &desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.OtelCol, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
-		existing := &appsv1.Deployment{}
+		existing := &routev1.Route{}
 		nns := types.NamespacedName{Namespace: desired.Namespace, Name: desired.Name}
 		err := params.Client.Get(ctx, nns, existing)
 		if err != nil && k8serrors.IsNotFound(err) {
-			if clientErr := params.Client.Create(ctx, &desired); clientErr != nil {
-				return fmt.Errorf("failed to create: %w", clientErr)
+			if err = params.Client.Create(ctx, desired); err != nil {
+				return fmt.Errorf("failed to create: %w", err)
 			}
-			params.Log.V(2).Info("created", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
+			params.Log.V(2).Info("created", "route.name", desired.Name, "route.namespace", desired.Namespace)
 			continue
 		} else if err != nil {
 			return fmt.Errorf("failed to get: %w", err)
-		}
-
-		// Selector is an immutable field, if set, we cannot modify it otherwise we will face reconciliation error.
-		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-			params.Log.V(2).Info("Spec.Selector change detected, trying to delete, the new collector deployment will be created in the next reconcile cycle ", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)
-
-			if err := params.Client.Delete(ctx, existing); err != nil {
-				return fmt.Errorf("failed to delete deployment: %w", err)
-			}
-			continue
 		}
 
 		// it exists already, merge the two if the end result isn't identical to the existing one
@@ -87,9 +93,11 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 		if updated.Labels == nil {
 			updated.Labels = map[string]string{}
 		}
-
-		updated.Spec = desired.Spec
 		updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
+		updated.Spec.To = desired.Spec.To
+		updated.Spec.TLS = desired.Spec.TLS
+		updated.Spec.Port = desired.Spec.Port
+		updated.Spec.WildcardPolicy = desired.Spec.WildcardPolicy
 
 		for k, v := range desired.ObjectMeta.Annotations {
 			updated.ObjectMeta.Annotations[k] = v
@@ -104,21 +112,20 @@ func expectedDeployments(ctx context.Context, params Params, expected []appsv1.D
 			return fmt.Errorf("failed to apply changes: %w", err)
 		}
 
-		params.Log.V(2).Info("applied", "deployment.name", desired.Name, "deployment.namespace", desired.Namespace)
+		params.Log.V(2).Info("applied", "route.name", desired.Name, "route.namespace", desired.Namespace)
 	}
-
 	return nil
 }
 
-func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Deployment) error {
+func deleteRoutes(ctx context.Context, params manifests.Params, expected []*routev1.Route) error {
 	opts := []client.ListOption{
-		client.InNamespace(params.Instance.Namespace),
+		client.InNamespace(params.OtelCol.Namespace),
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &appsv1.DeploymentList{}
+	list := &routev1.RouteList{}
 	if err := params.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -137,7 +144,7 @@ func deleteDeployments(ctx context.Context, params Params, expected []appsv1.Dep
 			if err := params.Client.Delete(ctx, &existing); err != nil {
 				return fmt.Errorf("failed to delete: %w", err)
 			}
-			params.Log.V(2).Info("deleted", "deployment.name", existing.Name, "deployment.namespace", existing.Namespace)
+			params.Log.V(2).Info("deleted", "route.name", existing.Name, "route.namespace", existing.Namespace)
 		}
 	}
 

@@ -120,7 +120,7 @@ func TestLabelsFilter(t *testing.T) {
 	labels := Labels(opampBridge, opampBridgeName, []string{".*.bar.io"})
 
 	// verify
-	assert.Len(t, labels, 6)
+	assert.Len(t, labels, 7)
 	assert.NotContains(t, labels, "test.bar.io")
 	assert.Equal(t, "bar", labels["test.foo.io"])
 }
