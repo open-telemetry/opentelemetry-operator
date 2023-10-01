@@ -47,7 +47,6 @@ type options struct {
 	onOpenShiftRoutesChange             changeHandler
 	labelsFilter                        []string
 	openshiftRoutes                     openshiftRoutesStore
-	hpaVersion                          hpaVersionStore
 	autoDetectFrequency                 time.Duration
 }
 

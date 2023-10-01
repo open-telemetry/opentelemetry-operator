@@ -53,7 +53,6 @@ type Config struct {
 	labelsFilter                        []string
 	openshiftRoutes                     openshiftRoutesStore
 	autoDetectFrequency                 time.Duration
-	hpaVersion                          hpaVersionStore
 }
 
 // New constructs a new configuration based on the given options.
@@ -66,7 +65,6 @@ func New(opts ...Option) Config {
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
 		logger:                            logf.Log.WithName("config"),
 		openshiftRoutes:                   newOpenShiftRoutesWrapper(),
-		hpaVersion:                        newHPAVersionWrapper(),
 		version:                           version.Get(),
 		onOpenShiftRoutesChange:           newOnChange(),
 	}
@@ -85,7 +83,6 @@ func New(opts ...Option) Config {
 		operatorOpAMPBridgeConfigMapEntry:   o.operatorOpAMPBridgeConfigMapEntry,
 		logger:                              o.logger,
 		openshiftRoutes:                     o.openshiftRoutes,
-		hpaVersion:                          o.hpaVersion,
 		onOpenShiftRoutesChange:             o.onOpenShiftRoutesChange,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
@@ -133,15 +130,6 @@ func (c *Config) AutoDetect() error {
 		}
 	}
 
-	hpaV, err := c.autoDetect.HPAVersion()
-	if err != nil {
-		return err
-	}
-	if c.hpaVersion.Get() != hpaV {
-		c.logger.V(1).Info("HPA version detected", "version", hpaV)
-		c.hpaVersion.Set(hpaV)
-	}
-
 	return nil
 }
 
@@ -178,11 +166,6 @@ func (c *Config) OperatorOpAMPBridgeConfigMapEntry() string {
 // OpenShiftRoutes represents the availability of the OpenShift Routes API.
 func (c *Config) OpenShiftRoutes() autodetect.OpenShiftRoutesAvailability {
 	return c.openshiftRoutes.Get()
-}
-
-// AutoscalingVersion represents the preferred version of autoscaling.
-func (c *Config) AutoscalingVersion() autodetect.AutoscalingVersion {
-	return c.hpaVersion.Get()
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
@@ -224,35 +207,6 @@ func (c *Config) LabelsFilter() []string {
 // is called when the OpenShift Routes detection detects a change.
 func (c *Config) RegisterOpenShiftRoutesChangeCallback(f func() error) {
 	c.onOpenShiftRoutesChange.Register(f)
-}
-
-type hpaVersionStore interface {
-	Set(hpaV autodetect.AutoscalingVersion)
-	Get() autodetect.AutoscalingVersion
-}
-
-func newHPAVersionWrapper() hpaVersionStore {
-	return &hpaVersionWrapper{
-		current: autodetect.AutoscalingVersionUnknown,
-	}
-}
-
-type hpaVersionWrapper struct {
-	mu      sync.Mutex
-	current autodetect.AutoscalingVersion
-}
-
-func (p *hpaVersionWrapper) Set(hpaV autodetect.AutoscalingVersion) {
-	p.mu.Lock()
-	p.current = hpaV
-	p.mu.Unlock()
-}
-
-func (p *hpaVersionWrapper) Get() autodetect.AutoscalingVersion {
-	p.mu.Lock()
-	hpaV := p.current
-	p.mu.Unlock()
-	return hpaV
 }
 
 type openshiftRoutesStore interface {

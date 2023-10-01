@@ -15,9 +15,11 @@
 package targetallocator
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -173,6 +175,36 @@ func TestContainerHasEnvVars(t *testing.T) {
 
 	// verify
 	assert.Equal(t, expected, c)
+}
+
+func TestContainerHasProxyEnvVars(t *testing.T) {
+	err := os.Setenv("NO_PROXY", "localhost")
+	require.NoError(t, err)
+	defer os.Unsetenv("NO_PROXY")
+
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+				Env: []corev1.EnvVar{
+					{
+						Name:  "TEST_ENV",
+						Value: "test",
+					},
+				},
+			},
+		},
+	}
+	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	require.Len(t, c.Env, 4)
+	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[2])
+	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[3])
 }
 
 func TestContainerDoesNotOverrideEnvVars(t *testing.T) {

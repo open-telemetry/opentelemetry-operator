@@ -49,7 +49,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -282,7 +281,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 	}, nil
 }
 
-func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion, minReps, maxReps int32) manifests.Params {
+func paramsWithHPA(minReps, maxReps int32) manifests.Params {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
@@ -290,16 +289,7 @@ func paramsWithHPA(autoscalingVersion autodetect.AutoscalingVersion, minReps, ma
 
 	cpuUtilization := int32(90)
 
-	mockAutoDetector := &mockAutoDetect{
-		HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
-			return autoscalingVersion, nil
-		},
-	}
-	configuration := config.New(config.WithAutoDetect(mockAutoDetector), config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
-	err = configuration.AutoDetect()
-	if err != nil {
-		logger.Error(err, "configuration.autodetect failed")
-	}
+	configuration := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
 
 	return manifests.Params{
 		Config: configuration,

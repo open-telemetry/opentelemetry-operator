@@ -44,9 +44,6 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 var mockAutoDetector = &mockAutoDetect{
-	HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
-		return autodetect.AutoscalingVersionV2Beta2, nil
-	},
 	OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
 		return autodetect.OpenShiftRoutesAvailable, nil
 	},
@@ -338,11 +335,6 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (autodetect.OpenShiftRoutesAvailability, error)
-	HPAVersionFunc                  func() (autodetect.AutoscalingVersion, error)
-}
-
-func (m *mockAutoDetect) HPAVersion() (autodetect.AutoscalingVersion, error) {
-	return m.HPAVersionFunc()
 }
 
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (autodetect.OpenShiftRoutesAvailability, error) {

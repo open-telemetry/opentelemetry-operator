@@ -38,7 +38,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
 const (
@@ -277,53 +276,10 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			},
 		},
 		{
-			name: "hpa v2beta2 deployment collector",
-			args: args{
-				params:  paramsWithHPA(autodetect.AutoscalingVersionV2Beta2, 3, 5),
-				updates: []manifests.Params{paramsWithHPA(autodetect.AutoscalingVersionV2Beta2, 1, 9)},
-			},
-			want: []want{
-				{
-					result: controllerruntime.Result{},
-					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
-							actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
-							exists, hpaErr := populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.HorizontalPodAutoscaler))
-							assert.NoError(t, hpaErr)
-							require.Len(t, actual.Spec.Metrics, 1)
-							assert.Equal(t, int32(90), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
-							assert.Equal(t, int32(3), *actual.Spec.MinReplicas)
-							assert.Equal(t, int32(5), actual.Spec.MaxReplicas)
-							assert.True(t, exists)
-						},
-					},
-					wantErr:     assert.NoError,
-					validateErr: assert.NoError,
-				},
-				{
-					result: controllerruntime.Result{},
-					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
-							actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
-							exists, hpaErr := populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.HorizontalPodAutoscaler))
-							assert.NoError(t, hpaErr)
-							require.Len(t, actual.Spec.Metrics, 1)
-							assert.Equal(t, int32(90), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
-							assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
-							assert.Equal(t, int32(9), actual.Spec.MaxReplicas)
-							assert.True(t, exists)
-						},
-					},
-					wantErr:     assert.NoError,
-					validateErr: assert.NoError,
-				},
-			},
-		},
-		{
 			name: "hpa v2 deployment collector",
 			args: args{
-				params:  paramsWithHPA(autodetect.AutoscalingVersionV2, 3, 5),
-				updates: []manifests.Params{paramsWithHPA(autodetect.AutoscalingVersionV2, 1, 9)},
+				params:  paramsWithHPA(3, 5),
+				updates: []manifests.Params{paramsWithHPA(1, 9)},
 			},
 			want: []want{
 				{

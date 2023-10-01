@@ -66,6 +66,10 @@ updates:
     directory: /
     schedule:
       interval: daily
+    groups:
+      gha-docker:
+        patterns:
+          - "docker/*"
 
   - package-ecosystem: docker
     directory: /

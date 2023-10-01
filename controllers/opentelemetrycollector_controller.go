@@ -25,7 +25,6 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -294,12 +293,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 	}
 
-	autoscalingVersion := r.config.AutoscalingVersion()
-	if autoscalingVersion == autodetect.AutoscalingVersionV2 {
-		builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
-	} else {
-		builder = builder.Owns(&autoscalingv2beta2.HorizontalPodAutoscaler{})
-	}
+	builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
 
 	return builder.Complete(r)
 }
