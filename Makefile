@@ -212,9 +212,14 @@ e2e-log-operator:
 	kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
 	kubectl get deploy -A
 
+# end-to-tests for multi-instrumentation
+.PHONY: e2e-multi-instrumentation
+e2e-multi-instrumentation:
+	$(KUTTL) test --config kuttl-test-multi-instr.yaml
+
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server load-image-all deploy
-	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 .PHONY: enable-prometheus-feature-flag
 enable-prometheus-feature-flag:
