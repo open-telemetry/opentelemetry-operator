@@ -30,6 +30,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		name string
 		v1alpha1.DotNet
 		pod      corev1.Pod
+		runtime  string
 		expected corev1.Pod
 		err      error
 	}{
@@ -375,12 +376,8 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{},
 					},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationDotNetRuntime: dotNetRuntimeLinuxGlibc,
-					},
-				},
 			},
+			runtime: dotNetRuntimeLinuxGlibc,
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
@@ -446,11 +443,6 @@ func TestInjectDotNetSDK(t *testing.T) {
 						},
 					},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationDotNetRuntime: dotNetRuntimeLinuxGlibc,
-					},
-				},
 			},
 			err: nil,
 		},
@@ -463,12 +455,8 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{},
 					},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationDotNetRuntime: dotNetRuntimeLinuxMusl,
-					},
-				},
 			},
+			runtime: dotNetRuntimeLinuxMusl,
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
@@ -534,11 +522,6 @@ func TestInjectDotNetSDK(t *testing.T) {
 						},
 					},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationDotNetRuntime: dotNetRuntimeLinuxMusl,
-					},
-				},
 			},
 			err: nil,
 		},
@@ -551,21 +534,13 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{},
 					},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationDotNetRuntime: "not-supported",
-					},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 			},
+			runtime: "not-supported",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{},
-					},
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationDotNetRuntime: "not-supported",
 					},
 				},
 			},
@@ -575,7 +550,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0)
+			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0, test.runtime)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})
