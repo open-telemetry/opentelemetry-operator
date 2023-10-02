@@ -13,7 +13,7 @@ spec:
     - name: OTEL_NODEJS_DEBUG
       value: "true"
     - name: NODE_OPTIONS
-      value: " --require /otel-auto-instrumentation/autoinstrumentation.js"
+      value: " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -37,11 +37,11 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-    - mountPath: /otel-auto-instrumentation
-      name: opentelemetry-auto-instrumentation
+    - mountPath: /otel-auto-instrumentation-nodejs
+      name: opentelemetry-auto-instrumentation-nodejs
   - name: otc-container
   initContainers:
-  - name: opentelemetry-auto-instrumentation
+  - name: opentelemetry-auto-instrumentation-nodejs
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
