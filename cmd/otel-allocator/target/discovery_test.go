@@ -17,6 +17,7 @@ package target
 import (
 	"context"
 	"errors"
+	"hash"
 	"sort"
 	"testing"
 	"time"
@@ -253,6 +254,33 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 			},
 		},
 		{
+			description: "different regex",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "serviceMonitor/testapp/testapp/1",
+						HonorTimestamps: false,
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics",
+						Scheme:          "http",
+						HTTPClientConfig: commonconfig.HTTPClientConfig{
+							FollowRedirects: true,
+						},
+						RelabelConfigs: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{model.LabelName("job")},
+								Separator:    ";",
+								Regex:        relabel.MustNewRegexp("(.+)"),
+								TargetLabel:  "__tmp_prometheus_job_name",
+								Replacement:  "$$1",
+								Action:       relabel.Replace,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			description: "mock error on update - no hash update",
 			cfg: &promconfig.Config{
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
@@ -263,39 +291,9 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 			},
 			expectErr: true,
 		},
-		// {
-		// TODO: fix handler logic so this test passes.
-		// This test currently fails due to the regexp struct not having any
-		// exported fields for the hashing algorithm to hash on, causing the
-		// hashes to be the same even though the data is different.
-		// 	description: "different regex",
-		// 	cfg: &promconfig.Config{
-		// 		ScrapeConfigs: []*promconfig.ScrapeConfig{
-		// 			{
-		// 				JobName:         "serviceMonitor/testapp/testapp/1",
-		// 				HonorTimestamps: false,
-		// 				ScrapeTimeout:   model.Duration(30 * time.Second),
-		// 				MetricsPath:     "/metrics",
-		// 				HTTPClientConfig: commonconfig.HTTPClientConfig{
-		// 					FollowRedirects: true,
-		// 				},
-		// 				RelabelConfigs: []*relabel.Config{
-		// 					{
-		// 						SourceLabels: model.LabelNames{model.LabelName("job")},
-		// 						Separator:    ";",
-		// 						Regex:        relabel.MustNewRegexp("something else"),
-		// 						TargetLabel:  "__tmp_prometheus_job_name",
-		// 						Replacement:  "$$1",
-		// 						Action:       relabel.Replace,
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
 	}
 	var (
-		lastValidHash   uint64
+		lastValidHash   hash.Hash
 		expectedConfig  map[string]*promconfig.ScrapeConfig
 		lastValidConfig map[string]*promconfig.ScrapeConfig
 	)
