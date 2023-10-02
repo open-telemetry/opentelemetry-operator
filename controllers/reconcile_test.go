@@ -59,7 +59,7 @@ var (
 	}
 )
 
-type check func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector)
+type check func(t *testing.T, params manifests.Params)
 
 func newParamsAssertNoErr(t *testing.T, taContainerImage string, file string) manifests.Params {
 	p, err := newParams(taContainerImage, file)
@@ -124,18 +124,18 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+						func(t *testing.T, params manifests.Params) {
 							d := appsv1.Deployment{}
-							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(appliedInstance, naming.Collector))
+							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Equal(t, int32(2), *d.Spec.Replicas)
 							assert.Contains(t, d.Annotations, annotationName)
 							assert.Contains(t, d.Labels, labelName)
-							exists, err = populateObjectIfExists(t, &v1.Service{}, namespacedObjectName(appliedInstance, naming.Service))
+							exists, err = populateObjectIfExists(t, &v1.Service{}, namespacedObjectName(naming.Service(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(appliedInstance, naming.ServiceAccount))
+							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(naming.ServiceAccount(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 						},
@@ -146,9 +146,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+						func(t *testing.T, params manifests.Params) {
 							d := appsv1.Deployment{}
-							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(appliedInstance, naming.Collector))
+							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Equal(t, int32(3), *d.Spec.Replicas)
@@ -156,7 +156,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.Contains(t, d.Annotations, annotationName)
 							assert.Contains(t, d.Labels, labelName)
 							actual := v1.Service{}
-							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.Service))
+							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.Service(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Contains(t, actual.Spec.Ports, extraPorts)
@@ -211,9 +211,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+						func(t *testing.T, params manifests.Params) {
 							d := networkingv1.Ingress{}
-							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(appliedInstance, naming.Ingress))
+							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.Ingress(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 						},
@@ -224,9 +224,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+						func(t *testing.T, params manifests.Params) {
 							d := networkingv1.Ingress{}
-							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(appliedInstance, naming.Ingress))
+							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.Ingress(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Equal(t, "something-else.com", d.Spec.Rules[0].Host)
@@ -247,9 +247,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+						func(t *testing.T, params manifests.Params) {
 							got := routev1.Route{}
-							nsn := types.NamespacedName{Namespace: appliedInstance.Namespace, Name: "otlp-grpc-test-route"}
+							nsn := types.NamespacedName{Namespace: params.OtelCol.Namespace, Name: "otlp-grpc-test-route"}
 							exists, err := populateObjectIfExists(t, &got, nsn)
 							assert.NoError(t, err)
 							assert.True(t, exists)
@@ -261,9 +261,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+						func(t *testing.T, params manifests.Params) {
 							got := routev1.Route{}
-							nsn := types.NamespacedName{Namespace: appliedInstance.Namespace, Name: "otlp-grpc-test-route"}
+							nsn := types.NamespacedName{Namespace: params.OtelCol.Namespace, Name: "otlp-grpc-test-route"}
 							exists, err := populateObjectIfExists(t, &got, nsn)
 							assert.NoError(t, err)
 							assert.True(t, exists)
@@ -285,9 +285,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+						func(t *testing.T, params manifests.Params) {
 							actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
-							exists, hpaErr := populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.HorizontalPodAutoscaler))
+							exists, hpaErr := populateObjectIfExists(t, &actual, namespacedObjectName(naming.HorizontalPodAutoscaler(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, hpaErr)
 							require.Len(t, actual.Spec.Metrics, 1)
 							assert.Equal(t, int32(90), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
@@ -302,9 +302,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+						func(t *testing.T, params manifests.Params) {
 							actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
-							exists, hpaErr := populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.HorizontalPodAutoscaler))
+							exists, hpaErr := populateObjectIfExists(t, &actual, namespacedObjectName(naming.HorizontalPodAutoscaler(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, hpaErr)
 							require.Len(t, actual.Spec.Metrics, 1)
 							assert.Equal(t, int32(90), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
@@ -327,8 +327,8 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &appsv1.DaemonSet{}, namespacedObjectName(appliedInstance, naming.Collector))
+						func(t *testing.T, params manifests.Params) {
+							exists, err := populateObjectIfExists(t, &appsv1.DaemonSet{}, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 						},
@@ -352,18 +352,18 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(appliedInstance, naming.Collector))
+						func(t *testing.T, params manifests.Params) {
+							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							exists, err = populateObjectIfExists(t, &appsv1.StatefulSet{}, namespacedObjectName(appliedInstance, naming.Collector))
+							exists, err = populateObjectIfExists(t, &appsv1.StatefulSet{}, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							// Check the TA doesn't exist
-							exists, err = populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(appliedInstance, naming.TargetAllocator))
+							exists, err = populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.TargetAllocator(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.False(t, exists)
-							exists, err = populateObjectIfExists(t, &appsv1.Deployment{}, namespacedObjectName(appliedInstance, naming.TargetAllocator))
+							exists, err = populateObjectIfExists(t, &appsv1.Deployment{}, namespacedObjectName(naming.TargetAllocator(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.False(t, exists)
 						},
@@ -374,18 +374,18 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(appliedInstance, naming.Collector))
+						func(t *testing.T, params manifests.Params) {
+							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							actual := v1.ConfigMap{}
-							exists, err = populateObjectIfExists(t, &appsv1.Deployment{}, namespacedObjectName(appliedInstance, naming.TargetAllocator))
+							exists, err = populateObjectIfExists(t, &appsv1.Deployment{}, namespacedObjectName(naming.TargetAllocator(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.TargetAllocator))
+							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.TargetAllocator(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(appliedInstance, naming.TargetAllocatorServiceAccount))
+							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(naming.TargetAllocatorServiceAccount(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 
@@ -415,15 +415,15 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(appliedInstance, naming.Collector))
+						func(t *testing.T, params manifests.Params) {
+							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							actual := v1.ConfigMap{}
-							exists, err = populateObjectIfExists(t, &appsv1.Deployment{}, namespacedObjectName(appliedInstance, naming.TargetAllocator))
+							exists, err = populateObjectIfExists(t, &appsv1.Deployment{}, namespacedObjectName(naming.TargetAllocator(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.TargetAllocator))
+							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.TargetAllocator(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Contains(t, actual.Data["targetallocator.yaml"], "0.0.0.0:10100")
@@ -435,9 +435,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				{
 					result: controllerruntime.Result{},
 					checks: []check{
-						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+						func(t *testing.T, params manifests.Params) {
 							actual := appsv1.Deployment{}
-							exists, err := populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.TargetAllocator))
+							exists, err := populateObjectIfExists(t, &actual, namespacedObjectName(naming.TargetAllocator(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Equal(t, actual.Spec.Template.Spec.Containers[0].Image, updatedTaImage)
@@ -479,7 +479,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			}
 			assert.Equal(t, firstCheck.result, got)
 			for _, check := range firstCheck.checks {
-				check(t, tt.args.params.OtelCol)
+				check(t, tt.args.params)
 			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
@@ -506,7 +506,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				}
 				assert.Equal(t, checkGroup.result, got)
 				for _, check := range checkGroup.checks {
-					check(t, updateParam.OtelCol)
+					check(t, updateParam)
 				}
 			}
 			// Only delete upon a successful creation
@@ -517,9 +517,162 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	}
 }
 
-func namespacedObjectName(instance v1alpha1.OpenTelemetryCollector, namingFunc func(string) string) types.NamespacedName {
+func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
+	addedMetadataDeployment := opampBridgeParams()
+	addedMetadataDeployment.OpAMPBridge.Labels = map[string]string{
+		labelName: labelVal,
+	}
+	addedMetadataDeployment.OpAMPBridge.Spec.PodAnnotations = map[string]string{
+		annotationName: annotationVal,
+	}
+	deploymentExtraPorts := opampBridgeParams()
+	deploymentExtraPorts.OpAMPBridge.Spec.Ports = append(deploymentExtraPorts.OpAMPBridge.Spec.Ports, extraPorts)
+
+	type args struct {
+		params manifests.Params
+		// an optional list of updates to supply after the initial object
+		updates []manifests.Params
+	}
+	type want struct {
+		// result check
+		result controllerruntime.Result
+		// a check to run against the current state applied
+		checks []check
+		// if an error from creation validation is expected
+		validateErr assert.ErrorAssertionFunc
+		// if an error from reconciliation is expected
+		wantErr assert.ErrorAssertionFunc
+	}
+	tests := []struct {
+		name string
+		args args
+		want []want
+	}{
+		{
+			name: "deployment opamp-bridge",
+			args: args{
+				params:  addedMetadataDeployment,
+				updates: []manifests.Params{deploymentExtraPorts},
+			},
+			want: []want{
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, params manifests.Params) {
+							d := appsv1.Deployment{}
+							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.OpAMPBridge(params.OpAMPBridge.Name), params.OpAMPBridge.Namespace))
+							assert.NoError(t, err)
+							assert.True(t, exists)
+							assert.Equal(t, int32(1), *d.Spec.Replicas)
+							assert.Contains(t, d.Spec.Template.Annotations, annotationName)
+							assert.Contains(t, d.Labels, labelName)
+							exists, err = populateObjectIfExists(t, &v1.Service{}, namespacedObjectName(naming.OpAMPBridgeService(params.OpAMPBridge.Name), params.OpAMPBridge.Namespace))
+							assert.NoError(t, err)
+							assert.True(t, exists)
+							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(naming.ServiceAccount(params.OpAMPBridge.Name), params.OpAMPBridge.Namespace))
+							assert.NoError(t, err)
+							assert.True(t, exists)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, params manifests.Params) {
+							d := appsv1.Deployment{}
+							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.OpAMPBridge(params.OpAMPBridge.Name), params.OpAMPBridge.Namespace))
+							assert.NoError(t, err)
+							assert.True(t, exists)
+							// confirm that we don't remove annotations and labels even if we don't set them
+							assert.Contains(t, d.Spec.Template.Annotations, annotationName)
+							assert.Contains(t, d.Labels, labelName)
+							actual := v1.Service{}
+							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.OpAMPBridgeService(params.OpAMPBridge.Name), params.OpAMPBridge.Namespace))
+							assert.NoError(t, err)
+							assert.True(t, exists)
+							assert.Contains(t, actual.Spec.Ports, extraPorts)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testContext := context.Background()
+			nsn := types.NamespacedName{Name: tt.args.params.OpAMPBridge.Name, Namespace: tt.args.params.OpAMPBridge.Namespace}
+			reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
+				Client:   k8sClient,
+				Log:      logger,
+				Scheme:   testScheme,
+				Recorder: record.NewFakeRecorder(20),
+				Config: config.New(
+					config.WithCollectorImage("default-collector"),
+					config.WithTargetAllocatorImage("default-ta-allocator"),
+					config.WithOperatorOpAMPBridgeImage("default-opamp-bridge"),
+				),
+			})
+			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
+			firstCheck := tt.want[0]
+			createErr := k8sClient.Create(testContext, &tt.args.params.OpAMPBridge)
+			if !firstCheck.validateErr(t, createErr) {
+				return
+			}
+			req := k8sreconcile.Request{
+				NamespacedName: nsn,
+			}
+			got, reconcileErr := reconciler.Reconcile(testContext, req)
+			if !firstCheck.wantErr(t, reconcileErr) {
+				require.NoError(t, k8sClient.Delete(testContext, &tt.args.params.OpAMPBridge))
+				return
+			}
+			assert.Equal(t, firstCheck.result, got)
+			for _, check := range firstCheck.checks {
+				check(t, tt.args.params)
+			}
+			// run the next set of checks
+			for pid, updateParam := range tt.args.updates {
+				existing := v1alpha1.OpAMPBridge{}
+				found, err := populateObjectIfExists(t, &existing, nsn)
+				assert.True(t, found)
+				assert.NoError(t, err)
+
+				updateParam.OpAMPBridge.SetResourceVersion(existing.ResourceVersion)
+				updateParam.OpAMPBridge.SetUID(existing.UID)
+				err = k8sClient.Update(testContext, &updateParam.OpAMPBridge)
+				assert.NoError(t, err)
+				if err != nil {
+					continue
+				}
+				req := k8sreconcile.Request{
+					NamespacedName: nsn,
+				}
+				_, err = reconciler.Reconcile(testContext, req)
+				// account for already checking the initial group
+				checkGroup := tt.want[pid+1]
+				if !checkGroup.wantErr(t, err) {
+					return
+				}
+				assert.Equal(t, checkGroup.result, got)
+				for _, check := range checkGroup.checks {
+					check(t, updateParam)
+				}
+			}
+			// Only delete upon a successful creation
+			if createErr == nil {
+				require.NoError(t, k8sClient.Delete(testContext, &tt.args.params.OpAMPBridge))
+			}
+		})
+	}
+}
+
+func namespacedObjectName(name string, namespace string) types.NamespacedName {
 	return types.NamespacedName{
-		Namespace: instance.Namespace,
-		Name:      namingFunc(instance.Name),
+		Namespace: namespace,
+		Name:      name,
 	}
 }

@@ -43,9 +43,6 @@ import (
 
 var opampBridgeLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
 var opampBridgeMockAutoDetector = &mockAutoDetect{
-	HPAVersionFunc: func() (autodetect.AutoscalingVersion, error) {
-		return autodetect.AutoscalingVersionV2Beta2, nil
-	},
 	OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
 		return autodetect.OpenShiftRoutesAvailable, nil
 	},

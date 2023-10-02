@@ -67,6 +67,7 @@ var (
 const (
 	defaultCollectorImage    = "default-collector"
 	defaultTaAllocationImage = "default-ta-allocator"
+	defaultOpAMPBridgeImage  = "default-opamp-bridge"
 	promFile                 = "testdata/test.yaml"
 	updatedPromFile          = "testdata/test_ta_update.yaml"
 	testFileIngress          = "testdata/ingress_testdata.yaml"
@@ -320,6 +321,44 @@ func paramsWithHPA(minReps, maxReps int32) manifests.Params {
 					MaxReplicas:          &maxReps,
 					TargetCPUUtilization: &cpuUtilization,
 				},
+			},
+		},
+		Scheme:   testScheme,
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
+func opampBridgeParams() manifests.Params {
+	return manifests.Params{
+		Config: config.New(config.WithOperatorOpAMPBridgeImage(defaultOpAMPBridgeImage)),
+		Client: k8sClient,
+		OpAMPBridge: v1alpha1.OpAMPBridge{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.OpAMPBridgeSpec{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
+				Ports: []v1.ServicePort{
+					{
+						Name: "metrics",
+						Port: 8081,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 8081,
+						},
+					},
+				},
+				Endpoint:          "ws://127.0.0.1:4320/v1/opamp",
+				Protocol:          "wss",
+				Capabilities:      []v1alpha1.OpAMPBridgeCapability{v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig, v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig, v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces, v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics, v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs, v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand, v1alpha1.OpAMPBridgeCapabilityReportsHealth, v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig},
+				ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"logging"}},
 			},
 		},
 		Scheme:   testScheme,
