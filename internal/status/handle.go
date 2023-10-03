@@ -41,10 +41,10 @@ const (
 func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, err error) (ctrl.Result, error) {
 	log.V(2).Info("updating collector status")
 	if err != nil {
-		params.Recorder.Event(&params.Instance, eventTypeWarning, reasonError, err.Error())
+		params.Recorder.Event(&params.OtelCol, eventTypeWarning, reasonError, err.Error())
 		return ctrl.Result{}, err
 	}
-	changed := params.Instance.DeepCopy()
+	changed := params.OtelCol.DeepCopy()
 
 	up := &collectorupgrade.VersionUpgrade{
 		Log:      params.Log,
@@ -63,7 +63,7 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 		params.Recorder.Event(changed, eventTypeWarning, reasonStatusFailure, statusErr.Error())
 		return ctrl.Result{}, statusErr
 	}
-	statusPatch := client.MergeFrom(&params.Instance)
+	statusPatch := client.MergeFrom(&params.OtelCol)
 	if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to apply status changes to the OpenTelemetry CR: %w", err)
 	}

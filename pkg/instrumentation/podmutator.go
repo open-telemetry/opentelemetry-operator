@@ -44,8 +44,9 @@ type instPodMutator struct {
 }
 
 type instrumentationWithContainers struct {
-	Instrumentation *v1alpha1.Instrumentation
-	Containers      string
+	Instrumentation       *v1alpha1.Instrumentation
+	Containers            string
+	AdditionalAnnotations map[string]string
 }
 
 type languageInstrumentations struct {
@@ -251,6 +252,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() || inst == nil {
 		insts.DotNet.Instrumentation = inst
+		insts.DotNet.AdditionalAnnotations = map[string]string{annotationDotNetRuntime: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationDotNetRuntime)}
 	} else {
 		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
