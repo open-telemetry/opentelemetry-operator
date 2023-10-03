@@ -50,7 +50,7 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 					ServiceAccountName: ServiceAccountName(params.OtelCol),
 					InitContainers:     params.OtelCol.Spec.InitContainers,
 					Containers:         append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
-					Volumes:            Volumes(params.Config, params.OtelCol),
+					Volumes:            Volumes(params.Config, params.OtelCol, naming.ConfigMap(params.OtelCol.Name)),
 					Tolerations:        params.OtelCol.Spec.Tolerations,
 					NodeSelector:       params.OtelCol.Spec.NodeSelector,
 					HostNetwork:        params.OtelCol.Spec.HostNetwork,

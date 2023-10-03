@@ -22,6 +22,28 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
+func VersionedConfigMap(params manifests.Params) *corev1.ConfigMap {
+	name := naming.VersionedConfigMap(params.OtelCol.Name, GetConfigMapSHA(params.OtelCol.Spec.Config))
+	labels := Labels(params.OtelCol, name, []string{})
+
+	replacedConf, err := ReplaceConfig(params.OtelCol)
+	if err != nil {
+		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
+	}
+
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   params.OtelCol.Namespace,
+			Labels:      labels,
+			Annotations: params.OtelCol.Annotations,
+		},
+		Data: map[string]string{
+			"collector.yaml": replacedConf,
+		},
+	}
+}
+
 func ConfigMap(params manifests.Params) *corev1.ConfigMap {
 	name := naming.ConfigMap(params.OtelCol.Name)
 	labels := Labels(params.OtelCol, name, []string{})

@@ -180,9 +180,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	five := int32(5)
 
 	tests := []struct { //nolint:govet
-		name        string
-		otelcol     OpenTelemetryCollector
-		expectedErr string
+		name             string
+		otelcol          OpenTelemetryCollector
+		expectedErr      string
+		expectedWarnings []string
 	}{
 		{
 			name:    "valid empty spec",
@@ -634,10 +635,13 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.otelcol.validateCRDSpec()
+			warnings, err := test.otelcol.validateCRDSpec()
 			if test.expectedErr == "" {
 				assert.NoError(t, err)
 				return
+			}
+			if len(test.expectedWarnings) == 0 {
+				assert.Empty(t, warnings, test.expectedWarnings)
 			}
 			assert.ErrorContains(t, err, test.expectedErr)
 		})

@@ -22,6 +22,25 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
+func BuildValidation(params manifests.Params) ([]client.Object, error) {
+	var resourceManifests []client.Object
+	var manifestFactories []manifests.K8sManifestFactory
+	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
+		manifests.FactoryWithoutError(Job),
+		manifests.FactoryWithoutError(VersionedConfigMap),
+		manifests.FactoryWithoutError(ServiceAccount),
+	}...)
+	for _, factory := range manifestFactories {
+		res, err := factory(params)
+		if err != nil {
+			return nil, err
+		} else if manifests.ObjectIsNotNil(res) {
+			resourceManifests = append(resourceManifests, res)
+		}
+	}
+	return resourceManifests, nil
+}
+
 // Build creates the manifest for the collector resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object

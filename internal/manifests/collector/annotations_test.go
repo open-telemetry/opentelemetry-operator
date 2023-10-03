@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 func TestDefaultAnnotations(t *testing.T) {
@@ -43,12 +44,12 @@ func TestDefaultAnnotations(t *testing.T) {
 	assert.Equal(t, "true", annotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", annotations["prometheus.io/path"])
-	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations["opentelemetry-operator-config/sha256"])
+	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations[constants.CollectorConfigSHA])
 	//verify propagation from metadata.annotations to spec.template.spec.metadata.annotations
 	assert.Equal(t, "true", podAnnotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", podAnnotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", podAnnotations["prometheus.io/path"])
-	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", podAnnotations["opentelemetry-operator-config/sha256"])
+	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", podAnnotations[constants.CollectorConfigSHA])
 }
 
 func TestUserAnnotations(t *testing.T) {
@@ -58,9 +59,9 @@ func TestUserAnnotations(t *testing.T) {
 			Name:      "my-instance",
 			Namespace: "my-ns",
 			Annotations: map[string]string{"prometheus.io/scrape": "false",
-				"prometheus.io/port":                   "1234",
-				"prometheus.io/path":                   "/test",
-				"opentelemetry-operator-config/sha256": "shouldBeOverwritten",
+				"prometheus.io/port":         "1234",
+				"prometheus.io/path":         "/test",
+				constants.CollectorConfigSHA: "shouldBeOverwritten",
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
@@ -76,8 +77,8 @@ func TestUserAnnotations(t *testing.T) {
 	assert.Equal(t, "false", annotations["prometheus.io/scrape"])
 	assert.Equal(t, "1234", annotations["prometheus.io/port"])
 	assert.Equal(t, "/test", annotations["prometheus.io/path"])
-	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations["opentelemetry-operator-config/sha256"])
-	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", podAnnotations["opentelemetry-operator-config/sha256"])
+	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations[constants.CollectorConfigSHA])
+	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", podAnnotations[constants.CollectorConfigSHA])
 }
 
 func TestAnnotationsPropagateDown(t *testing.T) {

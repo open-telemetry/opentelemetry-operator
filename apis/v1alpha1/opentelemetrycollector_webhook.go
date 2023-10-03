@@ -15,12 +15,16 @@
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 
+	"github.com/go-logr/logr"
+	admissionv1 "k8s.io/api/admission/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -29,8 +33,64 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
+const (
+	validatingWebhookPath = "/validate-opentelemetry-io-v1alpha1-opentelemetrycollector"
+)
+
 // log is for logging in this package.
 var opentelemetrycollectorlog = logf.Log.WithName("opentelemetrycollector-resource")
+
+type collectorValidatingWebhook struct {
+	client  client.Client
+	decoder *admission.Decoder
+	logger  logr.Logger
+}
+
+func (c collectorValidatingWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
+	otelcol := &OpenTelemetryCollector{}
+	err := c.decoder.DecodeRaw(req.Object, otelcol)
+	if err != nil {
+		c.logger.Error(err, "failed to decode message")
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+	c.logger.Info("validating operation", "operation", req.Operation, "name", otelcol.GetName())
+	var warnings []string
+	switch req.Operation {
+	// passthrough connect requests
+	case admissionv1.Connect:
+	case admissionv1.Create:
+		warnings, err = otelcol.validateCRDSpec()
+	case admissionv1.Update:
+		old := &OpenTelemetryCollector{}
+		err = c.decoder.DecodeRaw(req.OldObject, old)
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		warnings, err = otelcol.validateCRDSpec()
+	case admissionv1.Delete:
+		// req.OldObject contains the object being deleted
+		old := &OpenTelemetryCollector{}
+		err = c.decoder.DecodeRaw(req.OldObject, old)
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+	default:
+		return admission.Errored(http.StatusExpectationFailed, fmt.Errorf("unknown operator: %s", req.Operation))
+	}
+	if err != nil {
+		return admission.Denied(err.Error()).WithWarnings(warnings...)
+	}
+	return admission.Allowed("").WithWarnings(warnings...)
+}
+
+func RegisterCollectorValidatingWebhook(mgr ctrl.Manager) {
+	cvw := &collectorValidatingWebhook{
+		client:  mgr.GetClient(),
+		logger:  mgr.GetLogger().WithValues("handler", "collectorValidatingWebhook"),
+		decoder: admission.NewDecoder(mgr.GetScheme()),
+	}
+	mgr.GetWebhookServer().Register(validatingWebhookPath, &webhook.Admission{Handler: cvw})
+}
 
 func (r *OpenTelemetryCollector) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -39,6 +99,8 @@ func (r *OpenTelemetryCollector) SetupWebhookWithManager(mgr ctrl.Manager) error
 }
 
 // +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=ignore,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectordelete.kb.io,sideEffects=none,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &OpenTelemetryCollector{}
 
@@ -99,72 +161,51 @@ func (r *OpenTelemetryCollector) Default() {
 	}
 }
 
-// +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
-// +kubebuilder:webhook:verbs=delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=ignore,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectordelete.kb.io,sideEffects=none,admissionReviewVersions=v1
-
-var _ webhook.Validator = &OpenTelemetryCollector{}
-
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateCreate() (admission.Warnings, error) {
-	opentelemetrycollectorlog.Info("validate create", "name", r.Name)
-	return nil, r.validateCRDSpec()
-}
-
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	opentelemetrycollectorlog.Info("validate update", "name", r.Name)
-	return nil, r.validateCRDSpec()
-}
-
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpenTelemetryCollector) ValidateDelete() (admission.Warnings, error) {
-	opentelemetrycollectorlog.Info("validate delete", "name", r.Name)
-	return nil, nil
-}
-
-func (r *OpenTelemetryCollector) validateCRDSpec() error {
+// validateCrdSpec adheres closely to the admission.Validate spec to allow the collector to validate its CRD spec.
+func (r *OpenTelemetryCollector) validateCRDSpec() (admission.Warnings, error) {
+	warnings := admission.Warnings{}
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
 	}
 
 	// validate tolerations
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
 	}
 
 	// validate priorityClassName
 	if r.Spec.Mode == ModeSidecar && r.Spec.PriorityClassName != "" {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
 	}
 
 	// validate affinity
 	if r.Spec.Mode == ModeSidecar && r.Spec.Affinity != nil {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
 	}
 
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
 	}
 
 	// validate target allocation
 	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
-		return fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
 	}
 
 	// validate Prometheus config for target allocation
 	if r.Spec.TargetAllocator.Enabled {
 		promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
 		if err != nil {
-			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}
 		err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
 		if err != nil {
-			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}
 		err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
 		if err != nil {
-			return fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}
 	}
 
@@ -173,7 +214,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 		nameErrs := validation.IsValidPortName(p.Name)
 		numErrs := validation.IsValidPortNum(int(p.Port))
 		if len(nameErrs) > 0 || len(numErrs) > 0 {
-			return fmt.Errorf("the OpenTelemetry Spec Ports configuration is incorrect, port name '%s' errors: %s, num '%d' errors: %s",
+			return warnings, fmt.Errorf("the OpenTelemetry Spec Ports configuration is incorrect, port name '%s' errors: %s, num '%d' errors: %s",
 				p.Name, nameErrs, p.Port, numErrs)
 		}
 	}
@@ -184,7 +225,8 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	}
 
 	// check deprecated .Spec.MaxReplicas if maxReplicas is not set
-	if *maxReplicas == 0 {
+	if *maxReplicas == 0 && r.Spec.MaxReplicas != nil {
+		warnings = append(warnings, "MaxReplicas is deprecated")
 		maxReplicas = r.Spec.MaxReplicas
 	}
 
@@ -196,6 +238,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	// check deprecated .Spec.MinReplicas if minReplicas is not set
 	if *minReplicas == 0 {
 		if r.Spec.MinReplicas != nil {
+			warnings = append(warnings, "MinReplicas is deprecated")
 			minReplicas = r.Spec.MinReplicas
 		} else {
 			minReplicas = r.Spec.Replicas
@@ -203,7 +246,7 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	}
 
 	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
-		return fmt.Errorf("the OpenTelemetry Spec Ingress configuration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
 	}
@@ -211,57 +254,57 @@ func (r *OpenTelemetryCollector) validateCRDSpec() error {
 	// validate autoscale with horizontal pod autoscaler
 	if maxReplicas != nil {
 		if *maxReplicas < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, maxReplicas should be defined and one or more")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, maxReplicas should be defined and one or more")
 		}
 
 		if r.Spec.Replicas != nil && *r.Spec.Replicas > *maxReplicas {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
 		}
 
 		if minReplicas != nil && *minReplicas > *maxReplicas {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
 		}
 
 		if minReplicas != nil && *minReplicas < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
 		}
 
 		if r.Spec.Autoscaler != nil {
-			return checkAutoscalerSpec(r.Spec.Autoscaler)
+			return warnings, checkAutoscalerSpec(r.Spec.Autoscaler)
 		}
 	}
 
 	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
-		return fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
+		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
 	}
 	if r.Spec.Ingress.RuleType == IngressRuleTypeSubdomain && (r.Spec.Ingress.Hostname == "" || r.Spec.Ingress.Hostname == "*") {
-		return fmt.Errorf("a valid Ingress hostname has to be defined for subdomain ruleType")
+		return warnings, fmt.Errorf("a valid Ingress hostname has to be defined for subdomain ruleType")
 	}
 
 	if r.Spec.LivenessProbe != nil {
 		if r.Spec.LivenessProbe.InitialDelaySeconds != nil && *r.Spec.LivenessProbe.InitialDelaySeconds < 0 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
 		}
 		if r.Spec.LivenessProbe.PeriodSeconds != nil && *r.Spec.LivenessProbe.PeriodSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.TimeoutSeconds != nil && *r.Spec.LivenessProbe.TimeoutSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.SuccessThreshold != nil && *r.Spec.LivenessProbe.SuccessThreshold < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.FailureThreshold != nil && *r.Spec.LivenessProbe.FailureThreshold < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
 		}
 		if r.Spec.LivenessProbe.TerminationGracePeriodSeconds != nil && *r.Spec.LivenessProbe.TerminationGracePeriodSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
+			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
 		}
 	}
 
-	return nil
+	return warnings, nil
 }
 
 func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {

@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.
@@ -38,7 +39,7 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 		}
 	}
 	// make sure sha256 for configMap is always calculated
-	annotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	annotations[constants.CollectorConfigSHA] = GetConfigMapSHA(instance.Spec.Config)
 
 	return annotations
 }
@@ -61,12 +62,12 @@ func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string 
 	}
 
 	// make sure sha256 for configMap is always calculated
-	podAnnotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	podAnnotations[constants.CollectorConfigSHA] = GetConfigMapSHA(instance.Spec.Config)
 
 	return podAnnotations
 }
 
-func getConfigMapSHA(config string) string {
+func GetConfigMapSHA(config string) string {
 	h := sha256.Sum256([]byte(config))
 	return fmt.Sprintf("%x", h)
 }

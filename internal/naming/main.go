@@ -15,9 +15,18 @@
 // Package naming is for determining the names for components (containers, services, ...).
 package naming
 
+func truncatedHash(configHash string) string {
+	return Truncate("%s", 16, configHash)
+}
+
 // ConfigMap builds the name for the config map used in the OpenTelemetryCollector containers.
 func ConfigMap(otelcol string) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol))
+}
+
+// VersionedConfigMap builds the name for the config map and hash used in the OpenTelemetryCollector containers.
+func VersionedConfigMap(otelcol string, configHash string) string {
+	return DNSName(Truncate("%s-collector-%s", 63, otelcol, truncatedHash(configHash)))
 }
 
 // TAConfigMap returns the name for the config map used in the TargetAllocator.
@@ -48,6 +57,11 @@ func Container() string {
 // TAContainer returns the name to use for the container in the TargetAllocator pod.
 func TAContainer() string {
 	return "ta-container"
+}
+
+// Job builds the name of the job using the config hash.
+func Job(otelcol string, configHash string) string {
+	return DNSName(Truncate("%s-collector-%s", 63, otelcol, truncatedHash(configHash)))
 }
 
 // Collector builds the collector (deployment/daemonset) name based on the instance.

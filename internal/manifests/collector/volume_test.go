@@ -32,7 +32,7 @@ func TestVolumeNewDefault(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	volumes := Volumes(cfg, otelcol)
+	volumes := Volumes(cfg, otelcol, naming.ConfigMap(otelcol.Name))
 
 	// verify
 	assert.Len(t, volumes, 1)
@@ -53,7 +53,7 @@ func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	volumes := Volumes(cfg, otelcol)
+	volumes := Volumes(cfg, otelcol, naming.ConfigMap(otelcol.Name))
 
 	// verify
 	assert.Len(t, volumes, 2)
@@ -78,7 +78,7 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	volumes := Volumes(cfg, otelcol)
+	volumes := Volumes(cfg, otelcol, naming.ConfigMap(otelcol.Name))
 
 	// verify
 	assert.Len(t, volumes, 3)

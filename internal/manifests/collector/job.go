@@ -15,7 +15,7 @@
 package collector
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -23,36 +23,46 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// Deployment builds the deployment for the given instance.
-func Deployment(params manifests.Params) *appsv1.Deployment {
-	name := naming.Collector(params.OtelCol.Name)
+var (
+	// backoffLimit is set to one because we don't need to retry this job, it either fails or succeeds.
+	backoffLimit int32 = 1
+)
+
+func Job(params manifests.Params) *batchv1.Job {
+	confMapSha := GetConfigMapSHA(params.OtelCol.Spec.Config)
+	name := naming.Job(params.OtelCol.Name, confMapSha)
 	labels := Labels(params.OtelCol, name, params.Config.LabelsFilter())
 
 	annotations := Annotations(params.OtelCol)
 	podAnnotations := PodAnnotations(params.OtelCol)
+	// manualSelector is explicitly false because we don't want to cause a potential conflict between the job
+	// and the replicaset
+	manualSelector := false
 
-	return &appsv1.Deployment{
+	c := Container(params.Config, params.Log, params.OtelCol, true)
+	c.Args = append([]string{"validate"}, c.Args...)
+
+	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: params.OtelCol.Spec.Replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(params.OtelCol),
-			},
+		Spec: batchv1.JobSpec{
+			ManualSelector: &manualSelector,
+			BackoffLimit:   &backoffLimit,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
+					RestartPolicy:                 corev1.RestartPolicyNever,
 					ServiceAccountName:            ServiceAccountName(params.OtelCol),
 					InitContainers:                params.OtelCol.Spec.InitContainers,
-					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
-					Volumes:                       Volumes(params.Config, params.OtelCol, naming.ConfigMap(params.OtelCol.Name)),
+					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, c),
+					Volumes:                       Volumes(params.Config, params.OtelCol, naming.VersionedConfigMap(params.OtelCol.Name, confMapSha)),
 					DNSPolicy:                     getDNSPolicy(params.OtelCol),
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,

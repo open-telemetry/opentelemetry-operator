@@ -25,6 +25,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -115,6 +116,11 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			rb := existing.(*rbacv1.RoleBinding)
 			wantRb := desired.(*rbacv1.RoleBinding)
 			mutateRoleBinding(rb, wantRb)
+
+		case *batchv1.Job:
+			dpl := existing.(*batchv1.Job)
+			wantDpl := desired.(*batchv1.Job)
+			return mutateJob(dpl, wantDpl)
 
 		case *appsv1.Deployment:
 			dpl := existing.(*appsv1.Deployment)
@@ -264,6 +270,14 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 	}
 
 	if err := mergeWithOverride(&existing.Spec, desired.Spec); err != nil {
+		return err
+	}
+	return nil
+}
+
+func mutateJob(existing, desired *batchv1.Job) error {
+	// We specify that we DO NOT supply a selector, therefore we should never override the given selector
+	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
 		return err
 	}
 	return nil

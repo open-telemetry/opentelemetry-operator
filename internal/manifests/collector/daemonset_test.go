@@ -25,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 func TestDaemonSetNewDefault(t *testing.T) {
@@ -58,10 +59,10 @@ func TestDaemonSetNewDefault(t *testing.T) {
 
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		"prometheus.io/path":                   "/metrics",
-		"prometheus.io/port":                   "8888",
-		"prometheus.io/scrape":                 "true",
+		constants.CollectorConfigSHA: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"prometheus.io/path":         "/metrics",
+		"prometheus.io/port":         "8888",
+		"prometheus.io/scrape":       "true",
 	}
 	assert.Equal(t, expectedAnnotations, d.Spec.Template.Annotations)
 
@@ -148,14 +149,14 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	ds := DaemonSet(params)
 
 	// Add sha256 podAnnotation
-	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	testPodAnnotationValues[constants.CollectorConfigSHA] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 	expectedAnnotations := map[string]string{
-		"annotation-key":                       "annotation-value",
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		"prometheus.io/path":                   "/metrics",
-		"prometheus.io/port":                   "8888",
-		"prometheus.io/scrape":                 "true",
+		"annotation-key":             "annotation-value",
+		constants.CollectorConfigSHA: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"prometheus.io/path":         "/metrics",
+		"prometheus.io/port":         "8888",
+		"prometheus.io/scrape":       "true",
 	}
 
 	// verify
