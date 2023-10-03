@@ -30,6 +30,6 @@ type Params struct {
 	Recorder record.EventRecorder
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Instance v1alpha1.OpenTelemetryCollector
+	OtelCol  v1alpha1.OpenTelemetryCollector
 	Config   config.Config
 }

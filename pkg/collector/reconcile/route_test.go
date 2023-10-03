@@ -37,24 +37,24 @@ func TestExpectedRoutes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
-		params.Instance.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
+		params.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+		params.OtelCol.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 
-		routes := collector.Routes(params.Config, params.Log, params.Instance)
+		routes := collector.Routes(params)
 		err = expectedRoutes(ctx, params, routes)
 		assert.NoError(t, err)
 
-		nns := types.NamespacedName{Namespace: params.Instance.Namespace, Name: "otlp-grpc-test-route"}
+		nns := types.NamespacedName{Namespace: params.OtelCol.Namespace, Name: "otlp-grpc-test-route"}
 		exists, err := populateObjectIfExists(t, &routev1.Route{}, nns)
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
 		// update fields
 		const expectHostname = "something-else.com"
-		params.Instance.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
-		params.Instance.Spec.Ingress.Hostname = expectHostname
+		params.OtelCol.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
+		params.OtelCol.Spec.Ingress.Hostname = expectHostname
 
-		routes = collector.Routes(params.Config, params.Log, params.Instance)
+		routes = collector.Routes(params)
 		err = expectedRoutes(ctx, params, routes)
 		assert.NoError(t, err)
 
@@ -82,9 +82,9 @@ func TestDeleteRoutes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		myParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+		myParams.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 
-		routes := collector.Routes(myParams.Config, myParams.Log, myParams.Instance)
+		routes := collector.Routes(myParams)
 		err = expectedRoutes(ctx, myParams, routes)
 		assert.NoError(t, err)
 

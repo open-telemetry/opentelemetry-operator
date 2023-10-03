@@ -23,7 +23,7 @@ import (
 // Build creates the manifest for the TargetAllocator resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
-	if !params.Instance.Spec.TargetAllocator.Enabled {
+	if !params.OtelCol.Spec.TargetAllocator.Enabled {
 		return resourceManifests, nil
 	}
 	resourceFactories := []manifests.K8sManifestFactory{
@@ -33,7 +33,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.FactoryWithoutError(Service),
 	}
 	for _, factory := range resourceFactories {
-		res, err := factory(params.Config, params.Log, params.Instance)
+		res, err := factory(params)
 		if err != nil {
 			return nil, err
 		} else if manifests.ObjectIsNotNil(res) {
