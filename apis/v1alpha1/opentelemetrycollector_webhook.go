@@ -15,15 +15,10 @@
 package v1alpha1
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -32,59 +27,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
-const (
-	validatingWebhookPath = "/validate-opentelemetry-io-v1alpha1-opentelemetrycollector"
-)
-
 // log is for logging in this package.
 var opentelemetrycollectorlog = logf.Log.WithName("opentelemetrycollector-resource")
-var _ admission.CustomValidator = &CollectorValidatingWebhook{}
-
-type CollectorValidatingWebhook struct {
-	client  client.Client
-	decoder *admission.Decoder
-	logger  logr.Logger
-}
-
-func (c CollectorValidatingWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
-	otelcol, ok := obj.(*OpenTelemetryCollector)
-	if !ok {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
-	}
-	return otelcol.validateCRDSpec()
-}
-
-func (c CollectorValidatingWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
-	otelcol, ok := newObj.(*OpenTelemetryCollector)
-	if !ok {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", newObj)
-	}
-	return otelcol.validateCRDSpec()
-}
-
-func (c CollectorValidatingWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
-	otelcol, ok := obj.(*OpenTelemetryCollector)
-	if !ok {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
-	}
-	return otelcol.validateCRDSpec()
-}
-
-func NewCollectorValidatingWebhook(c client.Client, logger logr.Logger) *CollectorValidatingWebhook {
-	cvw := &CollectorValidatingWebhook{
-		client: c,
-		logger: logger.WithValues("handler", "CollectorValidatingWebhook"),
-	}
-	return cvw
-}
-
-func (c Coll)
-
-func (r *OpenTelemetryCollector) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
 
 // +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -150,7 +94,7 @@ func (r *OpenTelemetryCollector) Default() {
 }
 
 // validateCrdSpec adheres closely to the admission.Validate spec to allow the collector to validate its CRD spec.
-func (r *OpenTelemetryCollector) validateCRDSpec() (admission.Warnings, error) {
+func (r *OpenTelemetryCollector) ValidateCRDSpec() (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
@@ -207,24 +151,24 @@ func (r *OpenTelemetryCollector) validateCRDSpec() (admission.Warnings, error) {
 		}
 	}
 
-	maxReplicas := new(int32)
+	var maxReplicas *int32
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil {
 		maxReplicas = r.Spec.Autoscaler.MaxReplicas
 	}
 
 	// check deprecated .Spec.MaxReplicas if maxReplicas is not set
-	if *maxReplicas == 0 && r.Spec.MaxReplicas != nil {
+	if maxReplicas == nil && r.Spec.MaxReplicas != nil {
 		warnings = append(warnings, "MaxReplicas is deprecated")
 		maxReplicas = r.Spec.MaxReplicas
 	}
 
-	minReplicas := new(int32)
+	var minReplicas *int32
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil {
 		minReplicas = r.Spec.Autoscaler.MinReplicas
 	}
 
 	// check deprecated .Spec.MinReplicas if minReplicas is not set
-	if *minReplicas == 0 {
+	if minReplicas == nil {
 		if r.Spec.MinReplicas != nil {
 			warnings = append(warnings, "MinReplicas is deprecated")
 			minReplicas = r.Spec.MinReplicas

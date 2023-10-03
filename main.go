@@ -46,6 +46,7 @@ import (
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
+	"github.com/open-telemetry/opentelemetry-operator/internal/collectorwebhook"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
@@ -244,11 +245,7 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		err := ctrl.NewWebhookManagedBy(mgr).
-			For(&otelv1alpha1.OpenTelemetryCollector{}).
-			WithValidator(otelv1alpha1.NewCollectorValidatingWebhook(mgr.GetClient(), logger)).
-			Complete()
-		if err != nil {
+		if err = collectorwebhook.SetupCollectorValidatingWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}

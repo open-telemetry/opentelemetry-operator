@@ -46,6 +46,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/collectorwebhook"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
@@ -125,10 +126,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = ctrl.NewWebhookManagedBy(mgr).
-		For(&v1alpha1.OpenTelemetryCollector{}).
-		WithValidator(v1alpha1.NewCollectorValidatingWebhook(mgr.GetClient(), logger)).
-		Complete(); err != nil {
+	if err = collectorwebhook.SetupCollectorValidatingWebhookWithManager(mgr); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
