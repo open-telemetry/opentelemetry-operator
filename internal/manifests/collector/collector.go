@@ -26,7 +26,7 @@ import (
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
 	var manifestFactories []manifests.K8sManifestFactory
-	switch params.Instance.Spec.Mode {
+	switch params.OtelCol.Spec.Mode {
 	case v1alpha1.ModeDeployment:
 		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(Deployment))
 	case v1alpha1.ModeStatefulSet:
@@ -45,18 +45,18 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.FactoryWithoutError(MonitoringService),
 		manifests.FactoryWithoutError(Ingress),
 	}...)
-	if params.Instance.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
 	}
 	for _, factory := range manifestFactories {
-		res, err := factory(params.Config, params.Log, params.Instance)
+		res, err := factory(params)
 		if err != nil {
 			return nil, err
 		} else if manifests.ObjectIsNotNil(res) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
-	routes := Routes(params.Config, params.Log, params.Instance)
+	routes := Routes(params)
 	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
 	for _, route := range routes {
 		resourceManifests = append(resourceManifests, route)

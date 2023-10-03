@@ -34,19 +34,19 @@ import (
 // TODO: This functionality should be put with the rest of reconciliation logic in the mutate.go
 // https://github.com/open-telemetry/opentelemetry-operator/issues/2108
 func Routes(ctx context.Context, params manifests.Params) error {
-	if params.Instance.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
+	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
 		return nil
 	}
 
 	isSupportedMode := true
-	if params.Instance.Spec.Mode == v1alpha1.ModeSidecar {
+	if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
 		params.Log.V(3).Info("ingress settings are not supported in sidecar mode")
 		isSupportedMode = false
 	}
 
 	var desired []*routev1.Route
 	if isSupportedMode {
-		if r := collector.Routes(params.Config, params.Log, params.Instance); r != nil {
+		if r := collector.Routes(params); r != nil {
 			desired = append(desired, r...)
 		}
 	}
@@ -68,7 +68,7 @@ func expectedRoutes(ctx context.Context, params manifests.Params, expected []*ro
 	for _, obj := range expected {
 		desired := obj
 
-		if err := controllerutil.SetControllerReference(&params.Instance, desired, params.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(&params.OtelCol, desired, params.Scheme); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -119,9 +119,9 @@ func expectedRoutes(ctx context.Context, params manifests.Params, expected []*ro
 
 func deleteRoutes(ctx context.Context, params manifests.Params, expected []*routev1.Route) error {
 	opts := []client.ListOption{
-		client.InNamespace(params.Instance.Namespace),
+		client.InNamespace(params.OtelCol.Namespace),
 		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.Instance.Namespace, params.Instance.Name),
+			"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
