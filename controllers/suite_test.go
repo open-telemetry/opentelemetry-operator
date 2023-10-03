@@ -125,7 +125,10 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = ctrl.NewWebhookManagedBy(mgr).
+		For(&v1alpha1.OpenTelemetryCollector{}).
+		WithValidator(v1alpha1.NewCollectorValidatingWebhook(mgr.GetClient(), logger)).
+		Complete(); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}

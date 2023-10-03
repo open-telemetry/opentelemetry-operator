@@ -17,11 +17,10 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/go-logr/logr"
-	admissionv1 "k8s.io/api/admission/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,58 +38,47 @@ const (
 
 // log is for logging in this package.
 var opentelemetrycollectorlog = logf.Log.WithName("opentelemetrycollector-resource")
+var _ admission.CustomValidator = &CollectorValidatingWebhook{}
 
-type collectorValidatingWebhook struct {
+type CollectorValidatingWebhook struct {
 	client  client.Client
 	decoder *admission.Decoder
 	logger  logr.Logger
 }
 
-func (c collectorValidatingWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
-	otelcol := &OpenTelemetryCollector{}
-	err := c.decoder.DecodeRaw(req.Object, otelcol)
-	if err != nil {
-		c.logger.Error(err, "failed to decode message")
-		return admission.Errored(http.StatusBadRequest, err)
+func (c CollectorValidatingWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+	otelcol, ok := obj.(*OpenTelemetryCollector)
+	if !ok {
+		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
 	}
-	c.logger.Info("validating operation", "operation", req.Operation, "name", otelcol.GetName())
-	var warnings []string
-	switch req.Operation {
-	// passthrough connect requests
-	case admissionv1.Connect:
-	case admissionv1.Create:
-		warnings, err = otelcol.validateCRDSpec()
-	case admissionv1.Update:
-		old := &OpenTelemetryCollector{}
-		err = c.decoder.DecodeRaw(req.OldObject, old)
-		if err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		warnings, err = otelcol.validateCRDSpec()
-	case admissionv1.Delete:
-		// req.OldObject contains the object being deleted
-		old := &OpenTelemetryCollector{}
-		err = c.decoder.DecodeRaw(req.OldObject, old)
-		if err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-	default:
-		return admission.Errored(http.StatusExpectationFailed, fmt.Errorf("unknown operator: %s", req.Operation))
-	}
-	if err != nil {
-		return admission.Denied(err.Error()).WithWarnings(warnings...)
-	}
-	return admission.Allowed("").WithWarnings(warnings...)
+	return otelcol.validateCRDSpec()
 }
 
-func RegisterCollectorValidatingWebhook(mgr ctrl.Manager) {
-	cvw := &collectorValidatingWebhook{
-		client:  mgr.GetClient(),
-		logger:  mgr.GetLogger().WithValues("handler", "collectorValidatingWebhook"),
-		decoder: admission.NewDecoder(mgr.GetScheme()),
+func (c CollectorValidatingWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
+	otelcol, ok := newObj.(*OpenTelemetryCollector)
+	if !ok {
+		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", newObj)
 	}
-	mgr.GetWebhookServer().Register(validatingWebhookPath, &webhook.Admission{Handler: cvw})
+	return otelcol.validateCRDSpec()
 }
+
+func (c CollectorValidatingWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+	otelcol, ok := obj.(*OpenTelemetryCollector)
+	if !ok {
+		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
+	}
+	return otelcol.validateCRDSpec()
+}
+
+func NewCollectorValidatingWebhook(c client.Client, logger logr.Logger) *CollectorValidatingWebhook {
+	cvw := &CollectorValidatingWebhook{
+		client: c,
+		logger: logger.WithValues("handler", "CollectorValidatingWebhook"),
+	}
+	return cvw
+}
+
+func (c Coll)
 
 func (r *OpenTelemetryCollector) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).

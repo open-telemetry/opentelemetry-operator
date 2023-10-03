@@ -244,7 +244,14 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		otelv1alpha1.RegisterCollectorValidatingWebhook(mgr)
+		err := ctrl.NewWebhookManagedBy(mgr).
+			For(&otelv1alpha1.OpenTelemetryCollector{}).
+			WithValidator(otelv1alpha1.NewCollectorValidatingWebhook(mgr.GetClient(), logger)).
+			Complete()
+		if err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+			os.Exit(1)
+		}
 		if err = (&otelv1alpha1.Instrumentation{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
