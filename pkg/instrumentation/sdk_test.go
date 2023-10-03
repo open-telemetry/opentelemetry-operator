@@ -1414,6 +1414,7 @@ func TestInjectNginx(t *testing.T) {
 							},
 						},
 					},
+					Containers: "",
 				},
 			},
 			pod: corev1.Pod{

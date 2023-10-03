@@ -78,6 +78,9 @@ func (langInsts languageInstrumentations) isSingleInstrumentationEnabled() bool 
 	if langInsts.ApacheHttpd.Instrumentation != nil {
 		count++
 	}
+	if langInsts.Nginx.Instrumentation != nil {
+		count++
+	}
 	if langInsts.Go.Instrumentation != nil {
 		count++
 	}
@@ -119,6 +122,11 @@ func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultiple
 		instrWithContainers += isInstrWithContainers(langInsts.ApacheHttpd)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.ApacheHttpd)
 		allContainers = append(allContainers, langInsts.ApacheHttpd.Containers)
+	}
+	if langInsts.Nginx.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Nginx)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Nginx)
+		allContainers = append(allContainers, langInsts.Nginx.Containers)
 	}
 	if langInsts.Go.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Go)
@@ -321,6 +329,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.DotNet.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
 		insts.Go.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
 		insts.ApacheHttpd.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
+		insts.Nginx.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNginxContainersName)
 		insts.Sdk.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
 
 		// We check if provided annotations and instrumentations are valid
