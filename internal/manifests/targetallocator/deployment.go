@@ -56,6 +56,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OtelCol)},
 					Volumes:                   Volumes(params.Config, params.OtelCol),
 					NodeSelector:              params.OtelCol.Spec.TargetAllocator.NodeSelector,
+					Tolerations:               params.OtelCol.Spec.TargetAllocator.Tolerations,
 					TopologySpreadConstraints: params.OtelCol.Spec.TargetAllocator.TopologySpreadConstraints,
 				},
 			},
