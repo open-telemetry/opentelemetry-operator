@@ -52,7 +52,7 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 					ServiceAccountName:        ServiceAccountName(params.OtelCol),
 					InitContainers:            params.OtelCol.Spec.InitContainers,
 					Containers:                append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
-					Volumes:                   Volumes(params.Config, params.OtelCol),
+					Volumes:                   Volumes(params.Config, params.OtelCol, naming.ConfigMap(params.OtelCol.Name)),
 					DNSPolicy:                 getDNSPolicy(params.OtelCol),
 					HostNetwork:               params.OtelCol.Spec.HostNetwork,
 					Tolerations:               params.OtelCol.Spec.Tolerations,

@@ -24,12 +24,12 @@ import (
 )
 
 // Volumes builds the volumes for the given instance, including the config map volume.
-func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev1.Volume {
+func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector, configMap string) []corev1.Volume {
 	volumes := []corev1.Volume{{
 		Name: naming.ConfigMapVolume(),
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: naming.ConfigMap(otelcol.Name)},
+				LocalObjectReference: corev1.LocalObjectReference{Name: configMap},
 				Items: []corev1.KeyToPath{{
 					Key:  cfg.CollectorConfigMapEntry(),
 					Path: cfg.CollectorConfigMapEntry(),

@@ -180,9 +180,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	five := int32(5)
 
 	tests := []struct { //nolint:govet
-		name        string
-		otelcol     OpenTelemetryCollector
-		expectedErr string
+		name             string
+		otelcol          OpenTelemetryCollector
+		expectedErr      string
+		expectedWarnings []string
 	}{
 		{
 			name:    "valid empty spec",
@@ -335,7 +336,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					MaxReplicas: &zero,
 				},
 			},
-			expectedErr: "maxReplicas should be defined and one or more",
+			expectedErr:      "maxReplicas should be defined and one or more",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid replicas, greater than max",
@@ -345,7 +347,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					Replicas:    &five,
 				},
 			},
-			expectedErr: "replicas must not be greater than maxReplicas",
+			expectedErr:      "replicas must not be greater than maxReplicas",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid min replicas, greater than max",
@@ -355,7 +358,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					MinReplicas: &five,
 				},
 			},
-			expectedErr: "minReplicas must not be greater than maxReplicas",
+			expectedErr:      "minReplicas must not be greater than maxReplicas",
+			expectedWarnings: []string{"MaxReplicas is deprecated", "MinReplicas is deprecated"},
 		},
 		{
 			name: "invalid min replicas, lesser than 1",
@@ -365,7 +369,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					MinReplicas: &zero,
 				},
 			},
-			expectedErr: "minReplicas should be one or more",
+			expectedErr:      "minReplicas should be one or more",
+			expectedWarnings: []string{"MaxReplicas is deprecated", "MinReplicas is deprecated"},
 		},
 		{
 			name: "invalid autoscaler scale down",
@@ -381,7 +386,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "scaleDown should be one or more",
+			expectedErr:      "scaleDown should be one or more",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid autoscaler scale up",
@@ -397,7 +403,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "scaleUp should be one or more",
+			expectedErr:      "scaleUp should be one or more",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid autoscaler target cpu utilization",
@@ -409,7 +416,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "targetCPUUtilization should be greater than 0 and less than 100",
+			expectedErr:      "targetCPUUtilization should be greater than 0 and less than 100",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "autoscaler minReplicas is less than maxReplicas",
@@ -437,7 +445,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod",
+			expectedErr:      "the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid pod metric average value",
@@ -462,7 +471,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0",
+			expectedErr:      "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "utilization target is not valid with pod metrics",
@@ -487,7 +497,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type",
+			expectedErr:      "the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid deployment mode incompabible with ingress settings",
@@ -634,10 +645,15 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.otelcol.validateCRDSpec()
+			warnings, err := test.otelcol.ValidateCRDSpec()
 			if test.expectedErr == "" {
 				assert.NoError(t, err)
 				return
+			}
+			if len(test.expectedWarnings) == 0 {
+				assert.Empty(t, warnings, test.expectedWarnings)
+			} else {
+				assert.ElementsMatch(t, warnings, test.expectedWarnings)
 			}
 			assert.ErrorContains(t, err, test.expectedErr)
 		})

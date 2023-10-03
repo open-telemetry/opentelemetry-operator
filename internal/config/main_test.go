@@ -80,7 +80,7 @@ func TestAutoDetectInBackground(t *testing.T) {
 	}
 	cfg := config.New(
 		config.WithAutoDetect(mock),
-		config.WithAutoDetectFrequency(500*time.Second),
+		config.WithAutoDetectFrequency(5*time.Second),
 	)
 
 	// sanity check

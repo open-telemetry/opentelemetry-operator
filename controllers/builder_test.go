@@ -28,6 +28,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 var (
@@ -92,10 +93,10 @@ service:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "baf97852b8beb44fb46a120f8c31873ded3129088e50cd6c69f3208ba60bd661",
-							"prometheus.io/path":                   "/metrics",
-							"prometheus.io/port":                   "8888",
-							"prometheus.io/scrape":                 "true",
+							constants.CollectorConfigSHA: "baf97852b8beb44fb46a120f8c31873ded3129088e50cd6c69f3208ba60bd661",
+							"prometheus.io/path":         "/metrics",
+							"prometheus.io/port":         "8888",
+							"prometheus.io/scrape":       "true",
 						},
 					},
 					Spec: appsv1.DeploymentSpec{
@@ -114,10 +115,10 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "baf97852b8beb44fb46a120f8c31873ded3129088e50cd6c69f3208ba60bd661",
-									"prometheus.io/path":                   "/metrics",
-									"prometheus.io/port":                   "8888",
-									"prometheus.io/scrape":                 "true",
+									constants.CollectorConfigSHA: "baf97852b8beb44fb46a120f8c31873ded3129088e50cd6c69f3208ba60bd661",
+									"prometheus.io/path":         "/metrics",
+									"prometheus.io/port":         "8888",
+									"prometheus.io/scrape":       "true",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -335,10 +336,10 @@ service:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "baf97852b8beb44fb46a120f8c31873ded3129088e50cd6c69f3208ba60bd661",
-							"prometheus.io/path":                   "/metrics",
-							"prometheus.io/port":                   "8888",
-							"prometheus.io/scrape":                 "true",
+							constants.CollectorConfigSHA: "baf97852b8beb44fb46a120f8c31873ded3129088e50cd6c69f3208ba60bd661",
+							"prometheus.io/path":         "/metrics",
+							"prometheus.io/port":         "8888",
+							"prometheus.io/scrape":       "true",
 						},
 					},
 					Spec: appsv1.DeploymentSpec{
@@ -357,10 +358,10 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "baf97852b8beb44fb46a120f8c31873ded3129088e50cd6c69f3208ba60bd661",
-									"prometheus.io/path":                   "/metrics",
-									"prometheus.io/port":                   "8888",
-									"prometheus.io/scrape":                 "true",
+									constants.CollectorConfigSHA: "baf97852b8beb44fb46a120f8c31873ded3129088e50cd6c69f3208ba60bd661",
+									"prometheus.io/path":         "/metrics",
+									"prometheus.io/port":         "8888",
+									"prometheus.io/scrape":       "true",
 								},
 							},
 							Spec: corev1.PodSpec{
