@@ -25,40 +25,37 @@ import (
 
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) *appsv1.Deployment {
-	opampBridge := params.OpAMPBridge
-	logger := params.Log
-
-	name := naming.OpAMPBridge(opampBridge.Name)
-	labels := Labels(opampBridge, name, params.Config.LabelsFilter())
+	name := naming.OpAMPBridge(params.OpAMPBridge.Name)
+	labels := Labels(params.OpAMPBridge, name, params.Config.LabelsFilter())
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: opampBridge.Namespace,
+			Namespace: params.OpAMPBridge.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: opampBridge.Spec.Replicas,
+			Replicas: params.OpAMPBridge.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(opampBridge),
+				MatchLabels: SelectorLabels(params.OpAMPBridge),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: opampBridge.Spec.PodAnnotations,
+					Annotations: params.OpAMPBridge.Spec.PodAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:        ServiceAccountName(opampBridge),
-					Containers:                []corev1.Container{Container(params.Config, logger, opampBridge)},
-					Volumes:                   Volumes(params.Config, opampBridge),
-					DNSPolicy:                 getDNSPolicy(opampBridge),
-					HostNetwork:               opampBridge.Spec.HostNetwork,
-					Tolerations:               opampBridge.Spec.Tolerations,
-					NodeSelector:              opampBridge.Spec.NodeSelector,
-					SecurityContext:           opampBridge.Spec.PodSecurityContext,
-					PriorityClassName:         opampBridge.Spec.PriorityClassName,
-					Affinity:                  opampBridge.Spec.Affinity,
-					TopologySpreadConstraints: opampBridge.Spec.TopologySpreadConstraints,
+					ServiceAccountName:        ServiceAccountName(params.OpAMPBridge),
+					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OpAMPBridge)},
+					Volumes:                   Volumes(params.Config, params.OpAMPBridge),
+					DNSPolicy:                 getDNSPolicy(params.OpAMPBridge),
+					HostNetwork:               params.OpAMPBridge.Spec.HostNetwork,
+					Tolerations:               params.OpAMPBridge.Spec.Tolerations,
+					NodeSelector:              params.OpAMPBridge.Spec.NodeSelector,
+					SecurityContext:           params.OpAMPBridge.Spec.PodSecurityContext,
+					PriorityClassName:         params.OpAMPBridge.Spec.PriorityClassName,
+					Affinity:                  params.OpAMPBridge.Spec.Affinity,
+					TopologySpreadConstraints: params.OpAMPBridge.Spec.TopologySpreadConstraints,
 				},
 			},
 		},

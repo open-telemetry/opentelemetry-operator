@@ -16,7 +16,6 @@ package controllers_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
@@ -37,7 +36,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
@@ -57,7 +55,7 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 		Client:   k8sClient,
-		Log:      logger,
+		Log:      opampBridgeLogger,
 		Scheme:   testScheme,
 		Recorder: record.NewFakeRecorder(10),
 		Config:   cfg,
@@ -126,112 +124,15 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 	require.NoError(t, k8sClient.Delete(context.Background(), created))
 }
 
-func TestContinueOnRecoverableFailure_OpAMPBridge(t *testing.T) {
-	// prepare
-	taskCalled := false
-	reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
-		Log: opampBridgeLogger,
-		Tasks: []controllers.OpAMPBridgeReconcilerTask{
-			{
-				Name: "should-fail",
-				Do: func(context.Context, manifests.Params) error {
-					return errors.New("should fail")
-				},
-				BailOnError: false,
-			},
-			{
-				Name: "should-be-called",
-				Do: func(context.Context, manifests.Params) error {
-					taskCalled = true
-					return nil
-				},
-			},
-		},
-	})
-
-	// test
-	err := reconciler.RunTasks(context.Background(), manifests.Params{})
-
-	// verify
-	assert.NoError(t, err)
-	assert.True(t, taskCalled)
-}
-
-func TestBreakOnUnrecoverableError_OpAMPBridge(t *testing.T) {
-	// prepare
-	cfg := config.New()
-	taskCalled := false
-	expectedErr := errors.New("should fail")
-	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
-	reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
-		Client: k8sClient,
-		Log:    logger,
-		Scheme: scheme.Scheme,
-		Config: cfg,
-		Tasks: []controllers.OpAMPBridgeReconcilerTask{
-			{
-				Name: "should-fail",
-				Do: func(context.Context, manifests.Params) error {
-					taskCalled = true
-					return expectedErr
-				},
-				BailOnError: true,
-			},
-			{
-				Name: "should-not-be-called",
-				Do: func(context.Context, manifests.Params) error {
-					assert.Fail(t, "should not have been called")
-					return nil
-				},
-			},
-		},
-	})
-	created := &v1alpha1.OpAMPBridge{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      nsn.Name,
-			Namespace: nsn.Namespace,
-		},
-		Spec: v1alpha1.OpAMPBridgeSpec{
-			Endpoint:     "ws://opamp-server:4320/v1/opamp",
-			Protocol:     "wss",
-			Capabilities: []v1alpha1.OpAMPBridgeCapability{v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig, v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig, v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces, v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics, v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs, v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand, v1alpha1.OpAMPBridgeCapabilityReportsHealth, v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig},
-		},
-	}
-	err := k8sClient.Create(context.Background(), created)
-	require.NoError(t, err)
-
-	// test
-	req := k8sreconcile.Request{
-		NamespacedName: nsn,
-	}
-	_, err = reconciler.Reconcile(context.Background(), req)
-
-	// verify
-	assert.Equal(t, expectedErr, err)
-	assert.True(t, taskCalled)
-
-	// cleanup
-	assert.NoError(t, k8sClient.Delete(context.Background(), created))
-}
-
 func TestSkipWhenInstanceDoesNotExist_OpAMPBridge(t *testing.T) {
 	// prepare
 	cfg := config.New()
 	nsn := types.NamespacedName{Name: "non-existing-my-instance", Namespace: "default"}
 	reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 		Client: k8sClient,
-		Log:    logger,
+		Log:    opampBridgeLogger,
 		Scheme: scheme.Scheme,
 		Config: cfg,
-		Tasks: []controllers.OpAMPBridgeReconcilerTask{
-			{
-				Name: "should-not-be-called",
-				Do: func(context.Context, manifests.Params) error {
-					assert.Fail(t, "should not have been called")
-					return nil
-				},
-			},
-		},
 	})
 
 	// test

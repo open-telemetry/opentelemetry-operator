@@ -33,17 +33,15 @@ func ServiceAccountName(instance v1alpha1.OpAMPBridge) string {
 
 // ServiceAccount returns the service account for the given instance.
 func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
-	opampBridge := params.OpAMPBridge
-
-	name := naming.OpAMPBridgeServiceAccount(opampBridge.Name)
-	labels := Labels(opampBridge, name, []string{})
+	name := naming.OpAMPBridgeServiceAccount(params.OpAMPBridge.Name)
+	labels := Labels(params.OpAMPBridge, name, []string{})
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   opampBridge.Namespace,
+			Namespace:   params.OpAMPBridge.Namespace,
 			Labels:      labels,
-			Annotations: opampBridge.Annotations,
+			Annotations: params.OpAMPBridge.Annotations,
 		},
 	}
 }

@@ -25,24 +25,21 @@ import (
 
 // DaemonSet builds the deployment for the given instance.
 func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
-	otelcol := params.OtelCol
-	logger := params.Log
+	name := naming.Collector(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name, params.Config.LabelsFilter())
 
-	name := naming.Collector(otelcol.Name)
-	labels := Labels(otelcol, name, params.Config.LabelsFilter())
-
-	annotations := Annotations(otelcol)
-	podAnnotations := PodAnnotations(otelcol)
+	annotations := Annotations(params.OtelCol)
+	podAnnotations := PodAnnotations(params.OtelCol)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Collector(otelcol.Name),
-			Namespace:   otelcol.Namespace,
+			Name:        naming.Collector(params.OtelCol.Name),
+			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(otelcol),
+				MatchLabels: SelectorLabels(params.OtelCol),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -50,17 +47,17 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: ServiceAccountName(otelcol),
-					InitContainers:     otelcol.Spec.InitContainers,
-					Containers:         append(otelcol.Spec.AdditionalContainers, Container(params.Config, logger, otelcol, true)),
-					Volumes:            Volumes(params.Config, otelcol),
-					Tolerations:        otelcol.Spec.Tolerations,
-					NodeSelector:       otelcol.Spec.NodeSelector,
-					HostNetwork:        otelcol.Spec.HostNetwork,
-					DNSPolicy:          getDNSPolicy(otelcol),
-					SecurityContext:    otelcol.Spec.PodSecurityContext,
-					PriorityClassName:  otelcol.Spec.PriorityClassName,
-					Affinity:           otelcol.Spec.Affinity,
+					ServiceAccountName: ServiceAccountName(params.OtelCol),
+					InitContainers:     params.OtelCol.Spec.InitContainers,
+					Containers:         append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
+					Volumes:            Volumes(params.Config, params.OtelCol),
+					Tolerations:        params.OtelCol.Spec.Tolerations,
+					NodeSelector:       params.OtelCol.Spec.NodeSelector,
+					HostNetwork:        params.OtelCol.Spec.HostNetwork,
+					DNSPolicy:          getDNSPolicy(params.OtelCol),
+					SecurityContext:    params.OtelCol.Spec.PodSecurityContext,
+					PriorityClassName:  params.OtelCol.Spec.PriorityClassName,
+					Affinity:           params.OtelCol.Spec.Affinity,
 				},
 			},
 		},

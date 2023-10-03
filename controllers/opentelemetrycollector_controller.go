@@ -17,7 +17,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -35,8 +34,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
@@ -117,53 +114,6 @@ func (r *OpenTelemetryCollectorReconciler) removeRouteTask(ora autodetect.OpenSh
 	return nil
 }
 
-func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params manifests.Params) error {
-	// Collect all objects owned by the operator, to be able to prune objects
-	// which exist in the cluster but are not managed by the operator anymore.
-	desiredObjects, err := r.BuildAll(params)
-	if err != nil {
-		return err
-	}
-	var errs []error
-	for _, desired := range desiredObjects {
-		l := r.log.WithValues(
-			"object_name", desired.GetName(),
-			"object_kind", desired.GetObjectKind(),
-		)
-		if isNamespaceScoped(desired) {
-			if setErr := ctrl.SetControllerReference(&params.OtelCol, desired, params.Scheme); setErr != nil {
-				l.Error(setErr, "failed to set controller owner reference to desired")
-				errs = append(errs, setErr)
-				continue
-			}
-		}
-
-		// existing is an object the controller runtime will hydrate for us
-		// we obtain the existing object by deep copying the desired object because it's the most convenient way
-		existing := desired.DeepCopyObject().(client.Object)
-		mutateFn := manifests.MutateFuncFor(existing, desired)
-		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, existing, mutateFn)
-		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
-			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "existing", existing.GetName())
-			delErr := r.Client.Delete(ctx, existing)
-			if delErr != nil {
-				return delErr
-			}
-			continue
-		} else if crudErr != nil {
-			l.Error(crudErr, "failed to configure desired")
-			errs = append(errs, crudErr)
-			continue
-		}
-
-		l.V(1).Info(fmt.Sprintf("desired has been %s", op))
-	}
-	if len(errs) > 0 {
-		return fmt.Errorf("failed to create objects for Collector %s: %w", params.OtelCol.GetName(), errors.Join(errs...))
-	}
-	return nil
-}
-
 func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
 	return manifests.Params{
 		Config:   r.config,
@@ -233,7 +183,11 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, err
 	}
 
-	err := r.doCRUD(ctx, params)
+	desiredObjects, buildErr := BuildCollector(params)
+	if buildErr != nil {
+		return ctrl.Result{}, buildErr
+	}
+	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
 	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
@@ -255,23 +209,6 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 		}
 	}
 	return nil
-}
-
-// BuildAll returns the generation and collected errors of all manifests for a given instance.
-func (r *OpenTelemetryCollectorReconciler) BuildAll(params manifests.Params) ([]client.Object, error) {
-	builders := []manifests.Builder{
-		collector.Build,
-		targetallocator.Build,
-	}
-	var resources []client.Object
-	for _, builder := range builders {
-		objs, err := builder(params)
-		if err != nil {
-			return nil, err
-		}
-		resources = append(resources, objs...)
-	}
-	return resources, nil
 }
 
 // SetupWithManager tells the manager what our controller is interested in.

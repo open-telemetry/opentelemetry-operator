@@ -28,6 +28,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 var (
@@ -50,7 +51,7 @@ var (
 	}
 )
 
-func TestBuildAll_Collector(t *testing.T) {
+func TestBuildCollector(t *testing.T) {
 	var goodConfig = `receivers:
   examplereceiver:
     endpoint: "0.0.0.0:12345"
@@ -595,12 +596,12 @@ service:
 				config.WithCollectorImage("default-collector"),
 				config.WithTargetAllocatorImage("default-ta-allocator"),
 			)
-			reconciler := NewReconciler(Params{
-				Log:    logr.Discard(),
-				Config: cfg,
-			})
-			params := reconciler.getParams(tt.args.instance)
-			got, err := reconciler.BuildAll(params)
+			params := manifests.Params{
+				Log:     logr.Discard(),
+				Config:  cfg,
+				OtelCol: tt.args.instance,
+			}
+			got, err := BuildCollector(params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("BuildAll() error = %v, wantErr %v", err, tt.wantErr)
 				return

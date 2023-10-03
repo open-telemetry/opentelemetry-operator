@@ -35,16 +35,15 @@ func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
 
 // ServiceAccount returns the service account for the given instance.
 func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
-	otelcol := params.OtelCol
-	name := naming.TargetAllocatorServiceAccount(otelcol.Name)
-	labels := Labels(otelcol, name)
+	name := naming.TargetAllocatorServiceAccount(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name)
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   otelcol.Namespace,
+			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
-			Annotations: otelcol.Annotations,
+			Annotations: params.OtelCol.Annotations,
 		},
 	}
 }

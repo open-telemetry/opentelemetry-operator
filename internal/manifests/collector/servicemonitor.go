@@ -30,36 +30,33 @@ import (
 
 // ServiceMonitor returns the service monitor for the given instance.
 func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, error) {
-	otelcol := params.OtelCol
-	logger := params.Log
-
-	if !otelcol.Spec.Observability.Metrics.EnableMetrics {
-		logger.V(2).Info("Metrics disabled for this OTEL Collector",
-			"otelcol.name", otelcol.Name,
-			"otelcol.namespace", otelcol.Namespace,
+	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
+		params.Log.V(2).Info("Metrics disabled for this OTEL Collector",
+			"params.OtelCol.name", params.OtelCol.Name,
+			"params.OtelCol.namespace", params.OtelCol.Namespace,
 		)
 		return nil, nil
 	}
 
 	sm := monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: otelcol.Namespace,
-			Name:      naming.ServiceMonitor(otelcol.Name),
+			Namespace: params.OtelCol.Namespace,
+			Name:      naming.ServiceMonitor(params.OtelCol.Name),
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.ServiceMonitor(otelcol.Name),
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name),
+				"app.kubernetes.io/name":       naming.ServiceMonitor(params.OtelCol.Name),
+				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 				"app.kubernetes.io/managed-by": "opentelemetry-operator",
 			},
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: []monitoringv1.Endpoint{},
 			NamespaceSelector: monitoringv1.NamespaceSelector{
-				MatchNames: []string{otelcol.Namespace},
+				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name),
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 				},
 			},
 		},
@@ -71,7 +68,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 		},
 	}
 
-	sm.Spec.Endpoints = append(endpoints, endpointsFromConfig(logger, otelcol)...)
+	sm.Spec.Endpoints = append(endpoints, endpointsFromConfig(params.Log, params.OtelCol)...)
 	return &sm, nil
 }
 

@@ -27,11 +27,9 @@ import (
 )
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
-	opampBridge := params.OpAMPBridge
-
-	name := naming.OpAMPBridgeConfigMap(opampBridge.Name)
-	version := strings.Split(opampBridge.Spec.Image, ":")
-	labels := Labels(opampBridge, name, []string{})
+	name := naming.OpAMPBridgeConfigMap(params.OpAMPBridge.Name)
+	version := strings.Split(params.OpAMPBridge.Spec.Image, ":")
+	labels := Labels(params.OpAMPBridge, name, []string{})
 
 	if len(version) > 1 {
 		labels["app.kubernetes.io/version"] = version[len(version)-1]
@@ -41,20 +39,20 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	config := make(map[interface{}]interface{})
 
-	if len(opampBridge.Spec.Endpoint) > 0 {
-		config["endpoint"] = opampBridge.Spec.Endpoint
+	if len(params.OpAMPBridge.Spec.Endpoint) > 0 {
+		config["endpoint"] = params.OpAMPBridge.Spec.Endpoint
 	}
 
-	if len(opampBridge.Spec.Protocol) > 0 {
-		config["protocol"] = opampBridge.Spec.Protocol
+	if len(params.OpAMPBridge.Spec.Protocol) > 0 {
+		config["protocol"] = params.OpAMPBridge.Spec.Protocol
 	}
 
-	if opampBridge.Spec.Capabilities != nil {
-		config["capabilities"] = opampBridge.Spec.Capabilities
+	if params.OpAMPBridge.Spec.Capabilities != nil {
+		config["capabilities"] = params.OpAMPBridge.Spec.Capabilities
 	}
 
-	if opampBridge.Spec.ComponentsAllowed != nil {
-		config["components_allowed"] = opampBridge.Spec.ComponentsAllowed
+	if params.OpAMPBridge.Spec.ComponentsAllowed != nil {
+		config["components_allowed"] = params.OpAMPBridge.Spec.ComponentsAllowed
 	}
 
 	configYAML, err := yaml.Marshal(config)
@@ -65,9 +63,9 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   opampBridge.Namespace,
+			Namespace:   params.OpAMPBridge.Namespace,
 			Labels:      labels,
-			Annotations: opampBridge.Annotations,
+			Annotations: params.OpAMPBridge.Annotations,
 		},
 		Data: map[string]string{
 			"remoteconfiguration.yaml": string(configYAML),

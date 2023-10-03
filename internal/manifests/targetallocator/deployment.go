@@ -25,27 +25,24 @@ import (
 
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) *appsv1.Deployment {
-	otelcol := params.OtelCol
-	logger := params.Log
-
-	name := naming.TargetAllocator(otelcol.Name)
-	labels := Labels(otelcol, name)
+	name := naming.TargetAllocator(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name)
 
 	configMap, err := ConfigMap(params)
 	if err != nil {
-		logger.Info("failed to construct target allocator config map for annotations")
+		params.Log.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(otelcol, configMap)
+	annotations := Annotations(params.OtelCol, configMap)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: otelcol.Namespace,
+			Namespace: params.OtelCol.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: otelcol.Spec.TargetAllocator.Replicas,
+			Replicas: params.OtelCol.Spec.TargetAllocator.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -55,11 +52,11 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:        ServiceAccountName(otelcol),
-					Containers:                []corev1.Container{Container(params.Config, logger, otelcol)},
-					Volumes:                   Volumes(params.Config, otelcol),
-					NodeSelector:              otelcol.Spec.TargetAllocator.NodeSelector,
-					TopologySpreadConstraints: otelcol.Spec.TargetAllocator.TopologySpreadConstraints,
+					ServiceAccountName:        ServiceAccountName(params.OtelCol),
+					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OtelCol)},
+					Volumes:                   Volumes(params.Config, params.OtelCol),
+					NodeSelector:              params.OtelCol.Spec.TargetAllocator.NodeSelector,
+					TopologySpreadConstraints: params.OtelCol.Spec.TargetAllocator.TopologySpreadConstraints,
 				},
 			},
 		},
