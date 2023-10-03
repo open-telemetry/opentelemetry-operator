@@ -8,7 +8,7 @@ component: autoinstrumentation
 note: Bump python autoinstrumentation version to 1.20.0/0.41b0
 
 # One or more tracking issues related to the change
-issues: []
+issues: [2192]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
