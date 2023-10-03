@@ -90,6 +90,8 @@ func main() {
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
 	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger())
+	discovery.RegisterMetrics() // discovery manager metrics need to be enabled explicitly
+
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
 	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cfg.ClusterConfig)
 	if collectorWatcherErr != nil {

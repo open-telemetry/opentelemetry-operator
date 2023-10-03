@@ -307,7 +307,7 @@ The possible values for the annotation can be
 * `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
 
-#### Multi-container pods
+#### Multi-container pods with single instrumentation
 
 If nothing else is specified, instrumentation is performed on the first container available in the pod spec.
 In some cases (for example in the case of the injection of an Istio sidecar) it becomes necessary to specify on which container(s) this injection must be performed.
@@ -346,6 +346,90 @@ spec:
 In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3` will not.
 
 > 🚨 **NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first pod should be the only pod you want instrumented.
+
+#### Multi-container pods with multiple instrumentations
+
+Works only when `operator.autoinstrumentation.multi-instrumentation` feature is `enabled`.
+
+Annotations defining which language instrumentation will be injected are required. When feature is enabled, specific for Instrumentation language containers annotations are used:
+
+Java:
+```bash
+instrumentation.opentelemetry.io/java-container-names: "java1,java2"
+```
+
+NodeJS:
+```bash
+instrumentation.opentelemetry.io/nodejs-container-names: "nodejs1,nodejs2"
+```
+
+Python:
+```bash
+instrumentation.opentelemetry.io/python-container-names: "python1,python3"
+```
+
+DotNet:
+```bash
+instrumentation.opentelemetry.io/dotnet-container-names: "dotnet1,dotnet2"
+```
+
+Go:
+```bash
+instrumentation.opentelemetry.io/go-container-names: "go1"
+```
+
+ApacheHttpD:
+```bash
+instrumentation.opentelemetry.io/apache-httpd-container-names: "apache1,apache2"
+```
+
+SDK:
+```bash
+instrumentation.opentelemetry.io/sdk-container-names: "app1,app2"
+```
+
+If language instrumentation specific container names are not specified, instrumentation is performed on the first container available in the pod spec (only if single instrumentation injection is configured).
+
+In some cases containers in the pod are using different technologies. It becomes necessary to specify language instrumentation for container(s) on which this injection must be performed.
+
+For this, we will use language instrumentation specific container names annotation for which we will indicate one or more container names (`.spec.containers.name`) on which the injection must be made:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment-with-multi-containers-multi-instrumentations
+spec:
+  selector:
+    matchLabels:
+      app: my-pod-with-multi-containers-multi-instrumentations
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-pod-with-multi-containers-multi-instrumentations
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/java-container-names: "myapp,myapp2"
+        instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/python-container-names: "myapp3"
+    spec:
+      containers:
+      - name: myapp
+        image: myImage1
+      - name: myapp2
+        image: myImage2
+      - name: myapp3
+        image: myImage3
+```
+
+In the above case, `myapp` and `myapp2` containers will be instrumented using Java and `myapp3` using Python instrumentation.
+
+**NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first container should be the only you want to instrument.
+
+**NOTE**: This type of instrumentation **does not** allow to instrument a container with multiple language instrumentations.
+
+**NOTE**: `instrumentation.opentelemetry.io/container-names` annotation is not used for this feature.
 
 #### Use customized or vendor instrumentation
 
@@ -430,8 +514,8 @@ instrumentation.opentelemetry.io/inject-sdk: "true"
 The operator allows specifying, via the feature gates,  which languages the Instrumentation resource may instrument.
 These feature gates must be passed to the operator via the `--feature-gates` flag.
 The flag allows for a comma-delimited list of feature gate identifiers.
-Prefix a gate with '-' to disable support for the corresponding language.
-Prefixing a gate with '+' or no prefix will enable support for the corresponding language.
+Prefix a gate with '-' to disable support for the corresponding language or multi instrumentation feature.
+Prefixing a gate with '+' or no prefix will enable support for the corresponding language or multi instrumentation feature.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
 
 | Language      | Gate                                        | Default Value |
@@ -445,6 +529,10 @@ If a language is enabled by default its gate only needs to be supplied when disa
 | Nginx         | `operator.autoinstrumentation.nginx`        | disabled      |
 
 Language not specified in the table are always supported and cannot be disabled.
+
+OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
+These feature can be enabled using `operator.autoinstrumentation.multi-instrumentation` flag. By default flag is `disabled`.
+For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](#Multi-container-pods-with-multiple-instrumentations).
 
 ### Target Allocator
 

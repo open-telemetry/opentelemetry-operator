@@ -15,7 +15,7 @@ spec:
   - name: myrabbit
     env:
     - name: PYTHONPATH
-      value: /otel-auto-instrumentation/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation
+      value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
@@ -43,8 +43,8 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-    - mountPath: /otel-auto-instrumentation
-      name: opentelemetry-auto-instrumentation
+    - mountPath: /otel-auto-instrumentation-python
+      name: opentelemetry-auto-instrumentation-python
   - name: otc-container
 status:
   phase: Running

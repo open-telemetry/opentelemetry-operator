@@ -1,0 +1,58 @@
+name: Reusable - Publish autoinstrumentation E2E images
+
+on:
+  workflow_call:
+    inputs:
+      language:
+        type: string
+        required: true
+      platforms:
+        type: string
+        required: true
+
+jobs:
+  publish-e2e-image:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-${{ inputs.language }}
+          tags: |
+            type=ref,event=branch
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to GitHub Package Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          tags: ${{ steps.meta.outputs.tags }}
+          context: tests/instrumentation-e2e-apps/${{ inputs.language }}
+          platforms: ${{ inputs.platforms }}
+          push: ${{ github.event_name == 'push' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
