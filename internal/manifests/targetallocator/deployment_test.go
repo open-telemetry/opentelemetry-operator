@@ -168,7 +168,12 @@ func TestDeploymentTolerations(t *testing.T) {
 	}
 
 	cfg := config.New()
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+	d1 := Deployment(params1)
 	assert.Equal(t, "my-instance-targetallocator", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.Tolerations)
 
@@ -184,8 +189,12 @@ func TestDeploymentTolerations(t *testing.T) {
 		},
 	}
 
-	cfg = config.New()
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+	d2 := Deployment(params2)
 	assert.Equal(t, "my-instance-toleration-targetallocator", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.Tolerations)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.Tolerations)
