@@ -32,7 +32,7 @@ func TestPrometheusParser(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("should update config with http_sd_config", func(t *testing.T) {
-		actualConfig, err := ReplaceConfig(param.Instance)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		// prepare
@@ -65,12 +65,12 @@ func TestPrometheusParser(t *testing.T) {
 
 	t.Run("should update config with targetAllocator block", func(t *testing.T) {
 		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
-		param.Instance.Spec.TargetAllocator.Enabled = true
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
 		assert.NoError(t, err)
 
 		// Set up the test scenario
-		param.Instance.Spec.TargetAllocator.Enabled = true
-		actualConfig, err := ReplaceConfig(param.Instance)
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		// Verify the expected changes in the config
@@ -94,8 +94,8 @@ func TestPrometheusParser(t *testing.T) {
 	})
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
-		param.Instance.Spec.TargetAllocator.Enabled = false
-		actualConfig, err := ReplaceConfig(param.Instance)
+		param.OtelCol.Spec.TargetAllocator.Enabled = false
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		// prepare
@@ -133,25 +133,25 @@ func TestReplaceConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("should not modify config when TargetAllocator is disabled", func(t *testing.T) {
-		param.Instance.Spec.TargetAllocator.Enabled = false
+		param.OtelCol.Spec.TargetAllocator.Enabled = false
 		expectedConfigBytes, err := os.ReadFile("testdata/relabel_config_original.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
-		actualConfig, err := ReplaceConfig(param.Instance)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expectedConfig, actualConfig)
 	})
 
 	t.Run("should rewrite scrape configs with SD config when TargetAllocator is enabled and feature flag is not set", func(t *testing.T) {
-		param.Instance.Spec.TargetAllocator.Enabled = true
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
 
 		expectedConfigBytes, err := os.ReadFile("testdata/relabel_config_expected_with_sd_config.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
-		actualConfig, err := ReplaceConfig(param.Instance)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expectedConfig, actualConfig)
