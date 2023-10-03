@@ -20,7 +20,6 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/util/validation"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -33,8 +32,6 @@ var opentelemetrycollectorlog = logf.Log.WithName("opentelemetrycollector-resour
 // +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
 // +kubebuilder:webhook:verbs=delete,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=ignore,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectordelete.kb.io,sideEffects=none,admissionReviewVersions=v1
-
-var _ webhook.Defaulter = &OpenTelemetryCollector{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *OpenTelemetryCollector) Default() {
@@ -93,7 +90,7 @@ func (r *OpenTelemetryCollector) Default() {
 	}
 }
 
-// validateCrdSpec adheres closely to the admission.Validate spec to allow the collector to validate its CRD spec.
+// ValidateCRDSpec adheres closely to the admission.Validate spec to allow the collector to validate its CRD spec.
 func (r *OpenTelemetryCollector) ValidateCRDSpec() (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 	// validate volumeClaimTemplates

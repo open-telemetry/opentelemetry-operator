@@ -27,14 +27,26 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-var _ admission.CustomValidator = &CollectorValidatingWebhook{}
+var (
+	_ admission.CustomValidator = &Webhook{}
+	_ admission.CustomDefaulter = &Webhook{}
+)
 
-type CollectorValidatingWebhook struct {
+type Webhook struct {
 	logger logr.Logger
 	c      client.Client
 }
 
-func (c CollectorValidatingWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (c Webhook) Default(ctx context.Context, obj runtime.Object) error {
+	otelcol, ok := obj.(*v1alpha1.OpenTelemetryCollector)
+	if !ok {
+		return fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
+	}
+	otelcol.Default()
+	return nil
+}
+
+func (c Webhook) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
 	otelcol, ok := obj.(*v1alpha1.OpenTelemetryCollector)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
@@ -42,7 +54,7 @@ func (c CollectorValidatingWebhook) ValidateCreate(ctx context.Context, obj runt
 	return otelcol.ValidateCRDSpec()
 }
 
-func (c CollectorValidatingWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
+func (c Webhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
 	otelcol, ok := newObj.(*v1alpha1.OpenTelemetryCollector)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", newObj)
@@ -50,7 +62,7 @@ func (c CollectorValidatingWebhook) ValidateUpdate(ctx context.Context, oldObj, 
 	return otelcol.ValidateCRDSpec()
 }
 
-func (c CollectorValidatingWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (c Webhook) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
 	otelcol, ok := obj.(*v1alpha1.OpenTelemetryCollector)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
@@ -59,12 +71,13 @@ func (c CollectorValidatingWebhook) ValidateDelete(ctx context.Context, obj runt
 }
 
 func SetupCollectorValidatingWebhookWithManager(mgr controllerruntime.Manager) error {
-	cvw := &CollectorValidatingWebhook{
+	cvw := &Webhook{
 		c:      mgr.GetClient(),
-		logger: mgr.GetLogger().WithValues("handler", "CollectorValidatingWebhook"),
+		logger: mgr.GetLogger().WithValues("handler", "Webhook"),
 	}
 	return controllerruntime.NewWebhookManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).
 		WithValidator(cvw).
+		WithDefaulter(cvw).
 		Complete()
 }
