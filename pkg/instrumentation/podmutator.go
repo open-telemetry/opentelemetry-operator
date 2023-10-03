@@ -54,7 +54,7 @@ type languageInstrumentations struct {
 	Python      instrumentationWithContainers
 	DotNet      instrumentationWithContainers
 	ApacheHttpd instrumentationWithContainers
-  Nginx       instrumentationWithContainers
+	Nginx       instrumentationWithContainers
 	Go          instrumentationWithContainers
 	Sdk         instrumentationWithContainers
 }
@@ -290,7 +290,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.Nginx = inst
+		insts.Nginx.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Nginx auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Nginx auto instrumentation is not enabled")
@@ -305,7 +305,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 
 	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
 		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
-    insts.Nginx.Instrumentation == nil &&
+		insts.Nginx.Instrumentation == nil &&
 		insts.Sdk.Instrumentation == nil {
 
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")

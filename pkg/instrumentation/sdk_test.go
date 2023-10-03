@@ -1399,17 +1399,19 @@ func TestInjectNginx(t *testing.T) {
 		{
 			name: "injection enabled, exporter set",
 			insts: languageInstrumentations{
-				Nginx: &v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						Nginx: v1alpha1.Nginx{
-							Image: "img:1",
-							Attrs: []corev1.EnvVar{{
-								Name:  "NginxModuleOtelMaxQueueSize",
-								Value: "4096",
-							}},
-						},
-						Exporter: v1alpha1.Exporter{
-							Endpoint: "http://otlp-endpoint:4317",
+				Nginx: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Nginx: v1alpha1.Nginx{
+								Image: "img:1",
+								Attrs: []corev1.EnvVar{{
+									Name:  "NginxModuleOtelMaxQueueSize",
+									Value: "4096",
+								}},
+							},
+							Exporter: v1alpha1.Exporter{
+								Endpoint: "http://otlp-endpoint:4317",
+							},
 						},
 					},
 				},
@@ -1541,7 +1543,7 @@ func TestInjectNginx(t *testing.T) {
 			inj := sdkInjector{
 				logger: logr.Discard(),
 			}
-			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, "")
+			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
