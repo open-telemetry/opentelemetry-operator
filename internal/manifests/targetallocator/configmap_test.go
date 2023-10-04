@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
@@ -56,7 +57,12 @@ label_selector:
 		}
 		instance := collectorInstance()
 		cfg := config.New()
-		actual, err := ConfigMap(cfg, logr.Discard(), instance)
+		params := manifests.Params{
+			OtelCol: instance,
+			Config:  cfg,
+			Log:     logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
@@ -97,7 +103,12 @@ service_monitor_selector:
 			"release": "my-instance",
 		}
 		cfg := config.New()
-		actual, err := ConfigMap(cfg, logr.Discard(), instance)
+		params := manifests.Params{
+			OtelCol: instance,
+			Config:  cfg,
+			Log:     logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
@@ -132,7 +143,12 @@ prometheus_cr:
 		collector := collectorInstance()
 		collector.Spec.TargetAllocator.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
 		cfg := config.New()
-		actual, err := ConfigMap(cfg, logr.Discard(), collector)
+		params := manifests.Params{
+			OtelCol: collector,
+			Config:  cfg,
+			Log:     logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)

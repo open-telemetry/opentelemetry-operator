@@ -98,7 +98,7 @@ func TestDesiredService(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			Instance: v1alpha1.OpenTelemetryCollector{
+			OtelCol: v1alpha1.OpenTelemetryCollector{
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{Config: `receivers:
       test:
         protocols:
@@ -106,11 +106,11 @@ func TestDesiredService(t *testing.T) {
 			},
 		}
 
-		actual := Service(params.Config, params.Log, params.Instance)
+		actual := Service(params)
 		assert.Nil(t, actual)
 
 	})
-	t.Run("should return service with port mentioned in Instance.Spec.Ports and inferred ports", func(t *testing.T) {
+	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {
 
 		grpc := "grpc"
 		jaegerPorts := v1.ServicePort{
@@ -120,9 +120,9 @@ func TestDesiredService(t *testing.T) {
 			AppProtocol: &grpc,
 		}
 		params := deploymentParams()
-		ports := append(params.Instance.Spec.Ports, jaegerPorts)
+		ports := append(params.OtelCol.Spec.Ports, jaegerPorts)
 		expected := service("test-collector", ports)
-		actual := Service(params.Config, params.Log, params.Instance)
+		actual := Service(params)
 
 		assert.Equal(t, expected, *actual)
 
@@ -138,10 +138,10 @@ func TestDesiredService(t *testing.T) {
 		}
 
 		params := deploymentParams()
-		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
-		actual := Service(params.Config, params.Log, params.Instance)
+		params.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+		actual := Service(params)
 
-		ports := append(params.Instance.Spec.Ports, jaegerPort)
+		ports := append(params.OtelCol.Spec.Ports, jaegerPort)
 		expected := service("test-collector", ports)
 		assert.Equal(t, expected, *actual)
 	})
@@ -156,9 +156,9 @@ func TestDesiredService(t *testing.T) {
 			AppProtocol: &grpc,
 		}
 		p := paramsWithMode(v1alpha1.ModeDaemonSet)
-		ports := append(p.Instance.Spec.Ports, jaegerPorts)
+		ports := append(p.OtelCol.Spec.Ports, jaegerPorts)
 		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
-		actual := Service(p.Config, p.Log, p.Instance)
+		actual := Service(p)
 
 		assert.Equal(t, expected, *actual)
 	})
@@ -167,7 +167,7 @@ func TestDesiredService(t *testing.T) {
 func TestHeadlessService(t *testing.T) {
 	t.Run("should return headless service", func(t *testing.T) {
 		param := deploymentParams()
-		actual := HeadlessService(param.Config, param.Log, param.Instance)
+		actual := HeadlessService(param)
 		assert.Equal(t, actual.GetAnnotations()["service.beta.openshift.io/serving-cert-secret-name"], "test-collector-headless-tls")
 		assert.Equal(t, actual.Spec.ClusterIP, "None")
 	})
@@ -180,7 +180,7 @@ func TestMonitoringService(t *testing.T) {
 			Port: 8888,
 		}}
 		param := deploymentParams()
-		actual := MonitoringService(param.Config, param.Log, param.Instance)
+		actual := MonitoringService(param)
 		assert.Equal(t, expected, actual.Spec.Ports)
 	})
 
@@ -190,12 +190,12 @@ func TestMonitoringService(t *testing.T) {
 			Port: 9090,
 		}}
 		params := deploymentParams()
-		params.Instance.Spec.Config = `service:
+		params.OtelCol.Spec.Config = `service:
     telemetry:
         metrics:
             level: detailed
             address: 0.0.0.0:9090`
-		actual := MonitoringService(params.Config, params.Log, params.Instance)
+		actual := MonitoringService(params)
 		assert.NotNil(t, actual)
 		assert.Equal(t, expected, actual.Spec.Ports)
 	})
@@ -207,18 +207,18 @@ func service(name string, ports []v1.ServicePort) v1.Service {
 
 func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
 	params := deploymentParams()
-	labels := Labels(params.Instance, name, []string{})
+	labels := Labels(params.OtelCol, name, []string{})
 
 	return v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   "default",
 			Labels:      labels,
-			Annotations: params.Instance.Annotations,
+			Annotations: params.OtelCol.Annotations,
 		},
 		Spec: v1.ServiceSpec{
 			InternalTrafficPolicy: &internalTrafficPolicy,
-			Selector:              SelectorLabels(params.Instance),
+			Selector:              SelectorLabels(params.OtelCol),
 			ClusterIP:             "",
 			Ports:                 ports,
 		},

@@ -15,14 +15,17 @@
 package target
 
 import (
+	"hash"
+	"hash/fnv"
+
 	"github.com/go-logr/logr"
-	"github.com/mitchellh/hashstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/relabel"
+	"gopkg.in/yaml.v3"
 
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
 )
@@ -40,7 +43,7 @@ type Discoverer struct {
 	close                chan struct{}
 	configsMap           map[allocatorWatcher.EventSource]*config.Config
 	hook                 discoveryHook
-	scrapeConfigsHash    uint64
+	scrapeConfigsHash    hash.Hash
 	scrapeConfigsUpdater scrapeConfigsUpdater
 }
 
@@ -82,7 +85,7 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *confi
 		}
 	}
 
-	hash, err := hashstructure.Hash(jobToScrapeConfig, nil)
+	hash, err := getScrapeConfigHash(jobToScrapeConfig)
 	if err != nil {
 		return err
 	}
@@ -130,4 +133,24 @@ func (m *Discoverer) Watch(fn func(targets map[string]*Item)) error {
 
 func (m *Discoverer) Close() {
 	close(m.close)
+}
+
+// Calculate a hash for a scrape config map.
+// This is done by marshaling to YAML because it's the most straightforward and doesn't run into problems with unexported fields.
+func getScrapeConfigHash(jobToScrapeConfig map[string]*config.ScrapeConfig) (hash.Hash64, error) {
+	var err error
+	hash := fnv.New64()
+	yamlEncoder := yaml.NewEncoder(hash)
+	for jobName, scrapeConfig := range jobToScrapeConfig {
+		_, err = hash.Write([]byte(jobName))
+		if err != nil {
+			return nil, err
+		}
+		err = yamlEncoder.Encode(scrapeConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+	yamlEncoder.Close()
+	return hash, err
 }
