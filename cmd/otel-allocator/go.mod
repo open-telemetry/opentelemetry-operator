@@ -16,7 +16,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator v0.68.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.68.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.68.0
-	github.com/prometheus/client_golang v1.16.0
+	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v0.47.0
 	github.com/spf13/pflag v1.0.5
@@ -155,9 +155,9 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus-community/prom-label-proxy v0.7.0 // indirect
 	github.com/prometheus/alertmanager v0.26.0 // indirect
-	github.com/prometheus/client_model v0.4.0 // indirect
+	github.com/prometheus/client_model v0.4.1-0.20230718164431-9a2bf3000d16 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
-	github.com/prometheus/procfs v0.11.0 // indirect
+	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.20 // indirect
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

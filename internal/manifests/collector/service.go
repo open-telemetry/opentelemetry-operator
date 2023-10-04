@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -34,16 +34,16 @@ const (
 	headlessExists = "Exists"
 )
 
-func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
-	h, err := Service(cfg, logger, otelcol)
+func HeadlessService(params manifests.Params) (*corev1.Service, error) {
+	h, err := Service(params)
 	if h == nil || err != nil {
-		return h
+		return h, err
 	}
 
-	h.Name = naming.HeadlessService(otelcol.Name)
+	h.Name = naming.HeadlessService(params.OtelCol.Name)
 	h.Labels[headlessLabel] = headlessExists
 
-	// copy to avoid modifying otelcol.Annotations
+	// copy to avoid modifying params.OtelCol.Annotations
 	annotations := map[string]string{
 		"service.beta.openshift.io/serving-cert-secret-name": fmt.Sprintf("%s-tls", h.Name),
 	}
@@ -53,35 +53,35 @@ func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Ope
 	h.Annotations = annotations
 
 	h.Spec.ClusterIP = "None"
-	return h
+	return h, nil
 }
 
-func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error) {
-	name := naming.MonitoringService(otelcol.Name)
-	labels := Labels(otelcol, name, []string{})
+func MonitoringService(params manifests.Params) (*corev1.Service, error) {
+	name := naming.MonitoringService(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name, []string{})
 
-	c, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	c, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	// TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
 	if err != nil {
-		logger.Error(err, "couldn't extract the configuration")
+		params.Log.Error(err, "couldn't extract the configuration")
 		return nil, err
 	}
 
-	metricsPort, err := adapters.ConfigToMetricsPort(logger, c)
+	metricsPort, err := adapters.ConfigToMetricsPort(params.Log, c)
 	if err != nil {
-		logger.V(2).Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
+		params.Log.V(2).Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888
 	}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   otelcol.Namespace,
+			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
-			Annotations: otelcol.Annotations,
+			Annotations: params.OtelCol.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:  SelectorLabels(otelcol),
+			Selector:  SelectorLabels(params.OtelCol),
 			ClusterIP: "",
 			Ports: []corev1.ServicePort{{
 				Name: "monitoring",
@@ -91,28 +91,28 @@ func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.O
 	}, err
 }
 
-func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error) {
-	name := naming.Service(otelcol.Name)
-	labels := Labels(otelcol, name, []string{})
+func Service(params manifests.Params) (*corev1.Service, error) {
+	name := naming.Service(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name, []string{})
 
-	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
+	configFromString, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	if err != nil {
-		logger.Error(err, "couldn't extract the configuration from the context")
+		params.Log.Error(err, "couldn't extract the configuration from the context")
 		return nil, err
 	}
 
-	ports := adapters.ConfigToPorts(logger, configFromString)
+	ports := adapters.ConfigToPorts(params.Log, configFromString)
 
 	// set appProtocol to h2c for grpc ports on OpenShift.
 	// OpenShift uses HA proxy that uses appProtocol for its configuration.
 	for i := range ports {
 		h2c := "h2c"
-		if otelcol.Spec.Ingress.Type == v1alpha1.IngressTypeRoute && ports[i].AppProtocol != nil && strings.EqualFold(*ports[i].AppProtocol, "grpc") {
+		if params.OtelCol.Spec.Ingress.Type == v1alpha1.IngressTypeRoute && ports[i].AppProtocol != nil && strings.EqualFold(*ports[i].AppProtocol, "grpc") {
 			ports[i].AppProtocol = &h2c
 		}
 	}
 
-	if len(otelcol.Spec.Ports) > 0 {
+	if len(params.OtelCol.Spec.Ports) > 0 {
 		// we should add all the ports from the CR
 		// there are two cases where problems might occur:
 		// 1) when the port number is already being used by a receiver
@@ -120,38 +120,39 @@ func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 		//
 		// in the first case, we remove the port we inferred from the list
 		// in the second case, we rename our inferred port to something like "port-%d"
-		portNumbers, portNames := extractPortNumbersAndNames(otelcol.Spec.Ports)
+		portNumbers, portNames := extractPortNumbersAndNames(params.OtelCol.Spec.Ports)
 		var resultingInferredPorts []corev1.ServicePort
 		for _, inferred := range ports {
-			if filtered := filterPort(logger, inferred, portNumbers, portNames); filtered != nil {
+			if filtered := filterPort(params.Log, inferred, portNumbers, portNames); filtered != nil {
 				resultingInferredPorts = append(resultingInferredPorts, *filtered)
 			}
 		}
 
-		ports = append(otelcol.Spec.Ports, resultingInferredPorts...)
+		ports = append(params.OtelCol.Spec.Ports, resultingInferredPorts...)
 	}
 
 	// if we have no ports, we don't need a service
-	if len(ports) == 0 {
-		logger.V(1).Info("the instance's configuration didn't yield any ports to open, skipping service", "instance.name", otelcol.Name, "instance.namespace", otelcol.Namespace)
+	if len(ports) == 0 || err != nil {
+
+		params.Log.V(1).Info("the instance's configuration didn't yield any ports to open, skipping service", "instance.name", params.OtelCol.Name, "instance.namespace", params.OtelCol.Namespace)
 		return nil, err
 	}
 
 	trafficPolicy := corev1.ServiceInternalTrafficPolicyCluster
-	if otelcol.Spec.Mode == v1alpha1.ModeDaemonSet {
+	if params.OtelCol.Spec.Mode == v1alpha1.ModeDaemonSet {
 		trafficPolicy = corev1.ServiceInternalTrafficPolicyLocal
 	}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Service(otelcol.Name),
-			Namespace:   otelcol.Namespace,
+			Name:        naming.Service(params.OtelCol.Name),
+			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
-			Annotations: otelcol.Annotations,
+			Annotations: params.OtelCol.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			InternalTrafficPolicy: &trafficPolicy,
-			Selector:              SelectorLabels(otelcol),
+			Selector:              SelectorLabels(params.OtelCol),
 			ClusterIP:             "",
 			Ports:                 ports,
 		},
