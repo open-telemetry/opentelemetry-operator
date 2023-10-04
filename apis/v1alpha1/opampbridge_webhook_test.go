@@ -129,17 +129,6 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 			expectedErr: "the capabilities supported by OpAMP Bridge are not specified",
 		},
 		{
-			name: "required capabilities not enabled",
-			opampBridge: OpAMPBridge{
-				Spec: OpAMPBridgeSpec{
-					Endpoint:     "ws://opamp-server:4320/v1/opamp",
-					Protocol:     "wss",
-					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces},
-				},
-			},
-			expectedErr: "required capabilities must be enabled",
-		},
-		{
 			name: "replica count greater than 1 should return error",
 			opampBridge: OpAMPBridge{
 				ObjectMeta: metav1.ObjectMeta{

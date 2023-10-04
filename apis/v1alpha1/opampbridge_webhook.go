@@ -29,15 +29,6 @@ import (
 // log is for logging in this package.
 var opampbridgelog = logf.Log.WithName("opampbridge-resource")
 
-// atleast these capabilities should be enabled.
-var requiredCapabilities = []OpAMPBridgeCapability{
-	OpAMPBridgeCapabilityAcceptsRemoteConfig,
-	OpAMPBridgeCapabilityReportsEffectiveConfig,
-	OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings,
-	OpAMPBridgeCapabilityReportsHealth,
-	OpAMPBridgeCapabilityReportsRemoteConfig,
-}
-
 func (r *OpAMPBridge) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -104,20 +95,6 @@ func (r *OpAMPBridge) validateCRDSpec() error {
 
 	if len(r.Spec.Capabilities) == 0 {
 		return fmt.Errorf("the capabilities supported by OpAMP Bridge are not specified")
-	}
-
-	// check if necessary capabilities are enabled
-	for _, requiredCapability := range requiredCapabilities {
-		enabled := false
-		for _, enabledCapability := range r.Spec.Capabilities {
-			if requiredCapability == enabledCapability {
-				enabled = true
-				break
-			}
-		}
-		if !enabled {
-			return fmt.Errorf("required capabilities must be enabled. Required capabilities: %s", requiredCapabilities)
-		}
 	}
 
 	// validate port config
