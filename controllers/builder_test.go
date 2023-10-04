@@ -811,7 +811,7 @@ protocol: wss
 				Config: cfg,
 			})
 			params := reconciler.getParams(tt.args.instance)
-			got, err := reconciler.BuildAll(params)
+			got, err := BuildOpAMPBridge(params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("BuildAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
