@@ -355,7 +355,7 @@ func paramsWithPolicy(minAvailable, maxUnavailable int32) manifests.Params {
 	return manifests.Params{
 		Config: configuration,
 		Client: k8sClient,
-		Instance: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
