@@ -193,7 +193,7 @@ func paramsWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) manifests.Par
 	return manifests.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
 		Client: k8sClient,
-		Instance: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -243,7 +243,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 	return manifests.Params{
 		Config: cfg,
 		Client: k8sClient,
-		Instance: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -289,7 +289,7 @@ func paramsWithHPA(minReps, maxReps int32) manifests.Params {
 	return manifests.Params{
 		Config: configuration,
 		Client: k8sClient,
-		Instance: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",

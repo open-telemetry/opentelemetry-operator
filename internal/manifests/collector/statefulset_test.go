@@ -26,6 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
@@ -43,8 +44,14 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
 	// test
-	ss := StatefulSet(cfg, logger, otelcol)
+	ss := StatefulSet(params)
 
 	// verify
 	assert.Equal(t, "my-instance-collector", ss.Name)
@@ -109,8 +116,14 @@ func TestStatefulSetReplicas(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
 	// test
-	ss := StatefulSet(cfg, logger, otelcol)
+	ss := StatefulSet(params)
 
 	// assert correct number of replicas
 	assert.Equal(t, int32(3), *ss.Spec.Replicas)
@@ -139,8 +152,14 @@ func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
 	// test
-	ss := StatefulSet(cfg, logger, otelcol)
+	ss := StatefulSet(params)
 
 	// assert correct pvc name
 	assert.Equal(t, "added-volume", ss.Spec.VolumeClaimTemplates[0].Name)
@@ -165,8 +184,14 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
 	// test
-	ss := StatefulSet(cfg, logger, otelcol)
+	ss := StatefulSet(params)
 
 	// Add sha256 podAnnotation
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -203,7 +228,13 @@ func TestStatefulSetPodSecurityContext(t *testing.T) {
 
 	cfg := config.New()
 
-	d := StatefulSet(cfg, logger, otelcol)
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d := StatefulSet(params)
 
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
@@ -220,7 +251,13 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := StatefulSet(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d1 := StatefulSet(params1)
 
 	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
@@ -237,7 +274,13 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := StatefulSet(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d2 := StatefulSet(params2)
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -258,7 +301,13 @@ func TestStatefulSetFilterLabels(t *testing.T) {
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
 
-	d := StatefulSet(cfg, logger, otelcol)
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d := StatefulSet(params)
 
 	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
@@ -276,7 +325,13 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := StatefulSet(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d1 := StatefulSet(params1)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
@@ -295,7 +350,13 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := StatefulSet(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d2 := StatefulSet(params2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
@@ -308,7 +369,13 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 
 	cfg := config.New()
 
-	sts1 := StatefulSet(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	sts1 := StatefulSet(params1)
 	assert.Empty(t, sts1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
@@ -324,7 +391,13 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 
 	cfg = config.New()
 
-	sts2 := StatefulSet(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	sts2 := StatefulSet(params2)
 	assert.Equal(t, priorityClassName, sts2.Spec.Template.Spec.PriorityClassName)
 }
 
@@ -337,7 +410,13 @@ func TestStatefulSetAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	sts1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	sts1 := Deployment(params1)
 	assert.Nil(t, sts1.Spec.Template.Spec.Affinity)
 
 	otelcol2 := v1alpha1.OpenTelemetryCollector{
@@ -351,7 +430,13 @@ func TestStatefulSetAffinity(t *testing.T) {
 
 	cfg = config.New()
 
-	sts2 := StatefulSet(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	sts2 := StatefulSet(params2)
 	assert.NotNil(t, sts2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *sts2.Spec.Template.Spec.Affinity)
 }
@@ -373,8 +458,14 @@ func TestStatefulSetInitContainer(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
 	// test
-	s := StatefulSet(cfg, logger, otelcol)
+	s := StatefulSet(params)
 	assert.Equal(t, "my-instance-collector", s.Name)
 	assert.Equal(t, "my-instance-collector", s.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
@@ -392,7 +483,13 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg := config.New()
-	s1 := StatefulSet(cfg, logger, otelcol1)
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+	s1 := StatefulSet(params1)
 	assert.Equal(t, "my-instance-collector", s1.Name)
 	assert.Empty(t, s1.Spec.Template.Spec.TopologySpreadConstraints)
 
@@ -408,7 +505,13 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 
 	cfg = config.New()
 
-	s2 := StatefulSet(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	s2 := StatefulSet(params2)
 	assert.Equal(t, "my-instance-topologyspreadconstraint-collector", s2.Name)
 	assert.NotNil(t, s2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, s2.Spec.Template.Spec.TopologySpreadConstraints)
@@ -432,8 +535,14 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
 	// test
-	s := StatefulSet(cfg, logger, otelcol)
+	s := StatefulSet(params)
 	assert.Equal(t, "my-instance-collector", s.Name)
 	assert.Equal(t, "my-instance-collector", s.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])

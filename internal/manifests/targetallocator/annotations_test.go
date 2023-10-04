@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 func TestPodAnnotations(t *testing.T) {
@@ -38,7 +39,12 @@ func TestPodAnnotations(t *testing.T) {
 func TestConfigMapHash(t *testing.T) {
 	cfg := config.New()
 	instance := collectorInstance()
-	expectedConfigMap, err := ConfigMap(cfg, logr.Discard(), instance)
+	params := manifests.Params{
+		OtelCol: instance,
+		Config:  cfg,
+		Log:     logr.Discard(),
+	}
+	expectedConfigMap, err := ConfigMap(params)
 	require.NoError(t, err)
 	expectedConfig := expectedConfigMap.Data[targetAllocatorFilename]
 	require.NotEmpty(t, expectedConfig)

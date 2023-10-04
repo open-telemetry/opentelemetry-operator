@@ -52,7 +52,7 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 	}
 	return manifests.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
-		Instance: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -101,7 +101,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 
 	return manifests.Params{
 		Config: cfg,
-		Instance: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",

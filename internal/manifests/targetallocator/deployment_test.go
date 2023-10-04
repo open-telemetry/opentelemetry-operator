@@ -25,7 +25,16 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
+
+var testTolerationValues = []v1.Toleration{
+	{
+		Key:    "hii",
+		Value:  "greeting",
+		Effect: "NoSchedule",
+	},
+}
 
 var testTopologySpreadConstraintValue = []v1.TopologySpreadConstraint{
 	{
@@ -45,8 +54,14 @@ func TestDeploymentNewDefault(t *testing.T) {
 	otelcol := collectorInstance()
 	cfg := config.New()
 
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, otelcol)
+	d := Deployment(params)
 
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", d.GetName())
@@ -69,8 +84,14 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	otelcol.Spec.PodAnnotations = testPodAnnotationValues
 	cfg := config.New()
 
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
 	// test
-	ds := Deployment(cfg, logger, otelcol)
+	ds := Deployment(params)
 
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", ds.Name)
@@ -103,7 +124,13 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	}
 
 	cfg := config.New()
-	d1 := Deployment(cfg, logger, otelcol1)
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+	d1 := Deployment(params1)
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
@@ -122,8 +149,56 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.Equal(t, map[string]string{"node-key": "node-value"}, d2.Spec.Template.Spec.NodeSelector)
+}
+
+func TestDeploymentTolerations(t *testing.T) {
+	// Test default
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+	d1 := Deployment(params1)
+	assert.Equal(t, "my-instance-targetallocator", d1.Name)
+	assert.Empty(t, d1.Spec.Template.Spec.Tolerations)
+
+	// Test Tolerations
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-toleration",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Tolerations: testTolerationValues,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+	d2 := Deployment(params2)
+	assert.Equal(t, "my-instance-toleration-targetallocator", d2.Name)
+	assert.NotNil(t, d2.Spec.Template.Spec.Tolerations)
+	assert.NotEmpty(t, d2.Spec.Template.Spec.Tolerations)
+	assert.Equal(t, testTolerationValues, d2.Spec.Template.Spec.Tolerations)
 }
 
 func TestDeploymentTopologySpreadConstraints(t *testing.T) {
@@ -135,7 +210,13 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg := config.New()
-	d1 := Deployment(cfg, logger, otelcol1)
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+	d1 := Deployment(params1)
 	assert.Equal(t, "my-instance-targetallocator", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
@@ -152,7 +233,13 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg = config.New()
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.Equal(t, "my-instance-topologyspreadconstraint-targetallocator", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)

@@ -15,36 +15,34 @@
 package targetallocator
 
 import (
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *appsv1.Deployment {
-	name := naming.TargetAllocator(otelcol.Name)
-	labels := Labels(otelcol, name)
+func Deployment(params manifests.Params) *appsv1.Deployment {
+	name := naming.TargetAllocator(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name)
 
-	configMap, err := ConfigMap(cfg, logger, otelcol)
+	configMap, err := ConfigMap(params)
 	if err != nil {
-		logger.Info("failed to construct target allocator config map for annotations")
+		params.Log.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(otelcol, configMap)
+	annotations := Annotations(params.OtelCol, configMap)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: otelcol.Namespace,
+			Namespace: params.OtelCol.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: otelcol.Spec.TargetAllocator.Replicas,
+			Replicas: params.OtelCol.Spec.TargetAllocator.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -54,11 +52,12 @@ func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTele
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:        ServiceAccountName(otelcol),
-					Containers:                []corev1.Container{Container(cfg, logger, otelcol)},
-					Volumes:                   Volumes(cfg, otelcol),
-					NodeSelector:              otelcol.Spec.TargetAllocator.NodeSelector,
-					TopologySpreadConstraints: otelcol.Spec.TargetAllocator.TopologySpreadConstraints,
+					ServiceAccountName:        ServiceAccountName(params.OtelCol),
+					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OtelCol)},
+					Volumes:                   Volumes(params.Config, params.OtelCol),
+					NodeSelector:              params.OtelCol.Spec.TargetAllocator.NodeSelector,
+					Tolerations:               params.OtelCol.Spec.TargetAllocator.Tolerations,
+					TopologySpreadConstraints: params.OtelCol.Spec.TargetAllocator.TopologySpreadConstraints,
 				},
 			},
 		},
