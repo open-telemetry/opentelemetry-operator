@@ -15,30 +15,28 @@
 package collector
 
 import (
-	"github.com/go-logr/logr"
 	policyV1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func PodDisruptionBudget(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) client.Object {
+func PodDisruptionBudget(params manifests.Params) client.Object {
 	// defaulting webhook should always set this, but if unset then return nil.
-	if otelcol.Spec.PodDisruptionBudget == nil {
-		logger.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
+	if params.OtelCol.Spec.PodDisruptionBudget == nil {
+		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
 		return nil
 	}
 
-	name := naming.Collector(otelcol.Name)
-	labels := Labels(otelcol, name, cfg.LabelsFilter())
-	annotations := Annotations(otelcol)
+	name := naming.Collector(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name, params.Config.LabelsFilter())
+	annotations := Annotations(params.OtelCol)
 
 	objectMeta := metav1.ObjectMeta{
-		Name:        naming.PodDisruptionBudget(otelcol.Name),
-		Namespace:   otelcol.Namespace,
+		Name:        naming.PodDisruptionBudget(params.OtelCol.Name),
+		Namespace:   params.OtelCol.Namespace,
 		Labels:      labels,
 		Annotations: annotations,
 	}
@@ -46,8 +44,8 @@ func PodDisruptionBudget(cfg config.Config, logger logr.Logger, otelcol v1alpha1
 	return &policyV1.PodDisruptionBudget{
 		ObjectMeta: objectMeta,
 		Spec: policyV1.PodDisruptionBudgetSpec{
-			MinAvailable:   otelcol.Spec.PodDisruptionBudget.MinAvailable,
-			MaxUnavailable: otelcol.Spec.PodDisruptionBudget.MaxUnavailable,
+			MinAvailable:   params.OtelCol.Spec.PodDisruptionBudget.MinAvailable,
+			MaxUnavailable: params.OtelCol.Spec.PodDisruptionBudget.MaxUnavailable,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: objectMeta.Labels,
 			},
