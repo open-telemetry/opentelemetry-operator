@@ -46,8 +46,9 @@ func TestDesiredIngresses(t *testing.T) {
 			},
 		}
 
-		actual := Ingress(params.Config, params.Log, params.Instance)
+		actual, err := Ingress(params.Config, params.Log, params.Instance) //ports or error
 		assert.Nil(t, actual)
+		assert.ErrorContains(t, err, "tani")
 	})
 
 	t.Run("should return nil unable to parse config", func(t *testing.T) {
@@ -64,8 +65,9 @@ func TestDesiredIngresses(t *testing.T) {
 			},
 		}
 
-		actual := Ingress(params.Config, params.Log, params.Instance)
+		actual, err := Ingress(params.Config, params.Log, params.Instance)
 		assert.Nil(t, actual)
+		assert.ErrorContains(t, err, "tani")
 	})
 
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
@@ -82,8 +84,9 @@ func TestDesiredIngresses(t *testing.T) {
 			},
 		}
 
-		actual := Ingress(params.Config, params.Log, params.Instance)
+		actual, err := Ingress(params.Config, params.Log, params.Instance)
 		assert.Nil(t, actual)
+		assert.ErrorContains(t, err, "tani")
 	})
 
 	t.Run("path per port", func(t *testing.T) {
@@ -106,7 +109,8 @@ func TestDesiredIngresses(t *testing.T) {
 			IngressClassName: &ingressClassName,
 		}
 
-		got := Ingress(params.Config, params.Log, params.Instance)
+		got, err := Ingress(params.Config, params.Log, params.Instance)
+		assert.NoError(t, err)
 		pathType := networkingv1.PathTypePrefix
 
 		assert.NotEqual(t, &networkingv1.Ingress{
@@ -193,7 +197,8 @@ func TestDesiredIngresses(t *testing.T) {
 			IngressClassName: &ingressClassName,
 		}
 
-		got := Ingress(params.Config, params.Log, params.Instance)
+		got, err := Ingress(params.Config, params.Log, params.Instance)
+		assert.NoError(t, err)
 		pathType := networkingv1.PathTypePrefix
 
 		assert.NotEqual(t, &networkingv1.Ingress{

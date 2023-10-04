@@ -40,10 +40,10 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.FactoryWithoutError(ConfigMap),
 		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
 		manifests.FactoryWithoutError(ServiceAccount),
-		manifests.FactoryWithoutError(Service),
+		manifests.Factory(Service),
 		manifests.FactoryWithoutError(HeadlessService),
-		manifests.FactoryWithoutError(MonitoringService),
-		manifests.FactoryWithoutError(Ingress),
+		manifests.Factory(MonitoringService),
+		manifests.Factory(Ingress),
 	}...)
 	if params.Instance.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))

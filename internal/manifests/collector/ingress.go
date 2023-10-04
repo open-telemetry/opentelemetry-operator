@@ -28,21 +28,21 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *networkingv1.Ingress {
+func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*networkingv1.Ingress, error) {
 	if otelcol.Spec.Ingress.Type != v1alpha1.IngressTypeNginx {
-		return nil
+		return nil, nil
 	}
 
-	ports := servicePortsFromCfg(logger, otelcol)
+	ports, err := servicePortsFromCfg(logger, otelcol)
 
 	// if we have no ports, we don't need a ingress entry
-	if len(ports) == 0 {
+	if len(ports) == 0 || err != nil {
 		logger.V(1).Info(
 			"the instance's configuration didn't yield any ports to open, skipping ingress",
 			"instance.name", otelcol.Name,
 			"instance.namespace", otelcol.Namespace,
 		)
-		return nil
+		return nil, err
 	}
 
 	var rules []networkingv1.IngressRule
@@ -53,6 +53,7 @@ func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 		rules = createSubdomainIngressRules(otelcol.Name, otelcol.Spec.Ingress.Hostname, ports)
 	}
 
+	//dis is da manifest to create da ingress object
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Ingress(otelcol.Name),
@@ -69,7 +70,7 @@ func Ingress(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 			Rules:            rules,
 			IngressClassName: otelcol.Spec.Ingress.IngressClassName,
 		},
-	}
+	}, nil
 }
 
 func createPathIngressRules(otelcol string, hostname string, ports []corev1.ServicePort) networkingv1.IngressRule {
@@ -137,16 +138,17 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 }
 
 // TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
-func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []corev1.ServicePort {
+func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
 	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration from the context")
-		return nil
+		return nil, err
 	}
 
 	ports, err := adapters.ConfigToReceiverPorts(logger, configFromString)
 	if err != nil {
 		logger.Error(err, "couldn't build the ingress for this instance")
+		return nil, err
 	}
 
 	if len(otelcol.Spec.Ports) > 0 {
@@ -164,8 +166,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryColle
 				resultingInferredPorts = append(resultingInferredPorts, *filtered)
 			}
 		}
-
 		ports = append(otelcol.Spec.Ports, resultingInferredPorts...)
 	}
-	return ports
+	return ports, err
 }

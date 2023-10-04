@@ -106,8 +106,9 @@ func TestDesiredService(t *testing.T) {
 			},
 		}
 
-		actual := Service(params.Config, params.Log, params.Instance)
+		actual, err := Service(params.Config, params.Log, params.Instance)
 		assert.Nil(t, actual)
+		assert.ErrorContains(t, err, "tani")
 
 	})
 	t.Run("should return service with port mentioned in Instance.Spec.Ports and inferred ports", func(t *testing.T) {
@@ -122,8 +123,8 @@ func TestDesiredService(t *testing.T) {
 		params := deploymentParams()
 		ports := append(params.Instance.Spec.Ports, jaegerPorts)
 		expected := service("test-collector", ports)
-		actual := Service(params.Config, params.Log, params.Instance)
-
+		actual, err := Service(params.Config, params.Log, params.Instance)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, *actual)
 
 	})
@@ -139,11 +140,13 @@ func TestDesiredService(t *testing.T) {
 
 		params := deploymentParams()
 		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
-		actual := Service(params.Config, params.Log, params.Instance)
+		actual, err := Service(params.Config, params.Log, params.Instance)
 
 		ports := append(params.Instance.Spec.Ports, jaegerPort)
 		expected := service("test-collector", ports)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, *actual)
+
 	})
 
 	t.Run("should return service with local internal traffic policy", func(t *testing.T) {
@@ -158,8 +161,8 @@ func TestDesiredService(t *testing.T) {
 		p := paramsWithMode(v1alpha1.ModeDaemonSet)
 		ports := append(p.Instance.Spec.Ports, jaegerPorts)
 		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
-		actual := Service(p.Config, p.Log, p.Instance)
-
+		actual, err := Service(p.Config, p.Log, p.Instance)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, *actual)
 	})
 }
@@ -180,7 +183,8 @@ func TestMonitoringService(t *testing.T) {
 			Port: 8888,
 		}}
 		param := deploymentParams()
-		actual := MonitoringService(param.Config, param.Log, param.Instance)
+		actual, err := MonitoringService(param.Config, param.Log, param.Instance)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, actual.Spec.Ports)
 	})
 
@@ -195,7 +199,8 @@ func TestMonitoringService(t *testing.T) {
         metrics:
             level: detailed
             address: 0.0.0.0:9090`
-		actual := MonitoringService(params.Config, params.Log, params.Instance)
+		actual, err := MonitoringService(params.Config, params.Log, params.Instance)
+		assert.NoError(t, err)
 		assert.NotNil(t, actual)
 		assert.Equal(t, expected, actual.Spec.Ports)
 	})

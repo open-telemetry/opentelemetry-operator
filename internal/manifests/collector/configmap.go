@@ -31,6 +31,7 @@ func ConfigMap(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	replacedConf, err := ReplaceConfig(otelcol)
 	if err != nil {
 		logger.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
+		return nil
 	}
 
 	return &corev1.ConfigMap{

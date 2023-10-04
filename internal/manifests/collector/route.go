@@ -51,7 +51,7 @@ func Routes(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetr
 		return nil
 	}
 
-	ports := servicePortsFromCfg(logger, otelcol)
+	ports, _ := servicePortsFromCfg(logger, otelcol)
 
 	// if we have no ports, we don't need a ingress entry
 	if len(ports) == 0 {

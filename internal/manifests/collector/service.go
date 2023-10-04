@@ -35,8 +35,8 @@ const (
 )
 
 func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
-	h := Service(cfg, logger, otelcol)
-	if h == nil {
+	h, err := Service(cfg, logger, otelcol)
+	if h == nil || err != nil {
 		return h
 	}
 
@@ -56,7 +56,7 @@ func HeadlessService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Ope
 	return h
 }
 
-func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
+func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error) {
 	name := naming.MonitoringService(otelcol.Name)
 	labels := Labels(otelcol, name, []string{})
 
@@ -64,7 +64,7 @@ func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.O
 	// TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration")
-		return nil
+		return nil, err
 	}
 
 	metricsPort, err := adapters.ConfigToMetricsPort(logger, c)
@@ -88,17 +88,17 @@ func MonitoringService(cfg config.Config, logger logr.Logger, otelcol v1alpha1.O
 				Port: metricsPort,
 			}},
 		},
-	}
+	}, err
 }
 
-func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
+func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*corev1.Service, error) {
 	name := naming.Service(otelcol.Name)
 	labels := Labels(otelcol, name, []string{})
 
 	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration from the context")
-		return nil
+		return nil, err
 	}
 
 	ports := adapters.ConfigToPorts(logger, configFromString)
@@ -134,7 +134,7 @@ func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 	// if we have no ports, we don't need a service
 	if len(ports) == 0 {
 		logger.V(1).Info("the instance's configuration didn't yield any ports to open, skipping service", "instance.name", otelcol.Name, "instance.namespace", otelcol.Namespace)
-		return nil
+		return nil, err
 	}
 
 	trafficPolicy := corev1.ServiceInternalTrafficPolicyCluster
@@ -155,7 +155,7 @@ func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 			ClusterIP:             "",
 			Ports:                 ports,
 		},
-	}
+	}, err
 }
 
 func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {
