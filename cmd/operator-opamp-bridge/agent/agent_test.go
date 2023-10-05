@@ -475,14 +475,12 @@ func TestAgent_onMessage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockOpampClient{}
-			fs := config.GetFlagSet(pflag.ContinueOnError)
-			configFlag := []string{"--config-file", tt.fields.configFile}
-			err := fs.Parse(configFlag)
-			conf, err := config.Load(l, fs)
-			require.NoError(t, err, "should be able to load config")
+			conf := config.NewConfig(logr.Discard())
+			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
+			require.NoError(t, loadErr, "should be able to load config")
 			applier := getFakeApplier(t, conf)
 			agent := NewAgent(l, applier, conf, mockClient)
-			err = agent.Start()
+			err := agent.Start()
 			defer agent.Shutdown()
 			require.NoError(t, err, "should be able to start agent")
 			data, err := getMessageDataFromConfigFile(tt.args.configFile)
@@ -532,8 +530,10 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	fs := config.GetFlagSet(pflag.ContinueOnError)
 	configFlag := []string{"--config-file", "testdata/agent.yaml"}
 	err := fs.Parse(configFlag)
-	conf, err := config.Load(l, fs)
-	require.NoError(t, err, "should be able to load config")
+	assert.NoError(t, err)
+	conf := config.NewConfig(logr.Discard())
+	loadErr := config.LoadFromFile(conf, "testdata/agent.yaml")
+	require.NoError(t, loadErr, "should be able to load config")
 	applier := getFakeApplier(t, conf)
 	agent := NewAgent(l, applier, conf, mockClient)
 	err = agent.Start()

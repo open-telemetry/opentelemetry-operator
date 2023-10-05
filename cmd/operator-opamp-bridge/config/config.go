@@ -185,7 +185,7 @@ func Load(logger logr.Logger, flagSet *pflag.FlagSet) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = unmarshal(cfg, configFilePath)
+	err = LoadFromFile(cfg, configFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	return nil
 }
 
-func unmarshal(cfg *Config, configFile string) error {
+func LoadFromFile(cfg *Config, configFile string) error {
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
