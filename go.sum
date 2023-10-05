@@ -477,8 +477,8 @@ github.com/prometheus/procfs v0.1.3/go.mod h1:lV6e/gmhEcM9IjHGsFOCxxuZ+z1YqCvr4O
 github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/procfs v0.11.0 h1:5EAgkfkMl659uZPbe9AS2N68a7Cc1TJbPEuGzFuRbyk=
 github.com/prometheus/procfs v0.11.0/go.mod h1:nwNm2aOCAYw8uTR/9bWRREkZFxAUcWzPHWJq+XBB/FM=
-github.com/prometheus/prometheus v0.47.0 h1:tIJJKZGlmrMVsvIt6rMfB8he7CRHEc8ZxS5ubcZtbkM=
-github.com/prometheus/prometheus v0.47.0/go.mod h1:J/bmOSjgH7lFxz2gZhrWEZs2i64vMS+HIuZfmYNhJ/M=
+github.com/prometheus/prometheus v0.47.1 h1:bd2LiZyxzHn9Oo2Ei4eK2D86vz/L/OiqR1qYo0XmMBo=
+github.com/prometheus/prometheus v0.47.1/go.mod h1:J/bmOSjgH7lFxz2gZhrWEZs2i64vMS+HIuZfmYNhJ/M=
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
