@@ -97,6 +97,11 @@ func (r *OpenTelemetryCollector) Default() {
 	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Ingress.RuleType == "" {
 		r.Spec.Ingress.RuleType = IngressRuleTypePath
 	}
+	// If someone upgrades to a later version without upgrading their CRD they will not have a management state set.
+	// This results in a default state of unmanaged preventing reconciliation from continuing.
+	if len(r.Spec.ManagementState) == 0 {
+		r.Spec.ManagementState = ManagementStateManaged
+	}
 }
 
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1alpha1,name=vopentelemetrycollectorcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1

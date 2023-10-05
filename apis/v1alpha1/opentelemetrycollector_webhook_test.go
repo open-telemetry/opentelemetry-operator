@@ -48,6 +48,7 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					Mode:            ModeDeployment,
 					Replicas:        &one,
 					UpgradeStrategy: UpgradeStrategyAutomatic,
+					ManagementState: ManagementStateManaged,
 				},
 			},
 		},
@@ -70,6 +71,31 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					Mode:            ModeSidecar,
 					Replicas:        &five,
 					UpgradeStrategy: "adhoc",
+					ManagementState: ManagementStateManaged,
+				},
+			},
+		},
+		{
+			name: "doesn't override unmanaged",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					ManagementState: ManagementStateUnmanaged,
+					Mode:            ModeSidecar,
+					Replicas:        &five,
+					UpgradeStrategy: "adhoc",
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:            ModeSidecar,
+					Replicas:        &five,
+					UpgradeStrategy: "adhoc",
+					ManagementState: ManagementStateUnmanaged,
 				},
 			},
 		},
@@ -93,6 +119,7 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					Mode:            ModeDeployment,
 					Replicas:        &one,
 					UpgradeStrategy: UpgradeStrategyAutomatic,
+					ManagementState: ManagementStateManaged,
 					Autoscaler: &AutoscalerSpec{
 						TargetCPUUtilization: &defaultCPUTarget,
 						MaxReplicas:          &five,
@@ -118,6 +145,7 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					Mode:            ModeDeployment,
 					Replicas:        &one,
 					UpgradeStrategy: UpgradeStrategyAutomatic,
+					ManagementState: ManagementStateManaged,
 					Autoscaler: &AutoscalerSpec{
 						TargetCPUUtilization: &defaultCPUTarget,
 						// webhook Default adds MaxReplicas to Autoscaler because
@@ -146,7 +174,8 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpenTelemetryCollectorSpec{
-					Mode: ModeDeployment,
+					Mode:            ModeDeployment,
+					ManagementState: ManagementStateManaged,
 					Ingress: Ingress{
 						Type: IngressTypeRoute,
 						Route: OpenShiftRoute{
