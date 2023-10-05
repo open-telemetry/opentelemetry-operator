@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -114,21 +113,31 @@ func TestLoad(t *testing.T) {
 			},
 			wantErr: assert.NoError,
 		},
+		{
+			name: "bad configuration",
+			args: args{
+				file: "./testdata/agentbadconf.yaml",
+			},
+			want: &Config{
+				// We do unmarshal partially
+				Endpoint: "http://127.0.0.1:4320/v1/opamp",
+			},
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(t, err, "error unmarshaling YAML", i...)
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := GetFlagSet(pflag.ContinueOnError)
-			configFlag := []string{"--config-file", tt.args.file}
-			err := fs.Parse(configFlag)
-			assert.NoError(t, err)
-			got, err := Load(logr.Discard(), fs)
+			got := NewConfig(logr.Discard())
+			err := LoadFromFile(got, tt.args.file)
 			if !tt.wantErr(t, err, fmt.Sprintf("Load(%v)", tt.args.file)) {
 				return
 			}
 			// there are some fields we don't care about, so we ignore them.
 			got.ClusterConfig = tt.want.ClusterConfig
 			got.RootLogger = tt.want.RootLogger
-			assert.Equalf(t, tt.want.Endpoint, got.Endpoint, "Load(%v)", tt.args.file)
+			assert.Equalf(t, tt.want, got, "Load(%v)", tt.args.file)
 
 		})
 	}
