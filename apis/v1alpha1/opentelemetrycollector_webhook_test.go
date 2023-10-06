@@ -23,6 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestOTELColDefaultingWebhook(t *testing.T) {
@@ -49,6 +50,12 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					Replicas:        &one,
 					UpgradeStrategy: UpgradeStrategyAutomatic,
 					ManagementState: ManagementStateManaged,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
 				},
 			},
 		},
@@ -96,6 +103,12 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					Replicas:        &five,
 					UpgradeStrategy: "adhoc",
 					ManagementState: ManagementStateUnmanaged,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
 				},
 			},
 		},
@@ -124,6 +137,12 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 						TargetCPUUtilization: &defaultCPUTarget,
 						MaxReplicas:          &five,
 						MinReplicas:          &one,
+					},
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
 					},
 				},
 			},
@@ -154,6 +173,12 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 						MinReplicas: &one,
 					},
 					MaxReplicas: &five,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
 				},
 			},
 		},
@@ -184,6 +209,44 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					},
 					Replicas:        &one,
 					UpgradeStrategy: UpgradeStrategyAutomatic,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Defined PDB",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MinAvailable: &intstr.IntOrString{
+							Type:   intstr.String,
+							StrVal: "10%",
+						},
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:            ModeDeployment,
+					Replicas:        &one,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MinAvailable: &intstr.IntOrString{
+							Type:   intstr.String,
+							StrVal: "10%",
+						},
+					},
 				},
 			},
 		},
@@ -265,6 +328,12 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 							},
 						},
 						TargetCPUUtilization: &five,
+					},
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MinAvailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
 					},
 				},
 			},
@@ -517,6 +586,25 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type",
+		},
+		{
+			name: "pdb minAvailable and maxUnavailable have been set together",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					MaxReplicas: &three,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MinAvailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec podDisruptionBudget configuration is incorrect, minAvailable and maxUnavailable are mutually exclusive",
 		},
 		{
 			name: "invalid deployment mode incompabible with ingress settings",

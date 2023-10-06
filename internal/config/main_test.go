@@ -71,7 +71,7 @@ func TestOnPlatformChangeCallback(t *testing.T) {
 func TestAutoDetectInBackground(t *testing.T) {
 	// prepare
 	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(1)
 	mock := &mockAutoDetect{
 		OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
 			wg.Done()
