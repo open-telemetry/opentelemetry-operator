@@ -43,7 +43,7 @@ jobs:
     with:
       language: dotnet
       platforms: linux/arm64,linux/amd64
-  dotnet:
+  nodejs:
     uses: ./.github/workflows/reusable-publish-autoinstrumentation-e2e-images.yaml
     with:
       language: nodejs
