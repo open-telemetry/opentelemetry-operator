@@ -27,6 +27,7 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -151,6 +152,11 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			desiredHPA := desired.(*autoscalingv2.HorizontalPodAutoscaler)
 			mutateAutoscalingHPA(existingHPA, desiredHPA)
 
+		case *policyV1.PodDisruptionBudget:
+			existingPDB := existing.(*policyV1.PodDisruptionBudget)
+			desiredPDB := desired.(*policyV1.PodDisruptionBudget)
+			mutatePolicyV1PDB(existingPDB, desiredPDB)
+
 		case *routev1.Route:
 			rt := existing.(*routev1.Route)
 			wantRt := desired.(*routev1.Route)
@@ -220,6 +226,12 @@ func mutateV2BetaHPA(existing, desired *autoscalingv2beta2.HorizontalPodAutoscal
 }
 
 func mutateAutoscalingHPA(existing, desired *autoscalingv2.HorizontalPodAutoscaler) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
+}
+
+func mutatePolicyV1PDB(existing, desired *policyV1.PodDisruptionBudget) {
 	existing.Annotations = desired.Annotations
 	existing.Labels = desired.Labels
 	existing.Spec = desired.Spec
