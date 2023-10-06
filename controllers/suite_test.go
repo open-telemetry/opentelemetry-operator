@@ -323,6 +323,68 @@ func paramsWithHPA(minReps, maxReps int32) manifests.Params {
 	}
 }
 
+func paramsWithPolicy(minAvailable, maxUnavailable int32) manifests.Params {
+	configYAML, err := os.ReadFile("testdata/test.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+
+	configuration := config.New(config.WithAutoDetect(mockAutoDetector), config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
+	err = configuration.AutoDetect()
+	if err != nil {
+		logger.Error(err, "configuration.autodetect failed")
+	}
+
+	pdb := &v1alpha1.PodDisruptionBudgetSpec{}
+
+	if maxUnavailable > 0 && minAvailable > 0 {
+		fmt.Printf("worng configuration: %v", fmt.Errorf("minAvailable and maxUnavailable cannot be both set"))
+	}
+	if maxUnavailable > 0 {
+		pdb.MaxUnavailable = &intstr.IntOrString{
+			Type:   intstr.Int,
+			IntVal: maxUnavailable,
+		}
+	} else {
+		pdb.MinAvailable = &intstr.IntOrString{
+			Type:   intstr.Int,
+			IntVal: minAvailable,
+		}
+	}
+
+	return manifests.Params{
+		Config: configuration,
+		Client: k8sClient,
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "policytest",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
+				Config:              string(configYAML),
+				PodDisruptionBudget: pdb,
+			},
+		},
+		Scheme:   testScheme,
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
 func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
 	t.Helper()
 	err := k8sClient.Get(context.Background(), namespacedName, object)

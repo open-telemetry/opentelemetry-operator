@@ -26,6 +26,7 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	policyV1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
@@ -310,6 +311,45 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.Equal(t, int32(90), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
 							assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
 							assert.Equal(t, int32(9), actual.Spec.MaxReplicas)
+							assert.True(t, exists)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+			},
+		},
+		{
+			name: "policy v1 deployment collector",
+			args: args{
+				params:  paramsWithPolicy(1, 0),
+				updates: []manifests.Params{paramsWithPolicy(0, 1)},
+			},
+			want: []want{
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+							actual := policyV1.PodDisruptionBudget{}
+							exists, pdbErr := populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.HorizontalPodAutoscaler))
+							assert.NoError(t, pdbErr)
+							assert.Equal(t, int32(1), actual.Spec.MinAvailable.IntVal)
+							assert.Nil(t, actual.Spec.MaxUnavailable)
+							assert.True(t, exists)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+							actual := policyV1.PodDisruptionBudget{}
+							exists, pdbErr := populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.HorizontalPodAutoscaler))
+							assert.NoError(t, pdbErr)
+							assert.Nil(t, actual.Spec.MinAvailable)
+							assert.Equal(t, int32(1), actual.Spec.MaxUnavailable.IntVal)
 							assert.True(t, exists)
 						},
 					},
