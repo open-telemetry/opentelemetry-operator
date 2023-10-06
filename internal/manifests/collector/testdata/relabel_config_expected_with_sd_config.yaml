@@ -1,5 +1,5 @@
-exporters: null
 debug: null
+exporters: null
 processors: null
 receivers:
   prometheus:
