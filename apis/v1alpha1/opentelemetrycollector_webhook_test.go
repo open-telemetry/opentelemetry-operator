@@ -79,6 +79,12 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					Replicas:        &five,
 					UpgradeStrategy: "adhoc",
 					ManagementState: ManagementStateManaged,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
 				},
 			},
 		},
@@ -241,6 +247,7 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					Mode:            ModeDeployment,
 					Replicas:        &one,
 					UpgradeStrategy: UpgradeStrategyAutomatic,
+					ManagementState: ManagementStateManaged,
 					PodDisruptionBudget: &PodDisruptionBudgetSpec{
 						MinAvailable: &intstr.IntOrString{
 							Type:   intstr.String,
