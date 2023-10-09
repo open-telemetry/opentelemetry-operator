@@ -173,6 +173,23 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 		}
 	}
+
+	if insts.Nginx.Instrumentation != nil {
+		otelinst := *insts.Nginx.Instrumentation
+		i.logger.V(1).Info("injecting Nginx instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+
+		nginxContainers := insts.Nginx.Containers
+
+		for _, container := range strings.Split(nginxContainers, ",") {
+			index := getContainerIndex(container, pod)
+			// Nginx agent is configured via config files rather than env vars.
+			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
+			pod = injectNginxSDK(i.logger, otelinst.Spec.Nginx, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+			pod = i.injectCommonEnvVar(otelinst, pod, index)
+			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+		}
+	}
+
 	if insts.Sdk.Instrumentation != nil {
 		otelinst := *insts.Sdk.Instrumentation
 		i.logger.V(1).Info("injecting sdk-only instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)

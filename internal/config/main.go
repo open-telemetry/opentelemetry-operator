@@ -44,6 +44,7 @@ type Config struct {
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
+	autoInstrumentationNginxImage       string
 	targetAllocatorConfigMapEntry       string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
@@ -85,6 +86,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
 		autoInstrumentationDotNetImage:      o.autoInstrumentationDotNetImage,
 		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
+		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		labelsFilter:                        o.labelsFilter,
 	}
 }
@@ -182,6 +184,11 @@ func (c *Config) AutoInstrumentationGoImage() string {
 // AutoInstrumentationApacheHttpdImage returns OpenTelemetry ApacheHttpd auto-instrumentation container image.
 func (c *Config) AutoInstrumentationApacheHttpdImage() string {
 	return c.autoInstrumentationApacheHttpdImage
+}
+
+// AutoInstrumentationNginxImage returns OpenTelemetry Nginx auto-instrumentation container image.
+func (c *Config) AutoInstrumentationNginxImage() string {
+	return c.autoInstrumentationNginxImage
 }
 
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.

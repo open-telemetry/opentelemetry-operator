@@ -40,6 +40,8 @@ const (
 	annotationInjectSdkContainersName         = "instrumentation.opentelemetry.io/sdk-container-names"
 	annotationInjectApacheHttpd               = "instrumentation.opentelemetry.io/inject-apache-httpd"
 	annotationInjectApacheHttpdContainersName = "instrumentation.opentelemetry.io/apache-httpd-container-names"
+	annotationInjectNginx                     = "instrumentation.opentelemetry.io/inject-nginx"
+	annotationInjectNginxContainersName       = "instrumentation.opentelemetry.io/inject-nginx-container-names"
 )
 
 // annotationValue returns the effective annotationInjectJava value, based on the annotations from the pod and namespace.

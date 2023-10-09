@@ -1,0 +1,92 @@
+# skipping test, see https://github.com/open-telemetry/opentelemetry-operator/issues/1936
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-nginx
+spec:
+  selector:
+    matchLabels:
+      app: my-nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-nginx
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+        instrumentation.opentelemetry.io/inject-nginx: "true"
+        instrumentation.opentelemetry.io/container-names: "myrabbit"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+      containers:
+      - name: myapp
+        image: nginxinc/nginx-unprivileged:1.23.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8765
+        env:
+        - name: LD_LIBRARY_PATH
+          value: /opt
+        volumeMounts:
+          - name: nginx-conf
+            mountPath: /etc/nginx/nginx.conf
+            subPath: nginx.conf
+            readOnly: true
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+      - name: myrabbit
+        image: rabbitmq
+      volumes:
+      - name: nginx-conf
+        configMap:
+          name: nginx-conf
+          items:
+            - key: nginx.conf
+              path: nginx.conf
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+data:
+  nginx.conf: |
+    # user nginx;
+    worker_processes  1;
+    events {
+      worker_connections  10240;
+    }
+    http {
+      include /etc/nginx/conf.d/*.conf;
+      server {
+        listen       8765;
+        server_name  localhost;
+        location / {
+          root   /usr/share/nginx/html;
+          index  index.html index.htm;
+        }
+
+        location /api/customer/ {
+          proxy_pass http://localhost:8282/api/customer/;
+        }
+        location /api/vendor/ {
+          proxy_pass http://localhost:8383/api/vendor/;
+        }
+
+        location /seznam {
+          proxy_pass http://www.seznam.cz/;
+        }
+      }
+
+    }
+
+---
