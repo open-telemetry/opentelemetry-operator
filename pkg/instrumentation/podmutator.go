@@ -55,6 +55,7 @@ type languageInstrumentations struct {
 	Python      instrumentationWithContainers
 	DotNet      instrumentationWithContainers
 	ApacheHttpd instrumentationWithContainers
+	Nginx       instrumentationWithContainers
 	Go          instrumentationWithContainers
 	Sdk         instrumentationWithContainers
 }
@@ -76,6 +77,9 @@ func (langInsts languageInstrumentations) isSingleInstrumentationEnabled() bool 
 		count++
 	}
 	if langInsts.ApacheHttpd.Instrumentation != nil {
+		count++
+	}
+	if langInsts.Nginx.Instrumentation != nil {
 		count++
 	}
 	if langInsts.Go.Instrumentation != nil {
@@ -119,6 +123,11 @@ func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultiple
 		instrWithContainers += isInstrWithContainers(langInsts.ApacheHttpd)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.ApacheHttpd)
 		allContainers = append(allContainers, langInsts.ApacheHttpd.Containers)
+	}
+	if langInsts.Nginx.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Nginx)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Nginx)
+		allContainers = append(allContainers, langInsts.Nginx.Containers)
 	}
 	if langInsts.Go.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Go)
@@ -170,6 +179,9 @@ func (langInsts *languageInstrumentations) setInstrumentationLanguageContainers(
 	}
 	if langInsts.ApacheHttpd.Instrumentation != nil {
 		langInsts.ApacheHttpd.Containers = containers
+	}
+	if langInsts.Nginx.Instrumentation != nil {
+		langInsts.Nginx.Containers = containers
 	}
 	if langInsts.Go.Instrumentation != nil {
 		langInsts.Go.Containers = containers
@@ -282,6 +294,18 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Apache HTTPD auto instrumentation is not enabled")
 	}
 
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNginx); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.Nginx.Instrumentation = inst
+	} else {
+		logger.Error(nil, "support for Nginx auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Nginx auto instrumentation is not enabled")
+	}
+
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
@@ -291,7 +315,9 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 
 	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
 		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
+		insts.Nginx.Instrumentation == nil &&
 		insts.Sdk.Instrumentation == nil {
+
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}
@@ -305,6 +331,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.DotNet.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
 		insts.Go.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
 		insts.ApacheHttpd.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
+		insts.Nginx.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNginxContainersName)
 		insts.Sdk.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
 
 		// We check if provided annotations and instrumentations are valid

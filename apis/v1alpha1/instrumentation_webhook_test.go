@@ -30,6 +30,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				AnnotationDefaultAutoInstrumentationPython:      "python-img:1",
 				AnnotationDefaultAutoInstrumentationDotNet:      "dotnet-img:1",
 				AnnotationDefaultAutoInstrumentationApacheHttpd: "apache-httpd-img:1",
+				AnnotationDefaultAutoInstrumentationNginx:       "nginx-img:1",
 			},
 		},
 	}
@@ -39,6 +40,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	assert.Equal(t, "python-img:1", inst.Spec.Python.Image)
 	assert.Equal(t, "dotnet-img:1", inst.Spec.DotNet.Image)
 	assert.Equal(t, "apache-httpd-img:1", inst.Spec.ApacheHttpd.Image)
+	assert.Equal(t, "nginx-img:1", inst.Spec.Nginx.Image)
 }
 
 func TestInstrumentationValidatingWebhook(t *testing.T) {
