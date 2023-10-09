@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-http
+  namespace: kuttl-multi-cluster-send
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.75.0
+        args:
+        - traces
+        - --otlp-endpoint=otel-sender-collector:4318
+        - --traces=100
+        - --otlp-http
+        - --otlp-insecure=true
+        - --service=telemetrygen-http
+        - --otlp-attributes=protocol="http"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-grpc
+  namespace: kuttl-multi-cluster-send
+spec:
+  template:
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.75.0
+        args:
+        - traces
+        - --otlp-endpoint=otel-sender-collector:4317
+        - --traces=100
+        - --otlp-insecure=true
+        - --service=telemetrygen-grpc
+        - --otlp-attributes=protocol="grpc"
+      restartPolicy: Never
