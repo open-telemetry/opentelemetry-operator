@@ -23,6 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
@@ -78,8 +79,14 @@ func TestDeploymentNewDefault(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, otelcol)
+	d := Deployment(params)
 
 	// verify
 	assert.Equal(t, "my-instance-collector", d.Name)
@@ -137,8 +144,14 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, otelcol)
+	d := Deployment(params)
 
 	// Add sha256 podAnnotation
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -177,7 +190,13 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 
 	cfg := config.New()
 
-	d := Deployment(cfg, logger, otelcol)
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	d := Deployment(params)
 
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
@@ -194,7 +213,13 @@ func TestDeploymentHostNetwork(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+
+	d1 := Deployment(params1)
 
 	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
@@ -211,7 +236,13 @@ func TestDeploymentHostNetwork(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -232,7 +263,13 @@ func TestDeploymentFilterLabels(t *testing.T) {
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
 
-	d := Deployment(cfg, logger, otelcol)
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	d := Deployment(params)
 
 	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
@@ -250,7 +287,13 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+
+	d1 := Deployment(params1)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
@@ -269,7 +312,13 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
@@ -282,7 +331,13 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+
+	d1 := Deployment(params1)
 	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
@@ -298,7 +353,13 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
 
@@ -311,7 +372,13 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+
+	d1 := Deployment(params1)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
 	otelcol2 := v1alpha1.OpenTelemetryCollector{
@@ -325,7 +392,13 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
@@ -339,7 +412,13 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+
+	d1 := Deployment(params1)
 	assert.Nil(t, d1.Spec.Template.Spec.TerminationGracePeriodSeconds)
 
 	gracePeriodSec := int64(60)
@@ -355,7 +434,13 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
 	assert.NotNil(t, d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 	assert.Equal(t, gracePeriodSec, *d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }
@@ -377,8 +462,14 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, otelcol)
+	d := Deployment(params)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
@@ -396,7 +487,13 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg := config.New()
-	d1 := Deployment(cfg, logger, otelcol1)
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+	d1 := Deployment(params1)
 	assert.Equal(t, "my-instance-collector", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
@@ -411,7 +508,13 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg = config.New()
-	d2 := Deployment(cfg, logger, otelcol2)
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+	d2 := Deployment(params2)
 	assert.Equal(t, "my-instance-topologyspreadconstraint-collector", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
@@ -435,8 +538,14 @@ func TestDeploymentAdditionalContainers(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, otelcol)
+	d := Deployment(params)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])

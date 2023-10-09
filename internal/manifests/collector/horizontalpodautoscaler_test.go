@@ -24,6 +24,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
@@ -72,7 +73,12 @@ func TestHPA(t *testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				configuration := config.New()
-				raw := HorizontalPodAutoscaler(configuration, logger, otelcol)
+				params := manifests.Params{
+					Config:  configuration,
+					OtelCol: otelcol,
+					Log:     logger,
+				}
+				raw := HorizontalPodAutoscaler(params)
 
 				hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
 

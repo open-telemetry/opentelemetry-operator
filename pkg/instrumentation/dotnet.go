@@ -50,7 +50,7 @@ const (
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
-func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
 
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
@@ -72,7 +72,6 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec")
 	}
 
-	runtime := pod.Annotations[annotationDotNetRuntime]
 	coreClrProfilerPath := ""
 	switch runtime {
 	case "", dotNetRuntimeLinuxGlibc:

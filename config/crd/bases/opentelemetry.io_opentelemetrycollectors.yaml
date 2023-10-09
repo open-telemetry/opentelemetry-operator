@@ -3716,6 +3716,27 @@ spec:
                 description: PodAnnotations is the set of annotations that will be
                   attached to Collector and Target Allocator pods.
                 type: object
+              podDisruptionBudget:
+                description: PodDisruptionBudget specifies the pod disruption budget
+                  configuration to use for the OpenTelemetryCollector workload.
+                properties:
+                  maxUnavailable:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: An eviction is allowed if at most "maxUnavailable"
+                      pods selected by "selector" are unavailable after the eviction,
+                      i.e. even in absence of the evicted pod.
+                    x-kubernetes-int-or-string: true
+                  minAvailable:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: An eviction is allowed if at least "minAvailable"
+                      pods selected by "selector" will still be available after the
+                      eviction, i.e. even in the absence of the evicted pod.
+                    x-kubernetes-int-or-string: true
+                type: object
               podSecurityContext:
                 description: PodSecurityContext configures the pod security context
                   for the opentelemetry-collector pod, when running as a deployment,
@@ -4302,6 +4323,43 @@ spec:
                       service account to use with this instance. When set, the operator
                       will not automatically create a ServiceAccount for the TargetAllocator.
                     type: string
+                  tolerations:
+                    description: Toleration embedded kubernetes pod configuration
+                      option, controls how pods can be scheduled with matching taints
+                    items:
+                      description: The pod this Toleration is attached to tolerates
+                        any taint that matches the triple <key,value,effect> using
+                        the matching operator <operator>.
+                      properties:
+                        effect:
+                          description: Effect indicates the taint effect to match.
+                            Empty means match all taint effects. When specified, allowed
+                            values are NoSchedule, PreferNoSchedule and NoExecute.
+                          type: string
+                        key:
+                          description: Key is the taint key that the toleration applies
+                            to. Empty means match all taint keys. If the key is empty,
+                            operator must be Exists; this combination means to match
+                            all values and all keys.
+                          type: string
+                        operator:
+                          description: Operator represents a key's relationship to
+                            the value. Valid operators are Exists and Equal. Defaults
+                            to Equal.
+                          type: string
+                        tolerationSeconds:
+                          description: TolerationSeconds represents the period of
+                            time the toleration (which must be of effect NoExecute,
+                            otherwise this field is ignored) tolerates the taint.
+                          format: int64
+                          type: integer
+                        value:
+                          description: Value is the taint value the toleration matches
+                            to. If the operator is Exists, the value should be empty,
+                            otherwise just a regular string.
+                          type: string
+                      type: object
+                    type: array
                   topologySpreadConstraints:
                     description: TopologySpreadConstraints embedded kubernetes pod
                       configuration option, controls how pods are spread across your
