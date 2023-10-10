@@ -168,7 +168,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					LastRemoteConfigHash: []byte("good/testnamespace401"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -187,7 +187,7 @@ func TestAgent_onMessage(t *testing.T) {
 			want: want{
 				contents: nil,
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("bad/testnamespace408"),
+					LastRemoteConfigHash: []byte("bad/testnamespace404"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "yaml: line 16: could not find expected ':'",
 				},
@@ -216,7 +216,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					LastRemoteConfigHash: []byte("good/testnamespace401"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -235,7 +235,7 @@ func TestAgent_onMessage(t *testing.T) {
 			want: want{
 				contents: nil,
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					LastRemoteConfigHash: []byte("good/testnamespace401"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "Items in config are not allowed: [processors.batch]",
 				},
@@ -255,7 +255,7 @@ func TestAgent_onMessage(t *testing.T) {
 			want: want{
 				contents: nil,
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					LastRemoteConfigHash: []byte("good/testnamespace401"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "Items in config are not allowed: [processors]",
 				},
@@ -288,7 +288,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					LastRemoteConfigHash: []byte("good/testnamespace401"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{
@@ -303,7 +303,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace439"),
+					LastRemoteConfigHash: []byte("good/testnamespace435"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -335,7 +335,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					LastRemoteConfigHash: []byte("good/testnamespace401"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{
@@ -350,7 +350,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace408"), // The new hash should be of the bad config
+					LastRemoteConfigHash: []byte("good/testnamespace404"), // The new hash should be of the bad config
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "yaml: line 16: could not find expected ':'",
 				},
@@ -383,7 +383,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					LastRemoteConfigHash: []byte("good/testnamespace401"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{
@@ -405,7 +405,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405other/testnamespace439"),
+					LastRemoteConfigHash: []byte("good/testnamespace401other/testnamespace435"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -434,7 +434,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					LastRemoteConfigHash: []byte("good/testnamespace401"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{},

@@ -19,4 +19,4 @@ components_allowed:
   processors:
     - memory_limiter
   exporters:
-    - logging
+    - debug
