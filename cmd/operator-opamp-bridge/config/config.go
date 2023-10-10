@@ -64,6 +64,25 @@ func GetLogger() logr.Logger {
 	return zap.New(zap.UseFlagOptions(&zapCmdLineOpts))
 }
 
+type Capability string
+
+const (
+	Unspecified                    Capability = "Unspecified"
+	ReportsStatus                  Capability = "ReportsStatus"
+	AcceptsRemoteConfig            Capability = "AcceptsRemoteConfig"
+	ReportsEffectiveConfig         Capability = "ReportsEffectiveConfig"
+	AcceptsPackages                Capability = "AcceptsPackages"
+	ReportsPackageStatuses         Capability = "ReportsPackageStatuses"
+	ReportsOwnTraces               Capability = "ReportsOwnTraces"
+	ReportsOwnMetrics              Capability = "ReportsOwnMetrics"
+	ReportsOwnLogs                 Capability = "ReportsOwnLogs"
+	AcceptsOpAMPConnectionSettings Capability = "AcceptsOpAMPConnectionSettings"
+	AcceptsOtherConnectionSettings Capability = "AcceptsOtherConnectionSettings"
+	AcceptsRestartCommand          Capability = "AcceptsRestartCommand"
+	ReportsHealth                  Capability = "ReportsHealth"
+	ReportsRemoteConfig            Capability = "ReportsRemoteConfig"
+)
+
 type Config struct {
 	// KubeConfigFilePath empty if in cluster configuration is in use
 	KubeConfigFilePath string       `yaml:"kubeConfigFilePath,omitempty"`
@@ -74,7 +93,7 @@ type Config struct {
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	ComponentsAllowed map[string][]string `yaml:"componentsAllowed,omitempty"`
 	Endpoint          string              `yaml:"endpoint"`
-	Capabilities      []string            `yaml:"capabilities"`
+	Capabilities      map[Capability]bool `yaml:"capabilities"`
 }
 
 func NewConfig(logger logr.Logger) *Config {
@@ -107,7 +126,10 @@ func (c *Config) GetComponentsAllowed() map[string]map[string]bool {
 
 func (c *Config) GetCapabilities() protobufs.AgentCapabilities {
 	var capabilities int32
-	for _, capability := range c.Capabilities {
+	for capability, enabled := range c.Capabilities {
+		if !enabled {
+			continue
+		}
 		// This is a helper so that we don't force consumers to prefix every agent capability
 		formatted := fmt.Sprintf("AgentCapabilities_%s", capability)
 		if v, ok := protobufs.AgentCapabilities_value[formatted]; ok {
