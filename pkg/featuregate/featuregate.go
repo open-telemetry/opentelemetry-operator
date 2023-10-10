@@ -61,6 +61,12 @@ var (
 		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTPD auto-instrumentation"),
 		featuregate.WithRegisterFromVersion("v0.80.0"),
 	)
+	EnableNginxAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
+		"operator.autoinstrumentation.nginx",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("controls whether the operator supports Nginx auto-instrumentation"),
+		featuregate.WithRegisterFromVersion("v0.86.0"),
+	)
 
 	EnableMultiInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.multi-instrumentation",

@@ -101,6 +101,7 @@ func main() {
 		autoInstrumentationPython      string
 		autoInstrumentationDotNet      string
 		autoInstrumentationApacheHttpd string
+		autoInstrumentationNginx       string
 		autoInstrumentationGo          string
 		labelsFilter                   []string
 		webhookPort                    int
@@ -122,6 +123,7 @@ func main() {
 	pflag.StringVar(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet), "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationGo, "auto-instrumentation-go-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:%s", v.AutoInstrumentationGo), "The default OpenTelemetry Go instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringVar(&autoInstrumentationApacheHttpd, "auto-instrumentation-apache-httpd-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd), "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringVar(&autoInstrumentationNginx, "auto-instrumentation-nginx-image", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationNginx), "The default OpenTelemetry Nginx instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringArrayVar(&labelsFilter, "labels", []string{}, "Labels to filter away from propagating onto deploys")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
 	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
@@ -142,6 +144,7 @@ func main() {
 		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"auto-instrumentation-go", autoInstrumentationGo,
 		"auto-instrumentation-apache-httpd", autoInstrumentationApacheHttpd,
+		"auto-instrumentation-nginx", autoInstrumentationNginx,
 		"feature-gates", flagset.Lookup(featuregate.FeatureGatesFlag).Value.String(),
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
@@ -171,6 +174,7 @@ func main() {
 		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
 		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
 		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
+		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 	)
@@ -257,7 +261,7 @@ func main() {
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationDotNet:      autoInstrumentationDotNet,
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationGo:          autoInstrumentationGo,
 					otelv1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd: autoInstrumentationApacheHttpd,
-				},
+					otelv1alpha1.AnnotationDefaultAutoInstrumentationNginx:       autoInstrumentationNginx},
 			},
 		}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
@@ -324,6 +328,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 			DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
 			DefaultAutoInstGo:          cfg.AutoInstrumentationDotNetImage(),
 			DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
+			DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
 			Client:                     mgr.GetClient(),
 			Recorder:                   mgr.GetEventRecorderFor("opentelemetry-operator"),
 		}
