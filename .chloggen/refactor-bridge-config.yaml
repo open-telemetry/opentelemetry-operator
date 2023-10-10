@@ -16,3 +16,4 @@ issues: [1368]
 subtext: |
   `components_allowed` => `componentsAllowed`
   :x: `protocol` which is now inferred from endpoint
+  capabilities `[]string` => `map[Capability]bool` for enhanced configuration validation
