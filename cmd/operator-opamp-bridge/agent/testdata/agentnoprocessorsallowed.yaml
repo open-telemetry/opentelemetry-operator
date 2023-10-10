@@ -17,4 +17,4 @@ components_allowed:
   receivers:
     - otlp
   exporters:
-    - logging
+    - debug
