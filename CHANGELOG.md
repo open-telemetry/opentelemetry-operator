@@ -42,6 +42,7 @@ Changes by Version
 * [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
 * [Go - v0.3.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.3.0-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+* [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
 
 ## 0.85.0
 
