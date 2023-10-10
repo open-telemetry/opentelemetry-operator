@@ -29,7 +29,7 @@ jobs:
         with:
           images: |
             otel/opentelemetry-operator-bundle
-            ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator-bundle
+            ghcr.io/open-telemetry/opentelemetry-operator/operator-bundle
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
