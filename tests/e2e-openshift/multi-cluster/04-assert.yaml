@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-http
+  namespace: kuttl-multi-cluster-send
+status:
+  conditions:
+    - status: "True"
+      type: Complete
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-grpc
+  namespace: kuttl-multi-cluster-send
+status:
+  conditions:
+    - status: "True"
+      type: Complete
