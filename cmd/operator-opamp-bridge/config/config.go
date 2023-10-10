@@ -84,7 +84,8 @@ const (
 )
 
 type Config struct {
-	// KubeConfigFilePath empty if in cluster configuration is in use
+	// KubeConfigFilePath is empty if InClusterConfig() should be used, otherwise it's a path to where a valid
+	// kubernetes configuration file.
 	KubeConfigFilePath string       `yaml:"kubeConfigFilePath,omitempty"`
 	ListenAddr         string       `yaml:"listenAddr,omitempty"`
 	ClusterConfig      *rest.Config `yaml:"-"`
