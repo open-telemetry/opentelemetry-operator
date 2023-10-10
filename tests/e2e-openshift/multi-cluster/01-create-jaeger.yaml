@@ -1,0 +1,9 @@
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: jaeger-allinone
+  namespace: kuttl-multi-cluster-receive
+spec:
+  strategy: allinone
+  ingress:
+    security: none

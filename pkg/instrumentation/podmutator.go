@@ -17,6 +17,7 @@ package instrumentation
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -42,14 +43,152 @@ type instPodMutator struct {
 	Recorder    record.EventRecorder
 }
 
+type instrumentationWithContainers struct {
+	Instrumentation       *v1alpha1.Instrumentation
+	Containers            string
+	AdditionalAnnotations map[string]string
+}
+
 type languageInstrumentations struct {
-	Java        *v1alpha1.Instrumentation
-	NodeJS      *v1alpha1.Instrumentation
-	Python      *v1alpha1.Instrumentation
-	DotNet      *v1alpha1.Instrumentation
-	ApacheHttpd *v1alpha1.Instrumentation
-	Go          *v1alpha1.Instrumentation
-	Sdk         *v1alpha1.Instrumentation
+	Java        instrumentationWithContainers
+	NodeJS      instrumentationWithContainers
+	Python      instrumentationWithContainers
+	DotNet      instrumentationWithContainers
+	ApacheHttpd instrumentationWithContainers
+	Nginx       instrumentationWithContainers
+	Go          instrumentationWithContainers
+	Sdk         instrumentationWithContainers
+}
+
+// Check if single instrumentation is configured for Pod and return which is configured.
+func (langInsts languageInstrumentations) isSingleInstrumentationEnabled() bool {
+	count := 0
+
+	if langInsts.Java.Instrumentation != nil {
+		count++
+	}
+	if langInsts.NodeJS.Instrumentation != nil {
+		count++
+	}
+	if langInsts.Python.Instrumentation != nil {
+		count++
+	}
+	if langInsts.DotNet.Instrumentation != nil {
+		count++
+	}
+	if langInsts.ApacheHttpd.Instrumentation != nil {
+		count++
+	}
+	if langInsts.Nginx.Instrumentation != nil {
+		count++
+	}
+	if langInsts.Go.Instrumentation != nil {
+		count++
+	}
+	if langInsts.Sdk.Instrumentation != nil {
+		count++
+	}
+
+	return count == 1
+}
+
+// Check if specific containers are provided for configured instrumentation.
+func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultipleInstrumentations() (bool, error) {
+	var instrWithoutContainers int
+	var instrWithContainers int
+	var allContainers []string
+
+	// Check for instrumentations with and without containers.
+	if langInsts.Java.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Java)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Java)
+		allContainers = append(allContainers, langInsts.Java.Containers)
+	}
+	if langInsts.NodeJS.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.NodeJS)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.NodeJS)
+		allContainers = append(allContainers, langInsts.NodeJS.Containers)
+	}
+	if langInsts.Python.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Python)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Python)
+		allContainers = append(allContainers, langInsts.Python.Containers)
+	}
+	if langInsts.DotNet.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.DotNet)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.DotNet)
+		allContainers = append(allContainers, langInsts.DotNet.Containers)
+	}
+	if langInsts.ApacheHttpd.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.ApacheHttpd)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.ApacheHttpd)
+		allContainers = append(allContainers, langInsts.ApacheHttpd.Containers)
+	}
+	if langInsts.Nginx.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Nginx)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Nginx)
+		allContainers = append(allContainers, langInsts.Nginx.Containers)
+	}
+	if langInsts.Go.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Go)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Go)
+		allContainers = append(allContainers, langInsts.Go.Containers)
+	}
+	if langInsts.Sdk.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Sdk)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Sdk)
+		allContainers = append(allContainers, langInsts.Sdk.Containers)
+	}
+
+	// Look for duplicated containers.
+	containerDuplicates := findDuplicatedContainers(allContainers)
+	if containerDuplicates != nil {
+		return false, containerDuplicates
+	}
+
+	// Look for mixed multiple instrumentations with and without container names.
+	if instrWithoutContainers > 0 && instrWithContainers > 0 {
+		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
+	}
+
+	// Look for multiple instrumentations without container names.
+	if instrWithoutContainers > 1 && instrWithContainers == 0 {
+		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
+	}
+
+	if instrWithoutContainers == 0 && instrWithContainers == 0 {
+		return false, fmt.Errorf("instrumentation configuration not provided")
+	}
+
+	return true, nil
+}
+
+// Set containers for configured instrumentation.
+func (langInsts *languageInstrumentations) setInstrumentationLanguageContainers(containers string) {
+	if langInsts.Java.Instrumentation != nil {
+		langInsts.Java.Containers = containers
+	}
+	if langInsts.NodeJS.Instrumentation != nil {
+		langInsts.NodeJS.Containers = containers
+	}
+	if langInsts.Python.Instrumentation != nil {
+		langInsts.Python.Containers = containers
+	}
+	if langInsts.DotNet.Instrumentation != nil {
+		langInsts.DotNet.Containers = containers
+	}
+	if langInsts.ApacheHttpd.Instrumentation != nil {
+		langInsts.ApacheHttpd.Containers = containers
+	}
+	if langInsts.Nginx.Instrumentation != nil {
+		langInsts.Nginx.Containers = containers
+	}
+	if langInsts.Go.Instrumentation != nil {
+		langInsts.Go.Containers = containers
+	}
+	if langInsts.Sdk.Instrumentation != nil {
+		langInsts.Sdk.Containers = containers
+	}
 }
 
 var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
@@ -88,7 +227,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableJavaAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.Java = inst
+		insts.Java.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Java auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Java auto instrumentation is not enabled")
@@ -100,7 +239,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.NodeJS = inst
+		insts.NodeJS.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
@@ -112,7 +251,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.Python = inst
+		insts.Python.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Python auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
@@ -124,7 +263,8 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.DotNet = inst
+		insts.DotNet.Instrumentation = inst
+		insts.DotNet.AdditionalAnnotations = map[string]string{annotationDotNetRuntime: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationDotNetRuntime)}
 	} else {
 		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
@@ -136,7 +276,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableGoAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.Go = inst
+		insts.Go.Instrumentation = inst
 	} else {
 		logger.Error(err, "support for Go auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Go auto instrumentation is not enabled")
@@ -148,10 +288,22 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 	if featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled() || inst == nil {
-		insts.ApacheHttpd = inst
+		insts.ApacheHttpd.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Apache HTTPD auto instrumentation is not enabled")
+	}
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNginx); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled() || inst == nil {
+		insts.Nginx.Instrumentation = inst
+	} else {
+		logger.Error(nil, "support for Nginx auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Nginx auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
@@ -159,22 +311,53 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	insts.Sdk = inst
+	insts.Sdk.Instrumentation = inst
 
-	if insts.Java == nil && insts.NodeJS == nil && insts.Python == nil && insts.DotNet == nil && insts.Go == nil && insts.ApacheHttpd == nil && insts.Sdk == nil {
+	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
+		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
+		insts.Nginx.Instrumentation == nil &&
+		insts.Sdk.Instrumentation == nil {
+
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}
 
 	// We retrieve the annotation for podname
-	var targetContainers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
+	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+		// We use annotations specific for instrumentation language
+		insts.Java.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
+		insts.NodeJS.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
+		insts.Python.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectPythonContainersName)
+		insts.DotNet.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
+		insts.Go.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
+		insts.ApacheHttpd.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
+		insts.Nginx.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNginxContainersName)
+		insts.Sdk.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
+
+		// We check if provided annotations and instrumentations are valid
+		ok, msg := insts.areContainerNamesConfiguredForMultipleInstrumentations()
+		if !ok {
+			logger.V(1).Error(msg, "skipping instrumentation injection")
+			return pod, nil
+		}
+	} else {
+		// We use general annotation for container names
+		// only when multi instrumentation is disabled
+		singleInstrEnabled := insts.isSingleInstrumentationEnabled()
+		if singleInstrEnabled {
+			generalContainerNames := annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
+			insts.setInstrumentationLanguageContainers(generalContainerNames)
+		} else {
+			logger.V(1).Error(fmt.Errorf("multiple injection annotations present"), "skipping instrumentation injection")
+			return pod, nil
+		}
+
+	}
 
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
 	modifiedPod := pod
-	for _, currentContainer := range strings.Split(targetContainers, ",") {
-		modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod, strings.TrimSpace(currentContainer))
-	}
+	modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod)
 
 	return modifiedPod, nil
 }

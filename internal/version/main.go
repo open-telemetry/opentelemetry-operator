@@ -31,6 +31,7 @@ var (
 	autoInstrumentationPython      string
 	autoInstrumentationDotNet      string
 	autoInstrumentationApacheHttpd string
+	autoInstrumentationNginx       string
 	autoInstrumentationGo          string
 )
 
@@ -48,6 +49,7 @@ type Version struct {
 	AutoInstrumentationDotNet      string `json:"auto-instrumentation-dotnet"`
 	AutoInstrumentationGo          string `json:"auto-instrumentation-go"`
 	AutoInstrumentationApacheHttpd string `json:"auto-instrumentation-apache-httpd"`
+	AutoInstrumentationNginx       string `json:"auto-instrumentation-nginx"`
 }
 
 // Get returns the Version object with the relevant information.
@@ -65,12 +67,13 @@ func Get() Version {
 		AutoInstrumentationDotNet:      AutoInstrumentationDotNet(),
 		AutoInstrumentationGo:          AutoInstrumentationGo(),
 		AutoInstrumentationApacheHttpd: AutoInstrumentationApacheHttpd(),
+		AutoInstrumentationNginx:       AutoInstrumentationNginx(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v')",
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
@@ -83,6 +86,7 @@ func (v Version) String() string {
 		v.AutoInstrumentationDotNet,
 		v.AutoInstrumentationGo,
 		v.AutoInstrumentationApacheHttpd,
+		v.AutoInstrumentationNginx,
 	)
 }
 
@@ -150,6 +154,13 @@ func AutoInstrumentationDotNet() string {
 func AutoInstrumentationApacheHttpd() string {
 	if len(autoInstrumentationApacheHttpd) > 0 {
 		return autoInstrumentationApacheHttpd
+	}
+	return "0.0.0"
+}
+
+func AutoInstrumentationNginx() string {
+	if len(autoInstrumentationNginx) > 0 {
+		return autoInstrumentationNginx
 	}
 	return "0.0.0"
 }

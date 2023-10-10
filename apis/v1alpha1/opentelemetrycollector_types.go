@@ -19,6 +19,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // ManagementStateType defines the type for CR management states.
@@ -123,6 +124,11 @@ type OpenTelemetryCollectorSpec struct {
 	//
 	// +optional
 	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
+	// PodDisruptionBudget specifies the pod disruption budget configuration to use
+	// for the OpenTelemetryCollector workload.
+	//
+	// +optional
+	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 	// SecurityContext configures the container security context for
 	// the opentelemetry-collector container.
 	//
@@ -313,6 +319,10 @@ type OpenTelemetryTargetAllocator struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// Toleration embedded kubernetes pod configuration option,
+	// controls how pods can be scheduled with matching taints
+	// +optional
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 	// ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
 	// consumed in the config file for the TargetAllocator.
 	// +optional
@@ -442,6 +452,23 @@ type AutoscalerSpec struct {
 	// +optional
 	// TargetMemoryUtilization sets the target average memory utilization across all replicas
 	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
+}
+
+// PodDisruptionBudgetSpec defines the OpenTelemetryCollector's pod disruption budget specification.
+type PodDisruptionBudgetSpec struct {
+	// An eviction is allowed if at least "minAvailable" pods selected by
+	// "selector" will still be available after the eviction, i.e. even in the
+	// absence of the evicted pod.  So for example you can prevent all voluntary
+	// evictions by specifying "100%".
+	// +optional
+	MinAvailable *intstr.IntOrString `json:"minAvailable,omitempty"`
+
+	// An eviction is allowed if at most "maxUnavailable" pods selected by
+	// "selector" are unavailable after the eviction, i.e. even in absence of
+	// the evicted pod. For example, one can prevent all voluntary evictions
+	// by specifying 0. This is a mutually exclusive setting with "minAvailable".
+	// +optional
+	MaxUnavailable *intstr.IntOrString `json:"maxUnavailable,omitempty"`
 }
 
 // MetricsConfigSpec defines a metrics config.

@@ -26,6 +26,7 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	policyV1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
@@ -65,34 +66,34 @@ func newParamsAssertNoErr(t *testing.T, taContainerImage string, file string) ma
 	p, err := newParams(taContainerImage, file)
 	assert.NoError(t, err)
 	if len(taContainerImage) == 0 {
-		p.Instance.Spec.TargetAllocator.Enabled = false
+		p.OtelCol.Spec.TargetAllocator.Enabled = false
 	}
 	return p
 }
 
 func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	addedMetadataDeployment := paramsWithMode(v1alpha1.ModeDeployment)
-	addedMetadataDeployment.Instance.Labels = map[string]string{
+	addedMetadataDeployment.OtelCol.Labels = map[string]string{
 		labelName: labelVal,
 	}
-	addedMetadataDeployment.Instance.Annotations = map[string]string{
+	addedMetadataDeployment.OtelCol.Annotations = map[string]string{
 		annotationName: annotationVal,
 	}
 	deploymentExtraPorts := paramsWithModeAndReplicas(v1alpha1.ModeDeployment, 3)
-	deploymentExtraPorts.Instance.Spec.Ports = append(deploymentExtraPorts.Instance.Spec.Ports, extraPorts)
+	deploymentExtraPorts.OtelCol.Spec.Ports = append(deploymentExtraPorts.OtelCol.Spec.Ports, extraPorts)
 	ingressParams := newParamsAssertNoErr(t, "", testFileIngress)
-	ingressParams.Instance.Spec.Ingress.Type = "ingress"
+	ingressParams.OtelCol.Spec.Ingress.Type = "ingress"
 	updatedIngressParams := newParamsAssertNoErr(t, "", testFileIngress)
-	updatedIngressParams.Instance.Spec.Ingress.Type = "ingress"
-	updatedIngressParams.Instance.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
-	updatedIngressParams.Instance.Spec.Ingress.Hostname = expectHostname
+	updatedIngressParams.OtelCol.Spec.Ingress.Type = "ingress"
+	updatedIngressParams.OtelCol.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
+	updatedIngressParams.OtelCol.Spec.Ingress.Hostname = expectHostname
 	routeParams := newParamsAssertNoErr(t, "", testFileIngress)
-	routeParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
-	routeParams.Instance.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
+	routeParams.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+	routeParams.OtelCol.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 	updatedRouteParams := newParamsAssertNoErr(t, "", testFileIngress)
-	updatedRouteParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
-	updatedRouteParams.Instance.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
-	updatedRouteParams.Instance.Spec.Ingress.Hostname = expectHostname
+	updatedRouteParams.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+	updatedRouteParams.OtelCol.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
+	updatedRouteParams.OtelCol.Spec.Ingress.Hostname = expectHostname
 
 	type args struct {
 		params manifests.Params
@@ -319,6 +320,45 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			},
 		},
 		{
+			name: "policy v1 deployment collector",
+			args: args{
+				params:  paramsWithPolicy(1, 0),
+				updates: []manifests.Params{paramsWithPolicy(0, 1)},
+			},
+			want: []want{
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+							actual := policyV1.PodDisruptionBudget{}
+							exists, pdbErr := populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.HorizontalPodAutoscaler))
+							assert.NoError(t, pdbErr)
+							assert.Equal(t, int32(1), actual.Spec.MinAvailable.IntVal)
+							assert.Nil(t, actual.Spec.MaxUnavailable)
+							assert.True(t, exists)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, appliedInstance v1alpha1.OpenTelemetryCollector) {
+							actual := policyV1.PodDisruptionBudget{}
+							exists, pdbErr := populateObjectIfExists(t, &actual, namespacedObjectName(appliedInstance, naming.HorizontalPodAutoscaler))
+							assert.NoError(t, pdbErr)
+							assert.Nil(t, actual.Spec.MinAvailable)
+							assert.Equal(t, int32(1), actual.Spec.MaxUnavailable.IntVal)
+							assert.True(t, exists)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+			},
+		},
+		{
 			name: "daemonset collector",
 			args: args{
 				params: paramsWithMode(v1alpha1.ModeDaemonSet),
@@ -389,7 +429,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 							assert.True(t, exists)
 
-							promConfig, err := ta.ConfigToPromConfig(newParamsAssertNoErr(t, baseTaImage, promFile).Instance.Spec.Config)
+							promConfig, err := ta.ConfigToPromConfig(newParamsAssertNoErr(t, baseTaImage, promFile).OtelCol.Spec.Config)
 							assert.NoError(t, err)
 
 							taConfig := make(map[interface{}]interface{})
@@ -452,7 +492,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
-			nsn := types.NamespacedName{Name: tt.args.params.Instance.Name, Namespace: tt.args.params.Instance.Namespace}
+			nsn := types.NamespacedName{Name: tt.args.params.OtelCol.Name, Namespace: tt.args.params.OtelCol.Namespace}
 			reconciler := controllers.NewReconciler(controllers.Params{
 				Client:   k8sClient,
 				Log:      logger,
@@ -465,7 +505,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			})
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
 			firstCheck := tt.want[0]
-			createErr := k8sClient.Create(testContext, &tt.args.params.Instance)
+			createErr := k8sClient.Create(testContext, &tt.args.params.OtelCol)
 			if !firstCheck.validateErr(t, createErr) {
 				return
 			}
@@ -474,12 +514,12 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			}
 			got, reconcileErr := reconciler.Reconcile(testContext, req)
 			if !firstCheck.wantErr(t, reconcileErr) {
-				require.NoError(t, k8sClient.Delete(testContext, &tt.args.params.Instance))
+				require.NoError(t, k8sClient.Delete(testContext, &tt.args.params.OtelCol))
 				return
 			}
 			assert.Equal(t, firstCheck.result, got)
 			for _, check := range firstCheck.checks {
-				check(t, tt.args.params.Instance)
+				check(t, tt.args.params.OtelCol)
 			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
@@ -488,9 +528,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				assert.True(t, found)
 				assert.NoError(t, err)
 
-				updateParam.Instance.SetResourceVersion(existing.ResourceVersion)
-				updateParam.Instance.SetUID(existing.UID)
-				err = k8sClient.Update(testContext, &updateParam.Instance)
+				updateParam.OtelCol.SetResourceVersion(existing.ResourceVersion)
+				updateParam.OtelCol.SetUID(existing.UID)
+				err = k8sClient.Update(testContext, &updateParam.OtelCol)
 				assert.NoError(t, err)
 				if err != nil {
 					continue
@@ -506,12 +546,12 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				}
 				assert.Equal(t, checkGroup.result, got)
 				for _, check := range checkGroup.checks {
-					check(t, updateParam.Instance)
+					check(t, updateParam.OtelCol)
 				}
 			}
 			// Only delete upon a successful creation
 			if createErr == nil {
-				require.NoError(t, k8sClient.Delete(testContext, &tt.args.params.Instance))
+				require.NoError(t, k8sClient.Delete(testContext, &tt.args.params.OtelCol))
 			}
 		})
 	}

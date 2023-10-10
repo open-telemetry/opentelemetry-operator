@@ -29,6 +29,8 @@ jobs:
          - e2e-upgrade
          - e2e-prometheuscr
          - e2e-autoscale
+         - e2e-multi-instrumentation
+         - e2e-pdb
 
     steps:
     - name: Set up Go

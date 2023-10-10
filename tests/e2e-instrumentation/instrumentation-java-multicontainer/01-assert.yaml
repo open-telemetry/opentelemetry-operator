@@ -18,7 +18,7 @@ spec:
     - name: SPLUNK_PROFILER_ENABLED
       value: "false"
     - name: JAVA_TOOL_OPTIONS
-      value: " -javaagent:/otel-auto-instrumentation/javaagent.jar"
+      value: " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -40,8 +40,8 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-    - mountPath: /otel-auto-instrumentation
-      name: opentelemetry-auto-instrumentation
+    - mountPath: /otel-auto-instrumentation-java
+      name: opentelemetry-auto-instrumentation-java
   - name: myrabbit
     env:
     - name: OTEL_JAVAAGENT_DEBUG
@@ -51,7 +51,7 @@ spec:
     - name: SPLUNK_PROFILER_ENABLED
       value: "false"
     - name: JAVA_TOOL_OPTIONS
-      value: " -javaagent:/otel-auto-instrumentation/javaagent.jar"
+      value: " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -73,8 +73,8 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-    - mountPath: /otel-auto-instrumentation
-      name: opentelemetry-auto-instrumentation
+    - mountPath: /otel-auto-instrumentation-java
+      name: opentelemetry-auto-instrumentation-java
   - name: otc-container
 status:
   phase: Running

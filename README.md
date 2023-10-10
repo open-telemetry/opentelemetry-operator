@@ -189,7 +189,7 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -291,6 +291,11 @@ Apache HTTPD:
 instrumentation.opentelemetry.io/inject-apache-httpd: "true"
 ```
 
+Nginx:
+```bash
+instrumentation.opentelemetry.io/inject-nginx: "true"
+```
+
 OpenTelemetry SDK environment variables only:
 ```bash
 instrumentation.opentelemetry.io/inject-sdk: "true"
@@ -302,7 +307,7 @@ The possible values for the annotation can be
 * `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
 
-#### Multi-container pods
+#### Multi-container pods with single instrumentation
 
 If nothing else is specified, instrumentation is performed on the first container available in the pod spec.
 In some cases (for example in the case of the injection of an Istio sidecar) it becomes necessary to specify on which container(s) this injection must be performed.
@@ -342,6 +347,90 @@ In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3
 
 > 🚨 **NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first pod should be the only pod you want instrumented.
 
+#### Multi-container pods with multiple instrumentations
+
+Works only when `operator.autoinstrumentation.multi-instrumentation` feature is `enabled`.
+
+Annotations defining which language instrumentation will be injected are required. When feature is enabled, specific for Instrumentation language containers annotations are used:
+
+Java:
+```bash
+instrumentation.opentelemetry.io/java-container-names: "java1,java2"
+```
+
+NodeJS:
+```bash
+instrumentation.opentelemetry.io/nodejs-container-names: "nodejs1,nodejs2"
+```
+
+Python:
+```bash
+instrumentation.opentelemetry.io/python-container-names: "python1,python3"
+```
+
+DotNet:
+```bash
+instrumentation.opentelemetry.io/dotnet-container-names: "dotnet1,dotnet2"
+```
+
+Go:
+```bash
+instrumentation.opentelemetry.io/go-container-names: "go1"
+```
+
+ApacheHttpD:
+```bash
+instrumentation.opentelemetry.io/apache-httpd-container-names: "apache1,apache2"
+```
+
+SDK:
+```bash
+instrumentation.opentelemetry.io/sdk-container-names: "app1,app2"
+```
+
+If language instrumentation specific container names are not specified, instrumentation is performed on the first container available in the pod spec (only if single instrumentation injection is configured).
+
+In some cases containers in the pod are using different technologies. It becomes necessary to specify language instrumentation for container(s) on which this injection must be performed.
+
+For this, we will use language instrumentation specific container names annotation for which we will indicate one or more container names (`.spec.containers.name`) on which the injection must be made:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment-with-multi-containers-multi-instrumentations
+spec:
+  selector:
+    matchLabels:
+      app: my-pod-with-multi-containers-multi-instrumentations
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-pod-with-multi-containers-multi-instrumentations
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/java-container-names: "myapp,myapp2"
+        instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/python-container-names: "myapp3"
+    spec:
+      containers:
+      - name: myapp
+        image: myImage1
+      - name: myapp2
+        image: myImage2
+      - name: myapp3
+        image: myImage3
+```
+
+In the above case, `myapp` and `myapp2` containers will be instrumented using Java and `myapp3` using Python instrumentation.
+
+**NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first container should be the only you want to instrument.
+
+**NOTE**: This type of instrumentation **does not** allow to instrument a container with multiple language instrumentations.
+
+**NOTE**: `instrumentation.opentelemetry.io/container-names` annotation is not used for this feature.
+
 #### Use customized or vendor instrumentation
 
 By default, the operator uses upstream auto-instrumentation libraries. Custom auto-instrumentation can be configured by
@@ -365,6 +454,8 @@ spec:
     image: your-customized-auto-instrumentation-image:go
   apacheHttpd:
     image: your-customized-auto-instrumentation-image:apache-httpd
+  nginx:
+    image: your-customized-auto-instrumentation-image:nginx
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).
@@ -390,6 +481,26 @@ metadata:
 ```
 List of all available attributes can be found at [otel-webserver-module](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module)
 
+#### Using Nginx autoinstrumentation
+
+For `Nginx` autoinstrumentation, Nginx versions 1.22.0, 1.23.0, and 1.23.1 are supported at this time. The Nginx configuration file is expected to be `/etc/nginx/nginx.conf` by default, if it's different, see following example on how to change it. Instrumentation at this time also expects, that `conf.d` directory is present in the directory, where configuration file resides and that there is a `include <config-file-dir-path>/conf.d/*.conf;` directive in the `http { ... }` section of Nginx configuration file (like it is in the default configuration file of Nginx). You can also adjust OpenTelemetry SDK attributes. Example:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+  nginx:
+    image: your-customized-auto-instrumentation-image:nginx # if custom instrumentation image is needed
+    configFile: /my/custom-dir/custom-nginx.conf
+    attrs:
+    - name: NginxModuleOtelMaxQueueSize
+      value: "4096"
+    - name: ...
+      value: ...
+```
+List of all available attributes can be found at [otel-webserver-module](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module)
+
 #### Inject OpenTelemetry SDK environment variables only
 
 You can configure the OpenTelemetry SDK for applications which can't currently be autoinstrumented by using `inject-sdk` in place of `inject-python` or `inject-java`, for example. This will inject environment variables like `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_TRACES_SAMPLER`, and `OTEL_EXPORTER_OTLP_ENDPOINT`, that you can configure in the `Instrumentation`, but will not actually provide the SDK.
@@ -403,8 +514,8 @@ instrumentation.opentelemetry.io/inject-sdk: "true"
 The operator allows specifying, via the feature gates,  which languages the Instrumentation resource may instrument.
 These feature gates must be passed to the operator via the `--feature-gates` flag.
 The flag allows for a comma-delimited list of feature gate identifiers.
-Prefix a gate with '-' to disable support for the corresponding language.
-Prefixing a gate with '+' or no prefix will enable support for the corresponding language.
+Prefix a gate with '-' to disable support for the corresponding language or multi instrumentation feature.
+Prefixing a gate with '+' or no prefix will enable support for the corresponding language or multi instrumentation feature.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
 
 | Language      | Gate                                        | Default Value |
@@ -415,8 +526,13 @@ If a language is enabled by default its gate only needs to be supplied when disa
 | DotNet        | `operator.autoinstrumentation.dotnet`       | enabled       |
 | ApacheHttpD   | `operator.autoinstrumentation.apache-httpd` | enabled       |
 | Go            | `operator.autoinstrumentation.go`           | disabled      |
+| Nginx         | `operator.autoinstrumentation.nginx`        | disabled      |
 
 Language not specified in the table are always supported and cannot be disabled.
+
+OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
+These feature can be enabled using `operator.autoinstrumentation.multi-instrumentation` flag. By default flag is `disabled`.
+For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](#Multi-container-pods-with-multiple-instrumentations).
 
 ### Target Allocator
 
@@ -594,6 +710,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.86.0                | v1.23 to v1.28       | v1                  |
 | v0.85.0                | v1.19 to v1.28       | v1                  |
 | v0.84.0                | v1.19 to v1.28       | v1                  |
 | v0.83.0                | v1.19 to v1.27       | v1                  |
@@ -616,7 +733,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.66.0                | v1.19 to v1.25       | v1                  |
 | v0.64.1                | v1.19 to v1.25       | v1                  |
 | v0.63.1                | v1.19 to v1.25       | v1                  |
-| v0.62.1                | v1.19 to v1.25       | v1                  |
 
 ## Contributing and Developing
 

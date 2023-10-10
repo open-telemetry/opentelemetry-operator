@@ -17,7 +17,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -26,7 +25,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	policyV1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -36,8 +35,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/status"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
@@ -118,67 +115,11 @@ func (r *OpenTelemetryCollectorReconciler) removeRouteTask(ora autodetect.OpenSh
 	return nil
 }
 
-func (r *OpenTelemetryCollectorReconciler) doCRUD(ctx context.Context, params manifests.Params) error {
-	// Collect all objects owned by the operator, to be able to prune objects
-	// which exist in the cluster but are not managed by the operator anymore.
-	desiredObjects, err := r.BuildAll(params)
-	if err != nil {
-		return err
-	}
-	var errs []error
-	for _, desired := range desiredObjects {
-		l := r.log.WithValues(
-			"object_name", desired.GetName(),
-			"object_kind", desired.GetObjectKind(),
-		)
-		if isNamespaceScoped(desired) {
-			if setErr := ctrl.SetControllerReference(&params.Instance, desired, params.Scheme); setErr != nil {
-				l.Error(setErr, "failed to set controller owner reference to desired")
-				errs = append(errs, setErr)
-				continue
-			}
-		}
-
-		// existing is an object the controller runtime will hydrate for us
-		// we obtain the existing object by deep copying the desired object because it's the most convenient way
-		existing := desired.DeepCopyObject().(client.Object)
-		mutateFn := manifests.MutateFuncFor(existing, desired)
-		op, crudErr := ctrl.CreateOrUpdate(ctx, r.Client, existing, mutateFn)
-		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
-			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "existing", existing.GetName())
-			delErr := r.Client.Delete(ctx, existing)
-			if delErr != nil {
-				return delErr
-			}
-			continue
-		} else if crudErr != nil {
-			l.Error(crudErr, "failed to configure desired")
-			errs = append(errs, crudErr)
-			continue
-		}
-
-		l.V(1).Info(fmt.Sprintf("desired has been %s", op))
-	}
-	if len(errs) > 0 {
-		return fmt.Errorf("failed to create objects for Collector %s: %w", params.Instance.GetName(), errors.Join(errs...))
-	}
-	return nil
-}
-
-func isNamespaceScoped(obj client.Object) bool {
-	switch obj.(type) {
-	case *rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding:
-		return false
-	default:
-		return true
-	}
-}
-
 func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
 	return manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
-		Instance: instance,
+		OtelCol:  instance,
 		Log:      r.log,
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
@@ -208,6 +149,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
@@ -232,7 +174,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if instance.Spec.ManagementState != v1alpha1.ManagementStateManaged {
+	if instance.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
 		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
 		return ctrl.Result{}, nil
@@ -243,7 +185,11 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, err
 	}
 
-	err := r.doCRUD(ctx, params)
+	desiredObjects, buildErr := BuildCollector(params)
+	if buildErr != nil {
+		return ctrl.Result{}, buildErr
+	}
+	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
 	return status.HandleReconcileStatus(ctx, log, params, err)
 }
 
@@ -255,7 +201,7 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 		if err := task.Do(ctx, params); err != nil {
 			// If we get an error that occurs because a pod is being terminated, then exit this loop
 			if apierrors.IsForbidden(err) && apierrors.HasStatusCause(err, corev1.NamespaceTerminatingCause) {
-				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.Instance.Namespace)
+				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.OtelCol.Namespace)
 				return nil
 			}
 			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
@@ -265,23 +211,6 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 		}
 	}
 	return nil
-}
-
-// BuildAll returns the generation and collected errors of all manifests for a given instance.
-func (r *OpenTelemetryCollectorReconciler) BuildAll(params manifests.Params) ([]client.Object, error) {
-	builders := []manifests.Builder{
-		collector.Build,
-		targetallocator.Build,
-	}
-	var resources []client.Object
-	for _, builder := range builders {
-		objs, err := builder(params)
-		if err != nil {
-			return nil, err
-		}
-		resources = append(resources, objs...)
-	}
-	return resources, nil
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
@@ -304,6 +233,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 	}
 
 	builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
+	builder = builder.Owns(&policyV1.PodDisruptionBudget{})
 
 	return builder.Complete(r)
 }
