@@ -32,12 +32,12 @@ func main() {
 	err := flagSet.Parse(os.Args)
 	if err != nil {
 		l.Error(err, "Unable to load flags")
-		return
+		os.Exit(1)
 	}
 	cfg, configLoadErr := config.Load(l, flagSet)
 	if configLoadErr != nil {
 		l.Error(configLoadErr, "Unable to load configuration")
-		return
+		os.Exit(1)
 	}
 	l.Info("Starting the Remote Configuration service")
 

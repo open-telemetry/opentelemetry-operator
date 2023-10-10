@@ -66,8 +66,10 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 		opampClient:         opampClient,
 	}
 
-	agent.logger.V(3).Info("Agent created, id=%v, type=%s, version=%s.",
-		agent.instanceId.String(), config.GetAgentType(), config.GetAgentVersion())
+	agent.logger.V(3).Info("Agent created",
+		"instanceId", agent.instanceId.String(),
+		"agentType", config.GetAgentType(),
+		"agentVersion", config.GetAgentVersion())
 
 	return agent
 }
@@ -143,9 +145,9 @@ func (agent *Agent) Start() error {
 // updateAgentIdentity receives a new instanced Id from the remote server and updates the agent's instanceID field.
 // The meter will be reinitialized by the onMessage function.
 func (agent *Agent) updateAgentIdentity(instanceId ulid.ULID) {
-	agent.logger.V(3).Info("Agent identity is being changed from id=%v to id=%v",
-		agent.instanceId.String(),
-		instanceId.String())
+	agent.logger.V(3).Info("Agent identity is being changed",
+		"old instanceId", agent.instanceId.String(),
+		"new instanceid", instanceId.String())
 	agent.instanceId = instanceId
 }
 
