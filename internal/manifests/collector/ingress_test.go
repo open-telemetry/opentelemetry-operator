@@ -48,7 +48,7 @@ func TestDesiredIngresses(t *testing.T) {
 
 		actual, err := Ingress(params)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "tani")
+		assert.NoError(t, err)
 	})
 
 	t.Run("should return nil unable to parse config", func(t *testing.T) {
@@ -67,7 +67,7 @@ func TestDesiredIngresses(t *testing.T) {
 
 		actual, err := Ingress(params)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "tani")
+		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
 	})
 
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestDesiredIngresses(t *testing.T) {
 
 		actual, err := Ingress(params)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "tani")
+		assert.ErrorContains(t, err, "no receivers available as part of the configuration")
 	})
 
 	t.Run("path per port", func(t *testing.T) {

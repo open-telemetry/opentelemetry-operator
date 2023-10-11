@@ -28,9 +28,9 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	}
 	resourceFactories := []manifests.K8sManifestFactory{
 		manifests.Factory(ConfigMap),
-		manifests.FactoryWithoutError(Deployment),
-		manifests.FactoryWithoutError(ServiceAccount),
-		manifests.FactoryWithoutError(Service),
+		manifests.Factory(Deployment),
+		manifests.Factory(ServiceAccount),
+		manifests.Factory(Service),
 	}
 	for _, factory := range resourceFactories {
 		res, err := factory(params)

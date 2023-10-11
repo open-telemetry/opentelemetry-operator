@@ -165,7 +165,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		logger.Error(err, "couldn't extract the configuration")
 		return ports
 	}
-	ps := adapters.ConfigToPorts(logger, c)
+	ps, _ := adapters.ConfigToPorts(logger, c)
 	if len(ps) > 0 {
 		for _, p := range ps {
 			truncName := naming.Truncate(p.Name, maxPortLen)

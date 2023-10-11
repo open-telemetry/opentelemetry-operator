@@ -78,11 +78,12 @@ func TestHPA(t *testing.T) {
 					OtelCol: otelcol,
 					Log:     logger,
 				}
-				raw := HorizontalPodAutoscaler(params)
+				raw, err := HorizontalPodAutoscaler(params)
 
 				hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
 
 				// verify
+				assert.NoError(t, err)
 				assert.Equal(t, "my-instance-collector", hpa.Name)
 				assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
 				assert.Equal(t, int32(3), *hpa.Spec.MinReplicas)

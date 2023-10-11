@@ -107,8 +107,8 @@ func TestDesiredService(t *testing.T) {
 		}
 
 		actual, err := Service(params)
+		assert.NoError(t, err)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "tani")
 
 	})
 	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {

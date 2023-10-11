@@ -49,11 +49,11 @@ func Routes(params manifests.Params) []*routev1.Route {
 	default: // NOTE: if unsupported, end here.
 		return nil
 	}
-	
-	ports, _ := servicePortsFromCfg(params.Log, params.OtelCol)
+
+	ports, err := servicePortsFromCfg(params.Log, params.OtelCol)
 
 	// if we have no ports, we don't need a ingress entry
-	if len(ports) == 0 {
+	if len(ports) == 0 || err != nil {
 		params.Log.V(1).Info(
 			"the instance's configuration didn't yield any ports to open, skipping ingress",
 			"instance.name", params.OtelCol.Name,

@@ -224,13 +224,12 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{})
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{})
 
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 	}
-
-	builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
 
 	return builder.Complete(r)
 }

@@ -69,8 +69,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 
 	metricsPort, err := adapters.ConfigToMetricsPort(params.Log, c)
 	if err != nil {
-		params.Log.V(2).Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
-		metricsPort = 8888
+		return nil, err
 	}
 
 	return &corev1.Service{
@@ -88,7 +87,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 				Port: metricsPort,
 			}},
 		},
-	}, err
+	}, nil
 }
 
 func Service(params manifests.Params) (*corev1.Service, error) {
@@ -101,7 +100,10 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	ports := adapters.ConfigToPorts(params.Log, configFromString)
+	ports, err := adapters.ConfigToPorts(params.Log, configFromString)
+	if err != nil {
+		return nil, err
+	}
 
 	// set appProtocol to h2c for grpc ports on OpenShift.
 	// OpenShift uses HA proxy that uses appProtocol for its configuration.
@@ -132,7 +134,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	}
 
 	// if we have no ports, we don't need a service
-	if len(ports) == 0 || err != nil {
+	if len(ports) == 0 {
 
 		params.Log.V(1).Info("the instance's configuration didn't yield any ports to open, skipping service", "instance.name", params.OtelCol.Name, "instance.namespace", params.OtelCol.Namespace)
 		return nil, err

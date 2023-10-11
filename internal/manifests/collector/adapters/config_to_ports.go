@@ -19,6 +19,7 @@ import (
 	"net"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
@@ -175,7 +176,7 @@ func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{
 	return ports, nil
 }
 
-func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) []corev1.ServicePort {
+func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
 	ports, err := ConfigToReceiverPorts(logger, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
@@ -191,7 +192,7 @@ func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) []cor
 		return ports[i].Name < ports[j].Name
 	})
 
-	return ports
+	return ports, nil
 }
 
 // ConfigToMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
@@ -217,7 +218,9 @@ func ConfigToMetricsPort(logger logr.Logger, config map[interface{}]interface{})
 	}
 
 	_, port, err := net.SplitHostPort(cOut.Service.Telemetry.Metrics.Address)
-	if err != nil {
+	if err != nil && strings.Contains(err.Error(), "missing port in address") {
+		return 8888, nil
+	} else if err != nil {
 		return 0, err
 	}
 	i64, err := strconv.ParseInt(port, 10, 32)

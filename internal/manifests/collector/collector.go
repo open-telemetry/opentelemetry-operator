@@ -37,11 +37,11 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		params.Log.V(5).Info("not building sidecar...")
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
-		manifests.FactoryWithoutError(ConfigMap),
-		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
-		manifests.FactoryWithoutError(ServiceAccount),
+		manifests.Factory(ConfigMap),
+		manifests.Factory(HorizontalPodAutoscaler),
+		manifests.Factory(ServiceAccount),
 		manifests.Factory(Service),
-		manifests.FactoryWithoutError(HeadlessService),
+		manifests.Factory(HeadlessService),
 		manifests.Factory(MonitoringService),
 		manifests.Factory(Ingress),
 	}...)
