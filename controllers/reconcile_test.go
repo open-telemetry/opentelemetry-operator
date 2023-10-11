@@ -23,9 +23,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	policyV1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
@@ -286,7 +287,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check{
 						func(t *testing.T, params manifests.Params) {
-							actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
+							actual := autoscalingv2.HorizontalPodAutoscaler{}
 							exists, hpaErr := populateObjectIfExists(t, &actual, namespacedObjectName(naming.HorizontalPodAutoscaler(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, hpaErr)
 							require.Len(t, actual.Spec.Metrics, 1)
@@ -303,13 +304,52 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check{
 						func(t *testing.T, params manifests.Params) {
-							actual := autoscalingv2beta2.HorizontalPodAutoscaler{}
+							actual := autoscalingv2.HorizontalPodAutoscaler{}
 							exists, hpaErr := populateObjectIfExists(t, &actual, namespacedObjectName(naming.HorizontalPodAutoscaler(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, hpaErr)
 							require.Len(t, actual.Spec.Metrics, 1)
 							assert.Equal(t, int32(90), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
 							assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
 							assert.Equal(t, int32(9), actual.Spec.MaxReplicas)
+							assert.True(t, exists)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+			},
+		},
+		{
+			name: "policy v1 deployment collector",
+			args: args{
+				params:  paramsWithPolicy(1, 0),
+				updates: []manifests.Params{paramsWithPolicy(0, 1)},
+			},
+			want: []want{
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, params manifests.Params) {
+							actual := policyV1.PodDisruptionBudget{}
+							exists, pdbErr := populateObjectIfExists(t, &actual, namespacedObjectName(naming.HorizontalPodAutoscaler(params.OtelCol.Name), params.OtelCol.Namespace))
+							assert.NoError(t, pdbErr)
+							assert.Equal(t, int32(1), actual.Spec.MinAvailable.IntVal)
+							assert.Nil(t, actual.Spec.MaxUnavailable)
+							assert.True(t, exists)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, params manifests.Params) {
+							actual := policyV1.PodDisruptionBudget{}
+							exists, pdbErr := populateObjectIfExists(t, &actual, namespacedObjectName(naming.HorizontalPodAutoscaler(params.OtelCol.Name), params.OtelCol.Namespace))
+							assert.NoError(t, pdbErr)
+							assert.Nil(t, actual.Spec.MinAvailable)
+							assert.Equal(t, int32(1), actual.Spec.MaxUnavailable.IntVal)
 							assert.True(t, exists)
 						},
 					},

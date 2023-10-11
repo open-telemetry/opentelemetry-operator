@@ -127,6 +127,7 @@ spec:
   - email: jpkroehling@redhat.com
     name: Juraci Paixão Kröhling
   maturity: alpha
+  minKubeVersion: 1.23.0
   provider:
     name: OpenTelemetry Community
   version: 0.0.0

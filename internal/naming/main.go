@@ -75,6 +75,11 @@ func HorizontalPodAutoscaler(otelcol string) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol))
 }
 
+// HorizontalPodAutoscaler builds the autoscaler name based on the instance.
+func PodDisruptionBudget(otelcol string) string {
+	return DNSName(Truncate("%s-collector", 63, otelcol))
+}
+
 // OpenTelemetryCollector builds the collector (deployment/daemonset) name based on the instance.
 func OpenTelemetryCollector(otelcol string) string {
 	return DNSName(Truncate("%s", 63, otelcol))

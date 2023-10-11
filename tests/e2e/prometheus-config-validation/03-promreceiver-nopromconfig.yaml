@@ -31,7 +31,7 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
     extensions:
       health_check:
     service:
@@ -44,5 +44,5 @@ spec:
         traces:
           receivers: [jaeger]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 
