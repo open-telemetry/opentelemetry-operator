@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	annotationToGate = map[string]*featuregate2.Gate{
+	defaultAnnotationToGate = map[string]*featuregate2.Gate{
 		constants.AnnotationDefaultAutoInstrumentationJava:        featuregate.EnableJavaAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNodeJS:      featuregate.EnableNodeJSAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationPython:      featuregate.EnablePythonAutoInstrumentationSupport,
@@ -90,7 +90,7 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 
 func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
 	upgraded := inst.DeepCopy()
-	for annotation, gate := range annotationToGate {
+	for annotation, gate := range defaultAnnotationToGate {
 		autoInst := upgraded.Annotations[annotation]
 		if autoInst != "" {
 			if gate.IsEnabled() {
@@ -98,37 +98,37 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 				case constants.AnnotationDefaultAutoInstrumentationJava:
 					if inst.Spec.Java.Image == autoInst {
 						upgraded.Spec.Java.Image = u.DefaultAutoInstJava
-						upgraded.Annotations[constants.AnnotationDefaultAutoInstrumentationJava] = u.DefaultAutoInstJava
+						upgraded.Annotations[annotation] = u.DefaultAutoInstJava
 					}
 				case constants.AnnotationDefaultAutoInstrumentationNodeJS:
 					if inst.Spec.NodeJS.Image == autoInst {
 						upgraded.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
-						upgraded.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = u.DefaultAutoInstNodeJS
+						upgraded.Annotations[annotation] = u.DefaultAutoInstNodeJS
 					}
 				case constants.AnnotationDefaultAutoInstrumentationPython:
 					if inst.Spec.Python.Image == autoInst {
 						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
-						upgraded.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = u.DefaultAutoInstPython
+						upgraded.Annotations[annotation] = u.DefaultAutoInstPython
 					}
 				case constants.AnnotationDefaultAutoInstrumentationDotNet:
 					if inst.Spec.DotNet.Image == autoInst {
 						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
-						upgraded.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet] = u.DefaultAutoInstDotNet
+						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
 					}
 				case constants.AnnotationDefaultAutoInstrumentationGo:
 					if inst.Spec.Go.Image == autoInst {
 						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
-						upgraded.Annotations[constants.AnnotationDefaultAutoInstrumentationGo] = u.DefaultAutoInstGo
+						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
 					}
 				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
 					if inst.Spec.ApacheHttpd.Image == autoInst {
 						upgraded.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
-						upgraded.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd] = u.DefaultAutoInstApacheHttpd
+						upgraded.Annotations[annotation] = u.DefaultAutoInstApacheHttpd
 					}
 				case constants.AnnotationDefaultAutoInstrumentationNginx:
 					if inst.Spec.Nginx.Image == autoInst {
 						upgraded.Spec.Nginx.Image = u.DefaultAutoInstNginx
-						upgraded.Annotations[constants.AnnotationDefaultAutoInstrumentationNginx] = u.DefaultAutoInstNginx
+						upgraded.Annotations[annotation] = u.DefaultAutoInstNginx
 					}
 				}
 			} else {
