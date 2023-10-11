@@ -71,17 +71,20 @@ func TestUpgrade(t *testing.T) {
 			},
 		},
 	}
-	err = instrumentationwebhook.NewInstrumentationWebhook(nil,
+	err = instrumentationwebhook.NewInstrumentationWebhook(
+		logr.Discard(),
+		testScheme,
 		config.New(
-			config.WithAutoInstrumentationJavaImage("java-img:1"),
-			config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
-			config.WithAutoInstrumentationPythonImage("python-img:1"),
-			config.WithAutoInstrumentationDotNetImage("dotnet-img:1"),
-			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd-img:1"),
-			config.WithAutoInstrumentationNginxImage("nginx-img:1"),
+			config.WithAutoInstrumentationJavaImage("java:1"),
+			config.WithAutoInstrumentationNodeJSImage("nodejs:1"),
+			config.WithAutoInstrumentationPythonImage("python:1"),
+			config.WithAutoInstrumentationDotNetImage("dotnet:1"),
+			config.WithAutoInstrumentationGoImage("go:1"),
+			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:1"),
+			config.WithAutoInstrumentationNginxImage("nginx:1"),
 		),
 	).Default(context.Background(), inst)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, "java:1", inst.Spec.Java.Image)
 	assert.Equal(t, "nodejs:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python:1", inst.Spec.Python.Image)

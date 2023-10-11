@@ -29,18 +29,12 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 const (
-	AnnotationDefaultAutoInstrumentationJava        = "instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"
-	AnnotationDefaultAutoInstrumentationNodeJS      = "instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"
-	AnnotationDefaultAutoInstrumentationPython      = "instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"
-	AnnotationDefaultAutoInstrumentationDotNet      = "instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"
-	AnnotationDefaultAutoInstrumentationGo          = "instrumentation.opentelemetry.io/default-auto-instrumentation-go-image"
-	AnnotationDefaultAutoInstrumentationApacheHttpd = "instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"
-	AnnotationDefaultAutoInstrumentationNginx       = "instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image"
-	envPrefix                                       = "OTEL_"
-	envSplunkPrefix                                 = "SPLUNK_"
+	envPrefix       = "OTEL_"
+	envSplunkPrefix = "SPLUNK_"
 )
 
 var (
@@ -211,6 +205,17 @@ func (w Webhook) defaulter(r *v1alpha1.Instrumentation) error {
 	if r.Spec.Nginx.ConfigFile == "" {
 		r.Spec.Nginx.ConfigFile = "/etc/nginx/nginx.conf"
 	}
+	// Set the defaulting annotations
+	if r.Annotations == nil {
+		r.Annotations = map[string]string{}
+	}
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationJava] = w.cfg.AutoInstrumentationJavaImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = w.cfg.AutoInstrumentationNodeJSImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = w.cfg.AutoInstrumentationPythonImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet] = w.cfg.AutoInstrumentationDotNetImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationGo] = w.cfg.AutoInstrumentationGoImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd] = w.cfg.AutoInstrumentationApacheHttpdImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNginx] = w.cfg.AutoInstrumentationNginxImage()
 	return nil
 }
 
@@ -312,16 +317,20 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 	return nil
 }
 
-func NewInstrumentationWebhook(mgr ctrl.Manager, cfg config.Config) *Webhook {
+func NewInstrumentationWebhook(logger logr.Logger, scheme *runtime.Scheme, cfg config.Config) *Webhook {
 	return &Webhook{
-		logger: mgr.GetLogger().WithValues("handler", "InstrumentationWebhook"),
-		scheme: mgr.GetScheme(),
+		logger: logger,
+		scheme: scheme,
 		cfg:    cfg,
 	}
 }
 
 func SetupWebhook(mgr ctrl.Manager, cfg config.Config) error {
-	ivw := NewInstrumentationWebhook(mgr, cfg)
+	ivw := NewInstrumentationWebhook(
+		mgr.GetLogger().WithValues("handler", "InstrumentationWebhook"),
+		mgr.GetScheme(),
+		cfg,
+	)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&v1alpha1.Instrumentation{}).
 		WithValidator(ivw).

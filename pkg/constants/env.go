@@ -22,6 +22,15 @@ const (
 	EnvOTELTracesSampler        = "OTEL_TRACES_SAMPLER"
 	EnvOTELTracesSamplerArg     = "OTEL_TRACES_SAMPLER_ARG"
 
+	InstrumentationPrefix                           = "instrumentation.opentelemetry.io/"
+	AnnotationDefaultAutoInstrumentationJava        = InstrumentationPrefix + "default-auto-instrumentation-java-image"
+	AnnotationDefaultAutoInstrumentationNodeJS      = InstrumentationPrefix + "default-auto-instrumentation-nodejs-image"
+	AnnotationDefaultAutoInstrumentationPython      = InstrumentationPrefix + "default-auto-instrumentation-python-image"
+	AnnotationDefaultAutoInstrumentationDotNet      = InstrumentationPrefix + "default-auto-instrumentation-dotnet-image"
+	AnnotationDefaultAutoInstrumentationGo          = InstrumentationPrefix + "default-auto-instrumentation-go-image"
+	AnnotationDefaultAutoInstrumentationApacheHttpd = InstrumentationPrefix + "default-auto-instrumentation-apache-httpd-image"
+	AnnotationDefaultAutoInstrumentationNginx       = InstrumentationPrefix + "default-auto-instrumentation-nginx-image"
+
 	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
 	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
 	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
