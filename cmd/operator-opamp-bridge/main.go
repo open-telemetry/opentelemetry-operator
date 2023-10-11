@@ -18,37 +18,38 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/spf13/pflag"
+
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/agent"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/logger"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
 )
 
 func main() {
 	l := config.GetLogger()
-	cliConf, err := config.ParseCLI(l.WithName("cli-config"))
+
+	flagSet := config.GetFlagSet(pflag.ExitOnError)
+	err := flagSet.Parse(os.Args)
 	if err != nil {
-		l.Error(err, "unable to load ")
+		l.Error(err, "Unable to load flags")
 		os.Exit(1)
 	}
-	cfg, configLoadErr := config.Load(*cliConf.ConfigFilePath)
+	cfg, configLoadErr := config.Load(l, flagSet)
 	if configLoadErr != nil {
 		l.Error(configLoadErr, "Unable to load configuration")
-		return
+		os.Exit(1)
 	}
 	l.Info("Starting the Remote Configuration service")
-	agentLogf := l.WithName("agent")
-	agentLogger := logger.NewLogger(&agentLogf)
 
-	kubeClient, kubeErr := cliConf.GetKubernetesClient()
+	kubeClient, kubeErr := cfg.GetKubernetesClient()
 	if kubeErr != nil {
 		l.Error(kubeErr, "Couldn't create kubernetes client")
 		os.Exit(1)
 	}
 	operatorClient := operator.NewClient(l.WithName("operator-client"), kubeClient, cfg.GetComponentsAllowed())
 
-	opampClient := cfg.CreateClient(agentLogger)
-	opampAgent := agent.NewAgent(agentLogger, operatorClient, cfg, opampClient)
+	opampClient := cfg.CreateClient()
+	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient)
 
 	if err := opampAgent.Start(); err != nil {
 		l.Error(err, "Cannot start OpAMP client")
