@@ -2846,6 +2846,254 @@ func TestMutatePod(t *testing.T) {
 				})
 			},
 		},
+
+		{
+			name: "nginx injection, true",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "req-namespace",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-nginx-6c44bcbdd",
+					Namespace: "req-namespace",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Nginx: v1alpha1.Nginx{
+						Image: "otel/nginx-inj:1",
+						Attrs: []corev1.EnvVar{{
+							Name:  "NginxModuleOtelMaxQueueSize",
+							Value: "4096",
+						}},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://otlp-endpoint:4317",
+					},
+					Env: []corev1.EnvVar{},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-nginx-6c44bcbdd",
+					Annotations: map[string]string{
+						annotationInjectNginx: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "nginx",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-nginx-6c44bcbdd",
+					Annotations: map[string]string{
+						annotationInjectNginx: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "otel-nginx-conf-dir",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "otel-nginx-agent",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    nginxAgentCloneContainerName,
+							Image:   "",
+							Command: []string{"/bin/sh", "-c"},
+							Args:    []string{"cp -r /etc/nginx/* /opt/opentelemetry-webserver/source-conf && export NGINX_VERSION=$( { nginx -v ; } 2>&1 ) && echo ${NGINX_VERSION##*/} > /opt/opentelemetry-webserver/source-conf/version.txt"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      nginxAgentConfigVolume,
+								MountPath: nginxAgentConfDirFull,
+							}},
+						},
+						{
+							Name:    nginxAgentInitContainerName,
+							Image:   "otel/nginx-inj:1",
+							Command: []string{"/bin/sh", "-c"},
+							Args:    []string{nginxSdkInitContainerTestCommand},
+							Env: []corev1.EnvVar{
+								{
+									Name:  nginxAttributesEnvVar,
+									Value: "NginxModuleEnabled ON;\nNginxModuleOtelExporterEndpoint http://otlp-endpoint:4317;\nNginxModuleOtelMaxQueueSize 4096;\nNginxModuleOtelSpanExporter otlp;\nNginxModuleResolveBackends ON;\nNginxModuleServiceInstanceId <<SID-PLACEHOLDER>>;\nNginxModuleServiceName my-nginx-6c44bcbdd;\nNginxModuleServiceNamespace req-namespace;\nNginxModuleTraceAsError ON;\n",
+								},
+								{
+									Name:  "OTEL_NGINX_I13N_SCRIPT",
+									Value: nginxSdkInitContainerI13nScript,
+								}, {
+									Name: nginxServiceInstanceIdEnvVar,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      nginxAgentVolume,
+									MountPath: nginxAgentDirFull,
+								},
+								{
+									Name:      nginxAgentConfigVolume,
+									MountPath: nginxAgentConfDirFull,
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "nginx",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      nginxAgentVolume,
+									MountPath: nginxAgentDirFull,
+								},
+								{
+									Name:      nginxAgentConfigVolume,
+									MountPath: "/etc/nginx",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LD_LIBRARY_PATH",
+									Value: "/opt/opentelemetry-webserver/agent/sdk_lib/lib",
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "my-nginx-6c44bcbdd",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://otlp-endpoint:4317",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=nginx,k8s.namespace.name=req-namespace,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=my-nginx-6c44bcbdd",
+								},
+							},
+						},
+					},
+				},
+			},
+			setFeatureGates: func(t *testing.T) {
+				originalVal := featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNginxAutoInstrumentationSupport.ID(), true))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNginxAutoInstrumentationSupport.ID(), originalVal))
+				})
+			},
+		},
+		{
+			name: "nginx injection feature gate disabled",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "nginx-disabled",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-nginx-6c44bcbdd",
+					Namespace: "nginx-disabled",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Nginx: v1alpha1.Nginx{
+						Image: "otel/nginx-inj:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+							{
+								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+								Value: "http://localhost:4317",
+							},
+						},
+						Attrs: []corev1.EnvVar{{
+							Name:  "NginxModuleOtelMaxQueueSize",
+							Value: "4096",
+						}},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://otlp-endpoint:4317",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-nginx-6c44bcbdd",
+					Annotations: map[string]string{
+						annotationInjectNginx: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "nginx",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-nginx-6c44bcbdd",
+					Annotations: map[string]string{
+						annotationInjectNginx: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "nginx",
+						},
+					},
+				},
+			},
+			setFeatureGates: func(t *testing.T) {
+				originalVal := featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNginxAutoInstrumentationSupport.ID(), false))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNginxAutoInstrumentationSupport.ID(), originalVal))
+				})
+			},
+		},
+
 		{
 			name: "missing annotation",
 			ns: corev1.Namespace{

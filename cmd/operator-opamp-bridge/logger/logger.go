@@ -24,10 +24,10 @@ import (
 var _ types.Logger = &Logger{}
 
 type Logger struct {
-	Logger *logr.Logger
+	Logger logr.Logger
 }
 
-func NewLogger(logger *logr.Logger) *Logger {
+func NewLogger(logger logr.Logger) *Logger {
 	return &Logger{Logger: logger}
 }
 

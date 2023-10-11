@@ -67,13 +67,13 @@ service:
   pipelines:
     metrics:
       receivers: [examplereceiver, examplereceiver/settings]
-      exporters: [logging]
+      exporters: [debug]
     metrics/1:
       receivers: [jaeger, jaeger/custom]
-      exporters: [logging]
+      exporters: [debug]
     metrics/2:
       receivers: [otlp, otlp/2, zipkin]
-      exporters: [logging]
+      exporters: [debug]
 `
 
 func TestExtractPortsFromConfig(t *testing.T) {

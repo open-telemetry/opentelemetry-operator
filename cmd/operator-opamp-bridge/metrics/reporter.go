@@ -21,6 +21,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/oklog/ulid/v2"
 	"github.com/shirou/gopsutil/process"
 	"go.opentelemetry.io/otel/attribute"
@@ -30,14 +31,13 @@ import (
 	otelresource "go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
-	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
 )
 
 // MetricReporter is a metric reporter that collects Agent metrics and sends them to an
 // OTLP/HTTP destination.
 type MetricReporter struct {
-	logger types.Logger
+	logger logr.Logger
 
 	meter           metric.Meter
 	meterShutdowner func()
@@ -54,13 +54,7 @@ type MetricReporter struct {
 // NewMetricReporter creates an OTLP/HTTP client to the destination address supplied by the server.
 // TODO: do more validation on the endpoint, allow for gRPC.
 // TODO: set global provider and add more metrics to be reported.
-func NewMetricReporter(
-	logger types.Logger,
-	dest *protobufs.TelemetryConnectionSettings,
-	agentType string,
-	agentVersion string,
-	instanceId ulid.ULID,
-) (*MetricReporter, error) {
+func NewMetricReporter(logger logr.Logger, dest *protobufs.TelemetryConnectionSettings, agentType string, agentVersion string, instanceId ulid.ULID) (*MetricReporter, error) {
 
 	if dest.DestinationEndpoint == "" {
 		return nil, fmt.Errorf("metric destination must specify DestinationEndpoint")
@@ -145,7 +139,7 @@ func NewMetricReporter(
 func (reporter *MetricReporter) processCpuTimeFunc(_ context.Context, observer metric.Float64Observer) error {
 	times, err := reporter.process.Times()
 	if err != nil {
-		reporter.logger.Errorf("Cannot get process CPU times: %w", err)
+		reporter.logger.Error(err, "cannot get process CPU times")
 	}
 	observer.Observe(times.User, metric.WithAttributes(attribute.String("state", "user")))
 	observer.Observe(times.System, metric.WithAttributes(attribute.String("state", "system")))
@@ -156,7 +150,7 @@ func (reporter *MetricReporter) processCpuTimeFunc(_ context.Context, observer m
 func (reporter *MetricReporter) processMemoryPhysicalFunc(_ context.Context, observer metric.Float64Observer) error {
 	memory, err := reporter.process.MemoryInfo()
 	if err != nil {
-		reporter.logger.Errorf("Cannot get process memory information: %w", err)
+		reporter.logger.Error(err, "cannot get process memory information")
 		return nil
 	}
 	observer.Observe(float64(memory.RSS))

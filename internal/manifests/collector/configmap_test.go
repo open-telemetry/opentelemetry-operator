@@ -52,14 +52,14 @@ receivers:
           - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
 
 exporters:
-  logging:
+  debug:
 
 service:
   pipelines:
     metrics:
       receivers: [prometheus, jaeger]
       processors: []
-      exporters: [logging]`,
+      exporters: [debug]`,
 		}
 
 		param := deploymentParams()
@@ -78,7 +78,7 @@ service:
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
-  logging: null
+  debug: null
 processors: null
 receivers:
   jaeger:
@@ -95,7 +95,7 @@ service:
   pipelines:
     metrics:
       exporters:
-      - logging
+      - debug
       processors: []
       receivers:
       - prometheus
@@ -121,7 +121,7 @@ service:
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
-  logging: null
+  debug: null
 processors: null
 receivers:
   prometheus:
@@ -140,7 +140,7 @@ service:
   pipelines:
     metrics:
       exporters:
-      - logging
+      - debug
       processors: []
       receivers:
       - prometheus
@@ -171,7 +171,7 @@ service:
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
-  logging: null
+  debug: null
 processors: null
 receivers:
   prometheus:
@@ -184,7 +184,7 @@ service:
   pipelines:
     metrics:
       exporters:
-      - logging
+      - debug
       processors: []
       receivers:
       - prometheus

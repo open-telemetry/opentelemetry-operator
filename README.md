@@ -48,21 +48,21 @@ spec:
         timeout: 10s
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 EOF
 ```
 
 **_WARNING:_** Until the OpenTelemetry Collector format is stable, changes may be required in the above example to remain
 compatible with the latest version of the OpenTelemetry Collector image being referenced.
 
-This will create an OpenTelemetry Collector instance named `simplest`, exposing a `jaeger-grpc` port to consume spans from your instrumented applications and exporting those spans via `logging`, which writes the spans to the console (`stdout`) of the OpenTelemetry Collector instance that receives the span.
+This will create an OpenTelemetry Collector instance named `simplest`, exposing a `jaeger-grpc` port to consume spans from your instrumented applications and exporting those spans via `debug`, which writes the spans to the console (`stdout`) of the OpenTelemetry Collector instance that receives the span.
 
 The `config` node holds the `YAML` that should be passed down as-is to the underlying OpenTelemetry Collector instances. Refer to the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) documentation for a reference of the possible entries.
 
@@ -111,14 +111,14 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [jaeger]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 EOF
 
 kubectl apply -f - <<EOF
@@ -189,7 +189,7 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -289,6 +289,11 @@ securityContext:
 Apache HTTPD:
 ```bash
 instrumentation.opentelemetry.io/inject-apache-httpd: "true"
+```
+
+Nginx:
+```bash
+instrumentation.opentelemetry.io/inject-nginx: "true"
 ```
 
 OpenTelemetry SDK environment variables only:
@@ -449,6 +454,8 @@ spec:
     image: your-customized-auto-instrumentation-image:go
   apacheHttpd:
     image: your-customized-auto-instrumentation-image:apache-httpd
+  nginx:
+    image: your-customized-auto-instrumentation-image:nginx
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).
@@ -468,6 +475,26 @@ metadata:
     configPath: /your-custom-config-path
     attrs:
     - name: ApacheModuleOtelMaxQueueSize
+      value: "4096"
+    - name: ...
+      value: ...
+```
+List of all available attributes can be found at [otel-webserver-module](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module)
+
+#### Using Nginx autoinstrumentation
+
+For `Nginx` autoinstrumentation, Nginx versions 1.22.0, 1.23.0, and 1.23.1 are supported at this time. The Nginx configuration file is expected to be `/etc/nginx/nginx.conf` by default, if it's different, see following example on how to change it. Instrumentation at this time also expects, that `conf.d` directory is present in the directory, where configuration file resides and that there is a `include <config-file-dir-path>/conf.d/*.conf;` directive in the `http { ... }` section of Nginx configuration file (like it is in the default configuration file of Nginx). You can also adjust OpenTelemetry SDK attributes. Example:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+  nginx:
+    image: your-customized-auto-instrumentation-image:nginx # if custom instrumentation image is needed
+    configFile: /my/custom-dir/custom-nginx.conf
+    attrs:
+    - name: NginxModuleOtelMaxQueueSize
       value: "4096"
     - name: ...
       value: ...
@@ -499,6 +526,7 @@ If a language is enabled by default its gate only needs to be supplied when disa
 | DotNet        | `operator.autoinstrumentation.dotnet`       | enabled       |
 | ApacheHttpD   | `operator.autoinstrumentation.apache-httpd` | enabled       |
 | Go            | `operator.autoinstrumentation.go`           | disabled      |
+| Nginx         | `operator.autoinstrumentation.nginx`        | disabled      |
 
 Language not specified in the table are always supported and cannot be disabled.
 
@@ -537,14 +565,14 @@ spec:
               replacement: $$1
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
 The usage of `$$` in the replacement keys in the example above is based on the information provided in the Prometheus receiver [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) documentation, which states:
 `Note: Since the collector configuration supports env variable substitution $ characters in your prometheus configuration are interpreted as environment variables. If you want to use $ characters in your prometheus configuration, you must escape them using $$.`
@@ -569,14 +597,14 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
               replacement: $$1
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
 
 Note how the Operator removes any existing service discovery configurations (e.g., `static_configs`, `file_sd_configs`, etc.) from the `scrape_configs` section and adds an `http_sd_configs` configuration pointing to a Target Allocator instance it provisioned.
@@ -621,14 +649,14 @@ Operator add the necessary target allocator configuration automatically. This fe
           collector_id: $POD_NAME
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
 
 This also allows for a more straightforward collector configuration for target discovery using prometheus-operator CRDs. See below for a minimal example:
@@ -651,14 +679,14 @@ spec:
         config:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
 
 ## Compatibility matrix
@@ -682,6 +710,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.86.0                | v1.23 to v1.28       | v1                  |
 | v0.85.0                | v1.19 to v1.28       | v1                  |
 | v0.84.0                | v1.19 to v1.28       | v1                  |
 | v0.83.0                | v1.19 to v1.27       | v1                  |
@@ -704,7 +733,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.66.0                | v1.19 to v1.25       | v1                  |
 | v0.64.1                | v1.19 to v1.25       | v1                  |
 | v0.63.1                | v1.19 to v1.25       | v1                  |
-| v0.62.1                | v1.19 to v1.25       | v1                  |
 
 ## Contributing and Developing
 

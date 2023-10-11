@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: kuttl-multi-cluster-receive.otlp-receiver
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otlp-receiver-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: otlp-receiver-collector
+  namespace: kuttl-multi-cluster-receive
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: kuttl-multi-cluster-receive.otlp-receiver
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otlp-receiver-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: otlp-receiver-collector
+  namespace: kuttl-multi-cluster-receive
+spec:
+  ports:
+  - appProtocol: h2c
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: kuttl-multi-cluster-receive.otlp-receiver
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: kuttl-multi-cluster-receive.otlp-receiver
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otlp-receiver-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-headless-service: Exists
+  name: otlp-receiver-collector-headless
+  namespace: kuttl-multi-cluster-receive
+spec:
+  ports:
+  - appProtocol: h2c
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: kuttl-multi-cluster-receive.otlp-receiver
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: kuttl-multi-cluster-receive.otlp-receiver
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otlp-receiver-collector-monitoring
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: otlp-receiver-collector-monitoring
+  namespace: kuttl-multi-cluster-receive
+spec:
+  ports:
+  - name: monitoring
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: kuttl-multi-cluster-receive.otlp-receiver
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  type: ClusterIP
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app.kubernetes.io/instance: kuttl-multi-cluster-receive.otlp-receiver
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otlp-grpc-otlp-receiver-route
+  name: otlp-grpc-otlp-receiver-route
+  namespace: kuttl-multi-cluster-receive
+spec:
+  port:
+    targetPort: otlp-grpc
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: otlp-receiver-collector
+    weight: 100
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app.kubernetes.io/instance: kuttl-multi-cluster-receive.otlp-receiver
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: otlp-http-otlp-receiver-route
+  name: otlp-http-otlp-receiver-route
+  namespace: kuttl-multi-cluster-receive
+spec:
+  port:
+    targetPort: otlp-http
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: otlp-receiver-collector
+    weight: 100
