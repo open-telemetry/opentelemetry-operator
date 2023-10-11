@@ -195,7 +195,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace405"),
+					LastRemoteConfigHash: []byte("good/testnamespace401"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
