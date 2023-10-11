@@ -30,6 +30,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	instrumentationwebhook "github.com/open-telemetry/opentelemetry-operator/internal/webhook/instrumentation"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -115,11 +116,18 @@ func TestUpgrade(t *testing.T) {
 		Name:      "my-inst",
 	}, &updated)
 	require.NoError(t, err)
+	assert.Equal(t, "java:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationJava])
 	assert.Equal(t, "java:2", updated.Spec.Java.Image)
+	assert.Equal(t, "nodejs:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS])
 	assert.Equal(t, "nodejs:2", updated.Spec.NodeJS.Image)
+	assert.Equal(t, "python:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPython])
 	assert.Equal(t, "python:2", updated.Spec.Python.Image)
+	assert.Equal(t, "dotnet:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet])
 	assert.Equal(t, "dotnet:2", updated.Spec.DotNet.Image)
+	assert.Equal(t, "go:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationGo])
 	assert.Equal(t, "go:2", updated.Spec.Go.Image)
+	assert.Equal(t, "apache-httpd:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd])
 	assert.Equal(t, "apache-httpd:2", updated.Spec.ApacheHttpd.Image)
+	assert.Equal(t, "nginx:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNginx])
 	assert.Equal(t, "nginx:2", updated.Spec.Nginx.Image)
 }
