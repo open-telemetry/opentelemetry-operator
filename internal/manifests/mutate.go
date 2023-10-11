@@ -24,7 +24,6 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyV1 "k8s.io/api/policy/v1"
@@ -142,11 +141,6 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			wantIng := desired.(*networkingv1.Ingress)
 			mutateIngress(ing, wantIng)
 
-		case *autoscalingv2beta2.HorizontalPodAutoscaler:
-			existingHPA := existing.(*autoscalingv2beta2.HorizontalPodAutoscaler)
-			desiredHPA := desired.(*autoscalingv2beta2.HorizontalPodAutoscaler)
-			mutateV2BetaHPA(existingHPA, desiredHPA)
-
 		case *autoscalingv2.HorizontalPodAutoscaler:
 			existingHPA := existing.(*autoscalingv2.HorizontalPodAutoscaler)
 			desiredHPA := desired.(*autoscalingv2.HorizontalPodAutoscaler)
@@ -217,12 +211,6 @@ func mutateRoleBinding(existing, desired *rbacv1.RoleBinding) {
 	existing.Annotations = desired.Annotations
 	existing.Labels = desired.Labels
 	existing.Subjects = desired.Subjects
-}
-
-func mutateV2BetaHPA(existing, desired *autoscalingv2beta2.HorizontalPodAutoscaler) {
-	existing.Annotations = desired.Annotations
-	existing.Labels = desired.Labels
-	existing.Spec = desired.Spec
 }
 
 func mutateAutoscalingHPA(existing, desired *autoscalingv2.HorizontalPodAutoscaler) {

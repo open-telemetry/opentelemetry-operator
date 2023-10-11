@@ -13,11 +13,11 @@ spec:
           grpc:
     processors:
     exporters:
-      logging:
+      debug:
     service:
       pipelines:
         traces:
           receivers: [jaeger, otlp]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 

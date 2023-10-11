@@ -48,21 +48,21 @@ spec:
         timeout: 10s
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 EOF
 ```
 
 **_WARNING:_** Until the OpenTelemetry Collector format is stable, changes may be required in the above example to remain
 compatible with the latest version of the OpenTelemetry Collector image being referenced.
 
-This will create an OpenTelemetry Collector instance named `simplest`, exposing a `jaeger-grpc` port to consume spans from your instrumented applications and exporting those spans via `logging`, which writes the spans to the console (`stdout`) of the OpenTelemetry Collector instance that receives the span.
+This will create an OpenTelemetry Collector instance named `simplest`, exposing a `jaeger-grpc` port to consume spans from your instrumented applications and exporting those spans via `debug`, which writes the spans to the console (`stdout`) of the OpenTelemetry Collector instance that receives the span.
 
 The `config` node holds the `YAML` that should be passed down as-is to the underlying OpenTelemetry Collector instances. Refer to the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) documentation for a reference of the possible entries.
 
@@ -111,14 +111,14 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [jaeger]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 EOF
 
 kubectl apply -f - <<EOF
@@ -565,14 +565,14 @@ spec:
               replacement: $$1
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
 The usage of `$$` in the replacement keys in the example above is based on the information provided in the Prometheus receiver [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) documentation, which states:
 `Note: Since the collector configuration supports env variable substitution $ characters in your prometheus configuration are interpreted as environment variables. If you want to use $ characters in your prometheus configuration, you must escape them using $$.`
@@ -597,14 +597,14 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
               replacement: $$1
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
 
 Note how the Operator removes any existing service discovery configurations (e.g., `static_configs`, `file_sd_configs`, etc.) from the `scrape_configs` section and adds an `http_sd_configs` configuration pointing to a Target Allocator instance it provisioned.
@@ -649,14 +649,14 @@ Operator add the necessary target allocator configuration automatically. This fe
           collector_id: $POD_NAME
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
 
 This also allows for a more straightforward collector configuration for target discovery using prometheus-operator CRDs. See below for a minimal example:
@@ -679,14 +679,14 @@ spec:
         config:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
 
 ## Compatibility matrix
@@ -710,6 +710,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.86.0                | v1.23 to v1.28       | v1                  |
 | v0.85.0                | v1.19 to v1.28       | v1                  |
 | v0.84.0                | v1.19 to v1.28       | v1                  |
 | v0.83.0                | v1.19 to v1.27       | v1                  |
@@ -732,7 +733,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.66.0                | v1.19 to v1.25       | v1                  |
 | v0.64.1                | v1.19 to v1.25       | v1                  |
 | v0.63.1                | v1.19 to v1.25       | v1                  |
-| v0.62.1                | v1.19 to v1.25       | v1                  |
 
 ## Contributing and Developing
 

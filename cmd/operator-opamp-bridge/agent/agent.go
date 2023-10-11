@@ -17,8 +17,10 @@ package agent
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/metrics"
@@ -35,7 +37,7 @@ import (
 )
 
 type Agent struct {
-	logger types.Logger
+	logger logr.Logger
 
 	appliedKeys map[collectorKey]bool
 	startTime   uint64
@@ -47,12 +49,12 @@ type Agent struct {
 
 	opampClient         client.OpAMPClient
 	metricReporter      *metrics.MetricReporter
-	config              config.Config
+	config              *config.Config
 	applier             operator.ConfigApplier
 	remoteConfigEnabled bool
 }
 
-func NewAgent(logger types.Logger, applier operator.ConfigApplier, config config.Config, opampClient client.OpAMPClient) *Agent {
+func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config.Config, opampClient client.OpAMPClient) *Agent {
 	agent := &Agent{
 		config:              config,
 		applier:             applier,
@@ -64,8 +66,10 @@ func NewAgent(logger types.Logger, applier operator.ConfigApplier, config config
 		opampClient:         opampClient,
 	}
 
-	agent.logger.Debugf("Agent created, id=%v, type=%s, version=%s.",
-		agent.instanceId.String(), config.GetAgentType(), config.GetAgentVersion())
+	agent.logger.V(3).Info("Agent created",
+		"instanceId", agent.instanceId.String(),
+		"agentType", config.GetAgentType(),
+		"agentVersion", config.GetAgentVersion())
 
 	return agent
 }
@@ -81,17 +85,17 @@ func (agent *Agent) getHealth() *protobufs.AgentHealth {
 
 // onConnect is called when an agent is successfully connected to a server.
 func (agent *Agent) onConnect() {
-	agent.logger.Debugf("Connected to the server.")
+	agent.logger.V(3).Info("Connected to the server.")
 }
 
 // onConnectFailed is called when an agent was unable to connect to a server.
 func (agent *Agent) onConnectFailed(err error) {
-	agent.logger.Errorf("Failed to connect to the server: %v", err)
+	agent.logger.Error(err, "failed to connect to the server")
 }
 
 // onError is called when an agent receives an error response from the server.
 func (agent *Agent) onError(err *protobufs.ServerErrorResponse) {
-	agent.logger.Errorf("Server returned an error response: %v", err.ErrorMessage)
+	agent.logger.Error(fmt.Errorf(err.GetErrorMessage()), "server returned an error response")
 }
 
 // saveRemoteConfigStatus receives a status from the server when the server sets a remote configuration.
@@ -126,14 +130,14 @@ func (agent *Agent) Start() error {
 		return err
 	}
 
-	agent.logger.Debugf("Starting OpAMP client...")
+	agent.logger.V(3).Info("Starting OpAMP client...")
 
 	err = agent.opampClient.Start(context.Background(), settings)
 	if err != nil {
 		return err
 	}
 
-	agent.logger.Debugf("OpAMP Client started.")
+	agent.logger.V(3).Info("OpAMP Client started.")
 
 	return nil
 }
@@ -141,9 +145,9 @@ func (agent *Agent) Start() error {
 // updateAgentIdentity receives a new instanced Id from the remote server and updates the agent's instanceID field.
 // The meter will be reinitialized by the onMessage function.
 func (agent *Agent) updateAgentIdentity(instanceId ulid.ULID) {
-	agent.logger.Debugf("Agent identity is being changed from id=%v to id=%v",
-		agent.instanceId.String(),
-		instanceId.String())
+	agent.logger.V(3).Info("Agent identity is being changed",
+		"old instanceId", agent.instanceId.String(),
+		"new instanceid", instanceId.String())
 	agent.instanceId = instanceId
 }
 
@@ -152,14 +156,14 @@ func (agent *Agent) updateAgentIdentity(instanceId ulid.ULID) {
 func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.EffectiveConfig, error) {
 	instances, err := agent.applier.ListInstances()
 	if err != nil {
-		agent.logger.Errorf("couldn't list instances", err)
+		agent.logger.Error(err, "failed to list instances")
 		return nil, err
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
 	for _, instance := range instances {
 		marshaled, err := yaml.Marshal(instance)
 		if err != nil {
-			agent.logger.Errorf("couldn't marshal collector configuration", err)
+			agent.logger.Error(err, "failed to marhsal config")
 			return nil, err
 		}
 		mapKey := newCollectorKey(instance.GetName(), instance.GetNamespace())
@@ -181,7 +185,7 @@ func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.Effectiv
 func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
 	reporter, err := metrics.NewMetricReporter(agent.logger, settings, agent.config.GetAgentType(), agent.config.GetAgentVersion(), agent.instanceId)
 	if err != nil {
-		agent.logger.Errorf("Cannot collect metrics: %v", err)
+		agent.logger.Error(err, "failed to create metric reporter")
 		return
 	}
 
@@ -244,11 +248,11 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 
 // Shutdown will stop the OpAMP client gracefully.
 func (agent *Agent) Shutdown() {
-	agent.logger.Debugf("Agent shutting down...")
+	agent.logger.V(3).Info("Agent shutting down...")
 	if agent.opampClient != nil {
 		err := agent.opampClient.Stop(context.Background())
 		if err != nil {
-			agent.logger.Errorf(err.Error())
+			agent.logger.Error(err, "failed to stop client")
 		}
 	}
 	if agent.metricReporter != nil {
@@ -265,16 +269,16 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 		var err error
 		status, err := agent.applyRemoteConfig(msg.RemoteConfig)
 		if err != nil {
-			agent.logger.Errorf(err.Error())
+			agent.logger.Error(err, "failed to apply remote config")
 		}
 		err = agent.opampClient.SetRemoteConfigStatus(status)
 		if err != nil {
-			agent.logger.Errorf(err.Error())
+			agent.logger.Error(err, "failed to set remote config status")
 			return
 		}
 		err = agent.opampClient.UpdateEffectiveConfig(ctx)
 		if err != nil {
-			agent.logger.Errorf(err.Error())
+			agent.logger.Error(err, "failed to update effective config")
 		}
 	}
 
@@ -283,7 +287,7 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 	if msg.AgentIdentification != nil {
 		newInstanceId, err := ulid.Parse(msg.AgentIdentification.NewInstanceUid)
 		if err != nil {
-			agent.logger.Errorf(err.Error())
+			agent.logger.Error(err, "couldn't parse instance UID")
 			return
 		}
 		agent.updateAgentIdentity(newInstanceId)

@@ -1,14 +1,14 @@
 # One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
-change_type: bug_fix
+change_type: enhancement
 
 # The name of the component, or a single word describing the area of concern, (e.g. operator, target allocator, github action)
-component: target allocator
+component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Rebuild targets on scrape config regex-only changes
+note: updating the operator to use the Collector's debug exporter in replacement of the deprecated logging exporter
 
 # One or more tracking issues related to the change
-issues: [1358,1926]
+issues: [2130]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
