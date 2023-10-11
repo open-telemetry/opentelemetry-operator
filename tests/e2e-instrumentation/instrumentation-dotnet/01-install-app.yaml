@@ -21,7 +21,7 @@ spec:
         fsGroup: 2000
       containers:
       - name: myapp
-        image: docker.io/avadhutp123/aspnetapp@sha256:d2e8d3415f6f12efae0369aa0a9777a58583841fb133f33e10a73adb9fb392da  # source code of the application: https://github.com/dotnet/dotnet-docker/tree/main/samples/aspnetapp
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

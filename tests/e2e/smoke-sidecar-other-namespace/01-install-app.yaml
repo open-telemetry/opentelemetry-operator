@@ -17,4 +17,4 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: registry.k8s.io/echoserver:1.10
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main

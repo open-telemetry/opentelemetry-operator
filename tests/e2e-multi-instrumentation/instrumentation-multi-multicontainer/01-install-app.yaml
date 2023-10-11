@@ -25,14 +25,13 @@ spec:
     spec:
       containers:
         - name: dotnetapp
-          # source code of the application: https://github.com/dotnet/dotnet-docker/tree/main/samples/aspnetapp
-          image: docker.io/avadhutp123/aspnetapp@sha256:d2e8d3415f6f12efae0369aa0a9777a58583841fb133f33e10a73adb9fb392da
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main
         - name: javaapp
-          image: ghcr.io/pavolloffay/spring-petclinic:latest
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
         - name: nodejsapp
-          image: ghcr.io/anuraaga/express-hello-world:latest
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
         - name: pythonapp
-          image: ghcr.io/anuraaga/flask-hello-world:latest
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
         - name: shouldnt-be-instrumented
           image: rabbitmq:3
           env:

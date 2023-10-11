@@ -18,6 +18,6 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: ghcr.io/anuraaga/express-hello-world:latest
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
       - name: myrabbit
         image: rabbitmq:3
