@@ -248,11 +248,11 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = collectorwebhook.SetupCollectorValidatingWebhookWithManager(mgr, cfg); err != nil {
+		if err = collectorwebhook.SetupWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
-		if err = instrumentationwebhook.SetupInstrumentationValidatingWebhookWithManager(mgr, cfg); err != nil {
+		if err = instrumentationwebhook.SetupWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}

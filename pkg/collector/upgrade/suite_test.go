@@ -101,7 +101,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = collectorwebhook.SetupCollectorValidatingWebhookWithManager(mgr, conf); err != nil {
+	if err = collectorwebhook.SetupWebhook(mgr, conf); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}

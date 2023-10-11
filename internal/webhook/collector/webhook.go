@@ -342,7 +342,7 @@ func checkAutoscalerSpec(autoscaler *v1alpha1.AutoscalerSpec) error {
 	return nil
 }
 
-func SetupCollectorValidatingWebhookWithManager(mgr ctrl.Manager, cfg config.Config) error {
+func SetupWebhook(mgr ctrl.Manager, cfg config.Config) error {
 	cvw := &Webhook{
 		logger: mgr.GetLogger().WithValues("handler", "CollectorWebhook"),
 		scheme: mgr.GetScheme(),
