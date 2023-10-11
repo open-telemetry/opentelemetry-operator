@@ -82,7 +82,7 @@ func (c Client) create(ctx context.Context, name string, namespace string, colle
 		return err
 	}
 	if warnings != nil {
-		c.log.Info("Some warnings present on collector: %v", warnings)
+		c.log.Info("Some warnings present on collector", "warnings", warnings)
 	}
 	c.log.Info("Creating collector")
 	return c.k8sClient.Create(ctx, collector)
@@ -96,7 +96,7 @@ func (c Client) update(ctx context.Context, old *v1alpha1.OpenTelemetryCollector
 		return err
 	}
 	if warnings != nil {
-		c.log.Info("Some warnings present on collector: %v", warnings)
+		c.log.Info("Some warnings present on collector", "warnings", warnings)
 	}
 	c.log.Info("Updating collector")
 	return c.k8sClient.Update(ctx, new)

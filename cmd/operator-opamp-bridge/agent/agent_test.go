@@ -22,6 +22,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/go-logr/logr"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
 
 	"github.com/oklog/ulid/v2"
@@ -32,18 +34,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/logger"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
 )
 
 var (
-	l                               = logf.Log.WithName("agent-tests")
-	clientLogger                    = logger.NewLogger(&l)
-	_            client.OpAMPClient = &mockOpampClient{}
+	l                    = logr.Discard()
+	_ client.OpAMPClient = &mockOpampClient{}
 )
 
 type mockOpampClient struct {
@@ -91,7 +90,7 @@ func (m *mockOpampClient) SetPackageStatuses(statuses *protobufs.PackageStatuses
 	return nil
 }
 
-func getFakeApplier(t *testing.T, conf config.Config) *operator.Client {
+func getFakeApplier(t *testing.T, conf *config.Config) *operator.Client {
 	schemeBuilder := runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
 		s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.OpenTelemetryCollector{}, &v1alpha1.OpenTelemetryCollectorList{})
 		metav1.AddToGroupVersion(s, v1alpha1.GroupVersion)
@@ -169,6 +168,34 @@ func TestAgent_onMessage(t *testing.T) {
 				},
 				status: &protobufs.RemoteConfigStatus{
 					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
+				},
+			},
+		},
+		{
+			name: "base case http",
+			fields: fields{
+				configFile: "testdata/agenthttpbasic.yaml",
+			},
+			args: args{
+				ctx: context.Background(),
+				configFile: map[string]string{
+					"good/testnamespace": "basic.yaml",
+				},
+			},
+			want: want{
+				contents: map[string][]string{
+					"good/testnamespace": {
+						"kind: OpenTelemetryCollector",
+						"name: good",
+						"namespace: testnamespace",
+						"send_batch_size: 10000",
+						"receivers: [otlp]",
+						"status:",
+					},
+				},
+				status: &protobufs.RemoteConfigStatus{
+					LastRemoteConfigHash: []byte("good/testnamespace405"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -448,11 +475,12 @@ func TestAgent_onMessage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockOpampClient{}
-			conf, err := config.Load(tt.fields.configFile)
-			require.NoError(t, err, "should be able to load config")
+			conf := config.NewConfig(logr.Discard())
+			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
+			require.NoError(t, loadErr, "should be able to load config")
 			applier := getFakeApplier(t, conf)
-			agent := NewAgent(clientLogger, applier, conf, mockClient)
-			err = agent.Start()
+			agent := NewAgent(l, applier, conf, mockClient)
+			err := agent.Start()
 			defer agent.Shutdown()
 			require.NoError(t, err, "should be able to start agent")
 			data, err := getMessageDataFromConfigFile(tt.args.configFile)
@@ -498,10 +526,16 @@ func TestAgent_onMessage(t *testing.T) {
 
 func Test_CanUpdateIdentity(t *testing.T) {
 	mockClient := &mockOpampClient{}
-	conf, err := config.Load("testdata/agent.yaml")
-	require.NoError(t, err, "should be able to load config")
+
+	fs := config.GetFlagSet(pflag.ContinueOnError)
+	configFlag := []string{"--config-file", "testdata/agent.yaml"}
+	err := fs.Parse(configFlag)
+	assert.NoError(t, err)
+	conf := config.NewConfig(logr.Discard())
+	loadErr := config.LoadFromFile(conf, "testdata/agent.yaml")
+	require.NoError(t, loadErr, "should be able to load config")
 	applier := getFakeApplier(t, conf)
-	agent := NewAgent(clientLogger, applier, conf, mockClient)
+	agent := NewAgent(l, applier, conf, mockClient)
 	err = agent.Start()
 	defer agent.Shutdown()
 	require.NoError(t, err, "should be able to start agent")

@@ -1,4 +1,4 @@
-endpoint: ws://127.0.0.1:4320/v1/opamp
+endpoint: http://127.0.0.1:4320/v1/opamp
 capabilities:
   AcceptsRemoteConfig: true
   ReportsEffectiveConfig: true
@@ -12,10 +12,3 @@ capabilities:
   AcceptsRestartCommand: true
   ReportsHealth: true
   ReportsRemoteConfig: true
-componentsAllowed:
-  receivers:
-    - otlp
-  processors:
-    - memory_limiter
-  exporters:
-    - debug

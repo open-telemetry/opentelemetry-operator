@@ -17,5 +17,6 @@ componentsAllowed:
     - otlp
   processors:
     - memory_limiter
+    - batch
   exporters:
-    - debug
+    - logging
