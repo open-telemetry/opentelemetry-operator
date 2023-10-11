@@ -75,91 +75,84 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 }
 
 func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) v1alpha1.Instrumentation {
-	autoInstJava := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava]
+	autoInstJava := u.DefaultAutoInstJava
 	if autoInstJava != "" {
 		if featuregate.EnableJavaAutoInstrumentationSupport.IsEnabled() {
 			// upgrade the image only if the image matches the annotation
 			if inst.Spec.Java.Image == autoInstJava {
 				inst.Spec.Java.Image = u.DefaultAutoInstJava
-				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava] = u.DefaultAutoInstJava
 			}
 		} else {
 			u.Logger.Error(nil, "support for Java auto instrumentation is not enabled")
 			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Java auto instrumentation is not enabled")
 		}
 	}
-	autoInstNodeJS := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS]
+	autoInstNodeJS := u.DefaultAutoInstNodeJS
 	if autoInstNodeJS != "" {
 		if featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled() {
 			// upgrade the image only if the image matches the annotation
 			if inst.Spec.NodeJS.Image == autoInstNodeJS {
 				inst.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
-				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS] = u.DefaultAutoInstNodeJS
 			}
 		} else {
 			u.Logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
 			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for NodeJS auto instrumentation is not enabled")
 		}
 	}
-	autoInstPython := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython]
+	autoInstPython := u.DefaultAutoInstNodeJS
 	if autoInstPython != "" {
 		if featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled() {
 			// upgrade the image only if the image matches the annotation
 			if inst.Spec.Python.Image == autoInstPython {
 				inst.Spec.Python.Image = u.DefaultAutoInstPython
-				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython] = u.DefaultAutoInstPython
 			}
 		} else {
 			u.Logger.Error(nil, "support for Python auto instrumentation is not enabled")
 			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Python auto instrumentation is not enabled")
 		}
 	}
-	autoInstDotnet := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet]
+	autoInstDotnet := u.DefaultAutoInstDotNet
 	if autoInstDotnet != "" {
 		if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() {
 			// upgrade the image only if the image matches the annotation
 			if inst.Spec.DotNet.Image == autoInstDotnet {
 				inst.Spec.DotNet.Image = u.DefaultAutoInstDotNet
-				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet] = u.DefaultAutoInstDotNet
 			}
 		} else {
 			u.Logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for .NET auto instrumentation is not enabled")
 		}
 	}
-	autoInstGo := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo]
+	autoInstGo := u.DefaultAutoInstGo
 	if autoInstGo != "" {
 		if featuregate.EnableGoAutoInstrumentationSupport.IsEnabled() {
 			// upgrade the image only if the image matches the annotation
 			if inst.Spec.Go.Image == autoInstGo {
 				inst.Spec.Go.Image = u.DefaultAutoInstGo
-				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo] = u.DefaultAutoInstGo
 			}
 		} else {
 			u.Logger.Error(nil, "support for Go auto instrumentation is not enabled")
 			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Go auto instrumentation is not enabled")
 		}
 	}
-	autoInstApacheHttpd := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd]
+	autoInstApacheHttpd := u.DefaultAutoInstApacheHttpd
 	if autoInstApacheHttpd != "" {
 		if featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled() {
 			// upgrade the image only if the image matches the annotation
 			if inst.Spec.ApacheHttpd.Image == autoInstApacheHttpd {
 				inst.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
-				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd] = u.DefaultAutoInstApacheHttpd
 			}
 		} else {
 			u.Logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
 			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Apache HTTPD auto instrumentation is not enabled")
 		}
 	}
-	autoInstNginx := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNginx]
+	autoInstNginx := u.DefaultAutoInstNginx
 	if autoInstNginx != "" {
 		if featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled() {
 			// upgrade the image only if the image matches the annotation
 			if inst.Spec.Nginx.Image == autoInstNginx {
 				inst.Spec.Nginx.Image = u.DefaultAutoInstNginx
-				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNginx] = u.DefaultAutoInstNginx
 			}
 		} else {
 			u.Logger.Error(nil, "support for Nginx auto instrumentation is not enabled")

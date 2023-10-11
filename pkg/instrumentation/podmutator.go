@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/sidecar"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -191,7 +191,7 @@ func (langInsts *languageInstrumentations) setInstrumentationLanguageContainers(
 	}
 }
 
-var _ webhookhandler.PodMutator = (*instPodMutator)(nil)
+var _ sidecar.PodMutator = (*instPodMutator)(nil)
 
 func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder) *instPodMutator {
 	return &instPodMutator{

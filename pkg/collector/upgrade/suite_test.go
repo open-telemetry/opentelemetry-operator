@@ -37,6 +37,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	collectorwebhook "github.com/open-telemetry/opentelemetry-operator/internal/webhook/collector"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -48,6 +50,7 @@ var (
 	cancel     context.CancelFunc
 	err        error
 	cfg        *rest.Config
+	conf       = config.New()
 )
 
 func TestMain(m *testing.M) {
@@ -98,7 +101,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = collectorwebhook.SetupCollectorValidatingWebhookWithManager(mgr, conf); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
