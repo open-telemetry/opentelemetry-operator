@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package instrumentation
+package v1alpha1
 
 import (
 	"context"
@@ -21,13 +21,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 func TestInstrumentationDefaultingWebhook(t *testing.T) {
-	inst := &v1alpha1.Instrumentation{}
-	err := Webhook{
+	inst := &Instrumentation{}
+	err := CollectorWebhook{
 		cfg: config.New(
 			config.WithAutoInstrumentationJavaImage("java-img:1"),
 			config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
@@ -51,20 +50,20 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		name     string
 		err      string
 		warnings admission.Warnings
-		inst     v1alpha1.Instrumentation
+		inst     Instrumentation
 	}{
 		{
 			name: "all defaults",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{},
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{},
 			},
 			warnings: []string{"sampler type not set"},
 		},
 		{
 			name: "sampler configuration not present",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Sampler: v1alpha1.Sampler{},
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{},
 				},
 			},
 			warnings: []string{"sampler type not set"},
@@ -72,10 +71,10 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "argument is not a number",
 			err:  "spec.sampler.argument is not a number",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Sampler: v1alpha1.Sampler{
-						Type:     v1alpha1.ParentBasedTraceIDRatio,
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
 						Argument: "abc",
 					},
 				},
@@ -84,10 +83,10 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "argument is a wrong number",
 			err:  "spec.sampler.argument should be in rage [0..1]",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Sampler: v1alpha1.Sampler{
-						Type:     v1alpha1.ParentBasedTraceIDRatio,
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
 						Argument: "1.99",
 					},
 				},
@@ -95,10 +94,10 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "argument is a number",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Sampler: v1alpha1.Sampler{
-						Type:     v1alpha1.ParentBasedTraceIDRatio,
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
 						Argument: "0.99",
 					},
 				},
@@ -106,10 +105,10 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "argument is missing",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Sampler: v1alpha1.Sampler{
-						Type: v1alpha1.ParentBasedTraceIDRatio,
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type: ParentBasedTraceIDRatio,
 					},
 				},
 			},
@@ -120,17 +119,17 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
 			if test.err == "" {
-				warnings, err := Webhook{}.ValidateCreate(ctx, &test.inst)
+				warnings, err := CollectorWebhook{}.ValidateCreate(ctx, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Nil(t, err)
-				warnings, err = Webhook{}.ValidateUpdate(ctx, nil, &test.inst)
+				warnings, err = CollectorWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Nil(t, err)
 			} else {
-				warnings, err := Webhook{}.ValidateCreate(ctx, &test.inst)
+				warnings, err := CollectorWebhook{}.ValidateCreate(ctx, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Contains(t, err.Error(), test.err)
-				warnings, err = Webhook{}.ValidateUpdate(ctx, nil, &test.inst)
+				warnings, err = CollectorWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Contains(t, err.Error(), test.err)
 			}
@@ -165,14 +164,14 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 		},
 	}
 
-	samplers := []v1alpha1.SamplerType{v1alpha1.JaegerRemote, v1alpha1.ParentBasedJaegerRemote}
+	samplers := []SamplerType{JaegerRemote, ParentBasedJaegerRemote}
 
 	for _, sampler := range samplers {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				inst := v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						Sampler: v1alpha1.Sampler{
+				inst := Instrumentation{
+					Spec: InstrumentationSpec{
+						Sampler: Sampler{
 							Type:     sampler,
 							Argument: test.arg,
 						},
@@ -180,17 +179,17 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 				}
 				ctx := context.Background()
 				if test.err == "" {
-					warnings, err := Webhook{}.ValidateCreate(ctx, &inst)
+					warnings, err := CollectorWebhook{}.ValidateCreate(ctx, &inst)
 					assert.Nil(t, warnings)
 					assert.Nil(t, err)
-					warnings, err = Webhook{}.ValidateUpdate(ctx, nil, &inst)
+					warnings, err = CollectorWebhook{}.ValidateUpdate(ctx, nil, &inst)
 					assert.Nil(t, warnings)
 					assert.Nil(t, err)
 				} else {
-					warnings, err := Webhook{}.ValidateCreate(ctx, &inst)
+					warnings, err := CollectorWebhook{}.ValidateCreate(ctx, &inst)
 					assert.Nil(t, warnings)
 					assert.Contains(t, err.Error(), test.err)
-					warnings, err = Webhook{}.ValidateUpdate(ctx, nil, &inst)
+					warnings, err = CollectorWebhook{}.ValidateUpdate(ctx, nil, &inst)
 					assert.Nil(t, warnings)
 					assert.Contains(t, err.Error(), test.err)
 				}

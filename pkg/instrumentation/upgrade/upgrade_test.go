@@ -29,7 +29,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	instrumentationwebhook "github.com/open-telemetry/opentelemetry-operator/internal/webhook/instrumentation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -72,7 +71,7 @@ func TestUpgrade(t *testing.T) {
 			},
 		},
 	}
-	err = instrumentationwebhook.NewInstrumentationWebhook(
+	err = v1alpha1.NewInstrumentationWebhook(
 		logr.Discard(),
 		testScheme,
 		config.New(

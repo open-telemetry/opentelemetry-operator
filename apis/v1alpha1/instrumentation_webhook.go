@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package instrumentation
+package v1alpha1
 
 import (
 	"context"
@@ -27,7 +27,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
@@ -38,8 +37,8 @@ const (
 )
 
 var (
-	_                                  admission.CustomValidator = &Webhook{}
-	_                                  admission.CustomDefaulter = &Webhook{}
+	_                                  admission.CustomValidator = &InstrumentationWebhook{}
+	_                                  admission.CustomDefaulter = &InstrumentationWebhook{}
 	initContainerDefaultLimitResources                           = corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse("500m"),
 		corev1.ResourceMemory: resource.MustParse("128Mi"),
@@ -54,48 +53,45 @@ var (
 // +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1alpha1-instrumentation,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=instrumentations,versions=v1alpha1,name=vinstrumentationcreateupdate.kb.io,sideEffects=none,admissionReviewVersions=v1
 // +kubebuilder:webhook:verbs=delete,path=/validate-opentelemetry-io-v1alpha1-instrumentation,mutating=false,failurePolicy=ignore,groups=opentelemetry.io,resources=instrumentations,versions=v1alpha1,name=vinstrumentationdelete.kb.io,sideEffects=none,admissionReviewVersions=v1
 
-// Webhook is isolated because there are known registration issues when a custom webhook is in the same package
-// as the types.
-// See here: https://github.com/kubernetes-sigs/controller-runtime/issues/780#issuecomment-713408479
-type Webhook struct {
+type InstrumentationWebhook struct {
 	logger logr.Logger
 	cfg    config.Config
 	scheme *runtime.Scheme
 }
 
-func (w Webhook) Default(ctx context.Context, obj runtime.Object) error {
-	instrumentation, ok := obj.(*v1alpha1.Instrumentation)
+func (w InstrumentationWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	instrumentation, ok := obj.(*Instrumentation)
 	if !ok {
 		return fmt.Errorf("expected an Instrumentation, received %T", obj)
 	}
 	return w.defaulter(instrumentation)
 }
 
-func (w Webhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*v1alpha1.Instrumentation)
+func (w InstrumentationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	inst, ok := obj.(*Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
 	}
 	return w.validate(inst)
 }
 
-func (w Webhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	inst, ok := newObj.(*v1alpha1.Instrumentation)
+func (w InstrumentationWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	inst, ok := newObj.(*Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", newObj)
 	}
 	return w.validate(inst)
 }
 
-func (w Webhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*v1alpha1.Instrumentation)
+func (w InstrumentationWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	inst, ok := obj.(*Instrumentation)
 	if !ok || inst == nil {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
 	}
 	return w.validate(inst)
 }
 
-func (w Webhook) defaulter(r *v1alpha1.Instrumentation) error {
+func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
 	}
@@ -219,12 +215,12 @@ func (w Webhook) defaulter(r *v1alpha1.Instrumentation) error {
 	return nil
 }
 
-func (w Webhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, error) {
+func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
 	var warnings []string
 	switch r.Spec.Sampler.Type {
 	case "":
 		warnings = append(warnings, "sampler type not set")
-	case v1alpha1.TraceIDRatio, v1alpha1.ParentBasedTraceIDRatio:
+	case TraceIDRatio, ParentBasedTraceIDRatio:
 		if r.Spec.Sampler.Argument != "" {
 			rate, err := strconv.ParseFloat(r.Spec.Sampler.Argument, 64)
 			if err != nil {
@@ -234,7 +230,7 @@ func (w Webhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, erro
 				return warnings, fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Sampler.Argument)
 			}
 		}
-	case v1alpha1.JaegerRemote, v1alpha1.ParentBasedJaegerRemote:
+	case JaegerRemote, ParentBasedJaegerRemote:
 		// value is a comma separated list of endpoint, pollingIntervalMs, initialSamplingRate
 		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
 		if r.Spec.Sampler.Argument != "" {
@@ -244,7 +240,7 @@ func (w Webhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, erro
 				return warnings, fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Sampler.Type, err)
 			}
 		}
-	case v1alpha1.AlwaysOn, v1alpha1.AlwaysOff, v1alpha1.ParentBasedAlwaysOn, v1alpha1.ParentBasedAlwaysOff, v1alpha1.XRaySampler:
+	case AlwaysOn, AlwaysOff, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
 	default:
 		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
 	}
@@ -277,7 +273,7 @@ func (w Webhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, erro
 	return warnings, nil
 }
 
-func (w Webhook) validateEnv(envs []corev1.EnvVar) error {
+func (w InstrumentationWebhook) validateEnv(envs []corev1.EnvVar) error {
 	for _, env := range envs {
 		if !strings.HasPrefix(env.Name, envPrefix) && !strings.HasPrefix(env.Name, envSplunkPrefix) {
 			return fmt.Errorf("env name should start with \"OTEL_\" or \"SPLUNK_\": %s", env.Name)
@@ -317,22 +313,22 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 	return nil
 }
 
-func NewInstrumentationWebhook(logger logr.Logger, scheme *runtime.Scheme, cfg config.Config) *Webhook {
-	return &Webhook{
+func NewInstrumentationWebhook(logger logr.Logger, scheme *runtime.Scheme, cfg config.Config) *InstrumentationWebhook {
+	return &InstrumentationWebhook{
 		logger: logger,
 		scheme: scheme,
 		cfg:    cfg,
 	}
 }
 
-func SetupWebhook(mgr ctrl.Manager, cfg config.Config) error {
+func SetupInstrumentationWebhook(mgr ctrl.Manager, cfg config.Config) error {
 	ivw := NewInstrumentationWebhook(
 		mgr.GetLogger().WithValues("handler", "InstrumentationWebhook"),
 		mgr.GetScheme(),
 		cfg,
 	)
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&v1alpha1.Instrumentation{}).
+		For(&Instrumentation{}).
 		WithValidator(ivw).
 		WithDefaulter(ivw).
 		Complete()

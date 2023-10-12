@@ -47,8 +47,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
-	collectorwebhook "github.com/open-telemetry/opentelemetry-operator/internal/webhook/collector"
-	instrumentationwebhook "github.com/open-telemetry/opentelemetry-operator/internal/webhook/instrumentation"
 	sidecarwebhook "github.com/open-telemetry/opentelemetry-operator/internal/webhook/sidecar"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
@@ -248,11 +246,11 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = collectorwebhook.SetupWebhook(mgr, cfg); err != nil {
+		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
-		if err = instrumentationwebhook.SetupWebhook(mgr, cfg); err != nil {
+		if err = otelv1alpha1.SetupInstrumentationWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
