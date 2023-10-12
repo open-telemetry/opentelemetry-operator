@@ -12,7 +12,7 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 commands:
-  - command: kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.49.0.yaml
+  - command: kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.86.0.yaml
   - command: go run hack/check-operator-ready.go
 testDirs:
   - ./tests/e2e-upgrade/
