@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
   annotations:
-    operatorVersion: "v0.49.0"
+    operatorVersion: "v0.86.0"
 spec:
   replicas: 1
   config: |
