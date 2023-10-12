@@ -1,0 +1,53 @@
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: promreceiver-allocatorconfig-extra
+spec:
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    image: "local/opentelemetry-operator-targetallocator:e2e"
+    serviceAccount: ta
+    prometheusCR:
+      enabled: true
+
+  config: |
+    receivers:
+      jaeger:
+          protocols:
+            grpc:
+
+      # Collect own metrics
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'otel-collector'
+              scrape_interval: 10s
+              static_configs:
+                - targets: [ '0.0.0.0:8888' ]
+        target_allocator:
+          endpoint: http://promreceiver-allocatorconfig-extra-targetallocator
+          interval: 30s
+          collector_id: ${POD_NAME}
+          http_sd_config:
+            refresh_interval: 10s
+
+    processors:
+
+    exporters:
+      debug:
+    extensions:
+      health_check:
+    service:
+      telemetry:
+        metrics:
+          address: :8888
+      extensions:
+        - health_check
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: []
+          exporters: [debug]
+

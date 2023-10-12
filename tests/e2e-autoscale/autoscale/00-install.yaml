@@ -1,0 +1,85 @@
+# This creates two different deployments:
+#   * The first one is to ensure an autoscaler is created without
+#     setting any metrics in the Spec.
+#   * The second is to check that scaling works properly and that
+#     spec updates are working as expected.
+#
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+spec:
+# TODO: these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
+# deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
+# still supported but should eventually be updated.
+  minReplicas: 1
+  maxReplicas: 2
+  autoscaler:
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 10
+      scaleDown:
+        stabilizationWindowSeconds: 15
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
+
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+
+    exporters:
+      debug:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [debug]
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest-set-utilization
+spec:
+  minReplicas: 1
+  maxReplicas: 2
+  autoscaler:
+    targetCPUUtilization: 99
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 300
+  resources:
+    limits:
+      cpu: 250m
+      memory: 128Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
+
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+
+    exporters:
+      debug:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [debug]

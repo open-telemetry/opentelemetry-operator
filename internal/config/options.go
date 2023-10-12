@@ -23,28 +23,31 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 // Option represents one specific configuration option.
 type Option func(c *options)
 
 type options struct {
-	autoDetect                     autodetect.AutoDetect
-	version                        version.Version
-	logger                         logr.Logger
-	autoInstrumentationDotNetImage string
-	autoInstrumentationJavaImage   string
-	autoInstrumentationNodeJSImage string
-	autoInstrumentationPythonImage string
-	collectorImage                 string
-	collectorConfigMapEntry        string
-	targetAllocatorConfigMapEntry  string
-	targetAllocatorImage           string
-	onChange                       []func() error
-	labelsFilter                   []string
-	platform                       platform.Platform
-	autoDetectFrequency            time.Duration
+	autoDetect                          autodetect.AutoDetect
+	version                             version.Version
+	logger                              logr.Logger
+	autoInstrumentationDotNetImage      string
+	autoInstrumentationGoImage          string
+	autoInstrumentationJavaImage        string
+	autoInstrumentationNodeJSImage      string
+	autoInstrumentationPythonImage      string
+	autoInstrumentationApacheHttpdImage string
+	autoInstrumentationNginxImage       string
+	collectorImage                      string
+	collectorConfigMapEntry             string
+	targetAllocatorConfigMapEntry       string
+	targetAllocatorImage                string
+	operatorOpAMPBridgeImage            string
+	onOpenShiftRoutesChange             changeHandler
+	labelsFilter                        []string
+	openshiftRoutes                     openshiftRoutesStore
+	autoDetectFrequency                 time.Duration
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -62,7 +65,11 @@ func WithTargetAllocatorImage(s string) Option {
 		o.targetAllocatorImage = s
 	}
 }
-
+func WithOperatorOpAMPBridgeImage(s string) Option {
+	return func(o *options) {
+		o.operatorOpAMPBridgeImage = s
+	}
+}
 func WithCollectorImage(s string) Option {
 	return func(o *options) {
 		o.collectorImage = s
@@ -83,17 +90,18 @@ func WithLogger(logger logr.Logger) Option {
 		o.logger = logger
 	}
 }
-func WithOnChange(f func() error) Option {
+
+func WithOnOpenShiftRoutesChangeCallback(f func() error) Option {
 	return func(o *options) {
-		if o.onChange == nil {
-			o.onChange = []func() error{}
+		if o.onOpenShiftRoutesChange == nil {
+			o.onOpenShiftRoutesChange = newOnChange()
 		}
-		o.onChange = append(o.onChange, f)
+		o.onOpenShiftRoutesChange.Register(f)
 	}
 }
-func WithPlatform(plt platform.Platform) Option {
+func WithPlatform(ora autodetect.OpenShiftRoutesAvailability) Option {
 	return func(o *options) {
-		o.platform = plt
+		o.openshiftRoutes.Set(ora)
 	}
 }
 func WithVersion(v version.Version) Option {
@@ -123,6 +131,24 @@ func WithAutoInstrumentationPythonImage(s string) Option {
 func WithAutoInstrumentationDotNetImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationDotNetImage = s
+	}
+}
+
+func WithAutoInstrumentationGoImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationGoImage = s
+	}
+}
+
+func WithAutoInstrumentationApacheHttpdImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationApacheHttpdImage = s
+	}
+}
+
+func WithAutoInstrumentationNginxImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationNginxImage = s
 	}
 }
 

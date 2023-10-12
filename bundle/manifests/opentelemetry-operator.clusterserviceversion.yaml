@@ -23,21 +23,21 @@ metadata:
             "name": "otel"
           },
           "spec": {
-            "config": "receivers:\n  otlp:\n    protocols: \n      grpc:\n      http:\n\nexporters:\n  logging:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [logging]\n"
+            "config": "receivers:\n  otlp:\n    protocols: \n      grpc:\n      http:\n\nexporters:\n  debug:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
           }
         }
       ]
-    capabilities: Basic Install
-    categories: Logging & Tracing
+    capabilities: Deep Insights
+    categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2020-12-16T13:37:00+00:00"
+    createdAt: "2023-10-09T11:59:54Z"
     description: Provides the OpenTelemetry components, including the Collector
-    operators.operatorframework.io/builder: operator-sdk-v1.22.1
+    operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.56.0
+  name: opentelemetry-operator.v0.86.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -76,6 +76,18 @@ spec:
       - kind: StatefulSets
         name: ""
         version: apps/v1
+      specDescriptors:
+      - description: ObservabilitySpec defines how telemetry data gets handled.
+        displayName: Observability
+        path: observability
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: observability.metrics
+      - description: EnableMetrics specifies if ServiceMonitor should be created for
+          the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.prometheus
+          feature gate must be enabled to use this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: observability.metrics.enableMetrics
       version: v1alpha1
   description: |-
     OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
@@ -98,6 +110,8 @@ spec:
           - ""
           resources:
           - configmaps
+          - serviceaccounts
+          - services
           verbs:
           - create
           - delete
@@ -121,45 +135,11 @@ spec:
           - list
           - watch
         - apiGroups:
-          - ""
-          resources:
-          - serviceaccounts
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - services
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
           - apps
           resources:
           - daemonsets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - apps
-          resources:
           - deployments
+          - statefulsets
           verbs:
           - create
           - delete
@@ -175,18 +155,6 @@ spec:
           verbs:
           - get
           - list
-          - watch
-        - apiGroups:
-          - apps
-          resources:
-          - statefulsets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - autoscaling
@@ -210,6 +178,30 @@ spec:
           - list
           - update
         - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - opentelemetry.io
           resources:
           - instrumentations
@@ -224,8 +216,6 @@ spec:
           resources:
           - opentelemetrycollectors
           verbs:
-          - create
-          - delete
           - get
           - list
           - patch
@@ -247,6 +237,31 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - authentication.k8s.io
           resources:
@@ -282,7 +297,10 @@ spec:
               - args:
                 - --metrics-addr=127.0.0.1:8080
                 - --enable-leader-election
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.56.0
+                - --zap-log-level=info
+                - --zap-time-encoding=rfc3339nano
+                - --feature-gates=+operator.autoinstrumentation.go,+operator.autoinstrumentation.nginx
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.86.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -301,9 +319,6 @@ spec:
                   initialDelaySeconds: 5
                   periodSeconds: 10
                 resources:
-                  limits:
-                    cpu: 200m
-                    memory: 256Mi
                   requests:
                     cpu: 100m
                     memory: 64Mi
@@ -316,7 +331,7 @@ spec:
                 - --upstream=http://127.0.0.1:8080/
                 - --logtostderr=true
                 - --v=0
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
                 name: kube-rbac-proxy
                 ports:
                 - containerPort: 8443
@@ -390,9 +405,10 @@ spec:
   - email: jpkroehling@redhat.com
     name: Juraci Paixão Kröhling
   maturity: alpha
+  minKubeVersion: 1.23.0
   provider:
     name: OpenTelemetry Community
-  version: 0.56.0
+  version: 0.86.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

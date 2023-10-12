@@ -1,0 +1,69 @@
+name: "Publish Apache HTTPD Auto-Instrumentation"
+
+on:
+  push:
+    paths:
+      - 'autoinstrumentation/apache-httpd/**'
+      - '.github/workflows/publish-autoinstrumentation-apache-httpd.yaml'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'autoinstrumentation/apache-httpd/**'
+      - '.github/workflows/publish-autoinstrumentation-apache-httpd.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        run: echo "VERSION=$(cat autoinstrumentation/apache-httpd/version.txt)" >> $GITHUB_ENV
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd
+          tags: |
+            type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to GitHub Package Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: autoinstrumentation/apache-httpd
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' }}
+          build-args: version=${{ env.VERSION }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache

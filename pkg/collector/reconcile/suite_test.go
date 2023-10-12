@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO: This file can be deleted when Routes is removed from this package.
+// https://github.com/open-telemetry/opentelemetry-operator/issues/2108
 package reconcile
 
 import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -26,8 +27,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	routev1 "github.com/openshift/api/route/v1"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,9 +45,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
 )
 
 var (
@@ -62,6 +69,7 @@ var (
 const (
 	defaultCollectorImage    = "default-collector"
 	defaultTaAllocationImage = "default-ta-allocator"
+	testFileIngress          = "testdata/ingress_testdata.yaml"
 )
 
 func TestMain(m *testing.M) {
@@ -70,6 +78,12 @@ func TestMain(m *testing.M) {
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
+		CRDInstallOptions: envtest.CRDInstallOptions{
+			CRDs: []*apiextensionsv1.CustomResourceDefinition{
+				testdata.OpenShiftRouteCRD,
+				testdata.ServiceMonitorCRD,
+			},
+		},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
 		},
@@ -80,7 +94,17 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err := v1alpha1.AddToScheme(testScheme); err != nil {
+	if err = routev1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+
+	if err = v1alpha1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+
+	if err = monitoringv1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}
@@ -94,20 +118,24 @@ func TestMain(m *testing.M) {
 
 	// start webhook server using Manager
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             testScheme,
-		Host:               webhookInstallOptions.LocalServingHost,
-		Port:               webhookInstallOptions.LocalServingPort,
-		CertDir:            webhookInstallOptions.LocalServingCertDir,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
+	mgr, mgrErr := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:         testScheme,
+		LeaderElection: false,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
 	})
-	if err != nil {
-		fmt.Printf("failed to start webhook server: %v", err)
+	if mgrErr != nil {
+		fmt.Printf("failed to start webhook server: %v", mgrErr)
 		os.Exit(1)
 	}
 
-	if err := (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
@@ -138,9 +166,9 @@ func TestMain(m *testing.M) {
 			return true
 		}, func() error {
 			// #nosec G402
-			conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
-			if err != nil {
-				return err
+			conn, tlsErr := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+			if tlsErr != nil {
+				return tlsErr
 			}
 			_ = conn.Close()
 			return nil
@@ -162,16 +190,20 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func params() Params {
+func params() manifests.Params {
+	return paramsWithMode(v1alpha1.ModeDeployment)
+}
+
+func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 	replicas := int32(2)
-	configYAML, err := ioutil.ReadFile("../testdata/test.yaml")
+	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	return Params{
+	return manifests.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
 		Client: k8sClient,
-		Instance: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -194,6 +226,7 @@ func params() Params {
 				}},
 				Replicas: &replicas,
 				Config:   string(configYAML),
+				Mode:     mode,
 			},
 		},
 		Scheme:   testScheme,
@@ -202,26 +235,26 @@ func params() Params {
 	}
 }
 
-func newParams(taContainerImage string, file string) (Params, error) {
+func newParams(taContainerImage string, file string) (manifests.Params, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
 
 	if file == "" {
-		configYAML, err = ioutil.ReadFile("../testdata/test.yaml")
+		configYAML, err = os.ReadFile("testdata/test.yaml")
 	} else {
-		configYAML, err = ioutil.ReadFile(file)
+		configYAML, err = os.ReadFile(file)
 	}
 	if err != nil {
-		return Params{}, fmt.Errorf("Error getting yaml file: %w", err)
+		return manifests.Params{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}
 
 	cfg := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
 
-	return Params{
+	return manifests.Params{
 		Config: cfg,
 		Client: k8sClient,
-		Instance: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -255,16 +288,6 @@ func newParams(taContainerImage string, file string) (Params, error) {
 	}, nil
 }
 
-func createObjectIfNotExists(tb testing.TB, name string, object client.Object) {
-	tb.Helper()
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Namespace: "default", Name: name}, object)
-	if errors.IsNotFound(err) {
-		err := k8sClient.Create(context.Background(),
-			object)
-		assert.NoError(tb, err)
-	}
-}
-
 func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
 	t.Helper()
 	err := k8sClient.Get(context.Background(), namespacedName, object)
@@ -275,5 +298,4 @@ func populateObjectIfExists(t testing.TB, object client.Object, namespacedName t
 		return false, err
 	}
 	return true, nil
-
 }

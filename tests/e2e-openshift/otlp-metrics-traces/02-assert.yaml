@@ -1,0 +1,31 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: kuttl-otlp-metrics
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: kuttl-otlp-metrics.cluster-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: cluster-collector-collector
+  name: cluster-collector-collector
+  namespace: kuttl-otlp-metrics
+spec:
+  endpoints:
+  - port: monitoring
+  - port: prometheus
+  namespaceSelector:
+    matchNames:
+    - kuttl-otlp-metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kuttl-otlp-metrics.cluster-collector
+      app.kubernetes.io/managed-by: opentelemetry-operator

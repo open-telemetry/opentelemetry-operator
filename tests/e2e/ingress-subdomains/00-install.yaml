@@ -1,0 +1,29 @@
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+spec:
+  mode: "deployment"
+  ingress:
+    type: ingress
+    ruleType: subdomain
+    hostname: "test.otel"
+    annotations:
+      something.com: "true"
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    exporters:
+      debug:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [debug]

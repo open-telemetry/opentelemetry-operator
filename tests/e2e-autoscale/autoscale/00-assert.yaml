@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simplest-collector
+status:
+  readyReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simplest-set-utilization-collector
+status:
+  readyReplicas: 1
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: simplest-collector
+spec:
+  scaleTargetRef:
+    kind: OpenTelemetryCollector
+    name: simplest
+    apiVersion: opentelemetry.io/v1alpha1
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 90
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 10
+      selectPolicy: Max
+      policies:
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 15
+      selectPolicy: Max
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: simplest-set-utilization-collector
+spec:
+  scaleTargetRef:
+    kind: OpenTelemetryCollector
+    name: simplest-set-utilization
+    apiVersion: opentelemetry.io/v1alpha1
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 99
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 300
+      selectPolicy: Max
+      policies:
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+    scaleDown:
+      selectPolicy: Max
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15

@@ -1,0 +1,31 @@
+processors:
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: serviceMonitor/test/test/0
+
+        static_configs:
+        - targets: ["prom.domain:1001", "prom.domain:1002", "prom.domain:1003"]
+          labels:
+            my: label
+
+        file_sd_configs:
+        - files:
+          - file2.json
+    target_allocator:
+      endpoint: http://test-targetallocator:80
+      interval: 30s
+      collector_id: ${POD_NAME}
+      http_sd_config:
+        refresh_interval: 60s
+
+exporters:
+  debug:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: []
+      exporters: [debug]

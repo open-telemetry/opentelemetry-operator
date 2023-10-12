@@ -40,7 +40,6 @@ var _ WebhookHandler = (*podSidecarInjector)(nil)
 // WebhookHandler is a webhook handler that analyzes new pods and injects appropriate sidecars into it.
 type WebhookHandler interface {
 	admission.Handler
-	admission.DecoderInjector
 }
 
 // the implementation.
@@ -58,9 +57,10 @@ type PodMutator interface {
 }
 
 // NewWebhookHandler creates a new WebhookHandler.
-func NewWebhookHandler(cfg config.Config, logger logr.Logger, cl client.Client, podMutators []PodMutator) WebhookHandler {
+func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder *admission.Decoder, cl client.Client, podMutators []PodMutator) WebhookHandler {
 	return &podSidecarInjector{
 		config:      cfg,
+		decoder:     decoder,
 		logger:      logger,
 		client:      cl,
 		podMutators: podMutators,
@@ -104,9 +104,4 @@ func (p *podSidecarInjector) Handle(ctx context.Context, req admission.Request) 
 		return res
 	}
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
-}
-
-func (p *podSidecarInjector) InjectDecoder(d *admission.Decoder) error {
-	p.decoder = d
-	return nil
 }

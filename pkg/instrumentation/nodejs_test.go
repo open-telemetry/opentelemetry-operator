@@ -15,9 +15,9 @@
 package instrumentation
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -30,6 +30,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		v1alpha1.NodeJS
 		pod      corev1.Pod
 		expected corev1.Pod
+		err      error
 	}{
 		{
 			name:   "NODE_OPTIONS not defined",
@@ -45,20 +46,22 @@ func TestInjectNodeJSSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: volumeName,
+							Name: "opentelemetry-auto-instrumentation-nodejs",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
 					InitContainers: []corev1.Container{
 						{
-							Name:    initContainerName,
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      volumeName,
-								MountPath: "/otel-auto-instrumentation",
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
 							}},
 						},
 					},
@@ -66,24 +69,25 @@ func TestInjectNodeJSSDK(t *testing.T) {
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      volumeName,
-									MountPath: "/otel-auto-instrumentation",
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "NODE_OPTIONS",
-									Value: nodeRequireArgument,
+									Value: " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
 								},
 							},
 						},
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name:   "NODE_OPTIONS defined",
-			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -102,41 +106,45 @@ func TestInjectNodeJSSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: volumeName,
+							Name: "opentelemetry-auto-instrumentation-nodejs",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
 					InitContainers: []corev1.Container{
 						{
-							Name:    initContainerName,
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      volumeName,
-								MountPath: "/otel-auto-instrumentation",
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
 							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      volumeName,
-									MountPath: "/otel-auto-instrumentation",
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "NODE_OPTIONS",
-									Value: "-Dbaz=bar" + nodeRequireArgument,
+									Value: "-Dbaz=bar" + " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
 								},
 							},
 						},
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name:   "NODE_OPTIONS defined as ValueFrom",
@@ -169,13 +177,15 @@ func TestInjectNodeJSSDK(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envNodeOptions),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectNodeJSSDK(logr.Discard(), test.NodeJS, test.pod, 0)
+			pod, err := injectNodeJSSDK(test.NodeJS, test.pod, 0)
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

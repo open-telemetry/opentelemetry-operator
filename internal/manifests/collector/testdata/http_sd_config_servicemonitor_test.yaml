@@ -1,0 +1,25 @@
+processors:
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: serviceMonitor/test/test/0
+
+        static_configs:
+        - targets: ["prom.domain:1001", "prom.domain:1002", "prom.domain:1003"]
+          labels:
+            my: label
+
+        file_sd_configs:
+        - files:
+          - file2.json
+
+exporters:
+  debug:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: []
+      exporters: [debug]

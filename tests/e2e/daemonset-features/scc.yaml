@@ -1,0 +1,22 @@
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: daemonset-with-hostport
+  annotations:
+    kubernetes.io/description: 'Allows DaemonSets to bind to a well-known host port'
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+allowHostPorts: true
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: false
+allowPrivilegedContainer: false
+readOnlyRootFilesystem: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otel-collector-daemonset

@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tracegen-set-utilization
+spec:
+  template:
+    spec:
+      containers:
+        - name: tracegen
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/tracegen:latest
+          command:
+            - "./tracegen"
+          args:
+            - -otlp-endpoint=simplest-set-utilization-collector-headless:4317
+            - -otlp-insecure
+            # High duration to ensure the trace creation doesn't stop.
+            # It'll be stopped in step 4
+            - -duration=1m
+            - -workers=20
+      restartPolicy: Never
+  backoffLimit: 4

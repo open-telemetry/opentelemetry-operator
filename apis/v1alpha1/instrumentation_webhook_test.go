@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,10 +25,12 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	inst := &Instrumentation{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{
-				AnnotationDefaultAutoInstrumentationJava:   "java-img:1",
-				AnnotationDefaultAutoInstrumentationNodeJS: "nodejs-img:1",
-				AnnotationDefaultAutoInstrumentationPython: "python-img:1",
-				AnnotationDefaultAutoInstrumentationDotNet: "dotnet-img:1",
+				AnnotationDefaultAutoInstrumentationJava:        "java-img:1",
+				AnnotationDefaultAutoInstrumentationNodeJS:      "nodejs-img:1",
+				AnnotationDefaultAutoInstrumentationPython:      "python-img:1",
+				AnnotationDefaultAutoInstrumentationDotNet:      "dotnet-img:1",
+				AnnotationDefaultAutoInstrumentationApacheHttpd: "apache-httpd-img:1",
+				AnnotationDefaultAutoInstrumentationNginx:       "nginx-img:1",
 			},
 		},
 	}
@@ -38,37 +39,8 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python-img:1", inst.Spec.Python.Image)
 	assert.Equal(t, "dotnet-img:1", inst.Spec.DotNet.Image)
-	assert.Equal(t, true, inst.isEnvVarSet(envOtelDotnetAutoTracesEnabledInstrumentations))
-}
-
-func TestInstrumentationDefaultingWebhookOtelDotNetTracesEnabledInstruEnvSet(t *testing.T) {
-	inst := &Instrumentation{
-		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{
-				AnnotationDefaultAutoInstrumentationJava:   "java-img:1",
-				AnnotationDefaultAutoInstrumentationNodeJS: "nodejs-img:1",
-				AnnotationDefaultAutoInstrumentationPython: "python-img:1",
-				AnnotationDefaultAutoInstrumentationDotNet: "dotnet-img:1",
-			},
-		},
-		Spec: InstrumentationSpec{
-			DotNet: DotNet{
-				Env: []v1.EnvVar{
-					{
-						Name:  envOtelDotnetAutoTracesEnabledInstrumentations,
-						Value: "AspNet,HttpClient",
-					},
-				},
-			},
-		},
-	}
-	inst.Default()
-	for _, env := range inst.Spec.DotNet.Env {
-		if env.Name == envOtelDotnetAutoTracesEnabledInstrumentations {
-			assert.Equal(t, "AspNet,HttpClient", env.Value)
-			break
-		}
-	}
+	assert.Equal(t, "apache-httpd-img:1", inst.Spec.ApacheHttpd.Image)
+	assert.Equal(t, "nginx-img:1", inst.Spec.Nginx.Image)
 }
 
 func TestInstrumentationValidatingWebhook(t *testing.T) {
@@ -77,6 +49,20 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		err  string
 		inst Instrumentation
 	}{
+		{
+			name: "all defaults",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{},
+			},
+		},
+		{
+			name: "sampler configuration not present",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{},
+				},
+			},
+		},
 		{
 			name: "argument is not a number",
 			err:  "spec.sampler.argument is not a number",
@@ -123,17 +109,84 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			},
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.err == "" {
-				assert.Nil(t, test.inst.ValidateCreate())
-				assert.Nil(t, test.inst.ValidateUpdate(nil))
+				warnings, err := test.inst.ValidateCreate()
+				assert.Nil(t, warnings)
+				assert.Nil(t, err)
+				warnings, err = test.inst.ValidateUpdate(nil)
+				assert.Nil(t, warnings)
+				assert.Nil(t, err)
 			} else {
-				err := test.inst.ValidateCreate()
+				warnings, err := test.inst.ValidateCreate()
+				assert.Nil(t, warnings)
 				assert.Contains(t, err.Error(), test.err)
-				err = test.inst.ValidateUpdate(nil)
+				warnings, err = test.inst.ValidateUpdate(nil)
+				assert.Nil(t, warnings)
 				assert.Contains(t, err.Error(), test.err)
 			}
 		})
+	}
+}
+
+func TestInstrumentationJaegerRemote(t *testing.T) {
+	tests := []struct {
+		name string
+		err  string
+		arg  string
+	}{
+		{
+			name: "pollingIntervalMs is not a number",
+			err:  "invalid pollingIntervalMs: abc",
+			arg:  "pollingIntervalMs=abc",
+		},
+		{
+			name: "initialSamplingRate is out of range",
+			err:  "initialSamplingRate should be in rage [0..1]",
+			arg:  "initialSamplingRate=1.99",
+		},
+		{
+			name: "endpoint is missing",
+			err:  "endpoint cannot be empty",
+			arg:  "endpoint=",
+		},
+		{
+			name: "correct jaeger remote sampler configuration",
+			arg:  "endpoint=http://jaeger-collector:14250/,initialSamplingRate=0.99,pollingIntervalMs=1000",
+		},
+	}
+
+	samplers := []SamplerType{JaegerRemote, ParentBasedJaegerRemote}
+
+	for _, sampler := range samplers {
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				inst := Instrumentation{
+					Spec: InstrumentationSpec{
+						Sampler: Sampler{
+							Type:     sampler,
+							Argument: test.arg,
+						},
+					},
+				}
+				if test.err == "" {
+					warnings, err := inst.ValidateCreate()
+					assert.Nil(t, warnings)
+					assert.Nil(t, err)
+					warnings, err = inst.ValidateUpdate(nil)
+					assert.Nil(t, warnings)
+					assert.Nil(t, err)
+				} else {
+					warnings, err := inst.ValidateCreate()
+					assert.Nil(t, warnings)
+					assert.Contains(t, err.Error(), test.err)
+					warnings, err = inst.ValidateUpdate(nil)
+					assert.Nil(t, warnings)
+					assert.Contains(t, err.Error(), test.err)
+				}
+			})
+		}
 	}
 }

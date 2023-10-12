@@ -1,0 +1,38 @@
+#https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/prometheusexporter/README.md
+
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-collector
+  namespace: kuttl-otlp-metrics
+spec:
+  mode: deployment
+  observability:
+    metrics:
+      enableMetrics: true
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+    exporters:
+      otlp:
+        endpoint: jaeger-allinone-collector-headless.kuttl-otlp-metrics.svc:4317
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: 0.0.0.0:8889
+        resource_to_telemetry_conversion:
+          enabled: true # by default resource attributes are dropped
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlp]
+        metrics:
+          receivers: [otlp]
+          processors: []
+          exporters: [prometheus]

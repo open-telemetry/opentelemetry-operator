@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
@@ -30,11 +30,13 @@ func TestInjectDotNetSDK(t *testing.T) {
 		name string
 		v1alpha1.DotNet
 		pod      corev1.Pod
+		runtime  string
 		expected corev1.Pod
+		err      error
 	}{
 		{
-			name:   "DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS not defined",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{{Name: "OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS", Value: "AspNet,HttpClient,SqlClient"}}},
+			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS, OTEL_DOTNET_AUTO_HOME not defined",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -46,35 +48,46 @@ func TestInjectDotNetSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: volumeName,
+							Name: "opentelemetry-auto-instrumentation-dotnet",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
 					InitContainers: []corev1.Container{
 						{
-							Name:    initContainerName,
+							Name:    "opentelemetry-auto-instrumentation-dotnet",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      volumeName,
-								MountPath: "/otel-auto-instrumentation",
+								Name:      "opentelemetry-auto-instrumentation-dotnet",
+								MountPath: "/otel-auto-instrumentation-dotnet",
 							}},
+							Resources: testResourceRequirements,
 						},
 					},
 					Containers: []corev1.Container{
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      volumeName,
-									MountPath: "/otel-auto-instrumentation",
+									Name:      "opentelemetry-auto-instrumentation-dotnet",
+									MountPath: "/otel-auto-instrumentation-dotnet",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS",
-									Value: "AspNet,HttpClient,SqlClient",
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerID,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerGlibcPath,
 								},
 								{
 									Name:  envDotNetStartupHook,
@@ -85,6 +98,10 @@ func TestInjectDotNetSDK(t *testing.T) {
 									Value: dotNetAdditionalDepsPath,
 								},
 								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
+								{
 									Name:  envDotNetSharedStore,
 									Value: dotNetSharedStorePath,
 								},
@@ -93,15 +110,28 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			err: nil,
 		},
 		{
-			name:   "DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE defined",
+			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE defined",
 			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
 							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: "/foo:/bar",
+								},
 								{
 									Name:  envDotNetStartupHook,
 									Value: "/foo:/bar",
@@ -123,20 +153,22 @@ func TestInjectDotNetSDK(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: volumeName,
+							Name: "opentelemetry-auto-instrumentation-dotnet",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
 							},
 						},
 					},
 					InitContainers: []corev1.Container{
 						{
-							Name:    initContainerName,
+							Name:    "opentelemetry-auto-instrumentation-dotnet",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      volumeName,
-								MountPath: "/otel-auto-instrumentation",
+								Name:      "opentelemetry-auto-instrumentation-dotnet",
+								MountPath: "/otel-auto-instrumentation-dotnet",
 							}},
 						},
 					},
@@ -144,11 +176,23 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      volumeName,
-									MountPath: "/otel-auto-instrumentation",
+									Name:      "opentelemetry-auto-instrumentation-dotnet",
+									MountPath: "/otel-auto-instrumentation-dotnet",
 								},
 							},
 							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: "/foo:/bar",
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: "/foo:/bar",
+								},
 								{
 									Name:  envDotNetStartupHook,
 									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetStartupHookPath),
@@ -161,11 +205,16 @@ func TestInjectDotNetSDK(t *testing.T) {
 									Name:  envDotNetSharedStore,
 									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetSharedStorePath),
 								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
 							},
 						},
 					},
 				},
 			},
+			err: nil,
 		},
 		{
 			name:   "DOTNET_STARTUP_HOOKS defined as ValueFrom",
@@ -198,6 +247,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetStartupHook),
 		},
 		{
 			name:   "DOTNET_ADDITIONAL_DEPS defined as ValueFrom",
@@ -230,6 +280,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetAdditionalDeps),
 		},
 		{
 			name:   "DOTNET_SHARED_STORE defined as ValueFrom",
@@ -262,13 +313,246 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
+			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envDotNetSharedStore),
+		},
+		{
+			name:   "OTEL_DOTNET_AUTO_HOME already set in the container",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: "/otel-dotnet-auto",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: "/otel-dotnet-auto",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the container"),
+		},
+		{
+			name:   "OTEL_DOTNET_AUTO_HOME already set in the .NET instrumentation spec",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{{Name: envDotNetOTelAutoHome, Value: dotNetOTelAutoHomePath}}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec"),
+		},
+		{
+			name:   "runtime linux-x64",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			runtime: dotNetRuntimeLinuxGlibc,
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: dotnetVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    dotnetInitContainerName,
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      dotnetVolumeName,
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+							Resources: testResourceRequirements,
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      dotnetVolumeName,
+									MountPath: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerID,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerGlibcPath,
+								},
+								{
+									Name:  envDotNetStartupHook,
+									Value: dotNetStartupHookPath,
+								},
+								{
+									Name:  envDotNetAdditionalDeps,
+									Value: dotNetAdditionalDepsPath,
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
+								{
+									Name:  envDotNetSharedStore,
+									Value: dotNetSharedStorePath,
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "runtime linux-musl-x64",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			runtime: dotNetRuntimeLinuxMusl,
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: dotnetVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    dotnetInitContainerName,
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      dotnetVolumeName,
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+							Resources: testResourceRequirements,
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      dotnetVolumeName,
+									MountPath: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerID,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerMuslPath,
+								},
+								{
+									Name:  envDotNetStartupHook,
+									Value: dotNetStartupHookPath,
+								},
+								{
+									Name:  envDotNetAdditionalDeps,
+									Value: dotNetAdditionalDepsPath,
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
+								{
+									Name:  envDotNetSharedStore,
+									Value: dotNetSharedStorePath,
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "runtime not-supported",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{},
+			},
+			runtime: "not-supported",
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			err: fmt.Errorf("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value 'not-supported' is not supported"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectDotNetSDK(logr.Discard(), test.DotNet, test.pod, 0)
+			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0, test.runtime)
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

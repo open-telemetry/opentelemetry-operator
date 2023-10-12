@@ -11,6 +11,7 @@ spec:
   - name: otc-container
     env:
     - name: POD_NAME
+    - name: OTEL_CONFIG
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_UID
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME

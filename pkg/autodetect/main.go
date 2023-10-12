@@ -18,15 +18,13 @@ package autodetect
 import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
-
-	"github.com/open-telemetry/opentelemetry-operator/pkg/platform"
 )
 
 var _ AutoDetect = (*autoDetect)(nil)
 
 // AutoDetect provides an assortment of routines that auto-detect traits based on the runtime.
 type AutoDetect interface {
-	Platform() (platform.Platform, error)
+	OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error)
 }
 
 type autoDetect struct {
@@ -48,19 +46,19 @@ func New(restConfig *rest.Config) (AutoDetect, error) {
 	}, nil
 }
 
-// Platform returns the detected platform this operator is running on. Possible values: Kubernetes, OpenShift.
-func (a *autoDetect) Platform() (platform.Platform, error) {
+// OpenShiftRoutesAvailability checks if OpenShift Route are available.
+func (a *autoDetect) OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
-		return platform.Unknown, err
+		return OpenShiftRoutesNotAvailable, err
 	}
 
 	apiGroups := apiList.Groups
 	for i := 0; i < len(apiGroups); i++ {
 		if apiGroups[i].Name == "route.openshift.io" {
-			return platform.OpenShift, nil
+			return OpenShiftRoutesAvailable, nil
 		}
 	}
 
-	return platform.Kubernetes, nil
+	return OpenShiftRoutesNotAvailable, nil
 }

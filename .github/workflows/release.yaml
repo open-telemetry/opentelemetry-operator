@@ -5,20 +5,14 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.18
+        go-version: "~1.21.1"
 
-    - uses: actions/checkout@v3
-
-    - name: "install kubebuilder"
-      run: ./hack/install-kubebuilder.sh
-
-    - name: "install kustomize"
-      run: ./hack/install-kustomize.sh
+    - uses: actions/checkout@v4
 
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator"
@@ -32,3 +26,21 @@ jobs:
       run: |
         OPERATOR_VERSION=$(git describe --tags)
         curl https://proxy.golang.org/github.com/open-telemetry/opentelemetry-operator/@v/${OPERATOR_VERSION}.info
+
+  operator-hub-prod-release:
+    needs: release
+    uses: ./.github/workflows/reusable-operator-hub-release.yaml
+    with:
+      org: redhat-openshift-ecosystem
+      repo: community-operators-prod
+    secrets:
+      OPENTELEMETRYBOT_GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+
+  operator-hub-community-release:
+    needs: release
+    uses: ./.github/workflows/reusable-operator-hub-release.yaml
+    with:
+      org: k8s-operatorhub
+      repo: community-operators
+    secrets:
+      OPENTELEMETRYBOT_GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}

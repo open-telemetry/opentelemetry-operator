@@ -1,0 +1,21 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: daemonset
+spec:
+  mode: daemonset
+  hostNetwork: true
+  config: |
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+    processors:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: []
+          exporters: [debug]

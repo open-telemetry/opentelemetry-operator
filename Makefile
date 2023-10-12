@@ -3,13 +3,18 @@ VERSION ?= "$(shell git describe --tags | sed 's/^v//')"
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/version"
 OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
-OPERATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator | awk -F= '{print $$2}')"
+OPERATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')"
 TARGETALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')"
+OPERATOR_OPAMP_BRIDGE_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator-opamp-bridge | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-java | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-nodejs | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-python | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-dotnet | awk -F= '{print $$2}')"
-LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION}"
+AUTO_INSTRUMENTATION_GO_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-go | awk -F= '{print $$2}')"
+AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-apache-httpd | awk -F= '{print $$2}')"
+AUTO_INSTRUMENTATION_NGINX_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-nginx | awk -F= '{print $$2}')"
+LD_FLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.operatorOpAMPBridge=${OPERATOR_OPAMP_BRIDGE_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationGo=${AUTO_INSTRUMENTATION_GO_VERSION} -X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION} -X ${VERSION_PKG}.autoInstrumentationNginx=${AUTO_INSTRUMENTATION_NGINX_VERSION}"
+ARCH ?= $(shell go env GOARCH)
 
 # Image URL to use all building/pushing image targets
 IMG_PREFIX ?= ghcr.io/${USER}/opentelemetry-operator
@@ -20,6 +25,9 @@ BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 TARGETALLOCATOR_IMG_REPO ?= target-allocator
 TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,${VERSION})
 
+OPERATOROPAMPBRIDGE_IMG_REPO ?= operator-opamp-bridge
+OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addprefix v,${VERSION})
+
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -29,7 +37,7 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true"
+CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=200"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -48,12 +56,15 @@ else
 GOTEST_OPTS=-race -v
 endif
 
+START_KIND_CLUSTER ?= true
+
 KUBE_VERSION ?= 1.24
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
+KIND_CLUSTER_NAME ?= "otel-operator"
 
-OPERATOR_SDK_VERSION ?= 1.22.1
+OPERATOR_SDK_VERSION ?= 1.29.0
 
-CERTMANAGER_VERSION ?= 1.8.0
+CERTMANAGER_VERSION ?= 1.10.0
 
 ifndef ignore-not-found
   ignore-not-found = false
@@ -64,13 +75,17 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
+## On MacOS, use gsed instead of sed, to make sed behavior
+## consistent with Linux.
+SED ?= $(shell which gsed 2>/dev/null || which sed)
+
 .PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-generate-is-noop: USER=open-telemetry
 ensure-generate-is-noop: set-image-controller generate bundle
 	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
 	@git restore config/manager/kustomization.yaml
-	@git diff -s --exit-code api/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
+	@git diff -s --exit-code apis/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code bundle.Dockerfile || (echo "Build failed: the bundle.Dockerfile file has been changed. The file should be the same as generated one. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
@@ -85,6 +100,8 @@ ci: test
 .PHONY: test
 test: generate fmt vet ensure-generate-is-noop envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
+	cd cmd/otel-allocator && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
+	cd cmd/operator-opamp-bridge && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
 
 # Build manager binary
 .PHONY: manager
@@ -115,6 +132,7 @@ set-image-controller: manifests kustomize
 .PHONY: deploy
 deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	go run hack/check-operator-ready.go 300
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy
@@ -144,8 +162,10 @@ vet:
 
 # Run go lint against code
 .PHONY: lint
-lint:
-	golangci-lint run
+lint: golangci-lint
+	$(GOLANGCI_LINT) run
+	cd cmd/otel-allocator && $(GOLANGCI_LINT) run
+	cd cmd/operator-opamp-bridge && $(GOLANGCI_LINT) run
 
 # Generate code
 .PHONY: generate
@@ -157,53 +177,122 @@ generate: controller-gen api-docs
 e2e:
 	$(KUTTL) test
 
+
+# instrumentation end-to-tests
+.PHONY: e2e-instrumentation
+e2e-instrumentation:
+	$(KUTTL) test --config kuttl-test-instrumentation.yaml
+
+# end-to-end-test for PrometheusCR E2E tests
+.PHONY: e2e-prometheuscr
+e2e-prometheuscr:
+	$(KUTTL) test --config kuttl-test-prometheuscr.yaml
+
+# end-to-end-test for testing upgrading
+.PHONY: e2e-upgrade
+e2e-upgrade: undeploy
+	$(KUTTL) test --config kuttl-test-upgrade.yaml
+
+# end-to-end-test for testing autoscale
+.PHONY: e2e-autoscale
+e2e-autoscale:
+	$(KUTTL) test --config kuttl-test-autoscale.yaml
+
+# end-to-end-test for testing pdb support
+.PHONY: e2e-pdb
+e2e-pdb:
+	$(KUTTL) test --config kuttl-test-pdb.yaml
+
+# end-to-end-test for testing OpenShift cases
+.PHONY: e2e-openshift
+e2e-openshift:
+	$(KUTTL) test --config kuttl-test-openshift.yaml
+
+.PHONY: e2e-log-operator
+e2e-log-operator:
+	kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
+	kubectl get deploy -A
+
+# end-to-tests for multi-instrumentation
+.PHONY: e2e-multi-instrumentation
+e2e-multi-instrumentation:
+	$(KUTTL) test --config kuttl-test-multi-instr.yaml
+
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-test-image-vars set-image-controller container container-target-allocator start-kind install-metrics-server load-image-all
-	mkdir -p tests/_build/crds tests/_build/manifests
-	$(KUSTOMIZE) build config/default -o tests/_build/manifests/01-opentelemetry-operator.yaml
-	$(KUSTOMIZE) build config/crd -o tests/_build/crds/
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server load-image-all deploy
+	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+
+.PHONY: enable-prometheus-feature-flag
+enable-prometheus-feature-flag:
+	$(SED) -i "s#--feature-gates=+operator.autoinstrumentation.go#--feature-gates=+operator.autoinstrumentation.go,+operator.observability.prometheus#g" config/default/manager_auth_proxy_patch.yaml
+
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
 	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
 
-.PHONY: set-test-image-vars
-set-test-image-vars:
-	$(eval IMG=local/opentelemetry-operator:e2e)
-	$(eval TARGETALLOCATOR_IMG=local/opentelemetry-operator-targetallocator:e2e)
 
 # Build the container image, used only for local dev purposes
+# buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
 container:
-	docker build -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION}  --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} .
+	docker buildx build --load --platform linux/${ARCH} -t ${IMG} --build-arg VERSION_PKG=${VERSION_PKG} --build-arg VERSION=${VERSION} --build-arg VERSION_DATE=${VERSION_DATE} --build-arg OTELCOL_VERSION=${OTELCOL_VERSION} --build-arg TARGETALLOCATOR_VERSION=${TARGETALLOCATOR_VERSION} --build-arg OPERATOR_OPAMP_BRIDGE_VERSION=${OPERATOR_OPAMP_BRIDGE_VERSION} --build-arg AUTO_INSTRUMENTATION_JAVA_VERSION=${AUTO_INSTRUMENTATION_JAVA_VERSION}  --build-arg AUTO_INSTRUMENTATION_NODEJS_VERSION=${AUTO_INSTRUMENTATION_NODEJS_VERSION} --build-arg AUTO_INSTRUMENTATION_PYTHON_VERSION=${AUTO_INSTRUMENTATION_PYTHON_VERSION} --build-arg AUTO_INSTRUMENTATION_DOTNET_VERSION=${AUTO_INSTRUMENTATION_DOTNET_VERSION} --build-arg AUTO_INSTRUMENTATION_GO_VERSION=${AUTO_INSTRUMENTATION_GO_VERSION} --build-arg AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION=${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION} --build-arg AUTO_INSTRUMENTATION_NGINX_VERSION=${AUTO_INSTRUMENTATION_NGINX_VERSION} .
 
 # Push the container image, used only for local dev purposes
 .PHONY: container-push
 container-push:
 	docker push ${IMG}
 
+.PHONY: container-target-allocator-push
+container-target-allocator-push:
+	docker push ${TARGETALLOCATOR_IMG}
+
 .PHONY: container-target-allocator
 container-target-allocator:
-	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
+	docker buildx build  --load --platform linux/${ARCH} -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
+
+.PHONY: container-operator-opamp-bridge
+container-operator-opamp-bridge:
+	docker buildx build --platform linux/${ARCH} -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
 .PHONY: start-kind
 start-kind:
-	kind create cluster --config $(KIND_CONFIG)
+ifeq (true,$(START_KIND_CLUSTER))
+	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
+endif
 
 .PHONY: install-metrics-server
 install-metrics-server:
 	./hack/install-metrics-server.sh
 
+.PHONY: install-prometheus-operator
+install-prometheus-operator:
+	./hack/install-prometheus-operator.sh
+
 .PHONY: load-image-all
-load-image-all: load-image-operator load-image-target-allocator
+load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge
 
 .PHONY: load-image-operator
-load-image-operator:
-	kind load docker-image local/opentelemetry-operator:e2e
+load-image-operator: container
+ifeq (true,$(START_KIND_CLUSTER))
+	kind load --name $(KIND_CLUSTER_NAME) docker-image $(IMG)
+else
+	$(MAKE) container-push
+endif
+
 
 .PHONY: load-image-target-allocator
-load-image-target-allocator:
-	kind load docker-image ${TARGETALLOCATOR_IMG}
+load-image-target-allocator: container-target-allocator
+ifeq (true,$(START_KIND_CLUSTER))
+	kind load --name $(KIND_CLUSTER_NAME) docker-image $(TARGETALLOCATOR_IMG)
+else
+	$(MAKE) container-target-allocator-push
+endif
+
+
+.PHONY: load-image-operator-opamp-bridge
+load-image-operator-opamp-bridge:
+	kind load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
 
 .PHONY: cert-manager
 cert-manager: cmctl
@@ -231,25 +320,30 @@ cmctl:
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+CHLOGGEN ?= $(LOCALBIN)/chloggen
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
-## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.5
-CONTROLLER_TOOLS_VERSION ?= v0.8.0
+KUSTOMIZE_VERSION ?= v5.0.3
+CONTROLLER_TOOLS_VERSION ?= v0.12.0
+GOLANGCI_LINT_VERSION ?= v1.54.0
 
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4,$(KUSTOMIZE_VERSION))
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
+
+golangci-lint: ## Download golangci-lint locally if necessary.
+	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 $(CONTROLLER_GEN): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 CRDOC = $(shell pwd)/bin/crdoc
 .PHONY: crdoc
@@ -324,6 +418,7 @@ bundle: kustomize operator-sdk manifests set-image-controller
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
+	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build
@@ -334,9 +429,6 @@ bundle-build:
 bundle-push:
 	docker push $(BUNDLE_IMG)
 
-.PHONY: tools
-tools: ginkgo kustomize controller-gen operator-sdk
-
 .PHONY: api-docs
 api-docs: crdoc kustomize
 	@{ \
@@ -345,3 +437,68 @@ api-docs: crdoc kustomize
 	$(KUSTOMIZE) build config/crd -o $$TMP_DIR/crd-output.yaml ;\
 	$(CRDOC) --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
 	}
+
+
+.PHONY: chlog-install
+chlog-install: $(CHLOGGEN)
+$(CHLOGGEN): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install go.opentelemetry.io/build-tools/chloggen@v0.11.0
+
+FILENAME?=$(shell git branch --show-current)
+.PHONY: chlog-new
+chlog-new: chlog-install
+	$(CHLOGGEN) new --filename $(FILENAME)
+
+.PHONY: chlog-validate
+chlog-validate: chlog-install
+	$(CHLOGGEN) validate
+
+.PHONY: chlog-preview
+chlog-preview: chlog-install
+	$(CHLOGGEN) update --dry
+
+.PHONY: chlog-update
+chlog-update: chlog-install
+	$(CHLOGGEN) update --version $(VERSION)
+
+
+.PHONY: opm
+OPM = ./bin/opm
+opm: ## Download opm locally if necessary.
+ifeq (,$(wildcard $(OPM)))
+ifeq (,$(shell which opm 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OPM)) ;\
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.28.0/$${OS}-$${ARCH}-opm ;\
+	chmod +x $(OPM) ;\
+	}
+else
+OPM = $(shell which opm)
+endif
+endif
+
+# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=example.com/operator-bundle:v0.1.0,example.com/operator-bundle:v0.2.0).
+# These images MUST exist in a registry and be pull-able.
+BUNDLE_IMGS ?= $(BUNDLE_IMG)
+
+# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
+CATALOG_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-catalog:${VERSION}
+
+# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+ifneq ($(origin CATALOG_BASE_IMG), undefined)
+FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
+endif
+
+# Build a catalog image by adding bundle images to an empty catalog using the operator package manager tool, 'opm'.
+# This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
+# https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
+.PHONY: catalog-build
+catalog-build: opm bundle-build bundle-push ## Build a catalog image.
+	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+
+# Push the catalog image.
+.PHONY: catalog-push
+catalog-push: ## Push a catalog image.
+	docker push $(CATALOG_IMG)

@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
@@ -30,6 +31,8 @@ import (
 var k8sClient client.Client
 var testEnv *envtest.Environment
 var testScheme = scheme.Scheme
+var err error
+var cfg *rest.Config
 
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{
@@ -38,13 +41,13 @@ func TestMain(m *testing.M) {
 		},
 	}
 
-	cfg, err := testEnv.Start()
+	cfg, err = testEnv.Start()
 	if err != nil {
 		fmt.Printf("failed to start testEnv: %v", err)
 		os.Exit(1)
 	}
 
-	if err := v1alpha1.AddToScheme(testScheme); err != nil {
+	if err = v1alpha1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}

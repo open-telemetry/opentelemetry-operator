@@ -1,65 +1,120 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package config
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
-	"path/filepath"
+	"os"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-// ErrInvalidYAML represents an error in the format of the original YAML configuration file.
-var (
-	ErrInvalidYAML = errors.New("couldn't parse the loadbalancer configuration")
-)
-
 const DefaultResyncTime = 5 * time.Minute
 const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
+const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
 
 type Config struct {
-	LabelSelector map[string]string  `yaml:"label_selector,omitempty"`
-	Config        *promconfig.Config `yaml:"config"`
+	ListenAddr             string             `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath     string             `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig          *rest.Config       `yaml:"-"`
+	RootLogger             logr.Logger        `yaml:"-"`
+	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
+	PromConfig             *promconfig.Config `yaml:"config"`
+	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
+	PrometheusCR           PrometheusCRConfig `yaml:"prometheus_cr,omitempty"`
+	PodMonitorSelector     map[string]string  `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector map[string]string  `yaml:"service_monitor_selector,omitempty"`
 }
 
-type PrometheusCRWatcherConfig struct {
-	Enabled *bool
+type PrometheusCRConfig struct {
+	Enabled        bool           `yaml:"enabled,omitempty"`
+	ScrapeInterval model.Duration `yaml:"scrape_interval,omitempty"`
 }
 
-type CLIConfig struct {
-	ListenAddr     *string
-	ConfigFilePath *string
-	ClusterConfig  *rest.Config
-	// KubeConfigFilePath empty if in cluster configuration is in use
-	KubeConfigFilePath string
-	RootLogger         logr.Logger
-	PromCRWatcherConf  PrometheusCRWatcherConfig
-}
-
-func Load(file string) (Config, error) {
-	var cfg Config
-	if err := unmarshal(&cfg, file); err != nil {
-		return Config{}, err
+func (c Config) GetAllocationStrategy() string {
+	if c.AllocationStrategy != nil {
+		return *c.AllocationStrategy
 	}
-	return cfg, nil
+	return "least-weighted"
+}
+
+func (c Config) GetTargetsFilterStrategy() string {
+	if c.FilterStrategy != nil {
+		return *c.FilterStrategy
+	}
+	return ""
+}
+
+func LoadFromFile(file string, target *Config) error {
+	return unmarshal(target, file)
+}
+
+func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
+	var err error
+	// set the rest of the config attributes based on command-line flag values
+	target.RootLogger = zap.New(zap.UseFlagOptions(&zapCmdLineOpts))
+	klog.SetLogger(target.RootLogger)
+	ctrl.SetLogger(target.RootLogger)
+
+	target.KubeConfigFilePath, err = getKubeConfigFilePath(flagSet)
+	if err != nil {
+		return err
+	}
+	clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
+	if err != nil {
+		pathError := &fs.PathError{}
+		if ok := errors.As(err, &pathError); !ok {
+			return err
+		}
+		clusterConfig, err = rest.InClusterConfig()
+		if err != nil {
+			return err
+		}
+	}
+	target.ClusterConfig = clusterConfig
+
+	target.ListenAddr, err = getListenAddr(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.PrometheusCR.Enabled, err = getPrometheusCREnabled(flagSet)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func unmarshal(cfg *Config, configFile string) error {
 
-	yamlFile, err := ioutil.ReadFile(configFile)
+	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
 	}
@@ -69,35 +124,48 @@ func unmarshal(cfg *Config, configFile string) error {
 	return nil
 }
 
-func ParseCLI() (CLIConfig, error) {
-	opts := zap.Options{}
-	opts.BindFlags(flag.CommandLine)
-	cLIConf := CLIConfig{
-		ListenAddr:     pflag.String("listen-addr", ":8080", "The address where this service serves."),
-		ConfigFilePath: pflag.String("config-file", DefaultConfigFilePath, "The path to the config file."),
-		PromCRWatcherConf: PrometheusCRWatcherConfig{
-			Enabled: pflag.Bool("enable-prometheus-cr-watcher", false, "Enable Prometheus CRs as target sources"),
+func CreateDefaultConfig() Config {
+	return Config{
+		PrometheusCR: PrometheusCRConfig{
+			ScrapeInterval: DefaultCRScrapeInterval,
 		},
 	}
-	kubeconfigPath := pflag.String("kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
-	pflag.Parse()
+}
 
-	cLIConf.RootLogger = zap.New(zap.UseFlagOptions(&opts))
-	klog.SetLogger(cLIConf.RootLogger)
-	ctrl.SetLogger(cLIConf.RootLogger)
+func Load() (*Config, string, error) {
+	var err error
 
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigPath)
-	cLIConf.KubeConfigFilePath = *kubeconfigPath
+	flagSet := getFlagSet(pflag.ExitOnError)
+	err = flagSet.Parse(os.Args)
 	if err != nil {
-		if _, ok := err.(*fs.PathError); !ok {
-			return CLIConfig{}, err
-		}
-		clusterConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return CLIConfig{}, err
-		}
-		cLIConf.KubeConfigFilePath = "" // reset as we use in cluster configuration
+		return nil, "", err
 	}
-	cLIConf.ClusterConfig = clusterConfig
-	return cLIConf, nil
+
+	config := CreateDefaultConfig()
+
+	// load the config from the config file
+	configFilePath, err := getConfigFilePath(flagSet)
+	if err != nil {
+		return nil, "", err
+	}
+	err = LoadFromFile(configFilePath, &config)
+	if err != nil {
+		return nil, "", err
+	}
+
+	err = LoadFromCLI(&config, flagSet)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return &config, configFilePath, nil
+}
+
+// ValidateConfig validates the cli and file configs together.
+func ValidateConfig(config *Config) error {
+	scrapeConfigsPresent := (config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0)
+	if !(config.PrometheusCR.Enabled || scrapeConfigsPresent) {
+		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
+	}
+	return nil
 }

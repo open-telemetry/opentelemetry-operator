@@ -1,0 +1,9 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+artifactsDir: ./tests/_build/artifacts/
+commands:
+  - command: kubectl apply -f ./tests/e2e-multi-instrumentation/manager_deployment_feature_gate.yaml
+  - command: go run hack/check-operator-ready.go
+testDirs:
+  - ./tests/e2e-multi-instrumentation/
+timeout: 150

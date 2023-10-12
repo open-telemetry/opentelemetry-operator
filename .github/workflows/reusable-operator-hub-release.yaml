@@ -1,0 +1,88 @@
+name: Reusable - Create operator hub pull request
+
+on:
+  workflow_call:
+    inputs:
+      org:
+        type: string
+        required: true
+      repo:
+        type: string
+        required: true
+    secrets:
+      OPENTELEMETRYBOT_GITHUB_TOKEN:
+        required: true
+
+jobs:
+  create-operator-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set version as env variable
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          echo $TAG
+          TAG=${TAG:1} # remove v (prefix)
+          echo version=${TAG} >> $GITHUB_ENV # update GitHub ENV vars
+
+      - name: Sync fork
+        env:
+          GH_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+        run: |
+          # synchronizing the fork is fast, and avoids the need to fetch the full upstream repo
+          # (fetching the upstream repo with "--depth 1" would lead to "shallow update not allowed"
+          #  error when pushing back to the origin repo)
+          gh repo sync opentelemetrybot/${{ inputs.repo }} \
+              --source ${{ inputs.org }}/${{ inputs.repo }} \
+              --force
+
+      - name: Checkout operatorhub repo
+        uses: actions/checkout@v4
+        with:
+          repository: opentelemetrybot/${{ inputs.repo }}
+          token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+
+      - name: Checkout opentelemetry-operator to tmp/ directory
+        uses: actions/checkout@v4
+        with:
+          repository: open-telemetry/opentelemetry-operator
+          token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+          path: tmp/
+
+      - name: Update version
+        env:
+          VERSION: ${{ env.version }}
+        run: |
+          mkdir operators/opentelemetry-operator/${VERSION} 
+          cp -R ./tmp/bundle/* operators/opentelemetry-operator/${VERSION} 
+          rm -rf ./tmp
+
+      - name: Use CLA approved github bot
+        run: |
+          git config user.name opentelemetrybot
+          git config user.email 107717825+opentelemetrybot@users.noreply.github.com
+
+      - name: Create pull request against ${{ inputs.org }}/${{ inputs.repo }}
+        env:
+          VERSION: ${{ env.version }}
+          GH_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+        run: |
+          message="Update the opentelemetry to $VERSION"
+          body="Release opentelemetry-operator \`$VERSION\`.
+
+          cc @pavolloffay @frzifus @yuriolisa @jaronoff97 @VineethReddy02 @TylerHelmuth @swiatekm-sumo
+          "
+          branch="update-opentelemetry-operator-to-${VERSION}"
+
+          # gh pr create doesn't have a way to explicitly specify different head and base
+          # repositories currently, but it will implicitly pick up the head from a different
+          # repository if you set up a tracking branch
+
+          git checkout -b $branch
+          git add -A
+          git commit -s -m "$message"
+          git push -f --set-upstream origin $branch
+          gh pr create --title "$message" \
+                       --body "$body" \
+                       --repo ${{ inputs.org }}/${{ inputs.repo }} \
+                       --base main

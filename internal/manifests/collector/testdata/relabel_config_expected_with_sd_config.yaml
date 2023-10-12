@@ -1,0 +1,57 @@
+debug: null
+exporters: null
+processors: null
+receivers:
+  prometheus:
+    config:
+      global:
+        evaluation_interval: 1m
+        scrape_interval: 1m
+        scrape_timeout: 10s
+      scrape_configs:
+      - honor_labels: true
+        http_sd_configs:
+        - url: http://test-targetallocator:80/jobs/service-x/targets?collector_id=$POD_NAME
+        job_name: service-x
+        metric_relabel_configs:
+        - action: keep
+          regex: (.*)
+          separator: ;
+          source_labels:
+          - label1
+        - action: labelmap
+          regex: (.*)
+          separator: ;
+          source_labels:
+          - label4
+        metrics_path: /metrics
+        relabel_configs:
+        - action: keep
+          regex: (.*)
+          source_labels:
+          - label1
+        - action: replace
+          regex: (.*)
+          replacement: $$1_$$2
+          separator: ;
+          source_labels:
+          - label2
+          target_label: label3
+        - action: labelmap
+          regex: (.*)
+          separator: ;
+          source_labels:
+          - label4
+        - action: labeldrop
+          regex: foo_.*
+        scheme: http
+        scrape_interval: 1m
+        scrape_timeout: 10s
+service:
+  pipelines:
+    metrics:
+      exporters:
+      - debug
+      processors: []
+      receivers:
+      - prometheus

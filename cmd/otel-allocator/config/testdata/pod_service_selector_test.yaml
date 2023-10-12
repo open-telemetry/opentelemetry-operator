@@ -1,0 +1,14 @@
+label_selector:
+  app.kubernetes.io/instance: default.test
+  app.kubernetes.io/managed-by: opentelemetry-operator
+pod_monitor_selector:
+  release: test
+service_monitor_selector:
+  release: test
+config:
+  scrape_configs:
+    - job_name: prometheus
+      static_configs:
+        - targets: ["prom.domain:9001", "prom.domain:9002", "prom.domain:9003"]
+          labels:
+            my: label

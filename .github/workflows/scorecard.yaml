@@ -6,25 +6,34 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   scorecard-tests:
     name: test on k8s
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         kube-version:
-          - "1.19"
-          - "1.24"
+          - "1.23"
+          - "1.28"
 
     steps:
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
-          go-version: 1.18
+          go-version: "~1.21.1"
+
+      - name: Setup kind
+        env:
+          KIND_VERSION: "0.20.0"
+        run: go install sigs.k8s.io/kind@v${KIND_VERSION}
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: "install kuttl and kind"
         run: ./hack/install-kuttl.sh
@@ -39,3 +48,20 @@ jobs:
 
       - name: "run scorecard test"
         run: make scorecard-tests
+
+  scorecard-tests-check:
+    runs-on: ubuntu-22.04
+    if: always()
+    needs: [scorecard-tests]
+    steps:
+      - name: Print result
+        run: echo ${{ needs.scorecard-tests.result }}
+      - name: Interpret result
+        run: |
+          if [[ success == ${{ needs.scorecard-tests.result }} ]]
+          then
+            echo "All matrix jobs passed!"
+          else
+            echo "One or more matrix jobs failed."
+            false
+          fi

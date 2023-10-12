@@ -7,6 +7,8 @@
 # - Ensure you have `@opentelemetry/api`, `@opentelemetry/auto-instrumentations-node`, and `@opentelemetry/sdk-node` or your customized
 #   alternatives installed.
 # - Grant the necessary access to `/autoinstrumentation` directory. `chmod -R go+r /autoinstrumentation`
+# - For auto-instrumentation by container injection, the Linux command cp is
+#   used and must be availabe in the image.
 FROM node:16 AS build
 
 WORKDIR /operator-build

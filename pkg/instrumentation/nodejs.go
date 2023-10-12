@@ -15,22 +15,29 @@
 package instrumentation
 
 import (
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 const (
-	envNodeOptions      = "NODE_OPTIONS"
-	nodeRequireArgument = " --require /otel-auto-instrumentation/autoinstrumentation.js"
+	envNodeOptions          = "NODE_OPTIONS"
+	nodeRequireArgument     = " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
+	nodejsInitContainerName = initContainerName + "-nodejs"
+	nodejsVolumeName        = volumeName + "-nodejs"
+	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
 )
 
-func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) corev1.Pod {
-	// caller checks if there is at least one container
+func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
+	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
-	// inject env vars
+	err := validateContainerEnv(container.Env, envNodeOptions)
+	if err != nil {
+		return pod, err
+	}
+
+	// inject NodeJS instrumentation spec env vars.
 	for _, env := range nodeJSSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -45,39 +52,34 @@ func injectNodeJSSDK(logger logr.Logger, nodeJSSpec v1alpha1.NodeJS, pod corev1.
 			Value: nodeRequireArgument,
 		})
 	} else if idx > -1 {
-		if container.Env[idx].ValueFrom != nil {
-			// TODO add to status object or submit it as an event
-			logger.Info("Skipping NodeJS SDK injection, the container defines NODE_OPTIONS env var value via ValueFrom", "container", container.Name)
-			return pod
-		}
-
 		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
-
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      volumeName,
-		MountPath: "/otel-auto-instrumentation",
+		Name:      nodejsVolumeName,
+		MountPath: nodejsInstrMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container
-	if isInitContainerMissing(pod) {
+	if isInitContainerMissing(pod, nodejsInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: volumeName,
+			Name: nodejsVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: volumeSize(nodeJSSpec.VolumeSizeLimit),
+				},
 			}})
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:    initContainerName,
-			Image:   nodeJSSpec.Image,
-			Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			Name:      nodejsInitContainerName,
+			Image:     nodeJSSpec.Image,
+			Command:   []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+			Resources: nodeJSSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      volumeName,
-				MountPath: "/otel-auto-instrumentation",
+				Name:      nodejsVolumeName,
+				MountPath: nodejsInstrMountPath,
 			}},
 		})
 	}
-
-	return pod
+	return pod, nil
 }

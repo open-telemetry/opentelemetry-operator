@@ -52,6 +52,8 @@ spec:
           args:
             - --enable-prometheus-cr-watcher
           env:
+          - name: TEST_ENV
+            value: "test"
           - name: OTELCOL_NAMESPACE
             valueFrom:
               fieldRef:
