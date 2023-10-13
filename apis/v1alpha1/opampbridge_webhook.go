@@ -57,6 +57,15 @@ func (r *OpAMPBridge) Default() {
 	if r.Spec.Replicas == nil {
 		r.Spec.Replicas = &one
 	}
+
+	// ReportsStatus Capability must be set
+	if r.Spec.Capabilities == nil {
+		r.Spec.Capabilities = make(map[OpAMPBridgeCapability]bool)
+	}
+	enabled, found := r.Spec.Capabilities[OpAMPBridgeCapabilityReportsStatus]
+	if !enabled || !found {
+		r.Spec.Capabilities[OpAMPBridgeCapabilityReportsStatus] = true
+	}
 }
 
 //+kubebuilder:webhook:path=/validate-opentelemetry-io-v1alpha1-opampbridge,mutating=false,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update;delete,versions=v1alpha1,name=vopampbridge.kb.io,admissionReviewVersions=v1

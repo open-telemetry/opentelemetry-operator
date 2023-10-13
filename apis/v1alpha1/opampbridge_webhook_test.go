@@ -43,6 +43,7 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 				Spec: OpAMPBridgeSpec{
 					Replicas:        &one,
 					UpgradeStrategy: UpgradeStrategyAutomatic,
+					Capabilities:    map[OpAMPBridgeCapability]bool{OpAMPBridgeCapabilityReportsStatus: true},
 				},
 			},
 		},
@@ -63,6 +64,31 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 				Spec: OpAMPBridgeSpec{
 					Replicas:        &five,
 					UpgradeStrategy: "adhoc",
+					Capabilities:    map[OpAMPBridgeCapability]bool{OpAMPBridgeCapabilityReportsStatus: true},
+				},
+			},
+		},
+		{
+			name: "enable ReportsStatus capability if not enabled already",
+			opampBridge: OpAMPBridge{
+				Spec: OpAMPBridgeSpec{
+					Capabilities: map[OpAMPBridgeCapability]bool{
+						OpAMPBridgeCapabilityReportsStatus: false,
+					},
+				},
+			},
+			expected: OpAMPBridge{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpAMPBridgeSpec{
+					Replicas:        &one,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					Capabilities: map[OpAMPBridgeCapability]bool{
+						OpAMPBridgeCapabilityReportsStatus: true,
+					},
 				},
 			},
 		},

@@ -16,10 +16,10 @@ spec:
     ReportsOwnTraces: true
     ReportsRemoteConfig: true
     ReportsStatus: true
-    componentsAllowed:
+  componentsAllowed:
     receivers:
-      - otlp
+    - otlp
     processors:
-      - memory_limiter
+    - memory_limiter
     exporters:
-      - logging
+    - logging

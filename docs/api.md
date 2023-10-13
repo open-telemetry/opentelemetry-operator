@@ -3670,13 +3670,6 @@ OpAMPBridgeSpec defines the desired state of OpAMPBridge.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>protocol</b></td>
-        <td>string</td>
-        <td>
-          Protocol scheme for the communication between OpAMP server and OpAMP Bridge<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b><a href="#opampbridgespecaffinity">affinity</a></b></td>
         <td>object</td>
         <td>
