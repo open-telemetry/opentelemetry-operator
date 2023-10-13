@@ -220,7 +220,7 @@ e2e-multi-instrumentation:
 
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server load-image-all deploy
-	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 .PHONY: enable-prometheus-feature-flag
 enable-prometheus-feature-flag:
