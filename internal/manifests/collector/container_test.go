@@ -15,9 +15,11 @@
 package collector_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -72,7 +74,7 @@ service:
   pipelines:
     metrics:
       receivers: [examplereceiver]
-      exporters: [logging]
+      exporters: [debug]
 `
 
 	tests := []struct {
@@ -318,6 +320,32 @@ func TestContainerCustomVolumes(t *testing.T) {
 	assert.Equal(t, "custom-volume-mount", c.VolumeMounts[1].Name)
 }
 
+func TestContainerCustomConfigMapsVolumes(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
+				Name:      "test",
+				MountPath: "/",
+			}, {
+				Name:      "test2",
+				MountPath: "/dir",
+			}},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	assert.Len(t, c.VolumeMounts, 3)
+	assert.Equal(t, "configmap-test", c.VolumeMounts[1].Name)
+	assert.Equal(t, "/var/conf/configmap-test", c.VolumeMounts[1].MountPath)
+	assert.Equal(t, "configmap-test2", c.VolumeMounts[2].Name)
+	assert.Equal(t, "/var/conf/dir/configmap-test2", c.VolumeMounts[2].MountPath)
+}
+
 func TestContainerCustomSecurityContext(t *testing.T) {
 	// default config without security context
 	c1 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{Spec: v1alpha1.OpenTelemetryCollectorSpec{}}, true)
@@ -381,6 +409,26 @@ func TestContainerDefaultEnvVars(t *testing.T) {
 	// verify
 	assert.Len(t, c.Env, 1)
 	assert.Equal(t, c.Env[0].Name, "POD_NAME")
+}
+
+func TestContainerProxyEnvVars(t *testing.T) {
+	err := os.Setenv("NO_PROXY", "localhost")
+	require.NoError(t, err)
+	defer os.Unsetenv("NO_PROXY")
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	require.Len(t, c.Env, 3)
+	assert.Equal(t, "POD_NAME", c.Env[0].Name)
+	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[1])
+	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[2])
 }
 
 func TestContainerResourceRequirements(t *testing.T) {

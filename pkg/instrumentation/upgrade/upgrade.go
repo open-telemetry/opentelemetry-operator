@@ -36,6 +36,7 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstPython      string
 	DefaultAutoInstDotNet      string
 	DefaultAutoInstApacheHttpd string
+	DefaultAutoInstNginx       string
 	DefaultAutoInstGo          string
 }
 
@@ -150,6 +151,19 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		} else {
 			u.Logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
 			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Apache HTTPD auto instrumentation is not enabled")
+		}
+	}
+	autoInstNginx := inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNginx]
+	if autoInstNginx != "" {
+		if featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled() {
+			// upgrade the image only if the image matches the annotation
+			if inst.Spec.Nginx.Image == autoInstNginx {
+				inst.Spec.Nginx.Image = u.DefaultAutoInstNginx
+				inst.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNginx] = u.DefaultAutoInstNginx
+			}
+		} else {
+			u.Logger.Error(nil, "support for Nginx auto instrumentation is not enabled")
+			u.Recorder.Event(inst.DeepCopy(), "Warning", "InstrumentationUpgradeRejected", "support for Nginx auto instrumentation is not enabled")
 		}
 	}
 	return inst

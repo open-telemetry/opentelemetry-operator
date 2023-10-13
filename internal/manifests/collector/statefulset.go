@@ -15,35 +15,33 @@
 package collector
 
 import (
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // StatefulSet builds the statefulset for the given instance.
-func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *appsv1.StatefulSet {
-	name := naming.Collector(otelcol.Name)
-	labels := Labels(otelcol, name, cfg.LabelsFilter())
+func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
+	name := naming.Collector(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name, params.Config.LabelsFilter())
 
-	annotations := Annotations(otelcol)
-	podAnnotations := PodAnnotations(otelcol)
+	annotations := Annotations(params.OtelCol)
+	podAnnotations := PodAnnotations(params.OtelCol)
 
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   otelcol.Namespace,
+			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName: naming.Service(otelcol.Name),
+			ServiceName: naming.Service(params.OtelCol.Name),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(otelcol),
+				MatchLabels: SelectorLabels(params.OtelCol),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -51,23 +49,23 @@ func StatefulSet(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTel
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:        ServiceAccountName(otelcol),
-					InitContainers:            otelcol.Spec.InitContainers,
-					Containers:                append(otelcol.Spec.AdditionalContainers, Container(cfg, logger, otelcol, true)),
-					Volumes:                   Volumes(cfg, otelcol),
-					DNSPolicy:                 getDNSPolicy(otelcol),
-					HostNetwork:               otelcol.Spec.HostNetwork,
-					Tolerations:               otelcol.Spec.Tolerations,
-					NodeSelector:              otelcol.Spec.NodeSelector,
-					SecurityContext:           otelcol.Spec.PodSecurityContext,
-					PriorityClassName:         otelcol.Spec.PriorityClassName,
-					Affinity:                  otelcol.Spec.Affinity,
-					TopologySpreadConstraints: otelcol.Spec.TopologySpreadConstraints,
+					ServiceAccountName:        ServiceAccountName(params.OtelCol),
+					InitContainers:            params.OtelCol.Spec.InitContainers,
+					Containers:                append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
+					Volumes:                   Volumes(params.Config, params.OtelCol),
+					DNSPolicy:                 getDNSPolicy(params.OtelCol),
+					HostNetwork:               params.OtelCol.Spec.HostNetwork,
+					Tolerations:               params.OtelCol.Spec.Tolerations,
+					NodeSelector:              params.OtelCol.Spec.NodeSelector,
+					SecurityContext:           params.OtelCol.Spec.PodSecurityContext,
+					PriorityClassName:         params.OtelCol.Spec.PriorityClassName,
+					Affinity:                  params.OtelCol.Spec.Affinity,
+					TopologySpreadConstraints: params.OtelCol.Spec.TopologySpreadConstraints,
 				},
 			},
-			Replicas:             otelcol.Spec.Replicas,
+			Replicas:             params.OtelCol.Spec.Replicas,
 			PodManagementPolicy:  "Parallel",
-			VolumeClaimTemplates: VolumeClaimTemplates(otelcol),
+			VolumeClaimTemplates: VolumeClaimTemplates(params.OtelCol),
 		},
 	}
 }

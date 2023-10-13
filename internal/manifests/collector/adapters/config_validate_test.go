@@ -44,16 +44,16 @@ receivers:
 processors:
 
 exporters:
-  logging:
+  debug:
 
 service:
   pipelines:
     metrics:
       receivers: [httpd/mtls, jaeger]
-      exporters: [logging]
+      exporters: [debug]
     metrics/1:
       receivers: [httpd/mtls, jaeger]
-      exporters: [logging]
+      exporters: [debug]
 `
 	// // prepare
 	config, err := ConfigFromString(configStr)
@@ -85,7 +85,7 @@ receivers:
 processors:
 
 exporters:
-  logging:
+  debug:
 
 service:
   pipelines:

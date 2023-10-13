@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mount-test1
+data:
+  export.ini: |
+    - EXPORT=true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mount-test2
+data:
+  otel.ini: |
+    - OTEL_ENDPOINT=localhost
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simplest-with-configmaps-collector
+spec:
+  template:
+    spec:
+      volumes:
+        - name: otc-internal
+          configMap:
+            name: simplest-with-configmaps-collector
+            items:
+              - key: collector.yaml
+                path: collector.yaml
+            defaultMode: 420
+        - name: configmap-mount-test1
+          configMap:
+            name: mount-test1
+            defaultMode: 420
+        - name: configmap-mount-test2
+          configMap:
+            name: mount-test2
+            defaultMode: 420
+      containers:
+        - name: otc-container
+          volumeMounts:
+            - name: otc-internal
+              mountPath: /conf
+            - name: configmap-mount-test1
+              mountPath: /var/conf/configmap-mount-test1
+            - name: configmap-mount-test2
+              mountPath: /var/conf/dir/configmap-mount-test2
+status:
+  readyReplicas: 1

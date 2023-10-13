@@ -16,6 +16,7 @@ package targetallocator
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -61,6 +62,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	if otelcol.Spec.TargetAllocator.PrometheusCR.Enabled {
 		args = append(args, "--enable-prometheus-cr-watcher")
 	}
+	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
 		Name:         naming.TAContainer(),
 		Image:        image,

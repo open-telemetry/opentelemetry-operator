@@ -5,14 +5,14 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: "1.21"
+        go-version: "~1.21.1"
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator"

@@ -17,6 +17,7 @@ package target
 import (
 	"context"
 	"errors"
+	"hash"
 	"sort"
 	"testing"
 	"time"
@@ -83,10 +84,11 @@ func TestDiscovery(t *testing.T) {
 	}()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := config.Load(tt.args.file)
+			cfg := config.CreateDefaultConfig()
+			err := config.LoadFromFile(tt.args.file, &cfg)
 			assert.NoError(t, err)
-			assert.True(t, len(cfg.Config.ScrapeConfigs) > 0)
-			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.Config)
+			assert.True(t, len(cfg.PromConfig.ScrapeConfigs) > 0)
+			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.PromConfig)
 			assert.NoError(t, err)
 
 			gotTargets := <-results
@@ -96,7 +98,7 @@ func TestDiscovery(t *testing.T) {
 
 			// check the updated scrape configs
 			expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
-			for _, scrapeConfig := range cfg.Config.ScrapeConfigs {
+			for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
 				expectedScrapeConfigs[scrapeConfig.JobName] = scrapeConfig
 			}
 			assert.Equal(t, expectedScrapeConfigs, scu.mockCfg)
@@ -252,6 +254,33 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 			},
 		},
 		{
+			description: "different regex",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "serviceMonitor/testapp/testapp/1",
+						HonorTimestamps: false,
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics",
+						Scheme:          "http",
+						HTTPClientConfig: commonconfig.HTTPClientConfig{
+							FollowRedirects: true,
+						},
+						RelabelConfigs: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{model.LabelName("job")},
+								Separator:    ";",
+								Regex:        relabel.MustNewRegexp("(.+)"),
+								TargetLabel:  "__tmp_prometheus_job_name",
+								Replacement:  "$$1",
+								Action:       relabel.Replace,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			description: "mock error on update - no hash update",
 			cfg: &promconfig.Config{
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
@@ -262,39 +291,9 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 			},
 			expectErr: true,
 		},
-		// {
-		// TODO: fix handler logic so this test passes.
-		// This test currently fails due to the regexp struct not having any
-		// exported fields for the hashing algorithm to hash on, causing the
-		// hashes to be the same even though the data is different.
-		// 	description: "different regex",
-		// 	cfg: &promconfig.Config{
-		// 		ScrapeConfigs: []*promconfig.ScrapeConfig{
-		// 			{
-		// 				JobName:         "serviceMonitor/testapp/testapp/1",
-		// 				HonorTimestamps: false,
-		// 				ScrapeTimeout:   model.Duration(30 * time.Second),
-		// 				MetricsPath:     "/metrics",
-		// 				HTTPClientConfig: commonconfig.HTTPClientConfig{
-		// 					FollowRedirects: true,
-		// 				},
-		// 				RelabelConfigs: []*relabel.Config{
-		// 					{
-		// 						SourceLabels: model.LabelNames{model.LabelName("job")},
-		// 						Separator:    ";",
-		// 						Regex:        relabel.MustNewRegexp("something else"),
-		// 						TargetLabel:  "__tmp_prometheus_job_name",
-		// 						Replacement:  "$$1",
-		// 						Action:       relabel.Replace,
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
 	}
 	var (
-		lastValidHash   uint64
+		lastValidHash   hash.Hash
 		expectedConfig  map[string]*promconfig.ScrapeConfig
 		lastValidConfig map[string]*promconfig.ScrapeConfig
 	)

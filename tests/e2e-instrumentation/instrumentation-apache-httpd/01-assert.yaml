@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-apache-httpd: 'true'
+    sidecar.opentelemetry.io/inject: 'true'
+  labels:
+    app: my-apache
+spec:
+  containers:
+  - env:
+    - name: OTEL_SERVICE_NAME
+      value: my-apache
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4317
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: '0.25'
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    name: myapp
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+    - name: otel-apache-agent
+      mountPath: /opt/opentelemetry-webserver/agent
+    - name: otel-apache-conf-dir
+      mountPath: /usr/local/apache2/conf
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
+  initContainers:
+  - args:
+    - cp -r /usr/local/apache2/conf/* /opt/opentelemetry-webserver/source-conf
+    name: otel-agent-source-container-clone
+  - args:
+    - cp -r /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo "/opt/opentelemetry-webserver/agent/logs" | sed 's,/,\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml &&echo "$OTEL_APACHE_AGENT_CONF" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && echo 'Include /usr/local/apache2/conf/opentemetry_agent.conf' >> /opt/opentelemetry-webserver/source-conf/httpd.conf
+    name: otel-agent-attach-apache
+status:
+  phase: Running

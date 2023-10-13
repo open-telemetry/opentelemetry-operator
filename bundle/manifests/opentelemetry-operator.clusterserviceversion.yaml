@@ -23,7 +23,7 @@ metadata:
             "name": "otel"
           },
           "spec": {
-            "config": "receivers:\n  otlp:\n    protocols: \n      grpc:\n      http:\n\nexporters:\n  logging:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [logging]\n"
+            "config": "receivers:\n  otlp:\n    protocols: \n      grpc:\n      http:\n\nexporters:\n  debug:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
           }
         }
       ]
@@ -31,13 +31,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2023-08-18T14:30:49Z"
+    createdAt: "2023-10-09T11:59:54Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.83.0
+  name: opentelemetry-operator.v0.86.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -110,6 +110,8 @@ spec:
           - ""
           resources:
           - configmaps
+          - serviceaccounts
+          - services
           verbs:
           - create
           - delete
@@ -133,45 +135,11 @@ spec:
           - list
           - watch
         - apiGroups:
-          - ""
-          resources:
-          - serviceaccounts
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - services
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
           - apps
           resources:
           - daemonsets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - apps
-          resources:
           - deployments
+          - statefulsets
           verbs:
           - create
           - delete
@@ -187,18 +155,6 @@ spec:
           verbs:
           - get
           - list
-          - watch
-        - apiGroups:
-          - apps
-          resources:
-          - statefulsets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - autoscaling
@@ -282,6 +238,18 @@ spec:
           - patch
           - update
         - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - route.openshift.io
           resources:
           - routes
@@ -331,8 +299,8 @@ spec:
                 - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
-                - --feature-gates=+operator.autoinstrumentation.go
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.83.0
+                - --feature-gates=+operator.autoinstrumentation.go,+operator.autoinstrumentation.nginx
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.86.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -437,9 +405,10 @@ spec:
   - email: jpkroehling@redhat.com
     name: Juraci Paixão Kröhling
   maturity: alpha
+  minKubeVersion: 1.23.0
   provider:
     name: OpenTelemetry Community
-  version: 0.83.0
+  version: 0.86.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

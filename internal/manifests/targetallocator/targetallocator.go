@@ -20,11 +20,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
-// Build is currently unused, but will be implemented to solve
-// https://github.com/open-telemetry/opentelemetry-operator/issues/1876
+// Build creates the manifest for the TargetAllocator resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
-	if !params.Instance.Spec.TargetAllocator.Enabled {
+	if !params.OtelCol.Spec.TargetAllocator.Enabled {
 		return resourceManifests, nil
 	}
 	resourceFactories := []manifests.K8sManifestFactory{
@@ -34,13 +33,10 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.FactoryWithoutError(Service),
 	}
 	for _, factory := range resourceFactories {
-		res, err := factory(params.Config, params.Log, params.Instance)
+		res, err := factory(params)
 		if err != nil {
 			return nil, err
-		} else if res != nil {
-			// because of pointer semantics, res is still nil-able here as this is an interface pointer
-			// read here for details:
-			// https://github.com/open-telemetry/opentelemetry-operator/pull/1965#discussion_r1281705719
+		} else if manifests.ObjectIsNotNil(res) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
