@@ -26,7 +26,7 @@ import (
 
 func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	inst := &Instrumentation{}
-	err := CollectorWebhook{
+	err := InstrumentationWebhook{
 		cfg: config.New(
 			config.WithAutoInstrumentationJavaImage("java-img:1"),
 			config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
@@ -119,17 +119,17 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
 			if test.err == "" {
-				warnings, err := CollectorWebhook{}.ValidateCreate(ctx, &test.inst)
+				warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Nil(t, err)
-				warnings, err = CollectorWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
+				warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Nil(t, err)
 			} else {
-				warnings, err := CollectorWebhook{}.ValidateCreate(ctx, &test.inst)
+				warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Contains(t, err.Error(), test.err)
-				warnings, err = CollectorWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
+				warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Contains(t, err.Error(), test.err)
 			}
@@ -179,17 +179,17 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 				}
 				ctx := context.Background()
 				if test.err == "" {
-					warnings, err := CollectorWebhook{}.ValidateCreate(ctx, &inst)
+					warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &inst)
 					assert.Nil(t, warnings)
 					assert.Nil(t, err)
-					warnings, err = CollectorWebhook{}.ValidateUpdate(ctx, nil, &inst)
+					warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &inst)
 					assert.Nil(t, warnings)
 					assert.Nil(t, err)
 				} else {
-					warnings, err := CollectorWebhook{}.ValidateCreate(ctx, &inst)
+					warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &inst)
 					assert.Nil(t, warnings)
 					assert.Contains(t, err.Error(), test.err)
-					warnings, err = CollectorWebhook{}.ValidateUpdate(ctx, nil, &inst)
+					warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &inst)
 					assert.Nil(t, warnings)
 					assert.Contains(t, err.Error(), test.err)
 				}
