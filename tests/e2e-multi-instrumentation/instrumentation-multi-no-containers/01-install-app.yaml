@@ -18,12 +18,12 @@ spec:
     spec:
       containers:
         - name: nodejsapp
-          image: ghcr.io/anuraaga/express-hello-world:latest
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
           env:
             - name: TEST
               value: test
         - name: pythonapp
-          image: ghcr.io/anuraaga/flask-hello-world:latest
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
           env:
             - name: TEST
               value: test
