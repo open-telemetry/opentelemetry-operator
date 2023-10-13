@@ -18,7 +18,7 @@ The [Prometheus Receivers](https://github.com/open-telemetry/opentelemetry-colle
 
 ## Discovery of Prometheus Custom Resources
 
-The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitor and the PodMonitor don’t do any scraping themselves; their purpose is to inform the Target Allocator (or Prometheus) to add a new job to their scrape configuration. The Target Allocator then adds the job to the OTel Collector’s [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md)’s scrape configuration. 
+The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitors and the PodMonitors purpose is to inform the Target Allocator (or PrometheusOperator) to add a new job to their scrape configuration. The Target Allocator then provides the jobs to the OTel Collector [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md). 
 
 ![Diagram depicting service discovery functionality for the target allocator](images/otel_ta_service_discovery.jpeg)
 
