@@ -11,17 +11,28 @@ The TA serves two functions:
 
 ## Even Distribution of Prometheus Targets
 
-The Target Allocator's first job is to discover targets to scrape and collectors to allocate targets to. Then it can distribute the targets it discovers among the collectors. This means that the OTel Collectors collect the metrics instead of a Prometheus [scraper](https://uzxmx.github.io/prometheus-scrape-internals.html). 
-The [Prometheus Receivers](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) on the Collectors then query the target allocator for endpoints to scrape metrics from.
+The Target Allocator’s first job is to discover targets to scrape and OTel Collectors to allocate targets to. Then it can distribute the targets it discovers among the Collectors. The Collectors in turn query the Target Allocator for Metrics endpoints to scrape, and then the Collectors’ [Prometheus Receivers](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) scrape  the Metrics targets. 
 
-![Diagram depicting target distribution functionality for the target allocator](images/otel_ta_target_distribution.jpeg)
+This means that the OTel Collectors collect the metrics instead of a Prometheus [scraper](https://uzxmx.github.io/prometheus-scrape-internals.html). 
+
+
+```mermaid
+sequenceDiagram
+  participant Target Allocator
+  participant Metrics Targets
+  participant OTel Collectors
+  Target Allocator ->>Metrics Targets: 1. Discover Metrics targets
+  Target Allocator ->>OTel Collectors: 2. Discover available Collectors
+  Target Allocator ->>Target Allocator: 3. Assign Metrics targets
+  OTel Collectors ->>Target Allocator: 4. Query TA for Metrics endpoints scrape
+  OTel Collectors ->>Metrics Targets: 5. Scrape Metrics target
+```
 
 ## Discovery of Prometheus Custom Resources
 
 The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitors and the PodMonitors purpose is to inform the Target Allocator (or PrometheusOperator) to add a new job to their scrape configuration. The Target Allocator then provides the jobs to the OTel Collector [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md). 
 
 ![Diagram depicting service discovery functionality for the target allocator](images/otel_ta_service_discovery.jpeg)
-
 
 Even though Prometheus is not required to be installed in your Kubernetes cluster to use the Target Allocator for Prometheus CR discovery, the TA does require that the ServiceMonitor and PodMonitor be installed. These CRs are bundled with Prometheus Operator; however, they can be installed standalone as well.
 
