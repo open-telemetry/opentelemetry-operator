@@ -89,10 +89,6 @@ func (r *OpAMPBridge) validateCRDSpec() error {
 		return fmt.Errorf("the OpAMP server endpoint is not specified")
 	}
 
-	if len(strings.TrimSpace(r.Spec.Protocol)) == 0 {
-		return fmt.Errorf("the transport for OpAMP server protocol is not specified")
-	}
-
 	if len(r.Spec.Capabilities) == 0 {
 		return fmt.Errorf("the capabilities supported by OpAMP Bridge are not specified")
 	}

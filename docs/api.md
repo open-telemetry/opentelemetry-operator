@@ -3657,7 +3657,7 @@ OpAMPBridgeSpec defines the desired state of OpAMPBridge.
     </thead>
     <tbody><tr>
         <td><b>capabilities</b></td>
-        <td>[]enum</td>
+        <td>map[string]boolean</td>
         <td>
           Capabilities supported by the OpAMP Bridge<br/>
         </td>
@@ -3684,7 +3684,7 @@ OpAMPBridgeSpec defines the desired state of OpAMPBridge.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>components_allowed</b></td>
+        <td><b>componentsAllowed</b></td>
         <td>map[string][]string</td>
         <td>
           ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)<br/>

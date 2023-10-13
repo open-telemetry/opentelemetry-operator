@@ -21,6 +21,7 @@ type (
 )
 
 const (
+	OpAMPBridgeCapabilityReportsStatus                  OpAMPBridgeCapability = "ReportsStatus"
 	OpAMPBridgeCapabilityAcceptsRemoteConfig            OpAMPBridgeCapability = "AcceptsRemoteConfig"
 	OpAMPBridgeCapabilityReportsEffectiveConfig         OpAMPBridgeCapability = "ReportsEffectiveConfig"
 	OpAMPBridgeCapabilityReportsOwnTraces               OpAMPBridgeCapability = "ReportsOwnTraces"

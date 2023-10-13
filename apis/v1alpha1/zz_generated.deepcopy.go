@@ -548,8 +548,10 @@ func (in *OpAMPBridgeSpec) DeepCopyInto(out *OpAMPBridgeSpec) {
 	*out = *in
 	if in.Capabilities != nil {
 		in, out := &in.Capabilities, &out.Capabilities
-		*out = make([]OpAMPBridgeCapability, len(*in))
-		copy(*out, *in)
+		*out = make(map[OpAMPBridgeCapability]bool, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 	if in.ComponentsAllowed != nil {
 		in, out := &in.ComponentsAllowed, &out.ComponentsAllowed

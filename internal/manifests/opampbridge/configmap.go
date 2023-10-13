@@ -43,16 +43,12 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		config["endpoint"] = params.OpAMPBridge.Spec.Endpoint
 	}
 
-	if len(params.OpAMPBridge.Spec.Protocol) > 0 {
-		config["protocol"] = params.OpAMPBridge.Spec.Protocol
-	}
-
 	if params.OpAMPBridge.Spec.Capabilities != nil {
 		config["capabilities"] = params.OpAMPBridge.Spec.Capabilities
 	}
 
 	if params.OpAMPBridge.Spec.ComponentsAllowed != nil {
-		config["components_allowed"] = params.OpAMPBridge.Spec.ComponentsAllowed
+		config["componentsAllowed"] = params.OpAMPBridge.Spec.ComponentsAllowed
 	}
 
 	configYAML, err := yaml.Marshal(config)

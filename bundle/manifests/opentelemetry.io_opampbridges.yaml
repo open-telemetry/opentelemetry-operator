@@ -749,24 +749,11 @@ spec:
                     type: object
                 type: object
               capabilities:
+                additionalProperties:
+                  type: boolean
                 description: Capabilities supported by the OpAMP Bridge
-                items:
-                  description: OpAMPBridgeCapability represents capability supported
-                    by OpAMP Bridge.
-                  enum:
-                  - AcceptsRemoteConfig
-                  - ReportsEffectiveConfig
-                  - ReportsOwnTraces
-                  - ReportsOwnMetrics
-                  - ReportsOwnLogs
-                  - AcceptsOpAMPConnectionSettings
-                  - AcceptsOtherConnectionSettings
-                  - AcceptsRestartCommand
-                  - ReportsHealth
-                  - ReportsRemoteConfig
-                  type: string
-                type: array
-              components_allowed:
+                type: object
+              componentsAllowed:
                 additionalProperties:
                   items:
                     type: string
@@ -1110,10 +1097,6 @@ spec:
               priorityClassName:
                 description: If specified, indicates the pod's priority. If not specified,
                   the pod priority will be default or zero if there is no default.
-                type: string
-              protocol:
-                description: Protocol scheme for the communication between OpAMP server
-                  and OpAMP Bridge
                 type: string
               replicas:
                 description: Replicas is the number of pod instances for the OpAMPBridge.
@@ -2828,7 +2811,6 @@ spec:
             required:
             - capabilities
             - endpoint
-            - protocol
             type: object
           status:
             description: OpAMPBridgeStatus defines the observed state of OpAMPBridge.

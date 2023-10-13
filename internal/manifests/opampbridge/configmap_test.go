@@ -40,17 +40,18 @@ func TestDesiredConfigMap(t *testing.T) {
 
 		expectedData := map[string]string{
 			"remoteconfiguration.yaml": `capabilities:
-- AcceptsRemoteConfig
-- ReportsEffectiveConfig
-- ReportsOwnTraces
-- ReportsOwnMetrics
-- ReportsOwnLogs
-- AcceptsOpAMPConnectionSettings
-- AcceptsOtherConnectionSettings
-- AcceptsRestartCommand
-- ReportsHealth
-- ReportsRemoteConfig
-components_allowed:
+  AcceptsOpAMPConnectionSettings: true
+  AcceptsOtherConnectionSettings: true
+  AcceptsRemoteConfig: true
+  AcceptsRestartCommand: true
+  ReportsEffectiveConfig: true
+  ReportsHealth: true
+  ReportsOwnLogs: true
+  ReportsOwnMetrics: true
+  ReportsOwnTraces: true
+  ReportsRemoteConfig: true
+  ReportsStatus: true
+componentsAllowed:
   exporters:
   - logging
   processors:
@@ -58,7 +59,6 @@ components_allowed:
   receivers:
   - otlp
 endpoint: ws://opamp-server:4320/v1/opamp
-protocol: wss
 `}
 
 		opampBridge := v1alpha1.OpAMPBridge{
@@ -67,10 +67,21 @@ protocol: wss
 				Namespace: "my-namespace",
 			},
 			Spec: v1alpha1.OpAMPBridgeSpec{
-				Image:             "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
-				Endpoint:          "ws://opamp-server:4320/v1/opamp",
-				Protocol:          "wss",
-				Capabilities:      []v1alpha1.OpAMPBridgeCapability{v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig, v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig, v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces, v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics, v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs, v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand, v1alpha1.OpAMPBridgeCapabilityReportsHealth, v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig},
+				Image:    "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
+				Endpoint: "ws://opamp-server:4320/v1/opamp",
+				Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
+					v1alpha1.OpAMPBridgeCapabilityReportsStatus:                  true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,
+					v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig:         true,
+					v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces:               true,
+					v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics:              true,
+					v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs:                 true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings: true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings: true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
+					v1alpha1.OpAMPBridgeCapabilityReportsHealth:                  true,
+					v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig:            true,
+				},
 				ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"logging"}},
 			},
 		}

@@ -24,15 +24,12 @@ type OpAMPBridgeSpec struct {
 	// OpAMP backend Server endpoint
 	// +required
 	Endpoint string `json:"endpoint"`
-	// Protocol scheme for the communication between OpAMP server and OpAMP Bridge
-	// +required
-	Protocol string `json:"protocol"`
 	// Capabilities supported by the OpAMP Bridge
 	// +required
-	Capabilities []OpAMPBridgeCapability `json:"capabilities"`
+	Capabilities map[OpAMPBridgeCapability]bool `json:"capabilities"`
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	// +optional
-	ComponentsAllowed map[string][]string `json:"components_allowed,omitempty"`
+	ComponentsAllowed map[string][]string `json:"componentsAllowed,omitempty"`
 	// Resources to set on the OpAMPBridge pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`

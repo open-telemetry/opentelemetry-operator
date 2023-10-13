@@ -33,17 +33,18 @@ metadata:
 data:
   remoteconfiguration.yaml: |
     capabilities:
-    - AcceptsRemoteConfig
-    - ReportsEffectiveConfig
-    - ReportsOwnTraces
-    - ReportsOwnMetrics
-    - ReportsOwnLogs
-    - AcceptsOpAMPConnectionSettings
-    - AcceptsOtherConnectionSettings
-    - AcceptsRestartCommand
-    - ReportsHealth
-    - ReportsRemoteConfig
-    components_allowed:
+      AcceptsOpAMPConnectionSettings: true
+      AcceptsOtherConnectionSettings: true
+      AcceptsRemoteConfig: true
+      AcceptsRestartCommand: true
+      ReportsEffectiveConfig: true
+      ReportsHealth: true
+      ReportsOwnLogs: true
+      ReportsOwnMetrics: true
+      ReportsOwnTraces: true
+      ReportsRemoteConfig: true
+      ReportsStatus: true
+    componentsAllowed:
       exporters:
       - logging
       processors:
@@ -51,7 +52,6 @@ data:
       receivers:
       - otlp
     endpoint: ws://opamp-server:4320/v1/opamp
-    protocol: wss
 ---
 apiVersion: v1
 kind: Service

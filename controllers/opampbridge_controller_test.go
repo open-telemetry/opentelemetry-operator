@@ -67,9 +67,20 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 			Namespace: nsn.Namespace,
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			Endpoint:     "ws://opamp-server:4320/v1/opamp",
-			Protocol:     "wss",
-			Capabilities: []v1alpha1.OpAMPBridgeCapability{v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig, v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig, v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces, v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics, v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs, v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand, v1alpha1.OpAMPBridgeCapabilityReportsHealth, v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig},
+			Endpoint: "ws://opamp-server:4320/v1/opamp",
+			Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
+				v1alpha1.OpAMPBridgeCapabilityReportsStatus:                  true,
+				v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,
+				v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig:         true,
+				v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces:               true,
+				v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics:              true,
+				v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs:                 true,
+				v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings: true,
+				v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings: true,
+				v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
+				v1alpha1.OpAMPBridgeCapabilityReportsHealth:                  true,
+				v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig:            true,
+			},
 		},
 	}
 	err := k8sClient.Create(context.Background(), created)

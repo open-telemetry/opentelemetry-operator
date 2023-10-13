@@ -93,9 +93,20 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: OpAMPBridgeSpec{
-					Endpoint:     "ws://opamp-server:4320/v1/opamp",
-					Protocol:     "wss",
-					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
+					Endpoint: "ws://opamp-server:4320/v1/opamp",
+					Capabilities: map[OpAMPBridgeCapability]bool{
+						OpAMPBridgeCapabilityReportsStatus:                  true,
+						OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,
+						OpAMPBridgeCapabilityReportsEffectiveConfig:         true,
+						OpAMPBridgeCapabilityReportsOwnTraces:               true,
+						OpAMPBridgeCapabilityReportsOwnMetrics:              true,
+						OpAMPBridgeCapabilityReportsOwnLogs:                 true,
+						OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsOtherConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
+						OpAMPBridgeCapabilityReportsHealth:                  true,
+						OpAMPBridgeCapabilityReportsRemoteConfig:            true,
+					},
 				},
 			},
 		},
@@ -109,21 +120,10 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpAMP server endpoint is not specified",
 		},
 		{
-			name: "empty transport for OpAMP protocol",
-			opampBridge: OpAMPBridge{
-				Spec: OpAMPBridgeSpec{
-					Endpoint: "ws://opamp-server:4320/v1/opamp",
-					Protocol: "",
-				},
-			},
-			expectedErr: "the transport for OpAMP server protocol is not specified",
-		},
-		{
 			name: "empty capabilities",
 			opampBridge: OpAMPBridge{
 				Spec: OpAMPBridgeSpec{
 					Endpoint: "ws://opamp-server:4320/v1/opamp",
-					Protocol: "wss",
 				},
 			},
 			expectedErr: "the capabilities supported by OpAMP Bridge are not specified",
@@ -136,10 +136,21 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: OpAMPBridgeSpec{
-					Replicas:     &two,
-					Endpoint:     "ws://opamp-server:4320/v1/opamp",
-					Protocol:     "wss",
-					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
+					Replicas: &two,
+					Endpoint: "ws://opamp-server:4320/v1/opamp",
+					Capabilities: map[OpAMPBridgeCapability]bool{
+						OpAMPBridgeCapabilityReportsStatus:                  true,
+						OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,
+						OpAMPBridgeCapabilityReportsEffectiveConfig:         true,
+						OpAMPBridgeCapabilityReportsOwnTraces:               true,
+						OpAMPBridgeCapabilityReportsOwnMetrics:              true,
+						OpAMPBridgeCapabilityReportsOwnLogs:                 true,
+						OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsOtherConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
+						OpAMPBridgeCapabilityReportsHealth:                  true,
+						OpAMPBridgeCapabilityReportsRemoteConfig:            true,
+					},
 				},
 			},
 			expectedErr: "replica count must not be greater than 1",
@@ -148,9 +159,20 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 			name: "invalid port name",
 			opampBridge: OpAMPBridge{
 				Spec: OpAMPBridgeSpec{
-					Endpoint:     "ws://opamp-server:4320/v1/opamp",
-					Protocol:     "wss",
-					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
+					Endpoint: "ws://opamp-server:4320/v1/opamp",
+					Capabilities: map[OpAMPBridgeCapability]bool{
+						OpAMPBridgeCapabilityReportsStatus:                  true,
+						OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,
+						OpAMPBridgeCapabilityReportsEffectiveConfig:         true,
+						OpAMPBridgeCapabilityReportsOwnTraces:               true,
+						OpAMPBridgeCapabilityReportsOwnMetrics:              true,
+						OpAMPBridgeCapabilityReportsOwnLogs:                 true,
+						OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsOtherConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
+						OpAMPBridgeCapabilityReportsHealth:                  true,
+						OpAMPBridgeCapabilityReportsRemoteConfig:            true,
+					},
 					Ports: []v1.ServicePort{
 						{
 							// this port name contains a non alphanumeric character, which is invalid.
@@ -167,10 +189,20 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 			name: "invalid port name, too long",
 			opampBridge: OpAMPBridge{
 				Spec: OpAMPBridgeSpec{
-					Endpoint:     "ws://opamp-server:4320/v1/opamp",
-					Protocol:     "wss",
-					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
-					Ports: []v1.ServicePort{
+					Endpoint: "ws://opamp-server:4320/v1/opamp",
+					Capabilities: map[OpAMPBridgeCapability]bool{
+						OpAMPBridgeCapabilityReportsStatus:                  true,
+						OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,
+						OpAMPBridgeCapabilityReportsEffectiveConfig:         true,
+						OpAMPBridgeCapabilityReportsOwnTraces:               true,
+						OpAMPBridgeCapabilityReportsOwnMetrics:              true,
+						OpAMPBridgeCapabilityReportsOwnLogs:                 true,
+						OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsOtherConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
+						OpAMPBridgeCapabilityReportsHealth:                  true,
+						OpAMPBridgeCapabilityReportsRemoteConfig:            true,
+					}, Ports: []v1.ServicePort{
 						{
 							Name: "aaaabbbbccccdddd", // len: 16, too long
 							Port: 5555,
@@ -184,9 +216,20 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 			name: "invalid port num",
 			opampBridge: OpAMPBridge{
 				Spec: OpAMPBridgeSpec{
-					Endpoint:     "ws://opamp-server:4320/v1/opamp",
-					Protocol:     "wss",
-					Capabilities: []OpAMPBridgeCapability{OpAMPBridgeCapabilityAcceptsRemoteConfig, OpAMPBridgeCapabilityReportsEffectiveConfig, OpAMPBridgeCapabilityReportsOwnTraces, OpAMPBridgeCapabilityReportsOwnMetrics, OpAMPBridgeCapabilityReportsOwnLogs, OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings, OpAMPBridgeCapabilityAcceptsOtherConnectionSettings, OpAMPBridgeCapabilityAcceptsRestartCommand, OpAMPBridgeCapabilityReportsHealth, OpAMPBridgeCapabilityReportsRemoteConfig},
+					Endpoint: "ws://opamp-server:4320/v1/opamp",
+					Capabilities: map[OpAMPBridgeCapability]bool{
+						OpAMPBridgeCapabilityReportsStatus:                  true,
+						OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,
+						OpAMPBridgeCapabilityReportsEffectiveConfig:         true,
+						OpAMPBridgeCapabilityReportsOwnTraces:               true,
+						OpAMPBridgeCapabilityReportsOwnMetrics:              true,
+						OpAMPBridgeCapabilityReportsOwnLogs:                 true,
+						OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsOtherConnectionSettings: true,
+						OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
+						OpAMPBridgeCapabilityReportsHealth:                  true,
+						OpAMPBridgeCapabilityReportsRemoteConfig:            true,
+					},
 					Ports: []v1.ServicePort{
 						{
 							Name: "aaaabbbbccccddd", // len: 15
