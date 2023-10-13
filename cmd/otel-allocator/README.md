@@ -12,7 +12,7 @@ The TA serves two functions:
 ## Even Distribution of Prometheus Targets
 
 The Target Allocator's first job is to discover targets to scrape and collectors to allocate targets to. Then it can distribute the targets it discovers among the collectors. This means that the OTel Collectors collect the metrics instead of a Prometheus [scraper](https://uzxmx.github.io/prometheus-scrape-internals.html). 
-The [Prometheus Receivers](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) on the Collectors then query the target allocator to ingest Metrics.
+The [Prometheus Receivers](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) on the Collectors then query the target allocator for endpoints to scrape metrics from.
 
 ![Diagram depicting target distribution functionality for the target allocator](images/otel_ta_target_distribution.jpeg)
 
