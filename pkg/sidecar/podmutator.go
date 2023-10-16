@@ -28,7 +28,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/sidecar"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 )
 
 var (
@@ -43,7 +43,7 @@ type sidecarPodMutator struct {
 	config config.Config
 }
 
-var _ sidecar.PodMutator = (*sidecarPodMutator)(nil)
+var _ podmutation.PodMutator = (*sidecarPodMutator)(nil)
 
 func NewMutator(logger logr.Logger, config config.Config, client client.Client) *sidecarPodMutator {
 	return &sidecarPodMutator{
