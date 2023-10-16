@@ -171,6 +171,8 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, apacheAgentInitContainerName)
+			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, apacheAgentCloneContainerName)
 		}
 	}
 
