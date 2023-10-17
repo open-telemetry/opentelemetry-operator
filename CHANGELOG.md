@@ -16,6 +16,7 @@ Changes by Version
 
 - `operator`: updating the operator to use the Collector's debug exporter in replacement of the deprecated logging exporter (#2130)
 - `operator`: Publish operator images for I IBM P/Z (linux/s390x,linux/ppc64le) architectures. (#2215)
+- `Documentation`: Add diagrams to Target Allocator Readme. (#2229)
 
 ### 🧰 Bug fixes 🧰
 
