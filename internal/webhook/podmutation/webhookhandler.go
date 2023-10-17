@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package webhookhandler contains the webhook that injects sidecars into pods.
-package webhookhandler
+// Package podmutation contains the webhook that injects sidecars into pods.
+package podmutation
 
 import (
 	"context"
@@ -35,7 +35,7 @@ import (
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch
 // +kubebuilder:rbac:groups="apps",resources=replicasets,verbs=get;list;watch
 
-var _ WebhookHandler = (*podSidecarInjector)(nil)
+var _ WebhookHandler = (*podMutationWebhook)(nil)
 
 // WebhookHandler is a webhook handler that analyzes new pods and injects appropriate sidecars into it.
 type WebhookHandler interface {
@@ -43,7 +43,7 @@ type WebhookHandler interface {
 }
 
 // the implementation.
-type podSidecarInjector struct {
+type podMutationWebhook struct {
 	client      client.Client
 	decoder     *admission.Decoder
 	logger      logr.Logger
@@ -58,7 +58,7 @@ type PodMutator interface {
 
 // NewWebhookHandler creates a new WebhookHandler.
 func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder *admission.Decoder, cl client.Client, podMutators []PodMutator) WebhookHandler {
-	return &podSidecarInjector{
+	return &podMutationWebhook{
 		config:      cfg,
 		decoder:     decoder,
 		logger:      logger,
@@ -67,7 +67,7 @@ func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder *admission
 	}
 }
 
-func (p *podSidecarInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (p *podMutationWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
 	pod := corev1.Pod{}
 	err := p.decoder.Decode(req, &pod)
 	if err != nil {

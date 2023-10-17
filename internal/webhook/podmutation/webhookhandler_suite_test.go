@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package webhookhandler_test
+package podmutation_test
 
 import (
 	"context"
@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -55,9 +56,9 @@ func TestMain(m *testing.M) {
 	defer cancel()
 
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
+			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
 		},
 	}
 	cfg, err = testEnv.Start()
@@ -97,7 +98,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New()); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
