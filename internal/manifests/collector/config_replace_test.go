@@ -69,10 +69,36 @@ func TestPrometheusParser(t *testing.T) {
 		assert.True(t, cfg.TargetAllocConfig == nil)
 	})
 
-	t.Run("should update config with targetAllocator block", func(t *testing.T) {
+	t.Run("should update config with targetAllocator block if block not present", func(t *testing.T) {
 		// Set up the test scenario
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
 		actualConfig, err := ReplaceConfig(param.OtelCol)
+		assert.NoError(t, err)
+
+		// Verify the expected changes in the config
+		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
+		assert.NoError(t, err)
+
+		prometheusConfig := promCfgMap["config"].(map[interface{}]interface{})
+
+		assert.NotContains(t, prometheusConfig, "scrape_configs")
+
+		expectedTAConfig := map[interface{}]interface{}{
+			"endpoint":     "http://test-targetallocator:80",
+			"interval":     "30s",
+			"collector_id": "${POD_NAME}",
+		}
+		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
+		assert.NoError(t, err)
+	})
+
+	t.Run("should update config with targetAllocator block if block already present", func(t *testing.T) {
+		// Set up the test scenario
+		paramTa, err := newParams("test/test-img", "testdata/http_sd_config_ta_test.yaml")
+		require.NoError(t, err)
+		paramTa.OtelCol.Spec.TargetAllocator.Enabled = true
+
+		actualConfig, err := ReplaceConfig(paramTa.OtelCol)
 		assert.NoError(t, err)
 
 		// Verify the expected changes in the config
