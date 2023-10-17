@@ -531,7 +531,12 @@ If a language is enabled by default its gate only needs to be supplied when disa
 Language not specified in the table are always supported and cannot be disabled.
 
 OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
-These feature can be enabled using `operator.autoinstrumentation.multi-instrumentation` flag. By default flag is `disabled`.
+These features can be enabled using `operator.autoinstrumentation.multi-instrumentation` flag when installing the Operator via Helm. By default flag is `disabled`. For example:
+
+```sh
+helm install opentelemetry-operator open-telemetry/opentelemetry-operator --set manager.featureGates=operator.autoinstrumentation.multi-instrumentation=enabled
+```
+
 For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](#Multi-container-pods-with-multiple-instrumentations).
 
 ### Target Allocator
