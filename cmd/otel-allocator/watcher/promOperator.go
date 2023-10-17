@@ -38,7 +38,7 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
-const MinEventInterval = time.Second * 5
+const minEventInterval = time.Second * 5
 
 func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
 	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
@@ -82,7 +82,7 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 		k8sClient:              clientset,
 		informers:              monitoringInformers,
 		stopChannel:            make(chan struct{}),
-		eventInterval:          MinEventInterval,
+		eventInterval:          minEventInterval,
 		configGenerator:        generator,
 		kubeConfigPath:         cfg.KubeConfigFilePath,
 		serviceMonitorSelector: servMonSelector,
