@@ -49,7 +49,26 @@ func TestLabelsCommonSet(t *testing.T) {
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-collector", labels["app.kubernetes.io/component"])
 }
+func TestLabelsSha256Set(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      collectorName,
+			Namespace: collectorNamespace,
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.81.0@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+		},
+	}
 
+	// test
+	labels := Labels(otelcol, collectorName, []string{})
+	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
+	assert.Equal(t, "0.81.0", labels["app.kubernetes.io/version"])
+	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
+	assert.Equal(t, "opentelemetry-collector", labels["app.kubernetes.io/component"])
+}
 func TestLabelsTagUnset(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
