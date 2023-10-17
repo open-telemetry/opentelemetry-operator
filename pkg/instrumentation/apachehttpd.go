@@ -149,7 +149,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 			Command: []string{"/bin/sh", "-c"},
 			Args: []string{
 				// Copy agent binaries to shared volume
-				"cp -ar /opt/opentelemetry/* " + apacheAgentDirFull + " && " +
+				"cp -r /opt/opentelemetry/* " + apacheAgentDirFull + " && " +
 					// setup logging configuration from template
 					"export agentLogDir=$(echo \"" + apacheAgentDirFull + "/logs\" | sed 's,/,\\\\/,g') && " +
 					"cat " + apacheAgentDirFull + "/conf/appdynamics_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > " + apacheAgentDirFull + "/conf/appdynamics_sdk_log4cxx.xml &&" +

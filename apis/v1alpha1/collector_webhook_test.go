@@ -15,21 +15,37 @@
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+)
+
+var (
+	testScheme *runtime.Scheme = scheme.Scheme
 )
 
 func TestOTELColDefaultingWebhook(t *testing.T) {
 	one := int32(1)
 	five := int32(5)
 	defaultCPUTarget := int32(90)
+
+	if err := AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
 
 	tests := []struct {
 		name     string
@@ -261,7 +277,17 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			test.otelcol.Default()
+			cvw := &CollectorWebhook{
+				logger: logr.Discard(),
+				scheme: testScheme,
+				cfg: config.New(
+					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
+				),
+			}
+			ctx := context.Background()
+			err := cvw.Default(ctx, &test.otelcol)
+			assert.NoError(t, err)
 			assert.Equal(t, test.expected, test.otelcol)
 		})
 	}
@@ -279,9 +305,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	five := int32(5)
 
 	tests := []struct { //nolint:govet
-		name        string
-		otelcol     OpenTelemetryCollector
-		expectedErr string
+		name             string
+		otelcol          OpenTelemetryCollector
+		expectedErr      string
+		expectedWarnings []string
 	}{
 		{
 			name:    "valid empty spec",
@@ -335,12 +362,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 							},
 						},
 						TargetCPUUtilization: &five,
-					},
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MinAvailable: &intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 1,
-						},
 					},
 				},
 			},
@@ -440,7 +461,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					MaxReplicas: &zero,
 				},
 			},
-			expectedErr: "maxReplicas should be defined and one or more",
+			expectedErr:      "maxReplicas should be defined and one or more",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid replicas, greater than max",
@@ -450,7 +472,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					Replicas:    &five,
 				},
 			},
-			expectedErr: "replicas must not be greater than maxReplicas",
+			expectedErr:      "replicas must not be greater than maxReplicas",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid min replicas, greater than max",
@@ -460,7 +483,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					MinReplicas: &five,
 				},
 			},
-			expectedErr: "minReplicas must not be greater than maxReplicas",
+			expectedErr:      "minReplicas must not be greater than maxReplicas",
+			expectedWarnings: []string{"MaxReplicas is deprecated", "MinReplicas is deprecated"},
 		},
 		{
 			name: "invalid min replicas, lesser than 1",
@@ -470,7 +494,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					MinReplicas: &zero,
 				},
 			},
-			expectedErr: "minReplicas should be one or more",
+			expectedErr:      "minReplicas should be one or more",
+			expectedWarnings: []string{"MaxReplicas is deprecated", "MinReplicas is deprecated"},
 		},
 		{
 			name: "invalid autoscaler scale down",
@@ -486,7 +511,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "scaleDown should be one or more",
+			expectedErr:      "scaleDown should be one or more",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid autoscaler scale up",
@@ -502,7 +528,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "scaleUp should be one or more",
+			expectedErr:      "scaleUp should be one or more",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid autoscaler target cpu utilization",
@@ -514,7 +541,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "targetCPUUtilization should be greater than 0 and less than 100",
+			expectedErr:      "targetCPUUtilization should be greater than 0 and less than 100",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "autoscaler minReplicas is less than maxReplicas",
@@ -542,7 +570,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod",
+			expectedErr:      "the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid pod metric average value",
@@ -567,7 +596,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0",
+			expectedErr:      "the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "utilization target is not valid with pod metrics",
@@ -592,26 +622,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type",
-		},
-		{
-			name: "pdb minAvailable and maxUnavailable have been set together",
-			otelcol: OpenTelemetryCollector{
-				Spec: OpenTelemetryCollectorSpec{
-					MaxReplicas: &three,
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MinAvailable: &intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 1,
-						},
-						MaxUnavailable: &intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 1,
-						},
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec podDisruptionBudget configuration is incorrect, minAvailable and maxUnavailable are mutually exclusive",
+			expectedErr:      "the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type",
+			expectedWarnings: []string{"MaxReplicas is deprecated"},
 		},
 		{
 			name: "invalid deployment mode incompabible with ingress settings",
@@ -758,10 +770,24 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.otelcol.validateCRDSpec()
+			cvw := &CollectorWebhook{
+				logger: logr.Discard(),
+				scheme: testScheme,
+				cfg: config.New(
+					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
+				),
+			}
+			ctx := context.Background()
+			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)
 			if test.expectedErr == "" {
 				assert.NoError(t, err)
 				return
+			}
+			if len(test.expectedWarnings) == 0 {
+				assert.Empty(t, warnings, test.expectedWarnings)
+			} else {
+				assert.ElementsMatch(t, warnings, test.expectedWarnings)
 			}
 			assert.ErrorContains(t, err, test.expectedErr)
 		})

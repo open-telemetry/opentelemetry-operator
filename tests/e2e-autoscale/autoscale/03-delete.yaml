@@ -5,4 +5,4 @@ delete:
   kind: Job
   propagationPolicy: Background
   metadata:
-    name: tracegen-set-utilization
+    name: telemetrygen-set-utilization
