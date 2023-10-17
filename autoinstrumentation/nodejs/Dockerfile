@@ -9,7 +9,7 @@
 # - Grant the necessary access to `/autoinstrumentation` directory. `chmod -R go+r /autoinstrumentation`
 # - For auto-instrumentation by container injection, the Linux command cp is
 #   used and must be availabe in the image.
-FROM node:20 AS build
+FROM node:16 AS build
 
 WORKDIR /operator-build
 COPY . .
