@@ -85,6 +85,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
 		autoInstrumentationDotNetImage:      o.autoInstrumentationDotNetImage,
+		autoInstrumentationGoImage:          o.autoInstrumentationGoImage,
 		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		labelsFilter:                        o.labelsFilter,

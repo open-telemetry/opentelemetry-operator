@@ -28,6 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -62,15 +64,6 @@ func TestUpgrade(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-inst",
 			Namespace: nsName,
-			Annotations: map[string]string{
-				v1alpha1.AnnotationDefaultAutoInstrumentationJava:        "java:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS:      "nodejs:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationPython:      "python:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationDotNet:      "dotnet:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationGo:          "go:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd: "apache-httpd:1",
-				v1alpha1.AnnotationDefaultAutoInstrumentationNginx:       "nginx:1",
-			},
 		},
 		Spec: v1alpha1.InstrumentationSpec{
 			Sampler: v1alpha1.Sampler{
@@ -78,7 +71,20 @@ func TestUpgrade(t *testing.T) {
 			},
 		},
 	}
-	inst.Default()
+	err = v1alpha1.NewInstrumentationWebhook(
+		logr.Discard(),
+		testScheme,
+		config.New(
+			config.WithAutoInstrumentationJavaImage("java:1"),
+			config.WithAutoInstrumentationNodeJSImage("nodejs:1"),
+			config.WithAutoInstrumentationPythonImage("python:1"),
+			config.WithAutoInstrumentationDotNetImage("dotnet:1"),
+			config.WithAutoInstrumentationGoImage("go:1"),
+			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:1"),
+			config.WithAutoInstrumentationNginxImage("nginx:1"),
+		),
+	).Default(context.Background(), inst)
+	assert.Nil(t, err)
 	assert.Equal(t, "java:1", inst.Spec.Java.Image)
 	assert.Equal(t, "nodejs:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python:1", inst.Spec.Python.Image)
@@ -109,18 +115,18 @@ func TestUpgrade(t *testing.T) {
 		Name:      "my-inst",
 	}, &updated)
 	require.NoError(t, err)
-	assert.Equal(t, "java:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationJava])
+	assert.Equal(t, "java:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationJava])
 	assert.Equal(t, "java:2", updated.Spec.Java.Image)
-	assert.Equal(t, "nodejs:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNodeJS])
+	assert.Equal(t, "nodejs:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS])
 	assert.Equal(t, "nodejs:2", updated.Spec.NodeJS.Image)
-	assert.Equal(t, "python:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationPython])
+	assert.Equal(t, "python:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPython])
 	assert.Equal(t, "python:2", updated.Spec.Python.Image)
-	assert.Equal(t, "dotnet:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationDotNet])
+	assert.Equal(t, "dotnet:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet])
 	assert.Equal(t, "dotnet:2", updated.Spec.DotNet.Image)
-	assert.Equal(t, "go:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationGo])
+	assert.Equal(t, "go:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationGo])
 	assert.Equal(t, "go:2", updated.Spec.Go.Image)
-	assert.Equal(t, "apache-httpd:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd])
+	assert.Equal(t, "apache-httpd:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd])
 	assert.Equal(t, "apache-httpd:2", updated.Spec.ApacheHttpd.Image)
-	assert.Equal(t, "nginx:2", updated.Annotations[v1alpha1.AnnotationDefaultAutoInstrumentationNginx])
+	assert.Equal(t, "nginx:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNginx])
 	assert.Equal(t, "nginx:2", updated.Spec.Nginx.Image)
 }
