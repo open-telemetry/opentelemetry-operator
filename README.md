@@ -541,7 +541,7 @@ For more information about multi-instrumentation feature capabilities please see
 
 ### Target Allocator
 
-The OpenTelemetry Operator comes with an optional component, the [Target Allocator](/cmd/otel-allocator/README.md) (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also change the Prometheus receiver configuration in the CR, so that it uses the [http_sd_config](https://prometheus.io/docs/prometheus/latest/http_sd/) from the TA. The following example shows how to get started with the Target Allocator:
+The OpenTelemetry Operator comes with an optional component, the [Target Allocator](/cmd/otel-allocator/README.md) (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also rewrite the Prometheus receiver configuration in the CR, so that it uses the deployed target allocator. The following example shows how to get started with the Target Allocator:
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
@@ -579,6 +579,7 @@ spec:
           processors: []
           exporters: [debug]
 ```
+
 The usage of `$$` in the replacement keys in the example above is based on the information provided in the Prometheus receiver [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) documentation, which states:
 `Note: Since the collector configuration supports env variable substitution $ characters in your prometheus configuration are interpreted as environment variables. If you want to use $ characters in your prometheus configuration, you must escape them using $$.`
 
@@ -587,19 +588,10 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
 ```yaml
     receivers:
       prometheus:
-        config:
-          scrape_configs:
-          - job_name: otel-collector
-            scrape_interval: 10s
-            http_sd_configs:
-            - url: http://collector-with-ta-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
-            metric_relabel_configs:
-            - action: labeldrop
-              regex: (id|name)
-              replacement: $$1
-            - action: labelmap
-              regex: label_(.+)
-              replacement: $$1
+        target_allocator:
+          endpoint: http://collector-with-ta-targetallocator:80
+          interval: 30s
+          collector_id: $POD_NAME
 
     exporters:
       debug:
@@ -611,8 +603,6 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
           processors: []
           exporters: [debug]
 ```
-
-Note how the Operator removes any existing service discovery configurations (e.g., `static_configs`, `file_sd_configs`, etc.) from the `scrape_configs` section and adds an `http_sd_configs` configuration pointing to a Target Allocator instance it provisioned.
 
 The OpenTelemetry Operator will also convert the Target Allocator's Prometheus configuration after the reconciliation into the following:
 
@@ -631,40 +621,17 @@ The OpenTelemetry Operator will also convert the Target Allocator's Prometheus c
           regex: label_(.+)
           replacement: $1
 ```
+
 Note that in this case, the Operator replaces "$$" with a single "$" in the replacement keys. This is because the collector supports environment variable substitution, whereas the TA (Target Allocator) does not. Therefore, to ensure compatibility, the TA configuration should only contain a single "$" symbol.
 
 More info on the TargetAllocator can be found [here](cmd/otel-allocator/README.md).
 
-#### Target Allocator config rewriting
+#### Using Prometheus Custom Resources for service discovery
 
-Prometheus receiver now has explicit support for acquiring scrape targets from the target allocator. As such, it is now possible to have the
-Operator add the necessary target allocator configuration automatically. This feature currently requires the `operator.collector.rewritetargetallocator` feature flag to be enabled. With the flag enabled, the configuration from the previous section would be rendered as:
+The target allocator can use Custom Resources from the prometheus-operator ecosystem, like ServiceMonitors and PodMonitors, for service discovery, performing
+a function analogous to that of prometheus-operator itself. This is enabled via the `prometheusCR` section in the Collector CR.
 
-```yaml
-    receivers:
-      prometheus:
-        config:
-          global:
-            scrape_interval: 1m
-            scrape_timeout: 10s
-            evaluation_interval: 1m
-        target_allocator:
-          endpoint: http://collector-with-ta-targetallocator:80
-          interval: 30s
-          collector_id: $POD_NAME
-
-    exporters:
-      debug:
-
-    service:
-      pipelines:
-        metrics:
-          receivers: [prometheus]
-          processors: []
-          exporters: [debug]
-```
-
-This also allows for a more straightforward collector configuration for target discovery using prometheus-operator CRDs. See below for a minimal example:
+See below for a minimal example:
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
