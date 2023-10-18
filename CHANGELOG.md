@@ -10,6 +10,9 @@ Changes by Version
   `components_allowed` => `componentsAllowed`
   :x: `protocol` which is now inferred from endpoint
   capabilities `[]string` => `map[Capability]bool` for enhanced configuration validation
+- `operator`: Enable Target Allocator Rewrite by default (#2208)
+  See [the documentation](/README.md#target-allocator) for details.
+  Use the `--feature-gates=-operator.collector.rewritetargetallocator` command line option to switch back to the old behaviour.
   
 
 ### 💡 Enhancements 💡
@@ -17,6 +20,7 @@ Changes by Version
 - `operator`: updating the operator to use the Collector's debug exporter in replacement of the deprecated logging exporter (#2130)
 - `operator`: Publish operator images for I IBM P/Z (linux/s390x,linux/ppc64le) architectures. (#2215)
 - `Documentation`: Add diagrams to Target Allocator Readme. (#2229)
+- `target allocator`: Add rate limiting for scrape config updates (#1544)
 
 ### 🧰 Bug fixes 🧰
 
