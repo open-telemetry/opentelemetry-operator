@@ -19,7 +19,7 @@ spec:
         requests:
           cpu: "50m"
           memory: "32Mi"
-      image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:v0.3.0-alpha
+      image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:v0.7.0-alpha
       env:
         - name: OTEL_GO_AUTO_TARGET_EXE
           value: /usr/src/app/productcatalogservice
