@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: testlabel
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: 0.81.0
+    app.kubernetes.io/version: c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b53
 spec:
   selector:
     matchLabels:

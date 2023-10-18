@@ -58,7 +58,7 @@ func Labels(instance v1alpha1.OpenTelemetryCollector, name string, filterLabels 
 	case 3:
 		base["app.kubernetes.io/version"] = versionLabel
 	case 2:
-		base["app.kubernetes.io/version"] = version[len(version)-1]
+		base["app.kubernetes.io/version"] = naming.Truncate("%s", 63, version[len(version)-1])
 	default:
 		base["app.kubernetes.io/version"] = "latest"
 	}
