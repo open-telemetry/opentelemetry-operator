@@ -30,9 +30,11 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/cache"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -244,7 +246,7 @@ func TestLoadConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := getTestPrometheuCRWatcher(t, tt.serviceMonitor, tt.podMonitor)
+			w := getTestPrometheusCRWatcher(t, tt.serviceMonitor, tt.podMonitor)
 			for _, informer := range w.informers {
 				// Start informers in order to populate cache.
 				informer.Start(w.stopChannel)
@@ -266,9 +268,89 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
+func TestRateLimit(t *testing.T) {
+	var err error
+	serviceMonitor := &monitoringv1.ServiceMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "test",
+		},
+		Spec: monitoringv1.ServiceMonitorSpec{
+			JobLabel: "test",
+			Endpoints: []monitoringv1.Endpoint{
+				{
+					Port: "web",
+				},
+			},
+		},
+	}
+	events := make(chan Event, 1)
+	eventInterval := 5 * time.Millisecond
+
+	w := getTestPrometheusCRWatcher(t, nil, nil)
+	defer w.Close()
+	w.eventInterval = eventInterval
+
+	go func() {
+		watchErr := w.Watch(events, make(chan error))
+		require.NoError(t, watchErr)
+	}()
+	// we don't have a simple way to wait for the watch to actually add event handlers to the informer,
+	// instead, we just update a ServiceMonitor periodically and wait until we get a notification
+	_, err = w.kubeMonitoringClient.MonitoringV1().ServiceMonitors("test").Create(context.Background(), serviceMonitor, metav1.CreateOptions{})
+	require.NoError(t, err)
+
+	// wait for cache sync first
+	for _, informer := range w.informers {
+		success := cache.WaitForCacheSync(w.stopChannel, informer.HasSynced)
+		require.True(t, success)
+	}
+
+	require.Eventually(t, func() bool {
+		_, createErr := w.kubeMonitoringClient.MonitoringV1().ServiceMonitors("test").Update(context.Background(), serviceMonitor, metav1.UpdateOptions{})
+		if createErr != nil {
+			return false
+		}
+		select {
+		case <-events:
+			return true
+		default:
+			return false
+		}
+	}, eventInterval*2, time.Millisecond)
+
+	// it's difficult to measure the rate precisely
+	// what we do, is send two updates, and then assert that the elapsed time is between eventInterval and 3*eventInterval
+	startTime := time.Now()
+	_, err = w.kubeMonitoringClient.MonitoringV1().ServiceMonitors("test").Update(context.Background(), serviceMonitor, metav1.UpdateOptions{})
+	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		select {
+		case <-events:
+			return true
+		default:
+			return false
+		}
+	}, eventInterval*2, time.Millisecond)
+	_, err = w.kubeMonitoringClient.MonitoringV1().ServiceMonitors("test").Update(context.Background(), serviceMonitor, metav1.UpdateOptions{})
+	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		select {
+		case <-events:
+			return true
+		default:
+			return false
+		}
+	}, eventInterval*2, time.Millisecond)
+	elapsedTime := time.Since(startTime)
+	assert.Less(t, eventInterval, elapsedTime)
+	assert.GreaterOrEqual(t, eventInterval*3, elapsedTime)
+
+}
+
 // getTestPrometheuCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
-func getTestPrometheuCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, pm *monitoringv1.PodMonitor) *PrometheusCRWatcher {
+func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, pm *monitoringv1.PodMonitor) *PrometheusCRWatcher {
 	mClient := fakemonitoringclient.NewSimpleClientset()
 	if sm != nil {
 		_, err := mClient.MonitoringV1().ServiceMonitors("test").Create(context.Background(), sm, metav1.CreateOptions{})
