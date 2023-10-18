@@ -2,16 +2,16 @@
 # by default with the OpenTelemetry Operator. This would usually be the latest
 # stable OpenTelemetry version. When you update this file, make sure to update the
 # the docs as well.
-opentelemetry-collector=0.86.0
+opentelemetry-collector=0.87.0
 
 # Represents the current release of the OpenTelemetry Operator.
-operator=0.86.0
+operator=0.87.0
 
 # Represents the current release of the Target Allocator.
-targetallocator=0.86.0
+targetallocator=0.87.0
 
 # Represents the current release of the Operator OpAMP Bridge.
-operator-opamp-bridge=0.86.0
+operator-opamp-bridge=0.87.0
 
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
@@ -30,12 +30,12 @@ autoinstrumentation-python=0.41b0
 autoinstrumentation-dotnet=1.0.2
 
 # Represents the current release of Go instrumentation.
-autoinstrumentation-go=v0.3.0-alpha
+autoinstrumentation-go=v0.7.0-alpha
 
 # Represents the current release of Apache HTTPD instrumentation.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-apache-httpd=1.0.3
 
-# Represents the current release of Apache HTTPD instrumentation.
+# Represents the current release of Apache Nginx instrumentation.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-nginx=1.0.3
