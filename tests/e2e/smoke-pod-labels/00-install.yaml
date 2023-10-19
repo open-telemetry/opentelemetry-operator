@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: testlabel
 spec:
-  image: otel/opentelemetry-collector-contrib@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532
+  image: otel/opentelemetry-collector-contrib@sha256:a0c6dea261b3d794971c23c5665173a39f0ce2aa09b9d88b753bd46776d7b05b
   config: |
     receivers:
       otlp:
