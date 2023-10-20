@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -207,7 +208,7 @@ func service(name string, ports []v1.ServicePort) v1.Service {
 
 func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
 	params := deploymentParams()
-	labels := Labels(params.OtelCol, name, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	return v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -218,7 +219,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, inter
 		},
 		Spec: v1.ServiceSpec{
 			InternalTrafficPolicy: &internalTrafficPolicy,
-			Selector:              SelectorLabels(params.OtelCol),
+			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP:             "",
 			Ports:                 ports,
 		},

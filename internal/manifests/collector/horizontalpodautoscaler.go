@@ -22,12 +22,13 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 	annotations := Annotations(params.OtelCol)
 	var result client.Object
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package collector_test
+package manifestutils
 
 import (
 	"testing"
@@ -21,7 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 const (
@@ -42,7 +41,7 @@ func TestLabelsCommonSet(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol, collectorName, []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "0.47.0", labels["app.kubernetes.io/version"])
@@ -62,7 +61,7 @@ func TestLabelsSha256Set(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol, collectorName, []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b53", labels["app.kubernetes.io/version"])
@@ -81,7 +80,7 @@ func TestLabelsSha256Set(t *testing.T) {
 	}
 
 	// test
-	labelsTag := Labels(otelcolTag, collectorName, []string{})
+	labelsTag := Labels(otelcolTag.ObjectMeta, collectorName, otelcolTag.Spec.Image, "opentelemetry-collector", []string{})
 	assert.Equal(t, "opentelemetry-operator", labelsTag["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labelsTag["app.kubernetes.io/instance"])
 	assert.Equal(t, "0.81.0", labelsTag["app.kubernetes.io/version"])
@@ -101,7 +100,7 @@ func TestLabelsTagUnset(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol, collectorName, []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "latest", labels["app.kubernetes.io/version"])
@@ -118,10 +117,13 @@ func TestLabelsPropagateDown(t *testing.T) {
 				"app.kubernetes.io/name": "test",
 			},
 		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+		},
 	}
 
 	// test
-	labels := Labels(otelcol, collectorName, []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
 
 	// verify
 	assert.Len(t, labels, 7)
@@ -134,10 +136,13 @@ func TestLabelsFilter(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{"test.bar.io": "foo", "test.foo.io": "bar"},
 		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+		},
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	labels := Labels(otelcol, collectorName, []string{".*.bar.io"})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{".*.bar.io"})
 
 	// verify
 	assert.Len(t, labels, 7)
@@ -158,7 +163,7 @@ func TestSelectorLabels(t *testing.T) {
 	}
 
 	// test
-	result := SelectorLabels(otelcol)
+	result := SelectorLabels(otelcol.ObjectMeta, "opentelemetry-collector")
 
 	// verify
 	assert.Equal(t, expected, result)
