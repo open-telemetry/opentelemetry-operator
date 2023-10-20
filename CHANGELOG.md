@@ -2,6 +2,42 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.87.0
+
+### 🛑 Breaking changes 🛑
+
+- `OpAMP Bridge`: This PR simplifies the bridge's configuration and logging by renaming and removing fields. (#1368)
+  `components_allowed` => `componentsAllowed`
+  :x: `protocol` which is now inferred from endpoint
+  capabilities `[]string` => `map[Capability]bool` for enhanced configuration validation
+- `operator`: Enable Target Allocator Rewrite by default (#2208)
+  See [the documentation](/README.md#target-allocator) for details.
+  Use the `--feature-gates=-operator.collector.rewritetargetallocator` command line option to switch back to the old behaviour.
+  
+
+### 💡 Enhancements 💡
+
+- `operator`: updating the operator to use the Collector's debug exporter in replacement of the deprecated logging exporter (#2130)
+- `operator`: Publish operator images for I IBM P/Z (linux/s390x,linux/ppc64le) architectures. (#2215)
+- `Documentation`: Add diagrams to Target Allocator Readme. (#2229)
+- `target allocator`: Add rate limiting for scrape config updates (#1544)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Set the security context for the init containers of the Apache HTTPD instrumentation (#2050)
+
+### Components
+
+* [OpenTelemetry Collector - v0.87.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.87.0)
+* [OpenTelemetry Contrib - v0.87.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.87.0)
+* [Java auto-instrumentation - 1.30.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.30.0)
+* [.NET auto-instrumentation - 1.0.2](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.0.2)
+* [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
+* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Go - v0.7.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.7.0-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+* [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
+
 ## 0.86.0
 
 ### 🛑 Breaking changes 🛑
