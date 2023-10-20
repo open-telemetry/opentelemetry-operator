@@ -33,6 +33,7 @@ func isFilteredLabel(label string, filterLabels []string) bool {
 
 // Labels return the common labels to all objects that are part of a managed OpenTelemetryCollector.
 func Labels(instance v1alpha1.OpenTelemetryCollector, name string, filterLabels []string) map[string]string {
+	var versionLabel string
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
 	if nil != instance.Labels {
@@ -48,9 +49,17 @@ func Labels(instance v1alpha1.OpenTelemetryCollector, name string, filterLabels 
 	}
 
 	version := strings.Split(instance.Spec.Image, ":")
-	if len(version) > 1 {
-		base["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
+	for _, v := range version {
+		if strings.HasSuffix(v, "@sha256") {
+			versionLabel = strings.TrimSuffix(v, "@sha256")
+		}
+	}
+	switch lenVersion := len(version); lenVersion {
+	case 3:
+		base["app.kubernetes.io/version"] = versionLabel
+	case 2:
+		base["app.kubernetes.io/version"] = naming.Truncate("%s", 63, version[len(version)-1])
+	default:
 		base["app.kubernetes.io/version"] = "latest"
 	}
 

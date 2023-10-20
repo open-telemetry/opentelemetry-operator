@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testlabel-collector
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: testlabel-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: a0c6dea261b3d794971c23c5665173a39f0ce2aa09b9d88b753bd46776d7b05
+status:
+  readyReplicas: 1

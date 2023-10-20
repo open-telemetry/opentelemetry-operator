@@ -1,0 +1,22 @@
+debug: null
+exporters: null
+processors: null
+receivers:
+  prometheus:
+    config:
+      global:
+        evaluation_interval: 1m
+        scrape_interval: 1m
+        scrape_timeout: 10s
+    target_allocator:
+      collector_id: ${POD_NAME}
+      endpoint: http://test-targetallocator:80
+      interval: 30s
+service:
+  pipelines:
+    metrics:
+      exporters:
+      - debug
+      processors: []
+      receivers:
+      - prometheus

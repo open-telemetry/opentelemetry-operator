@@ -78,7 +78,7 @@ var (
 	// automatically be rewritten when the target allocator is enabled.
 	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.rewritetargetallocator",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"),
 		featuregate.WithRegisterFromVersion("v0.76.1"),
 	)
