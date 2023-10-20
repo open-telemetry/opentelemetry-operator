@@ -20,24 +20,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) *appsv1.Deployment {
 	name := naming.OpAMPBridge(params.OpAMPBridge.Name)
-	labels := Labels(params.OpAMPBridge, name, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, params.Config.LabelsFilter())
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: params.OpAMPBridge.Namespace,
-			Labels:    labels,
+			Name:        name,
+			Namespace:   params.OpAMPBridge.Namespace,
+			Labels:      labels,
+			Annotations: params.OpAMPBridge.Annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: params.OpAMPBridge.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(params.OpAMPBridge),
+				MatchLabels: manifestutils.SelectorLabels(params.OpAMPBridge.ObjectMeta, ComponentOpAMPBridge),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

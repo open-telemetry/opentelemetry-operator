@@ -20,13 +20,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func Service(params manifests.Params) *corev1.Service {
 	name := naming.OpAMPBridgeService(params.OpAMPBridge.Name)
-	labels := Labels(params.OpAMPBridge, name, []string{})
-	selector := SelectorLabels(params.OpAMPBridge)
+	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, []string{})
+	selector := manifestutils.SelectorLabels(params.OpAMPBridge.ObjectMeta, ComponentOpAMPBridge)
 
 	ports := []corev1.ServicePort{{
 		Name:       "opamp-bridge",

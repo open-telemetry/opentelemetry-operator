@@ -20,6 +20,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
+const (
+	ComponentOpAMPBridge = "opentelemetry-opamp-bridge"
+)
+
 // Build creates the manifest for the OpAMPBridge resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object

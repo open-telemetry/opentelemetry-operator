@@ -23,13 +23,14 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.OpAMPBridgeConfigMap(params.OpAMPBridge.Name)
 	version := strings.Split(params.OpAMPBridge.Spec.Image, ":")
-	labels := Labels(params.OpAMPBridge, name, []string{})
+	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, []string{})
 
 	if len(version) > 1 {
 		labels["app.kubernetes.io/version"] = version[len(version)-1]
