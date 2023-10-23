@@ -20,6 +20,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -35,7 +36,7 @@ func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
 // ServiceAccount returns the service account for the given instance.
 func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
 	name := naming.ServiceAccount(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
