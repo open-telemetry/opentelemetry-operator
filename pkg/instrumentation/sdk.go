@@ -17,6 +17,7 @@ package instrumentation
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -424,7 +425,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 			res[k] = v
 		}
 	}
-
+	serviceInstanceId, _ := os.Hostname()
 	k8sResources := map[attribute.Key]string{}
 	k8sResources[semconv.K8SNamespaceNameKey] = ns.Name
 	k8sResources[semconv.K8SContainerNameKey] = pod.Spec.Containers[index].Name
@@ -433,6 +434,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SPodNameKey] = pod.Name
 	k8sResources[semconv.K8SPodUIDKey] = string(pod.UID)
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
+	k8sResources[semconv.ServiceInstanceIDKey] = serviceInstanceId
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
 	for k, v := range k8sResources {
 		if !existingRes[string(k)] && v != "" {
