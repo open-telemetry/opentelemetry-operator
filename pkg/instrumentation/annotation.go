@@ -29,6 +29,7 @@ const (
 	annotationInjectNodeJS                    = "instrumentation.opentelemetry.io/inject-nodejs"
 	annotationInjectNodeJSContainersName      = "instrumentation.opentelemetry.io/nodejs-container-names"
 	annotationInjectPython                    = "instrumentation.opentelemetry.io/inject-python"
+	annotationPythonRuntime                   = "instrumentation.opentelemetry.io/otel-python-auto-runtime"
 	annotationInjectPythonContainersName      = "instrumentation.opentelemetry.io/python-container-names"
 	annotationInjectDotNet                    = "instrumentation.opentelemetry.io/inject-dotnet"
 	annotationDotNetRuntime                   = "instrumentation.opentelemetry.io/otel-dotnet-auto-runtime"

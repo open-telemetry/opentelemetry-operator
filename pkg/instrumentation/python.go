@@ -28,20 +28,40 @@ const (
 	envOtelMetricsExporter             = "OTEL_METRICS_EXPORTER"
 	envOtelExporterOTLPTracesProtocol  = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
 	envOtelExporterOTLPMetricsProtocol = "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"
-	pythonPathPrefix                   = "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation"
-	pythonPathSuffix                   = "/otel-auto-instrumentation-python"
+	pythonPathGlibcPrefix              = "/otel-auto-instrumentation-python/linux-x64/opentelemetry/instrumentation/auto_instrumentation"
+	pythonPathGlibcSuffix              = "/otel-auto-instrumentation-python/linux-x64"
+	pythonPathMuslPrefix               = "/otel-auto-instrumentation-python/linux-musl-x64/opentelemetry/instrumentation/auto_instrumentation"
+	pythonPathMuslSuffix               = "/otel-auto-instrumentation-python/linux-musl-x64"
 	pythonInstrMountPath               = "/otel-auto-instrumentation-python"
 	pythonVolumeName                   = volumeName + "-python"
 	pythonInitContainerName            = initContainerName + "-python"
 )
 
-func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
+const (
+	pythonRuntimeLinuxGlibc = "linux-x64"
+	pythonRuntimeLinuxMusl  = "linux-musl-x64"
+)
+
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
 	err := validateContainerEnv(container.Env, envPythonPath)
 	if err != nil {
 		return pod, err
+	}
+
+	pythonPathPrefix := ""
+	pythonPathSuffix := ""
+	switch runtime {
+	case "", pythonRuntimeLinuxGlibc:
+		pythonPathPrefix = pythonPathGlibcPrefix
+		pythonPathSuffix = pythonPathGlibcSuffix
+	case pythonRuntimeLinuxMusl:
+		pythonPathPrefix = pythonPathMuslPrefix
+		pythonPathSuffix = pythonPathMuslSuffix
+	default:
+		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/otel-python-auto-runtime annotation value '%s' is not supported", runtime)
 	}
 
 	// inject Python instrumentation spec env vars.

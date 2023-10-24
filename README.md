@@ -250,8 +250,13 @@ instrumentation.opentelemetry.io/inject-nodejs: "true"
 ```
 
 Python:
+Python auto-instrumentation also honors an annotation that will be used to set Python runtime C library implementation.
+Currently, two C library implementations are supported: `linux-x64` and `linux-musl-x64`.
+By default `linux-x64` is used.
 ```bash
-instrumentation.opentelemetry.io/inject-python: "true"
+instrumentation.opentelemetry.io/inject-: "true"
+instrumentation.opentelemetry.io/otel-python-auto-runtime: "linux-x64" # for Linux glibc based images, this is default value and can be omitted
+instrumentation.opentelemetry.io/otel-python-auto-runtime: "linux-musl-x64"  # for Linux musl based images
 ```
 
 .NET:

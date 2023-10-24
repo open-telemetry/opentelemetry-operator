@@ -762,7 +762,7 @@ func TestInjectPython(t *testing.T) {
 					Env: []corev1.EnvVar{
 						{
 							Name:  "PYTHONPATH",
-							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
+							Value: fmt.Sprintf("%s:%s", pythonPathGlibcPrefix, pythonPathGlibcSuffix),
 						},
 						{
 							Name:  "OTEL_TRACES_EXPORTER",
