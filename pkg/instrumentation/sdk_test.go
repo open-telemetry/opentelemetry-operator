@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -31,8 +30,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
-
-var serviceInstanceId, _ = os.Hostname()
 
 var defaultVolumeLimitSize = resource.MustParse("150Mi")
 
