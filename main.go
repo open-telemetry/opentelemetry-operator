@@ -28,7 +28,6 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -48,7 +47,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
-	"github.com/open-telemetry/opentelemetry-operator/internal/webhookhandler"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -70,7 +69,6 @@ type tlsConfig struct {
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(routev1.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
@@ -247,34 +245,39 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
+		Scheme:   mgr.GetScheme(),
+		Config:   cfg,
+		Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
+		os.Exit(1)
+	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&otelv1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
-		if err = (&otelv1alpha1.Instrumentation{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationJava:        autoInstrumentationJava,
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationNodeJS:      autoInstrumentationNodeJS,
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationPython:      autoInstrumentationPython,
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationDotNet:      autoInstrumentationDotNet,
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationGo:          autoInstrumentationGo,
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationApacheHttpd: autoInstrumentationApacheHttpd,
-					otelv1alpha1.AnnotationDefaultAutoInstrumentationNginx:       autoInstrumentationNginx},
-			},
-		}).SetupWebhookWithManager(mgr); err != nil {
+		if err = otelv1alpha1.SetupInstrumentationWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
 		decoder := admission.NewDecoder(mgr.GetScheme())
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
-			Handler: webhookhandler.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
-				[]webhookhandler.PodMutator{
+			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
+				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
 					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator")),
 				}),
 		})
+
+		if err = (&otelv1alpha1.OpAMPBridge{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "OpAMPBridge")
+			os.Exit(1)
+		}
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
 	}

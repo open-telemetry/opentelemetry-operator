@@ -72,7 +72,12 @@ service:
 
 	})
 
-	t.Run("should return expected collector config map with http_sd_config", func(t *testing.T) {
+	t.Run("should return expected collector config map with http_sd_config if rewrite flag disabled", func(t *testing.T) {
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		})
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
 
@@ -114,7 +119,13 @@ service:
 
 	})
 
-	t.Run("should return expected escaped collector config map with http_sd_config", func(t *testing.T) {
+	t.Run("should return expected escaped collector config map with http_sd_config if rewrite flag disabled", func(t *testing.T) {
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		})
+
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
 		expectedLables["app.kubernetes.io/version"] = "latest"
@@ -166,8 +177,6 @@ service:
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
 		expectedLables["app.kubernetes.io/version"] = "latest"
-		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
-		assert.NoError(t, err)
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
@@ -203,7 +212,6 @@ service:
 
 		// Reset the value
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
-		err = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
 		assert.NoError(t, err)
 
 	})

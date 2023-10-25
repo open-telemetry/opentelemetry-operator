@@ -35,7 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/status"
+	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -60,7 +60,7 @@ type Task struct {
 	BailOnError bool
 }
 
-// Params is the set of options to build a new openTelemetryCollectorReconciler.
+// Params is the set of options to build a new OpenTelemetryCollectorReconciler.
 type Params struct {
 	client.Client
 	Recorder record.EventRecorder
@@ -190,7 +190,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, buildErr
 	}
 	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
-	return status.HandleReconcileStatus(ctx, log, params, err)
+	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
 // RunTasks runs all the tasks associated with this reconciler.

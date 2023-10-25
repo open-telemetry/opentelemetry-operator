@@ -25,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -58,7 +59,7 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 
 func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	name := naming.MonitoringService(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	c, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	// TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
@@ -80,7 +81,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 			Annotations: params.OtelCol.Annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:  SelectorLabels(params.OtelCol),
+			Selector:  manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP: "",
 			Ports: []corev1.ServicePort{{
 				Name: "monitoring",
@@ -92,7 +93,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 
 func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	configFromString, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	if err != nil {
@@ -154,7 +155,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		},
 		Spec: corev1.ServiceSpec{
 			InternalTrafficPolicy: &trafficPolicy,
-			Selector:              SelectorLabels(params.OtelCol),
+			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP:             "",
 			Ports:                 ports,
 		},

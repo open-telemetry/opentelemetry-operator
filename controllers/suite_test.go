@@ -67,6 +67,7 @@ var (
 const (
 	defaultCollectorImage    = "default-collector"
 	defaultTaAllocationImage = "default-ta-allocator"
+	defaultOpAMPBridgeImage  = "default-opamp-bridge"
 	promFile                 = "testdata/test.yaml"
 	updatedPromFile          = "testdata/test_ta_update.yaml"
 	testFileIngress          = "testdata/ingress_testdata.yaml"
@@ -125,7 +126,12 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New()); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
+		os.Exit(1)
+	}
+
+	if err = (&v1alpha1.OpAMPBridge{}).SetupWebhookWithManager(mgr); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
@@ -377,6 +383,55 @@ func paramsWithPolicy(minAvailable, maxUnavailable int32) manifests.Params {
 				}},
 				Config:              string(configYAML),
 				PodDisruptionBudget: pdb,
+			},
+		},
+		Scheme:   testScheme,
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
+func opampBridgeParams() manifests.Params {
+	return manifests.Params{
+		Config: config.New(config.WithOperatorOpAMPBridgeImage(defaultOpAMPBridgeImage)),
+		Client: k8sClient,
+		OpAMPBridge: v1alpha1.OpAMPBridge{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.OpAMPBridgeSpec{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
+				Ports: []v1.ServicePort{
+					{
+						Name: "metrics",
+						Port: 8081,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 8081,
+						},
+					},
+				},
+				Endpoint: "ws://127.0.0.1:4320/v1/opamp",
+				Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
+					v1alpha1.OpAMPBridgeCapabilityReportsStatus:                  true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,
+					v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig:         true,
+					v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces:               true,
+					v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics:              true,
+					v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs:                 true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings: true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings: true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
+					v1alpha1.OpAMPBridgeCapabilityReportsHealth:                  true,
+					v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig:            true,
+				},
+				ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"logging"}},
 			},
 		},
 		Scheme:   testScheme,

@@ -20,6 +20,34 @@ kind: ConfigMap
 metadata:
   name: stateful-targetallocator
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stateful-collector
+data:
+  collector.yaml: |
+    exporters:
+      debug: null
+    processors: null
+    receivers:
+      jaeger:
+        protocols:
+          grpc: null
+      prometheus:
+        config: {}
+        target_allocator:
+          collector_id: ${POD_NAME}
+          endpoint: http://stateful-targetallocator:80
+          interval: 30s
+    service:
+      pipelines:
+        traces:
+          exporters:
+          - debug
+          processors: []
+          receivers:
+          - jaeger
+---
 # Print TA pod logs if test fails
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert

@@ -20,11 +20,21 @@ spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000
-        fsGroup: 2000
+        fsGroup: 3000
       containers:
       - name: myapp
         image: nginxinc/nginx-unprivileged:1.23.1
         imagePullPolicy: Always
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 3000
+          fsGroup: 3000
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            drop: ["ALL"]
         ports:
         - containerPort: 8765
         env:
@@ -45,6 +55,16 @@ spec:
             memory: 100Mi
       - name: myrabbit
         image: rabbitmq
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 3000
+          fsGroup: 3000
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
       volumes:
       - name: nginx-conf
         configMap:
@@ -62,12 +82,18 @@ metadata:
 data:
   nginx.conf: |
     # user nginx;
+    pid /tmp/nginx.pid;
     worker_processes  1;
     events {
       worker_connections  10240;
     }
     http {
       include /etc/nginx/conf.d/*.conf;
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path       /tmp/proxy_temp_path;
+      fastcgi_temp_path     /tmp/fastcgi_temp;
+      uwsgi_temp_path       /tmp/uwsgi_temp;
+      scgi_temp_path        /tmp/scgi_temp;
       server {
         listen       8765;
         server_name  localhost;

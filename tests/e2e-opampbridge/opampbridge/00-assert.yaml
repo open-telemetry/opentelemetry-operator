@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-opamp-bridge
+spec:
+  template:
+    spec:
+      containers:
+        - name: opamp-bridge-container
+          env:
+          - name: OTELCOL_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          volumeMounts:
+          - mountPath: /conf
+            name: opamp-bridge-internal
+      volumes:
+        - configMap: 
+            items:
+            - key: remoteconfiguration.yaml
+              path: remoteconfiguration.yaml
+            name: test-opamp-bridge
+          name: opamp-bridge-internal
+status:
+  replicas: 1
+  readyReplicas: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-opamp-bridge
+data:
+  remoteconfiguration.yaml: |
+    capabilities:
+      AcceptsOpAMPConnectionSettings: true
+      AcceptsOtherConnectionSettings: true
+      AcceptsRemoteConfig: true
+      AcceptsRestartCommand: true
+      ReportsEffectiveConfig: true
+      ReportsHealth: true
+      ReportsOwnLogs: true
+      ReportsOwnMetrics: true
+      ReportsOwnTraces: true
+      ReportsRemoteConfig: true
+      ReportsStatus: true
+    componentsAllowed:
+      exporters:
+      - logging
+      processors:
+      - memory_limiter
+      receivers:
+      - otlp
+    endpoint: ws://opamp-server:4320/v1/opamp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-opamp-bridge
+spec:
+  ports:
+  - name: opamp-bridge
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+opampbridges:
+  - selector: app.kubernetes.io/component=opentelemetry-opamp-bridge

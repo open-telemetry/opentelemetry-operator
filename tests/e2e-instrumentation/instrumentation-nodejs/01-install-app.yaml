@@ -21,7 +21,7 @@ spec:
         fsGroup: 2000
       containers:
       - name: myapp
-        image: ghcr.io/anuraaga/express-hello-world:latest
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

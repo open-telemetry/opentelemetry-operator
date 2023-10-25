@@ -19,12 +19,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.ConfigMap(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	replacedConf, err := ReplaceConfig(params.OtelCol)
 	if err != nil {
