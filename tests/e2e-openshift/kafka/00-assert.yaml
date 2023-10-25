@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kuttl-kafka
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: my-cluster
+    app.kubernetes.io/managed-by: strimzi-cluster-operator
+    app.kubernetes.io/name: entity-operator
+    app.kubernetes.io/part-of: strimzi-my-cluster
+    strimzi.io/cluster: my-cluster
+    strimzi.io/component-type: entity-operator
+    strimzi.io/kind: Kafka
+    strimzi.io/name: my-cluster-entity-operator
+  name: my-cluster-entity-operator
+  namespace: kuttl-kafka
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-cluster-kafka-0
+  namespace: kuttl-kafka
+status:
+  phase: Running
+
+--- 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-cluster-zookeeper-0
+  namespace: kuttl-kafka
+status:
+  phase: Running
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: my-cluster
+    app.kubernetes.io/managed-by: strimzi-cluster-operator
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: strimzi-my-cluster
+    strimzi.io/cluster: my-cluster
+    strimzi.io/component-type: kafka
+    strimzi.io/discovery: "true"
+    strimzi.io/kind: Kafka
+    strimzi.io/name: my-cluster-kafka
+  name: my-cluster-kafka-bootstrap
+  namespace: kuttl-kafka
+spec:
+  ports:
+  - name: tcp-replication
+    port: 9091
+    protocol: TCP
+    targetPort: 9091
+  - name: tcp-clients
+    port: 9092
+    protocol: TCP
+    targetPort: 9092
+  - name: tcp-clientstls
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  selector:
+    strimzi.io/cluster: my-cluster
+    strimzi.io/kind: Kafka
+    strimzi.io/name: my-cluster-kafka
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: my-cluster
+    app.kubernetes.io/managed-by: strimzi-cluster-operator
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: strimzi-my-cluster
+    strimzi.io/cluster: my-cluster
+    strimzi.io/component-type: kafka
+    strimzi.io/kind: Kafka
+    strimzi.io/name: my-cluster-kafka
+  name: my-cluster-kafka-brokers
+  namespace: kuttl-kafka
+spec:
+  ports:
+  - name: tcp-ctrlplane
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  - name: tcp-replication
+    port: 9091
+    protocol: TCP
+    targetPort: 9091
+  - name: tcp-kafkaagent
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
+  - name: tcp-clients
+    port: 9092
+    protocol: TCP
+    targetPort: 9092
+  - name: tcp-clientstls
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  publishNotReadyAddresses: true
+  selector:
+    strimzi.io/cluster: my-cluster
+    strimzi.io/kind: Kafka
+    strimzi.io/name: my-cluster-kafka
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: my-cluster
+    app.kubernetes.io/managed-by: strimzi-cluster-operator
+    app.kubernetes.io/name: zookeeper
+    app.kubernetes.io/part-of: strimzi-my-cluster
+    strimzi.io/cluster: my-cluster
+    strimzi.io/component-type: zookeeper
+    strimzi.io/kind: Kafka
+    strimzi.io/name: my-cluster-zookeeper
+  name: my-cluster-zookeeper-client
+  namespace: kuttl-kafka
+spec:
+  ports:
+  - name: tcp-clients
+    port: 2181
+    protocol: TCP
+    targetPort: 2181
+  selector:
+    strimzi.io/cluster: my-cluster
+    strimzi.io/kind: Kafka
+    strimzi.io/name: my-cluster-zookeeper
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: my-cluster
+    app.kubernetes.io/managed-by: strimzi-cluster-operator
+    app.kubernetes.io/name: zookeeper
+    app.kubernetes.io/part-of: strimzi-my-cluster
+    strimzi.io/cluster: my-cluster
+    strimzi.io/component-type: zookeeper
+    strimzi.io/kind: Kafka
+    strimzi.io/name: my-cluster-zookeeper
+  name: my-cluster-zookeeper-nodes
+  namespace: kuttl-kafka
+spec:
+  ports:
+  - name: tcp-clients
+    port: 2181
+    protocol: TCP
+    targetPort: 2181
+  - name: tcp-clustering
+    port: 2888
+    protocol: TCP
+    targetPort: 2888
+  - name: tcp-election
+    port: 3888
+    protocol: TCP
+    targetPort: 3888
+  selector:
+    strimzi.io/cluster: my-cluster
+    strimzi.io/kind: Kafka
+    strimzi.io/name: my-cluster-zookeeper
