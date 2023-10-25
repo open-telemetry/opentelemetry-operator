@@ -12,25 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifests
+package opampbridge
 
 import (
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"context"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
-// Params holds the reconciliation-specific parameters.
-type Params struct {
-	Client      client.Client
-	Recorder    record.EventRecorder
-	Scheme      *runtime.Scheme
-	Log         logr.Logger
-	OtelCol     v1alpha1.OpenTelemetryCollector
-	OpAMPBridge v1alpha1.OpAMPBridge
-	Config      config.Config
+func UpdateOpAMPBridgeStatus(ctx context.Context, cli client.Client, changed *v1alpha1.OpAMPBridge) error {
+	if changed.Status.Version == "" {
+		changed.Status.Version = version.OperatorOpAMPBridge()
+	}
+	return nil
 }

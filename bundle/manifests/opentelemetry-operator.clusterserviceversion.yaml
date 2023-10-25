@@ -52,6 +52,24 @@ spec:
         name: ""
         version: v1
       version: v1alpha1
+    - description: OpAMPBridge is the Schema for the opampbridges API.
+      displayName: OpAMP Bridge
+      kind: OpAMPBridge
+      name: opampbridges.opentelemetry.io
+      resources:
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      version: v1alpha1
     - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
         API.
       displayName: OpenTelemetry Collector
@@ -211,6 +229,32 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opampbridges
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opampbridges/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opampbridges/status
+          verbs:
+          - get
+          - patch
+          - update
         - apiGroups:
           - opentelemetry.io
           resources:
@@ -435,6 +479,26 @@ spec:
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
     failurePolicy: Fail
+    generateName: mopampbridge.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - opampbridges
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-opentelemetry-io-v1alpha1-opampbridge
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
     generateName: mopentelemetrycollector.kb.io
     rules:
     - apiGroups:
@@ -509,6 +573,27 @@ spec:
     targetPort: 9443
     type: ValidatingAdmissionWebhook
     webhookPath: /validate-opentelemetry-io-v1alpha1-instrumentation
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: vopampbridge.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      - DELETE
+      resources:
+      - opampbridges
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-opampbridge
   - admissionReviewVersions:
     - v1
     containerPort: 443

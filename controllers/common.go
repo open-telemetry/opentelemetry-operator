@@ -28,6 +28,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 )
 
@@ -45,6 +46,22 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 	builders := []manifests.Builder{
 		collector.Build,
 		targetallocator.Build,
+	}
+	var resources []client.Object
+	for _, builder := range builders {
+		objs, err := builder(params)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, objs...)
+	}
+	return resources, nil
+}
+
+// BuildOpAMPBridge returns the generation and collected errors of all manifests for a given instance.
+func BuildOpAMPBridge(params manifests.Params) ([]client.Object, error) {
+	builders := []manifests.Builder{
+		opampbridge.Build,
 	}
 	var resources []client.Object
 	for _, builder := range builders {

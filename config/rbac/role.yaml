@@ -112,6 +112,32 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
+  - opampbridges
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - opampbridges/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - opampbridges/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - opentelemetry.io
+  resources:
   - opentelemetrycollectors
   verbs:
   - get

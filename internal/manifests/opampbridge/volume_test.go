@@ -12,25 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifests
+package opampbridge
 
 import (
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// Params holds the reconciliation-specific parameters.
-type Params struct {
-	Client      client.Client
-	Recorder    record.EventRecorder
-	Scheme      *runtime.Scheme
-	Log         logr.Logger
-	OtelCol     v1alpha1.OpenTelemetryCollector
-	OpAMPBridge v1alpha1.OpAMPBridge
-	Config      config.Config
+func TestVolumeNewDefault(t *testing.T) {
+	// prepare
+	opampBridge := v1alpha1.OpAMPBridge{}
+	cfg := config.New()
+
+	// test
+	volumes := Volumes(cfg, opampBridge)
+
+	// verify
+	assert.Len(t, volumes, 1)
+
+	// check if the number of elements in the volume source items list is 1
+	assert.Len(t, volumes[0].VolumeSource.ConfigMap.Items, 1)
+
+	// check that it's the opamp-bridge-internal volume, with the config map
+	assert.Equal(t, naming.OpAMPBridgeConfigMapVolume(), volumes[0].Name)
 }
