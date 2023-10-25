@@ -120,7 +120,7 @@ func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentC
 	if len(reasons) > 0 {
 		return errors.NewBadRequest(fmt.Sprintf("Items in config are not allowed: %v", reasons))
 	}
-	updatedCollector := &v1alpha1.OpenTelemetryCollector{Spec: collector.Spec}
+	updatedCollector := collector.DeepCopy()
 	ctx := context.Background()
 	instance, err := c.GetInstance(name, namespace)
 	if err != nil {
