@@ -180,12 +180,15 @@ func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) ([]co
 	ports, err := ConfigToReceiverPorts(logger, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
+		return nil, err
 	}
 
 	exporterPorts, err := ConfigToExporterPorts(logger, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the exporters")
+		return nil, err
 	}
+
 	ports = append(ports, exporterPorts...)
 
 	sort.Slice(ports, func(i, j int) bool {

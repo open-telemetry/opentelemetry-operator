@@ -39,7 +39,32 @@ var metricContainerPort = corev1.ContainerPort{
 
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	var defaultConfig = `receivers:
+		otlp:
+			protocols:
+			http:
+			grpc:
+	exporters:
+		logging:
+			loglevel: debug
+	service:
+		pipelines:
+			metrics:
+				receivers: [otlp]
+				exporters: [logging]`
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+			Config: defaultConfig,
+		},
+	}
 	cfg := config.New(config.WithCollectorImage("default-image"))
 
 	// test
@@ -70,12 +95,14 @@ func TestContainerPorts(t *testing.T) {
 	var goodConfig = `receivers:
   examplereceiver:
     endpoint: "0.0.0.0:12345"
+exporters:
+  logging:
+    loglevel: debug
 service:
   pipelines:
     metrics:
       receivers: [examplereceiver]
-      exporters: [debug]
-`
+      exporters: [logging]`
 
 	tests := []struct {
 		description   string
@@ -90,9 +117,15 @@ service:
 			expectedPorts: []corev1.ContainerPort{},
 		},
 		{
-			description:   "couldn't build ports from spec config",
-			specConfig:    "",
-			specPorts:     nil,
+			description: "couldn't build ports from spec config",
+			specConfig:  "",
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{metricContainerPort},
 		},
 		{
@@ -110,6 +143,11 @@ service:
 		{
 			description: "ports in spec ContainerPorts",
 			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
 				{
 					Name: "testport1",
 					Port: 12345,
@@ -184,15 +222,32 @@ service:
 			specConfig: `exporters:
     prometheus:
         endpoint: "0.0.0.0:9090"
+exporters:
+	logging:
+		loglevel: debug
 service:
     pipelines:
         metrics:
+			receivers: [otlp]
             exporters: [prometheus]
 `,
-
-			specPorts: []corev1.ServicePort{},
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name: "prometheus",
+					Port: 9090,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{
-				metricContainerPort,
+				{
+					Name:          "metrics",
+					ContainerPort: 8888,
+					Protocol:      corev1.ProtocolTCP,
+				},
 				{
 					Name:          "prometheus",
 					ContainerPort: 9090,
@@ -206,12 +261,29 @@ service:
         endpoint: "0.0.0.0:9090"
     prometheus/dev:
         endpoint: "0.0.0.0:9091"
+exporters:
+	logging:
+		loglevel: debug
 service:
     pipelines:
         metrics:
             exporters: [prometheus/prod, prometheus/dev]
 `,
-			specPorts: []corev1.ServicePort{},
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name: "prometheus-dev",
+					Port: 9091,
+				},
+				{
+					Name: "prometheus-prod",
+					Port: 9090,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{
 				metricContainerPort,
 				{
@@ -229,7 +301,13 @@ service:
 			specConfig: `exporters:
     prometheusremotewrite/prometheus:
         endpoint: http://prometheus-server.monitoring/api/v1/write`,
-			specPorts:     []corev1.ServicePort{},
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{metricContainerPort},
 		},
 		{
@@ -241,11 +319,28 @@ service:
         endpoint: "0.0.0.0:9091"
     prometheusremotewrite/prometheus:
         endpoint: http://prometheus-server.monitoring/api/v1/write
+exporters:
+	logging:
+		loglevel: debug
 service:
     pipelines:
         metrics:
             exporters: [prometheus/prod, prometheus/dev, prometheusremotewrite/prometheus]`,
-			specPorts: []corev1.ServicePort{},
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name: "prometheus-dev",
+					Port: 9091,
+				},
+				{
+					Name: "prometheus-prod",
+					Port: 9090,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{
 				metricContainerPort,
 				{
@@ -269,11 +364,11 @@ service:
 					Ports:  testCase.specPorts,
 				},
 			}
+
 			cfg := config.New(config.WithCollectorImage("default-image"))
 
 			// test
 			c := Container(cfg, logger, otelcol, true)
-
 			// verify
 			assert.ElementsMatch(t, testCase.expectedPorts, c.Ports, testCase.description)
 		})

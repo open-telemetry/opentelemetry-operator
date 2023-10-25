@@ -40,8 +40,8 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
 		manifests.Factory(ConfigMap),
-		manifests.Factory(HorizontalPodAutoscaler),
-		manifests.Factory(ServiceAccount),
+		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
+		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.Factory(Service),
 		manifests.Factory(HeadlessService),
 		manifests.Factory(MonitoringService),
@@ -58,7 +58,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
-	routes := Routes(params)
+	routes, _ := Routes(params)
 	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
 	for _, route := range routes {
 		resourceManifests = append(resourceManifests, route)

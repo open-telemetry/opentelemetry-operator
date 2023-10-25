@@ -45,7 +45,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		actual := Routes(params)
+		actual, _ := Routes(params)
 		assert.Nil(t, actual)
 	})
 
@@ -63,7 +63,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		actual := Routes(params)
+		actual, _ := Routes(params)
 		assert.Nil(t, actual)
 	})
 
@@ -81,7 +81,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		actual := Routes(params)
+		actual, _ := Routes(params)
 		assert.Nil(t, actual)
 	})
 
@@ -106,7 +106,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		routes := Routes(params)
+		routes, _ := Routes(params)
 		got := routes[0]
 
 		assert.NotEqual(t, &routev1.Route{
@@ -154,7 +154,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		routes := Routes(params)
+		routes, _ := Routes(params)
 		require.Equal(t, 3, len(routes))
 		assert.Equal(t, "web.example.com", routes[0].Spec.Host)
 		assert.Equal(t, "otlp-grpc.example.com", routes[1].Spec.Host)
@@ -174,7 +174,7 @@ func TestDesiredRoutes(t *testing.T) {
 			},
 		}
 
-		routes := Routes(params)
+		routes, _ := Routes(params)
 		require.Equal(t, 3, len(routes))
 		assert.Equal(t, "", routes[0].Spec.Host)
 		assert.Equal(t, "", routes[1].Spec.Host)
@@ -185,13 +185,13 @@ func TestDesiredRoutes(t *testing.T) {
 func TestRoutes(t *testing.T) {
 	t.Run("wrong mode", func(t *testing.T) {
 		params := deploymentParams()
-		routes := Routes(params)
+		routes, _ := Routes(params)
 		assert.Nil(t, routes)
 	})
 
 	t.Run("supported mode and service exists", func(t *testing.T) {
 		params := deploymentParams()
-		routes := Routes(params)
+		routes, _ := Routes(params)
 		assert.Nil(t, routes)
 	})
 

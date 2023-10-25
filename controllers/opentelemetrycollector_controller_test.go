@@ -35,6 +35,11 @@ import (
 )
 
 var logger = logf.Log.WithName("unit-tests")
+var mockAutoDetector = &mockAutoDetect{
+	OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
+		return autodetect.OpenShiftRoutesAvailable, nil
+	},
+}
 
 func TestContinueOnRecoverableFailure(t *testing.T) {
 	// prepare

@@ -26,14 +26,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func Routes(params manifests.Params) []*routev1.Route {
+func Routes(params manifests.Params) ([]*routev1.Route, error) {
 	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
-		return nil
+		return nil, nil
 	}
 
 	if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
 		params.Log.V(3).Info("ingress settings are not supported in sidecar mode")
-		return nil
+		return nil, nil
 	}
 
 	var tlsCfg *routev1.TLSConfig
@@ -47,7 +47,7 @@ func Routes(params manifests.Params) []*routev1.Route {
 	case v1alpha1.TLSRouteTerminationTypeReencrypt:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationReencrypt}
 	default: // NOTE: if unsupported, end here.
-		return nil
+		return nil, nil
 	}
 
 	ports, err := servicePortsFromCfg(params.Log, params.OtelCol)
@@ -59,7 +59,7 @@ func Routes(params manifests.Params) []*routev1.Route {
 			"instance.name", params.OtelCol.Name,
 			"instance.namespace", params.OtelCol.Namespace,
 		)
-		return nil
+		return nil, err
 	}
 
 	routes := make([]*routev1.Route, len(ports))
@@ -95,5 +95,5 @@ func Routes(params manifests.Params) []*routev1.Route {
 			},
 		}
 	}
-	return routes
+	return routes, nil
 }

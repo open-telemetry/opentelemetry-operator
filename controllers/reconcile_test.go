@@ -503,6 +503,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					config.WithTargetAllocatorImage("default-ta-allocator"),
 				),
 			})
+
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
 			firstCheck := tt.want[0]
 			createErr := k8sClient.Create(testContext, &tt.args.params.OtelCol)

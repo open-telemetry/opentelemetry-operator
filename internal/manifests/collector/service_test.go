@@ -107,7 +107,7 @@ func TestDesiredService(t *testing.T) {
 		}
 
 		actual, err := Service(params)
-		assert.NoError(t, err)
+		assert.ErrorContains(t, err, "receivers property in the configuration doesn't contain valid receivers")
 		assert.Nil(t, actual)
 
 	})

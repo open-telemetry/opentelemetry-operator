@@ -43,7 +43,8 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	// build container ports from service ports
-	ports := getConfigContainerPorts(logger, otelcol.Spec.Config)
+	ports, err := getConfigContainerPorts(logger, otelcol.Spec.Config)
+	logger.Error(err, "container ports config")
 	for _, p := range otelcol.Spec.Ports {
 		ports[p.Name] = corev1.ContainerPort{
 			Name:          p.Name,
@@ -158,14 +159,17 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 }
 
-func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.ContainerPort {
+func getConfigContainerPorts(logger logr.Logger, cfg string) (map[string]corev1.ContainerPort, error) {
 	ports := map[string]corev1.ContainerPort{}
 	c, err := adapters.ConfigFromString(cfg)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration")
-		return ports
+		return ports, err
 	}
-	ps, _ := adapters.ConfigToPorts(logger, c)
+	ps, err := adapters.ConfigToPorts(logger, c)
+	if err != nil {
+		return ports, err
+	}
 	if len(ps) > 0 {
 		for _, p := range ps {
 			truncName := naming.Truncate(p.Name, maxPortLen)
@@ -199,7 +203,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		Protocol:      corev1.ProtocolTCP,
 	}
 
-	return ports
+	return ports, nil
 }
 
 func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {

@@ -23,7 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func Service(params manifests.Params) (*corev1.Service, error) {
+func Service(params manifests.Params) *corev1.Service {
 	name := naming.TAService(params.OtelCol.Name)
 	labels := Labels(params.OtelCol, name)
 
@@ -43,5 +43,5 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 				TargetPort: intstr.FromInt(8080),
 			}},
 		},
-	}, nil
+	}
 }

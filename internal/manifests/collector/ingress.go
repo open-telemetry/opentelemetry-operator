@@ -38,7 +38,6 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 	// if we have no ports, we don't need a ingress entry
 	if len(ports) == 0 || err != nil {
 		params.Log.V(1).Info(
-
 			"the instance's configuration didn't yield any ports to open, skipping ingress",
 			"instance.name", params.OtelCol.Name,
 			"instance.namespace", params.OtelCol.Namespace,
@@ -54,7 +53,6 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 		rules = createSubdomainIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)
 	}
 
-	//dis is da manifest to create da ingress object
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Ingress(params.OtelCol.Name),
