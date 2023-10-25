@@ -1,0 +1,17 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-metrics
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-collector:9090/metrics | grep "otelcol_exporter_sent_metric_points_total{"
+
