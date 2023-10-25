@@ -17,12 +17,13 @@ package operator
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
-	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
@@ -31,7 +32,7 @@ const (
 	CollectorResource       = "OpenTelemetryCollector"
 	ResourceIdentifierKey   = "created-by"
 	ResourceIdentifierValue = "operator-opamp-bridge"
-	ManagedAnnotationKey    = "opentelemetry.io/opamp-reporting"
+	ReportingAnnotationKey  = "opentelemetry.io/opamp-reporting"
 )
 
 type ConfigApplier interface {
@@ -126,10 +127,13 @@ func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentC
 	if err != nil {
 		return err
 	}
-	if instance != nil {
-		return c.update(ctx, instance, updatedCollector)
+	if instance == nil {
+		return c.create(ctx, name, namespace, updatedCollector)
 	}
-	return c.create(ctx, name, namespace, updatedCollector)
+	if labels := instance.GetLabels(); labels != nil && strings.EqualFold(labels[ReportingAnnotationKey], "true") {
+		return errors.NewBadRequest("cannot modify a collector with `opentelemetry.io/opamp-reporting: true`")
+	}
+	return c.update(ctx, instance, updatedCollector)
 }
 
 func (c Client) Delete(name string, namespace string) error {
@@ -159,7 +163,7 @@ func (c Client) ListInstances() ([]v1alpha1.OpenTelemetryCollector, error) {
 	}
 	reportingCollectors := v1alpha1.OpenTelemetryCollectorList{}
 	err = c.k8sClient.List(ctx, &reportingCollectors, client.MatchingLabels{
-		ManagedAnnotationKey: "true",
+		ReportingAnnotationKey: "true",
 	})
 	if err != nil {
 		return nil, err
