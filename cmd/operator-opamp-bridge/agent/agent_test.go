@@ -109,15 +109,15 @@ func TestAgent_onMessage(t *testing.T) {
 	}
 	type args struct {
 		ctx context.Context
-		// Mapping from name/namespace to a config in testdata
+		// Mapping from namespace/name to a config in testdata
 		configFile map[string]string
-		// Mapping from name/namespace to a config in testdata (for testing updates)
+		// Mapping from namespace/name to a config in testdata (for testing updates)
 		nextConfigFile map[string]string
 	}
 	type want struct {
-		// Mapping from name/namespace to a list of expected contents
+		// Mapping from namespace/name to a list of expected contents
 		contents map[string][]string
-		// Mapping from name/namespace to a list of updated expected contents
+		// Mapping from namespace/name to a list of updated expected contents
 		nextContents map[string][]string
 		// The status after the initial config loading
 		status *protobufs.RemoteConfigStatus
@@ -152,12 +152,12 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"good/testnamespace": "basic.yaml",
+					"testnamespace/good": "basic.yaml",
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -167,7 +167,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					LastRemoteConfigHash: []byte("testnamespace/good512"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -180,12 +180,12 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"good/testnamespace": "basic.yaml",
+					"testnamespace/good": "basic.yaml",
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -195,7 +195,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					LastRemoteConfigHash: []byte("testnamespace/good512"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -208,15 +208,15 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"bad/testnamespace": "invalid.yaml",
+					"testnamespace/bad": "invalid.yaml",
 				},
 			},
 			want: want{
 				contents: nil,
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("bad/testnamespace404"),
+					LastRemoteConfigHash: []byte("testnamespace/bad513"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
-					ErrorMessage:         "yaml: line 16: could not find expected ':'",
+					ErrorMessage:         "yaml: line 20: could not find expected ':'",
 				},
 			},
 		},
@@ -228,12 +228,12 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"good/testnamespace": "basic.yaml",
+					"testnamespace/good": "basic.yaml",
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -243,7 +243,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					LastRemoteConfigHash: []byte("testnamespace/good512"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -256,13 +256,13 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"good/testnamespace": "basic.yaml",
+					"testnamespace/good": "basic.yaml",
 				},
 			},
 			want: want{
 				contents: nil,
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					LastRemoteConfigHash: []byte("testnamespace/good512"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "Items in config are not allowed: [processors.batch]",
 				},
@@ -276,13 +276,13 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"good/testnamespace": "basic.yaml",
+					"testnamespace/good": "basic.yaml",
 				},
 			},
 			want: want{
 				contents: nil,
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					LastRemoteConfigHash: []byte("testnamespace/good512"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "Items in config are not allowed: [processors]",
 				},
@@ -296,15 +296,15 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"good/testnamespace": "basic.yaml",
+					"testnamespace/good": "basic.yaml",
 				},
 				nextConfigFile: map[string]string{
-					"good/testnamespace": "updated.yaml",
+					"testnamespace/good": "updated.yaml",
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -315,11 +315,11 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					LastRemoteConfigHash: []byte("testnamespace/good512"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -330,7 +330,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace435"),
+					LastRemoteConfigHash: []byte("testnamespace/good547"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -343,15 +343,15 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"good/testnamespace": "basic.yaml",
+					"testnamespace/good": "basic.yaml",
 				},
 				nextConfigFile: map[string]string{
-					"good/testnamespace": "invalid.yaml",
+					"testnamespace/good": "invalid.yaml",
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -362,11 +362,11 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					LastRemoteConfigHash: []byte("testnamespace/good512"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -377,9 +377,9 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace404"), // The new hash should be of the bad config
+					LastRemoteConfigHash: []byte("testnamespace/good513"), // The new hash should be of the bad config
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
-					ErrorMessage:         "yaml: line 16: could not find expected ':'",
+					ErrorMessage:         "yaml: line 20: could not find expected ':'",
 				},
 			},
 		},
@@ -391,16 +391,16 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"good/testnamespace": "basic.yaml",
+					"testnamespace/good": "basic.yaml",
 				},
 				nextConfigFile: map[string]string{
-					"good/testnamespace":  "basic.yaml",
-					"other/testnamespace": "updated.yaml",
+					"testnamespace/good":  "basic.yaml",
+					"testnamespace/other": "updated.yaml",
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -410,11 +410,11 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					LastRemoteConfigHash: []byte("testnamespace/good512"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -422,7 +422,7 @@ func TestAgent_onMessage(t *testing.T) {
 						"processors: []",
 						"status:",
 					},
-					"other/testnamespace": {
+					"testnamespace/other": {
 						"kind: OpenTelemetryCollector",
 						"name: other",
 						"namespace: testnamespace",
@@ -432,7 +432,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401other/testnamespace435"),
+					LastRemoteConfigHash: []byte("testnamespace/good512testnamespace/other547"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -445,13 +445,13 @@ func TestAgent_onMessage(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"good/testnamespace": "basic.yaml",
+					"testnamespace/good": "basic.yaml",
 				},
 				nextConfigFile: map[string]string{},
 			},
 			want: want{
 				contents: map[string][]string{
-					"good/testnamespace": {
+					"testnamespace/good": {
 						"kind: OpenTelemetryCollector",
 						"name: good",
 						"namespace: testnamespace",
@@ -461,7 +461,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("good/testnamespace401"),
+					LastRemoteConfigHash: []byte("testnamespace/good512"),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{},
