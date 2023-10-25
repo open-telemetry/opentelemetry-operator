@@ -42,6 +42,7 @@ type options struct {
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	targetAllocatorConfigMapEntry       string
+	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
 	operatorOpAMPBridgeImage            string
 	onOpenShiftRoutesChange             changeHandler
@@ -83,6 +84,11 @@ func WithCollectorConfigMapEntry(s string) Option {
 func WithTargetAllocatorConfigMapEntry(s string) Option {
 	return func(o *options) {
 		o.targetAllocatorConfigMapEntry = s
+	}
+}
+func WithOperatorOpAMPBridgeConfigMapEntry(s string) Option {
+	return func(o *options) {
+		o.operatorOpAMPBridgeConfigMapEntry = s
 	}
 }
 func WithLogger(logger logr.Logger) Option {

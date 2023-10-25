@@ -12,25 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifests
+package opampbridge
 
 import (
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-// Params holds the reconciliation-specific parameters.
-type Params struct {
-	Client      client.Client
-	Recorder    record.EventRecorder
-	Scheme      *runtime.Scheme
-	Log         logr.Logger
-	OtelCol     v1alpha1.OpenTelemetryCollector
-	OpAMPBridge v1alpha1.OpAMPBridge
-	Config      config.Config
+func getDNSPolicy(opampBridge v1alpha1.OpAMPBridge) corev1.DNSPolicy {
+	dnsPolicy := corev1.DNSClusterFirst
+	if opampBridge.Spec.HostNetwork {
+		dnsPolicy = corev1.DNSClusterFirstWithHostNet
+	}
+	return dnsPolicy
 }
