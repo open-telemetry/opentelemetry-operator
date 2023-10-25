@@ -96,7 +96,7 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		if err != nil {
 			return err
 		}
-        target.KubeConfigFilePath = ""
+		target.KubeConfigFilePath = ""
 	}
 	target.ClusterConfig = clusterConfig
 
