@@ -235,7 +235,7 @@ ApacheHttpd defines configuration for Apache HTTPD auto-instrumentation.
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
-          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 200Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -844,7 +844,7 @@ DotNet defines configuration for DotNet auto-instrumentation.
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
-          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 200Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1480,7 +1480,7 @@ Go defines configuration for Go auto-instrumentation.
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
-          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 200Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1843,7 +1843,7 @@ Java defines configuration for java auto-instrumentation.
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
-          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 200Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2220,7 +2220,7 @@ Nginx defines configuration for Nginx auto-instrumentation.
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
-          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 200Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2829,7 +2829,7 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
-          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 200Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3192,7 +3192,7 @@ Python defines configuration for python auto-instrumentation.
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
-          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 150Mi.<br/>
+          VolumeSizeLimit defines size limit for volume used for auto-instrumentation. The default size is 200Mi.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
