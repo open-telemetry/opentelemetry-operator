@@ -121,7 +121,7 @@ type Java struct {
 	Image string `json:"image,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-	// The default size is 150Mi.
+	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines java specific env vars. There are four layers for env vars' definitions and
@@ -142,7 +142,7 @@ type NodeJS struct {
 	Image string `json:"image,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-	// The default size is 150Mi.
+	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines nodejs specific env vars. There are four layers for env vars' definitions and
@@ -163,7 +163,7 @@ type Python struct {
 	Image string `json:"image,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-	// The default size is 150Mi.
+	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines python specific env vars. There are four layers for env vars' definitions and
@@ -184,7 +184,7 @@ type DotNet struct {
 	Image string `json:"image,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-	// The default size is 150Mi.
+	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines DotNet specific env vars. There are four layers for env vars' definitions and
@@ -203,7 +203,7 @@ type Go struct {
 	Image string `json:"image,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-	// The default size is 150Mi.
+	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines Go specific env vars. There are four layers for env vars' definitions and
@@ -224,7 +224,7 @@ type ApacheHttpd struct {
 	Image string `json:"image,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-	// The default size is 150Mi.
+	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines Apache HTTPD specific env vars. There are four layers for env vars' definitions and
@@ -260,7 +260,7 @@ type Nginx struct {
 	Image string `json:"image,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-	// The default size is 150Mi.
+	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines Nginx specific env vars. There are four layers for env vars' definitions and

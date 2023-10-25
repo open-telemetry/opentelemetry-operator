@@ -31,7 +31,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-var defaultVolumeLimitSize = resource.MustParse("150Mi")
+var defaultVolumeLimitSize = resource.MustParse("200Mi")
 
 var testResourceRequirements = corev1.ResourceRequirements{
 	Limits: corev1.ResourceList{
