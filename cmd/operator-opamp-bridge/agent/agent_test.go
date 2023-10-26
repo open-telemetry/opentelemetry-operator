@@ -40,10 +40,44 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
 )
 
+const (
+	collectorBasicFile   = "testdata/basic.yaml"
+	collectorUpdatedFile = "testdata/updated.yaml"
+	collectorInvalidFile = "testdata/invalid.yaml"
+
+	testNamespace      = "testnamespace"
+	testCollectorName  = "collector"
+	otherCollectorName = "other"
+	emptyConfigHash    = ""
+	testCollectorKey   = testNamespace + "/" + testCollectorName
+	otherCollectorKey  = testNamespace + "/" + otherCollectorName
+
+	agentTestFileName                       = "testdata/agent.yaml"
+	agentTestFileHttpName                   = "testdata/agenthttpbasic.yaml"
+	agentTestFileBasicComponentsAllowedName = "testdata/agentbasiccomponentsallowed.yaml"
+	agentTestFileBatchNotAllowedName        = "testdata/agentbatchnotallowed.yaml"
+	agentTestFileNoProcessorsAllowedName    = "testdata/agentnoprocessorsallowed.yaml"
+)
+
 var (
 	l                    = logr.Discard()
 	_ client.OpAMPClient = &mockOpampClient{}
+
+	basicYamlConfigHash        = getConfigHash(testCollectorKey, collectorBasicFile)
+	invalidYamlConfigHash      = getConfigHash(testCollectorKey, collectorInvalidFile)
+	updatedYamlConfigHash      = getConfigHash(testCollectorKey, collectorUpdatedFile)
+	otherUpdatedYamlConfigHash = getConfigHash(otherCollectorKey, collectorUpdatedFile)
 )
+
+func getConfigHash(key, file string) string {
+	fi, err := os.Stat(file)
+	if err != nil {
+		return ""
+	}
+	// get the size
+	size := fi.Size()
+	return fmt.Sprintf("%s%d", key, size)
+}
 
 type mockOpampClient struct {
 	lastStatus          *protobufs.RemoteConfigStatus
@@ -51,16 +85,16 @@ type mockOpampClient struct {
 	settings            types.StartSettings
 }
 
-func (m *mockOpampClient) Start(ctx context.Context, settings types.StartSettings) error {
+func (m *mockOpampClient) Start(_ context.Context, settings types.StartSettings) error {
 	m.settings = settings
 	return nil
 }
 
-func (m *mockOpampClient) Stop(ctx context.Context) error {
+func (m *mockOpampClient) Stop(_ context.Context) error {
 	return nil
 }
 
-func (m *mockOpampClient) SetAgentDescription(descr *protobufs.AgentDescription) error {
+func (m *mockOpampClient) SetAgentDescription(_ *protobufs.AgentDescription) error {
 	return nil
 }
 
@@ -68,7 +102,7 @@ func (m *mockOpampClient) AgentDescription() *protobufs.AgentDescription {
 	return nil
 }
 
-func (m *mockOpampClient) SetHealth(health *protobufs.AgentHealth) error {
+func (m *mockOpampClient) SetHealth(_ *protobufs.AgentHealth) error {
 	return nil
 }
 
@@ -86,7 +120,7 @@ func (m *mockOpampClient) SetRemoteConfigStatus(status *protobufs.RemoteConfigSt
 	return nil
 }
 
-func (m *mockOpampClient) SetPackageStatuses(statuses *protobufs.PackageStatuses) error {
+func (m *mockOpampClient) SetPackageStatuses(_ *protobufs.PackageStatuses) error {
 	return nil
 }
 
@@ -133,7 +167,7 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "no data",
 			fields: fields{
-				configFile: "testdata/agent.yaml",
+				configFile: agentTestFileName,
 			},
 			args: args{
 				ctx:        context.Background(),
@@ -147,27 +181,27 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "base case",
 			fields: fields{
-				configFile: "testdata/agent.yaml",
+				configFile: agentTestFileName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/good": "basic.yaml",
+					testCollectorKey: collectorBasicFile,
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"receivers: [otlp]",
 						"status:",
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -175,27 +209,27 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "base case http",
 			fields: fields{
-				configFile: "testdata/agenthttpbasic.yaml",
+				configFile: agentTestFileHttpName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/good": "basic.yaml",
+					testCollectorKey: collectorBasicFile,
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"receivers: [otlp]",
 						"status:",
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -203,18 +237,18 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "failure",
 			fields: fields{
-				configFile: "testdata/agent.yaml",
+				configFile: agentTestFileName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/bad": "invalid.yaml",
+					testCollectorKey: collectorInvalidFile,
 				},
 			},
 			want: want{
 				contents: nil,
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/bad513"),
+					LastRemoteConfigHash: []byte(invalidYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "error converting YAML to JSON: yaml: line 21: could not find expected ':'",
 				},
@@ -223,27 +257,27 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "all components are allowed",
 			fields: fields{
-				configFile: "testdata/agentbasiccomponentsallowed.yaml",
+				configFile: agentTestFileBasicComponentsAllowedName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/good": "basic.yaml",
+					testCollectorKey: collectorBasicFile,
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"receivers: [otlp]",
 						"status:",
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -251,18 +285,18 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "batch not allowed",
 			fields: fields{
-				configFile: "testdata/agentbatchnotallowed.yaml",
+				configFile: agentTestFileBatchNotAllowedName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/good": "basic.yaml",
+					testCollectorKey: collectorBasicFile,
 				},
 			},
 			want: want{
 				contents: nil,
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "Items in config are not allowed: [processors.batch]",
 				},
@@ -271,18 +305,18 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "processors not allowed",
 			fields: fields{
-				configFile: "testdata/agentnoprocessorsallowed.yaml",
+				configFile: agentTestFileNoProcessorsAllowedName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/good": "basic.yaml",
+					testCollectorKey: collectorBasicFile,
 				},
 			},
 			want: want{
 				contents: nil,
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "Items in config are not allowed: [processors]",
 				},
@@ -291,23 +325,23 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "can update config and replicas",
 			fields: fields{
-				configFile: "testdata/agent.yaml",
+				configFile: agentTestFileName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/good": "basic.yaml",
+					testCollectorKey: collectorBasicFile,
 				},
 				nextConfigFile: map[string]string{
-					"testnamespace/good": "updated.yaml",
+					testCollectorKey: collectorUpdatedFile,
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: []",
 						"replicas: 1",
@@ -315,14 +349,14 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: [memory_limiter, batch]",
 						"replicas: 3",
@@ -330,7 +364,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good547"),
+					LastRemoteConfigHash: []byte(updatedYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -338,23 +372,23 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "cannot update with bad config",
 			fields: fields{
-				configFile: "testdata/agent.yaml",
+				configFile: agentTestFileName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/good": "basic.yaml",
+					testCollectorKey: collectorBasicFile,
 				},
 				nextConfigFile: map[string]string{
-					"testnamespace/good": "invalid.yaml",
+					testCollectorKey: collectorInvalidFile,
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: []",
 						"replicas: 1",
@@ -362,14 +396,14 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: []",
 						"replicas: 1",
@@ -377,7 +411,7 @@ func TestAgent_onMessage(t *testing.T) {
 					},
 				},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good513"), // The new hash should be of the bad config
+					LastRemoteConfigHash: []byte(invalidYamlConfigHash), // The new hash should be of the bad config
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
 					ErrorMessage:         "error converting YAML to JSON: yaml: line 21: could not find expected ':'",
 				},
@@ -386,53 +420,53 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "update with new collector",
 			fields: fields{
-				configFile: "testdata/agent.yaml",
+				configFile: agentTestFileName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/good": "basic.yaml",
+					testCollectorKey: collectorBasicFile,
 				},
 				nextConfigFile: map[string]string{
-					"testnamespace/good":  "basic.yaml",
-					"testnamespace/other": "updated.yaml",
+					testCollectorKey:  collectorBasicFile,
+					otherCollectorKey: collectorUpdatedFile,
 				},
 			},
 			want: want{
 				contents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: []",
 						"status:",
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: []",
 						"status:",
 					},
-					"testnamespace/other": {
+					otherCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: other",
-						"namespace: testnamespace",
+						"name: " + otherCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: [memory_limiter, batch]",
 						"status:",
 					},
 				},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512testnamespace/other547"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash + otherUpdatedYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -440,33 +474,33 @@ func TestAgent_onMessage(t *testing.T) {
 		{
 			name: "can delete existing collector",
 			fields: fields{
-				configFile: "testdata/agent.yaml",
+				configFile: agentTestFileName,
 			},
 			args: args{
 				ctx: context.Background(),
 				configFile: map[string]string{
-					"testnamespace/good": "basic.yaml",
+					testCollectorKey: collectorBasicFile,
 				},
 				nextConfigFile: map[string]string{},
 			},
 			want: want{
 				contents: map[string][]string{
-					"testnamespace/good": {
+					testCollectorKey: {
 						"kind: OpenTelemetryCollector",
-						"name: good",
-						"namespace: testnamespace",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: []",
 						"status:",
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte("testnamespace/good512"),
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 				nextContents: map[string][]string{},
 				nextStatus: &protobufs.RemoteConfigStatus{
-					LastRemoteConfigHash: []byte(""),
+					LastRemoteConfigHash: []byte(emptyConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
 				},
 			},
@@ -528,11 +562,11 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	mockClient := &mockOpampClient{}
 
 	fs := config.GetFlagSet(pflag.ContinueOnError)
-	configFlag := []string{"--config-file", "testdata/agent.yaml"}
+	configFlag := []string{"--config-file", agentTestFileName}
 	err := fs.Parse(configFlag)
 	assert.NoError(t, err)
 	conf := config.NewConfig(logr.Discard())
-	loadErr := config.LoadFromFile(conf, "testdata/agent.yaml")
+	loadErr := config.LoadFromFile(conf, agentTestFileName)
 	require.NoError(t, loadErr, "should be able to load config")
 	applier := getFakeApplier(t, conf)
 	agent := NewAgent(l, applier, conf, mockClient)
@@ -568,7 +602,7 @@ func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData
 	sort.Strings(fileNames)
 
 	for _, key := range fileNames {
-		yamlFile, err := os.ReadFile(fmt.Sprintf("testdata/%s", filemap[key]))
+		yamlFile, err := os.ReadFile(filemap[key])
 		if err != nil {
 			return toReturn, err
 		}
