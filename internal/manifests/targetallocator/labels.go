@@ -15,12 +15,12 @@
 package targetallocator
 
 import (
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Labels return the common labels to all TargetAllocator objects that are part of a managed OpenTelemetryCollector.
-func Labels(instance v1alpha1.OpenTelemetryCollector, name string) map[string]string {
+func Labels(instance v1alpha2.OpenTelemetryCollector, name string) map[string]string {
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
 	if nil != instance.Labels {

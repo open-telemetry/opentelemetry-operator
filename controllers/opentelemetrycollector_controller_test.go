@@ -36,6 +36,7 @@ import (
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -65,7 +66,7 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 		Config:   cfg,
 	})
 	require.NoError(t, cfg.AutoDetect())
-	created := &v1alpha1.OpenTelemetryCollector{
+	created := &v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,
@@ -177,7 +178,7 @@ func TestNewStatefulSetObjectsOnReconciliation(t *testing.T) {
 		Recorder: record.NewFakeRecorder(10),
 		Config:   cfg,
 	})
-	created := &v1alpha1.OpenTelemetryCollector{
+	created := &v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
 			Namespace: nsn.Namespace,

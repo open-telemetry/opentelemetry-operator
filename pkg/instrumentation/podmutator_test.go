@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -43,7 +43,7 @@ func TestMutatePod(t *testing.T) {
 		err             string
 		pod             corev1.Pod
 		expected        corev1.Pod
-		inst            v1alpha1.Instrumentation
+		inst            v1alpha2.Instrumentation
 		ns              corev1.Namespace
 		setFeatureGates func(t *testing.T)
 	}{
@@ -54,13 +54,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "javaagent",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "javaagent",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.Java{
+				Spec: v1alpha2.InstrumentationSpec{
+					Java: v1alpha2.Java{
 						Env: []corev1.EnvVar{
 							{
 								Name:  "OTEL_JAVAAGENT_DEBUG",
@@ -103,7 +103,7 @@ func TestMutatePod(t *testing.T) {
 							Value: "true",
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -237,13 +237,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "javaagent-multiple-containers",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "javaagent-multiple-containers",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.Java{
+				Spec: v1alpha2.InstrumentationSpec{
+					Java: v1alpha2.Java{
 						Env: []corev1.EnvVar{
 							{
 								Name:  "OTEL_JAVAAGENT_DEBUG",
@@ -286,7 +286,7 @@ func TestMutatePod(t *testing.T) {
 							Value: "true",
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -500,13 +500,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "javaagent-disabled",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "javaagent-disabled",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.Java{
+				Spec: v1alpha2.InstrumentationSpec{
+					Java: v1alpha2.Java{
 						Env: []corev1.EnvVar{
 							{
 								Name:  "OTEL_JAVAAGENT_DEBUG",
@@ -548,7 +548,7 @@ func TestMutatePod(t *testing.T) {
 							Value: "true",
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -596,13 +596,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "nodejs",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "nodejs",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					NodeJS: v1alpha1.NodeJS{
+				Spec: v1alpha2.InstrumentationSpec{
+					NodeJS: v1alpha2.NodeJS{
 						Image: "otel/nodejs:1",
 						Env: []corev1.EnvVar{
 							{
@@ -637,7 +637,7 @@ func TestMutatePod(t *testing.T) {
 							Value: "true",
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -763,13 +763,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "nodejs-multiple-containers",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "nodejs-multiple-containers",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					NodeJS: v1alpha1.NodeJS{
+				Spec: v1alpha2.InstrumentationSpec{
+					NodeJS: v1alpha2.NodeJS{
 						Image: "otel/nodejs:1",
 						Env: []corev1.EnvVar{
 							{
@@ -804,7 +804,7 @@ func TestMutatePod(t *testing.T) {
 							Value: "true",
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -1002,13 +1002,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "nodejs-disabled",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "nodejs-disabled",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					NodeJS: v1alpha1.NodeJS{
+				Spec: v1alpha2.InstrumentationSpec{
+					NodeJS: v1alpha2.NodeJS{
 						Image: "otel/nodejs:1",
 						Env: []corev1.EnvVar{
 							{
@@ -1043,7 +1043,7 @@ func TestMutatePod(t *testing.T) {
 							Value: "true",
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -1091,13 +1091,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "python",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "python",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Python: v1alpha1.Python{
+				Spec: v1alpha2.InstrumentationSpec{
+					Python: v1alpha2.Python{
 						Image: "otel/python:1",
 						Env: []corev1.EnvVar{
 							{
@@ -1118,7 +1118,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -1274,13 +1274,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "python-multiple-containers",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "python-multiple-containers",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Python: v1alpha1.Python{
+				Spec: v1alpha2.InstrumentationSpec{
+					Python: v1alpha2.Python{
 						Image: "otel/python:1",
 						Env: []corev1.EnvVar{
 							{
@@ -1301,7 +1301,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -1541,13 +1541,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "python-disabled",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "python-disabled",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Python: v1alpha1.Python{
+				Spec: v1alpha2.InstrumentationSpec{
+					Python: v1alpha2.Python{
 						Image: "otel/python:1",
 						Env: []corev1.EnvVar{
 							{
@@ -1568,7 +1568,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -1634,13 +1634,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "dotnet",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "dotnet",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -1653,7 +1653,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -1823,13 +1823,13 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "dotnet-by-namespace-annotation",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -1842,7 +1842,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -1998,13 +1998,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "dotnet-multiple-containers",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "dotnet-multiple-containers",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -2017,7 +2017,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -2273,13 +2273,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "dotnet-disabled",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "dotnet-disabled",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -2292,7 +2292,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -2358,13 +2358,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "go",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "go",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Go: v1alpha1.Go{
+				Spec: v1alpha2.InstrumentationSpec{
+					Go: v1alpha2.Go{
 						Image: "otel/go:1",
 						Env: []corev1.EnvVar{
 							{
@@ -2377,7 +2377,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -2533,13 +2533,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "go-disabled",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "go-disabled",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Go: v1alpha1.Go{
+				Spec: v1alpha2.InstrumentationSpec{
+					Go: v1alpha2.Go{
 						Image: "otel/go:1",
 						Env: []corev1.EnvVar{
 							{
@@ -2552,7 +2552,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -2613,16 +2613,16 @@ func TestMutatePod(t *testing.T) {
 					Name: "apache-httpd",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "apache-httpd",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					ApacheHttpd: v1alpha1.ApacheHttpd{
+				Spec: v1alpha2.InstrumentationSpec{
+					ApacheHttpd: v1alpha2.ApacheHttpd{
 						Image: "otel/apache-httpd:1",
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{},
@@ -2772,13 +2772,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "apache-httpd-disabled",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "apache-httpd-disabled",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					ApacheHttpd: v1alpha1.ApacheHttpd{
+				Spec: v1alpha2.InstrumentationSpec{
+					ApacheHttpd: v1alpha2.ApacheHttpd{
 						Image: "otel/apache-httpd:1",
 						Env: []corev1.EnvVar{
 							{
@@ -2791,7 +2791,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 					Env: []corev1.EnvVar{
@@ -2854,20 +2854,20 @@ func TestMutatePod(t *testing.T) {
 					Name: "req-namespace",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-nginx-6c44bcbdd",
 					Namespace: "req-namespace",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Nginx: v1alpha1.Nginx{
+				Spec: v1alpha2.InstrumentationSpec{
+					Nginx: v1alpha2.Nginx{
 						Image: "otel/nginx-inj:1",
 						Attrs: []corev1.EnvVar{{
 							Name:  "NginxModuleOtelMaxQueueSize",
 							Value: "4096",
 						}},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://otlp-endpoint:4317",
 					},
 					Env: []corev1.EnvVar{},
@@ -3013,13 +3013,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "nginx-disabled",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-nginx-6c44bcbdd",
 					Namespace: "nginx-disabled",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Nginx: v1alpha1.Nginx{
+				Spec: v1alpha2.InstrumentationSpec{
+					Nginx: v1alpha2.Nginx{
 						Image: "otel/nginx-inj:1",
 						Env: []corev1.EnvVar{
 							{
@@ -3036,7 +3036,7 @@ func TestMutatePod(t *testing.T) {
 							Value: "4096",
 						}},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://otlp-endpoint:4317",
 					},
 					Env: []corev1.EnvVar{
@@ -3101,16 +3101,16 @@ func TestMutatePod(t *testing.T) {
 					Name: "missing-annotation",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "missing-annotation",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.Java{
+				Spec: v1alpha2.InstrumentationSpec{
+					Java: v1alpha2.Java{
 						Image: "otel/java:1",
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -3141,16 +3141,16 @@ func TestMutatePod(t *testing.T) {
 					Name: "annotation-false",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "annotation-false",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.Java{
+				Spec: v1alpha2.InstrumentationSpec{
+					Java: v1alpha2.Java{
 						Image: "otel/java:1",
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -3191,16 +3191,16 @@ func TestMutatePod(t *testing.T) {
 					Name: "non-existing-instance",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "non-existing-instance",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					Java: v1alpha1.Java{
+				Spec: v1alpha2.InstrumentationSpec{
+					Java: v1alpha2.Java{
 						Image: "otel/java:1",
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -3228,13 +3228,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "multi-instrumentation-multi-containers",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "multi-instrumentation-multi-containers",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -3243,7 +3243,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Java: v1alpha1.Java{
+					Java: v1alpha2.Java{
 						Image: "otel/java:1",
 						Env: []corev1.EnvVar{
 							{
@@ -3252,7 +3252,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					NodeJS: v1alpha1.NodeJS{
+					NodeJS: v1alpha2.NodeJS{
 						Image: "otel/nodejs:1",
 						Env: []corev1.EnvVar{
 							{
@@ -3261,7 +3261,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Python: v1alpha1.Python{
+					Python: v1alpha2.Python{
 						Image: "otel/python:1",
 						Env: []corev1.EnvVar{
 							{
@@ -3270,7 +3270,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -3878,13 +3878,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "multi-instrumentation-multi-containers-cn",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "multi-instrumentation-multi-containers-cn",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -3893,7 +3893,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Java: v1alpha1.Java{
+					Java: v1alpha2.Java{
 						Image: "otel/java:1",
 						Env: []corev1.EnvVar{
 							{
@@ -3902,7 +3902,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					NodeJS: v1alpha1.NodeJS{
+					NodeJS: v1alpha2.NodeJS{
 						Image: "otel/nodejs:1",
 						Env: []corev1.EnvVar{
 							{
@@ -3911,7 +3911,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Python: v1alpha1.Python{
+					Python: v1alpha2.Python{
 						Image: "otel/python:1",
 						Env: []corev1.EnvVar{
 							{
@@ -3920,7 +3920,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -4542,13 +4542,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "multi-instrumentation-multi-containers-dis-cn",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "multi-instrumentation-multi-containers-dis-cn",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4557,7 +4557,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Java: v1alpha1.Java{
+					Java: v1alpha2.Java{
 						Image: "otel/java:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4566,7 +4566,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					NodeJS: v1alpha1.NodeJS{
+					NodeJS: v1alpha2.NodeJS{
 						Image: "otel/nodejs:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4575,7 +4575,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Python: v1alpha1.Python{
+					Python: v1alpha2.Python{
 						Image: "otel/python:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4584,7 +4584,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -4702,13 +4702,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "multi-instrumentation-multi-containers-no-cont",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "multi-instrumentation-multi-containers-no-cont",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4717,7 +4717,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Java: v1alpha1.Java{
+					Java: v1alpha2.Java{
 						Image: "otel/java:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4726,7 +4726,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					NodeJS: v1alpha1.NodeJS{
+					NodeJS: v1alpha2.NodeJS{
 						Image: "otel/nodejs:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4735,7 +4735,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Python: v1alpha1.Python{
+					Python: v1alpha2.Python{
 						Image: "otel/python:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4744,7 +4744,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -4852,13 +4852,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "multi-instrumentation-single-container-no-cont",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "multi-instrumentation-single-container-no-cont",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4867,7 +4867,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Java: v1alpha1.Java{
+					Java: v1alpha2.Java{
 						Image: "otel/java:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4876,7 +4876,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					NodeJS: v1alpha1.NodeJS{
+					NodeJS: v1alpha2.NodeJS{
 						Image: "otel/nodejs:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4885,7 +4885,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Python: v1alpha1.Python{
+					Python: v1alpha2.Python{
 						Image: "otel/python:1",
 						Env: []corev1.EnvVar{
 							{
@@ -4894,7 +4894,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -5037,13 +5037,13 @@ func TestMutatePod(t *testing.T) {
 					Name: "multi-instrumentation-single-container-spec-cont",
 				},
 			},
-			inst: v1alpha1.Instrumentation{
+			inst: v1alpha2.Instrumentation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "example-inst",
 					Namespace: "multi-instrumentation-single-container-spec-cont",
 				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
+				Spec: v1alpha2.InstrumentationSpec{
+					DotNet: v1alpha2.DotNet{
 						Image: "otel/dotnet:1",
 						Env: []corev1.EnvVar{
 							{
@@ -5052,7 +5052,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					NodeJS: v1alpha1.NodeJS{
+					NodeJS: v1alpha2.NodeJS{
 						Image: "otel/nodejs:1",
 						Env: []corev1.EnvVar{
 							{
@@ -5061,7 +5061,7 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
-					Exporter: v1alpha1.Exporter{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "http://collector:12345",
 					},
 				},
@@ -5176,7 +5176,7 @@ func TestSingleInstrumentationEnabled(t *testing.T) {
 		{
 			name: "Single instrumentation enabled",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}},
 				NodeJS: instrumentationWithContainers{Instrumentation: nil},
 			},
 			expectedStatus: true,
@@ -5185,8 +5185,8 @@ func TestSingleInstrumentationEnabled(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}},
+				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}},
 			},
 			expectedStatus: false,
 			expectedMsg:    "",
@@ -5220,7 +5220,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Single instrumentation enabled without containers",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}},
 				NodeJS: instrumentationWithContainers{Instrumentation: nil},
 			},
 			expectedStatus: true,
@@ -5229,8 +5229,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled with containers",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "java"},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "nodejs"},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}, Containers: "java"},
+				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}, Containers: "nodejs"},
 			},
 			expectedStatus: true,
 			expectedMsg:    nil,
@@ -5238,8 +5238,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled without containers",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}},
+				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}},
 			},
 			expectedStatus: false,
 			expectedMsg:    fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations"),
@@ -5247,8 +5247,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled with containers for single instrumentation",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "test"},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}, Containers: "test"},
+				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}},
 			},
 			expectedStatus: false,
 			expectedMsg:    fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations"),
@@ -5264,8 +5264,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled with duplicated containers",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "app,app1,java"},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "app1,app,nodejs"},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}, Containers: "app,app1,java"},
+				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}, Containers: "app1,app,nodejs"},
 			},
 			expectedStatus: false,
 			expectedMsg:    fmt.Errorf("duplicated container names detected: [app app1]"),
@@ -5273,8 +5273,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled with duplicated containers for single instrumentation",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "app,app,java"},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "nodejs"},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}, Containers: "app,app,java"},
+				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}, Containers: "nodejs"},
 			},
 			expectedStatus: false,
 			expectedMsg:    fmt.Errorf("duplicated container names detected: [app]"),
@@ -5301,12 +5301,12 @@ func TestInstrumentationLanguageContainersSet(t *testing.T) {
 			name: "Set containers for enabled instrumentation",
 			instrumentations: languageInstrumentations{
 				NodeJS: instrumentationWithContainers{Instrumentation: nil},
-				Python: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
+				Python: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}},
 			},
 			containers: "python,python1",
 			expectedInstrumentations: languageInstrumentations{
 				NodeJS: instrumentationWithContainers{Instrumentation: nil},
-				Python: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "python,python1"},
+				Python: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{}, Containers: "python,python1"},
 			},
 		},
 		{

@@ -21,11 +21,11 @@ import (
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha2.OpenTelemetryCollector) (*v1alpha2.OpenTelemetryCollector, error) {
 	// return if this does not use an autoscaler
 	if otelcol.Spec.MaxReplicas == nil {
 		return otelcol, nil
@@ -59,7 +59,7 @@ func upgrade0_56_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 			updated.Spec.ScaleTargetRef = autoscalingv1.CrossVersionObjectReference{
 				Kind:       "OpenTelemetryCollector",
 				Name:       naming.OpenTelemetryCollectorName(otelcol.Name),
-				APIVersion: v1alpha1.GroupVersion.String(),
+				APIVersion: v1alpha2.GroupVersion.String(),
 			}
 			patch := client.MergeFrom(&existing)
 			err := u.Client.Patch(ctx, updated, patch)

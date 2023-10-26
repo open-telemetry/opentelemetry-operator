@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 )
@@ -100,12 +101,12 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	return add(p.config, p.logger, otelcol, pod, attributes)
 }
 
-func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha1.OpenTelemetryCollector, error) {
+func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.Namespace, ann string) (v1alpha2.OpenTelemetryCollector, error) {
 	if strings.EqualFold(ann, "true") {
 		return p.selectCollectorInstance(ctx, ns)
 	}
 
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha2.OpenTelemetryCollector{}
 	var nsnOtelcol types.NamespacedName
 	instNamespace, instName, namespaced := strings.Cut(ann, "/")
 	if namespaced {
@@ -119,20 +120,20 @@ func (p *sidecarPodMutator) getCollectorInstance(ctx context.Context, ns corev1.
 	}
 
 	if otelcol.Spec.Mode != v1alpha1.ModeSidecar {
-		return v1alpha1.OpenTelemetryCollector{}, errInstanceNotSidecar
+		return v1alpha2.OpenTelemetryCollector{}, errInstanceNotSidecar
 	}
 
 	return otelcol, nil
 }
 
-func (p *sidecarPodMutator) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1alpha1.OpenTelemetryCollector, error) {
+func (p *sidecarPodMutator) selectCollectorInstance(ctx context.Context, ns corev1.Namespace) (v1alpha2.OpenTelemetryCollector, error) {
 	var (
-		otelcols = v1alpha1.OpenTelemetryCollectorList{}
-		sidecars []v1alpha1.OpenTelemetryCollector
+		otelcols = v1alpha2.OpenTelemetryCollectorList{}
+		sidecars []v1alpha2.OpenTelemetryCollector
 	)
 
 	if err := p.client.List(ctx, &otelcols, client.InNamespace(ns.Name)); err != nil {
-		return v1alpha1.OpenTelemetryCollector{}, err
+		return v1alpha2.OpenTelemetryCollector{}, err
 	}
 
 	for i := range otelcols.Items {
@@ -144,9 +145,9 @@ func (p *sidecarPodMutator) selectCollectorInstance(ctx context.Context, ns core
 
 	switch {
 	case len(sidecars) == 0:
-		return v1alpha1.OpenTelemetryCollector{}, errNoInstancesAvailable
+		return v1alpha2.OpenTelemetryCollector{}, errNoInstancesAvailable
 	case len(sidecars) > 1:
-		return v1alpha1.OpenTelemetryCollector{}, errMultipleInstancesPossible
+		return v1alpha2.OpenTelemetryCollector{}, errMultipleInstancesPossible
 	default:
 		return sidecars[0], nil
 	}

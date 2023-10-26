@@ -25,6 +25,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
@@ -39,7 +40,7 @@ var metricContainerPort = corev1.ContainerPort{
 
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1alpha2.OpenTelemetryCollector{}
 	cfg := config.New(config.WithCollectorImage("default-image"))
 
 	// test
@@ -52,7 +53,7 @@ func TestContainerNewDefault(t *testing.T) {
 
 func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Image: "overridden-image",
 		},
@@ -263,7 +264,7 @@ service:
 	for _, testCase := range tests {
 		t.Run(testCase.description, func(t *testing.T) {
 			// prepare
-			otelcol := v1alpha1.OpenTelemetryCollector{
+			otelcol := v1alpha2.OpenTelemetryCollector{
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{
 					Config: testCase.specConfig,
 					Ports:  testCase.specPorts,
@@ -282,7 +283,7 @@ service:
 
 func TestContainerConfigFlagIsIgnored(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Args: map[string]string{
 				"key":    "value",
@@ -303,7 +304,7 @@ func TestContainerConfigFlagIsIgnored(t *testing.T) {
 
 func TestContainerCustomVolumes(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			VolumeMounts: []corev1.VolumeMount{{
 				Name: "custom-volume-mount",
@@ -322,7 +323,7 @@ func TestContainerCustomVolumes(t *testing.T) {
 
 func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
 				Name:      "test",
@@ -348,7 +349,7 @@ func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 
 func TestContainerCustomSecurityContext(t *testing.T) {
 	// default config without security context
-	c1 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{Spec: v1alpha1.OpenTelemetryCollectorSpec{}}, true)
+	c1 := Container(config.New(), logger, v1alpha2.OpenTelemetryCollector{Spec: v1alpha1.OpenTelemetryCollectorSpec{}}, true)
 
 	// verify
 	assert.Nil(t, c1.SecurityContext)
@@ -358,7 +359,7 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 	uid := int64(1234)
 
 	// test
-	c2 := Container(config.New(), logger, v1alpha1.OpenTelemetryCollector{
+	c2 := Container(config.New(), logger, v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			SecurityContext: &corev1.SecurityContext{
 				Privileged: &isPrivileged,
@@ -374,7 +375,7 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 }
 
 func TestContainerEnvVarsOverridden(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Env: []corev1.EnvVar{
 				{
@@ -397,7 +398,7 @@ func TestContainerEnvVarsOverridden(t *testing.T) {
 }
 
 func TestContainerDefaultEnvVars(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
 	}
 
@@ -415,7 +416,7 @@ func TestContainerProxyEnvVars(t *testing.T) {
 	err := os.Setenv("NO_PROXY", "localhost")
 	require.NoError(t, err)
 	defer os.Unsetenv("NO_PROXY")
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
 	}
 
@@ -432,7 +433,7 @@ func TestContainerProxyEnvVars(t *testing.T) {
 }
 
 func TestContainerResourceRequirements(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
@@ -460,7 +461,7 @@ func TestContainerResourceRequirements(t *testing.T) {
 }
 
 func TestContainerDefaultResourceRequirements(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
 	}
 
@@ -475,7 +476,7 @@ func TestContainerDefaultResourceRequirements(t *testing.T) {
 
 func TestContainerArgs(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Args: map[string]string{
 				"metrics-level": "detailed",
@@ -495,7 +496,7 @@ func TestContainerArgs(t *testing.T) {
 
 func TestContainerOrderedArgs(t *testing.T) {
 	// prepare a scenario where the debug level and a feature gate has been enabled
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Args: map[string]string{
 				"log-level":     "debug",
@@ -517,7 +518,7 @@ func TestContainerOrderedArgs(t *testing.T) {
 
 func TestContainerImagePullPolicy(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			ImagePullPolicy: corev1.PullIfNotPresent,
 		},
@@ -547,7 +548,7 @@ func TestContainerEnvFrom(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			EnvFrom: []corev1.EnvFromSource{
 				envFrom1,
@@ -573,7 +574,7 @@ func TestContainerProbe(t *testing.T) {
 	successThreshold := int32(13)
 	failureThreshold := int32(14)
 	terminationGracePeriodSeconds := int64(15)
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Config: `extensions:
   health_check:
@@ -610,7 +611,7 @@ service:
 func TestContainerProbeEmptyConfig(t *testing.T) {
 	// prepare
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Config: `extensions:
   health_check:
@@ -633,7 +634,7 @@ service:
 func TestContainerProbeNoConfig(t *testing.T) {
 	// prepare
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Config: `extensions:
   health_check:
@@ -654,7 +655,7 @@ service:
 
 func TestContainerLifecycle(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Lifecycle: &corev1.Lifecycle{
 				PostStart: &corev1.LifecycleHandler{

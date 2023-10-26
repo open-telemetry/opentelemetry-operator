@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
@@ -36,10 +37,10 @@ var (
 
 func Test0_61_0Upgrade(t *testing.T) {
 
-	collectorInstance := v1alpha1.OpenTelemetryCollector{
+	collectorInstance := v1alpha2.OpenTelemetryCollector{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "OpenTelemetryCollector",
-			APIVersion: "v1alpha1",
+			APIVersion: "v1alpha2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otel-my-instance",

@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -63,7 +64,7 @@ service:
 `
 	one := int32(1)
 	type args struct {
-		instance v1alpha1.OpenTelemetryCollector
+		instance v1alpha2.OpenTelemetryCollector
 	}
 	tests := []struct {
 		name    string
@@ -74,7 +75,7 @@ service:
 		{
 			name: "base case",
 			args: args{
-				instance: v1alpha1.OpenTelemetryCollector{
+				instance: v1alpha2.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
@@ -310,7 +311,7 @@ service:
 		{
 			name: "ingress",
 			args: args{
-				instance: v1alpha1.OpenTelemetryCollector{
+				instance: v1alpha2.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",

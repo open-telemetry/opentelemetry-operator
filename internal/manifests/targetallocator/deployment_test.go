@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -98,12 +99,12 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	assert.Subset(t, ds.Spec.Template.Annotations, testPodAnnotationValues)
 }
 
-func collectorInstance() v1alpha1.OpenTelemetryCollector {
+func collectorInstance() v1alpha2.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	return v1alpha1.OpenTelemetryCollector{
+	return v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "default",
@@ -117,7 +118,7 @@ func collectorInstance() v1alpha1.OpenTelemetryCollector {
 
 func TestDeploymentNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -134,7 +135,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
@@ -161,7 +162,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 func TestDeploymentTolerations(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -178,7 +179,7 @@ func TestDeploymentTolerations(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.Tolerations)
 
 	// Test Tolerations
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-toleration",
 		},
@@ -203,7 +204,7 @@ func TestDeploymentTolerations(t *testing.T) {
 
 func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -221,7 +222,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
 	// Test TopologySpreadConstraints
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-topologyspreadconstraint",
 		},

@@ -24,7 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -35,7 +35,7 @@ func TestInjectGoSDK(t *testing.T) {
 
 	tests := []struct {
 		name string
-		v1alpha1.Go
+		v1alpha2.Go
 		pod             corev1.Pod
 		expected        corev1.Pod
 		err             error
@@ -43,7 +43,7 @@ func TestInjectGoSDK(t *testing.T) {
 	}{
 		{
 			name: "shared process namespace disabled",
-			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			Go:   v1alpha2.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					ShareProcessNamespace: &falsee,
@@ -58,7 +58,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "using go-container-names",
-			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			Go:   v1alpha2.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -84,7 +84,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "using container-names",
-			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			Go:   v1alpha2.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -103,7 +103,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "pod annotation takes precedence",
-			Go: v1alpha1.Go{
+			Go: v1alpha2.Go{
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
@@ -169,7 +169,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "use instrumentation env var",
-			Go: v1alpha1.Go{
+			Go: v1alpha2.Go{
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
@@ -233,7 +233,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "inject env vars",
-			Go: v1alpha1.Go{
+			Go: v1alpha2.Go{
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{

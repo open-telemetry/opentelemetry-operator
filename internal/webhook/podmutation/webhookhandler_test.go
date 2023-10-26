@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
@@ -44,7 +45,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 		name     string
 		ns       corev1.Namespace
 		pod      corev1.Pod
-		otelcols []v1alpha1.OpenTelemetryCollector
+		otelcols []v1alpha2.OpenTelemetryCollector
 	}{
 		{
 			// this is the simplest positive test: a pod is being created with an annotation
@@ -61,7 +62,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 					Annotations: map[string]string{sidecar.Annotation: "my-instance"},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha2.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-simplest-positive-case",
@@ -81,7 +82,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha2.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-annotated-namespace",
@@ -101,7 +102,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{
+			otelcols: []v1alpha2.OpenTelemetryCollector{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-instance",
@@ -192,7 +193,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 		name     string
 		ns       corev1.Namespace
 		pod      corev1.Pod
-		otelcols []v1alpha1.OpenTelemetryCollector
+		otelcols []v1alpha2.OpenTelemetryCollector
 	}{
 		{
 			name: "namespace has no annotations",
@@ -202,7 +203,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha2.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-no-annotations",
@@ -221,7 +222,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{
+			otelcols: []v1alpha2.OpenTelemetryCollector{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-instance-1",
@@ -251,7 +252,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod:      corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{},
+			otelcols: []v1alpha2.OpenTelemetryCollector{},
 		},
 		{
 			name: "otelcol is not a sidecar",
@@ -262,7 +263,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha2.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-no-sidecar-otelcol",
@@ -281,7 +282,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 				},
 			},
 			pod: corev1.Pod{},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha2.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-no-automatic-sidecar-otelcol",
@@ -308,7 +309,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 					}},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha2.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-pod-has-sidecar",
@@ -330,7 +331,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 					Annotations: map[string]string{sidecar.Annotation: "false"},
 				},
 			},
-			otelcols: []v1alpha1.OpenTelemetryCollector{{
+			otelcols: []v1alpha2.OpenTelemetryCollector{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-instance",
 					Namespace: "my-namespace-sidecar-not-desired",

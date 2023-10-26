@@ -131,7 +131,7 @@ set-image-controller: manifests kustomize
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | kubectl create -f -
 	go run hack/check-operator-ready.go 300
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
@@ -254,11 +254,11 @@ container-target-allocator-push:
 
 .PHONY: container-target-allocator
 container-target-allocator:
-	docker buildx build  --load --platform linux/${ARCH} -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
+	docker buildx build --load --platform linux/${ARCH} -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
 .PHONY: container-operator-opamp-bridge
 container-operator-opamp-bridge:
-	docker buildx build --platform linux/${ARCH} -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
+	docker buildx build --load --platform linux/${ARCH} -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
 .PHONY: start-kind
 start-kind:

@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -91,7 +91,7 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 		ObjectMeta: objectMeta,
 		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
-				APIVersion: v1alpha1.GroupVersion.String(),
+				APIVersion: v1alpha2.GroupVersion.String(),
 				Kind:       "OpenTelemetryCollector",
 				Name:       naming.OpenTelemetryCollector(params.OtelCol.Name),
 			},
@@ -104,7 +104,7 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 		autoscaler.Spec.Behavior = params.OtelCol.Spec.Autoscaler.Behavior
 	}
 
-	// convert from v1alpha1.MetricSpec into a autoscalingv2.MetricSpec.
+	// convert from v1alpha2.MetricSpec into a autoscalingv2.MetricSpec.
 	for _, metric := range params.OtelCol.Spec.Autoscaler.Metrics {
 		if metric.Type == autoscalingv2.PodsMetricSourceType {
 			v2metric := autoscalingv2.MetricSpec{

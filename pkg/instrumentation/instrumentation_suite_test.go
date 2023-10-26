@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 var (
@@ -47,7 +47,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = v1alpha1.AddToScheme(testScheme); err != nil {
+	if err = v1alpha2.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}

@@ -17,10 +17,10 @@ package upgrade
 import (
 	"github.com/Masterminds/semver/v3"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
-type upgradeFunc func(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error)
+type upgradeFunc func(u VersionUpgrade, otelcol *v1alpha2.OpenTelemetryCollector) (*v1alpha2.OpenTelemetryCollector, error)
 
 type otelcolVersion struct {
 	upgrade upgradeFunc

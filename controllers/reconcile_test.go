@@ -34,6 +34,7 @@ import (
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -523,7 +524,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
-				existing := v1alpha1.OpenTelemetryCollector{}
+				existing := v1alpha2.OpenTelemetryCollector{}
 				found, err := populateObjectIfExists(t, &existing, nsn)
 				assert.True(t, found)
 				assert.NoError(t, err)

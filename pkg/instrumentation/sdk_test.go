@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 var defaultVolumeLimitSize = resource.MustParse("200Mi")
@@ -107,22 +108,22 @@ func TestSDKInjection(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		inst     v1alpha1.Instrumentation
+		inst     v1alpha2.Instrumentation
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
 			name: "SDK env vars not defined",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Exporter: v1alpha1.Exporter{
+			inst: v1alpha2.Instrumentation{
+				Spec: v1alpha2.InstrumentationSpec{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "https://collector:4317",
 					},
-					Resource: v1alpha1.Resource{
+					Resource: v1alpha2.Resource{
 						AddK8sUIDAttributes: true,
 					},
 					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
-					Sampler: v1alpha1.Sampler{
+					Sampler: v1alpha2.Sampler{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
@@ -211,18 +212,18 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "SDK env vars defined",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Exporter: v1alpha1.Exporter{
+			inst: v1alpha2.Instrumentation{
+				Spec: v1alpha2.InstrumentationSpec{
+					Exporter: v1alpha2.Exporter{
 						Endpoint: "https://collector:4317",
 					},
-					Resource: v1alpha1.Resource{
+					Resource: v1alpha2.Resource{
 						Attributes: map[string]string{
 							"fromcr": "val",
 						},
 					},
 					Propagators: []v1alpha1.Propagator{"jaeger"},
-					Sampler: v1alpha1.Sampler{
+					Sampler: v1alpha2.Sampler{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
@@ -309,8 +310,8 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "Empty instrumentation spec",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{},
+			inst: v1alpha2.Instrumentation{
+				Spec: v1alpha2.InstrumentationSpec{},
 			},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -379,7 +380,7 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "SDK image with port number, no version",
-			inst: v1alpha1.Instrumentation{},
+			inst: v1alpha2.Instrumentation{},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -427,7 +428,7 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "SDK image with port number, with version",
-			inst: v1alpha1.Instrumentation{},
+			inst: v1alpha2.Instrumentation{},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -489,13 +490,13 @@ func TestSDKInjection(t *testing.T) {
 }
 
 func TestInjectJava(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			Java: v1alpha1.Java{
+	inst := v1alpha2.Instrumentation{
+		Spec: v1alpha2.InstrumentationSpec{
+			Java: v1alpha2.Java{
 				Image:     "img:1",
 				Resources: testResourceRequirements,
 			},
-			Exporter: v1alpha1.Exporter{
+			Exporter: v1alpha2.Exporter{
 				Endpoint: "https://collector:4317",
 			},
 		},
@@ -593,13 +594,13 @@ func TestInjectJava(t *testing.T) {
 }
 
 func TestInjectNodeJS(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			NodeJS: v1alpha1.NodeJS{
+	inst := v1alpha2.Instrumentation{
+		Spec: v1alpha2.InstrumentationSpec{
+			NodeJS: v1alpha2.NodeJS{
 				Image:     "img:1",
 				Resources: testResourceRequirements,
 			},
-			Exporter: v1alpha1.Exporter{
+			Exporter: v1alpha2.Exporter{
 				Endpoint: "https://collector:4318",
 			},
 		},
@@ -697,12 +698,12 @@ func TestInjectNodeJS(t *testing.T) {
 }
 
 func TestInjectPython(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			Python: v1alpha1.Python{
+	inst := v1alpha2.Instrumentation{
+		Spec: v1alpha2.InstrumentationSpec{
+			Python: v1alpha2.Python{
 				Image: "img:1",
 			},
-			Exporter: v1alpha1.Exporter{
+			Exporter: v1alpha2.Exporter{
 				Endpoint: "https://collector:4318",
 			},
 		},
@@ -816,12 +817,12 @@ func TestInjectPython(t *testing.T) {
 }
 
 func TestInjectDotNet(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			DotNet: v1alpha1.DotNet{
+	inst := v1alpha2.Instrumentation{
+		Spec: v1alpha2.InstrumentationSpec{
+			DotNet: v1alpha2.DotNet{
 				Image: "img:1",
 			},
-			Exporter: v1alpha1.Exporter{
+			Exporter: v1alpha2.Exporter{
 				Endpoint: "https://collector:4318",
 			},
 		},
@@ -955,9 +956,9 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "shared process namespace disabled",
 			insts: languageInstrumentations{
-				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						Go: v1alpha1.Go{
+				Go: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{
+					Spec: v1alpha2.InstrumentationSpec{
+						Go: v1alpha2.Go{
 							Image: "otel/go:1",
 						},
 					},
@@ -988,9 +989,9 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "OTEL_GO_AUTO_TARGET_EXE not set",
 			insts: languageInstrumentations{
-				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						Go: v1alpha1.Go{
+				Go: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{
+					Spec: v1alpha2.InstrumentationSpec{
+						Go: v1alpha2.Go{
 							Image: "otel/go:1",
 						},
 					},
@@ -1019,9 +1020,9 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "OTEL_GO_AUTO_TARGET_EXE set by inst",
 			insts: languageInstrumentations{
-				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						Go: v1alpha1.Go{
+				Go: instrumentationWithContainers{Instrumentation: &v1alpha2.Instrumentation{
+					Spec: v1alpha2.InstrumentationSpec{
+						Go: v1alpha2.Go{
 							Image: "otel/go:1",
 							Env: []corev1.EnvVar{
 								{
@@ -1119,9 +1120,9 @@ func TestInjectGo(t *testing.T) {
 			insts: languageInstrumentations{
 				Go: instrumentationWithContainers{
 					Containers: "",
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							Go: v1alpha1.Go{
+					Instrumentation: &v1alpha2.Instrumentation{
+						Spec: v1alpha2.InstrumentationSpec{
+							Go: v1alpha2.Go{
 								Image: "otel/go:1",
 							},
 						},
@@ -1243,12 +1244,12 @@ func TestInjectApacheHttpd(t *testing.T) {
 			name: "injection enabled, exporter set",
 			insts: languageInstrumentations{
 				ApacheHttpd: instrumentationWithContainers{
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							ApacheHttpd: v1alpha1.ApacheHttpd{
+					Instrumentation: &v1alpha2.Instrumentation{
+						Spec: v1alpha2.InstrumentationSpec{
+							ApacheHttpd: v1alpha2.ApacheHttpd{
 								Image: "img:1",
 							},
-							Exporter: v1alpha1.Exporter{
+							Exporter: v1alpha2.Exporter{
 								Endpoint: "https://collector:4318",
 							},
 						},
@@ -1400,16 +1401,16 @@ func TestInjectNginx(t *testing.T) {
 			name: "injection enabled, exporter set",
 			insts: languageInstrumentations{
 				Nginx: instrumentationWithContainers{
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							Nginx: v1alpha1.Nginx{
+					Instrumentation: &v1alpha2.Instrumentation{
+						Spec: v1alpha2.InstrumentationSpec{
+							Nginx: v1alpha2.Nginx{
 								Image: "img:1",
 								Attrs: []corev1.EnvVar{{
 									Name:  "NginxModuleOtelMaxQueueSize",
 									Value: "4096",
 								}},
 							},
-							Exporter: v1alpha1.Exporter{
+							Exporter: v1alpha2.Exporter{
 								Endpoint: "http://otlp-endpoint:4317",
 							},
 						},
@@ -1551,9 +1552,9 @@ func TestInjectNginx(t *testing.T) {
 }
 
 func TestInjectSdkOnly(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			Exporter: v1alpha1.Exporter{
+	inst := v1alpha2.Instrumentation{
+		Spec: v1alpha2.InstrumentationSpec{
+			Exporter: v1alpha2.Exporter{
 				Endpoint: "https://collector:4318",
 			},
 		},

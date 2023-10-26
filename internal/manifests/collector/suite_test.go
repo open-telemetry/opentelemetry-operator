@@ -26,6 +26,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -52,7 +53,7 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 	}
 	return manifests.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -101,7 +102,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 
 	return manifests.Params{
 		Config: cfg,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",

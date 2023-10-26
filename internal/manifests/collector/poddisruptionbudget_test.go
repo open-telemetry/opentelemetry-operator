@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -65,7 +66,7 @@ func TestPDB(t *testing.T) {
 		},
 	}
 
-	otelcols := []v1alpha1.OpenTelemetryCollector{
+	otelcols := []v1alpha2.OpenTelemetryCollector{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",

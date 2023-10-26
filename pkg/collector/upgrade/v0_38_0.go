@@ -22,13 +22,13 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha2.OpenTelemetryCollector) (*v1alpha2.OpenTelemetryCollector, error) {
 	// return if args exist
 	if len(otelcol.Spec.Args) == 0 {
 		return otelcol, nil

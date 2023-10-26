@@ -44,6 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	otelv1alpha2 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -69,6 +70,7 @@ type tlsConfig struct {
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(otelv1alpha2.AddToScheme(scheme))
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(routev1.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
@@ -257,8 +259,16 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = otelv1alpha2.SetupCollectorWebhook(mgr, cfg); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+			os.Exit(1)
+		}
 		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+			os.Exit(1)
+		}
+		if err = otelv1alpha2.SetupInstrumentationWebhook(mgr, cfg); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
 		if err = otelv1alpha1.SetupInstrumentationWebhook(mgr, cfg); err != nil {
@@ -281,6 +291,7 @@ func main() {
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
 	}
+
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

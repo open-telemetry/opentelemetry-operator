@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -137,7 +138,7 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 }
 
 // TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
-func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []corev1.ServicePort {
+func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha2.OpenTelemetryCollector) []corev1.ServicePort {
 	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration from the context")

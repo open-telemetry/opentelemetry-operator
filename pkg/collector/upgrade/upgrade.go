@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -47,7 +48,7 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &v1alpha1.OpenTelemetryCollectorList{}
+	list := &v1alpha2.OpenTelemetryCollectorList{}
 	if err := u.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -101,7 +102,7 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 }
 
 // ManagedInstance performs the necessary changes to bring the given otelcol instance to the current version.
-func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.OpenTelemetryCollector) (v1alpha1.OpenTelemetryCollector, error) {
+func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha2.OpenTelemetryCollector) (v1alpha2.OpenTelemetryCollector, error) {
 	// this is likely a new instance, assume it's already up to date
 	if otelcol.Status.Version == "" {
 		return otelcol, nil

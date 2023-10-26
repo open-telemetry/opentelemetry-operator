@@ -23,19 +23,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 func TestInjectApacheHttpdagent(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.ApacheHttpd
+		v1alpha2.ApacheHttpd
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
 			name:        "Clone Container not present",
-			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+			ApacheHttpd: v1alpha2.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -125,7 +125,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 		// === Test ConfigPath configuration =============================
 		{
 			name: "ConfigPath honored",
-			ApacheHttpd: v1alpha1.ApacheHttpd{
+			ApacheHttpd: v1alpha2.ApacheHttpd{
 				Image:      "foo/bar:1",
 				ConfigPath: "/opt/customPath",
 			},
@@ -218,7 +218,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 		// === Test Removal of probes  =============================
 		{
 			name:        "Probes removed on clone init container",
-			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+			ApacheHttpd: v1alpha2.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -315,7 +315,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 		// Pod Namespace specified
 		{
 			name:        "Pod Namespace specified",
-			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+			ApacheHttpd: v1alpha2.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				ObjectMeta: v1.ObjectMeta{
 					Namespace: "my-namespace",
@@ -426,13 +426,13 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.ApacheHttpd
+		v1alpha2.ApacheHttpd
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
 			name:        "Clone Container not present, unknown namespace",
-			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+			ApacheHttpd: v1alpha2.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{

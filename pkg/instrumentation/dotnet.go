@@ -20,7 +20,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 const (
@@ -50,7 +50,7 @@ const (
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
-func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
+func injectDotNetSDK(dotNetSpec v1alpha2.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
 
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]

@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 const (
@@ -30,7 +31,7 @@ const (
 
 func TestLabelsCommonSet(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      collectorName,
 			Namespace: collectorNamespace,
@@ -89,7 +90,7 @@ func TestLabelsSha256Set(t *testing.T) {
 }
 func TestLabelsTagUnset(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      collectorName,
 			Namespace: collectorNamespace,
@@ -110,7 +111,7 @@ func TestLabelsTagUnset(t *testing.T) {
 
 func TestLabelsPropagateDown(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				"myapp":                  "mycomponent",
@@ -132,7 +133,7 @@ func TestLabelsPropagateDown(t *testing.T) {
 }
 
 func TestLabelsFilter(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{"test.bar.io": "foo", "test.foo.io": "bar"},
 		},
@@ -158,7 +159,7 @@ func TestSelectorLabels(t *testing.T) {
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-opentelemetry-collector", Namespace: "my-namespace"},
 	}
 

@@ -1,0 +1,12 @@
+apiVersion: opentelemetry.io/v1alpha2
+kind: OpenTelemetryCollector
+metadata:
+  labels:
+    app.kubernetes.io/name: opentelemetrycollector
+    app.kubernetes.io/instance: opentelemetrycollector-sample
+    app.kubernetes.io/part-of: opentelemetry-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: opentelemetry-operator
+  name: opentelemetrycollector-sample
+spec:
+  # TODO(user): Add fields here

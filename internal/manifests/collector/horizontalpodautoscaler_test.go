@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -40,7 +41,7 @@ func TestHPA(t *testing.T) {
 	var cpuUtilization int32 = 66
 	var memoryUtilization int32 = 77
 
-	otelcols := []v1alpha1.OpenTelemetryCollector{
+	otelcols := []v1alpha2.OpenTelemetryCollector{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",

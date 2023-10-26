@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -60,18 +61,18 @@ func TestUpgrade(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	inst := &v1alpha1.Instrumentation{
+	inst := &v1alpha2.Instrumentation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-inst",
 			Namespace: nsName,
 		},
-		Spec: v1alpha1.InstrumentationSpec{
-			Sampler: v1alpha1.Sampler{
+		Spec: v1alpha2.InstrumentationSpec{
+			Sampler: v1alpha2.Sampler{
 				Type: v1alpha1.ParentBasedAlwaysOff,
 			},
 		},
 	}
-	err = v1alpha1.NewInstrumentationWebhook(
+	err = v1alpha2.NewInstrumentationWebhook(
 		logr.Discard(),
 		testScheme,
 		config.New(
@@ -109,7 +110,7 @@ func TestUpgrade(t *testing.T) {
 	err = up.ManagedInstances(context.Background())
 	require.NoError(t, err)
 
-	updated := v1alpha1.Instrumentation{}
+	updated := v1alpha2.Instrumentation{}
 	err = k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: nsName,
 		Name:      "my-inst",

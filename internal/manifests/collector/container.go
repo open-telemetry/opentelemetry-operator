@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -36,7 +37,7 @@ import (
 const maxPortLen = 15
 
 // Container builds a container for the given collector.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, addConfig bool) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha2.OpenTelemetryCollector, addConfig bool) corev1.Container {
 	image := otelcol.Spec.Image
 	if len(image) == 0 {
 		image = cfg.CollectorImage()

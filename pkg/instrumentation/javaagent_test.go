@@ -21,20 +21,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 func TestInjectJavaagent(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.Java
+		v1alpha2.Java
 		pod      corev1.Pod
 		expected corev1.Pod
 		err      error
 	}{
 		{
 			name: "JAVA_TOOL_OPTIONS not defined",
-			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			Java: v1alpha2.Java{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -87,7 +87,7 @@ func TestInjectJavaagent(t *testing.T) {
 		},
 		{
 			name: "JAVA_TOOL_OPTIONS defined",
-			Java: v1alpha1.Java{Image: "foo/bar:1", Resources: testResourceRequirements},
+			Java: v1alpha2.Java{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -148,7 +148,7 @@ func TestInjectJavaagent(t *testing.T) {
 		},
 		{
 			name: "JAVA_TOOL_OPTIONS defined as ValueFrom",
-			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			Java: v1alpha2.Java{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{

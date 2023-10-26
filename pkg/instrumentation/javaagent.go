@@ -17,7 +17,7 @@ package instrumentation
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 	javaInstrMountPath    = "/otel-auto-instrumentation-java"
 )
 
-func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectJavaagent(javaSpec v1alpha2.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 

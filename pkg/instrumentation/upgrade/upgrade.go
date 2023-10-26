@@ -24,7 +24,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -65,7 +65,7 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &v1alpha1.InstrumentationList{}
+	list := &v1alpha2.InstrumentationList{}
 	if err := u.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -88,7 +88,7 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 	return nil
 }
 
-func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
+func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha2.Instrumentation) *v1alpha2.Instrumentation {
 	upgraded := inst.DeepCopy()
 	for annotation, gate := range defaultAnnotationToGate {
 		autoInst := upgraded.Annotations[annotation]

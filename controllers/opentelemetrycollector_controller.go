@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
@@ -115,7 +116,7 @@ func (r *OpenTelemetryCollectorReconciler) removeRouteTask(ora autodetect.OpenSh
 	return nil
 }
 
-func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
+func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha2.OpenTelemetryCollector) manifests.Params {
 	return manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -162,7 +163,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("opentelemetrycollector", req.NamespacedName)
 
-	var instance v1alpha1.OpenTelemetryCollector
+	var instance v1alpha2.OpenTelemetryCollector
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch OpenTelemetryCollector")
@@ -220,7 +221,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		return err
 	}
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.OpenTelemetryCollector{}).
+		For(&v1alpha2.OpenTelemetryCollector{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).

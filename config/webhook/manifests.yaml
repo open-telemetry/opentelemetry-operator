@@ -12,7 +12,7 @@ webhooks:
       namespace: system
       path: /mutate-opentelemetry-io-v1alpha1-instrumentation
   failurePolicy: Fail
-  name: minstrumentation.kb.io
+  name: minstrumentationv1alpha1.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -52,12 +52,52 @@ webhooks:
       namespace: system
       path: /mutate-opentelemetry-io-v1alpha1-opentelemetrycollector
   failurePolicy: Fail
-  name: mopentelemetrycollector.kb.io
+  name: mopentelemetrycollectorv1alpha1.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
     apiVersions:
     - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - opentelemetrycollectors
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-opentelemetry-io-v1alpha2-instrumentation
+  failurePolicy: Fail
+  name: minstrumentation.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - instrumentations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-opentelemetry-io-v1alpha2-opentelemetrycollector
+  failurePolicy: Fail
+  name: mopentelemetrycollector.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -98,7 +138,7 @@ webhooks:
       namespace: system
       path: /validate-opentelemetry-io-v1alpha1-instrumentation
   failurePolicy: Fail
-  name: vinstrumentationcreateupdate.kb.io
+  name: vinstrumentationcreateupdatev1alpha1.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -118,7 +158,7 @@ webhooks:
       namespace: system
       path: /validate-opentelemetry-io-v1alpha1-instrumentation
   failurePolicy: Ignore
-  name: vinstrumentationdelete.kb.io
+  name: vinstrumentationdeletev1alpha1.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -158,7 +198,7 @@ webhooks:
       namespace: system
       path: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
   failurePolicy: Fail
-  name: vopentelemetrycollectorcreateupdate.kb.io
+  name: vopentelemetrycollectorcreateupdatev1alpha1.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -178,12 +218,90 @@ webhooks:
       namespace: system
       path: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
   failurePolicy: Ignore
-  name: vopentelemetrycollectordelete.kb.io
+  name: vopentelemetrycollectordeletev1alpha1.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
     apiVersions:
     - v1alpha1
+    operations:
+    - DELETE
+    resources:
+    - opentelemetrycollectors
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-opentelemetry-io-v1alpha2-instrumentation
+  failurePolicy: Fail
+  name: vinstrumentationcreateupdate.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - instrumentations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-opentelemetry-io-v1alpha2-instrumentation
+  failurePolicy: Ignore
+  name: vinstrumentationdelete.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1alpha2
+    operations:
+    - DELETE
+    resources:
+    - instrumentations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-opentelemetry-io-v1alpha2-opentelemetrycollector
+  failurePolicy: Fail
+  name: vopentelemetrycollectorcreateupdate.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - opentelemetrycollectors
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-opentelemetry-io-v1alpha2-opentelemetrycollector
+  failurePolicy: Ignore
+  name: vopentelemetrycollectordelete.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1alpha2
     operations:
     - DELETE
     resources:

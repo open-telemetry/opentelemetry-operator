@@ -17,7 +17,7 @@ package instrumentation
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
 )
 
-func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectNodeJSSDK(nodeJSSpec v1alpha2.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 

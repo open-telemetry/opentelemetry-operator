@@ -20,13 +20,13 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func upgrade0_39_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_39_0(u VersionUpgrade, otelcol *v1alpha2.OpenTelemetryCollector) (*v1alpha2.OpenTelemetryCollector, error) {
 	cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.39.0, failed to parse configuration: %w", err)
@@ -112,7 +112,7 @@ func upgrade0_39_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	return updateConfig(otelcol, cfg)
 }
 
-func updateConfig(otelcol *v1alpha1.OpenTelemetryCollector, cfg map[interface{}]interface{}) (*v1alpha1.OpenTelemetryCollector, error) {
+func updateConfig(otelcol *v1alpha2.OpenTelemetryCollector, cfg map[interface{}]interface{}) (*v1alpha2.OpenTelemetryCollector, error) {
 	res, err := yaml.Marshal(cfg)
 	if err != nil {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.39.0, failed to marshall back configuration: %w", err)

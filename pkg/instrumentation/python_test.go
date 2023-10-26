@@ -21,20 +21,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 func TestInjectPythonSDK(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.Python
+		v1alpha2.Python
 		pod      corev1.Pod
 		expected corev1.Pod
 		err      error
 	}{
 		{
 			name:   "PYTHONPATH not defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: v1alpha2.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -103,7 +103,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "PYTHONPATH defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1", Resources: testResourceRequirements},
+			Python: v1alpha2.Python{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -180,7 +180,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "OTEL_TRACES_EXPORTER defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: v1alpha2.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -256,7 +256,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "OTEL_METRICS_EXPORTER defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: v1alpha2.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -332,7 +332,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "PYTHONPATH defined as ValueFrom",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: v1alpha2.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{

@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -44,7 +44,7 @@ type instPodMutator struct {
 }
 
 type instrumentationWithContainers struct {
-	Instrumentation       *v1alpha1.Instrumentation
+	Instrumentation       *v1alpha2.Instrumentation
 	Containers            string
 	AdditionalAnnotations map[string]string
 }
@@ -214,7 +214,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, nil
 	}
 
-	var inst *v1alpha1.Instrumentation
+	var inst *v1alpha2.Instrumentation
 	var err error
 
 	insts := languageInstrumentations{}
@@ -362,7 +362,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	return modifiedPod, nil
 }
 
-func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha2.Instrumentation, error) {
 	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, instAnnotation)
 
 	if len(instValue) == 0 || strings.EqualFold(instValue, "false") {
@@ -380,7 +380,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 		instNamespacedName = types.NamespacedName{Name: instValue, Namespace: ns.Name}
 	}
 
-	otelInst := &v1alpha1.Instrumentation{}
+	otelInst := &v1alpha2.Instrumentation{}
 	err := pm.Client.Get(ctx, instNamespacedName, otelInst)
 	if err != nil {
 		return nil, err
@@ -389,8 +389,8 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
-	var otelInsts v1alpha1.InstrumentationList
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha2.Instrumentation, error) {
+	var otelInsts v1alpha2.InstrumentationList
 	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
 		return nil, err
 	}

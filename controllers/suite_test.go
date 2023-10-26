@@ -46,6 +46,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
@@ -95,6 +96,10 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	if err = v1alpha2.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
 	if err = v1alpha1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
@@ -123,6 +128,11 @@ func TestMain(m *testing.M) {
 	})
 	if mgrErr != nil {
 		fmt.Printf("failed to start webhook server: %v", mgrErr)
+		os.Exit(1)
+	}
+
+	if err = v1alpha2.SetupCollectorWebhook(mgr, config.New()); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
 
@@ -199,7 +209,7 @@ func paramsWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) manifests.Par
 	return manifests.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
 		Client: k8sClient,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -249,7 +259,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 	return manifests.Params{
 		Config: cfg,
 		Client: k8sClient,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -295,7 +305,7 @@ func paramsWithHPA(minReps, maxReps int32) manifests.Params {
 	return manifests.Params{
 		Config: configuration,
 		Client: k8sClient,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -361,7 +371,7 @@ func paramsWithPolicy(minAvailable, maxUnavailable int32) manifests.Params {
 	return manifests.Params{
 		Config: configuration,
 		Client: k8sClient,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",

@@ -18,11 +18,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.
-func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+func Annotations(instance v1alpha2.OpenTelemetryCollector) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
@@ -44,7 +44,7 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 }
 
 // PodAnnotations return the spec annotations for OpenTelemetryCollector pod.
-func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+func PodAnnotations(instance v1alpha2.OpenTelemetryCollector) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	podAnnotations := map[string]string{}
 

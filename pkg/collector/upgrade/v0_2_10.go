@@ -14,12 +14,10 @@
 
 package upgrade
 
-import (
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-)
+import "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 
 // this is our first version under otel/opentelemetry-collector.
-func upgrade0_2_10(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
+func upgrade0_2_10(u VersionUpgrade, otelcol *v1alpha2.OpenTelemetryCollector) (*v1alpha2.OpenTelemetryCollector, error) {
 	// this is a no-op, but serves to keep the skeleton here for the future versions
 	return otelcol, nil
 }

@@ -23,7 +23,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 const (
@@ -59,7 +59,7 @@ const (
 	6) Inject mounting of volumes / files into appropriate directories in application container
 */
 
-func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod corev1.Pod, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
+func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha2.ApacheHttpd, pod corev1.Pod, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
 
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[index]
@@ -201,7 +201,7 @@ func isApacheInitContainerMissing(pod corev1.Pod, containerName string) bool {
 
 // Calculate Apache HTTPD agent configuration file based on attributes provided by the injection rules
 // and by the pod values.
-func getApacheOtelConfig(pod corev1.Pod, apacheSpec v1alpha1.ApacheHttpd, index int, otelEndpoint string, resourceMap map[string]string) string {
+func getApacheOtelConfig(pod corev1.Pod, apacheSpec v1alpha2.ApacheHttpd, index int, otelEndpoint string, resourceMap map[string]string) string {
 	template := `
 #Load the Otel Webserver SDK
 LoadFile %[1]s/sdk_lib/lib/libopentelemetry_common.so

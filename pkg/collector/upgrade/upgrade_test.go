@@ -26,6 +26,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
@@ -57,7 +58,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			require.NoError(t, err)
 
 			// sanity check
-			persisted := &v1alpha1.OpenTelemetryCollector{}
+			persisted := &v1alpha2.OpenTelemetryCollector{}
 			err = k8sClient.Get(context.Background(), nsn, persisted)
 			require.NoError(t, err)
 			require.Equal(t, beginV, persisted.Status.Version)
@@ -160,8 +161,8 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 	}
 }
 
-func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementStateType) v1alpha1.OpenTelemetryCollector {
-	return v1alpha1.OpenTelemetryCollector{
+func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementStateType) v1alpha2.OpenTelemetryCollector {
+	return v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			ManagementState: managementState,
 		},

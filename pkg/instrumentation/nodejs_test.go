@@ -21,20 +21,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 func TestInjectNodeJSSDK(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.NodeJS
+		v1alpha2.NodeJS
 		pod      corev1.Pod
 		expected corev1.Pod
 		err      error
 	}{
 		{
 			name:   "NODE_OPTIONS not defined",
-			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			NodeJS: v1alpha2.NodeJS{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -87,7 +87,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		},
 		{
 			name:   "NODE_OPTIONS defined",
-			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1", Resources: testResourceRequirements},
+			NodeJS: v1alpha2.NodeJS{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -148,7 +148,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		},
 		{
 			name:   "NODE_OPTIONS defined as ValueFrom",
-			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			NodeJS: v1alpha2.NodeJS{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
