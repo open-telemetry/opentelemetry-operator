@@ -25,7 +25,7 @@ type collectorKey struct {
 	namespace string
 }
 
-func newCollectorKey(name string, namespace string) collectorKey {
+func newCollectorKey(namespace string, name string) collectorKey {
 	return collectorKey{name: name, namespace: namespace}
 }
 
@@ -39,5 +39,5 @@ func collectorKeyFromKey(key string) (collectorKey, error) {
 }
 
 func (k collectorKey) String() string {
-	return fmt.Sprintf("%s/%s", k.name, k.namespace)
+	return fmt.Sprintf("%s/%s", k.namespace, k.name)
 }
