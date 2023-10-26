@@ -17,9 +17,10 @@
 package v1alpha2
 
 import (
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
@@ -231,7 +232,7 @@ type OpenTelemetryCollectorStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// OpenTelemetryCollector is the Schema for the opentelemetrycollectors API
+// OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
 type OpenTelemetryCollector struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -242,7 +243,7 @@ type OpenTelemetryCollector struct {
 
 //+kubebuilder:object:root=true
 
-// OpenTelemetryCollectorList contains a list of OpenTelemetryCollector
+// OpenTelemetryCollectorList contains a list of OpenTelemetryCollector.
 type OpenTelemetryCollectorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
