@@ -8,7 +8,7 @@ component: operator
 note: "Bump NodeJS dependencies. Also, increase the size of the default size for the volume used to copy the autoinstrumentation libraries from 150M to 200M"
 
 # One or more tracking issues related to the change
-issues: [2240, 2237]
+issues: [2240, 2237, 2236]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
