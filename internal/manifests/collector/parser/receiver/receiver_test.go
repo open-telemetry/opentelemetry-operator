@@ -135,7 +135,7 @@ func TestReceiverShouldFindRegisteredParser(t *testing.T) {
 	})
 
 	// test
-	For(logger, "mock", map[interface{}]interface{}{})
+	_, _ = For(logger, "mock", map[interface{}]interface{}{})
 
 	// verify
 	assert.True(t, builderCalled)

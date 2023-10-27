@@ -16,8 +16,9 @@ package receiver
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 )
 
 const parserNameStatsd = "__statsd"

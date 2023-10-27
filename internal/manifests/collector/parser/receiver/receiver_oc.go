@@ -16,6 +16,7 @@ package receiver
 
 import (
 	"github.com/go-logr/logr"
+
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 )
 
