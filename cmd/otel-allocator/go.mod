@@ -9,7 +9,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-kit/log v0.2.1
-	github.com/go-logr/logr v1.2.4
+	github.com/go-logr/logr v1.3.0
 	github.com/json-iterator/go v1.1.12
 	github.com/oklog/run v1.1.0
 	github.com/prometheus-operator/prometheus-operator v0.68.0
