@@ -15,18 +15,19 @@
 package operator
 
 import (
+	"context"
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
@@ -87,6 +88,15 @@ func TestClient_Apply(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "create reporting-only",
+			args: args{
+				name:      "test",
+				namespace: "opentelemetry",
+				file:      "testdata/reporting-collector.yaml",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -104,8 +114,9 @@ func TestClient_Apply(t *testing.T) {
 				Body:        colConfig,
 				ContentType: "yaml",
 			}
-			if err := c.Apply(tt.args.name, tt.args.namespace, configmap); (err != nil) != tt.wantErr {
-				t.Errorf("Apply() error = %v, wantErr %v", err, tt.wantErr)
+			applyErr := c.Apply(tt.args.name, tt.args.namespace, configmap)
+			if (applyErr != nil) != tt.wantErr {
+				t.Errorf("Apply() error = %v, wantErr %v", applyErr, tt.wantErr)
 			}
 		})
 	}
@@ -116,6 +127,24 @@ func Test_collectorUpdate(t *testing.T) {
 	namespace := "testing"
 	fakeClient := getFakeClient(t)
 	c := NewClient(clientLogger, fakeClient, nil)
+
+	// Load reporting-only collector
+	reportingColConfig, err := loadConfig("testdata/reporting-collector.yaml")
+	require.NoError(t, err, "Should be no error on loading test configuration")
+	var reportingCol v1alpha1.OpenTelemetryCollector
+	err = yaml.Unmarshal(reportingColConfig, &reportingCol)
+	require.NoError(t, err, "Should be no error on unmarshal")
+	reportingCol.Default()
+	reportingCol.TypeMeta.Kind = CollectorResource
+	reportingCol.TypeMeta.APIVersion = v1alpha1.GroupVersion.String()
+	reportingCol.ObjectMeta.Name = "simplest"
+	reportingCol.ObjectMeta.Namespace = namespace
+	err = fakeClient.Create(context.Background(), &reportingCol)
+	require.NoError(t, err, "Should be able to make reporting col")
+	allInstances, err := c.ListInstances()
+	require.NoError(t, err, "Should be able to list all collectors")
+	require.Len(t, allInstances, 1)
+
 	colConfig, err := loadConfig("testdata/collector.yaml")
 	require.NoError(t, err, "Should be no error on loading test configuration")
 	configmap := &protobufs.AgentConfigFile{
@@ -151,10 +180,11 @@ func Test_collectorUpdate(t *testing.T) {
 	require.NoError(t, err, "Should be able to get the updated instance")
 	assert.Contains(t, updatedInstance.Spec.Config, "processors: [memory_limiter, batch]")
 
-	allInstances, err := c.ListInstances()
+	allInstances, err = c.ListInstances()
 	require.NoError(t, err, "Should be able to list all collectors")
-	assert.Len(t, allInstances, 1)
-	assert.Equal(t, allInstances[0], *updatedInstance)
+	assert.Len(t, allInstances, 2)
+	assert.Contains(t, allInstances, reportingCol)
+	assert.Contains(t, allInstances, *updatedInstance)
 }
 
 func Test_collectorDelete(t *testing.T) {

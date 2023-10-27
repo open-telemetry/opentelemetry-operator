@@ -32,6 +32,24 @@ spec:
         name: ""
         version: v1
       version: v1alpha1
+    - description: OpAMPBridge is the Schema for the opampbridges API.
+      displayName: OpAMP Bridge
+      kind: OpAMPBridge
+      name: opampbridges.opentelemetry.io
+      resources:
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      version: v1alpha1
     - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
         API.
       displayName: OpenTelemetry Collector
