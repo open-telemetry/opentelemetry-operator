@@ -16,13 +16,14 @@ package receiver
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	corev1 "k8s.io/api/core/v1"
 )
 
 const parserNameZipkin = "__zipkin"
 
 // NewZipkinReceiverParser builds a new parser for Zipkin receivers.
-func NewZipkinReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewZipkinReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	http := "http"
 	return &GenericReceiver{
 		logger:             logger,

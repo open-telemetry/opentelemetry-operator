@@ -12,26 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receiver
+package parser
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+	corev1 "k8s.io/api/core/v1"
 )
 
-const parserNameInfluxdb = "__influxdb"
+type ComponentPortParser interface {
+	// Ports returns the service ports parsed based on the exporter's configuration
+	Ports() ([]corev1.ServicePort, error)
 
-// NewInfluxdbReceiverParser builds a new parser for Influxdb receivers, from the contrib repository.
-func NewInfluxdbReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
-	return &GenericReceiver{
-		logger:      logger,
-		name:        name,
-		config:      config,
-		defaultPort: 8086,
-		parserName:  parserNameInfluxdb,
-	}
+	// ParserName returns the name of this parser
+	ParserName() string
 }
 
-func init() {
-	Register("influxdb", NewInfluxdbReceiverParser)
-}
+// Builder specifies the signature required for parser builders.
+type Builder func(logr.Logger, string, map[interface{}]interface{}) ComponentPortParser

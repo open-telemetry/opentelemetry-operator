@@ -19,10 +19,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-var _ ExporterParser = &PrometheusExporterParser{}
+var _ parser.ComponentPortParser = &PrometheusExporterParser{}
 
 const (
 	parserNamePrometheus  = "__prometheus"
@@ -37,7 +38,7 @@ type PrometheusExporterParser struct {
 }
 
 // NewPrometheusExporterParser builds a new parser for OTLP receivers.
-func NewPrometheusExporterParser(logger logr.Logger, name string, config map[interface{}]interface{}) ExporterParser {
+func NewPrometheusExporterParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	return &PrometheusExporterParser{
 		logger: logger,
 		name:   name,
