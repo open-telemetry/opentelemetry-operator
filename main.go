@@ -274,7 +274,7 @@ func main() {
 				}),
 		})
 
-		if err = (&otelv1alpha1.OpAMPBridge{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = otelv1alpha1.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpAMPBridge")
 			os.Exit(1)
 		}

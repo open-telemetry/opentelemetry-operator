@@ -137,7 +137,7 @@ webhooks:
       namespace: system
       path: /validate-opentelemetry-io-v1alpha1-opampbridge
   failurePolicy: Fail
-  name: vopampbridge.kb.io
+  name: vopampbridgecreateupdate.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -146,6 +146,24 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    resources:
+    - opampbridges
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-opentelemetry-io-v1alpha1-opampbridge
+  failurePolicy: Ignore
+  name: vopampbridgedelete.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1alpha1
+    operations:
     - DELETE
     resources:
     - opampbridges
