@@ -34,6 +34,9 @@ jobs:
          - e2e-opampbridge
 
     steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v4
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
@@ -43,9 +46,6 @@ jobs:
       env:
         KIND_VERSION: "0.20.0"
       run: go install sigs.k8s.io/kind@v${KIND_VERSION}
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
 
     - name: "install kuttl"
       run: ./hack/install-kuttl.sh
