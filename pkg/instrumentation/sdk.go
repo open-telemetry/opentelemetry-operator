@@ -23,7 +23,6 @@ import (
 	"unsafe"
 
 	"github.com/go-logr/logr"
-	"github.com/google/uuid"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
@@ -52,8 +51,6 @@ type sdkInjector struct {
 	client client.Client
 	logger logr.Logger
 }
-
-var serviceInstanceId = uuid.NewString()
 
 func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
 	if len(pod.Spec.Containers) < 1 {
@@ -436,7 +433,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SPodNameKey] = pod.Name
 	k8sResources[semconv.K8SPodUIDKey] = string(pod.UID)
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
-	k8sResources[semconv.ServiceInstanceIDKey] = serviceInstanceId
+	k8sResources[semconv.ServiceInstanceIDKey] = string(pod.UID)
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
 	for k, v := range k8sResources {
 		if !existingRes[string(k)] && v != "" {

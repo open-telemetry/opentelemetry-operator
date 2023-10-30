@@ -5,7 +5,7 @@ change_type: enhancement
 component: Operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Added the service.instance.id as os.Hostname into the traces resource Env.
+note: Added the service.instance.id as the pod.UID into the traces resource Env.
 
 # One or more tracking issues related to the change
 issues: [1921]
