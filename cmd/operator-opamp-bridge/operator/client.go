@@ -33,6 +33,7 @@ const (
 	ResourceIdentifierKey   = "created-by"
 	ResourceIdentifierValue = "operator-opamp-bridge"
 	ReportingAnnotationKey  = "opentelemetry.io/opamp-reporting"
+	ManagedAnnotationKey    = "opentelemetry.io/opamp-managed"
 )
 
 type ConfigApplier interface {
@@ -54,6 +55,7 @@ type Client struct {
 	componentsAllowed map[string]map[string]bool
 	k8sClient         client.Client
 	close             chan bool
+	name              string
 }
 
 var _ ConfigApplier = &Client{}
@@ -64,7 +66,15 @@ func NewClient(log logr.Logger, c client.Client, componentsAllowed map[string]ma
 		componentsAllowed: componentsAllowed,
 		k8sClient:         c,
 		close:             make(chan bool, 1),
+		name:              "test-bridge",
 	}
+}
+
+func (c Client) labelSetContainsLabel(instance *v1alpha1.OpenTelemetryCollector, label, value string) bool {
+	if labels := instance.GetLabels(); labels != nil && strings.EqualFold(labels[label], value) {
+		return true
+	}
+	return false
 }
 
 func (c Client) create(ctx context.Context, name string, namespace string, collector *v1alpha1.OpenTelemetryCollector) error {
@@ -130,10 +140,14 @@ func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentC
 	if instance == nil {
 		return c.create(ctx, name, namespace, updatedCollector)
 	}
-	if labels := instance.GetLabels(); labels != nil && strings.EqualFold(labels[ReportingAnnotationKey], "true") {
+	if c.labelSetContainsLabel(instance, ReportingAnnotationKey, "true") {
 		return errors.NewBadRequest("cannot modify a collector with `opentelemetry.io/opamp-reporting: true`")
 	}
-	return c.update(ctx, instance, updatedCollector)
+	if c.labelSetContainsLabel(instance, ManagedAnnotationKey, "true") ||
+		c.labelSetContainsLabel(instance, ManagedAnnotationKey, c.name) {
+		return c.update(ctx, instance, updatedCollector)
+	}
+	return nil
 }
 
 func (c Client) Delete(name string, namespace string) error {
@@ -156,7 +170,13 @@ func (c Client) ListInstances() ([]v1alpha1.OpenTelemetryCollector, error) {
 	ctx := context.Background()
 	result := v1alpha1.OpenTelemetryCollectorList{}
 	err := c.k8sClient.List(ctx, &result, client.MatchingLabels{
-		ResourceIdentifierKey: ResourceIdentifierValue,
+		ManagedAnnotationKey: c.name,
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = c.k8sClient.List(ctx, &result, client.MatchingLabels{
+		ManagedAnnotationKey: "true",
 	})
 	if err != nil {
 		return nil, err

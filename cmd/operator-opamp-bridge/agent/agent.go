@@ -21,19 +21,16 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"gopkg.in/yaml.v3"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/metrics"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
-
 	"github.com/oklog/ulid/v2"
-	"go.uber.org/multierr"
-
 	"github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
+	"go.uber.org/multierr"
+	"sigs.k8s.io/yaml"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/metrics"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
 )
 
 type Agent struct {
@@ -52,6 +49,9 @@ type Agent struct {
 	config              *config.Config
 	applier             operator.ConfigApplier
 	remoteConfigEnabled bool
+
+	done   chan struct{}
+	ticker *time.Ticker
 }
 
 func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config.Config, opampClient client.OpAMPClient) *Agent {
@@ -64,6 +64,8 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 		agentDescription:    config.GetDescription(),
 		remoteConfigEnabled: config.RemoteConfigEnabled(),
 		opampClient:         opampClient,
+		done:                make(chan struct{}, 1),
+		ticker:              time.NewTicker(30 * time.Second),
 	}
 
 	agent.logger.V(3).Info("Agent created",
@@ -74,13 +76,42 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 	return agent
 }
 
-// TODO: Something should run on a schedule to set the health of the OpAMP client.
-func (agent *Agent) getHealth() *protobufs.AgentHealth {
-	return &protobufs.AgentHealth{
-		Healthy:           true,
-		StartTimeUnixNano: agent.startTime,
-		LastError:         "",
+// getHealth is called every heartbeat interval to report health.
+func (agent *Agent) getHealth() *protobufs.ComponentHealth {
+	healthMap, err := agent.generateComponentHealthMap()
+	if err != nil {
+		return &protobufs.ComponentHealth{
+			Healthy:           false,
+			StartTimeUnixNano: agent.startTime,
+			LastError:         err.Error(),
+		}
 	}
+	return &protobufs.ComponentHealth{
+		Healthy:            true,
+		StartTimeUnixNano:  agent.startTime,
+		StatusTimeUnixNano: uint64(time.Now().UnixNano()),
+		LastError:          "",
+		ComponentHealthMap: healthMap,
+	}
+}
+
+// generateComponentHealthMap allows the bridge to report the status of the collector pools it owns.
+// TODO: implement enhanced health messaging.
+func (agent *Agent) generateComponentHealthMap() (map[string]*protobufs.ComponentHealth, error) {
+	cols, err := agent.applier.ListInstances()
+	if err != nil {
+		return nil, err
+	}
+	healthMap := map[string]*protobufs.ComponentHealth{}
+	for _, col := range cols {
+		key := newCollectorKey(col.GetNamespace(), col.GetName())
+		healthMap[key.String()] = &protobufs.ComponentHealth{
+			StartTimeUnixNano:  uint64(col.ObjectMeta.GetCreationTimestamp().UnixNano()),
+			StatusTimeUnixNano: uint64(time.Now().UnixNano()),
+			Status:             col.Status.Scale.StatusReplicas,
+		}
+	}
+	return healthMap, nil
 }
 
 // onConnect is called when an agent is successfully connected to a server.
@@ -137,9 +168,30 @@ func (agent *Agent) Start() error {
 		return err
 	}
 
+	go agent.runHeartbeat()
+
 	agent.logger.V(3).Info("OpAMP Client started.")
 
 	return nil
+}
+
+// runHeartbeat sets health on an interval to keep the connection active.
+func (agent *Agent) runHeartbeat() {
+	for {
+		select {
+		case <-agent.ticker.C:
+			agent.logger.V(4).Info("sending heartbeat")
+			err := agent.opampClient.SetHealth(agent.getHealth())
+			if err != nil {
+				agent.logger.Error(err, "failed to heartbeat")
+				return
+			}
+		case <-agent.done:
+			agent.ticker.Stop()
+			agent.logger.Info("stopping heartbeating")
+			return
+		}
+	}
 }
 
 // updateAgentIdentity receives a new instanced Id from the remote server and updates the agent's instanceID field.
@@ -249,6 +301,7 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 // Shutdown will stop the OpAMP client gracefully.
 func (agent *Agent) Shutdown() {
 	agent.logger.V(3).Info("Agent shutting down...")
+	close(agent.done)
 	if agent.opampClient != nil {
 		err := agent.opampClient.Stop(context.Background())
 		if err != nil {

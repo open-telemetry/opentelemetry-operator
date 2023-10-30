@@ -102,7 +102,7 @@ func (m *mockOpampClient) AgentDescription() *protobufs.AgentDescription {
 	return nil
 }
 
-func (m *mockOpampClient) SetHealth(_ *protobufs.AgentHealth) error {
+func (m *mockOpampClient) SetHealth(_ *protobufs.ComponentHealth) error {
 	return nil
 }
 
