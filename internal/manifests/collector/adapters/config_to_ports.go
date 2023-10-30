@@ -29,8 +29,19 @@ import (
 	receiverParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
+type ComponentType int
+
+const (
+	Receivers ComponentType = iota
+	Exporters
+)
+
+func (c ComponentType) String() string {
+	return [...]string{"receivers", "exporters"}[c]
+}
+
 // ConfigToComponentPorts converts the incoming configuration object into a set of service ports required by the exporters.
-func ConfigToComponentPorts(logger logr.Logger, componentsName string, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
+func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
 	// now, we gather which ports we might need to open
 	// for that, we get all the exporters and check their `endpoint` properties,
 	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
@@ -45,27 +56,27 @@ func ConfigToComponentPorts(logger logr.Logger, componentsName string, config ma
 	//   componentexample/settings:
 	//     endpoint: 0.0.0.0:12346
 	// in this case, we have 2 ports, named: "componentexample" and "componentexample-settings"
-	componentsProperty, ok := config[componentsName]
+	componentsProperty, ok := config[cType.String()]
 	if !ok {
-		return nil, fmt.Errorf("no %s available as part of the configuration", componentsName)
+		return nil, fmt.Errorf("no %s available as part of the configuration", cType)
 	}
 
 	components, ok := componentsProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, fmt.Errorf("%s doesn't contain valid components", componentsName)
+		return nil, fmt.Errorf("%s doesn't contain valid components", cType.String())
 	}
 
 	var compEnabled map[interface{}]bool
 
-	switch componentsName {
-	case "exporters":
+	switch cType {
+	case Exporters:
 		compEnabled = GetEnabledExporters(logger, config)
-	case "receivers":
+	case Receivers:
 		compEnabled = GetEnabledReceivers(logger, config)
 	}
 
 	if compEnabled == nil {
-		return nil, fmt.Errorf("no enabled %s available as part of the configuration", componentsName)
+		return nil, fmt.Errorf("no enabled %s available as part of the configuration", cType)
 	}
 
 	ports := []corev1.ServicePort{}
@@ -77,17 +88,17 @@ func ConfigToComponentPorts(logger logr.Logger, componentsName string, config ma
 		}
 		exporter, ok := val.(map[interface{}]interface{})
 		if !ok {
-			logger.V(2).Info("component doesn't seem to be a map of properties", componentsName[:len(componentsName)-2], key)
+			logger.V(2).Info("component doesn't seem to be a map of properties", cType.String()[:len(cType.String())-2], key)
 			exporter = map[interface{}]interface{}{}
 		}
 
 		cmptName := key.(string)
 		var cmptParser parser.ComponentPortParser
 		var err error
-		switch componentsName {
-		case "exporters":
+		switch cType {
+		case Exporters:
 			cmptParser, err = exporterParser.For(logger, cmptName, exporter)
-		case "receivers":
+		case Receivers:
 			cmptParser, err = receiverParser.For(logger, cmptName, exporter)
 		}
 
@@ -115,12 +126,12 @@ func ConfigToComponentPorts(logger logr.Logger, componentsName string, config ma
 }
 
 func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) []corev1.ServicePort {
-	ports, err := ConfigToComponentPorts(logger, "receivers", config)
+	ports, err := ConfigToComponentPorts(logger, Receivers, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
 	}
 
-	exporterPorts, err := ConfigToComponentPorts(logger, "exporters", config)
+	exporterPorts, err := ConfigToComponentPorts(logger, Exporters, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the exporters")
 	}

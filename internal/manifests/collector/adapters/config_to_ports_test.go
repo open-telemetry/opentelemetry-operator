@@ -84,7 +84,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	require.NotEmpty(t, config)
 
 	// test
-	ports, err := adapters.ConfigToComponentPorts(logger, "receivers", config)
+	ports, err := adapters.ConfigToComponentPorts(logger, adapters.Receivers, config)
 	assert.NoError(t, err)
 	assert.Len(t, ports, 10)
 
@@ -133,7 +133,7 @@ func TestNoPortsParsed(t *testing.T) {
 			require.NoError(t, err)
 
 			// test
-			ports, err := adapters.ConfigToComponentPorts(logger, "receivers", config)
+			ports, err := adapters.ConfigToComponentPorts(logger, adapters.Receivers, config)
 
 			// verify
 			assert.Nil(t, ports)
@@ -162,7 +162,7 @@ func TestInvalidReceivers(t *testing.T) {
 			require.NoError(t, err)
 
 			// test
-			ports, err := adapters.ConfigToComponentPorts(logger, "receivers", config)
+			ports, err := adapters.ConfigToComponentPorts(logger, adapters.Receivers, config)
 
 			// verify
 			assert.NoError(t, err)
@@ -198,7 +198,7 @@ func TestParserFailed(t *testing.T) {
 	}
 
 	// test
-	ports, err := adapters.ConfigToComponentPorts(logger, "receivers", config)
+	ports, err := adapters.ConfigToComponentPorts(logger, adapters.Receivers, config)
 
 	// verify
 	assert.Len(t, ports, 0)
