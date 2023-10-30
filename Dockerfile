@@ -1,5 +1,5 @@
-# Build the manager binary
-FROM alpine:3.18 as builder
+# Get CA certificates from alpine package repo
+FROM alpine:3.18 as certificates
 
 RUN apk --no-cache add ca-certificates
 
@@ -10,8 +10,8 @@ ARG TARGETARCH
 
 WORKDIR /
 
-# Copy the certs from the builder
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Copy the certs from Alpine
+COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy binary built on the host
 COPY bin/manager_${TARGETARCH} manager
