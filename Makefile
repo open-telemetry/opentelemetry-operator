@@ -108,6 +108,10 @@ test: generate fmt vet ensure-generate-is-noop envtest
 manager: generate fmt vet
 	go build -o bin/manager main.go
 
+# Build target allocator binary
+targetallocator:
+	cd cmd/otel-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o bin/targetallocator_${ARCH} .
+
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
 run: generate fmt vet manifests
@@ -253,8 +257,9 @@ container-target-allocator-push:
 	docker push ${TARGETALLOCATOR_IMG}
 
 .PHONY: container-target-allocator
-container-target-allocator:
-	docker buildx build  --load --platform linux/${ARCH} -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
+container-target-allocator: GOOS = linux
+container-target-allocator: targetallocator
+	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
 .PHONY: container-operator-opamp-bridge
 container-operator-opamp-bridge:
