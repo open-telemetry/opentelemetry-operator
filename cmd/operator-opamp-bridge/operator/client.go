@@ -60,13 +60,13 @@ type Client struct {
 
 var _ ConfigApplier = &Client{}
 
-func NewClient(log logr.Logger, c client.Client, componentsAllowed map[string]map[string]bool) *Client {
+func NewClient(name string, log logr.Logger, c client.Client, componentsAllowed map[string]map[string]bool) *Client {
 	return &Client{
 		log:               log,
 		componentsAllowed: componentsAllowed,
 		k8sClient:         c,
 		close:             make(chan bool, 1),
-		name:              "test-bridge",
+		name:              name,
 	}
 }
 

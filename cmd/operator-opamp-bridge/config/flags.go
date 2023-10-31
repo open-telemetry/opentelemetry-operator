@@ -32,6 +32,7 @@ const (
 	listenAddrFlagName        = "listen-addr"
 	kubeConfigPathFlagName    = "kubeconfig-path"
 	heartbeatIntervalFlagName = "heartbeat-interval"
+	nameFlagName              = "name"
 	defaultHeartbeatInterval  = 30 * time.Second
 )
 
@@ -44,6 +45,7 @@ func GetFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet.String(listenAddrFlagName, ":8080", "The address where this service serves.")
 	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file.")
 	flagSet.Duration(heartbeatIntervalFlagName, defaultHeartbeatInterval, "The interval to use for sending a heartbeat. Setting it to 0 disables the heartbeat.")
+	flagSet.String(nameFlagName, opampBridgeName, "The name of the bridge to use for querying managed collectors.")
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
@@ -56,6 +58,10 @@ func getHeartbeatInterval(flagset *pflag.FlagSet) (time.Duration, error) {
 
 func getConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
 	return flagSet.GetString(configFilePathFlagName)
+}
+
+func getName(flagSet *pflag.FlagSet) (string, error) {
+	return flagSet.GetString(nameFlagName)
 }
 
 func getKubeConfigFilePath(flagSet *pflag.FlagSet) (string, error) {

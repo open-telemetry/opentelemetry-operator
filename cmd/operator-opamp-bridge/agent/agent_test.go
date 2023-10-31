@@ -134,7 +134,7 @@ func getFakeApplier(t *testing.T, conf *config.Config) *operator.Client {
 	err := schemeBuilder.AddToScheme(scheme)
 	require.NoError(t, err, "Should be able to add custom types")
 	c := fake.NewClientBuilder().WithScheme(scheme)
-	return operator.NewClient(l, c.Build(), conf.GetComponentsAllowed())
+	return operator.NewClient("", l, c.Build(), conf.GetComponentsAllowed())
 }
 
 func TestAgent_onMessage(t *testing.T) {

@@ -53,6 +53,12 @@ func TestFlagGetters(t *testing.T) {
 			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getKubeConfigFilePath(fs) },
 		},
 		{
+			name:          "GetName",
+			flagArgs:      []string{"--" + nameFlagName, "test"},
+			expectedValue: "test",
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getName(fs) },
+		},
+		{
 			name:          "GetListenAddr",
 			flagArgs:      []string{"--" + listenAddrFlagName, ":8081"},
 			expectedValue: ":8081",

@@ -115,7 +115,7 @@ func TestClient_Apply(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeClient := getFakeClient(t)
-			c := NewClient(clientLogger, fakeClient, nil)
+			c := NewClient("", clientLogger, fakeClient, nil)
 			var colConfig []byte
 			var err error
 			if len(tt.args.file) > 0 {
@@ -141,7 +141,7 @@ func Test_collectorUpdate(t *testing.T) {
 	name := "test"
 	namespace := "testing"
 	fakeClient := getFakeClient(t)
-	c := NewClient(clientLogger, fakeClient, nil)
+	c := NewClient("", clientLogger, fakeClient, nil)
 
 	// Load reporting-only collector
 	reportingColConfig, err := loadConfig("testdata/reporting-collector.yaml")
@@ -206,7 +206,7 @@ func Test_collectorDelete(t *testing.T) {
 	name := "test"
 	namespace := "testing"
 	fakeClient := getFakeClient(t)
-	c := NewClient(clientLogger, fakeClient, nil)
+	c := NewClient("", clientLogger, fakeClient, nil)
 	colConfig, err := loadConfig("testdata/collector.yaml")
 	require.NoError(t, err, "Should be no error on loading test configuration")
 	configmap := &protobufs.AgentConfigFile{

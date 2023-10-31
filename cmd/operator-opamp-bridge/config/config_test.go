@@ -67,6 +67,7 @@ func TestLoad(t *testing.T) {
 				RootLogger:        logr.Discard(),
 				Endpoint:          "http://127.0.0.1:4320/v1/opamp",
 				HeartbeatInterval: 45 * time.Second,
+				Name:              "http-test-bridge",
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
