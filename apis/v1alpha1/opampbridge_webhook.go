@@ -15,33 +15,69 @@
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
 	"strings"
+
+	"github.com/go-logr/logr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// log is for logging in this package.
-var opampbridgelog = logf.Log.WithName("opampbridge-resource")
-
-func (r *OpAMPBridge) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
+var (
+	_ admission.CustomValidator = &OpAMPBridgeWebhook{}
+	_ admission.CustomDefaulter = &OpAMPBridgeWebhook{}
+)
 
 //+kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opampbridge,mutating=true,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update,versions=v1alpha1,name=mopampbridge.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-opentelemetry-io-v1alpha1-opampbridge,mutating=false,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update,versions=v1alpha1,name=vopampbridgecreateupdate.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-opentelemetry-io-v1alpha1-opampbridge,mutating=false,failurePolicy=ignore,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=delete,versions=v1alpha1,name=vopampbridgedelete.kb.io,admissionReviewVersions=v1
+//+kubebuilder:object:generate=false
 
-var _ webhook.Defaulter = &OpAMPBridge{}
+type OpAMPBridgeWebhook struct {
+	logger logr.Logger
+	cfg    config.Config
+	scheme *runtime.Scheme
+}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type.
-func (r *OpAMPBridge) Default() {
-	opampbridgelog.Info("default", "name", r.Name)
+func (o *OpAMPBridgeWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	opampBridge, ok := obj.(*OpAMPBridge)
+	if !ok {
+		return fmt.Errorf("expected an OpAMPBridge, received %T", obj)
+	}
+	return o.defaulter(opampBridge)
+}
+
+func (c OpAMPBridgeWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	opampBridge, ok := obj.(*OpAMPBridge)
+	if !ok {
+		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
+	}
+	return c.validate(opampBridge)
+}
+
+func (c OpAMPBridgeWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	opampBridge, ok := newObj.(*OpAMPBridge)
+	if !ok {
+		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", newObj)
+	}
+	return c.validate(opampBridge)
+}
+
+func (o OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	opampBridge, ok := obj.(*OpAMPBridge)
+	if !ok || opampBridge == nil {
+		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
+	}
+	return o.validate(opampBridge)
+}
+
+func (o OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 	if len(r.Spec.UpgradeStrategy) == 0 {
 		r.Spec.UpgradeStrategy = UpgradeStrategyAutomatic
 	}
@@ -66,40 +102,20 @@ func (r *OpAMPBridge) Default() {
 	if !enabled || !found {
 		r.Spec.Capabilities[OpAMPBridgeCapabilityReportsStatus] = true
 	}
+	return nil
 }
 
-//+kubebuilder:webhook:path=/validate-opentelemetry-io-v1alpha1-opampbridge,mutating=false,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update;delete,versions=v1alpha1,name=vopampbridge.kb.io,admissionReviewVersions=v1
+func (o OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) {
+	warnings := admission.Warnings{}
 
-var _ webhook.Validator = &OpAMPBridge{}
-
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpAMPBridge) ValidateCreate() (admission.Warnings, error) {
-	opampbridgelog.Info("validate create", "name", r.Name)
-	return nil, r.validateCRDSpec()
-}
-
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpAMPBridge) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	opampbridgelog.Info("validate update", "name", r.Name)
-	return nil, r.validateCRDSpec()
-}
-
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *OpAMPBridge) ValidateDelete() (admission.Warnings, error) {
-	opampbridgelog.Info("validate delete", "name", r.Name)
-	return nil, nil
-}
-
-func (r *OpAMPBridge) validateCRDSpec() error {
-
-	// check required fields
-
+	// validate OpAMP server endpoint
 	if len(strings.TrimSpace(r.Spec.Endpoint)) == 0 {
-		return fmt.Errorf("the OpAMP server endpoint is not specified")
+		return warnings, fmt.Errorf("the OpAMP server endpoint is not specified")
 	}
 
+	// validate OpAMPBridge capabilities
 	if len(r.Spec.Capabilities) == 0 {
-		return fmt.Errorf("the capabilities supported by OpAMP Bridge are not specified")
+		return warnings, fmt.Errorf("the capabilities supported by OpAMP Bridge are not specified")
 	}
 
 	// validate port config
@@ -107,14 +123,27 @@ func (r *OpAMPBridge) validateCRDSpec() error {
 		nameErrs := validation.IsValidPortName(p.Name)
 		numErrs := validation.IsValidPortNum(int(p.Port))
 		if len(nameErrs) > 0 || len(numErrs) > 0 {
-			return fmt.Errorf("the OpAMPBridge Spec Ports configuration is incorrect, port name '%s' errors: %s, num '%d' errors: %s",
+			return warnings, fmt.Errorf("the OpAMPBridge Spec Ports configuration is incorrect, port name '%s' errors: %s, num '%d' errors: %s",
 				p.Name, nameErrs, p.Port, numErrs)
 		}
 	}
 
 	// check for maximum replica count
 	if r.Spec.Replicas != nil && *r.Spec.Replicas > 1 {
-		return fmt.Errorf("replica count must not be greater than 1")
+		return warnings, fmt.Errorf("replica count must not be greater than 1")
 	}
-	return nil
+	return warnings, nil
+}
+
+func SetupOpAMPBridgeWebhook(mgr ctrl.Manager, cfg config.Config) error {
+	webhook := &OpAMPBridgeWebhook{
+		logger: mgr.GetLogger().WithValues("handler", "OpAMPBridgeWebhook"),
+		scheme: mgr.GetScheme(),
+		cfg:    cfg,
+	}
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(&OpAMPBridge{}).
+		WithValidator(webhook).
+		WithDefaulter(webhook).
+		Complete()
 }
