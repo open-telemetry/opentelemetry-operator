@@ -177,9 +177,18 @@ func main() {
 		config.WithLabelFilters(labelsFilter),
 	)
 
+	var namespaces map[string]cache.Config
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if found {
 		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
+		namespaces = map[string]cache.Config{}
+		if strings.Contains(watchNamespace, ",") {
+			for _, ns := range strings.Split(watchNamespace, ",") {
+				namespaces[ns] = cache.Config{}
+			}
+		} else {
+			namespaces[watchNamespace] = cache.Config{}
+		}
 	} else {
 		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
 	}
@@ -191,13 +200,6 @@ func main() {
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
 		func(config *tls.Config) { tlsConfigSetting(config, tlsOpt) },
-	}
-	var namespaces map[string]cache.Config
-	if strings.Contains(watchNamespace, ",") {
-		namespaces = map[string]cache.Config{}
-		for _, ns := range strings.Split(watchNamespace, ",") {
-			namespaces[ns] = cache.Config{}
-		}
 	}
 
 	mgrOptions := ctrl.Options{
