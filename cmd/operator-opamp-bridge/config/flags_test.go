@@ -17,6 +17,7 @@ package config
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
@@ -56,6 +57,12 @@ func TestFlagGetters(t *testing.T) {
 			flagArgs:      []string{"--" + listenAddrFlagName, ":8081"},
 			expectedValue: ":8081",
 			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getListenAddr(fs) },
+		},
+		{
+			name:          "GetHeartbeatInterval",
+			flagArgs:      []string{"--" + heartbeatIntervalFlagName, "45s"},
+			expectedValue: 45 * time.Second,
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getHeartbeatInterval(fs) },
 		},
 		{
 			name:        "InvalidFlag",

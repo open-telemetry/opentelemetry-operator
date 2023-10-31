@@ -1,6 +1,8 @@
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
+  labels:
+    "opentelemetry.io/opamp-managed": "true"
 spec:
   config: |
     receivers:

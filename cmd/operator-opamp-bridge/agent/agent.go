@@ -55,6 +55,10 @@ type Agent struct {
 }
 
 func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config.Config, opampClient client.OpAMPClient) *Agent {
+	var t *time.Ticker
+	if config.HeartbeatInterval > 0 {
+		t = time.NewTicker(config.HeartbeatInterval)
+	}
 	agent := &Agent{
 		config:              config,
 		applier:             applier,
@@ -65,7 +69,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 		remoteConfigEnabled: config.RemoteConfigEnabled(),
 		opampClient:         opampClient,
 		done:                make(chan struct{}, 1),
-		ticker:              time.NewTicker(30 * time.Second),
+		ticker:              t,
 	}
 
 	agent.logger.V(3).Info("Agent created",
@@ -168,7 +172,9 @@ func (agent *Agent) Start() error {
 		return err
 	}
 
-	go agent.runHeartbeat()
+	if agent.config.HeartbeatInterval > 0 {
+		go agent.runHeartbeat()
+	}
 
 	agent.logger.V(3).Info("OpAMP Client started.")
 
@@ -177,6 +183,10 @@ func (agent *Agent) Start() error {
 
 // runHeartbeat sets health on an interval to keep the connection active.
 func (agent *Agent) runHeartbeat() {
+	if agent.ticker == nil {
+		agent.logger.Info("cannot run heartbeat without setting an interval for the ticker")
+		return
+	}
 	for {
 		select {
 		case <-agent.ticker.C:

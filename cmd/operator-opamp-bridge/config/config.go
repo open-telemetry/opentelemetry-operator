@@ -95,6 +95,7 @@ type Config struct {
 	ComponentsAllowed map[string][]string `yaml:"componentsAllowed,omitempty"`
 	Endpoint          string              `yaml:"endpoint"`
 	Capabilities      map[Capability]bool `yaml:"capabilities"`
+	HeartbeatInterval time.Duration       `yaml:"heartbeatInterval,omitempty"`
 }
 
 func NewConfig(logger logr.Logger) *Config {
@@ -247,6 +248,12 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	if err != nil {
 		return err
 	}
+
+	heartbeatInterval, err := getHeartbeatInterval(flagSet)
+	if err != nil {
+		return err
+	}
+	target.HeartbeatInterval = heartbeatInterval
 
 	return nil
 }

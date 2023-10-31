@@ -32,8 +32,8 @@ const (
 	CollectorResource       = "OpenTelemetryCollector"
 	ResourceIdentifierKey   = "created-by"
 	ResourceIdentifierValue = "operator-opamp-bridge"
-	ReportingAnnotationKey  = "opentelemetry.io/opamp-reporting"
-	ManagedAnnotationKey    = "opentelemetry.io/opamp-managed"
+	ReportingLabelKey       = "opentelemetry.io/opamp-reporting"
+	ManagedLabelKey         = "opentelemetry.io/opamp-managed"
 )
 
 type ConfigApplier interface {
@@ -71,6 +71,9 @@ func NewClient(log logr.Logger, c client.Client, componentsAllowed map[string]ma
 }
 
 func (c Client) labelSetContainsLabel(instance *v1alpha1.OpenTelemetryCollector, label, value string) bool {
+	if instance == nil || instance.GetLabels() == nil {
+		return false
+	}
 	if labels := instance.GetLabels(); labels != nil && strings.EqualFold(labels[label], value) {
 		return true
 	}
@@ -137,17 +140,22 @@ func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentC
 	if err != nil {
 		return err
 	}
+	// If either the received collector or the collector being created has reporting set to true, it should be denied
+	if c.labelSetContainsLabel(instance, ReportingLabelKey, "true") ||
+		c.labelSetContainsLabel(updatedCollector, ReportingLabelKey, "true") {
+		return errors.NewBadRequest("cannot modify a collector with `opentelemetry.io/opamp-reporting: true`")
+	}
+	// If either the received collector or the collector doesn't have the managed label set to true, it should be denied
+	if !c.labelSetContainsLabel(instance, ManagedLabelKey, "true") &&
+		!c.labelSetContainsLabel(instance, ManagedLabelKey, c.name) &&
+		!c.labelSetContainsLabel(updatedCollector, ManagedLabelKey, "true") &&
+		!c.labelSetContainsLabel(updatedCollector, ManagedLabelKey, c.name) {
+		return errors.NewBadRequest("cannot modify a collector that doesn't have `opentelemetry.io/opamp-managed: true | <bridge-name>` set")
+	}
 	if instance == nil {
 		return c.create(ctx, name, namespace, updatedCollector)
 	}
-	if c.labelSetContainsLabel(instance, ReportingAnnotationKey, "true") {
-		return errors.NewBadRequest("cannot modify a collector with `opentelemetry.io/opamp-reporting: true`")
-	}
-	if c.labelSetContainsLabel(instance, ManagedAnnotationKey, "true") ||
-		c.labelSetContainsLabel(instance, ManagedAnnotationKey, c.name) {
-		return c.update(ctx, instance, updatedCollector)
-	}
-	return nil
+	return c.update(ctx, instance, updatedCollector)
 }
 
 func (c Client) Delete(name string, namespace string) error {
@@ -170,20 +178,20 @@ func (c Client) ListInstances() ([]v1alpha1.OpenTelemetryCollector, error) {
 	ctx := context.Background()
 	result := v1alpha1.OpenTelemetryCollectorList{}
 	err := c.k8sClient.List(ctx, &result, client.MatchingLabels{
-		ManagedAnnotationKey: c.name,
+		ManagedLabelKey: c.name,
 	})
 	if err != nil {
 		return nil, err
 	}
 	err = c.k8sClient.List(ctx, &result, client.MatchingLabels{
-		ManagedAnnotationKey: "true",
+		ManagedLabelKey: "true",
 	})
 	if err != nil {
 		return nil, err
 	}
 	reportingCollectors := v1alpha1.OpenTelemetryCollectorList{}
 	err = c.k8sClient.List(ctx, &reportingCollectors, client.MatchingLabels{
-		ReportingAnnotationKey: "true",
+		ReportingLabelKey: "true",
 	})
 	if err != nil {
 		return nil, err

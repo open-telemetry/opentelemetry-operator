@@ -250,7 +250,7 @@ func TestAgent_onMessage(t *testing.T) {
 				status: &protobufs.RemoteConfigStatus{
 					LastRemoteConfigHash: []byte(invalidYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
-					ErrorMessage:         "error converting YAML to JSON: yaml: line 21: could not find expected ':'",
+					ErrorMessage:         "error converting YAML to JSON: yaml: line 23: could not find expected ':'",
 				},
 			},
 		},
@@ -413,7 +413,7 @@ func TestAgent_onMessage(t *testing.T) {
 				nextStatus: &protobufs.RemoteConfigStatus{
 					LastRemoteConfigHash: []byte(invalidYamlConfigHash), // The new hash should be of the bad config
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
-					ErrorMessage:         "error converting YAML to JSON: yaml: line 21: could not find expected ':'",
+					ErrorMessage:         "error converting YAML to JSON: yaml: line 23: could not find expected ':'",
 				},
 			},
 		},
