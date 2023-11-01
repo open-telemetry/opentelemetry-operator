@@ -578,7 +578,7 @@ spec:
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
     failurePolicy: Fail
-    generateName: vopampbridge.kb.io
+    generateName: vopampbridgecreateupdate.kb.io
     rules:
     - apiGroups:
       - opentelemetry.io
@@ -587,6 +587,24 @@ spec:
       operations:
       - CREATE
       - UPDATE
+      resources:
+      - opampbridges
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-opampbridge
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: vopampbridgedelete.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
       - DELETE
       resources:
       - opampbridges
