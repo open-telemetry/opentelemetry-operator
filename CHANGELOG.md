@@ -2,6 +2,38 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.88.0
+
+### 🛑 Breaking changes 🛑
+
+- `OpAMP Bridge`: Currently, the bridge doesn't adhere to the spec for the naming structure. This changes the bridge to use the <namespace>/<otelcol> structure as described. (#2131)
+  * Updates the bridge to get collectors using the reporting annotation
+  * Fixes a bug where we were using the incorrect structure for the collectors
+  
+
+### 💡 Enhancements 💡
+
+- `operator-opamp-bridge`: Creates the CRD for the OpAMPBridge resource (#1368)
+- `autoinstrumentation`: Bump OpenTelemetry .NET Automatic Instrumentation to 1.1.0 (#2252)
+- `operator`: Bump NodeJS dependencies. Also, increase the size of the default size for the volume used to copy the autoinstrumentation libraries from 150M to 200M (#2240, #2237)
+
+### 🧰 Bug fixes 🧰
+
+- `Operator`: Fixed the labeling process which was broken at the moment to capture the current image tag when the users set the sha256 reference. (#1982)
+- `target allocator`: reset kubeconfig to empty string when using in-cluster config (#2262)
+
+### Components
+
+* [OpenTelemetry Collector - v0.88.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.88.0)
+* [OpenTelemetry Contrib - v0.88.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.88.0)
+* [Java auto-instrumentation - 1.31.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.31.0)
+* [.NET auto-instrumentation - 1.1.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.1.0)
+* [Node.JS - 0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.44.0)
+* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Go - v0.7.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.7.0-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+* [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
+
 ## 0.87.0
 
 ### 🛑 Breaking changes 🛑
