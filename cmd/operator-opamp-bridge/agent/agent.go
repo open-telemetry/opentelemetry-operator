@@ -26,6 +26,7 @@ import (
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"go.uber.org/multierr"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
@@ -37,6 +38,7 @@ type Agent struct {
 	logger logr.Logger
 
 	appliedKeys map[collectorKey]bool
+	clock       clock.Clock
 	startTime   uint64
 	lastHash    []byte
 
@@ -68,6 +70,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 		agentDescription:    config.GetDescription(),
 		remoteConfigEnabled: config.RemoteConfigEnabled(),
 		opampClient:         opampClient,
+		clock:               clock.RealClock{},
 		done:                make(chan struct{}, 1),
 		ticker:              t,
 	}
@@ -93,7 +96,7 @@ func (agent *Agent) getHealth() *protobufs.ComponentHealth {
 	return &protobufs.ComponentHealth{
 		Healthy:            true,
 		StartTimeUnixNano:  agent.startTime,
-		StatusTimeUnixNano: uint64(time.Now().UnixNano()),
+		StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
 		LastError:          "",
 		ComponentHealthMap: healthMap,
 	}
@@ -111,7 +114,7 @@ func (agent *Agent) generateComponentHealthMap() (map[string]*protobufs.Componen
 		key := newCollectorKey(col.GetNamespace(), col.GetName())
 		healthMap[key.String()] = &protobufs.ComponentHealth{
 			StartTimeUnixNano:  uint64(col.ObjectMeta.GetCreationTimestamp().UnixNano()),
-			StatusTimeUnixNano: uint64(time.Now().UnixNano()),
+			StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
 			Status:             col.Status.Scale.StatusReplicas,
 		}
 	}
@@ -140,7 +143,7 @@ func (agent *Agent) saveRemoteConfigStatus(_ context.Context, status *protobufs.
 
 // Start sets up the callbacks for the OpAMP client and begins the client's connection to the server.
 func (agent *Agent) Start() error {
-	agent.startTime = uint64(time.Now().UnixNano())
+	agent.startTime = uint64(agent.clock.Now().UnixNano())
 	settings := types.StartSettings{
 		OpAMPServerURL: agent.config.Endpoint,
 		InstanceUid:    agent.instanceId.String(),
