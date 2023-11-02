@@ -166,7 +166,7 @@ func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.Effectiv
 			agent.logger.Error(err, "failed to marhsal config")
 			return nil, err
 		}
-		mapKey := newCollectorKey(instance.GetName(), instance.GetNamespace())
+		mapKey := newCollectorKey(instance.GetNamespace(), instance.GetName())
 		instanceMap[mapKey.String()] = &protobufs.AgentConfigFile{
 			Body:        marshaled,
 			ContentType: "yaml",

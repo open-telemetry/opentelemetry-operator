@@ -27,9 +27,10 @@ import (
 )
 
 const (
-	defaultAutoDetectFrequency           = 5 * time.Second
-	defaultCollectorConfigMapEntry       = "collector.yaml"
-	defaultTargetAllocatorConfigMapEntry = "targetallocator.yaml"
+	defaultAutoDetectFrequency               = 5 * time.Second
+	defaultCollectorConfigMapEntry           = "collector.yaml"
+	defaultTargetAllocatorConfigMapEntry     = "targetallocator.yaml"
+	defaultOperatorOpAMPBridgeConfigMapEntry = "remoteconfiguration.yaml"
 )
 
 // Config holds the static configuration for this operator.
@@ -46,6 +47,7 @@ type Config struct {
 	autoInstrumentationApacheHttpdImage string
 	autoInstrumentationNginxImage       string
 	targetAllocatorConfigMapEntry       string
+	operatorOpAMPBridgeConfigMapEntry   string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
 	onOpenShiftRoutesChange             changeHandler
@@ -58,13 +60,14 @@ type Config struct {
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		autoDetectFrequency:           defaultAutoDetectFrequency,
-		collectorConfigMapEntry:       defaultCollectorConfigMapEntry,
-		targetAllocatorConfigMapEntry: defaultTargetAllocatorConfigMapEntry,
-		logger:                        logf.Log.WithName("config"),
-		openshiftRoutes:               newOpenShiftRoutesWrapper(),
-		version:                       version.Get(),
-		onOpenShiftRoutesChange:       newOnChange(),
+		autoDetectFrequency:               defaultAutoDetectFrequency,
+		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
+		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
+		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
+		logger:                            logf.Log.WithName("config"),
+		openshiftRoutes:                   newOpenShiftRoutesWrapper(),
+		version:                           version.Get(),
+		onOpenShiftRoutesChange:           newOnChange(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -78,6 +81,7 @@ func New(opts ...Option) Config {
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
+		operatorOpAMPBridgeConfigMapEntry:   o.operatorOpAMPBridgeConfigMapEntry,
 		logger:                              o.logger,
 		openshiftRoutes:                     o.openshiftRoutes,
 		onOpenShiftRoutesChange:             o.onOpenShiftRoutesChange,
@@ -147,9 +151,19 @@ func (c *Config) TargetAllocatorImage() string {
 	return c.targetAllocatorImage
 }
 
+// OperatorOpAMPBridgeImage represents the flag to override the OpAMPBridge container image.
+func (c *Config) OperatorOpAMPBridgeImage() string {
+	return c.operatorOpAMPBridgeImage
+}
+
 // TargetAllocatorConfigMapEntry represents the configuration file name for the TargetAllocator. Immutable.
 func (c *Config) TargetAllocatorConfigMapEntry() string {
 	return c.targetAllocatorConfigMapEntry
+}
+
+// OperatorOpAMPBridgeImageConfigMapEntry represents the configuration file name for the OpAMPBridge. Immutable.
+func (c *Config) OperatorOpAMPBridgeConfigMapEntry() string {
+	return c.operatorOpAMPBridgeConfigMapEntry
 }
 
 // OpenShiftRoutes represents the availability of the OpenShift Routes API.

@@ -24,6 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -51,7 +52,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	taConfig := make(map[interface{}]interface{})
 	prometheusCRConfig := make(map[interface{}]interface{})
-	taConfig["label_selector"] = collector.SelectorLabels(params.OtelCol)
+	taConfig["label_selector"] = manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)
 	// We only take the "config" from the returned object, if it's present
 	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
 		taConfig["config"] = prometheusConfig

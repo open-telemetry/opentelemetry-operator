@@ -245,6 +245,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
+		Scheme:   mgr.GetScheme(),
+		Config:   cfg,
+		Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
+		os.Exit(1)
+	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
@@ -262,6 +273,11 @@ func main() {
 					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator")),
 				}),
 		})
+
+		if err = otelv1alpha1.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "OpAMPBridge")
+			os.Exit(1)
+		}
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
 	}

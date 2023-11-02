@@ -218,9 +218,14 @@ e2e-log-operator:
 e2e-multi-instrumentation:
 	$(KUTTL) test --config kuttl-test-multi-instr.yaml
 
+# OpAMPBridge CR end-to-tests
+.PHONY: e2e-opampbridge
+e2e-opampbridge:
+	$(KUTTL) test --config kuttl-test-opampbridge.yaml
+
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server load-image-all deploy
-	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 .PHONY: enable-prometheus-feature-flag
 enable-prometheus-feature-flag:
@@ -268,6 +273,11 @@ install-metrics-server:
 .PHONY: install-prometheus-operator
 install-prometheus-operator:
 	./hack/install-prometheus-operator.sh
+
+# This only installs the CRDs Target Allocator supports
+.PHONY: install-targetallocator-prometheus-crds
+install-targetallocator-prometheus-crds:
+	./hack/install-targetallocator-prometheus-crds.sh
 
 .PHONY: load-image-all
 load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge

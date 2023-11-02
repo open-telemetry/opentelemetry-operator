@@ -31,13 +31,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2023-10-17T18:16:13Z"
+    createdAt: "2023-10-31T11:59:58Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.87.0
+  name: opentelemetry-operator.v0.88.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -49,6 +49,24 @@ spec:
       name: instrumentations.opentelemetry.io
       resources:
       - kind: Pod
+        name: ""
+        version: v1
+      version: v1alpha1
+    - description: OpAMPBridge is the Schema for the opampbridges API.
+      displayName: OpAMP Bridge
+      kind: OpAMPBridge
+      name: opampbridges.opentelemetry.io
+      resources:
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Service
         name: ""
         version: v1
       version: v1alpha1
@@ -214,6 +232,32 @@ spec:
         - apiGroups:
           - opentelemetry.io
           resources:
+          - opampbridges
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opampbridges/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opampbridges/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - opentelemetry.io
+          resources:
           - opentelemetrycollectors
           verbs:
           - get
@@ -300,7 +344,7 @@ spec:
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
                 - --feature-gates=+operator.autoinstrumentation.go,+operator.autoinstrumentation.nginx
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.87.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.88.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -408,7 +452,7 @@ spec:
   minKubeVersion: 1.23.0
   provider:
     name: OpenTelemetry Community
-  version: 0.87.0
+  version: 0.88.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
@@ -430,6 +474,26 @@ spec:
     targetPort: 9443
     type: MutatingAdmissionWebhook
     webhookPath: /mutate-opentelemetry-io-v1alpha1-instrumentation
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: mopampbridge.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - opampbridges
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-opentelemetry-io-v1alpha1-opampbridge
   - admissionReviewVersions:
     - v1
     containerPort: 443
@@ -509,6 +573,45 @@ spec:
     targetPort: 9443
     type: ValidatingAdmissionWebhook
     webhookPath: /validate-opentelemetry-io-v1alpha1-instrumentation
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: vopampbridgecreateupdate.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - opampbridges
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-opampbridge
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: vopampbridgedelete.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - DELETE
+      resources:
+      - opampbridges
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-opampbridge
   - admissionReviewVersions:
     - v1
     containerPort: 443
