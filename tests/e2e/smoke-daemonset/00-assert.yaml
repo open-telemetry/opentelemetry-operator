@@ -6,8 +6,9 @@ spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
+      maxSurge: 0
       maxUnavailable: 1
 status:
-  replicas: 1
-  readyReplicas: 1
+  numberAvailable: 1
+  numberMisscheduled: 0
+  numberReady: 1
