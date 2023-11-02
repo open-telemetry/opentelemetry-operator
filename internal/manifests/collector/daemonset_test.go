@@ -18,8 +18,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -418,4 +420,72 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
 	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[0])
+}
+
+func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			UpdateStrategy: &appsv1.DaemonSetUpdateStrategy{
+				Type: "RollingUpdate",
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	// test
+	d := DaemonSet(params)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("RollingUpdate"), d.Spec.UpdateStrategy.Type)
+	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
+	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+}
+
+func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			UpdateStrategy: &appsv1.DaemonSetUpdateStrategy{
+				Type: "OnDelete",
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	// test
+	d := DaemonSet(params)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("OnDelete"), d.Spec.UpdateStrategy.Type)
+	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
+	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
 }

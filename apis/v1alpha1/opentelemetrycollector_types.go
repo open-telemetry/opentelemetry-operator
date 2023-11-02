@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -275,6 +276,11 @@ type OpenTelemetryCollectorSpec struct {
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
 	ConfigMaps []ConfigMapsSpec `json:"configmaps,omitempty"`
+	// UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
+	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
+	// This is only applicable to Daemonset mode.
+	// +optional
+	UpdateStrategy *appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.

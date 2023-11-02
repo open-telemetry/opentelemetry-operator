@@ -9678,6 +9678,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecupdatestrategy">updateStrategy</a></b></td>
+        <td>object</td>
+        <td>
+          UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods https://kubernetes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>upgradeStrategy</b></td>
         <td>enum</td>
         <td>
@@ -18879,6 +18886,74 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td>[]string</td>
         <td>
           values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.updateStrategy
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods https://kubernetes.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecupdatestrategyrollingupdate">rollingUpdate</a></b></td>
+        <td>object</td>
+        <td>
+          Rolling update config params. Present only if type = "RollingUpdate". --- TODO: Update this to follow our convention for oneOf, whatever we decide it to be. Same as Deployment `strategy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type of daemon set update. Can be "RollingUpdate" or "OnDelete". Default is RollingUpdate.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.updateStrategy.rollingUpdate
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecupdatestrategy)</sup></sup>
+
+
+
+Rolling update config params. Present only if type = "RollingUpdate". --- TODO: Update this to follow our convention for oneOf, whatever we decide it to be. Same as Deployment `strategy.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxSurge</b></td>
+        <td>int or string</td>
+        <td>
+          The maximum number of nodes with an existing available DaemonSet pod that can have an updated DaemonSet pod during during an update.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxUnavailable</b></td>
+        <td>int or string</td>
+        <td>
+          The maximum number of DaemonSet pods that can be unavailable during the update.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -20,6 +20,7 @@
 package v1alpha1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2"
 	"k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -910,6 +911,11 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 		in, out := &in.ConfigMaps, &out.ConfigMaps
 		*out = make([]ConfigMapsSpec, len(*in))
 		copy(*out, *in)
+	}
+	if in.UpdateStrategy != nil {
+		in, out := &in.UpdateStrategy, &out.UpdateStrategy
+		*out = new(appsv1.DaemonSetUpdateStrategy)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

@@ -61,6 +61,13 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 					Affinity:           params.OtelCol.Spec.Affinity,
 				},
 			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: params.OtelCol.Spec.UpdateStrategy.Type,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxSurge:       params.OtelCol.Spec.UpdateStrategy.RollingUpdate.MaxSurge,
+					MaxUnavailable: params.OtelCol.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable,
+				},
+			},
 		},
 	}
 }

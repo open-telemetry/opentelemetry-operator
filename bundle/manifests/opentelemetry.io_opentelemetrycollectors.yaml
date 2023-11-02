@@ -4591,6 +4591,36 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+              updateStrategy:
+                description: UpdateStrategy represents the strategy the operator will
+                  take replacing existing DaemonSet pods with new pods https://kubernetes.
+                properties:
+                  rollingUpdate:
+                    description: 'Rolling update config params. Present only if type
+                      = "RollingUpdate". --- TODO: Update this to follow our convention
+                      for oneOf, whatever we decide it to be. Same as Deployment `strategy.'
+                    properties:
+                      maxSurge:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: The maximum number of nodes with an existing
+                          available DaemonSet pod that can have an updated DaemonSet
+                          pod during during an update.
+                        x-kubernetes-int-or-string: true
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: The maximum number of DaemonSet pods that can
+                          be unavailable during the update.
+                        x-kubernetes-int-or-string: true
+                    type: object
+                  type:
+                    description: Type of daemon set update. Can be "RollingUpdate"
+                      or "OnDelete". Default is RollingUpdate.
+                    type: string
+                type: object
               upgradeStrategy:
                 description: UpgradeStrategy represents how the operator will handle
                   upgrades to the CR when a newer version of the operator is deployed
