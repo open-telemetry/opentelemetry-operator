@@ -430,7 +430,7 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			UpdateStrategy: &appsv1.DaemonSetUpdateStrategy{
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "RollingUpdate",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
@@ -464,7 +464,7 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			UpdateStrategy: &appsv1.DaemonSetUpdateStrategy{
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "OnDelete",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
