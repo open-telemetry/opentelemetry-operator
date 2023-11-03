@@ -402,6 +402,17 @@ func chooseServiceVersion(pod corev1.Pod, index int) string {
 	return tag
 }
 
+// creates the service.instance.id following the semantic defined by
+// https://github.com/open-telemetry/semantic-conventions/pull/312.
+func createServiceInstanceId(namespaceName, podName, containerName string) string {
+	var serviceInstanceId string
+	if namespaceName != "" && podName != "" && containerName != "" {
+		resNames := []string{namespaceName, podName, containerName}
+		serviceInstanceId = strings.Join(resNames, ".")
+	}
+	return serviceInstanceId
+}
+
 // createResourceMap creates resource attribute map.
 // User defined attributes (in explicitly set env var) have higher precedence.
 func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, index int) map[string]string {
@@ -433,7 +444,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SPodNameKey] = pod.Name
 	k8sResources[semconv.K8SPodUIDKey] = string(pod.UID)
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
-	k8sResources[semconv.ServiceInstanceIDKey] = string(pod.UID)
+	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(ns.Name, pod.Name, pod.Spec.Containers[index].Name)
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
 	for k, v := range k8sResources {
 		if !existingRes[string(k)] && v != "" {
