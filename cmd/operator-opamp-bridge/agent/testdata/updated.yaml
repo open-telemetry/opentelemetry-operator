@@ -2,7 +2,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
   labels:
-    "opentelemetry.io/opamp-managed": "true"
+    "opentelemetry.io/opamp-managed": "test-bridge"
 spec:
   config: |
     receivers:

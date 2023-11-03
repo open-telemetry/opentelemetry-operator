@@ -262,10 +262,10 @@ func TestAgent_getHealth(t *testing.T) {
 			defer agent.Shutdown()
 			require.NoError(t, err, "should be able to start agent")
 			if len(tt.args.configs) > 0 {
-				assert.True(t, len(tt.args.configs) == len(tt.want), "must have an equal amount of configs and checks.")
+				require.True(t, len(tt.args.configs) == len(tt.want), "must have an equal amount of configs and checks.")
 			} else {
-				assert.Len(t, tt.want, 1, "must have exactly one want if no config is supplied.")
-				assert.Equal(t, tt.want[0], agent.getHealth())
+				require.Len(t, tt.want, 1, "must have exactly one want if no config is supplied.")
+				require.Equal(t, tt.want[0], agent.getHealth())
 			}
 			for i, configMap := range tt.args.configs {
 				data, err := getMessageDataFromConfigFile(configMap)

@@ -22,6 +22,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -177,15 +179,13 @@ func (c Client) Delete(name string, namespace string) error {
 func (c Client) ListInstances() ([]v1alpha1.OpenTelemetryCollector, error) {
 	ctx := context.Background()
 	result := v1alpha1.OpenTelemetryCollectorList{}
-	err := c.k8sClient.List(ctx, &result, client.MatchingLabels{
-		ManagedLabelKey: c.name,
-	})
+	labelSelector := labels.NewSelector()
+	requirement, err := labels.NewRequirement(ManagedLabelKey, selection.In, []string{c.name, "true"})
 	if err != nil {
 		return nil, err
 	}
-	err = c.k8sClient.List(ctx, &result, client.MatchingLabels{
-		ManagedLabelKey: "true",
-	})
+	labelSelector.Add(*requirement)
+	err = c.k8sClient.List(ctx, &result, client.MatchingLabelsSelector{Selector: labelSelector})
 	if err != nil {
 		return nil, err
 	}
