@@ -46,7 +46,7 @@ func main() {
 		l.Error(kubeErr, "Couldn't create kubernetes client")
 		os.Exit(1)
 	}
-	operatorClient := operator.NewClient(l.WithName("operator-client"), kubeClient, cfg.GetComponentsAllowed())
+	operatorClient := operator.NewClient(cfg.Name, l.WithName("operator-client"), kubeClient, cfg.GetComponentsAllowed())
 
 	opampClient := cfg.CreateClient()
 	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient)

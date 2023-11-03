@@ -17,6 +17,7 @@ package config
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
@@ -52,10 +53,22 @@ func TestFlagGetters(t *testing.T) {
 			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getKubeConfigFilePath(fs) },
 		},
 		{
+			name:          "GetName",
+			flagArgs:      []string{"--" + nameFlagName, "test"},
+			expectedValue: "test",
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getName(fs) },
+		},
+		{
 			name:          "GetListenAddr",
 			flagArgs:      []string{"--" + listenAddrFlagName, ":8081"},
 			expectedValue: ":8081",
 			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getListenAddr(fs) },
+		},
+		{
+			name:          "GetHeartbeatInterval",
+			flagArgs:      []string{"--" + heartbeatIntervalFlagName, "45s"},
+			expectedValue: 45 * time.Second,
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getHeartbeatInterval(fs) },
 		},
 		{
 			name:        "InvalidFlag",
