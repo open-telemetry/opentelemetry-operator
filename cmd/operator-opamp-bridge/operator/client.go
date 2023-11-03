@@ -184,8 +184,7 @@ func (c Client) ListInstances() ([]v1alpha1.OpenTelemetryCollector, error) {
 	if err != nil {
 		return nil, err
 	}
-	labelSelector.Add(*requirement)
-	err = c.k8sClient.List(ctx, &result, client.MatchingLabelsSelector{Selector: labelSelector})
+	err = c.k8sClient.List(ctx, &result, client.MatchingLabelsSelector{Selector: labelSelector.Add(*requirement)})
 	if err != nil {
 		return nil, err
 	}
