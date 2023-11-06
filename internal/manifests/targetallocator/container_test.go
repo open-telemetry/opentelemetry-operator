@@ -189,6 +189,13 @@ func TestContainerHasEnvVars(t *testing.T) {
 				SubPathExpr:      "",
 			},
 		},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "http",
+				ContainerPort: 8080,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
 	}
 
 	// test
@@ -262,6 +269,13 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 				SubPath:          "",
 				MountPropagation: nil,
 				SubPathExpr:      "",
+			},
+		},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "http",
+				ContainerPort: 8080,
+				Protocol:      corev1.ProtocolTCP,
 			},
 		},
 	}
