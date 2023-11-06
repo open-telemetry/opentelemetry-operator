@@ -112,6 +112,10 @@ manager: generate fmt vet
 targetallocator:
 	cd cmd/otel-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o bin/targetallocator_${ARCH} .
 
+# Build opamp bridge binary
+operator-opamp-bridge:
+	cd cmd/operator-opamp-bridge && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o bin/opampbridge_${ARCH} .
+
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
 run: generate fmt vet manifests
@@ -263,8 +267,9 @@ container-target-allocator: targetallocator
 	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
 .PHONY: container-operator-opamp-bridge
-container-operator-opamp-bridge:
-	docker buildx build --platform linux/${ARCH} -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
+container-operator-opamp-bridge: GOOS = linux
+container-operator-opamp-bridge: operator-opamp-bridge
+	docker build -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
 .PHONY: start-kind
 start-kind:
