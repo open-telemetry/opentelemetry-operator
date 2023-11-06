@@ -17,6 +17,7 @@ package config
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -63,8 +64,10 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/agenthttpbasic.yaml",
 			},
 			want: &Config{
-				RootLogger: logr.Discard(),
-				Endpoint:   "http://127.0.0.1:4320/v1/opamp",
+				RootLogger:        logr.Discard(),
+				Endpoint:          "http://127.0.0.1:4320/v1/opamp",
+				HeartbeatInterval: 45 * time.Second,
+				Name:              "http-test-bridge",
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
