@@ -21,18 +21,19 @@ import (
 	"os"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/spf13/pflag"
-	"github.com/stretchr/testify/require"
-
 	"github.com/oklog/ulid/v2"
 	"github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	testingclock "k8s.io/utils/clock/testing"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -57,6 +58,11 @@ const (
 	agentTestFileBasicComponentsAllowedName = "testdata/agentbasiccomponentsallowed.yaml"
 	agentTestFileBatchNotAllowedName        = "testdata/agentbatchnotallowed.yaml"
 	agentTestFileNoProcessorsAllowedName    = "testdata/agentnoprocessorsallowed.yaml"
+
+	// collectorStartTime is set to the result of a zero'd out creation timestamp
+	// read more here https://github.com/open-telemetry/opentelemetry-go/issues/4268
+	// we could attempt to hack the creation timestamp, but this is a constant and far easier.
+	collectorStartTime = uint64(11651379494838206464)
 )
 
 var (
@@ -102,7 +108,7 @@ func (m *mockOpampClient) AgentDescription() *protobufs.AgentDescription {
 	return nil
 }
 
-func (m *mockOpampClient) SetHealth(_ *protobufs.AgentHealth) error {
+func (m *mockOpampClient) SetHealth(_ *protobufs.ComponentHealth) error {
 	return nil
 }
 
@@ -134,7 +140,146 @@ func getFakeApplier(t *testing.T, conf *config.Config) *operator.Client {
 	err := schemeBuilder.AddToScheme(scheme)
 	require.NoError(t, err, "Should be able to add custom types")
 	c := fake.NewClientBuilder().WithScheme(scheme)
-	return operator.NewClient(l, c.Build(), conf.GetComponentsAllowed())
+	return operator.NewClient("test-bridge", l, c.Build(), conf.GetComponentsAllowed())
+}
+
+func TestAgent_getHealth(t *testing.T) {
+	fakeClock := testingclock.NewFakeClock(time.Now())
+	type fields struct {
+		configFile string
+	}
+	type args struct {
+		ctx context.Context
+		// List of mappings from namespace/name to a config file, tests are run in order of list
+		configs []map[string]string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		fields fields
+		// want is evaluated with the corresponding configs' index.
+		want []*protobufs.ComponentHealth
+	}{
+		{
+			name: "no data",
+			fields: fields{
+				configFile: agentTestFileName,
+			},
+			args: args{
+				ctx:     context.Background(),
+				configs: nil,
+			},
+			want: []*protobufs.ComponentHealth{
+				{
+					Healthy:            true,
+					StartTimeUnixNano:  uint64(fakeClock.Now().UnixNano()),
+					LastError:          "",
+					Status:             "",
+					StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+					ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
+				},
+			},
+		},
+		{
+			name: "base case",
+			fields: fields{
+				configFile: agentTestFileName,
+			},
+			args: args{
+				ctx: context.Background(),
+				configs: []map[string]string{
+					{
+						testCollectorKey: collectorBasicFile,
+					},
+				},
+			},
+			want: []*protobufs.ComponentHealth{
+				{
+					Healthy:            true,
+					StartTimeUnixNano:  uint64(fakeClock.Now().UnixNano()),
+					StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+					ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+						"testnamespace/collector": {
+							Healthy:            false, // we're working with mocks so the status will never be reconciled.
+							StartTimeUnixNano:  collectorStartTime,
+							LastError:          "",
+							Status:             "",
+							StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "two collectors",
+			fields: fields{
+				configFile: agentTestFileName,
+			},
+			args: args{
+				ctx: context.Background(),
+				configs: []map[string]string{
+					{
+						testCollectorKey:  collectorBasicFile,
+						otherCollectorKey: collectorUpdatedFile,
+					},
+				},
+			},
+			want: []*protobufs.ComponentHealth{
+				{
+					Healthy:            true,
+					StartTimeUnixNano:  uint64(fakeClock.Now().UnixNano()),
+					StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+					ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+						"testnamespace/collector": {
+							Healthy:            false, // we're working with mocks so the status will never be reconciled.
+							StartTimeUnixNano:  collectorStartTime,
+							LastError:          "",
+							Status:             "",
+							StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+						},
+						"testnamespace/other": {
+							Healthy:            false, // we're working with mocks so the status will never be reconciled.
+							StartTimeUnixNano:  collectorStartTime,
+							LastError:          "",
+							Status:             "",
+							StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := &mockOpampClient{}
+			conf := config.NewConfig(logr.Discard())
+			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
+			require.NoError(t, loadErr, "should be able to load config")
+			applier := getFakeApplier(t, conf)
+			agent := NewAgent(l, applier, conf, mockClient)
+			agent.clock = fakeClock
+			err := agent.Start()
+			defer agent.Shutdown()
+			require.NoError(t, err, "should be able to start agent")
+			if len(tt.args.configs) > 0 {
+				require.True(t, len(tt.args.configs) == len(tt.want), "must have an equal amount of configs and checks.")
+			} else {
+				require.Len(t, tt.want, 1, "must have exactly one want if no config is supplied.")
+				require.Equal(t, tt.want[0], agent.getHealth())
+			}
+			for i, configMap := range tt.args.configs {
+				data, err := getMessageDataFromConfigFile(configMap)
+				require.NoError(t, err, "should be able to load data")
+				agent.onMessage(tt.args.ctx, data)
+				effectiveConfig, err := agent.getEffectiveConfig(tt.args.ctx)
+				require.NoError(t, err, "should be able to get effective config")
+				// We should only expect this to happen if we supply configuration
+				assert.Equal(t, effectiveConfig, mockClient.lastEffectiveConfig, "client's config should be updated")
+				assert.NotNilf(t, effectiveConfig.ConfigMap.GetConfigMap(), "configmap should have data")
+				assert.Equal(t, tt.want[i], agent.getHealth())
+			}
+		})
+	}
 }
 
 func TestAgent_onMessage(t *testing.T) {
@@ -250,7 +395,7 @@ func TestAgent_onMessage(t *testing.T) {
 				status: &protobufs.RemoteConfigStatus{
 					LastRemoteConfigHash: []byte(invalidYamlConfigHash),
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
-					ErrorMessage:         "error converting YAML to JSON: yaml: line 21: could not find expected ':'",
+					ErrorMessage:         "error converting YAML to JSON: yaml: line 23: could not find expected ':'",
 				},
 			},
 		},
@@ -413,7 +558,7 @@ func TestAgent_onMessage(t *testing.T) {
 				nextStatus: &protobufs.RemoteConfigStatus{
 					LastRemoteConfigHash: []byte(invalidYamlConfigHash), // The new hash should be of the bad config
 					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED,
-					ErrorMessage:         "error converting YAML to JSON: yaml: line 21: could not find expected ':'",
+					ErrorMessage:         "error converting YAML to JSON: yaml: line 23: could not find expected ':'",
 				},
 			},
 		},

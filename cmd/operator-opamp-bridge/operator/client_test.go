@@ -19,6 +19,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,14 +27,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 var (
-	clientLogger = logf.Log.WithName("client-tests")
+	clientLogger = logr.Discard()
+)
+
+const (
+	bridgeName = "bridge-test"
 )
 
 func getFakeClient(t *testing.T) client.WithWatch {
@@ -57,9 +61,10 @@ func TestClient_Apply(t *testing.T) {
 		config    string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name        string
+		args        args
+		wantErr     bool
+		errContains string
 	}{
 		{
 			name: "base case",
@@ -77,7 +82,8 @@ func TestClient_Apply(t *testing.T) {
 				namespace: "opentelemetry",
 				file:      "testdata/invalid-collector.yaml",
 			},
-			wantErr: true,
+			wantErr:     true,
+			errContains: "error converting YAML to JSON",
 		},
 		{
 			name: "empty config",
@@ -86,7 +92,8 @@ func TestClient_Apply(t *testing.T) {
 				namespace: "opentelemetry",
 				config:    "",
 			},
-			wantErr: true,
+			wantErr:     true,
+			errContains: "Must supply valid configuration",
 		},
 		{
 			name: "create reporting-only",
@@ -95,13 +102,24 @@ func TestClient_Apply(t *testing.T) {
 				namespace: "opentelemetry",
 				file:      "testdata/reporting-collector.yaml",
 			},
-			wantErr: false,
+			wantErr:     true,
+			errContains: "opentelemetry.io/opamp-reporting",
+		},
+		{
+			name: "create managed false",
+			args: args{
+				name:      "test",
+				namespace: "opentelemetry",
+				file:      "testdata/unmanaged-collector.yaml",
+			},
+			wantErr:     true,
+			errContains: "opentelemetry.io/opamp-managed",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeClient := getFakeClient(t)
-			c := NewClient(clientLogger, fakeClient, nil)
+			c := NewClient(bridgeName, clientLogger, fakeClient, nil)
 			var colConfig []byte
 			var err error
 			if len(tt.args.file) > 0 {
@@ -115,8 +133,9 @@ func TestClient_Apply(t *testing.T) {
 				ContentType: "yaml",
 			}
 			applyErr := c.Apply(tt.args.name, tt.args.namespace, configmap)
-			if (applyErr != nil) != tt.wantErr {
-				t.Errorf("Apply() error = %v, wantErr %v", applyErr, tt.wantErr)
+			if tt.wantErr {
+				assert.Error(t, applyErr)
+				assert.ErrorContains(t, applyErr, tt.errContains)
 			}
 		})
 	}
@@ -126,7 +145,7 @@ func Test_collectorUpdate(t *testing.T) {
 	name := "test"
 	namespace := "testing"
 	fakeClient := getFakeClient(t)
-	c := NewClient(clientLogger, fakeClient, nil)
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
 
 	// Load reporting-only collector
 	reportingColConfig, err := loadConfig("testdata/reporting-collector.yaml")
@@ -191,7 +210,7 @@ func Test_collectorDelete(t *testing.T) {
 	name := "test"
 	namespace := "testing"
 	fakeClient := getFakeClient(t)
-	c := NewClient(clientLogger, fakeClient, nil)
+	c := NewClient(bridgeName, clientLogger, fakeClient, nil)
 	colConfig, err := loadConfig("testdata/collector.yaml")
 	require.NoError(t, err, "Should be no error on loading test configuration")
 	configmap := &protobufs.AgentConfigFile{
