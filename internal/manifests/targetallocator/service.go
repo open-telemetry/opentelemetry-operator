@@ -40,7 +40,7 @@ func Service(params manifests.Params) *corev1.Service {
 			Ports: []corev1.ServicePort{{
 				Name:       "targetallocation",
 				Port:       80,
-				TargetPort: intstr.FromInt(8080),
+				TargetPort: intstr.FromString("http"),
 			}},
 		},
 	}
