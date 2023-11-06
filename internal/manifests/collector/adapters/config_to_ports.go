@@ -32,12 +32,12 @@ import (
 type ComponentType int
 
 const (
-	Receivers ComponentType = iota
-	Exporters
+	ComponentTypeReceiver ComponentType = iota
+	ComponentTypeExporter
 )
 
 func (c ComponentType) String() string {
-	return [...]string{"receivers", "exporters"}[c]
+	return [...]string{"receiver", "exporter"}[c]
 }
 
 // ConfigToComponentPorts converts the incoming configuration object into a set of service ports required by the exporters.
@@ -56,27 +56,27 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 	//   componentexample/settings:
 	//     endpoint: 0.0.0.0:12346
 	// in this case, we have 2 ports, named: "componentexample" and "componentexample-settings"
-	componentsProperty, ok := config[cType.String()]
+	componentsProperty, ok := config[fmt.Sprintf("%ss", cType.String())]
 	if !ok {
-		return nil, fmt.Errorf("no %s available as part of the configuration", cType)
+		return nil, fmt.Errorf("no %ss available as part of the configuration", cType)
 	}
 
 	components, ok := componentsProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, fmt.Errorf("%s doesn't contain valid components", cType.String())
+		return nil, fmt.Errorf("%ss doesn't contain valid components", cType.String())
 	}
 
 	var compEnabled map[interface{}]bool
 
 	switch cType {
-	case Exporters:
+	case ComponentTypeExporter:
 		compEnabled = GetEnabledExporters(logger, config)
-	case Receivers:
+	case ComponentTypeReceiver:
 		compEnabled = GetEnabledReceivers(logger, config)
 	}
 
 	if compEnabled == nil {
-		return nil, fmt.Errorf("no enabled %s available as part of the configuration", cType)
+		return nil, fmt.Errorf("no enabled %ss available as part of the configuration", cType)
 	}
 
 	ports := []corev1.ServicePort{}
@@ -88,7 +88,7 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 		}
 		exporter, ok := val.(map[interface{}]interface{})
 		if !ok {
-			logger.V(2).Info("component doesn't seem to be a map of properties", cType.String()[:len(cType.String())-2], key)
+			logger.V(2).Info("component doesn't seem to be a map of properties", cType.String(), key)
 			exporter = map[interface{}]interface{}{}
 		}
 
@@ -96,9 +96,9 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 		var cmptParser parser.ComponentPortParser
 		var err error
 		switch cType {
-		case Exporters:
+		case ComponentTypeExporter:
 			cmptParser, err = exporterParser.For(logger, cmptName, exporter)
-		case Receivers:
+		case ComponentTypeReceiver:
 			cmptParser, err = receiverParser.For(logger, cmptName, exporter)
 		}
 
@@ -126,12 +126,12 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 }
 
 func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) []corev1.ServicePort {
-	ports, err := ConfigToComponentPorts(logger, Receivers, config)
+	ports, err := ConfigToComponentPorts(logger, ComponentTypeReceiver, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
 	}
 
-	exporterPorts, err := ConfigToComponentPorts(logger, Exporters, config)
+	exporterPorts, err := ConfigToComponentPorts(logger, ComponentTypeExporter, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the exporters")
 	}
