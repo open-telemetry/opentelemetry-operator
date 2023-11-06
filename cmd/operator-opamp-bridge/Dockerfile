@@ -1,29 +1,19 @@
-# Build the operator-opamp-bridge binary
-FROM golang:1.21-alpine as builder
-
-WORKDIR /app
+# Get CA certificates from the Alpine package repo
+FROM alpine:3.18 as certificates
 
 RUN apk --no-cache add ca-certificates
 
-# Copy go mod and sum files
-COPY go.mod go.sum ./
-
-RUN go mod download
-
-COPY . .
-
-# Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
-
-######## Start a new stage from scratch #######
+# Start a new stage from scratch
 FROM scratch
+
+ARG TARGETARCH
 
 WORKDIR /root/
 
-# Copy the certs from the builder
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Copy the certs
+COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy the pre-built binary file from the previous stage
-COPY --from=builder /app/main .
+# Copy binary built on the host
+COPY bin/opampbridge_${TARGETARCH} ./main
 
 ENTRYPOINT ["./main"]
