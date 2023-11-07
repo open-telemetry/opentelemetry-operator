@@ -40,11 +40,13 @@ func Test0_43_0Upgrade(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Args: map[string]string{
-				"--metrics-addr":   ":8988",
-				"--metrics-level":  "detailed",
-				"--test-upgrade43": "true",
-				"--test-arg1":      "otel",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Args: map[string]string{
+					"--metrics-addr":   ":8988",
+					"--metrics-level":  "detailed",
+					"--test-upgrade43": "true",
+					"--test-arg1":      "otel",
+				},
 			},
 			Config: `
 receivers:

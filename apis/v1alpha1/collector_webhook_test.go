@@ -62,16 +62,18 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:            ModeDeployment,
-					Replicas:        &one,
-					UpgradeStrategy: UpgradeStrategyAutomatic,
-					ManagementState: ManagementStateManaged,
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MaxUnavailable: &intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 1,
+					Common: OpenTelemetryCommonFields{
+						ManagementState: ManagementStateManaged,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
 						},
+						Replicas: &one,
 					},
+					Mode:            ModeDeployment,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
 				},
 			},
 		},
@@ -79,8 +81,10 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 			name: "provided values in spec",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
+					Common: OpenTelemetryCommonFields{
+						Replicas: &five,
+					},
 					Mode:            ModeSidecar,
-					Replicas:        &five,
 					UpgradeStrategy: "adhoc",
 				},
 			},
@@ -91,16 +95,18 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:            ModeSidecar,
-					Replicas:        &five,
-					UpgradeStrategy: "adhoc",
-					ManagementState: ManagementStateManaged,
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MaxUnavailable: &intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 1,
+					Common: OpenTelemetryCommonFields{
+						Replicas:        &five,
+						ManagementState: ManagementStateManaged,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
 						},
 					},
+					Mode:            ModeSidecar,
+					UpgradeStrategy: "adhoc",
 				},
 			},
 		},
@@ -108,9 +114,12 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 			name: "doesn't override unmanaged",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					ManagementState: ManagementStateUnmanaged,
-					Mode:            ModeSidecar,
-					Replicas:        &five,
+					Common: OpenTelemetryCommonFields{
+						Replicas:        &five,
+						ManagementState: ManagementStateUnmanaged,
+					},
+					Mode: ModeSidecar,
+
 					UpgradeStrategy: "adhoc",
 				},
 			},
@@ -121,16 +130,18 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:            ModeSidecar,
-					Replicas:        &five,
-					UpgradeStrategy: "adhoc",
-					ManagementState: ManagementStateUnmanaged,
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MaxUnavailable: &intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 1,
+					Common: OpenTelemetryCommonFields{
+						ManagementState: ManagementStateUnmanaged,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
 						},
+						Replicas: &five,
 					},
+					Mode:            ModeSidecar,
+					UpgradeStrategy: "adhoc",
 				},
 			},
 		},
@@ -138,9 +149,11 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 			name: "Setting Autoscaler MaxReplicas",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Autoscaler: &AutoscalerSpec{
-						MaxReplicas: &five,
-						MinReplicas: &one,
+					Common: OpenTelemetryCommonFields{
+						Autoscaler: &AutoscalerSpec{
+							MaxReplicas: &five,
+							MinReplicas: &one,
+						},
 					},
 				},
 			},
@@ -151,21 +164,23 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:            ModeDeployment,
-					Replicas:        &one,
-					UpgradeStrategy: UpgradeStrategyAutomatic,
-					ManagementState: ManagementStateManaged,
-					Autoscaler: &AutoscalerSpec{
-						TargetCPUUtilization: &defaultCPUTarget,
-						MaxReplicas:          &five,
-						MinReplicas:          &one,
-					},
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MaxUnavailable: &intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 1,
+					Common: OpenTelemetryCommonFields{
+						Replicas:        &one,
+						ManagementState: ManagementStateManaged,
+						Autoscaler: &AutoscalerSpec{
+							TargetCPUUtilization: &defaultCPUTarget,
+							MaxReplicas:          &five,
+							MinReplicas:          &one,
+						},
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
 						},
 					},
+					Mode:            ModeDeployment,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
 				},
 			},
 		},
@@ -183,24 +198,26 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:            ModeDeployment,
-					Replicas:        &one,
-					UpgradeStrategy: UpgradeStrategyAutomatic,
-					ManagementState: ManagementStateManaged,
-					Autoscaler: &AutoscalerSpec{
-						TargetCPUUtilization: &defaultCPUTarget,
-						// webhook Default adds MaxReplicas to Autoscaler because
-						// OpenTelemetryCollector.Spec.MaxReplicas is deprecated.
-						MaxReplicas: &five,
-						MinReplicas: &one,
-					},
-					MaxReplicas: &five,
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MaxUnavailable: &intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 1,
+					Common: OpenTelemetryCommonFields{
+						Replicas:        &one,
+						ManagementState: ManagementStateManaged,
+						Autoscaler: &AutoscalerSpec{
+							TargetCPUUtilization: &defaultCPUTarget,
+							// webhook Default adds MaxReplicas to Autoscaler because
+							// OpenTelemetryCollector.Spec.MaxReplicas is deprecated.
+							MaxReplicas: &five,
+							MinReplicas: &one,
+						},
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
 						},
 					},
+					Mode:            ModeDeployment,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					MaxReplicas:     &five,
 				},
 			},
 		},
@@ -221,22 +238,24 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:            ModeDeployment,
-					ManagementState: ManagementStateManaged,
+					Common: OpenTelemetryCommonFields{
+						Replicas:        &one,
+						ManagementState: ManagementStateManaged,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
+						},
+					},
+					Mode: ModeDeployment,
 					Ingress: Ingress{
 						Type: IngressTypeRoute,
 						Route: OpenShiftRoute{
 							Termination: TLSRouteTerminationTypeEdge,
 						},
 					},
-					Replicas:        &one,
 					UpgradeStrategy: UpgradeStrategyAutomatic,
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MaxUnavailable: &intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 1,
-						},
-					},
 				},
 			},
 		},
@@ -245,10 +264,12 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MinAvailable: &intstr.IntOrString{
-							Type:   intstr.String,
-							StrVal: "10%",
+					Common: OpenTelemetryCommonFields{
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MinAvailable: &intstr.IntOrString{
+								Type:   intstr.String,
+								StrVal: "10%",
+							},
 						},
 					},
 				},
@@ -260,16 +281,18 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:            ModeDeployment,
-					Replicas:        &one,
-					UpgradeStrategy: UpgradeStrategyAutomatic,
-					ManagementState: ManagementStateManaged,
-					PodDisruptionBudget: &PodDisruptionBudgetSpec{
-						MinAvailable: &intstr.IntOrString{
-							Type:   intstr.String,
-							StrVal: "10%",
+					Common: OpenTelemetryCommonFields{
+						Replicas:        &one,
+						ManagementState: ManagementStateManaged,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MinAvailable: &intstr.IntOrString{
+								Type:   intstr.String,
+								StrVal: "10%",
+							},
 						},
 					},
+					Mode:            ModeDeployment,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
 				},
 			},
 		},
@@ -320,7 +343,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode:            ModeStatefulSet,
 					MinReplicas:     &one,
-					Replicas:        &three,
 					MaxReplicas:     &five,
 					UpgradeStrategy: "adhoc",
 					TargetAllocator: OpenTelemetryTargetAllocator{
@@ -341,27 +363,30 @@ func TestOTELColValidatingWebhook(t *testing.T) {
       thrift_http:
         endpoint: 0.0.0.0:15268
 `,
-					Ports: []v1.ServicePort{
-						{
-							Name: "port1",
-							Port: 5555,
-						},
-						{
-							Name:     "port2",
-							Port:     5554,
-							Protocol: v1.ProtocolUDP,
-						},
-					},
-					Autoscaler: &AutoscalerSpec{
-						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
-							ScaleDown: &autoscalingv2.HPAScalingRules{
-								StabilizationWindowSeconds: &three,
+					Common: OpenTelemetryCommonFields{
+						Replicas: &three,
+						Ports: []v1.ServicePort{
+							{
+								Name: "port1",
+								Port: 5555,
 							},
-							ScaleUp: &autoscalingv2.HPAScalingRules{
-								StabilizationWindowSeconds: &five,
+							{
+								Name:     "port2",
+								Port:     5554,
+								Protocol: v1.ProtocolUDP,
 							},
 						},
-						TargetCPUUtilization: &five,
+						Autoscaler: &AutoscalerSpec{
+							Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+								ScaleDown: &autoscalingv2.HPAScalingRules{
+									StabilizationWindowSeconds: &three,
+								},
+								ScaleUp: &autoscalingv2.HPAScalingRules{
+									StabilizationWindowSeconds: &five,
+								},
+							},
+							TargetCPUUtilization: &five,
+						},
 					},
 				},
 			},
@@ -370,8 +395,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid mode with volume claim templates",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:                 ModeSidecar,
-					VolumeClaimTemplates: []v1.PersistentVolumeClaim{{}, {}},
+					Mode: ModeSidecar,
+					Common: OpenTelemetryCommonFields{
+						VolumeClaimTemplates: []v1.PersistentVolumeClaim{{}, {}},
+					},
 				},
 			},
 			expectedErr: "does not support the attribute 'volumeClaimTemplates'",
@@ -380,8 +407,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid mode with tolerations",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:        ModeSidecar,
-					Tolerations: []v1.Toleration{{}, {}},
+					Mode: ModeSidecar,
+					Common: OpenTelemetryCommonFields{
+						Tolerations: []v1.Toleration{{}, {}},
+					},
 				},
 			},
 			expectedErr: "does not support the attribute 'tolerations'",
@@ -414,12 +443,14 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid port name",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Ports: []v1.ServicePort{
-						{
-							// this port name contains a non alphanumeric character, which is invalid.
-							Name:     "-test🦄port",
-							Port:     12345,
-							Protocol: v1.ProtocolTCP,
+					Common: OpenTelemetryCommonFields{
+						Ports: []v1.ServicePort{
+							{
+								// this port name contains a non alphanumeric character, which is invalid.
+								Name:     "-test🦄port",
+								Port:     12345,
+								Protocol: v1.ProtocolTCP,
+							},
 						},
 					},
 				},
@@ -430,10 +461,12 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid port name, too long",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Ports: []v1.ServicePort{
-						{
-							Name: "aaaabbbbccccdddd", // len: 16, too long
-							Port: 5555,
+					Common: OpenTelemetryCommonFields{
+						Ports: []v1.ServicePort{
+							{
+								Name: "aaaabbbbccccdddd", // len: 16, too long
+								Port: 5555,
+							},
 						},
 					},
 				},
@@ -444,10 +477,12 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid port num",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Ports: []v1.ServicePort{
-						{
-							Name: "aaaabbbbccccddd", // len: 15
-							// no port set means it's 0, which is invalid
+					Common: OpenTelemetryCommonFields{
+						Ports: []v1.ServicePort{
+							{
+								Name: "aaaabbbbccccddd", // len: 15
+								// no port set means it's 0, which is invalid
+							},
 						},
 					},
 				},
@@ -469,7 +504,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					MaxReplicas: &three,
-					Replicas:    &five,
+					Common: OpenTelemetryCommonFields{
+						Replicas: &five,
+					},
 				},
 			},
 			expectedErr:      "replicas must not be greater than maxReplicas",
@@ -502,10 +539,12 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					MaxReplicas: &three,
-					Autoscaler: &AutoscalerSpec{
-						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
-							ScaleDown: &autoscalingv2.HPAScalingRules{
-								StabilizationWindowSeconds: &zero,
+					Common: OpenTelemetryCommonFields{
+						Autoscaler: &AutoscalerSpec{
+							Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+								ScaleDown: &autoscalingv2.HPAScalingRules{
+									StabilizationWindowSeconds: &zero,
+								},
 							},
 						},
 					},
@@ -519,10 +558,12 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					MaxReplicas: &three,
-					Autoscaler: &AutoscalerSpec{
-						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
-							ScaleUp: &autoscalingv2.HPAScalingRules{
-								StabilizationWindowSeconds: &zero,
+					Common: OpenTelemetryCommonFields{
+						Autoscaler: &AutoscalerSpec{
+							Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+								ScaleUp: &autoscalingv2.HPAScalingRules{
+									StabilizationWindowSeconds: &zero,
+								},
 							},
 						},
 					},
@@ -536,8 +577,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					MaxReplicas: &three,
-					Autoscaler: &AutoscalerSpec{
-						TargetCPUUtilization: &zero,
+					Common: OpenTelemetryCommonFields{
+						Autoscaler: &AutoscalerSpec{
+							TargetCPUUtilization: &zero,
+						},
 					},
 				},
 			},
@@ -548,9 +591,11 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "autoscaler minReplicas is less than maxReplicas",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Autoscaler: &AutoscalerSpec{
-						MaxReplicas: &one,
-						MinReplicas: &five,
+					Common: OpenTelemetryCommonFields{
+						Autoscaler: &AutoscalerSpec{
+							MaxReplicas: &one,
+							MinReplicas: &five,
+						},
 					},
 				},
 			},
@@ -561,10 +606,12 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					MaxReplicas: &three,
-					Autoscaler: &AutoscalerSpec{
-						Metrics: []MetricSpec{
-							{
-								Type: autoscalingv2.ResourceMetricSourceType,
+					Common: OpenTelemetryCommonFields{
+						Autoscaler: &AutoscalerSpec{
+							Metrics: []MetricSpec{
+								{
+									Type: autoscalingv2.ResourceMetricSourceType,
+								},
 							},
 						},
 					},
@@ -578,17 +625,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					MaxReplicas: &three,
-					Autoscaler: &AutoscalerSpec{
-						Metrics: []MetricSpec{
-							{
-								Type: autoscalingv2.PodsMetricSourceType,
-								Pods: &autoscalingv2.PodsMetricSource{
-									Metric: autoscalingv2.MetricIdentifier{
-										Name: "custom1",
-									},
-									Target: autoscalingv2.MetricTarget{
-										Type:         autoscalingv2.AverageValueMetricType,
-										AverageValue: resource.NewQuantity(int64(0), resource.DecimalSI),
+					Common: OpenTelemetryCommonFields{
+						Autoscaler: &AutoscalerSpec{
+							Metrics: []MetricSpec{
+								{
+									Type: autoscalingv2.PodsMetricSourceType,
+									Pods: &autoscalingv2.PodsMetricSource{
+										Metric: autoscalingv2.MetricIdentifier{
+											Name: "custom1",
+										},
+										Target: autoscalingv2.MetricTarget{
+											Type:         autoscalingv2.AverageValueMetricType,
+											AverageValue: resource.NewQuantity(int64(0), resource.DecimalSI),
+										},
 									},
 								},
 							},
@@ -604,17 +653,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					MaxReplicas: &three,
-					Autoscaler: &AutoscalerSpec{
-						Metrics: []MetricSpec{
-							{
-								Type: autoscalingv2.PodsMetricSourceType,
-								Pods: &autoscalingv2.PodsMetricSource{
-									Metric: autoscalingv2.MetricIdentifier{
-										Name: "custom1",
-									},
-									Target: autoscalingv2.MetricTarget{
-										Type:               autoscalingv2.UtilizationMetricType,
-										AverageUtilization: &one,
+					Common: OpenTelemetryCommonFields{
+						Autoscaler: &AutoscalerSpec{
+							Metrics: []MetricSpec{
+								{
+									Type: autoscalingv2.PodsMetricSourceType,
+									Pods: &autoscalingv2.PodsMetricSource{
+										Metric: autoscalingv2.MetricIdentifier{
+											Name: "custom1",
+										},
+										Target: autoscalingv2.MetricTarget{
+											Type:               autoscalingv2.UtilizationMetricType,
+											AverageUtilization: &one,
+										},
 									},
 								},
 							},
@@ -643,8 +694,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid mode with priorityClassName",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Mode:              ModeSidecar,
-					PriorityClassName: "test-class",
+					Mode: ModeSidecar,
+					Common: OpenTelemetryCommonFields{
+						PriorityClassName: "test-class",
+					},
 				},
 			},
 			expectedErr: "does not support the attribute 'priorityClassName'",
@@ -654,16 +707,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeSidecar,
-					Affinity: &v1.Affinity{
-						NodeAffinity: &v1.NodeAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
-								NodeSelectorTerms: []v1.NodeSelectorTerm{
-									{
-										MatchExpressions: []v1.NodeSelectorRequirement{
-											{
-												Key:      "node",
-												Operator: v1.NodeSelectorOpIn,
-												Values:   []string{"test-node"},
+					Common: OpenTelemetryCommonFields{
+						Affinity: &v1.Affinity{
+							NodeAffinity: &v1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+									NodeSelectorTerms: []v1.NodeSelectorTerm{
+										{
+											MatchExpressions: []v1.NodeSelectorRequirement{
+												{
+													Key:      "node",
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"test-node"},
+												},
 											},
 										},
 									},

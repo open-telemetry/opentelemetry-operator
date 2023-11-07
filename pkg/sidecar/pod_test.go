@@ -52,9 +52,11 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Namespace: "some-app",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			InitContainers: []corev1.Container{
-				{
-					Name: "test",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				InitContainers: []corev1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 			Config: `

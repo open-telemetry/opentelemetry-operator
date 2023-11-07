@@ -41,10 +41,12 @@ func TestRemoveMetricsTypeFlags(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Args: map[string]string{
-				// this would not happen in the real world, as it's either one or another, but we aren't going that far
-				"--new-metrics":    "true",
-				"--legacy-metrics": "true",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Args: map[string]string{
+					// this would not happen in the real world, as it's either one or another, but we aren't going that far
+					"--new-metrics":    "true",
+					"--legacy-metrics": "true",
+				},
 			},
 		},
 	}

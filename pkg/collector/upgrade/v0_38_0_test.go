@@ -40,12 +40,14 @@ func Test0_38_0Upgrade(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Args: map[string]string{
-				"--hii":         "hello",
-				"--log-profile": "",
-				"--log-format":  "hii",
-				"--log-level":   "debug",
-				"--arg1":        "",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Args: map[string]string{
+					"--hii":         "hello",
+					"--log-profile": "",
+					"--log-format":  "hii",
+					"--log-level":   "debug",
+					"--arg1":        "",
+				},
 			},
 			Config: `
 receivers:

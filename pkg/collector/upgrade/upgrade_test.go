@@ -163,7 +163,9 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementStateType) v1alpha1.OpenTelemetryCollector {
 	return v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			ManagementState: managementState,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				ManagementState: managementState,
+			},
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,

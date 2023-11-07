@@ -80,10 +80,12 @@ service:
 						Namespace: "test",
 					},
 					Spec: v1alpha1.OpenTelemetryCollectorSpec{
-						Replicas: &one,
-						Mode:     "deployment",
-						Image:    "test",
-						Config:   goodConfig,
+						Common: v1alpha1.OpenTelemetryCommonFields{
+							Image:    "test",
+							Replicas: &one,
+						},
+						Mode:   "deployment",
+						Config: goodConfig,
 					},
 				},
 			},
@@ -316,9 +318,11 @@ service:
 						Namespace: "test",
 					},
 					Spec: v1alpha1.OpenTelemetryCollectorSpec{
-						Replicas: &one,
-						Mode:     "deployment",
-						Image:    "test",
+						Common: v1alpha1.OpenTelemetryCommonFields{
+							Image:    "test",
+							Replicas: &one,
+						},
+						Mode: "deployment",
 						Ingress: v1alpha1.Ingress{
 							Type:     v1alpha1.IngressTypeNginx,
 							Hostname: "example.com",
@@ -631,8 +635,10 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 						Namespace: "test",
 					},
 					Spec: v1alpha1.OpAMPBridgeSpec{
-						Replicas: &one,
-						Image:    "test",
+						Common: v1alpha1.OpenTelemetryCommonFields{
+							Replicas: &one,
+							Image:    "test",
+						},
 						Endpoint: "ws://opamp-server:4320/v1/opamp",
 						Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
 							v1alpha1.OpAMPBridgeCapabilityReportsStatus:                  true,

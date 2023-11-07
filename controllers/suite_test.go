@@ -209,19 +209,21 @@ func paramsWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) manifests.Par
 				Namespace: "default",
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				Replicas: &replicas,
-				Config:   string(configYAML),
-				Mode:     mode,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+					Ports: []v1.ServicePort{{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}},
+					Replicas: &replicas,
+				},
+				Config: string(configYAML),
+				Mode:   mode,
 			},
 		},
 		Scheme:   testScheme,
@@ -260,21 +262,25 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
 				Mode: v1alpha1.ModeStatefulSet,
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Ports: []v1.ServicePort{{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}},
+					Replicas: &replicas,
+				},
 				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 					Enabled: true,
-					Image:   taContainerImage,
+					Common: v1alpha1.OpenTelemetryCommonFields{
+						Image: taContainerImage,
+					},
 				},
-				Replicas: &replicas,
-				Config:   string(configYAML),
+				Config: string(configYAML),
 			},
 		},
 		Scheme: testScheme,
@@ -306,21 +312,23 @@ func paramsWithHPA(minReps, maxReps int32) manifests.Params {
 				UID:       instanceUID,
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Autoscaler: &v1alpha1.AutoscalerSpec{
+						MinReplicas:          &minReps,
+						MaxReplicas:          &maxReps,
+						TargetCPUUtilization: &cpuUtilization,
 					},
-					NodePort: 0,
-				}},
-				Config: string(configYAML),
-				Autoscaler: &v1alpha1.AutoscalerSpec{
-					MinReplicas:          &minReps,
-					MaxReplicas:          &maxReps,
-					TargetCPUUtilization: &cpuUtilization,
+					Ports: []v1.ServicePort{{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}},
 				},
+				Config: string(configYAML),
 			},
 		},
 		Scheme:   testScheme,
@@ -372,17 +380,19 @@ func paramsWithPolicy(minAvailable, maxUnavailable int32) manifests.Params {
 				UID:       instanceUID,
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				Config:              string(configYAML),
-				PodDisruptionBudget: pdb,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					PodDisruptionBudget: pdb,
+					Ports: []v1.ServicePort{{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}},
+				},
+				Config: string(configYAML),
 			},
 		},
 		Scheme:   testScheme,
@@ -406,14 +416,16 @@ func opampBridgeParams() manifests.Params {
 				UID:       instanceUID,
 			},
 			Spec: v1alpha1.OpAMPBridgeSpec{
-				Image: "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
-				Ports: []v1.ServicePort{
-					{
-						Name: "metrics",
-						Port: 8081,
-						TargetPort: intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 8081,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Image: "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
+					Ports: []v1.ServicePort{
+						{
+							Name: "metrics",
+							Port: 8081,
+							TargetPort: intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 8081,
+							},
 						},
 					},
 				},

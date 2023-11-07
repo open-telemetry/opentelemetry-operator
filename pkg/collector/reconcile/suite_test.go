@@ -214,19 +214,21 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 				UID:       instanceUID,
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				Replicas: &replicas,
-				Config:   string(configYAML),
-				Mode:     mode,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+					Ports: []v1.ServicePort{{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}},
+					Replicas: &replicas,
+				},
+				Config: string(configYAML),
+				Mode:   mode,
 			},
 		},
 		Scheme:   testScheme,
@@ -266,21 +268,25 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
 				Mode: v1alpha1.ModeStatefulSet,
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Replicas: &replicas,
+					Ports: []v1.ServicePort{{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}},
+				},
 				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 					Enabled: true,
-					Image:   taContainerImage,
+					Common: v1alpha1.OpenTelemetryCommonFields{
+						Image: taContainerImage,
+					},
 				},
-				Replicas: &replicas,
-				Config:   string(configYAML),
+				Config: string(configYAML),
 			},
 		},
 		Scheme: testScheme,

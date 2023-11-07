@@ -72,10 +72,12 @@ func TestNewObjectsOnReconciliation(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Mode: v1alpha1.ModeDeployment,
-			Ports: []corev1.ServicePort{
-				{
-					Name: "telnet",
-					Port: 49935,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Ports: []corev1.ServicePort{
+					{
+						Name: "telnet",
+						Port: 49935,
+					},
 				},
 			},
 			Ingress: v1alpha1.Ingress{

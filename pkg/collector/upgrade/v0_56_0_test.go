@@ -41,7 +41,9 @@ func Test0_56_0Upgrade(t *testing.T) {
 			Namespace: "somewhere",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Replicas:    &one,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Replicas: &one,
+			},
 			MaxReplicas: &three,
 		},
 	}

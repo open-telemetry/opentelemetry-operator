@@ -54,7 +54,9 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpAMPBridgeSpec{
-					Replicas:        &one,
+					Common: OpenTelemetryCommonFields{
+						Replicas: &one,
+					},
 					UpgradeStrategy: UpgradeStrategyAutomatic,
 					Capabilities:    map[OpAMPBridgeCapability]bool{OpAMPBridgeCapabilityReportsStatus: true},
 				},
@@ -64,7 +66,9 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 			name: "provided values in spec",
 			opampBridge: OpAMPBridge{
 				Spec: OpAMPBridgeSpec{
-					Replicas:        &five,
+					Common: OpenTelemetryCommonFields{
+						Replicas: &five,
+					},
 					UpgradeStrategy: "adhoc",
 				},
 			},
@@ -75,7 +79,9 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpAMPBridgeSpec{
-					Replicas:        &five,
+					Common: OpenTelemetryCommonFields{
+						Replicas: &five,
+					},
 					UpgradeStrategy: "adhoc",
 					Capabilities:    map[OpAMPBridgeCapability]bool{OpAMPBridgeCapabilityReportsStatus: true},
 				},
@@ -97,7 +103,9 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 					},
 				},
 				Spec: OpAMPBridgeSpec{
-					Replicas:        &one,
+					Common: OpenTelemetryCommonFields{
+						Replicas: &one,
+					},
 					UpgradeStrategy: UpgradeStrategyAutomatic,
 					Capabilities: map[OpAMPBridgeCapability]bool{
 						OpAMPBridgeCapabilityReportsStatus: true,
@@ -187,7 +195,9 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: OpAMPBridgeSpec{
-					Replicas: &two,
+					Common: OpenTelemetryCommonFields{
+						Replicas: &two,
+					},
 					Endpoint: "ws://opamp-server:4320/v1/opamp",
 					Capabilities: map[OpAMPBridgeCapability]bool{
 						OpAMPBridgeCapabilityReportsStatus:                  true,
@@ -224,12 +234,14 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 						OpAMPBridgeCapabilityReportsHealth:                  true,
 						OpAMPBridgeCapabilityReportsRemoteConfig:            true,
 					},
-					Ports: []v1.ServicePort{
-						{
-							// this port name contains a non alphanumeric character, which is invalid.
-							Name:     "-test🦄port",
-							Port:     12345,
-							Protocol: v1.ProtocolTCP,
+					Common: OpenTelemetryCommonFields{
+						Ports: []v1.ServicePort{
+							{
+								// this port name contains a non alphanumeric character, which is invalid.
+								Name:     "-test🦄port",
+								Port:     12345,
+								Protocol: v1.ProtocolTCP,
+							},
 						},
 					},
 				},
@@ -253,10 +265,13 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 						OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
 						OpAMPBridgeCapabilityReportsHealth:                  true,
 						OpAMPBridgeCapabilityReportsRemoteConfig:            true,
-					}, Ports: []v1.ServicePort{
-						{
-							Name: "aaaabbbbccccdddd", // len: 16, too long
-							Port: 5555,
+					},
+					Common: OpenTelemetryCommonFields{
+						Ports: []v1.ServicePort{
+							{
+								Name: "aaaabbbbccccdddd", // len: 16, too long
+								Port: 5555,
+							},
 						},
 					},
 				},
@@ -281,10 +296,12 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 						OpAMPBridgeCapabilityReportsHealth:                  true,
 						OpAMPBridgeCapabilityReportsRemoteConfig:            true,
 					},
-					Ports: []v1.ServicePort{
-						{
-							Name: "aaaabbbbccccddd", // len: 15
-							// no port set means it's 0, which is invalid
+					Common: OpenTelemetryCommonFields{
+						Ports: []v1.ServicePort{
+							{
+								Name: "aaaabbbbccccddd", // len: 15
+								// no port set means it's 0, which is invalid
+							},
 						},
 					},
 				},
