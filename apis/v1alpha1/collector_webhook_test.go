@@ -294,7 +294,7 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 }
 
 // TODO: a lot of these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
-// deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
+// deprecated and moved to .Spec.Common.Autoscaler. Fine to use these fields to test that old CRD is
 // still supported but should eventually be updated.
 func TestOTELColValidatingWebhook(t *testing.T) {
 	minusOne := int32(-1)

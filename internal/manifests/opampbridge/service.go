@@ -26,7 +26,7 @@ import (
 
 func Service(params manifests.Params) *corev1.Service {
 	name := naming.OpAMPBridgeService(params.OpAMPBridge.Name)
-	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, []string{})
+	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Common.Image, ComponentOpAMPBridge, []string{})
 	selector := manifestutils.SelectorLabels(params.OpAMPBridge.ObjectMeta, ComponentOpAMPBridge)
 
 	ports := []corev1.ServicePort{{
@@ -35,7 +35,7 @@ func Service(params manifests.Params) *corev1.Service {
 		TargetPort: intstr.FromInt(8080),
 	}}
 
-	ports = append(params.OpAMPBridge.Spec.Ports, ports...)
+	ports = append(params.OpAMPBridge.Spec.Common.Ports, ports...)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

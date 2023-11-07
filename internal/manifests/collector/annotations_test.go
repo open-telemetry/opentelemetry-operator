@@ -87,7 +87,9 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 			Annotations: map[string]string{"myapp": "mycomponent"},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodAnnotations: map[string]string{"pod_annotation": "pod_annotation_value"},
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PodAnnotations: map[string]string{"pod_annotation": "pod_annotation_value"},
+			},
 		},
 	}
 

@@ -30,17 +30,17 @@ import (
 
 func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	// return if args exist
-	if len(otelcol.Spec.Args) == 0 {
+	if len(otelcol.Spec.Common.Args) == 0 {
 		return otelcol, nil
 	}
 
 	// Remove otelcol args --log-level, --log-profile, --log-format
 	// are deprecated in reference to https://github.com/open-telemetry/opentelemetry-collector/pull/4213
 	foundLoggingArgs := make(map[string]string)
-	for argKey, argValue := range otelcol.Spec.Args {
+	for argKey, argValue := range otelcol.Spec.Common.Args {
 		if argKey == "--log-level" || argKey == "--log-profile" || argKey == "--log-format" {
 			foundLoggingArgs[argKey] = argValue
-			delete(otelcol.Spec.Args, argKey)
+			delete(otelcol.Spec.Common.Args, argKey)
 		}
 	}
 
@@ -97,7 +97,7 @@ func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		})
 		existing := &corev1.ConfigMap{}
 		updated := existing.DeepCopy()
-		u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.38.0 dropped the deprecated logging arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", keys))
+		u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.38.0 dropped the deprecated logging arguments "+"i.e. %v from otelcol custom resource otelcol.Spec.Common.Args and adding them to otelcol.spec.config.service.telemetry.logs, if no logging parameters are configured already.", keys))
 	}
 	return otelcol, nil
 }

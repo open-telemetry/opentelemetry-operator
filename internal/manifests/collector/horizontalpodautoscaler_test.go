@@ -46,11 +46,13 @@ func TestHPA(t *testing.T) {
 				Name: "my-instance",
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Autoscaler: &v1alpha1.AutoscalerSpec{
-					MinReplicas:             &minReplicas,
-					MaxReplicas:             &maxReplicas,
-					TargetCPUUtilization:    &cpuUtilization,
-					TargetMemoryUtilization: &memoryUtilization,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Autoscaler: &v1alpha1.AutoscalerSpec{
+						MinReplicas:             &minReplicas,
+						MaxReplicas:             &maxReplicas,
+						TargetCPUUtilization:    &cpuUtilization,
+						TargetMemoryUtilization: &memoryUtilization,
+					},
 				},
 			},
 		},
@@ -61,9 +63,11 @@ func TestHPA(t *testing.T) {
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
 				MinReplicas: &minReplicas,
 				MaxReplicas: &maxReplicas,
-				Autoscaler: &v1alpha1.AutoscalerSpec{
-					TargetCPUUtilization:    &cpuUtilization,
-					TargetMemoryUtilization: &memoryUtilization,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Autoscaler: &v1alpha1.AutoscalerSpec{
+						TargetCPUUtilization:    &cpuUtilization,
+						TargetMemoryUtilization: &memoryUtilization,
+					},
 				},
 			},
 		},

@@ -29,11 +29,11 @@ import (
 
 func TestPodAnnotations(t *testing.T) {
 	instance := collectorInstance()
-	instance.Spec.PodAnnotations = map[string]string{
+	instance.Spec.Common.PodAnnotations = map[string]string{
 		"key": "value",
 	}
 	annotations := Annotations(instance, nil)
-	assert.Subset(t, annotations, instance.Spec.PodAnnotations)
+	assert.Subset(t, annotations, instance.Spec.Common.PodAnnotations)
 }
 
 func TestConfigMapHash(t *testing.T) {

@@ -46,7 +46,9 @@ func TestServiceAccountOverride(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-				ServiceAccount: "my-special-sa",
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					ServiceAccount: "my-special-sa",
+				},
 			},
 		},
 	}

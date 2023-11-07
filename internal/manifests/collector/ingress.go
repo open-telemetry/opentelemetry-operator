@@ -149,7 +149,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryColle
 		logger.Error(err, "couldn't build the ingress for this instance")
 	}
 
-	if len(otelcol.Spec.Ports) > 0 {
+	if len(otelcol.Spec.Common.Ports) > 0 {
 		// we should add all the ports from the CR
 		// there are two cases where problems might occur:
 		// 1) when the port number is already being used by a receiver
@@ -157,7 +157,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryColle
 		//
 		// in the first case, we remove the port we inferred from the list
 		// in the second case, we rename our inferred port to something like "port-%d"
-		portNumbers, portNames := extractPortNumbersAndNames(otelcol.Spec.Ports)
+		portNumbers, portNames := extractPortNumbersAndNames(otelcol.Spec.Common.Ports)
 		var resultingInferredPorts []corev1.ServicePort
 		for _, inferred := range ports {
 			if filtered := filterPort(logger, inferred, portNumbers, portNames); filtered != nil {
@@ -165,7 +165,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryColle
 			}
 		}
 
-		ports = append(otelcol.Spec.Ports, resultingInferredPorts...)
+		ports = append(otelcol.Spec.Common.Ports, resultingInferredPorts...)
 	}
 	return ports
 }

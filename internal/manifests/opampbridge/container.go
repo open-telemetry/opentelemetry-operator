@@ -26,7 +26,7 @@ import (
 
 // Container builds a container for the given OpAMPBridge.
 func Container(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAMPBridge) corev1.Container {
-	image := opampBridge.Spec.Image
+	image := opampBridge.Spec.Common.Image
 	if len(image) == 0 {
 		image = cfg.OperatorOpAMPBridgeImage()
 	}
@@ -36,12 +36,12 @@ func Container(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAMP
 		MountPath: "/conf",
 	}}
 
-	if len(opampBridge.Spec.VolumeMounts) > 0 {
-		volumeMounts = append(volumeMounts, opampBridge.Spec.VolumeMounts...)
+	if len(opampBridge.Spec.Common.VolumeMounts) > 0 {
+		volumeMounts = append(volumeMounts, opampBridge.Spec.Common.VolumeMounts...)
 	}
 
-	var envVars = opampBridge.Spec.Env
-	if opampBridge.Spec.Env == nil {
+	var envVars = opampBridge.Spec.Common.Env
+	if opampBridge.Spec.Common.Env == nil {
 		envVars = []corev1.EnvVar{}
 	}
 
@@ -67,11 +67,11 @@ func Container(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAMP
 	return corev1.Container{
 		Name:            naming.OpAMPBridgeContainer(),
 		Image:           image,
-		ImagePullPolicy: opampBridge.Spec.ImagePullPolicy,
+		ImagePullPolicy: opampBridge.Spec.Common.ImagePullPolicy,
 		Env:             envVars,
 		VolumeMounts:    volumeMounts,
-		EnvFrom:         opampBridge.Spec.EnvFrom,
-		Resources:       opampBridge.Spec.Resources,
-		SecurityContext: opampBridge.Spec.SecurityContext,
+		EnvFrom:         opampBridge.Spec.Common.EnvFrom,
+		Resources:       opampBridge.Spec.Common.Resources,
+		SecurityContext: opampBridge.Spec.Common.SecurityContext,
 	}
 }

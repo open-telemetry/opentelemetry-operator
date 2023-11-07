@@ -26,13 +26,13 @@ import (
 
 func PodDisruptionBudget(params manifests.Params) client.Object {
 	// defaulting webhook should always set this, but if unset then return nil.
-	if params.OtelCol.Spec.PodDisruptionBudget == nil {
+	if params.OtelCol.Spec.Common.PodDisruptionBudget == nil {
 		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
 		return nil
 	}
 
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Common.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 	annotations := Annotations(params.OtelCol)
 
 	objectMeta := metav1.ObjectMeta{
@@ -45,8 +45,8 @@ func PodDisruptionBudget(params manifests.Params) client.Object {
 	return &policyV1.PodDisruptionBudget{
 		ObjectMeta: objectMeta,
 		Spec: policyV1.PodDisruptionBudgetSpec{
-			MinAvailable:   params.OtelCol.Spec.PodDisruptionBudget.MinAvailable,
-			MaxUnavailable: params.OtelCol.Spec.PodDisruptionBudget.MaxUnavailable,
+			MinAvailable:   params.OtelCol.Spec.Common.PodDisruptionBudget.MinAvailable,
+			MaxUnavailable: params.OtelCol.Spec.Common.PodDisruptionBudget.MaxUnavailable,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: objectMeta.Labels,
 			},

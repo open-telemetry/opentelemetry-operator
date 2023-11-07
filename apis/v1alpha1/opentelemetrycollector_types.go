@@ -46,7 +46,7 @@ const (
 // SEE: https://github.com/open-telemetry/opentelemetry-operator/issues/1306.
 // NOTE: As a workaround, port name and appProtocol could be specified directly
 // in the CR.
-// SEE: OpenTelemetryCollector.spec.ports[index].
+// SEE: OpenTelemetryCollector.Spec.Common.Ports[index].
 type Ingress struct {
 	// Type default value is: ""
 	// Supported types are: ingress, route
@@ -91,154 +91,37 @@ type OpenShiftRoute struct {
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
-	// ManagementState defines if the CR should be managed by the operator or not.
-	// Default is managed.
-	//
-	// +required
-	// +kubebuilder:validation:Required
-	// +kubebuilder:default:=managed
-	ManagementState ManagementStateType `json:"managementState,omitempty"`
-	// Resources to set on the OpenTelemetry Collector pods.
-	// +optional
-	Resources v1.ResourceRequirements `json:"resources,omitempty"`
-	// NodeSelector to schedule OpenTelemetry Collector pods.
-	// This is only relevant to daemonset, statefulset, and deployment mode
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Args is the set of arguments to pass to the OpenTelemetry Collector binary
-	// +optional
-	Args map[string]string `json:"args,omitempty"`
-	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling
-	// +optional
-	Replicas *int32 `json:"replicas,omitempty"`
+	// Common defines fields that are common to all OpenTelemetry CRD workloads.
+	Common OpenTelemetryCommonFields `json:",inline"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.
+	// Deprecated: use "OpenTelemetryCollector.Spec.Common.Autoscaler.MinReplicas" instead.
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.
+	// Deprecated: use "OpenTelemetryCollector.Spec.Common.Autoscaler.MaxReplicas" instead.
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
-	// Autoscaler specifies the pod autoscaling configuration to use
-	// for the OpenTelemetryCollector workload.
-	//
-	// +optional
-	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
-	// PodDisruptionBudget specifies the pod disruption budget configuration to use
-	// for the OpenTelemetryCollector workload.
-	//
-	// +optional
-	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
-	// SecurityContext configures the container security context for
-	// the opentelemetry-collector container.
-	//
-	// In deployment, daemonset, or statefulset mode, this controls
-	// the security context settings for the primary application
-	// container.
-	//
-	// In sidecar mode, this controls the security context for the
-	// injected sidecar container.
-	//
-	// +optional
-	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
-	// PodSecurityContext configures the pod security context for the
-	// opentelemetry-collector pod, when running as a deployment, daemonset,
-	// or statefulset.
-	//
-	// In sidecar mode, the opentelemetry-operator will ignore this setting.
-	//
-	// +optional
-	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
-	// PodAnnotations is the set of annotations that will be attached to
-	// Collector and Target Allocator pods.
-	// +optional
-	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	TargetAllocator OpenTelemetryTargetAllocator `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	Mode Mode `json:"mode,omitempty"`
-	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
-	// the operator will not automatically create a ServiceAccount for the collector.
-	// +optional
-	ServiceAccount string `json:"serviceAccount,omitempty"`
-	// Image indicates the container image to use for the OpenTelemetry Collector.
-	// +optional
-	Image string `json:"image,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
 	// +optional
 	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`
-
-	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
-	// +optional
-	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// +required
 	Config string `json:"config,omitempty"`
-	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
-	// +optional
-	// +listType=atomic
-	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
-	// Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator
-	// will attempt to infer the required ports by parsing the .Spec.Config property but this property can be
-	// used to open additional ports that can't be inferred by the operator, like for custom receivers.
-	// +optional
-	// +listType=atomic
-	Ports []v1.ServicePort `json:"ports,omitempty"`
-	// ENV vars to set on the OpenTelemetry Collector's Pods. These can then in certain cases be
-	// consumed in the config file for the Collector.
-	// +optional
-	Env []v1.EnvVar `json:"env,omitempty"`
-	// List of sources to populate environment variables on the OpenTelemetry Collector's Pods.
-	// These can then in certain cases be consumed in the config file for the Collector.
-	// +optional
-	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
-	// VolumeClaimTemplates will provide stable storage using PersistentVolumes. Only available when the mode=statefulset.
-	// +optional
-	// +listType=atomic
-	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
-	// Toleration to schedule OpenTelemetry Collector pods.
-	// This is only relevant to daemonset, statefulset, and deployment mode
-	// +optional
-	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// Volumes represents which volumes to use in the underlying collector deployment(s).
-	// +optional
-	// +listType=atomic
-	Volumes []v1.Volume `json:"volumes,omitempty"`
 	// Ingress is used to specify how OpenTelemetry Collector is exposed. This
 	// functionality is only available if one of the valid modes is set.
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
 	Ingress Ingress `json:"ingress,omitempty"`
-	// HostNetwork indicates if the pod should run in the host networking namespace.
-	// +optional
-	HostNetwork bool `json:"hostNetwork,omitempty"`
-	// If specified, indicates the pod's priority.
-	// If not specified, the pod priority will be default or zero if there is no
-	// default.
-	// +optional
-	PriorityClassName string `json:"priorityClassName,omitempty"`
-	// If specified, indicates the pod's scheduling constraints
-	// +optional
-	Affinity *v1.Affinity `json:"affinity,omitempty"`
-	// Actions that the management system should take in response to container lifecycle events. Cannot be updated.
-	// +optional
-	Lifecycle *v1.Lifecycle `json:"lifecycle,omitempty"`
-	// Duration in seconds the pod needs to terminate gracefully upon probe failure.
-	// +optional
-	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
-	// InitContainers allows injecting initContainers to the Collector's pod definition.
-	// These init containers can be used to fetch secrets for injection into the
-	// configuration from external sources, run added checks, etc. Any errors during the execution of
-	// an initContainer will lead to a restart of the Pod. More info:
-	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-	// +optional
-	InitContainers []v1.Container `json:"initContainers,omitempty"`
 
 	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
 	// These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping
@@ -263,14 +146,6 @@ type OpenTelemetryCollectorSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
 	Observability ObservabilitySpec `json:"observability,omitempty"`
 
-	// TopologySpreadConstraints embedded kubernetes pod configuration option,
-	// controls how pods are spread across your cluster among failure-domains
-	// such as regions, zones, nodes, and other user-defined topology domains
-	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
-	// This is only relevant to statefulset, and deployment mode
-	// +optional
-	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-
 	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
@@ -279,17 +154,8 @@ type OpenTelemetryCollectorSpec struct {
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
 type OpenTelemetryTargetAllocator struct {
-	// Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
-	// other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
-	// that can be run in a high availability mode is consistent-hashing.
-	// +optional
-	Replicas *int32 `json:"replicas,omitempty"`
-	// NodeSelector to schedule OpenTelemetry TargetAllocator pods.
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// Resources to set on the OpenTelemetryTargetAllocator containers.
-	// +optional
-	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	// Common defines fields that are common to all OpenTelemetry CRD workloads.
+	Common OpenTelemetryCommonFields `json:",inline"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted and consistent-hashing. The default option is least-weighted
 	// +optional
@@ -299,13 +165,6 @@ type OpenTelemetryTargetAllocator struct {
 	// Filtering is disabled by default.
 	// +optional
 	FilterStrategy string `json:"filterStrategy,omitempty"`
-	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
-	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
-	// +optional
-	ServiceAccount string `json:"serviceAccount,omitempty"`
-	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
-	// +optional
-	Image string `json:"image,omitempty"`
 	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
@@ -313,20 +172,6 @@ type OpenTelemetryTargetAllocator struct {
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
-	// TopologySpreadConstraints embedded kubernetes pod configuration option,
-	// controls how pods are spread across your cluster among failure-domains
-	// such as regions, zones, nodes, and other user-defined topology domains
-	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
-	// +optional
-	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-	// Toleration embedded kubernetes pod configuration option,
-	// controls how pods can be scheduled with matching taints
-	// +optional
-	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
-	// consumed in the config file for the TargetAllocator.
-	// +optional
-	Env []v1.EnvVar `json:"env,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {

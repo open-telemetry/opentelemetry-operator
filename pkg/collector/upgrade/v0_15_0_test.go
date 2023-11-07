@@ -51,8 +51,8 @@ func TestRemoveMetricsTypeFlags(t *testing.T) {
 	existing.Status.Version = "0.9.0"
 
 	// sanity check
-	require.Contains(t, existing.Spec.Args, "--new-metrics")
-	require.Contains(t, existing.Spec.Args, "--legacy-metrics")
+	require.Contains(t, existing.Spec.Common.Args, "--new-metrics")
+	require.Contains(t, existing.Spec.Common.Args, "--legacy-metrics")
 
 	// test
 	up := &upgrade.VersionUpgrade{
@@ -65,6 +65,6 @@ func TestRemoveMetricsTypeFlags(t *testing.T) {
 	assert.NoError(t, err)
 
 	// verify
-	assert.NotContains(t, res.Spec.Args, "--new-metrics")
-	assert.NotContains(t, res.Spec.Args, "--legacy-metrics")
+	assert.NotContains(t, res.Spec.Common.Args, "--new-metrics")
+	assert.NotContains(t, res.Spec.Common.Args, "--legacy-metrics")
 }

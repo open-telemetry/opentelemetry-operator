@@ -28,22 +28,22 @@ import (
 
 func upgrade0_43_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
 	// return if args exist
-	if len(otelcol.Spec.Args) == 0 {
+	if len(otelcol.Spec.Common.Args) == 0 {
 		return otelcol, nil
 	}
 
-	//Removing deprecated Spec.Args (--metrics-addr and --metrics-level) based on
+	//Removing deprecated Spec.Common.Args (--metrics-addr and --metrics-level) based on
 	// https://github.com/open-telemetry/opentelemetry-collector/pull/4695
 	//Both args can be used now on the Spec.Config
 	foundMetricsArgs := make(map[string]string)
-	for argKey, argValue := range otelcol.Spec.Args {
+	for argKey, argValue := range otelcol.Spec.Common.Args {
 		if argKey == "--metrics-addr" || argKey == "--metrics-level" {
 			foundMetricsArgs[argKey] = argValue
-			delete(otelcol.Spec.Args, argKey)
+			delete(otelcol.Spec.Common.Args, argKey)
 		}
 	}
 
-	// If we find metrics being used on Spec.Args we'll move to the syntax on Spec.Config
+	// If we find metrics being used on Spec.Common.Args we'll move to the syntax on Spec.Config
 	if len(foundMetricsArgs) > 0 {
 		cfg, err := adapters.ConfigFromString(otelcol.Spec.Config)
 		if err != nil {
@@ -88,7 +88,7 @@ func upgrade0_43_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		sort.Strings(keys)
 		existing := &corev1.ConfigMap{}
 		updated := existing.DeepCopy()
-		u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. %v from otelcol custom resource otelcol.spec.args and adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", keys))
+		u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.43.0 dropped the deprecated metrics arguments "+"i.e. %v from otelcol custom resource otelcol.Spec.Common.Args and adding them to otelcol.spec.config.service.telemetry.metrics, if no metrics arguments are configured already.", keys))
 	}
 	return otelcol, nil
 }

@@ -80,7 +80,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		annotationName: annotationVal,
 	}
 	deploymentExtraPorts := paramsWithModeAndReplicas(v1alpha1.ModeDeployment, 3)
-	deploymentExtraPorts.OtelCol.Spec.Ports = append(deploymentExtraPorts.OtelCol.Spec.Ports, extraPorts)
+	deploymentExtraPorts.OtelCol.Spec.Common.Ports = append(deploymentExtraPorts.OtelCol.Spec.Common.Ports, extraPorts)
 	ingressParams := newParamsAssertNoErr(t, "", testFileIngress)
 	ingressParams.OtelCol.Spec.Ingress.Type = "ingress"
 	updatedIngressParams := newParamsAssertNoErr(t, "", testFileIngress)
@@ -130,7 +130,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Equal(t, int32(2), *d.Spec.Replicas)
+							assert.Equal(t, int32(2), *d.Spec.Common.Replicas)
 							assert.Contains(t, d.Annotations, annotationName)
 							assert.Contains(t, d.Labels, labelName)
 							exists, err = populateObjectIfExists(t, &v1.Service{}, namespacedObjectName(naming.Service(params.OtelCol.Name), params.OtelCol.Namespace))
@@ -152,7 +152,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Equal(t, int32(3), *d.Spec.Replicas)
+							assert.Equal(t, int32(3), *d.Spec.Common.Replicas)
 							// confirm that we don't remove annotations and labels even if we don't set them
 							assert.Contains(t, d.Annotations, annotationName)
 							assert.Contains(t, d.Labels, labelName)
@@ -160,7 +160,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.Service(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Contains(t, actual.Spec.Ports, extraPorts)
+							assert.Contains(t, actual.Spec.Common.Ports, extraPorts)
 						},
 					},
 					wantErr:     assert.NoError,
@@ -566,7 +566,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 		annotationName: annotationVal,
 	}
 	deploymentExtraPorts := opampBridgeParams()
-	deploymentExtraPorts.OpAMPBridge.Spec.Ports = append(deploymentExtraPorts.OpAMPBridge.Spec.Ports, extraPorts)
+	deploymentExtraPorts.OpAMPBridge.Spec.Common.Ports = append(deploymentExtraPorts.OpAMPBridge.Spec.Common.Ports, extraPorts)
 
 	type args struct {
 		params manifests.Params
@@ -603,7 +603,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.OpAMPBridge(params.OpAMPBridge.Name), params.OpAMPBridge.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Equal(t, int32(1), *d.Spec.Replicas)
+							assert.Equal(t, int32(1), *d.Spec.Common.Replicas)
 							assert.Contains(t, d.Spec.Template.Annotations, annotationName)
 							assert.Contains(t, d.Labels, labelName)
 							exists, err = populateObjectIfExists(t, &v1.Service{}, namespacedObjectName(naming.OpAMPBridgeService(params.OpAMPBridge.Name), params.OpAMPBridge.Namespace))
@@ -632,7 +632,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.OpAMPBridgeService(params.OpAMPBridge.Name), params.OpAMPBridge.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Contains(t, actual.Spec.Ports, extraPorts)
+							assert.Contains(t, actual.Spec.Common.Ports, extraPorts)
 						},
 					},
 					wantErr:     assert.NoError,

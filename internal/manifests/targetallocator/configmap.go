@@ -35,7 +35,7 @@ const (
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(params.OtelCol.Name)
-	version := strings.Split(params.OtelCol.Spec.Image, ":")
+	version := strings.Split(params.OtelCol.Spec.Common.Image, ":")
 	labels := Labels(params.OtelCol, name)
 	if len(version) > 1 {
 		labels["app.kubernetes.io/version"] = version[len(version)-1]

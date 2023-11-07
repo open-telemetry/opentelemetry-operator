@@ -36,12 +36,14 @@ func TestLabelsCommonSet(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+			},
 		},
 	}
 
 	// test
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Common.Image, "opentelemetry-collector", []string{})
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "0.47.0", labels["app.kubernetes.io/version"])
@@ -56,12 +58,14 @@ func TestLabelsSha256Set(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			},
 		},
 	}
 
 	// test
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Common.Image, "opentelemetry-collector", []string{})
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b53", labels["app.kubernetes.io/version"])
@@ -75,12 +79,14 @@ func TestLabelsSha256Set(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.81.0@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.81.0@sha256:c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b532",
+			},
 		},
 	}
 
 	// test
-	labelsTag := Labels(otelcolTag.ObjectMeta, collectorName, otelcolTag.Spec.Image, "opentelemetry-collector", []string{})
+	labelsTag := Labels(otelcolTag.ObjectMeta, collectorName, otelcolTag.Spec.Common.Image, "opentelemetry-collector", []string{})
 	assert.Equal(t, "opentelemetry-operator", labelsTag["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labelsTag["app.kubernetes.io/instance"])
 	assert.Equal(t, "0.81.0", labelsTag["app.kubernetes.io/version"])
@@ -95,12 +101,14 @@ func TestLabelsTagUnset(t *testing.T) {
 			Namespace: collectorNamespace,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+			},
 		},
 	}
 
 	// test
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Common.Image, "opentelemetry-collector", []string{})
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "latest", labels["app.kubernetes.io/version"])
@@ -118,12 +126,14 @@ func TestLabelsPropagateDown(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+			},
 		},
 	}
 
 	// test
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Common.Image, "opentelemetry-collector", []string{})
 
 	// verify
 	assert.Len(t, labels, 7)
@@ -137,12 +147,14 @@ func TestLabelsFilter(t *testing.T) {
 			Labels: map[string]string{"test.bar.io": "foo", "test.foo.io": "bar"},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+			},
 		},
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{".*.bar.io"})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Common.Image, "opentelemetry-collector", []string{".*.bar.io"})
 
 	// verify
 	assert.Len(t, labels, 7)

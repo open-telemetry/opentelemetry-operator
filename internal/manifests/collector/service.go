@@ -59,7 +59,7 @@ func HeadlessService(params manifests.Params) *corev1.Service {
 
 func MonitoringService(params manifests.Params) *corev1.Service {
 	name := naming.MonitoringService(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Common.Image, ComponentOpenTelemetryCollector, []string{})
 
 	c, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	// TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
@@ -94,7 +94,7 @@ func MonitoringService(params manifests.Params) *corev1.Service {
 
 func Service(params manifests.Params) *corev1.Service {
 	name := naming.Service(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Common.Image, ComponentOpenTelemetryCollector, []string{})
 
 	configFromString, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	if err != nil {
@@ -113,7 +113,7 @@ func Service(params manifests.Params) *corev1.Service {
 		}
 	}
 
-	if len(params.OtelCol.Spec.Ports) > 0 {
+	if len(params.OtelCol.Spec.Common.Ports) > 0 {
 		// we should add all the ports from the CR
 		// there are two cases where problems might occur:
 		// 1) when the port number is already being used by a receiver
@@ -121,7 +121,7 @@ func Service(params manifests.Params) *corev1.Service {
 		//
 		// in the first case, we remove the port we inferred from the list
 		// in the second case, we rename our inferred port to something like "port-%d"
-		portNumbers, portNames := extractPortNumbersAndNames(params.OtelCol.Spec.Ports)
+		portNumbers, portNames := extractPortNumbersAndNames(params.OtelCol.Spec.Common.Ports)
 		var resultingInferredPorts []corev1.ServicePort
 		for _, inferred := range ports {
 			if filtered := filterPort(params.Log, inferred, portNumbers, portNames); filtered != nil {
@@ -129,7 +129,7 @@ func Service(params manifests.Params) *corev1.Service {
 			}
 		}
 
-		ports = append(params.OtelCol.Spec.Ports, resultingInferredPorts...)
+		ports = append(params.OtelCol.Spec.Common.Ports, resultingInferredPorts...)
 	}
 
 	// if we have no ports, we don't need a service

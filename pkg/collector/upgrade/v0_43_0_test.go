@@ -81,7 +81,7 @@ service:
 	assert.Equal(t, map[string]string{
 		"--test-upgrade43": "true",
 		"--test-arg1":      "otel",
-	}, res.Spec.Args)
+	}, res.Spec.Common.Args)
 
 	// verify
 	assert.Equal(t, `exporters:
@@ -126,7 +126,7 @@ service:
       level: detailed
 `
 	existing.Spec.Config = configWithMetrics
-	existing.Spec.Args = map[string]string{
+	existing.Spec.Common.Args = map[string]string{
 		"--metrics-addr":   ":8988",
 		"--metrics-level":  "detailed",
 		"--test-upgrade43": "true",
@@ -140,6 +140,6 @@ service:
 	assert.Equal(t, map[string]string{
 		"--test-upgrade43": "true",
 		"--test-arg1":      "otel",
-	}, res.Spec.Args)
+	}, res.Spec.Common.Args)
 
 }

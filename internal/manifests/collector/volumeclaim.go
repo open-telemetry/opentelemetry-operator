@@ -29,5 +29,5 @@ func VolumeClaimTemplates(otelcol v1alpha1.OpenTelemetryCollector) []corev1.Pers
 	}
 
 	// Add all user specified claims.
-	return otelcol.Spec.VolumeClaimTemplates
+	return otelcol.Spec.Common.VolumeClaimTemplates
 }

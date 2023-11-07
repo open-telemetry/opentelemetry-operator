@@ -111,7 +111,7 @@ func TestDesiredService(t *testing.T) {
 		assert.Nil(t, actual)
 
 	})
-	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {
+	t.Run("should return service with port mentioned in OtelCol.Spec.Common.Ports and inferred ports", func(t *testing.T) {
 
 		grpc := "grpc"
 		jaegerPorts := v1.ServicePort{
@@ -121,7 +121,7 @@ func TestDesiredService(t *testing.T) {
 			AppProtocol: &grpc,
 		}
 		params := deploymentParams()
-		ports := append(params.OtelCol.Spec.Ports, jaegerPorts)
+		ports := append(params.OtelCol.Spec.Common.Ports, jaegerPorts)
 		expected := service("test-collector", ports)
 		actual := Service(params)
 
@@ -142,7 +142,7 @@ func TestDesiredService(t *testing.T) {
 		params.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 		actual := Service(params)
 
-		ports := append(params.OtelCol.Spec.Ports, jaegerPort)
+		ports := append(params.OtelCol.Spec.Common.Ports, jaegerPort)
 		expected := service("test-collector", ports)
 		assert.Equal(t, expected, *actual)
 	})
@@ -157,7 +157,7 @@ func TestDesiredService(t *testing.T) {
 			AppProtocol: &grpc,
 		}
 		p := paramsWithMode(v1alpha1.ModeDaemonSet)
-		ports := append(p.OtelCol.Spec.Ports, jaegerPorts)
+		ports := append(p.OtelCol.Spec.Common.Ports, jaegerPorts)
 		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
 		actual := Service(p)
 
@@ -208,7 +208,7 @@ func service(name string, ports []v1.ServicePort) v1.Service {
 
 func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
 	params := deploymentParams()
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Common.Image, ComponentOpenTelemetryCollector, []string{})
 
 	return v1.Service{
 		ObjectMeta: metav1.ObjectMeta{

@@ -26,7 +26,7 @@ import (
 
 // Container builds a container for the given TargetAllocator.
 func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
-	image := otelcol.Spec.TargetAllocator.Image
+	image := otelcol.Spec.TargetAllocator.Common.Image
 	if len(image) == 0 {
 		image = cfg.TargetAllocatorImage()
 	}
@@ -43,8 +43,8 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		MountPath: "/conf",
 	}}
 
-	var envVars = otelcol.Spec.TargetAllocator.Env
-	if otelcol.Spec.TargetAllocator.Env == nil {
+	var envVars = otelcol.Spec.TargetAllocator.Common.Env
+	if otelcol.Spec.TargetAllocator.Common.Env == nil {
 		envVars = []corev1.EnvVar{}
 	}
 
@@ -76,7 +76,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		Ports:        ports,
 		Env:          envVars,
 		VolumeMounts: volumeMounts,
-		Resources:    otelcol.Spec.TargetAllocator.Resources,
+		Resources:    otelcol.Spec.TargetAllocator.Common.Resources,
 		Args:         args,
 	}
 }

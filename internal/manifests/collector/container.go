@@ -37,14 +37,14 @@ const maxPortLen = 15
 
 // Container builds a container for the given collector.
 func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, addConfig bool) corev1.Container {
-	image := otelcol.Spec.Image
+	image := otelcol.Spec.Common.Image
 	if len(image) == 0 {
 		image = cfg.CollectorImage()
 	}
 
 	// build container ports from service ports
 	ports := getConfigContainerPorts(logger, otelcol.Spec.Config)
-	for _, p := range otelcol.Spec.Ports {
+	for _, p := range otelcol.Spec.Common.Ports {
 		ports[p.Name] = corev1.ContainerPort{
 			Name:          p.Name,
 			ContainerPort: p.Port,
@@ -53,7 +53,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	var volumeMounts []corev1.VolumeMount
-	argsMap := otelcol.Spec.Args
+	argsMap := otelcol.Spec.Common.Args
 	if argsMap == nil {
 		argsMap = map[string]string{}
 	}
@@ -79,7 +79,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 			})
 	}
 
-	// ensure that the v1alpha1.OpenTelemetryCollectorSpec.Args are ordered when moved to container.Args,
+	// ensure that the v1alpha1.OpenTelemetryCollectorSpec.Common.Args are ordered when moved to container.Args,
 	// where iterating over a map does not guarantee, so that reconcile will not be fooled by different
 	// ordering in args.
 	var sortedArgs []string
@@ -89,12 +89,12 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	sort.Strings(sortedArgs)
 	args = append(args, sortedArgs...)
 
-	if len(otelcol.Spec.VolumeMounts) > 0 {
-		volumeMounts = append(volumeMounts, otelcol.Spec.VolumeMounts...)
+	if len(otelcol.Spec.Common.VolumeMounts) > 0 {
+		volumeMounts = append(volumeMounts, otelcol.Spec.Common.VolumeMounts...)
 	}
 
-	var envVars = otelcol.Spec.Env
-	if otelcol.Spec.Env == nil {
+	var envVars = otelcol.Spec.Common.Env
+	if otelcol.Spec.Common.Env == nil {
 		envVars = []corev1.EnvVar{}
 	}
 
@@ -145,16 +145,16 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	return corev1.Container{
 		Name:            naming.Container(),
 		Image:           image,
-		ImagePullPolicy: otelcol.Spec.ImagePullPolicy,
+		ImagePullPolicy: otelcol.Spec.Common.ImagePullPolicy,
 		Ports:           portMapToList(ports),
 		VolumeMounts:    volumeMounts,
 		Args:            args,
 		Env:             envVars,
-		EnvFrom:         otelcol.Spec.EnvFrom,
-		Resources:       otelcol.Spec.Resources,
-		SecurityContext: otelcol.Spec.SecurityContext,
+		EnvFrom:         otelcol.Spec.Common.EnvFrom,
+		Resources:       otelcol.Spec.Common.Resources,
+		SecurityContext: otelcol.Spec.Common.SecurityContext,
 		LivenessProbe:   livenessProbe,
-		Lifecycle:       otelcol.Spec.Lifecycle,
+		Lifecycle:       otelcol.Spec.Common.Lifecycle,
 	}
 }
 

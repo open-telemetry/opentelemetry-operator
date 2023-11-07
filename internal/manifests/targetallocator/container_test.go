@@ -49,7 +49,9 @@ func TestContainerWithImageOverridden(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Enabled: true,
-				Image:   "overridden-image",
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Image: "overridden-image",
+				},
 			},
 		},
 	}
@@ -68,7 +70,9 @@ func TestContainerPorts(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Enabled: true,
-				Image:   "default-image",
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Image: "default-image",
+				},
 			},
 		},
 	}
@@ -89,7 +93,9 @@ func TestContainerVolumes(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Enabled: true,
-				Image:   "default-image",
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Image: "default-image",
+				},
 			},
 		},
 	}
@@ -107,14 +113,16 @@ func TestContainerResourceRequirements(t *testing.T) {
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-				Resources: corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("100m"),
-						corev1.ResourceMemory: resource.MustParse("128M"),
-					},
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("200m"),
-						corev1.ResourceMemory: resource.MustParse("256M"),
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("128M"),
+						},
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("200m"),
+							corev1.ResourceMemory: resource.MustParse("256M"),
+						},
 					},
 				},
 			},
@@ -146,10 +154,12 @@ func TestContainerHasEnvVars(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Enabled: true,
-				Env: []corev1.EnvVar{
-					{
-						Name:  "TEST_ENV",
-						Value: "test",
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "TEST_ENV",
+							Value: "test",
+						},
 					},
 				},
 			},
@@ -215,10 +225,12 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Enabled: true,
-				Env: []corev1.EnvVar{
-					{
-						Name:  "TEST_ENV",
-						Value: "test",
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "TEST_ENV",
+							Value: "test",
+						},
 					},
 				},
 			},
@@ -241,10 +253,12 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Enabled: true,
-				Env: []corev1.EnvVar{
-					{
-						Name:  "OTELCOL_NAMESPACE",
-						Value: "test",
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTELCOL_NAMESPACE",
+							Value: "test",
+						},
 					},
 				},
 			},

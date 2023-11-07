@@ -49,7 +49,7 @@ func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string 
 	podAnnotations := map[string]string{}
 
 	// allow override of pod annotations
-	for k, v := range instance.Spec.PodAnnotations {
+	for k, v := range instance.Spec.Common.PodAnnotations {
 		podAnnotations[k] = v
 	}
 

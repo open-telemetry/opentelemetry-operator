@@ -43,7 +43,9 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpAMPBridge{
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			Image: "overridden-image",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Image: "overridden-image",
+			},
 		},
 	}
 
@@ -60,7 +62,9 @@ func TestContainerVolumes(t *testing.T) {
 	// prepare
 	opampBridge := v1alpha1.OpAMPBridge{
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			Image: "default-image",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Image: "default-image",
+			},
 		},
 	}
 	cfg := config.New()

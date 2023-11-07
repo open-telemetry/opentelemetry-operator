@@ -37,7 +37,9 @@ func TestDaemonSetNewDefault(t *testing.T) {
 				Namespace: "my-namespace",
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Tolerations: testTolerationValues,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Tolerations: testTolerationValues,
+				},
 			},
 		},
 		Log: logger,
@@ -115,7 +117,9 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 				Namespace: "my-namespace",
 			},
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				HostNetwork: true,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					HostNetwork: true,
+				},
 			},
 		},
 		Log: logger,
@@ -133,7 +137,9 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodAnnotations: testPodAnnotationValues,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PodAnnotations: testPodAnnotationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -174,10 +180,12 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodSecurityContext: &v1.PodSecurityContext{
-				RunAsNonRoot: &runAsNonRoot,
-				RunAsUser:    &runAsUser,
-				RunAsGroup:   &runasGroup,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PodSecurityContext: &v1.PodSecurityContext{
+					RunAsNonRoot: &runAsNonRoot,
+					RunAsUser:    &runAsUser,
+					RunAsGroup:   &runasGroup,
+				},
 			},
 		},
 	}
@@ -253,9 +261,11 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 			Name: "my-instance-nodeselector",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
-			NodeSelector: map[string]string{
-				"node-key": "node-value",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				HostNetwork: true,
+				NodeSelector: map[string]string{
+					"node-key": "node-value",
+				},
 			},
 		},
 	}
@@ -297,7 +307,9 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PriorityClassName: priorityClassName,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PriorityClassName: priorityClassName,
+			},
 		},
 	}
 
@@ -336,7 +348,9 @@ func TestDaemonSetAffinity(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Affinity: testAffinityValue,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Affinity: testAffinityValue,
+			},
 		},
 	}
 
@@ -361,9 +375,11 @@ func TestDaemonSetInitContainer(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			InitContainers: []v1.Container{
-				{
-					Name: "test",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				InitContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},

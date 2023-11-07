@@ -31,17 +31,20 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Mode: "statefulset",
-			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "added-volume",
-				},
-				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{"storage": resource.MustParse("1Gi")},
+
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "added-volume",
 					},
-				},
-			}},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{"storage": resource.MustParse("1Gi")},
+						},
+					},
+				}},
+			},
 		},
 	}
 
@@ -66,17 +69,20 @@ func TestVolumeClaimChecksForStatefulset(t *testing.T) {
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Mode: "daemonset",
-			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "added-volume",
-				},
-				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{"storage": resource.MustParse("1Gi")},
+
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "added-volume",
 					},
-				},
-			}},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{"storage": resource.MustParse("1Gi")},
+						},
+					},
+				}},
+			},
 		},
 	}
 
