@@ -84,7 +84,6 @@ func (c Client) labelSetContainsLabel(instance *v1alpha1.OpenTelemetryCollector,
 
 func (c Client) create(ctx context.Context, name string, namespace string, collector *v1alpha1.OpenTelemetryCollector) error {
 	// Set the defaults
-	collector.Default()
 	collector.TypeMeta.Kind = CollectorResource
 	collector.TypeMeta.APIVersion = v1alpha1.GroupVersion.String()
 	collector.ObjectMeta.Name = name
@@ -94,13 +93,6 @@ func (c Client) create(ctx context.Context, name string, namespace string, colle
 		collector.ObjectMeta.Labels = map[string]string{}
 	}
 	collector.ObjectMeta.Labels[ResourceIdentifierKey] = ResourceIdentifierValue
-	warnings, err := collector.ValidateCreate()
-	if err != nil {
-		return err
-	}
-	if warnings != nil {
-		c.log.Info("Some warnings present on collector", "warnings", warnings)
-	}
 	c.log.Info("Creating collector")
 	return c.k8sClient.Create(ctx, collector)
 }
@@ -108,13 +100,6 @@ func (c Client) create(ctx context.Context, name string, namespace string, colle
 func (c Client) update(ctx context.Context, old *v1alpha1.OpenTelemetryCollector, new *v1alpha1.OpenTelemetryCollector) error {
 	new.ObjectMeta = old.ObjectMeta
 	new.TypeMeta = old.TypeMeta
-	warnings, err := new.ValidateUpdate(old)
-	if err != nil {
-		return err
-	}
-	if warnings != nil {
-		c.log.Info("Some warnings present on collector", "warnings", warnings)
-	}
 	c.log.Info("Updating collector")
 	return c.k8sClient.Update(ctx, new)
 }

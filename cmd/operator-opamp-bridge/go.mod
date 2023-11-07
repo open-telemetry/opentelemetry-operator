@@ -6,7 +6,7 @@ require (
 	github.com/go-logr/logr v1.3.0
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/open-telemetry/opamp-go v0.10.0
-	github.com/open-telemetry/opentelemetry-operator v0.85.0
+	github.com/open-telemetry/opentelemetry-operator v0.88.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
