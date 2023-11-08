@@ -49,6 +49,24 @@ var testTopologySpreadConstraintValue = []v1.TopologySpreadConstraint{
 	},
 }
 
+var testAffinityValue = &v1.Affinity{
+	NodeAffinity: &v1.NodeAffinity{
+		RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+			NodeSelectorTerms: []v1.NodeSelectorTerm{
+				{
+					MatchExpressions: []v1.NodeSelectorRequirement{
+						{
+							Key:      "node",
+							Operator: v1.NodeSelectorOpIn,
+							Values:   []string{"test-node"},
+						},
+					},
+				},
+			},
+		},
+	},
+}
+
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	otelcol := collectorInstance()
@@ -157,6 +175,47 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	d2 := Deployment(params2)
 	assert.Equal(t, map[string]string{"node-key": "node-value"}, d2.Spec.Template.Spec.NodeSelector)
+}
+func TestDeploymentAffinity(t *testing.T) {
+	// Test default
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+	d1 := Deployment(params1)
+	assert.Empty(t, d1.Spec.Template.Spec.Affinity)
+
+	// Test nodeSelector
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-affinity",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Affinity: testAffinityValue,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
+	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
 
 func TestDeploymentTolerations(t *testing.T) {
