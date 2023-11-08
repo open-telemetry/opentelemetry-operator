@@ -22,7 +22,7 @@ import (
 
 func getDNSPolicy(otelcol v1alpha1.OpenTelemetryCollector) corev1.DNSPolicy {
 	dnsPolicy := corev1.DNSClusterFirst
-	if otelcol.Spec.HostNetwork {
+	if otelcol.Spec.Common.HostNetwork {
 		dnsPolicy = corev1.DNSClusterFirstWithHostNet
 	}
 	return dnsPolicy

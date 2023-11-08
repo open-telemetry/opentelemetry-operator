@@ -74,7 +74,9 @@ func TestDeploymentNewDefault(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Tolerations: testTolerationValues,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Tolerations: testTolerationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -139,7 +141,9 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodAnnotations: testPodAnnotationValues,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PodAnnotations: testPodAnnotationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -180,10 +184,12 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodSecurityContext: &v1.PodSecurityContext{
-				RunAsNonRoot: &runAsNonRoot,
-				RunAsUser:    &runAsUser,
-				RunAsGroup:   &runasGroup,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PodSecurityContext: &v1.PodSecurityContext{
+					RunAsNonRoot: &runAsNonRoot,
+					RunAsUser:    &runAsUser,
+					RunAsGroup:   &runasGroup,
+				},
 			},
 		},
 	}
@@ -230,7 +236,9 @@ func TestDeploymentHostNetwork(t *testing.T) {
 			Name: "my-instance-hostnetwork",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				HostNetwork: true,
+			},
 		},
 	}
 
@@ -303,9 +311,11 @@ func TestDeploymentNodeSelector(t *testing.T) {
 			Name: "my-instance-nodeselector",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
-			NodeSelector: map[string]string{
-				"node-key": "node-value",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				HostNetwork: true,
+				NodeSelector: map[string]string{
+					"node-key": "node-value",
+				},
 			},
 		},
 	}
@@ -347,7 +357,9 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PriorityClassName: priorityClassName,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PriorityClassName: priorityClassName,
+			},
 		},
 	}
 
@@ -386,7 +398,9 @@ func TestDeploymentAffinity(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Affinity: testAffinityValue,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Affinity: testAffinityValue,
+			},
 		},
 	}
 
@@ -428,7 +442,9 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 			Name: "my-instance-terminationGracePeriodSeconds",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			TerminationGracePeriodSeconds: &gracePeriodSec,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				TerminationGracePeriodSeconds: &gracePeriodSec,
+			},
 		},
 	}
 
@@ -453,9 +469,11 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			InitContainers: []v1.Container{
-				{
-					Name: "test",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				InitContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -503,7 +521,9 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 			Name: "my-instance-topologyspreadconstraint",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			TopologySpreadConstraints: testTopologySpreadConstraintValue,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				TopologySpreadConstraints: testTopologySpreadConstraintValue,
+			},
 		},
 	}
 

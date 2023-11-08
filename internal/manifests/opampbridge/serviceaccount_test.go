@@ -45,7 +45,9 @@ func TestServiceAccountOverride(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			ServiceAccount: "my-special-sa",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				ServiceAccount: "my-special-sa",
+			},
 		},
 	}
 

@@ -45,9 +45,11 @@ func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Volumes: []corev1.Volume{{
-				Name: "my-volume",
-			}},
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Volumes: []corev1.Volume{{
+					Name: "my-volume",
+				}},
+			},
 		},
 	}
 	cfg := config.New()

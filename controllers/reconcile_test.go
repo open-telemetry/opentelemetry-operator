@@ -80,7 +80,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		annotationName: annotationVal,
 	}
 	deploymentExtraPorts := paramsWithModeAndReplicas(v1alpha1.ModeDeployment, 3)
-	deploymentExtraPorts.OtelCol.Spec.Ports = append(deploymentExtraPorts.OtelCol.Spec.Ports, extraPorts)
+	deploymentExtraPorts.OtelCol.Spec.Common.Ports = append(deploymentExtraPorts.OtelCol.Spec.Common.Ports, extraPorts)
 	ingressParams := newParamsAssertNoErr(t, "", testFileIngress)
 	ingressParams.OtelCol.Spec.Ingress.Type = "ingress"
 	updatedIngressParams := newParamsAssertNoErr(t, "", testFileIngress)
@@ -562,11 +562,11 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 	addedMetadataDeployment.OpAMPBridge.Labels = map[string]string{
 		labelName: labelVal,
 	}
-	addedMetadataDeployment.OpAMPBridge.Spec.PodAnnotations = map[string]string{
+	addedMetadataDeployment.OpAMPBridge.Spec.Common.PodAnnotations = map[string]string{
 		annotationName: annotationVal,
 	}
 	deploymentExtraPorts := opampBridgeParams()
-	deploymentExtraPorts.OpAMPBridge.Spec.Ports = append(deploymentExtraPorts.OpAMPBridge.Spec.Ports, extraPorts)
+	deploymentExtraPorts.OpAMPBridge.Spec.Common.Ports = append(deploymentExtraPorts.OpAMPBridge.Spec.Common.Ports, extraPorts)
 
 	type args struct {
 		params manifests.Params

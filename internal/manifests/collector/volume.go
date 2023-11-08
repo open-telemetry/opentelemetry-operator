@@ -38,8 +38,8 @@ func Volumes(cfg config.Config, otelcol v1alpha1.OpenTelemetryCollector) []corev
 		},
 	}}
 
-	if len(otelcol.Spec.Volumes) > 0 {
-		volumes = append(volumes, otelcol.Spec.Volumes...)
+	if len(otelcol.Spec.Common.Volumes) > 0 {
+		volumes = append(volumes, otelcol.Spec.Common.Volumes...)
 	}
 
 	if len(otelcol.Spec.ConfigMaps) > 0 {

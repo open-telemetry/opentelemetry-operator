@@ -22,7 +22,7 @@ import (
 
 func getDNSPolicy(opampBridge v1alpha1.OpAMPBridge) corev1.DNSPolicy {
 	dnsPolicy := corev1.DNSClusterFirst
-	if opampBridge.Spec.HostNetwork {
+	if opampBridge.Spec.Common.HostNetwork {
 		dnsPolicy = corev1.DNSClusterFirstWithHostNet
 	}
 	return dnsPolicy

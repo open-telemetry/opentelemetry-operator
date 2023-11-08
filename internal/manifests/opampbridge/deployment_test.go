@@ -73,7 +73,9 @@ func TestDeploymentNewDefault(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			Tolerations: testTolerationValues,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Tolerations: testTolerationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -126,7 +128,9 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			PodAnnotations: testPodAnnotationValues,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PodAnnotations: testPodAnnotationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -156,10 +160,12 @@ func TestDeploymentPodSecurityContext(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			PodSecurityContext: &v1.PodSecurityContext{
-				RunAsNonRoot: &runAsNonRoot,
-				RunAsUser:    &runAsUser,
-				RunAsGroup:   &runasGroup,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PodSecurityContext: &v1.PodSecurityContext{
+					RunAsNonRoot: &runAsNonRoot,
+					RunAsUser:    &runAsUser,
+					RunAsGroup:   &runasGroup,
+				},
 			},
 		},
 	}
@@ -206,7 +212,9 @@ func TestDeploymentHostNetwork(t *testing.T) {
 			Name: "my-instance-hostnetwork",
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			HostNetwork: true,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				HostNetwork: true,
+			},
 		},
 	}
 
@@ -279,9 +287,11 @@ func TestDeploymentNodeSelector(t *testing.T) {
 			Name: "my-instance-nodeselector",
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			HostNetwork: true,
-			NodeSelector: map[string]string{
-				"node-key": "node-value",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				HostNetwork: true,
+				NodeSelector: map[string]string{
+					"node-key": "node-value",
+				},
 			},
 		},
 	}
@@ -323,7 +333,9 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			PriorityClassName: priorityClassName,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				PriorityClassName: priorityClassName,
+			},
 		},
 	}
 
@@ -362,7 +374,9 @@ func TestDeploymentAffinity(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			Affinity: testAffinityValue,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Affinity: testAffinityValue,
+			},
 		},
 	}
 
@@ -405,7 +419,9 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 			Name: "my-instance-topologyspreadconstraint",
 		},
 		Spec: v1alpha1.OpAMPBridgeSpec{
-			TopologySpreadConstraints: testTopologySpreadConstraintValue,
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				TopologySpreadConstraints: testTopologySpreadConstraintValue,
+			},
 		},
 	}
 

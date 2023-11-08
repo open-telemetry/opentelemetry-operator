@@ -76,7 +76,7 @@ func TestPDB(t *testing.T) {
 	for _, otelcol := range otelcols {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				otelcol.Spec.PodDisruptionBudget = &v1alpha1.PodDisruptionBudgetSpec{
+				otelcol.Spec.Common.PodDisruptionBudget = &v1alpha1.PodDisruptionBudgetSpec{
 					MinAvailable:   test.MinAvailable,
 					MaxUnavailable: test.MaxUnavailable,
 				}

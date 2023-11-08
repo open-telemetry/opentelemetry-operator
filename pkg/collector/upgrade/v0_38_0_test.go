@@ -40,12 +40,14 @@ func Test0_38_0Upgrade(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Args: map[string]string{
-				"--hii":         "hello",
-				"--log-profile": "",
-				"--log-format":  "hii",
-				"--log-level":   "debug",
-				"--arg1":        "",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Args: map[string]string{
+					"--hii":         "hello",
+					"--log-profile": "",
+					"--log-format":  "hii",
+					"--log-level":   "debug",
+					"--arg1":        "",
+				},
 			},
 			Config: `
 receivers:
@@ -83,7 +85,7 @@ service:
 	assert.Equal(t, map[string]string{
 		"--hii":  "hello",
 		"--arg1": "",
-	}, res.Spec.Args)
+	}, res.Spec.Common.Args)
 
 	// verify
 	assert.Equal(t, `exporters:
@@ -132,7 +134,7 @@ service:
       level: debug
 `
 	existing.Spec.Config = configWithLogging
-	existing.Spec.Args = map[string]string{
+	existing.Spec.Common.Args = map[string]string{
 		"--hii":         "hello",
 		"--log-profile": "",
 		"--log-format":  "hii",
@@ -148,5 +150,5 @@ service:
 	assert.Equal(t, map[string]string{
 		"--hii":  "hello",
 		"--arg1": "",
-	}, res.Spec.Args)
+	}, res.Spec.Common.Args)
 }

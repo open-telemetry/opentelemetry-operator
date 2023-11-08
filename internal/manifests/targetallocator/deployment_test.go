@@ -81,7 +81,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
 	otelcol := collectorInstance()
-	otelcol.Spec.PodAnnotations = testPodAnnotationValues
+	otelcol.Spec.Common.PodAnnotations = testPodAnnotationValues
 	cfg := config.New()
 
 	params := manifests.Params{
@@ -109,7 +109,9 @@ func collectorInstance() v1alpha1.OpenTelemetryCollector {
 			Namespace: "default",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image:  "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+			Common: v1alpha1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+			},
 			Config: string(configYAML),
 		},
 	}
@@ -140,8 +142,10 @@ func TestDeploymentNodeSelector(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-				NodeSelector: map[string]string{
-					"node-key": "node-value",
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					NodeSelector: map[string]string{
+						"node-key": "node-value",
+					},
 				},
 			},
 		},
@@ -184,7 +188,9 @@ func TestDeploymentTolerations(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-				Tolerations: testTolerationValues,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					Tolerations: testTolerationValues,
+				},
 			},
 		},
 	}
@@ -227,7 +233,9 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-				TopologySpreadConstraints: testTopologySpreadConstraintValue,
+				Common: v1alpha1.OpenTelemetryCommonFields{
+					TopologySpreadConstraints: testTopologySpreadConstraintValue,
+				},
 			},
 		},
 	}

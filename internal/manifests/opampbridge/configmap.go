@@ -29,8 +29,8 @@ import (
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.OpAMPBridgeConfigMap(params.OpAMPBridge.Name)
-	version := strings.Split(params.OpAMPBridge.Spec.Image, ":")
-	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, []string{})
+	version := strings.Split(params.OpAMPBridge.Spec.Common.Image, ":")
+	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Common.Image, ComponentOpAMPBridge, []string{})
 
 	if len(version) > 1 {
 		labels["app.kubernetes.io/version"] = version[len(version)-1]

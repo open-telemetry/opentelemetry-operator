@@ -28,7 +28,7 @@ import (
 
 func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Common.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 	annotations := Annotations(params.OtelCol)
 	var result client.Object
 
@@ -40,47 +40,47 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 	}
 
 	// defaulting webhook should always set this, but if unset then return nil.
-	if params.OtelCol.Spec.Autoscaler == nil {
+	if params.OtelCol.Spec.Common.Autoscaler == nil {
 		params.Log.Info("hpa field is unset in Spec, skipping autoscaler creation")
 		return nil
 	}
 
-	if params.OtelCol.Spec.Autoscaler.MaxReplicas == nil {
-		params.OtelCol.Spec.Autoscaler.MaxReplicas = params.OtelCol.Spec.MaxReplicas
+	if params.OtelCol.Spec.Common.Autoscaler.MaxReplicas == nil {
+		params.OtelCol.Spec.Common.Autoscaler.MaxReplicas = params.OtelCol.Spec.MaxReplicas
 	}
 
-	if params.OtelCol.Spec.Autoscaler.MinReplicas == nil {
+	if params.OtelCol.Spec.Common.Autoscaler.MinReplicas == nil {
 		if params.OtelCol.Spec.MinReplicas != nil {
-			params.OtelCol.Spec.Autoscaler.MinReplicas = params.OtelCol.Spec.MinReplicas
+			params.OtelCol.Spec.Common.Autoscaler.MinReplicas = params.OtelCol.Spec.MinReplicas
 		} else {
-			params.OtelCol.Spec.Autoscaler.MinReplicas = params.OtelCol.Spec.Replicas
+			params.OtelCol.Spec.Common.Autoscaler.MinReplicas = params.OtelCol.Spec.Common.Replicas
 		}
 	}
 
 	metrics := []autoscalingv2.MetricSpec{}
 
-	if params.OtelCol.Spec.Autoscaler.TargetMemoryUtilization != nil {
+	if params.OtelCol.Spec.Common.Autoscaler.TargetMemoryUtilization != nil {
 		memoryTarget := autoscalingv2.MetricSpec{
 			Type: autoscalingv2.ResourceMetricSourceType,
 			Resource: &autoscalingv2.ResourceMetricSource{
 				Name: corev1.ResourceMemory,
 				Target: autoscalingv2.MetricTarget{
 					Type:               autoscalingv2.UtilizationMetricType,
-					AverageUtilization: params.OtelCol.Spec.Autoscaler.TargetMemoryUtilization,
+					AverageUtilization: params.OtelCol.Spec.Common.Autoscaler.TargetMemoryUtilization,
 				},
 			},
 		}
 		metrics = append(metrics, memoryTarget)
 	}
 
-	if params.OtelCol.Spec.Autoscaler.TargetCPUUtilization != nil {
+	if params.OtelCol.Spec.Common.Autoscaler.TargetCPUUtilization != nil {
 		cpuTarget := autoscalingv2.MetricSpec{
 			Type: autoscalingv2.ResourceMetricSourceType,
 			Resource: &autoscalingv2.ResourceMetricSource{
 				Name: corev1.ResourceCPU,
 				Target: autoscalingv2.MetricTarget{
 					Type:               autoscalingv2.UtilizationMetricType,
-					AverageUtilization: params.OtelCol.Spec.Autoscaler.TargetCPUUtilization,
+					AverageUtilization: params.OtelCol.Spec.Common.Autoscaler.TargetCPUUtilization,
 				},
 			},
 		}
@@ -95,17 +95,17 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 				Kind:       "OpenTelemetryCollector",
 				Name:       naming.OpenTelemetryCollector(params.OtelCol.Name),
 			},
-			MinReplicas: params.OtelCol.Spec.Autoscaler.MinReplicas,
-			MaxReplicas: *params.OtelCol.Spec.Autoscaler.MaxReplicas,
+			MinReplicas: params.OtelCol.Spec.Common.Autoscaler.MinReplicas,
+			MaxReplicas: *params.OtelCol.Spec.Common.Autoscaler.MaxReplicas,
 			Metrics:     metrics,
 		},
 	}
-	if params.OtelCol.Spec.Autoscaler.Behavior != nil {
-		autoscaler.Spec.Behavior = params.OtelCol.Spec.Autoscaler.Behavior
+	if params.OtelCol.Spec.Common.Autoscaler.Behavior != nil {
+		autoscaler.Spec.Behavior = params.OtelCol.Spec.Common.Autoscaler.Behavior
 	}
 
 	// convert from v1alpha1.MetricSpec into a autoscalingv2.MetricSpec.
-	for _, metric := range params.OtelCol.Spec.Autoscaler.Metrics {
+	for _, metric := range params.OtelCol.Spec.Common.Autoscaler.Metrics {
 		if metric.Type == autoscalingv2.PodsMetricSourceType {
 			v2metric := autoscalingv2.MetricSpec{
 				Type: metric.Type,

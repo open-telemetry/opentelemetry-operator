@@ -90,8 +90,8 @@ func (o OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 	}
 
 	one := int32(1)
-	if r.Spec.Replicas == nil {
-		r.Spec.Replicas = &one
+	if r.Spec.Common.Replicas == nil {
+		r.Spec.Common.Replicas = &one
 	}
 
 	// ReportsStatus Capability must be set
@@ -119,7 +119,7 @@ func (o OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error)
 	}
 
 	// validate port config
-	for _, p := range r.Spec.Ports {
+	for _, p := range r.Spec.Common.Ports {
 		nameErrs := validation.IsValidPortName(p.Name)
 		numErrs := validation.IsValidPortNum(int(p.Port))
 		if len(nameErrs) > 0 || len(numErrs) > 0 {
@@ -129,7 +129,7 @@ func (o OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error)
 	}
 
 	// check for maximum replica count
-	if r.Spec.Replicas != nil && *r.Spec.Replicas > 1 {
+	if r.Spec.Common.Replicas != nil && *r.Spec.Common.Replicas > 1 {
 		return warnings, fmt.Errorf("replica count must not be greater than 1")
 	}
 	return warnings, nil

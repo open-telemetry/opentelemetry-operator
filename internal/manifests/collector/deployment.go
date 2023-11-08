@@ -27,7 +27,7 @@ import (
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) *appsv1.Deployment {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Common.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
 	annotations := Annotations(params.OtelCol)
 	podAnnotations := PodAnnotations(params.OtelCol)
@@ -40,7 +40,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: params.OtelCol.Spec.Replicas,
+			Replicas: params.OtelCol.Spec.Common.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},
@@ -51,18 +51,18 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            ServiceAccountName(params.OtelCol),
-					InitContainers:                params.OtelCol.Spec.InitContainers,
+					InitContainers:                params.OtelCol.Spec.Common.InitContainers,
 					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
 					Volumes:                       Volumes(params.Config, params.OtelCol),
 					DNSPolicy:                     getDNSPolicy(params.OtelCol),
-					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
-					Tolerations:                   params.OtelCol.Spec.Tolerations,
-					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
-					SecurityContext:               params.OtelCol.Spec.PodSecurityContext,
-					PriorityClassName:             params.OtelCol.Spec.PriorityClassName,
-					Affinity:                      params.OtelCol.Spec.Affinity,
-					TerminationGracePeriodSeconds: params.OtelCol.Spec.TerminationGracePeriodSeconds,
-					TopologySpreadConstraints:     params.OtelCol.Spec.TopologySpreadConstraints,
+					HostNetwork:                   params.OtelCol.Spec.Common.HostNetwork,
+					Tolerations:                   params.OtelCol.Spec.Common.Tolerations,
+					NodeSelector:                  params.OtelCol.Spec.Common.NodeSelector,
+					SecurityContext:               params.OtelCol.Spec.Common.PodSecurityContext,
+					PriorityClassName:             params.OtelCol.Spec.Common.PriorityClassName,
+					Affinity:                      params.OtelCol.Spec.Common.Affinity,
+					TerminationGracePeriodSeconds: params.OtelCol.Spec.Common.TerminationGracePeriodSeconds,
+					TopologySpreadConstraints:     params.OtelCol.Spec.Common.TopologySpreadConstraints,
 				},
 			},
 		},

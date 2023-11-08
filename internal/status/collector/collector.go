@@ -45,7 +45,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 	name := naming.Collector(changed.Name)
 
 	// Set the scale selector
-	labels := manifestutils.Labels(changed.ObjectMeta, name, changed.Spec.Image, collector.ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(changed.ObjectMeta, name, changed.Spec.Common.Image, collector.ComponentOpenTelemetryCollector, []string{})
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return fmt.Errorf("failed to get selector for labelSelector: %w", err)

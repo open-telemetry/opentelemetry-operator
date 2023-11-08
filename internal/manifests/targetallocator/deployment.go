@@ -42,7 +42,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: params.OtelCol.Spec.TargetAllocator.Replicas,
+			Replicas: params.OtelCol.Spec.TargetAllocator.Common.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -55,9 +55,9 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 					ServiceAccountName:        ServiceAccountName(params.OtelCol),
 					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OtelCol)},
 					Volumes:                   Volumes(params.Config, params.OtelCol),
-					NodeSelector:              params.OtelCol.Spec.TargetAllocator.NodeSelector,
-					Tolerations:               params.OtelCol.Spec.TargetAllocator.Tolerations,
-					TopologySpreadConstraints: params.OtelCol.Spec.TargetAllocator.TopologySpreadConstraints,
+					NodeSelector:              params.OtelCol.Spec.TargetAllocator.Common.NodeSelector,
+					Tolerations:               params.OtelCol.Spec.TargetAllocator.Common.Tolerations,
+					TopologySpreadConstraints: params.OtelCol.Spec.TargetAllocator.Common.TopologySpreadConstraints,
 				},
 			},
 		},
