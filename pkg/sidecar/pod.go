@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	label      = "sidecar.opentelemetry.io/injected"
-	confEnvVar = "OTEL_CONFIG"
+	injectedLabel = "sidecar.opentelemetry.io/injected"
+	confEnvVar    = "OTEL_CONFIG"
 )
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
@@ -53,7 +53,7 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCo
 	if pod.Labels == nil {
 		pod.Labels = map[string]string{}
 	}
-	pod.Labels[label] = fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name)
+	pod.Labels[injectedLabel] = naming.Truncate("%s.%s", 63, otelcol.Namespace, otelcol.Name)
 
 	return pod, nil
 }
