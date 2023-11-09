@@ -194,7 +194,7 @@ func TestDeploymentAffinity(t *testing.T) {
 	d1 := Deployment(params1)
 	assert.Empty(t, d1.Spec.Template.Spec.Affinity)
 
-	// Test nodeSelector
+	// Test affinity
 	otelcol2 := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-affinity",
