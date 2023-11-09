@@ -17,9 +17,12 @@ package watcher
 import (
 	"context"
 	"fmt"
+	"os"
+	"regexp"
 	"time"
 
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
@@ -27,8 +30,10 @@ import (
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
 	"github.com/prometheus-operator/prometheus-operator/pkg/prometheus"
+	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
+	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -220,8 +225,12 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	smRetrieveErr := w.informers[monitoringv1.ServiceMonitorName].ListAll(w.serviceMonitorSelector, func(sm interface{}) {
 		monitor := sm.(*monitoringv1.ServiceMonitor)
 		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
-		w.addStoreAssetsForServiceMonitor(ctx, monitor.Name, monitor.Namespace, monitor.Spec.Endpoints, store)
-		serviceMonitorInstances[key] = monitor
+		validateError := w.addStoreAssetsForServiceMonitor(ctx, monitor.Name, monitor.Namespace, monitor.Spec.Endpoints, store)
+		if validateError != nil {
+			w.logger.Error(validateError, "Failed validating ServiceMonitor, skipping", "ServiceMonitor:", monitor.Name, "in namespace", monitor.Namespace)
+		} else {
+			serviceMonitorInstances[key] = monitor
+		}
 	})
 	if smRetrieveErr != nil {
 		return nil, smRetrieveErr
@@ -231,8 +240,12 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	pmRetrieveErr := w.informers[monitoringv1.PodMonitorName].ListAll(w.podMonitorSelector, func(pm interface{}) {
 		monitor := pm.(*monitoringv1.PodMonitor)
 		key, _ := cache.DeletionHandlingMetaNamespaceKeyFunc(monitor)
-		w.addStoreAssetsForPodMonitor(ctx, monitor.Name, monitor.Namespace, monitor.Spec.PodMetricsEndpoints, store)
-		podMonitorInstances[key] = monitor
+		validateError := w.addStoreAssetsForPodMonitor(ctx, monitor.Name, monitor.Namespace, monitor.Spec.PodMetricsEndpoints, store)
+		if validateError != nil {
+			w.logger.Error(validateError, "Failed validating PodMonitor, skipping", "PodMonitor:", monitor.Name, "in namespace", monitor.Namespace)
+		} else {
+			podMonitorInstances[key] = monitor
+		}
 	})
 	if pmRetrieveErr != nil {
 		return nil, pmRetrieveErr
@@ -288,8 +301,9 @@ func (w *PrometheusCRWatcher) addStoreAssetsForServiceMonitor(
 	smName, smNamespace string,
 	endps []monitoringv1.Endpoint,
 	store *assets.Store,
-) {
+) error {
 	var err error
+	var validateErr error
 	for i, endp := range endps {
 		objKey := fmt.Sprintf("serviceMonitor/%s/%s/%d", smNamespace, smName, i)
 
@@ -315,11 +329,33 @@ func (w *PrometheusCRWatcher) addStoreAssetsForServiceMonitor(
 		if err = store.AddSafeAuthorizationCredentials(ctx, smNamespace, endp.Authorization, smAuthKey); err != nil {
 			break
 		}
+
+		for _, rl := range endp.RelabelConfigs {
+			if rl.Action != "" {
+				if validateErr = validateRelabelConfig(*rl); validateErr != nil {
+					break
+				}
+			}
+		}
+
+		for _, rl := range endp.MetricRelabelConfigs {
+			if rl.Action != "" {
+				if validateErr = validateRelabelConfig(*rl); validateErr != nil {
+					break
+				}
+			}
+		}
 	}
 
 	if err != nil {
 		w.logger.Error(err, "Failed to obtain credentials for a ServiceMonitor", "serviceMonitor", smName)
 	}
+
+	if validateErr != nil {
+		return validateErr
+	}
+
+	return nil
 }
 
 // addStoreAssetsForServiceMonitor adds authentication / authorization related information to the assets store,
@@ -331,7 +367,7 @@ func (w *PrometheusCRWatcher) addStoreAssetsForPodMonitor(
 	pmName, pmNamespace string,
 	podMetricsEndps []monitoringv1.PodMetricsEndpoint,
 	store *assets.Store,
-) {
+) error {
 	var err error
 	for i, endp := range podMetricsEndps {
 		objKey := fmt.Sprintf("podMonitor/%s/%s/%d", pmNamespace, pmName, i)
@@ -358,9 +394,96 @@ func (w *PrometheusCRWatcher) addStoreAssetsForPodMonitor(
 		if err = store.AddSafeAuthorizationCredentials(ctx, pmNamespace, endp.Authorization, smAuthKey); err != nil {
 			break
 		}
+
+		for _, rl := range endp.RelabelConfigs {
+			if rl.Action != "" {
+				if validateErr = validateRelabelConfig(*rl); validateErr != nil {
+					break
+				}
+			}
+		}
+
+		for _, rl := range endp.MetricRelabelConfigs {
+			if rl.Action != "" {
+				if validateErr = validateRelabelConfig(*rl); validateErr != nil {
+					break
+				}
+			}
+		}
 	}
 
 	if err != nil {
 		w.logger.Error(err, "Failed to obtain credentials for a PodMonitor", "podMonitor", pmName)
 	}
+
+	if validateErr != nil {
+		return validateErr
+	}
+
+	return nil
+}
+
+// validateRelabelConfig validates relabel config for service and pod monitor,
+// based on the service monitor and pod metrics endpoints specs.
+// This code borrows from
+// https://github.com/prometheus-operator/prometheus-operator/blob/ba536405154d18f3a6f312818283d671182af6f3/pkg/prometheus/resource_selector.go#L237
+func validateRelabelConfig(rc monitoringv1.RelabelConfig) error {
+	relabelTarget := regexp.MustCompile(`^(?:(?:[a-zA-Z_]|\$(?:\{\w+\}|\w+))+\w*)+$`)
+
+	if _, err := relabel.NewRegexp(rc.Regex); err != nil {
+		return fmt.Errorf("invalid regex %s for relabel configuration", rc.Regex)
+	}
+
+	if rc.Modulus == 0 && rc.Action == string(relabel.HashMod) {
+		return fmt.Errorf("relabel configuration for hashmod requires non-zero modulus")
+	}
+
+	if (rc.Action == string(relabel.Replace) || rc.Action == string(relabel.HashMod) || rc.Action == string(relabel.Lowercase) || rc.Action == string(relabel.Uppercase) || rc.Action == string(relabel.KeepEqual) || rc.Action == string(relabel.DropEqual)) && rc.TargetLabel == "" {
+		return fmt.Errorf("relabel configuration for %s action needs targetLabel value", rc.Action)
+	}
+
+	if (rc.Action == string(relabel.Replace) || rc.Action == string(relabel.Lowercase) || rc.Action == string(relabel.Uppercase) || rc.Action == string(relabel.KeepEqual) || rc.Action == string(relabel.DropEqual)) && !relabelTarget.MatchString(rc.TargetLabel) {
+		return fmt.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
+	}
+
+	if (rc.Action == string(relabel.Lowercase) || rc.Action == string(relabel.Uppercase) || rc.Action == string(relabel.KeepEqual) || rc.Action == string(relabel.DropEqual)) && !(rc.Replacement == relabel.DefaultRelabelConfig.Replacement || rc.Replacement == "") {
+		return fmt.Errorf("'replacement' can not be set for %s action", rc.Action)
+	}
+
+	if rc.Action == string(relabel.LabelMap) {
+		if rc.Replacement != "" && !relabelTarget.MatchString(rc.Replacement) {
+			return fmt.Errorf("%q is invalid 'replacement' for %s action", rc.Replacement, rc.Action)
+		}
+	}
+
+	if rc.Action == string(relabel.HashMod) && !model.LabelName(rc.TargetLabel).IsValid() {
+		return fmt.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
+	}
+
+	if rc.Action == string(relabel.KeepEqual) || rc.Action == string(relabel.DropEqual) {
+		if !(rc.Regex == "" || rc.Regex == relabel.DefaultRelabelConfig.Regex.String()) ||
+			!(rc.Modulus == uint64(0) ||
+				rc.Modulus == relabel.DefaultRelabelConfig.Modulus) ||
+			!(rc.Separator == "" ||
+				rc.Separator == relabel.DefaultRelabelConfig.Separator) ||
+			!(rc.Replacement == relabel.DefaultRelabelConfig.Replacement ||
+				rc.Replacement == "") {
+			return fmt.Errorf("%s action requires only 'source_labels' and `target_label`, and no other fields", rc.Action)
+		}
+	}
+
+	if rc.Action == string(relabel.LabelDrop) || rc.Action == string(relabel.LabelKeep) {
+		if len(rc.SourceLabels) != 0 ||
+			!(rc.TargetLabel == "" ||
+				rc.TargetLabel == relabel.DefaultRelabelConfig.TargetLabel) ||
+			!(rc.Modulus == uint64(0) ||
+				rc.Modulus == relabel.DefaultRelabelConfig.Modulus) ||
+			!(rc.Separator == "" ||
+				rc.Separator == relabel.DefaultRelabelConfig.Separator) ||
+			!(rc.Replacement == relabel.DefaultRelabelConfig.Replacement ||
+				rc.Replacement == "") {
+			return fmt.Errorf("%s action requires only 'regex', and no other fields", rc.Action)
+		}
+	}
+	return nil
 }
