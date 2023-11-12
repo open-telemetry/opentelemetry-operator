@@ -41,9 +41,9 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 	containerNames := ""
 	ok := false
 	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
-		containerNames, ok = pod.Annotations[annotationInjectGoContainersName]
+		containerNames, ok = getFromAnnotationAndLabel(pod, annotationInjectGoContainersName)
 	} else {
-		containerNames, ok = pod.Annotations[annotationInjectContainerName]
+		containerNames, ok = getFromAnnotationAndLabel(pod, annotationInjectContainerName)
 	}
 
 	if ok && len(strings.Split(containerNames, ",")) > 1 {
@@ -74,7 +74,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 	}
 
 	// Annotation takes precedence for OTEL_GO_AUTO_TARGET_EXE
-	execPath, ok := pod.Annotations[annotationGoExecPath]
+	execPath, ok := getFromAnnotationAndLabel(pod, annotationGoExecPath)
 	if ok {
 		goAgent.Env = append(goAgent.Env, corev1.EnvVar{
 			Name:  envOtelTargetExe,

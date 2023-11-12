@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -264,7 +265,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() || inst == nil {
 		insts.DotNet.Instrumentation = inst
-		insts.DotNet.AdditionalAnnotations = map[string]string{annotationDotNetRuntime: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationDotNetRuntime)}
+		insts.DotNet.AdditionalAnnotations = map[string]string{annotationDotNetRuntime: getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationDotNetRuntime)}
 	} else {
 		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
@@ -325,14 +326,14 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	// We retrieve the annotation for podname
 	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
 		// We use annotations specific for instrumentation language
-		insts.Java.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
-		insts.NodeJS.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
-		insts.Python.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectPythonContainersName)
-		insts.DotNet.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
-		insts.Go.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
-		insts.ApacheHttpd.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
-		insts.Nginx.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNginxContainersName)
-		insts.Sdk.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
+		insts.Java.Containers = getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
+		insts.NodeJS.Containers = getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
+		insts.Python.Containers = getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectPythonContainersName)
+		insts.DotNet.Containers = getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectDotnetContainersName)
+		insts.Go.Containers = getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectGoContainersName)
+		insts.ApacheHttpd.Containers = getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectApacheHttpdContainersName)
+		insts.Nginx.Containers = getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNginxContainersName)
+		insts.Sdk.Containers = getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectSdkContainersName)
 
 		// We check if provided annotations and instrumentations are valid
 		ok, msg := insts.areContainerNamesConfiguredForMultipleInstrumentations()
@@ -345,7 +346,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		// only when multi instrumentation is disabled
 		singleInstrEnabled := insts.isSingleInstrumentationEnabled()
 		if singleInstrEnabled {
-			generalContainerNames := annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
+			generalContainerNames := getInstValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectContainerName)
 			insts.setInstrumentationLanguageContainers(generalContainerNames)
 		} else {
 			logger.V(1).Error(fmt.Errorf("multiple injection annotations present"), "skipping instrumentation injection")
@@ -363,7 +364,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 }
 
 func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
-	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, instAnnotation)
+	instValue := getInstValue(ns.ObjectMeta, pod.ObjectMeta, instAnnotation)
 
 	if len(instValue) == 0 || strings.EqualFold(instValue, "false") {
 		return nil, nil
@@ -403,4 +404,34 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	default:
 		return &otelInsts.Items[0], nil
 	}
+}
+
+func getInstValue(nsObjMeta, podObjMeta v1.ObjectMeta, instAnnotation string) string {
+	annoValue := annotationValue(nsObjMeta, podObjMeta, instAnnotation)
+	labValue := labelValue(nsObjMeta, podObjMeta, instAnnotation)
+
+	if len(annoValue) == 0 {
+		return labValue
+	}
+
+	if len(labValue) == 0 {
+		return annoValue
+	}
+
+	if strings.EqualFold(annoValue, "false") {
+		return labValue
+	}
+
+	if strings.EqualFold(labValue, "false") {
+		return annoValue
+	}
+
+	if strings.EqualFold(annoValue, "true") {
+		return labValue
+	}
+
+	if strings.EqualFold(labValue, "true") {
+		return annoValue
+	}
+	return labValue
 }
