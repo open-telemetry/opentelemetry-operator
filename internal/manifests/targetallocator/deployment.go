@@ -58,6 +58,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 					NodeSelector:              params.OtelCol.Spec.TargetAllocator.NodeSelector,
 					Tolerations:               params.OtelCol.Spec.TargetAllocator.Tolerations,
 					TopologySpreadConstraints: params.OtelCol.Spec.TargetAllocator.TopologySpreadConstraints,
+					Affinity:                  params.OtelCol.Spec.TargetAllocator.Affinity,
 				},
 			},
 		},
