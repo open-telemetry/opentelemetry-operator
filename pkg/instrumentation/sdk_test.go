@@ -201,7 +201,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.version=latest",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.app.application-name,service.version=latest",
 								},
 							},
 						},
@@ -369,7 +369,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,service.version=latest",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,service.instance.id=project1.app.application-name,service.version=latest",
 								},
 							},
 						},
