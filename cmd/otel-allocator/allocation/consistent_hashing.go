@@ -186,7 +186,40 @@ func (c *consistentHashingAllocator) SetTargets(targets map[string]*target.Item)
 	defer c.m.Unlock()
 
 	if len(c.collectors) == 0 {
-		c.log.Info("No collector instances present, cannot set targets")
+		c.log.Info("No collector instances present, saving targets to allocate to collector(s)")
+		// If there were no targets discovered previously, assign this as the new set of target items
+		if len(c.targetItems) == 0 {
+			c.log.Info("Not discovered any targets previously, saving targets found to the targetItems set")
+			for k, item := range targets {
+				c.targetItems[k] = item
+			}
+		} else {
+			// If there were previously discovered targets, add or remove accordingly
+			targetsDiffEmptyCollectorSet := diff.Maps(c.targetItems, targets)
+
+			// Check for additions
+			if len(targetsDiffEmptyCollectorSet.Additions()) > 0 {
+				c.log.Info("New targets discovered, adding new targets to the targetItems set")
+				for k, item := range targetsDiffEmptyCollectorSet.Additions() {
+					// Do nothing if the item is already there
+					if _, ok := c.targetItems[k]; ok {
+						continue
+					} else {
+						// Add item to item pool
+						c.targetItems[k] = item
+					}
+				}
+			}
+
+			// Check for deletions
+			if len(targetsDiffEmptyCollectorSet.Removals()) > 0 {
+				c.log.Info("Targets removed, Removing targets from the targetItems set")
+				for k, _ := range targetsDiffEmptyCollectorSet.Removals() {
+					// Delete item from target items
+					delete(c.targetItems, k)
+				}
+			}
+		}
 		return
 	}
 	// Check for target changes
