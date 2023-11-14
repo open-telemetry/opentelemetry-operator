@@ -23,6 +23,10 @@ import (
 	"unsafe"
 
 	"github.com/go-logr/logr"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
+
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,9 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 const (
@@ -401,6 +402,17 @@ func chooseServiceVersion(pod corev1.Pod, index int) string {
 	return tag
 }
 
+// creates the service.instance.id following the semantic defined by
+// https://github.com/open-telemetry/semantic-conventions/pull/312.
+func createServiceInstanceId(namespaceName, podName, containerName string) string {
+	var serviceInstanceId string
+	if namespaceName != "" && podName != "" && containerName != "" {
+		resNames := []string{namespaceName, podName, containerName}
+		serviceInstanceId = strings.Join(resNames, ".")
+	}
+	return serviceInstanceId
+}
+
 // createResourceMap creates resource attribute map.
 // User defined attributes (in explicitly set env var) have higher precedence.
 func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, index int) map[string]string {
@@ -424,7 +436,6 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 			res[k] = v
 		}
 	}
-
 	k8sResources := map[attribute.Key]string{}
 	k8sResources[semconv.K8SNamespaceNameKey] = ns.Name
 	k8sResources[semconv.K8SContainerNameKey] = pod.Spec.Containers[index].Name
@@ -433,6 +444,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SPodNameKey] = pod.Name
 	k8sResources[semconv.K8SPodUIDKey] = string(pod.UID)
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
+	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(ns.Name, pod.Name, pod.Spec.Containers[index].Name)
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
 	for k, v := range k8sResources {
 		if !existingRes[string(k)] && v != "" {
