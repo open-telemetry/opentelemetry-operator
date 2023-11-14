@@ -960,6 +960,11 @@ func (in *OpenTelemetryTargetAllocator) DeepCopyInto(out *OpenTelemetryTargetAll
 		}
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Affinity != nil {
+		in, out := &in.Affinity, &out.Affinity
+		*out = new(v1.Affinity)
+		(*in).DeepCopyInto(*out)
+	}
 	in.PrometheusCR.DeepCopyInto(&out.PrometheusCR)
 	if in.TopologySpreadConstraints != nil {
 		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
