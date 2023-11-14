@@ -31,6 +31,13 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		image = cfg.TargetAllocatorImage()
 	}
 
+	ports := make([]corev1.ContainerPort, 0)
+	ports = append(ports, corev1.ContainerPort{
+		Name:          "http",
+		ContainerPort: 8080,
+		Protocol:      corev1.ProtocolTCP,
+	})
+
 	volumeMounts := []corev1.VolumeMount{{
 		Name:      naming.TAConfigMapVolume(),
 		MountPath: "/conf",
@@ -66,6 +73,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	return corev1.Container{
 		Name:         naming.TAContainer(),
 		Image:        image,
+		Ports:        ports,
 		Env:          envVars,
 		VolumeMounts: volumeMounts,
 		Resources:    otelcol.Spec.TargetAllocator.Resources,

@@ -62,6 +62,27 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	assert.Equal(t, "overridden-image", c.Image)
 }
 
+func TestContainerPorts(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+				Image:   "default-image",
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Len(t, c.Ports, 1)
+	assert.Equal(t, "http", c.Ports[0].Name)
+	assert.Equal(t, int32(8080), c.Ports[0].ContainerPort)
+}
+
 func TestContainerVolumes(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
@@ -168,6 +189,13 @@ func TestContainerHasEnvVars(t *testing.T) {
 				SubPathExpr:      "",
 			},
 		},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "http",
+				ContainerPort: 8080,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
 	}
 
 	// test
@@ -241,6 +269,13 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 				SubPath:          "",
 				MountPropagation: nil,
 				SubPathExpr:      "",
+			},
+		},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "http",
+				ContainerPort: 8080,
+				Protocol:      corev1.ProtocolTCP,
 			},
 		},
 	}

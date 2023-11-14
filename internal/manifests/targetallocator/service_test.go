@@ -15,33 +15,31 @@
 package targetallocator
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func Service(params manifests.Params) *corev1.Service {
-	name := naming.TAService(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name)
+func TestServicePorts(t *testing.T) {
+	otelcol := collectorInstance()
+	cfg := config.New()
 
-	selector := Labels(params.OtelCol, name)
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(params.OtelCol.Name),
-			Namespace: params.OtelCol.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: selector,
-			Ports: []corev1.ServicePort{{
-				Name:       "targetallocation",
-				Port:       80,
-				TargetPort: intstr.FromString("http"),
-			}},
-		},
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
 	}
+
+	ports := []v1.ServicePort{{Name: "targetallocation", Port: 80, TargetPort: intstr.FromString("http")}}
+
+	s := Service(params)
+
+	assert.Equal(t, ports[0].Name, s.Spec.Ports[0].Name)
+	assert.Equal(t, ports[0].Port, s.Spec.Ports[0].Port)
+	assert.Equal(t, ports[0].TargetPort, s.Spec.Ports[0].TargetPort)
 }

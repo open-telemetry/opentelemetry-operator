@@ -95,6 +95,8 @@ type Config struct {
 	ComponentsAllowed map[string][]string `yaml:"componentsAllowed,omitempty"`
 	Endpoint          string              `yaml:"endpoint"`
 	Capabilities      map[Capability]bool `yaml:"capabilities"`
+	HeartbeatInterval time.Duration       `yaml:"heartbeatInterval,omitempty"`
+	Name              string              `yaml:"name,omitempty"`
 }
 
 func NewConfig(logger logr.Logger) *Config {
@@ -244,6 +246,16 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	target.ClusterConfig = clusterConfig
 
 	target.ListenAddr, err = getListenAddr(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HeartbeatInterval, err = getHeartbeatInterval(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.Name, err = getName(flagSet)
 	if err != nil {
 		return err
 	}
