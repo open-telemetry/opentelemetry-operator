@@ -258,12 +258,26 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 }
 
 func TestTargetsWithNoCollectorsLeastWeighted(t *testing.T) {
-	numItems := 10
-
 	s, _ := New("least-weighted", logger)
+
+	// Adding 10 new targets
+	numItems := 10
 	initTargets := MakeNNewTargetsWithEmptyCollectors(numItems, 0)
 	s.SetTargets(initTargets)
-
 	actualTargetItems := s.TargetItems()
 	assert.Len(t, actualTargetItems, numItems)
+
+	// Adding 5 new targets, and removing the old 10 targets
+	numItemsUpdate := 5
+	newTargets := MakeNNewTargetsWithEmptyCollectors(numItemsUpdate, 10)
+	s.SetTargets(newTargets)
+	actualTargetItems = s.TargetItems()
+	assert.Len(t, actualTargetItems, numItemsUpdate)
+
+	// Adding 5 new targets, and one existing target
+	numItemsUpdate = 6
+	newTargets = MakeNNewTargetsWithEmptyCollectors(numItemsUpdate, 14)
+	s.SetTargets(newTargets)
+	actualTargetItems = s.TargetItems()
+	assert.Len(t, actualTargetItems, numItemsUpdate)
 }

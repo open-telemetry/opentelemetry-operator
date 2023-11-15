@@ -105,11 +105,25 @@ func TestNumRemapped(t *testing.T) {
 }
 
 func TestTargetsWithNoCollectorsConsistentHashing(t *testing.T) {
-	numItems := 10
 
 	c := newConsistentHashingAllocator(logger)
-	c.SetTargets(MakeNNewTargetsWithEmptyCollectors(numItems, 0))
 
+	// Adding 10 new targets
+	numItems := 10
+	c.SetTargets(MakeNNewTargetsWithEmptyCollectors(numItems, 0))
 	actualTargetItems := c.TargetItems()
 	assert.Len(t, actualTargetItems, numItems)
+
+	// Adding 5 new targets, and removing the old 10 targets
+	numItemsUpdate := 5
+	c.SetTargets(MakeNNewTargetsWithEmptyCollectors(numItemsUpdate, 10))
+	actualTargetItemsUpdated := c.TargetItems()
+	assert.Len(t, actualTargetItemsUpdated, numItemsUpdate)
+
+	// Adding 5 new targets, and one existing target
+	numItemsUpdate = 6
+	c.SetTargets(MakeNNewTargetsWithEmptyCollectors(numItemsUpdate, 14))
+	actualTargetItemsUpdated = c.TargetItems()
+	assert.Len(t, actualTargetItemsUpdated, numItemsUpdate)
+
 }
