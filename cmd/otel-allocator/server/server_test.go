@@ -62,6 +62,7 @@ func TestServer_LivenessProbeHandler(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, result.StatusCode)
 }
+
 func TestServer_TargetsHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
 	type args struct {

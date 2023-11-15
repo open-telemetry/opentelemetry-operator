@@ -150,6 +150,7 @@ func (s *Server) JobHandler(c *gin.Context) {
 func (s *Server) LivenessProbeHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
+
 func (s *Server) PrometheusMiddleware(c *gin.Context) {
 	path := c.FullPath()
 	timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
