@@ -402,6 +402,54 @@ func chooseServiceVersion(pod corev1.Pod, index int) string {
 	return tag
 }
 
+// create/reserve namespace
+
+func (i *sdkInjector) createReservedNamespace(ctx context.Context) (bool, error) {
+	err := i.client.Get(ctx, types.NamespacedName{Name: constants.ReservedNamespace}, &corev1.Namespace{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			ns := corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: constants.ReservedNamespace,
+				},
+			}
+			err = i.client.Create(ctx, &ns)
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+	return true, nil
+}
+
+// recognizeUserDefinedValues recognizes user defined values assigned with opentelemetry.io/ prefix
+func (i *sdkInjector) recognizeUserDefinedValues(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, deployment appsv1.Deployment, index int) map[string]string {
+
+	existingRes := map[string]bool{}
+	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[index].Env, constants.EnvOTELResourceAttrs)
+
+	if existingResourceEnvIdx > -1 {
+		existingResArr := strings.Split(pod.Spec.Containers[index].Env[existingResourceEnvIdx].Value, ",")
+		for _, kv := range existingResArr {
+			keyValueArr := strings.Split(strings.TrimSpace(kv), "=")
+			if len(keyValueArr) != 2 {
+				continue
+			}
+			existingRes[keyValueArr[0]] = true
+		}
+	}
+
+	resMap := map[string]string{}
+
+	for key := range existingRes {
+		if strings.HasPrefix(key, constants.ReservedNamespace+"/") {
+			// now if it has the prefix opentelemetry.io/ then we need to check if the attribute name is already present in the resource attributes
+			// then do the operation accordingly
+		}
+	}
+	return resMap
+}
+
 // creates the service.instance.id following the semantic defined by
 // https://github.com/open-telemetry/semantic-conventions/pull/312.
 func createServiceInstanceId(namespaceName, podName, containerName string) string {
