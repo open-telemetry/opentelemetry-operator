@@ -30,7 +30,7 @@ autoinstrumentation-python=0.41b0
 autoinstrumentation-dotnet=1.1.0
 
 # Represents the current release of Go instrumentation.
-autoinstrumentation-go=v0.7.0-alpha
+autoinstrumentation-go=v0.8.0-alpha
 
 # Represents the current release of Apache HTTPD instrumentation.
 # Should match autoinstrumentation/apache-httpd/version.txt

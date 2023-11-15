@@ -279,9 +279,6 @@ Go auto-instrumentation also requires elevated permissions. The below permission
 
 ```yaml
 securityContext:
-    capabilities:
-     add:
-     - SYS_PTRACE
     privileged: true
     runAsUser: 0
 ```
