@@ -103,3 +103,27 @@ func TestNumRemapped(t *testing.T) {
 	}
 	assert.InDelta(t, numItems/numFinalCols, countRemapped, expectedDelta)
 }
+
+func TestTargetsWithNoCollectors(t *testing.T) {
+	//numCols := 0
+	numItems := 10
+
+	c := newConsistentHashingAllocator(logger)
+	// First setting targets when no collector instances are present
+	c.SetTargets(MakeNNewTargetsWithEmptyCollectors(numItems, 0))
+
+	//cols := MakeNCollectors(numCols, 0)
+	// var expectedPerCollector = float64(numItems / numCols)
+	// expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
+	// c := newConsistentHashingAllocator(logger)
+	//c.SetCollectors(cols)
+	//c.SetTargets(MakeNNewTargets(numItems, 0, 0))
+	actualTargetItems := c.TargetItems()
+	assert.Len(t, actualTargetItems, numItems)
+	// actualCollectors := c.Collectors()
+	// assert.Len(t, actualCollectors, numCols)
+	// for _, col := range actualCollectors {
+	// 	assert.InDelta(t, col.NumTargets, expectedPerCollector, expectedDelta)
+	// }
+
+}
