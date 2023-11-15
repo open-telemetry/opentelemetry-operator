@@ -256,3 +256,14 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 }
+
+func TestTargetsWithNoCollectorsLeastWeighted(t *testing.T) {
+	numItems := 10
+
+	s, _ := New("least-weighted", logger)
+	initTargets := MakeNNewTargetsWithEmptyCollectors(numItems, 0)
+	s.SetTargets(initTargets)
+
+	actualTargetItems := s.TargetItems()
+	assert.Len(t, actualTargetItems, numItems)
+}
