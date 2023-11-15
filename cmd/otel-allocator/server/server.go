@@ -88,6 +88,7 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 	router.GET("/jobs", s.JobHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	router.GET("/healthz", s.LivenessProbeHandler)
 	registerPprof(router.Group("/debug/pprof/"))
 
 	s.server = &http.Server{Addr: listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
@@ -146,6 +147,9 @@ func (s *Server) JobHandler(c *gin.Context) {
 	s.jsonHandler(c.Writer, displayData)
 }
 
+func (s *Server) LivenessProbeHandler(c *gin.Context) {
+	c.Status(http.StatusOK)
+}
 func (s *Server) PrometheusMiddleware(c *gin.Context) {
 	path := c.FullPath()
 	timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))

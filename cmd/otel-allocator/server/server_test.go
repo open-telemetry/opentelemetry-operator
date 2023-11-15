@@ -50,6 +50,18 @@ var (
 	testJobTargetItemTwo = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
 )
 
+func TestServer_LivenessProbeHandler(t *testing.T) {
+	leastWeighted, _ := allocation.New("least-weighted", logger)
+	listenAddr := ":8080"
+	s := NewServer(logger, leastWeighted, listenAddr)
+	request := httptest.NewRequest("GET", "/healthz", nil)
+	w := httptest.NewRecorder()
+
+	s.server.Handler.ServeHTTP(w, request)
+	result := w.Result()
+
+	assert.Equal(t, http.StatusOK, result.StatusCode)
+}
 func TestServer_TargetsHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
 	type args struct {
