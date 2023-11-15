@@ -61,6 +61,13 @@ spec:
           volumeMounts:
           - mountPath: /conf
             name: ta-internal
+          livenessProbe:
+            httpGet:
+              path: /healthz
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
       volumes:
         - configMap:
             items:

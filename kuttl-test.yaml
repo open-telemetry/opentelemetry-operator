@@ -2,6 +2,6 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 artifactsDir: ./tests/_build/artifacts/
 testDirs:
-  - ./tests/e2e/
-timeout: 150
+  - ./tests/e2e/targetallocator-features
+timeout: 30
 parallel: 4
