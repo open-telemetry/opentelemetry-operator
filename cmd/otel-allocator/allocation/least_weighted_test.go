@@ -280,4 +280,27 @@ func TestTargetsWithNoCollectorsLeastWeighted(t *testing.T) {
 	s.SetTargets(newTargets)
 	actualTargetItems = s.TargetItems()
 	assert.Len(t, actualTargetItems, numItemsUpdate)
+
+	// Adding collectors to test allocation
+	numCols := 2
+	cols := MakeNCollectors(2, 0)
+	s.SetCollectors(cols)
+
+	// Checking to see that there is no change to number of targets
+	actualTargetItems = s.TargetItems()
+	assert.Len(t, actualTargetItems, numItemsUpdate)
+	// Checking to see collectors are added correctly
+	actualCollectors := s.Collectors()
+	assert.Len(t, actualCollectors, numCols)
+
+	// Divisor needed to get 15%
+	divisor := 6.7
+	targetItemLen := len(actualTargetItems)
+	count := targetItemLen / len(actualCollectors)
+	percent := float64(targetItemLen) / divisor
+
+	// Check to see targets are allocated with the expected delta
+	for _, i := range actualCollectors {
+		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
+	}
 }

@@ -126,4 +126,19 @@ func TestTargetsWithNoCollectorsConsistentHashing(t *testing.T) {
 	actualTargetItemsUpdated = c.TargetItems()
 	assert.Len(t, actualTargetItemsUpdated, numItemsUpdate)
 
+	// Adding collectors to test allocation
+	numCols := 2
+	cols := MakeNCollectors(2, 0)
+	c.SetCollectors(cols)
+	var expectedPerCollector = float64(numItemsUpdate / numCols)
+	expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
+	// Checking to see that there is no change to number of targets
+	actualTargetItems = c.TargetItems()
+	assert.Len(t, actualTargetItems, numItemsUpdate)
+	// Checking to see collectors are added correctly
+	actualCollectors := c.Collectors()
+	assert.Len(t, actualCollectors, numCols)
+	for _, col := range actualCollectors {
+		assert.InDelta(t, col.NumTargets, expectedPerCollector, expectedDelta)
+	}
 }

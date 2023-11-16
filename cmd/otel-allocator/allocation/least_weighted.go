@@ -183,9 +183,20 @@ func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Col
 		delete(allocator.targetItemsPerJobPerCollector, k.Name)
 		TargetsPerCollector.WithLabelValues(k.Name, leastWeightedStrategyName).Set(0)
 	}
+
+	// If previously there were no collector instances present, allocate the previous set of saved targets to the new collectors
+	allocateTargets := false
+	if len(allocator.collectors) == 0 && len(allocator.targetItems) > 0 {
+		allocateTargets = true
+	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
 		allocator.collectors[i.Name] = NewCollector(i.Name)
+	}
+	if allocateTargets {
+		for _, item := range allocator.targetItems {
+				allocator.addTargetToTargetItems(item)
+		}
 	}
 
 	// Re-Allocate targets of the removed collectors
@@ -240,7 +251,7 @@ func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*target.I
 			// Check for deletions
 			if len(targetsDiffEmptyCollectorSet.Removals()) > 0 {
 				allocator.log.Info("Targets removed, Removing targets from the targetItems set")
-				for k, _ := range targetsDiffEmptyCollectorSet.Removals() {
+				for k := range targetsDiffEmptyCollectorSet.Removals() {
 					// Delete item from target items
 					delete(allocator.targetItems, k)
 				}
