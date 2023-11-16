@@ -17,12 +17,15 @@ package operator
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
-	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
@@ -31,6 +34,8 @@ const (
 	CollectorResource       = "OpenTelemetryCollector"
 	ResourceIdentifierKey   = "created-by"
 	ResourceIdentifierValue = "operator-opamp-bridge"
+	ReportingLabelKey       = "opentelemetry.io/opamp-reporting"
+	ManagedLabelKey         = "opentelemetry.io/opamp-managed"
 )
 
 type ConfigApplier interface {
@@ -52,17 +57,29 @@ type Client struct {
 	componentsAllowed map[string]map[string]bool
 	k8sClient         client.Client
 	close             chan bool
+	name              string
 }
 
 var _ ConfigApplier = &Client{}
 
-func NewClient(log logr.Logger, c client.Client, componentsAllowed map[string]map[string]bool) *Client {
+func NewClient(name string, log logr.Logger, c client.Client, componentsAllowed map[string]map[string]bool) *Client {
 	return &Client{
 		log:               log,
 		componentsAllowed: componentsAllowed,
 		k8sClient:         c,
 		close:             make(chan bool, 1),
+		name:              name,
 	}
+}
+
+func (c Client) labelSetContainsLabel(instance *v1alpha1.OpenTelemetryCollector, label, value string) bool {
+	if instance == nil || instance.GetLabels() == nil {
+		return false
+	}
+	if labels := instance.GetLabels(); labels != nil && strings.EqualFold(labels[label], value) {
+		return true
+	}
+	return false
 }
 
 func (c Client) create(ctx context.Context, name string, namespace string, collector *v1alpha1.OpenTelemetryCollector) error {
@@ -104,31 +121,43 @@ func (c Client) update(ctx context.Context, old *v1alpha1.OpenTelemetryCollector
 
 func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentConfigFile) error {
 	c.log.Info("Received new config", "name", name, "namespace", namespace)
-	var collectorSpec v1alpha1.OpenTelemetryCollectorSpec
-	err := yaml.Unmarshal(configmap.Body, &collectorSpec)
+	var collector v1alpha1.OpenTelemetryCollector
+	err := yaml.Unmarshal(configmap.Body, &collector)
 	if err != nil {
 		return err
 	}
-	if len(collectorSpec.Config) == 0 {
+	if len(collector.Spec.Config) == 0 {
 		return errors.NewBadRequest("Must supply valid configuration")
 	}
-	reasons, validateErr := c.validate(collectorSpec)
+	reasons, validateErr := c.validate(collector.Spec)
 	if validateErr != nil {
 		return validateErr
 	}
 	if len(reasons) > 0 {
 		return errors.NewBadRequest(fmt.Sprintf("Items in config are not allowed: %v", reasons))
 	}
-	collector := &v1alpha1.OpenTelemetryCollector{Spec: collectorSpec}
+	updatedCollector := collector.DeepCopy()
 	ctx := context.Background()
 	instance, err := c.GetInstance(name, namespace)
 	if err != nil {
 		return err
 	}
-	if instance != nil {
-		return c.update(ctx, instance, collector)
+	// If either the received collector or the collector being created has reporting set to true, it should be denied
+	if c.labelSetContainsLabel(instance, ReportingLabelKey, "true") ||
+		c.labelSetContainsLabel(updatedCollector, ReportingLabelKey, "true") {
+		return errors.NewBadRequest("cannot modify a collector with `opentelemetry.io/opamp-reporting: true`")
 	}
-	return c.create(ctx, name, namespace, collector)
+	// If either the received collector or the collector doesn't have the managed label set to true, it should be denied
+	if !c.labelSetContainsLabel(instance, ManagedLabelKey, "true") &&
+		!c.labelSetContainsLabel(instance, ManagedLabelKey, c.name) &&
+		!c.labelSetContainsLabel(updatedCollector, ManagedLabelKey, "true") &&
+		!c.labelSetContainsLabel(updatedCollector, ManagedLabelKey, c.name) {
+		return errors.NewBadRequest("cannot modify a collector that doesn't have `opentelemetry.io/opamp-managed: true | <bridge-name>` set")
+	}
+	if instance == nil {
+		return c.create(ctx, name, namespace, updatedCollector)
+	}
+	return c.update(ctx, instance, updatedCollector)
 }
 
 func (c Client) Delete(name string, namespace string) error {
@@ -150,13 +179,28 @@ func (c Client) Delete(name string, namespace string) error {
 func (c Client) ListInstances() ([]v1alpha1.OpenTelemetryCollector, error) {
 	ctx := context.Background()
 	result := v1alpha1.OpenTelemetryCollectorList{}
-	err := c.k8sClient.List(ctx, &result, client.MatchingLabels{
-		ResourceIdentifierKey: ResourceIdentifierValue,
+	labelSelector := labels.NewSelector()
+	requirement, err := labels.NewRequirement(ManagedLabelKey, selection.In, []string{c.name, "true"})
+	if err != nil {
+		return nil, err
+	}
+	err = c.k8sClient.List(ctx, &result, client.MatchingLabelsSelector{Selector: labelSelector.Add(*requirement)})
+	if err != nil {
+		return nil, err
+	}
+	reportingCollectors := v1alpha1.OpenTelemetryCollectorList{}
+	err = c.k8sClient.List(ctx, &reportingCollectors, client.MatchingLabels{
+		ReportingLabelKey: "true",
 	})
 	if err != nil {
 		return nil, err
 	}
-	return result.Items, nil
+	items := append(result.Items, reportingCollectors.Items...)
+	for i := range items {
+		items[i].SetManagedFields(nil)
+	}
+
+	return items, nil
 }
 
 func (c Client) GetInstance(name string, namespace string) (*v1alpha1.OpenTelemetryCollector, error) {

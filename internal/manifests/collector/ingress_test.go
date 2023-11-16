@@ -66,6 +66,7 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		actual, err := Ingress(params)
+		fmt.Printf("error1: %+v", err)
 		assert.Nil(t, actual)
 		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
 	})
@@ -85,6 +86,7 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		actual, err := Ingress(params)
+		fmt.Printf("error2: %+v", err)
 		assert.Nil(t, actual)
 		assert.ErrorContains(t, err, "no receivers available as part of the configuration")
 	})

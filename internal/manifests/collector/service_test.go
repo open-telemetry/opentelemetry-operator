@@ -170,6 +170,21 @@ func TestDesiredService(t *testing.T) {
 
 		assert.Equal(t, expected, *actual)
 	})
+
+	t.Run("should return nil unable to parse config", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1alpha1.OpenTelemetryCollector{
+				Spec: v1alpha1.OpenTelemetryCollectorSpec{Config: `!!!`},
+			},
+		}
+
+		actual, err := Service(params)
+		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
+		assert.Nil(t, actual)
+
+	})
 }
 
 func TestHeadlessService(t *testing.T) {

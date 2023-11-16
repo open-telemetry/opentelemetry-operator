@@ -62,7 +62,6 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	c, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
-	// TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration")
 		return nil, err
@@ -135,7 +134,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	}
 
 	// if we have no ports, we don't need a service
-	if len(ports) == 0 || err != nil {
+	if len(ports) == 0 {
 
 		params.Log.V(1).Info("the instance's configuration didn't yield any ports to open, skipping service", "instance.name", params.OtelCol.Name, "instance.namespace", params.OtelCol.Namespace)
 		return nil, err

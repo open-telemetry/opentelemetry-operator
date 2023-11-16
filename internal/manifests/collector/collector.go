@@ -62,7 +62,10 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
-	routes, _ := Routes(params)
+	routes, err := Routes(params)
+	if err != nil {
+		return nil, err
+	}
 	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
 	for _, route := range routes {
 		resourceManifests = append(resourceManifests, route)
