@@ -2434,9 +2434,6 @@ func TestMutatePod(t *testing.T) {
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
 								Privileged: &true,
-								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{"SYS_PTRACE"},
-								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{

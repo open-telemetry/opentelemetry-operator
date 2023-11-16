@@ -217,7 +217,7 @@ func TestDeploymentAffinity(t *testing.T) {
 		Config:  cfg,
 		Log:     logger,
 	}
-
+	
 	d2, err := Deployment(params2)
 	assert.NoError(t, err)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
