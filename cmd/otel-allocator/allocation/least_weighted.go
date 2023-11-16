@@ -195,7 +195,7 @@ func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Col
 	}
 	if allocateTargets {
 		for _, item := range allocator.targetItems {
-				allocator.addTargetToTargetItems(item)
+			allocator.addTargetToTargetItems(item)
 		}
 	}
 
