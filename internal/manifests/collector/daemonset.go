@@ -61,6 +61,7 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 					Affinity:           params.OtelCol.Spec.Affinity,
 				},
 			},
+			UpdateStrategy: params.OtelCol.Spec.UpdateStrategy,
 		},
 	}
 }
