@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -765,6 +766,22 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "a valid Ingress hostname has to be defined for subdomain ruleType",
+		},
+		{
+			name: "invalid updateStrategy for Deployment mode",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+						Type: "RollingUpdate",
+						RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+							MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+							MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Collector mode is set to deployment, which does not support the attribute 'updateStrategy'",
 		},
 	}
 
