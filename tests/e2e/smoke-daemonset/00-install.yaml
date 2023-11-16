@@ -1,0 +1,24 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: daemonset-test
+spec:
+  mode: daemonset
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  config: |
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+    processors:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: []
+          exporters: [debug]
