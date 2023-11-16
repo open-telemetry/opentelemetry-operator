@@ -88,7 +88,7 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 	router.GET("/jobs", s.JobHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	router.GET("/healthz", s.LivenessProbeHandler)
+	router.GET("/livez", s.LivenessProbeHandler)
 	registerPprof(router.Group("/debug/pprof/"))
 
 	s.server = &http.Server{Addr: listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}

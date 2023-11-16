@@ -54,7 +54,7 @@ func TestServer_LivenessProbeHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
 	listenAddr := ":8080"
 	s := NewServer(logger, leastWeighted, listenAddr)
-	request := httptest.NewRequest("GET", "/healthz", nil)
+	request := httptest.NewRequest("GET", "/livez", nil)
 	w := httptest.NewRecorder()
 
 	s.server.Handler.ServeHTTP(w, request)
