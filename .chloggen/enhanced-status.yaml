@@ -5,17 +5,10 @@ change_type: enhancement
 component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-<<<<<<<< HEAD:.chloggen/enhanced-status.yaml
 note: added reconciliation errors for CRD events
 
 # One or more tracking issues related to the change
 issues: [1972]
-========
-note: Added updateStrategy for DaemonSet mode.
-
-# One or more tracking issues related to the change
-issues: [2107]
->>>>>>>> b353f36e99a60a87d16f451ffda78715e7dcd91e:.chloggen/add-updatestrategy.yaml
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
