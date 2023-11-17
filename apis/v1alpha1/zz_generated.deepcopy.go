@@ -1010,17 +1010,13 @@ func (in *OpenTelemetryTargetAllocatorPrometheusCR) DeepCopyInto(out *OpenTeleme
 	}
 	if in.PodMonitorSelector != nil {
 		in, out := &in.PodMonitorSelector, &out.PodMonitorSelector
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = new(metav1.LabelSelector)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ServiceMonitorSelector != nil {
 		in, out := &in.ServiceMonitorSelector, &out.ServiceMonitorSelector
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = new(metav1.LabelSelector)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

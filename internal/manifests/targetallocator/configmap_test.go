@@ -90,17 +90,26 @@ label_selector:
   app.kubernetes.io/managed-by: opentelemetry-operator
   app.kubernetes.io/part-of: opentelemetry
 pod_monitor_selector:
-  release: my-instance
+  matchlabels:
+    release: my-instance
+  matchexpressions: []
 service_monitor_selector:
-  release: my-instance
+  matchlabels:
+    release: my-instance
+  matchexpressions: []
 `,
 		}
 		instance := collectorInstance()
-		instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = map[string]string{
-			"release": "my-instance",
+		instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"release": "my-instance",
+			},
 		}
-		instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = map[string]string{
-			"release": "my-instance",
+
+		instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"release": "my-instance",
+			},
 		}
 		cfg := config.New()
 		params := manifests.Params{

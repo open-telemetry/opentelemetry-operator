@@ -2,9 +2,11 @@ label_selector:
   app.kubernetes.io/instance: default.test
   app.kubernetes.io/managed-by: opentelemetry-operator
 pod_monitor_selector:
-  release: test
+  matchlabels:
+    release: test
 service_monitor_selector:
-  release: test
+  matchlabels:
+    release: test
 config:
   scrape_configs:
     - job_name: prometheus

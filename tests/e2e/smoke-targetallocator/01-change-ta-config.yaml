@@ -11,7 +11,11 @@ spec:
     prometheusCR:
       enabled: true
       serviceMonitorSelector:
-        key: value # this is just an arbitrary change to the target allocator config
+        matchLabels:
+          key: value # this is just an arbitrary change to the target allocator config
+      podMonitorSelector:
+        matchLabels:
+          key: value # this is just an arbitrary change to the target allocator config
   config: |
     receivers:
       jaeger:

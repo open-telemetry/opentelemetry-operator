@@ -4973,13 +4973,48 @@ spec:
                           custom resources as targets or not.
                         type: boolean
                       podMonitorSelector:
-                        additionalProperties:
-                          type: string
                         description: PodMonitors to be selected for target discovery.
                           This is a map of {key,value} pairs. Each {key,value} in
                           the map is going to exactly match a label in a PodMonitor's
                           meta labels.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                            type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                       scrapeInterval:
                         default: 30s
                         description: "Interval between consecutive scrapes. Equivalent
@@ -4987,13 +5022,48 @@ spec:
                         format: duration
                         type: string
                       serviceMonitorSelector:
-                        additionalProperties:
-                          type: string
                         description: ServiceMonitors to be selected for target discovery.
                           This is a map of {key,value} pairs. Each {key,value} in
                           the map is going to exactly match a label in a ServiceMonitor's
                           meta labels.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                            type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   replicas:
                     description: Replicas is the number of pod instances for the underlying

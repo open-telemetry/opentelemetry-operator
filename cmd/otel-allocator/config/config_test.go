@@ -26,6 +26,7 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/file"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestLoad(t *testing.T) {
@@ -151,11 +152,15 @@ func TestLoad(t *testing.T) {
 						},
 					},
 				},
-				PodMonitorSelector: map[string]string{
-					"release": "test",
+				PodMonitorSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"release": "test",
+					},
 				},
-				ServiceMonitorSelector: map[string]string{
-					"release": "test",
+				ServiceMonitorSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"release": "test",
+					},
 				},
 			},
 			wantErr: assert.NoError,

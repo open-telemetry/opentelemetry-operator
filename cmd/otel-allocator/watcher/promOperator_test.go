@@ -411,8 +411,8 @@ func getTestPrometheusCRWatcher(t *testing.T, sm *monitoringv1.ServiceMonitor, p
 		k8sClient:              k8sClient,
 		informers:              informers,
 		configGenerator:        generator,
-		serviceMonitorSelector: getSelector(nil),
-		podMonitorSelector:     getSelector(nil),
+		serviceMonitorSelector: nil,
+		podMonitorSelector:     nil,
 		stopChannel:            make(chan struct{}),
 	}
 }

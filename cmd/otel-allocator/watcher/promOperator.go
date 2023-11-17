@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
@@ -76,9 +77,9 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 		return nil, err
 	}
 
-	servMonSelector := getSelector(cfg.ServiceMonitorSelector)
+	servMonSelector := cfg.ServiceMonitorSelector
 
-	podMonSelector := getSelector(cfg.PodMonitorSelector)
+	podMonSelector := cfg.PodMonitorSelector
 
 	return &PrometheusCRWatcher{
 		logger:                 logger,
@@ -95,24 +96,16 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*Pr
 }
 
 type PrometheusCRWatcher struct {
-	logger               logr.Logger
-	kubeMonitoringClient monitoringclient.Interface
-	k8sClient            kubernetes.Interface
-	informers            map[string]*informers.ForResource
-	eventInterval        time.Duration
-	stopChannel          chan struct{}
-	configGenerator      *prometheus.ConfigGenerator
-	kubeConfigPath       string
-
-	serviceMonitorSelector labels.Selector
-	podMonitorSelector     labels.Selector
-}
-
-func getSelector(s map[string]string) labels.Selector {
-	if s == nil {
-		return labels.NewSelector()
-	}
-	return labels.SelectorFromSet(s)
+	logger                 logr.Logger
+	kubeMonitoringClient   monitoringclient.Interface
+	k8sClient              kubernetes.Interface
+	informers              map[string]*informers.ForResource
+	eventInterval          time.Duration
+	stopChannel            chan struct{}
+	configGenerator        *prometheus.ConfigGenerator
+	kubeConfigPath         string
+	serviceMonitorSelector *metav1.LabelSelector
+	podMonitorSelector     *metav1.LabelSelector
 }
 
 // getInformers returns a map of informers for the given resources.
