@@ -5,15 +5,12 @@ change_type: bug_fix
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Run the target allocator as a non-root user
+note: Save targets discovered before collector instances come up
 
 # One or more tracking issues related to the change
-issues: [738]
+issues: [2350]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext: |
-  Some Kubernetes configurations do not allow running images as root, so
-  provide a non-zero UID in the Docker image.
-
+subtext:
