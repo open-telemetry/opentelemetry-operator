@@ -220,13 +220,12 @@ service:
 			specConfig: `exporters:
     prometheus:
         endpoint: "0.0.0.0:9090"
-exporters:
 	debug:
 service:
     pipelines:
         metrics:
 			receivers: [otlp]
-            exporters: [prometheus]
+            exporters: [prometheus, debug]
 `,
 			specPorts: []corev1.ServicePort{
 				{
@@ -258,12 +257,11 @@ service:
         endpoint: "0.0.0.0:9090"
     prometheus/dev:
         endpoint: "0.0.0.0:9091"
-exporters:
 	debug:
 service:
     pipelines:
         metrics:
-            exporters: [prometheus/prod, prometheus/dev]
+            exporters: [prometheus/prod, prometheus/dev, debug]
 `,
 			specPorts: []corev1.ServicePort{
 				{
@@ -315,12 +313,11 @@ service:
         endpoint: "0.0.0.0:9091"
     prometheusremotewrite/prometheus:
         endpoint: http://prometheus-server.monitoring/api/v1/write
-exporters:
 	debug:
 service:
     pipelines:
         metrics:
-            exporters: [prometheus/prod, prometheus/dev, prometheusremotewrite/prometheus]`,
+            exporters: [prometheus/prod, prometheus/dev, prometheusremotewrite/prometheus, debug]`,
 			specPorts: []corev1.ServicePort{
 				{
 					Name:     "metrics",
