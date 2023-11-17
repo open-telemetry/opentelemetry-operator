@@ -50,7 +50,7 @@ func TestContainerNewDefault(t *testing.T) {
 		pipelines:
 			metrics:
 				receivers: [otlp]
-				exporters: [logging]`
+				exporters: [debug]`
 
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
@@ -100,7 +100,7 @@ service:
   pipelines:
     metrics:
       receivers: [examplereceiver]
-      exporters: [logging]`
+      exporters: [debug]`
 
 	tests := []struct {
 		description   string
