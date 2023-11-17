@@ -45,8 +45,7 @@ func TestContainerNewDefault(t *testing.T) {
 			http:
 			grpc:
 	exporters:
-		logging:
-			loglevel: debug
+		debug:
 	service:
 		pipelines:
 			metrics:
@@ -96,8 +95,7 @@ func TestContainerPorts(t *testing.T) {
   examplereceiver:
     endpoint: "0.0.0.0:12345"
 exporters:
-  logging:
-    loglevel: debug
+  debug:
 service:
   pipelines:
     metrics:
@@ -223,8 +221,7 @@ service:
     prometheus:
         endpoint: "0.0.0.0:9090"
 exporters:
-	logging:
-		loglevel: debug
+	debug:
 service:
     pipelines:
         metrics:
@@ -262,8 +259,7 @@ service:
     prometheus/dev:
         endpoint: "0.0.0.0:9091"
 exporters:
-	logging:
-		loglevel: debug
+	debug:
 service:
     pipelines:
         metrics:
@@ -320,8 +316,7 @@ service:
     prometheusremotewrite/prometheus:
         endpoint: http://prometheus-server.monitoring/api/v1/write
 exporters:
-	logging:
-		loglevel: debug
+	debug:
 service:
     pipelines:
         metrics:

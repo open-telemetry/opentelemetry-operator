@@ -111,8 +111,8 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	}
 
 	// test
-	ds, _ := Deployment(params)
-
+	ds, err := Deployment(params)
+	assert.NoError(t, err)
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", ds.Name)
 	assert.Subset(t, ds.Spec.Template.Annotations, testPodAnnotationValues)
@@ -150,7 +150,8 @@ func TestDeploymentNodeSelector(t *testing.T) {
 		Config:  cfg,
 		Log:     logger,
 	}
-	d1, _ := Deployment(params1)
+	d1, err := Deployment(params1)
+	assert.NoError(t, err)
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector

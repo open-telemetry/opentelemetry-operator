@@ -40,7 +40,7 @@ func TestExpectedRoutes(t *testing.T) {
 		params.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 		params.OtelCol.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 
-		routes, _ := collector.Routes(params)
+		routes, err := collector.Routes(params)
 		err = expectedRoutes(ctx, params, routes)
 		assert.NoError(t, err)
 
@@ -54,7 +54,7 @@ func TestExpectedRoutes(t *testing.T) {
 		params.OtelCol.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
 		params.OtelCol.Spec.Ingress.Hostname = expectHostname
 
-		routes, _ = collector.Routes(params)
+		routes, err = collector.Routes(params)
 		err = expectedRoutes(ctx, params, routes)
 		assert.NoError(t, err)
 
@@ -84,7 +84,7 @@ func TestDeleteRoutes(t *testing.T) {
 		}
 		myParams.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 
-		routes, _ := collector.Routes(myParams)
+		routes, err := collector.Routes(myParams)
 		err = expectedRoutes(ctx, myParams, routes)
 		assert.NoError(t, err)
 
