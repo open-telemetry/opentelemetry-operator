@@ -256,3 +256,51 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 }
+
+func TestTargetsWithNoCollectorsLeastWeighted(t *testing.T) {
+	s, _ := New("least-weighted", logger)
+
+	// Adding 10 new targets
+	numItems := 10
+	initTargets := MakeNNewTargetsWithEmptyCollectors(numItems, 0)
+	s.SetTargets(initTargets)
+	actualTargetItems := s.TargetItems()
+	assert.Len(t, actualTargetItems, numItems)
+
+	// Adding 5 new targets, and removing the old 10 targets
+	numItemsUpdate := 5
+	newTargets := MakeNNewTargetsWithEmptyCollectors(numItemsUpdate, 10)
+	s.SetTargets(newTargets)
+	actualTargetItems = s.TargetItems()
+	assert.Len(t, actualTargetItems, numItemsUpdate)
+
+	// Adding 5 new targets, and one existing target
+	numItemsUpdate = 6
+	newTargets = MakeNNewTargetsWithEmptyCollectors(numItemsUpdate, 14)
+	s.SetTargets(newTargets)
+	actualTargetItems = s.TargetItems()
+	assert.Len(t, actualTargetItems, numItemsUpdate)
+
+	// Adding collectors to test allocation
+	numCols := 2
+	cols := MakeNCollectors(2, 0)
+	s.SetCollectors(cols)
+
+	// Checking to see that there is no change to number of targets
+	actualTargetItems = s.TargetItems()
+	assert.Len(t, actualTargetItems, numItemsUpdate)
+	// Checking to see collectors are added correctly
+	actualCollectors := s.Collectors()
+	assert.Len(t, actualCollectors, numCols)
+
+	// Divisor needed to get 15%
+	divisor := 6.7
+	targetItemLen := len(actualTargetItems)
+	count := targetItemLen / len(actualCollectors)
+	percent := float64(targetItemLen) / divisor
+
+	// Check to see targets are allocated with the expected delta
+	for _, i := range actualCollectors {
+		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
+	}
+}
