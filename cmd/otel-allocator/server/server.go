@@ -89,6 +89,7 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	router.GET("/livez", s.LivenessProbeHandler)
+	router.GET("/readyz", s.ReadinessProbeHandler)
 	registerPprof(router.Group("/debug/pprof/"))
 
 	s.server = &http.Server{Addr: listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
@@ -136,6 +137,18 @@ func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
 	_, err := c.Writer.Write(result)
 	if err != nil {
 		s.errorHandler(c.Writer, err)
+	}
+}
+
+func (s *Server) ReadinessProbeHandler(c *gin.Context) {
+	s.mtx.RLock()
+	result := s.scrapeConfigResponse
+	s.mtx.RUnlock()
+
+	if result != nil {
+		c.Status(http.StatusOK)
+	} else {
+		c.Status(http.StatusServiceUnavailable)
 	}
 }
 
