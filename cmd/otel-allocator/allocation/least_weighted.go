@@ -183,9 +183,20 @@ func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Col
 		delete(allocator.targetItemsPerJobPerCollector, k.Name)
 		TargetsPerCollector.WithLabelValues(k.Name, leastWeightedStrategyName).Set(0)
 	}
+
+	// If previously there were no collector instances present, allocate the previous set of saved targets to the new collectors
+	allocateTargets := false
+	if len(allocator.collectors) == 0 && len(allocator.targetItems) > 0 {
+		allocateTargets = true
+	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
 		allocator.collectors[i.Name] = NewCollector(i.Name)
+	}
+	if allocateTargets {
+		for _, item := range allocator.targetItems {
+			allocator.addTargetToTargetItems(item)
+		}
 	}
 
 	// Re-Allocate targets of the removed collectors
@@ -212,7 +223,40 @@ func (allocator *leastWeightedAllocator) SetTargets(targets map[string]*target.I
 	defer allocator.m.Unlock()
 
 	if len(allocator.collectors) == 0 {
-		allocator.log.Info("No collector instances present, cannot set targets")
+		allocator.log.Info("No collector instances present, saving targets to allocate to collector(s)")
+		// If there were no targets discovered previously, assign this as the new set of target items
+		if len(allocator.targetItems) == 0 {
+			allocator.log.Info("Not discovered any targets previously, saving targets found to the targetItems set")
+			for k, item := range targets {
+				allocator.targetItems[k] = item
+			}
+		} else {
+			// If there were previously discovered targets, add or remove accordingly
+			targetsDiffEmptyCollectorSet := diff.Maps(allocator.targetItems, targets)
+
+			// Check for additions
+			if len(targetsDiffEmptyCollectorSet.Additions()) > 0 {
+				allocator.log.Info("New targets discovered, adding new targets to the targetItems set")
+				for k, item := range targetsDiffEmptyCollectorSet.Additions() {
+					// Do nothing if the item is already there
+					if _, ok := allocator.targetItems[k]; ok {
+						continue
+					} else {
+						// Add item to item pool
+						allocator.targetItems[k] = item
+					}
+				}
+			}
+
+			// Check for deletions
+			if len(targetsDiffEmptyCollectorSet.Removals()) > 0 {
+				allocator.log.Info("Targets removed, Removing targets from the targetItems set")
+				for k := range targetsDiffEmptyCollectorSet.Removals() {
+					// Delete item from target items
+					delete(allocator.targetItems, k)
+				}
+			}
+		}
 		return
 	}
 	// Check for target changes
