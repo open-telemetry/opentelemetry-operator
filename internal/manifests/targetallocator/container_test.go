@@ -200,7 +200,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 		LivenessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/healthz",
+					Path: "/livez",
 					Port: intstr.FromInt(8080),
 				},
 			},
@@ -290,7 +290,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 		LivenessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/healthz",
+					Path: "/livez",
 					Port: intstr.FromInt(8080),
 				},
 			},
@@ -316,7 +316,7 @@ func TestLivenessProbe(t *testing.T) {
 	expected := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/healthz",
+				Path: "/livez",
 				Port: intstr.FromInt(8080),
 			},
 		},

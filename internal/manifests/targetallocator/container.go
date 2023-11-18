@@ -73,7 +73,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	livenessProbe := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/healthz",
+				Path: "/livez",
 				Port: intstr.FromInt(8080),
 			},
 		},
