@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -196,6 +197,14 @@ func TestContainerHasEnvVars(t *testing.T) {
 				Protocol:      corev1.ProtocolTCP,
 			},
 		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/livez",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
 	}
 
 	// test
@@ -278,6 +287,14 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 				Protocol:      corev1.ProtocolTCP,
 			},
 		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/livez",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
 	}
 
 	// test
@@ -285,4 +302,29 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 
 	// verify
 	assert.Equal(t, expected, c)
+}
+func TestLivenessProbe(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+			},
+		},
+	}
+	cfg := config.New()
+	expected := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/livez",
+				Port: intstr.FromInt(8080),
+			},
+		},
+	}
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, expected, c.LivenessProbe)
 }
