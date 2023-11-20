@@ -548,6 +548,69 @@ func TestServer_JobHandler(t *testing.T) {
 		})
 	}
 }
+func TestServer_Readiness(t *testing.T) {
+	tests := []struct {
+		description   string
+		scrapeConfigs map[string]*promconfig.ScrapeConfig
+		expectedCode  int
+		expectedBody  []byte
+	}{
+		{
+			description:   "nil scrape config",
+			scrapeConfigs: nil,
+			expectedCode:  http.StatusServiceUnavailable,
+		},
+		{
+			description:   "empty scrape config",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{},
+			expectedCode:  http.StatusOK,
+		},
+		{
+			description: "single entry",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp/0": {
+					JobName:         "serviceMonitor/testapp/testapp/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s := NewServer(logger, nil, listenAddr)
+			if tc.scrapeConfigs != nil {
+				assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
+			}
+
+			request := httptest.NewRequest("GET", "/readyz", nil)
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+		})
+	}
+}
 
 func newLink(jobName string) target.LinkJSON {
 	return target.LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
