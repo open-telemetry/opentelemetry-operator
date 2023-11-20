@@ -61,7 +61,7 @@ service:
 	require.NotEmpty(t, config)
 
 	// test
-	check := GetEnabledReceivers(logger, config)
+	check := getEnabledComponents(config, ComponentTypeReceiver)
 	require.NotEmpty(t, check)
 }
 
@@ -102,6 +102,6 @@ service:
 	require.NotEmpty(t, config)
 
 	// test
-	check := GetEnabledReceivers(logger, config)
+	check := getEnabledComponents(config, ComponentTypeReceiver)
 	require.Empty(t, check)
 }

@@ -66,14 +66,7 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 		return nil, fmt.Errorf("%ss doesn't contain valid components", cType.String())
 	}
 
-	var compEnabled map[interface{}]bool
-
-	switch cType {
-	case ComponentTypeExporter:
-		compEnabled = GetEnabledExporters(logger, config)
-	case ComponentTypeReceiver:
-		compEnabled = GetEnabledReceivers(logger, config)
-	}
+	compEnabled := getEnabledComponents(config, cType)
 
 	if compEnabled == nil {
 		return nil, fmt.Errorf("no enabled %ss available as part of the configuration", cType)
