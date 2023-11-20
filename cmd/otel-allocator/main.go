@@ -98,10 +98,12 @@ func main() {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
 	}
-	fileWatcher, err = allocatorWatcher.NewFileWatcher(setupLog.WithName("file-watcher"), configFilePath)
-	if err != nil {
-		setupLog.Error(err, "Can't start the file watcher")
-		os.Exit(1)
+	if cfg.ReloadConfig {
+		fileWatcher, err = allocatorWatcher.NewFileWatcher(setupLog.WithName("file-watcher"), configFilePath)
+		if err != nil {
+			setupLog.Error(err, "Can't start the file watcher")
+			os.Exit(1)
+		}
 	}
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer close(interrupts)
@@ -126,19 +128,21 @@ func main() {
 				}
 			})
 	}
-	runGroup.Add(
-		func() error {
-			fileWatcherErr := fileWatcher.Watch(eventChan, errChan)
-			setupLog.Info("File watcher exited")
-			return fileWatcherErr
-		},
-		func(_ error) {
-			setupLog.Info("Closing file watcher")
-			fileWatcherErr := fileWatcher.Close()
-			if fileWatcherErr != nil {
-				setupLog.Error(fileWatcherErr, "file watcher failed to close")
-			}
-		})
+	if cfg.ReloadConfig {
+		runGroup.Add(
+			func() error {
+				fileWatcherErr := fileWatcher.Watch(eventChan, errChan)
+				setupLog.Info("File watcher exited")
+				return fileWatcherErr
+			},
+			func(_ error) {
+				setupLog.Info("Closing file watcher")
+				fileWatcherErr := fileWatcher.Close()
+				if fileWatcherErr != nil {
+					setupLog.Error(fileWatcherErr, "file watcher failed to close")
+				}
+			})
+	}
 	runGroup.Add(
 		func() error {
 			discoveryManagerErr := discoveryManager.Run()

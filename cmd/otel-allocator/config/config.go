@@ -43,6 +43,7 @@ type Config struct {
 	KubeConfigFilePath     string             `yaml:"kube_config_file_path,omitempty"`
 	ClusterConfig          *rest.Config       `yaml:"-"`
 	RootLogger             logr.Logger        `yaml:"-"`
+	ReloadConfig           bool               `yaml:"-"`
 	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
 	PromConfig             *promconfig.Config `yaml:"config"`
 	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
@@ -106,6 +107,11 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	}
 
 	target.PrometheusCR.Enabled, err = getPrometheusCREnabled(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.ReloadConfig, err = getConfigReloadEnabled(flagSet)
 	if err != nil {
 		return err
 	}
