@@ -56,3 +56,16 @@ func MakeNCollectors(n int, startingIndex int) map[string]*Collector {
 	}
 	return toReturn
 }
+
+func MakeNNewTargetsWithEmptyCollectors(n int, startingIndex int) map[string]*target.Item {
+	toReturn := map[string]*target.Item{}
+	for i := startingIndex; i < n+startingIndex; i++ {
+		label := model.LabelSet{
+			"i":     model.LabelValue(strconv.Itoa(i)),
+			"total": model.LabelValue(strconv.Itoa(n + startingIndex)),
+		}
+		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), "test-url", label, "")
+		toReturn[newTarget.Hash()] = newTarget
+	}
+	return toReturn
+}
