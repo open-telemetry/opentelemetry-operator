@@ -116,6 +116,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
 			if test.err == "" {

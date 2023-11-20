@@ -17,12 +17,8 @@ package adapters
 import (
 	"testing"
 
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	"github.com/stretchr/testify/require"
 )
-
-var logger = logf.Log.WithName("unit-tests")
 
 func TestConfigValidate(t *testing.T) {
 	// prepare
