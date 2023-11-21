@@ -78,6 +78,14 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 			},
 		},
 	}
+	livenessProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/livez",
+				Port: intstr.FromInt(8080),
+			},
+		},
+	}
 
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
@@ -88,6 +96,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		VolumeMounts:   volumeMounts,
 		Resources:      otelcol.Spec.TargetAllocator.Resources,
 		Args:           args,
+		LivenessProbe:  livenessProbe,
 		ReadinessProbe: readinessProbe,
 	}
 }

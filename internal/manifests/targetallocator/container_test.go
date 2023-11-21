@@ -205,6 +205,14 @@ func TestContainerHasEnvVars(t *testing.T) {
 				},
 			},
 		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/livez",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
 	}
 
 	// test
@@ -295,6 +303,14 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 				},
 			},
 		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/livez",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
 	}
 
 	// test
@@ -304,7 +320,6 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	assert.Equal(t, expected, c)
 }
 func TestReadinessProbe(t *testing.T) {
-	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
@@ -327,4 +342,29 @@ func TestReadinessProbe(t *testing.T) {
 
 	// verify
 	assert.Equal(t, expected, c.ReadinessProbe)
+}
+func TestLivenessProbe(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+			},
+		},
+	}
+	cfg := config.New()
+	expected := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/livez",
+				Port: intstr.FromInt(8080),
+			},
+		},
+	}
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, expected, c.LivenessProbe)
 }
