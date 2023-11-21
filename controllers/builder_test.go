@@ -211,21 +211,6 @@ service:
 						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: \"0.0.0.0:12345\"\nservice:\n  pipelines:\n    metrics:\n      receivers: [examplereceiver]\n      exporters: [logging]\n",
 					},
 				},
-				&corev1.ServiceAccount{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-collector",
-						Namespace: "test",
-						Labels: map[string]string{
-							"app.kubernetes.io/component":  "opentelemetry-collector",
-							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector",
-							"app.kubernetes.io/part-of":    "opentelemetry",
-							"app.kubernetes.io/version":    "latest",
-						},
-						Annotations: nil,
-					},
-				},
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-collector",
@@ -302,6 +287,21 @@ service:
 							},
 						},
 						Selector: selectorLabels,
+					},
+				},
+				&corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-collector",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: nil,
 					},
 				},
 			},
@@ -454,21 +454,6 @@ service:
 						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: \"0.0.0.0:12345\"\nservice:\n  pipelines:\n    metrics:\n      receivers: [examplereceiver]\n      exporters: [logging]\n",
 					},
 				},
-				&corev1.ServiceAccount{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-collector",
-						Namespace: "test",
-						Labels: map[string]string{
-							"app.kubernetes.io/component":  "opentelemetry-collector",
-							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector",
-							"app.kubernetes.io/part-of":    "opentelemetry",
-							"app.kubernetes.io/version":    "latest",
-						},
-						Annotations: nil,
-					},
-				},
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-collector",
@@ -584,6 +569,21 @@ service:
 								},
 							},
 						},
+					},
+				},
+				&corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-collector",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: nil,
 					},
 				},
 			},
