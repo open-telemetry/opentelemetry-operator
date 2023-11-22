@@ -64,13 +64,14 @@ func TestDiscovery(t *testing.T) {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	d := discovery.NewManager(ctx, gokitlog.NewNopLogger())
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
-	defer close(manager.close)
+
+	defer func() { manager.Close() }()
 	defer cancelFunc()
 
 	results := make(chan []string)
 	go func() {
 		err := d.Run()
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	}()
 	go func() {
 		err := manager.Watch(func(targets map[string]*Item) {
@@ -343,7 +344,7 @@ func TestDiscovery_NoConfig(t *testing.T) {
 
 	go func() {
 		err := d.Run()
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	}()
 	// check the updated scrape configs
 	expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
