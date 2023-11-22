@@ -121,7 +121,7 @@ export %[4]s=$( { nginx -v ; } 2>&1 ) && echo ${%[4]s##*/} > %[3]s/version.txt
 		cloneContainer.ReadinessProbe = nil
 		cloneContainer.StartupProbe = nil
 		// remove lifecycle, since not supported on init containers
-		cloneContainer.lifecycle = nil
+		cloneContainer.Lifecycle = nil
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, *cloneContainer)
 
