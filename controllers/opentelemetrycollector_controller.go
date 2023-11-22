@@ -173,6 +173,10 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	// We have a deletion, short circuit and let the deletion happen
+	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
+		return ctrl.Result{}, nil
+	}
 
 	if instance.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())

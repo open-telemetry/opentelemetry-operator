@@ -23,8 +23,10 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -94,7 +96,12 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 		// we obtain the existing object by deep copying the desired object because it's the most convenient way
 		existing := desired.DeepCopyObject().(client.Object)
 		mutateFn := manifests.MutateFuncFor(existing, desired)
-		op, crudErr := ctrl.CreateOrUpdate(ctx, kubeClient, existing, mutateFn)
+		var op controllerutil.OperationResult
+		crudErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			result, createOrUpdateErr := ctrl.CreateOrUpdate(ctx, kubeClient, existing, mutateFn)
+			op = result
+			return createOrUpdateErr
+		})
 		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
 			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "existing", existing.GetName())
 			delErr := kubeClient.Delete(ctx, existing)
