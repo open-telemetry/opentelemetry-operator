@@ -45,14 +45,12 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
 		manifests.FactoryWithoutError(ConfigMap),
 		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
+		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.FactoryWithoutError(Service),
 		manifests.FactoryWithoutError(HeadlessService),
 		manifests.FactoryWithoutError(MonitoringService),
 		manifests.FactoryWithoutError(Ingress),
 	}...)
-	if params.OtelCol.Spec.ServiceAccount == "" {
-		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(ServiceAccount))
-	}
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
 	}
