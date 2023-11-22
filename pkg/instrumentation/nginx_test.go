@@ -267,7 +267,7 @@ func TestInjectNginxSDK(t *testing.T) {
 							ReadinessProbe: &corev1.Probe{},
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
-							Lifecycle:      &corev1.lifecycle{},
+							Lifecycle:      &corev1.Lifecycle{},
 						},
 					},
 				},
@@ -352,7 +352,7 @@ func TestInjectNginxSDK(t *testing.T) {
 							ReadinessProbe: &corev1.Probe{},
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
-							Lifecycle:      &corev1.lifecycle{},
+							Lifecycle:      &corev1.Lifecycle{},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "LD_LIBRARY_PATH",
