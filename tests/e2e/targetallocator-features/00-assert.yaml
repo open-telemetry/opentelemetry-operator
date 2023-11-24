@@ -70,6 +70,13 @@ spec:
           volumeMounts:
           - mountPath: /conf
             name: ta-internal
+          readinessProbe:
+            httpGet:
+              path: /readyz
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /livez
