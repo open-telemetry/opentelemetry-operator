@@ -162,6 +162,7 @@ spec:
           - ""
           resources:
           - configmaps
+          - pods
           - serviceaccounts
           - services
           verbs:
