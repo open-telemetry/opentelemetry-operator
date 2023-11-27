@@ -505,10 +505,10 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check{
 						func(t *testing.T, params manifests.Params) {
-							d := appsv1.Deployment{}
-							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
+							o := v1alpha1.OpenTelemetryCollector{}
+							exists, err := populateObjectIfExists(t, &o, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
-							assert.False(t, exists)
+							assert.False(t, exists) // There should be no collector anymore
 						},
 					},
 					wantErr:     assert.NoError,
