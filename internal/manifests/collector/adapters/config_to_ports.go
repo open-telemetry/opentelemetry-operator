@@ -220,11 +220,11 @@ func ConfigToMetricsPort(logger logr.Logger, config map[interface{}]interface{})
 		return 0, err
 	}
 
-	_, port, err := net.SplitHostPort(cOut.Service.Telemetry.Metrics.Address)
-	if err != nil && strings.Contains(err.Error(), "missing port in address") {
+	_, port, netErr := net.SplitHostPort(cOut.Service.Telemetry.Metrics.Address)
+	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
 		return 8888, nil
-	} else if err != nil {
-		return 0, err
+	} else if netErr != nil {
+		return 0, netErr
 	}
 	i64, err := strconv.ParseInt(port, 10, 32)
 	if err != nil {
