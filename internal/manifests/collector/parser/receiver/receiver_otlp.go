@@ -21,10 +21,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-var _ ReceiverParser = &OTLPReceiverParser{}
+var _ parser.ComponentPortParser = &OTLPReceiverParser{}
 
 const (
 	parserNameOTLP = "__otlp"
@@ -46,7 +47,7 @@ type OTLPReceiverParser struct {
 }
 
 // NewOTLPReceiverParser builds a new parser for OTLP receivers.
-func NewOTLPReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewOTLPReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	if protocols, ok := config["protocols"].(map[interface{}]interface{}); ok {
 		return &OTLPReceiverParser{
 			logger: logger,

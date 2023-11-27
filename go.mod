@@ -5,9 +5,9 @@ go 1.20
 retract v1.51.0
 
 require (
+	dario.cat/mergo v1.0.0
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/go-logr/logr v1.3.0
-	github.com/imdario/mergo v0.3.16
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/operator-framework/operator-lib v0.11.0
@@ -19,7 +19,7 @@ require (
 	go.opentelemetry.io/otel v1.21.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.4
-	k8s.io/apiextensions-apiserver v0.28.3
+	k8s.io/apiextensions-apiserver v0.28.4
 	k8s.io/apimachinery v0.28.4
 	k8s.io/client-go v0.28.4
 	k8s.io/component-base v0.28.4
@@ -93,6 +93,7 @@ require (
 	github.com/hashicorp/nomad/api v0.0.0-20230721134942-515895c7690c // indirect
 	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/hetznercloud/hcloud-go/v2 v2.4.0 // indirect
+	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/ionos-cloud/sdk-go/v6 v6.1.9 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect

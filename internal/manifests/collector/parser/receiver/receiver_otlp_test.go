@@ -27,7 +27,8 @@ func TestOTLPSelfRegisters(t *testing.T) {
 
 func TestOTLPIsFoundByName(t *testing.T) {
 	// test
-	p := For(logger, "otlp", map[interface{}]interface{}{})
+	p, err := For(logger, "otlp", map[interface{}]interface{}{})
+	assert.NoError(t, err)
 
 	// verify
 	assert.Equal(t, "__otlp", p.ParserName())

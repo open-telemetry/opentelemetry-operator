@@ -14,12 +14,16 @@
 
 package receiver
 
-import "github.com/go-logr/logr"
+import (
+	"github.com/go-logr/logr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+)
 
 const parserNameWavefront = "__wavefront"
 
 // NewWavefrontReceiverParser builds a new parser for Wavefront receivers, from the contrib repository.
-func NewWavefrontReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewWavefrontReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

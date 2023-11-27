@@ -26,26 +26,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// ReceiverParser is an interface that should be implemented by all receiver parsers.
-type ReceiverParser interface {
-	// Ports returns the service ports parsed based on the receiver's configuration
-	Ports() ([]corev1.ServicePort, error)
-
-	// ParserName returns the name of this parser
-	ParserName() string
-}
-
-// Builder specifies the signature required for parser builders.
-type Builder func(logr.Logger, string, map[interface{}]interface{}) ReceiverParser
-
-// registry holds a record of all known parsers.
-var registry = make(map[string]Builder)
+// registry holds a record of all known receiver parsers.
+var registry = make(map[string]parser.Builder)
 
 // BuilderFor returns a parser builder for the given receiver name.
-func BuilderFor(name string) Builder {
+func BuilderFor(name string) parser.Builder {
 	builder := registry[receiverType(name)]
 	if builder == nil {
 		builder = NewGenericReceiverParser
@@ -55,13 +44,13 @@ func BuilderFor(name string) Builder {
 }
 
 // For returns a new parser for the given receiver name + config.
-func For(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func For(logger logr.Logger, name string, config map[interface{}]interface{}) (parser.ComponentPortParser, error) {
 	builder := BuilderFor(name)
-	return builder(logger, name, config)
+	return builder(logger, name, config), nil
 }
 
 // Register adds a new parser builder to the list of known builders.
-func Register(name string, builder Builder) {
+func Register(name string, builder parser.Builder) {
 	registry[name] = builder
 }
 

@@ -15,7 +15,6 @@
 package collector
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -80,10 +79,8 @@ func endpointsFromConfig(logger logr.Logger, otelcol v1alpha1.OpenTelemetryColle
 		return []monitoringv1.Endpoint{}
 	}
 
-	exporterPorts, err := adapters.ConfigToExporterPorts(logger, c)
-	if err != nil && errors.Is(err, adapters.ErrNoExporters) {
-		logger.V(4).Info("no exporters found, skipping")
-	} else if err != nil {
+	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, c)
+	if err != nil {
 		logger.Error(err, "couldn't build service monitors from configuration")
 		return []monitoringv1.Endpoint{}
 	}
