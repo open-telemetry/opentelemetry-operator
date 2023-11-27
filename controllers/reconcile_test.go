@@ -17,6 +17,7 @@ package controllers_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
@@ -27,10 +28,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyV1 "k8s.io/api/policy/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -94,6 +97,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	updatedRouteParams.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 	updatedRouteParams.OtelCol.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 	updatedRouteParams.OtelCol.Spec.Ingress.Hostname = expectHostname
+	deletedParams := paramsWithMode(v1alpha1.ModeDeployment)
+	now := metav1.NewTime(time.Now())
+	deletedParams.OtelCol.DeletionTimestamp = &now
 
 	type args struct {
 		params manifests.Params
@@ -488,6 +494,28 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "collector is being deleted",
+			args: args{
+				params:  deletedParams,
+				updates: []manifests.Params{},
+			},
+			want: []want{
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, params manifests.Params) {
+							o := v1alpha1.OpenTelemetryCollector{}
+							exists, err := populateObjectIfExists(t, &o, namespacedObjectName(naming.Collector(params.OtelCol.Name), params.OtelCol.Namespace))
+							assert.NoError(t, err)
+							assert.False(t, exists) // There should be no collector anymore
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -505,9 +533,15 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			})
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
 			firstCheck := tt.want[0]
+			// Check for this before create, otherwise it's blown away.
+			deletionTimestamp := tt.args.params.OtelCol.GetDeletionTimestamp()
 			createErr := k8sClient.Create(testContext, &tt.args.params.OtelCol)
 			if !firstCheck.validateErr(t, createErr) {
 				return
+			}
+			if deletionTimestamp != nil {
+				err := k8sClient.Delete(testContext, &tt.args.params.OtelCol, client.PropagationPolicy(metav1.DeletePropagationForeground))
+				assert.NoError(t, err)
 			}
 			req := k8sreconcile.Request{
 				NamespacedName: nsn,
