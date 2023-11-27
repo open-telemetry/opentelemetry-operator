@@ -518,6 +518,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.OtelCol.Name, Namespace: tt.args.params.OtelCol.Namespace}
@@ -557,6 +558,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
+				updateParam := updateParam
 				existing := v1alpha1.OpenTelemetryCollector{}
 				found, err := populateObjectIfExists(t, &existing, nsn)
 				assert.True(t, found)
@@ -676,6 +678,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.OpAMPBridge.Name, Namespace: tt.args.params.OpAMPBridge.Namespace}
@@ -710,6 +713,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
+				updateParam := updateParam
 				existing := v1alpha1.OpAMPBridge{}
 				found, err := populateObjectIfExists(t, &existing, nsn)
 				assert.True(t, found)

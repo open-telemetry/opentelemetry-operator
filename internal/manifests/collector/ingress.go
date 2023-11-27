@@ -144,7 +144,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryColle
 		return nil
 	}
 
-	ports, err := adapters.ConfigToReceiverPorts(logger, configFromString)
+	ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, configFromString)
 	if err != nil {
 		logger.Error(err, "couldn't build the ingress for this instance")
 	}

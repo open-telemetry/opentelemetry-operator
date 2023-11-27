@@ -18,12 +18,13 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 const parserNameGeneric = "__generic"
 
-var _ ReceiverParser = &GenericReceiver{}
+var _ parser.ComponentPortParser = &GenericReceiver{}
 
 // GenericReceiver is a special parser for generic receivers. It doesn't self-register and should be created/used directly.
 type GenericReceiver struct {
@@ -40,7 +41,7 @@ type GenericReceiver struct {
 // so that it can expose the required port based on the receiver's config. Receiver scrapers are ignored.
 
 // NewGenericReceiverParser builds a new parser for generic receivers.
-func NewGenericReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewGenericReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:     logger,
 		name:       name,

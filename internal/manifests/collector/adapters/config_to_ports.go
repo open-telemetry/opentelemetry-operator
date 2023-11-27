@@ -15,7 +15,7 @@
 package adapters
 
 import (
-	"errors"
+	"fmt"
 	"net"
 	"sort"
 	"strconv"
@@ -24,26 +24,24 @@ import (
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	exporterParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/exporter"
 	receiverParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
-var (
-	// ErrNoExporters indicates that there are no exporters in the configuration.
-	ErrNoExporters = errors.New("no exporters available as part of the configuration")
+type ComponentType int
 
-	// ErrNoReceivers indicates that there are no receivers in the configuration.
-	ErrNoReceivers = errors.New("no receivers available as part of the configuration")
-
-	// ErrReceiversNotAMap indicates that the receivers property isn't a map of values.
-	ErrReceiversNotAMap = errors.New("receivers property in the configuration doesn't contain valid receivers")
-
-	// ErrExportersNotAMap indicates that the exporters property isn't a map of values.
-	ErrExportersNotAMap = errors.New("exporters property in the configuration doesn't contain valid exporters")
+const (
+	ComponentTypeReceiver ComponentType = iota
+	ComponentTypeExporter
 )
 
-// ConfigToExporterPorts converts the incoming configuration object into a set of service ports required by the exporters.
-func ConfigToExporterPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
+func (c ComponentType) String() string {
+	return [...]string{"receiver", "exporter"}[c]
+}
+
+// ConfigToComponentPorts converts the incoming configuration object into a set of service ports required by the exporters.
+func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
 	// now, we gather which ports we might need to open
 	// for that, we get all the exporters and check their `endpoint` properties,
 	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
@@ -52,48 +50,59 @@ func ConfigToExporterPorts(logger logr.Logger, config map[interface{}]interface{
 	// the exporter-qualifier is what comes after the slash in the exporter name, but typically nil
 	// examples:
 	// ```yaml
-	// exporters:
-	//   exampleexporter:
+	// components:
+	//   componentexample:
 	//     endpoint: 0.0.0.0:12345
-	//   exampleexporter/settings:
+	//   componentexample/settings:
 	//     endpoint: 0.0.0.0:12346
-	// in this case, we have two ports, named: "exampleexporter" and "exampleexporter-settings"
-	exportersProperty, ok := config["exporters"]
+	// in this case, we have 2 ports, named: "componentexample" and "componentexample-settings"
+	componentsProperty, ok := config[fmt.Sprintf("%ss", cType.String())]
 	if !ok {
-		return nil, ErrNoExporters
+		return nil, fmt.Errorf("no %ss available as part of the configuration", cType)
 	}
-	expEnabled := GetEnabledExporters(logger, config)
-	if expEnabled == nil {
-		return nil, ErrExportersNotAMap
-	}
-	exporters, ok := exportersProperty.(map[interface{}]interface{})
+
+	components, ok := componentsProperty.(map[interface{}]interface{})
 	if !ok {
-		return nil, ErrExportersNotAMap
+		return nil, fmt.Errorf("%ss doesn't contain valid components", cType.String())
+	}
+
+	compEnabled := getEnabledComponents(config, cType)
+
+	if compEnabled == nil {
+		return nil, fmt.Errorf("no enabled %ss available as part of the configuration", cType)
 	}
 
 	ports := []corev1.ServicePort{}
-	for key, val := range exporters {
-		// This check will pass only the enabled exporters,
+	for key, val := range components {
+		// This check will pass only the enabled components,
 		// then only the related ports will be opened.
-		if !expEnabled[key] {
+		if !compEnabled[key] {
 			continue
 		}
 		exporter, ok := val.(map[interface{}]interface{})
 		if !ok {
-			logger.V(2).Info("exporter doesn't seem to be a map of properties", "exporter", key)
+			logger.V(2).Info("component doesn't seem to be a map of properties", cType.String(), key)
 			exporter = map[interface{}]interface{}{}
 		}
 
-		exprtName := key.(string)
-		exprtParser, err := exporterParser.For(logger, exprtName, exporter)
+		cmptName := key.(string)
+		var cmptParser parser.ComponentPortParser
+		var err error
+		switch cType {
+		case ComponentTypeExporter:
+			cmptParser, err = exporterParser.For(logger, cmptName, exporter)
+		case ComponentTypeReceiver:
+			cmptParser, err = receiverParser.For(logger, cmptName, exporter)
+		}
+
 		if err != nil {
-			logger.V(2).Info("no parser found for '%s'", exprtName)
+			logger.V(2).Info("no parser found for '%s'", cmptName)
 			continue
 		}
 
-		exprtPorts, err := exprtParser.Ports()
+		exprtPorts, err := cmptParser.Ports()
 		if err != nil {
-			logger.Error(err, "parser for '%s' has returned an error: %w", exprtName, err)
+			logger.Error(err, "parser for '%s' has returned an error: %w", cmptName, err)
 			continue
 		}
 
@@ -109,79 +118,13 @@ func ConfigToExporterPorts(logger logr.Logger, config map[interface{}]interface{
 	return ports, nil
 }
 
-// ConfigToReceiverPorts converts the incoming configuration object into a set of service ports required by the receivers.
-func ConfigToReceiverPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
-	// now, we gather which ports we might need to open
-	// for that, we get all the receivers and check their `endpoint` properties,
-	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
-	// ${instance.Name}-${receiver.name}-${receiver.qualifier}
-	// the receiver-name is typically the node name from the receivers map
-	// the receiver-qualifier is what comes after the slash in the receiver name, but typically nil
-	// examples:
-	// ```yaml
-	// receivers:
-	//   examplereceiver:
-	//     endpoint: 0.0.0.0:12345
-	//   examplereceiver/settings:
-	//     endpoint: 0.0.0.0:12346
-	// in this case, we have two ports, named: "examplereceiver" and "examplereceiver-settings"
-	receiversProperty, ok := config["receivers"]
-	if !ok {
-		return nil, ErrNoReceivers
-	}
-	recEnabled := GetEnabledReceivers(logger, config)
-	if recEnabled == nil {
-		return nil, ErrReceiversNotAMap
-	}
-	receivers, ok := receiversProperty.(map[interface{}]interface{})
-	if !ok {
-		return nil, ErrReceiversNotAMap
-	}
-
-	ports := []corev1.ServicePort{}
-	for key, val := range receivers {
-		// This check will pass only the enabled receivers,
-		// then only the related ports will be opened.
-		if !recEnabled[key] {
-			continue
-		}
-		receiver, ok := val.(map[interface{}]interface{})
-		if !ok {
-			logger.Info("receiver doesn't seem to be a map of properties", "receiver", key)
-			receiver = map[interface{}]interface{}{}
-		}
-
-		rcvrName := key.(string)
-		rcvrParser := receiverParser.For(logger, rcvrName, receiver)
-
-		rcvrPorts, err := rcvrParser.Ports()
-		if err != nil {
-			// should we break the process and return an error, or just ignore this faulty parser
-			// and let the other parsers add their ports to the service? right now, the best
-			// option seems to be to log the failures and move on, instead of failing them all
-			logger.Error(err, "parser for '%s' has returned an error: %w", rcvrName, err)
-			continue
-		}
-
-		if len(rcvrPorts) > 0 {
-			ports = append(ports, rcvrPorts...)
-		}
-	}
-
-	sort.Slice(ports, func(i, j int) bool {
-		return ports[i].Name < ports[j].Name
-	})
-
-	return ports, nil
-}
-
 func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) []corev1.ServicePort {
-	ports, err := ConfigToReceiverPorts(logger, config)
+	ports, err := ConfigToComponentPorts(logger, ComponentTypeReceiver, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
 	}
 
-	exporterPorts, err := ConfigToExporterPorts(logger, config)
+	exporterPorts, err := ConfigToComponentPorts(logger, ComponentTypeExporter, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the exporters")
 	}
