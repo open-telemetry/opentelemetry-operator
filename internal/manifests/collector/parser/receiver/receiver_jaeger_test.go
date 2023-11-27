@@ -28,7 +28,8 @@ func TestJaegerSelfRegisters(t *testing.T) {
 
 func TestJaegerIsFoundByName(t *testing.T) {
 	// test
-	p := For(logger, "jaeger", map[interface{}]interface{}{})
+	p, err := For(logger, "jaeger", map[interface{}]interface{}{})
+	assert.NoError(t, err)
 
 	// verify
 	assert.Equal(t, "__jaeger", p.ParserName())
