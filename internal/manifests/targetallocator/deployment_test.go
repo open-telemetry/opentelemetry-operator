@@ -79,7 +79,9 @@ func TestDeploymentNewDefault(t *testing.T) {
 	}
 
 	// test
-	d := Deployment(params)
+	d, err := Deployment(params)
+
+	assert.NoError(t, err)
 
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", d.GetName())
@@ -109,8 +111,8 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	}
 
 	// test
-	ds := Deployment(params)
-
+	ds, err := Deployment(params)
+	assert.NoError(t, err)
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", ds.Name)
 	assert.Subset(t, ds.Spec.Template.Annotations, testPodAnnotationValues)
@@ -148,7 +150,8 @@ func TestDeploymentNodeSelector(t *testing.T) {
 		Config:  cfg,
 		Log:     logger,
 	}
-	d1 := Deployment(params1)
+	d1, err := Deployment(params1)
+	assert.NoError(t, err)
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
@@ -173,7 +176,8 @@ func TestDeploymentNodeSelector(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := Deployment(params2)
+	d2, err := Deployment(params2)
+	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{"node-key": "node-value"}, d2.Spec.Template.Spec.NodeSelector)
 }
 func TestDeploymentAffinity(t *testing.T) {
@@ -191,7 +195,8 @@ func TestDeploymentAffinity(t *testing.T) {
 		Config:  cfg,
 		Log:     logger,
 	}
-	d1 := Deployment(params1)
+	d1, err := Deployment(params1)
+	assert.NoError(t, err)
 	assert.Empty(t, d1.Spec.Template.Spec.Affinity)
 
 	// Test affinity
@@ -214,7 +219,8 @@ func TestDeploymentAffinity(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := Deployment(params2)
+	d2, err := Deployment(params2)
+	assert.NoError(t, err)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
 
@@ -232,7 +238,8 @@ func TestDeploymentTolerations(t *testing.T) {
 		Config:  cfg,
 		Log:     logger,
 	}
-	d1 := Deployment(params1)
+	d1, err := Deployment(params1)
+	assert.NoError(t, err)
 	assert.Equal(t, "my-instance-targetallocator", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.Tolerations)
 
@@ -253,7 +260,8 @@ func TestDeploymentTolerations(t *testing.T) {
 		Config:  cfg,
 		Log:     logger,
 	}
-	d2 := Deployment(params2)
+	d2, err := Deployment(params2)
+	assert.NoError(t, err)
 	assert.Equal(t, "my-instance-toleration-targetallocator", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.Tolerations)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.Tolerations)
@@ -275,7 +283,8 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 		Config:  cfg,
 		Log:     logger,
 	}
-	d1 := Deployment(params1)
+	d1, err := Deployment(params1)
+	assert.NoError(t, err)
 	assert.Equal(t, "my-instance-targetallocator", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
@@ -298,7 +307,8 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := Deployment(params2)
+	d2, err := Deployment(params2)
+	assert.NoError(t, err)
 	assert.Equal(t, "my-instance-topologyspreadconstraint-targetallocator", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)

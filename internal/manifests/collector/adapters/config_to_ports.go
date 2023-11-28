@@ -19,6 +19,7 @@ import (
 	"net"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
@@ -118,23 +119,26 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 	return ports, nil
 }
 
-func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) []corev1.ServicePort {
+func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
 	ports, err := ConfigToComponentPorts(logger, ComponentTypeReceiver, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
+		return nil, err
 	}
 
 	exporterPorts, err := ConfigToComponentPorts(logger, ComponentTypeExporter, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the exporters")
+		return nil, err
 	}
+
 	ports = append(ports, exporterPorts...)
 
 	sort.Slice(ports, func(i, j int) bool {
 		return ports[i].Name < ports[j].Name
 	})
 
-	return ports
+	return ports, nil
 }
 
 // ConfigToMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
@@ -159,9 +163,11 @@ func ConfigToMetricsPort(logger logr.Logger, config map[interface{}]interface{})
 		return 0, err
 	}
 
-	_, port, err := net.SplitHostPort(cOut.Service.Telemetry.Metrics.Address)
-	if err != nil {
-		return 0, err
+	_, port, netErr := net.SplitHostPort(cOut.Service.Telemetry.Metrics.Address)
+	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
+		return 8888, nil
+	} else if netErr != nil {
+		return 0, netErr
 	}
 	i64, err := strconv.ParseInt(port, 10, 32)
 	if err != nil {
