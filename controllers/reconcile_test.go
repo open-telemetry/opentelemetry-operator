@@ -38,6 +38,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -530,6 +531,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				Config: config.New(
 					config.WithCollectorImage("default-collector"),
 					config.WithTargetAllocatorImage("default-ta-allocator"),
+					config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
 				),
 			})
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")

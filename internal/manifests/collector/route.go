@@ -22,12 +22,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func Routes(params manifests.Params) []*routev1.Route {
-	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
+	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability() != openshift.RoutesAvailable {
 		return nil
 	}
 

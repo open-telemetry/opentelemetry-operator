@@ -45,10 +45,10 @@ import (
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
@@ -186,6 +186,10 @@ func main() {
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 	)
+	err = cfg.AutoDetect()
+	if err != nil {
+		setupLog.Error(err, "failed to autodetect config variables")
+	}
 
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if found {
@@ -310,15 +314,8 @@ func main() {
 }
 
 func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v version.Version) error {
-	// run the auto-detect mechanism for the configuration
-	err := mgr.Add(manager.RunnableFunc(func(_ context.Context) error {
-		return cfg.StartAutoDetect()
-	}))
-	if err != nil {
-		return fmt.Errorf("failed to start the auto-detect mechanism: %w", err)
-	}
 	// adds the upgrade mechanism to be executed once the manager is ready
-	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
+	err := mgr.Add(manager.RunnableFunc(func(c context.Context) error {
 		up := &collectorupgrade.VersionUpgrade{
 			Log:      ctrl.Log.WithName("collector-upgrade"),
 			Version:  v,
