@@ -18,5 +18,4 @@ COPY bin/opampbridge_${TARGETARCH} ./main
 
 # "nonroot"
 USER 65532:65532
-
 ENTRYPOINT ["./main"]

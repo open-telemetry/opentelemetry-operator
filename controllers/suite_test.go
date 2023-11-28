@@ -42,10 +42,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
@@ -60,8 +63,14 @@ var (
 	cancel     context.CancelFunc
 	err        error
 	cfg        *rest.Config
+	logger     = logf.Log.WithName("unit-tests")
 
-	instanceUID = uuid.NewUUID()
+	instanceUID      = uuid.NewUUID()
+	mockAutoDetector = &mockAutoDetect{
+		OpenShiftRoutesAvailabilityFunc: func() (openshift.RoutesAvailability, error) {
+			return openshift.RoutesAvailable, nil
+		},
+	}
 )
 
 const (
@@ -72,6 +81,19 @@ const (
 	updatedPromFile          = "testdata/test_ta_update.yaml"
 	testFileIngress          = "testdata/ingress_testdata.yaml"
 )
+
+var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
+
+type mockAutoDetect struct {
+	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
+}
+
+func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
+	if m.OpenShiftRoutesAvailabilityFunc != nil {
+		return m.OpenShiftRoutesAvailabilityFunc()
+	}
+	return openshift.RoutesNotAvailable, nil
+}
 
 func TestMain(m *testing.M) {
 	ctx, cancel = context.WithCancel(context.TODO())
