@@ -17,11 +17,12 @@ package collector
 import (
 	"fmt"
 
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func ClusterRole(params manifests.Params) *rbacv1.ClusterRole {
@@ -37,17 +38,17 @@ func ClusterRole(params manifests.Params) *rbacv1.ClusterRole {
 	}
 
 	return &rbacv1.ClusterRole{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace),
-				Annotations: params.OtelCol.Spec.Ingress.Annotations,
-				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace),
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					"app.kubernetes.io/component":  "opentelemetry-collector",
-				},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace),
+			Annotations: params.OtelCol.Spec.Ingress.Annotations,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace),
+				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
+				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				"app.kubernetes.io/component":  "opentelemetry-collector",
 			},
-			Rules: rules,
+		},
+		Rules: rules,
 	}
 }
 
@@ -64,27 +65,27 @@ func ClusterRoleBinding(params manifests.Params) *rbacv1.ClusterRoleBinding {
 	}
 
 	return &rbacv1.ClusterRoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.ClusterRoleBinding(params.OtelCol.Name),
-				Annotations: params.OtelCol.Spec.Ingress.Annotations,
-				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.ClusterRoleBinding(params.OtelCol.Name),
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					"app.kubernetes.io/component":  "opentelemetry-collector",
-				},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        naming.ClusterRoleBinding(params.OtelCol.Name),
+			Annotations: params.OtelCol.Spec.Ingress.Annotations,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       naming.ClusterRoleBinding(params.OtelCol.Name),
+				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
+				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				"app.kubernetes.io/component":  "opentelemetry-collector",
 			},
-			Subjects: []rbacv1.Subject{
-				{
-					Kind: "ServiceAccount",
-					Name: ServiceAccountName(params.OtelCol),
-					Namespace: params.OtelCol.Namespace,
-				},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      ServiceAccountName(params.OtelCol),
+				Namespace: params.OtelCol.Namespace,
 			},
-			RoleRef: rbacv1.RoleRef{
-					Kind: "ClusterRole",
-					Name: naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace),
-					APIGroup: "rbac.authorization.k8s.io",
-				},
-		}
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace),
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
 }

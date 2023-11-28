@@ -34,6 +34,7 @@ type ComponentType int
 const (
 	ComponentTypeReceiver ComponentType = iota
 	ComponentTypeExporter
+	ComponentTypeProcessor
 )
 
 func (c ComponentType) String() string {
@@ -93,6 +94,8 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 			cmptParser, err = exporterParser.For(logger, cmptName, exporter)
 		case ComponentTypeReceiver:
 			cmptParser, err = receiverParser.For(logger, cmptName, exporter)
+		case ComponentTypeProcessor:
+			logger.V(2).Info("processors don't provide a way to enable associated ports", "name", key)
 		}
 
 		if err != nil {

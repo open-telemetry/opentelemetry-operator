@@ -24,7 +24,7 @@ import (
 var _ ProcessorParser = &ResourceDetectionParser{}
 
 const (
-	parserNameResourceDetection  = "__resourcedetection"
+	parserNameResourceDetection = "__resourcedetection"
 )
 
 // PrometheusExporterParser parses the configuration for OTLP receivers.
@@ -48,7 +48,7 @@ func (o *ResourceDetectionParser) ParserName() string {
 	return parserNameResourceDetection
 }
 
-func (o* ResourceDetectionParser) GetRBACRules() []rbacv1.PolicyRule {
+func (o *ResourceDetectionParser) GetRBACRules() []rbacv1.PolicyRule {
 	var prs []rbacv1.PolicyRule
 
 	detectorsCfg, ok := o.config["detectors"]
@@ -62,14 +62,14 @@ func (o* ResourceDetectionParser) GetRBACRules() []rbacv1.PolicyRule {
 	}
 	for _, d := range detectors {
 		detectorName := fmt.Sprint(d)
-		switch detectorName{
+		switch detectorName {
 		case "openshift":
 			policy := rbacv1.PolicyRule{
 				APIGroups: []string{"config.openshift.io"},
 				Resources: []string{"infrastructures", "infrastructures/status"},
-				Verbs: []string{"get", "watch", "list"},
+				Verbs:     []string{"get", "watch", "list"},
 			}
-			prs = append(prs,policy)
+			prs = append(prs, policy)
 		}
 	}
 	return prs

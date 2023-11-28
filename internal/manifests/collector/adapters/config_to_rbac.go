@@ -16,8 +16,9 @@ package adapters
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/processor"
 	rbacv1 "k8s.io/api/rbac/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/processor"
 )
 
 func ConfigToRBAC(logger logr.Logger, config map[interface{}]interface{}) []rbacv1.PolicyRule {
@@ -33,20 +34,19 @@ func ConfigToRBAC(logger logr.Logger, config map[interface{}]interface{}) []rbac
 		return nil
 	}
 
-	enabledExporters := GetEnabledProcessors(logger, config)
+	enabledExporters := getEnabledComponents(config, ComponentTypeProcessor)
 
 	var policyRules []rbacv1.PolicyRule
 	for key, val := range processors {
 		if !enabledExporters[key] {
 			continue
 		}
-		
+
 		processorCfg, ok := val.(map[interface{}]interface{})
 		if !ok {
 			logger.V(2).Info("processor doesn't seem to be a map of properties", "processor", key)
 			processorCfg = map[interface{}]interface{}{}
 		}
-
 
 		processorName := key.(string)
 		processorParser, err := processor.For(logger, processorName, processorCfg)
