@@ -17,8 +17,11 @@ package watcher
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
@@ -37,13 +40,15 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
-func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliConfig allocatorconfig.CLIConfig) (*PrometheusCRWatcher, error) {
-	mClient, err := monitoringclient.NewForConfig(cliConfig.ClusterConfig)
+const minEventInterval = time.Second * 5
+
+func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
+	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	clientset, err := kubernetes.NewForConfig(cliConfig.ClusterConfig)
+	clientset, err := kubernetes.NewForConfig(cfg.ClusterConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +69,9 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliC
 		},
 	}
 
-	generator, err := prometheus.NewConfigGenerator(log.NewNopLogger(), prom, true) // TODO replace Nop?
+	promOperatorLogger := level.NewFilter(log.NewLogfmtLogger(os.Stderr), level.AllowWarn())
+	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, true)
+
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +86,9 @@ func NewPrometheusCRWatcher(logger logr.Logger, cfg allocatorconfig.Config, cliC
 		k8sClient:              clientset,
 		informers:              monitoringInformers,
 		stopChannel:            make(chan struct{}),
+		eventInterval:          minEventInterval,
 		configGenerator:        generator,
-		kubeConfigPath:         cliConfig.KubeConfigFilePath,
+		kubeConfigPath:         cfg.KubeConfigFilePath,
 		serviceMonitorSelector: servMonSelector,
 		podMonitorSelector:     podMonSelector,
 	}, nil
@@ -91,6 +99,7 @@ type PrometheusCRWatcher struct {
 	kubeMonitoringClient monitoringclient.Interface
 	k8sClient            kubernetes.Interface
 	informers            map[string]*informers.ForResource
+	eventInterval        time.Duration
 	stopChannel          chan struct{}
 	configGenerator      *prometheus.ConfigGenerator
 	kubeConfigPath       string
@@ -126,11 +135,9 @@ func getInformers(factory informers.FactoriesForNamespaces) (map[string]*informe
 
 // Watch wrapped informers and wait for an initial sync.
 func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
-	event := Event{
-		Source:  EventSourcePrometheusCR,
-		Watcher: Watcher(w),
-	}
 	success := true
+	// this channel needs to be buffered because notifications are asynchronous and neither producers nor consumers wait
+	notifyEvents := make(chan struct{}, 1)
 
 	for name, resource := range w.informers {
 		resource.Start(w.stopChannel)
@@ -138,23 +145,72 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 		if ok := cache.WaitForNamedCacheSync(name, w.stopChannel, resource.HasSynced); !ok {
 			success = false
 		}
+
+		// only send an event notification if there isn't one already
 		resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			// these functions only write to the notification channel if it's empty to avoid blocking
+			// if scrape config updates are being rate-limited
 			AddFunc: func(obj interface{}) {
-				upstreamEvents <- event
+				select {
+				case notifyEvents <- struct{}{}:
+				default:
+				}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				upstreamEvents <- event
+				select {
+				case notifyEvents <- struct{}{}:
+				default:
+				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				upstreamEvents <- event
+				select {
+				case notifyEvents <- struct{}{}:
+				default:
+				}
 			},
 		})
 	}
 	if !success {
 		return fmt.Errorf("failed to sync cache")
 	}
+
+	// limit the rate of outgoing events
+	w.rateLimitedEventSender(upstreamEvents, notifyEvents)
+
 	<-w.stopChannel
 	return nil
+}
+
+// rateLimitedEventSender sends events to the upstreamEvents channel whenever it gets a notification on the notifyEvents channel,
+// but not more frequently than once per w.eventPeriod.
+func (w *PrometheusCRWatcher) rateLimitedEventSender(upstreamEvents chan Event, notifyEvents chan struct{}) {
+	ticker := time.NewTicker(w.eventInterval)
+	defer ticker.Stop()
+
+	event := Event{
+		Source:  EventSourcePrometheusCR,
+		Watcher: Watcher(w),
+	}
+
+	for {
+		select {
+		case <-w.stopChannel:
+			return
+		case <-ticker.C: // throttle events to avoid excessive updates
+			select {
+			case <-notifyEvents:
+				select {
+				case upstreamEvents <- event:
+				default: // put the notification back in the queue if we can't send it upstream
+					select {
+					case notifyEvents <- struct{}{}:
+					default:
+					}
+				}
+			default:
+			}
+		}
+	}
 }
 
 func (w *PrometheusCRWatcher) Close() error {
@@ -284,7 +340,7 @@ func (w *PrometheusCRWatcher) addStoreAssetsForPodMonitor(
 	for i, endp := range podMetricsEndps {
 		objKey := fmt.Sprintf("podMonitor/%s/%s/%d", pmNamespace, pmName, i)
 
-		if err = store.AddBearerToken(ctx, pmNamespace, endp.BearerTokenSecret, objKey); err != nil {
+		if err = store.AddBearerToken(ctx, pmNamespace, &endp.BearerTokenSecret, objKey); err != nil {
 			break
 		}
 

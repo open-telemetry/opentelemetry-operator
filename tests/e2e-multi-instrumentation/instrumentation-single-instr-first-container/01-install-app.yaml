@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dep-single-instr-first-container
+spec:
+  selector:
+    matchLabels:
+      app: pod-single-instr-first-container
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pod-single-instr-first-container
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "true"
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      containers:
+        - name: nodejsapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
+        - name: pythonapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+          env:
+            - name: TEST
+              value: test

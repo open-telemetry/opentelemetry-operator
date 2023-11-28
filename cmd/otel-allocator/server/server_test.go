@@ -50,6 +50,19 @@ var (
 	testJobTargetItemTwo = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
 )
 
+func TestServer_LivenessProbeHandler(t *testing.T) {
+	leastWeighted, _ := allocation.New("least-weighted", logger)
+	listenAddr := ":8080"
+	s := NewServer(logger, leastWeighted, listenAddr)
+	request := httptest.NewRequest("GET", "/livez", nil)
+	w := httptest.NewRecorder()
+
+	s.server.Handler.ServeHTTP(w, request)
+	result := w.Result()
+
+	assert.Equal(t, http.StatusOK, result.StatusCode)
+}
+
 func TestServer_TargetsHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
 	type args struct {
@@ -154,7 +167,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tt.args.allocator, &listenAddr)
+			s := NewServer(logger, tt.args.allocator, listenAddr)
 			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{"test-collector": {Name: "test-collector"}})
 			tt.args.allocator.SetTargets(tt.args.cMap)
 			request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/%s/targets?collector_id=%s", tt.args.job, tt.args.collector), nil)
@@ -445,7 +458,7 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, nil, &listenAddr)
+			s := NewServer(logger, nil, listenAddr)
 			assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 
 			request := httptest.NewRequest("GET", "/scrape_configs", nil)
@@ -518,7 +531,7 @@ func TestServer_JobHandler(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
 			a := &mockAllocator{targetItems: tc.targetItems}
-			s := NewServer(logger, a, &listenAddr)
+			s := NewServer(logger, a, listenAddr)
 			request := httptest.NewRequest("GET", "/jobs", nil)
 			w := httptest.NewRecorder()
 
@@ -532,6 +545,69 @@ func TestServer_JobHandler(t *testing.T) {
 			err = json.Unmarshal(bodyBytes, &jobs)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedJobs, jobs)
+		})
+	}
+}
+func TestServer_Readiness(t *testing.T) {
+	tests := []struct {
+		description   string
+		scrapeConfigs map[string]*promconfig.ScrapeConfig
+		expectedCode  int
+		expectedBody  []byte
+	}{
+		{
+			description:   "nil scrape config",
+			scrapeConfigs: nil,
+			expectedCode:  http.StatusServiceUnavailable,
+		},
+		{
+			description:   "empty scrape config",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{},
+			expectedCode:  http.StatusOK,
+		},
+		{
+			description: "single entry",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp/0": {
+					JobName:         "serviceMonitor/testapp/testapp/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+					},
+					RelabelConfigs: []*relabel.Config{
+						{
+							SourceLabels: model.LabelNames{model.LabelName("job")},
+							Separator:    ";",
+							Regex:        relabel.MustNewRegexp("(.*)"),
+							TargetLabel:  "__tmp_prometheus_job_name",
+							Replacement:  "$$1",
+							Action:       relabel.Replace,
+						},
+					},
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s := NewServer(logger, nil, listenAddr)
+			if tc.scrapeConfigs != nil {
+				assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
+			}
+
+			request := httptest.NewRequest("GET", "/readyz", nil)
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
 		})
 	}
 }

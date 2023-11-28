@@ -79,7 +79,9 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: apacheAgentConfigVolume,
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: volumeSize(apacheSpec.VolumeSizeLimit),
+				},
 			}})
 
 		apacheConfDir := getApacheConfDir(apacheSpec.ConfigPath)
@@ -136,7 +138,9 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: apacheAgentVolume,
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: volumeSize(apacheSpec.VolumeSizeLimit),
+				},
 			}})
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
@@ -145,7 +149,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 			Command: []string{"/bin/sh", "-c"},
 			Args: []string{
 				// Copy agent binaries to shared volume
-				"cp -ar /opt/opentelemetry/* " + apacheAgentDirFull + " && " +
+				"cp -r /opt/opentelemetry/* " + apacheAgentDirFull + " && " +
 					// setup logging configuration from template
 					"export agentLogDir=$(echo \"" + apacheAgentDirFull + "/logs\" | sed 's,/,\\\\/,g') && " +
 					"cat " + apacheAgentDirFull + "/conf/appdynamics_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > " + apacheAgentDirFull + "/conf/appdynamics_sdk_log4cxx.xml &&" +

@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -64,21 +65,18 @@ func main() {
 		interrupts      = make(chan os.Signal, 1)
 		errChan         = make(chan error)
 	)
-	cliConf, err := config.ParseCLI()
+	cfg, configFilePath, err := config.Load()
 	if err != nil {
-		setupLog.Error(err, "Failed to parse parameters")
+		fmt.Printf("Failed to load config: %v", err)
 		os.Exit(1)
 	}
-	cfg, configLoadErr := config.Load(*cliConf.ConfigFilePath)
-	if configLoadErr != nil {
-		setupLog.Error(configLoadErr, "Unable to load configuration")
-	}
+	ctrl.SetLogger(cfg.RootLogger)
 
-	if validationErr := config.ValidateConfig(&cfg, &cliConf); validationErr != nil {
+	if validationErr := config.ValidateConfig(cfg); validationErr != nil {
 		setupLog.Error(validationErr, "Invalid configuration")
 	}
 
-	cliConf.RootLogger.Info("Starting the Target Allocator")
+	cfg.RootLogger.Info("Starting the Target Allocator")
 	ctx := context.Background()
 	log := ctrl.Log.WithName("allocator")
 
@@ -88,26 +86,30 @@ func main() {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
-	srv := server.NewServer(log, allocator, cliConf.ListenAddr)
+	srv := server.NewServer(log, allocator, cfg.ListenAddr)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
 	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger())
+	discovery.RegisterMetrics() // discovery manager metrics need to be enabled explicitly
+
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
-	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cliConf.ClusterConfig)
+	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cfg.ClusterConfig)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
 	}
-	fileWatcher, err = allocatorWatcher.NewFileWatcher(setupLog.WithName("file-watcher"), cliConf)
-	if err != nil {
-		setupLog.Error(err, "Can't start the file watcher")
-		os.Exit(1)
+	if cfg.ReloadConfig {
+		fileWatcher, err = allocatorWatcher.NewFileWatcher(setupLog.WithName("file-watcher"), configFilePath)
+		if err != nil {
+			setupLog.Error(err, "Can't start the file watcher")
+			os.Exit(1)
+		}
 	}
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer close(interrupts)
 
-	if *cliConf.PromCRWatcherConf.Enabled {
-		promWatcher, err = allocatorWatcher.NewPrometheusCRWatcher(setupLog.WithName("prometheus-cr-watcher"), cfg, cliConf)
+	if cfg.PrometheusCR.Enabled {
+		promWatcher, err = allocatorWatcher.NewPrometheusCRWatcher(setupLog.WithName("prometheus-cr-watcher"), *cfg)
 		if err != nil {
 			setupLog.Error(err, "Can't start the prometheus watcher")
 			os.Exit(1)
@@ -126,19 +128,21 @@ func main() {
 				}
 			})
 	}
-	runGroup.Add(
-		func() error {
-			fileWatcherErr := fileWatcher.Watch(eventChan, errChan)
-			setupLog.Info("File watcher exited")
-			return fileWatcherErr
-		},
-		func(_ error) {
-			setupLog.Info("Closing file watcher")
-			fileWatcherErr := fileWatcher.Close()
-			if fileWatcherErr != nil {
-				setupLog.Error(fileWatcherErr, "file watcher failed to close")
-			}
-		})
+	if cfg.ReloadConfig {
+		runGroup.Add(
+			func() error {
+				fileWatcherErr := fileWatcher.Watch(eventChan, errChan)
+				setupLog.Info("File watcher exited")
+				return fileWatcherErr
+			},
+			func(_ error) {
+				setupLog.Info("Closing file watcher")
+				fileWatcherErr := fileWatcher.Close()
+				if fileWatcherErr != nil {
+					setupLog.Error(fileWatcherErr, "file watcher failed to close")
+				}
+			})
+	}
 	runGroup.Add(
 		func() error {
 			discoveryManagerErr := discoveryManager.Run()
@@ -152,7 +156,7 @@ func main() {
 	runGroup.Add(
 		func() error {
 			// Initial loading of the config file's scrape config
-			err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.Config)
+			err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.PromConfig)
 			if err != nil {
 				setupLog.Error(err, "Unable to apply initial configuration")
 				return err

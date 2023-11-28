@@ -1,0 +1,22 @@
+name: Other issue
+description: Create a new issue to help us improve the operator
+labels: ["needs triage"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component(s)
+      description: Which component(s) does your issue concern?
+      multiple: true
+      options:
+      - operator
+      - collector
+      - instrumentation
+      - target allocator
+      - opamp bridge
+  - type: textarea
+    attributes:
+      label: Describe the issue you're reporting
+      description: A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+    validations:
+      required: true

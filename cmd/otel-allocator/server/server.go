@@ -71,7 +71,7 @@ type Server struct {
 	scrapeConfigResponse []byte
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr *string) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string) *Server {
 	s := &Server{
 		logger:         log,
 		allocator:      allocator,
@@ -88,9 +88,11 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr *stri
 	router.GET("/jobs", s.JobHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	router.GET("/livez", s.LivenessProbeHandler)
+	router.GET("/readyz", s.ReadinessProbeHandler)
 	registerPprof(router.Group("/debug/pprof/"))
 
-	s.server = &http.Server{Addr: *listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
+	s.server = &http.Server{Addr: listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
 	return s
 }
 
@@ -138,12 +140,28 @@ func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
 	}
 }
 
+func (s *Server) ReadinessProbeHandler(c *gin.Context) {
+	s.mtx.RLock()
+	result := s.scrapeConfigResponse
+	s.mtx.RUnlock()
+
+	if result != nil {
+		c.Status(http.StatusOK)
+	} else {
+		c.Status(http.StatusServiceUnavailable)
+	}
+}
+
 func (s *Server) JobHandler(c *gin.Context) {
 	displayData := make(map[string]target.LinkJSON)
 	for _, v := range s.allocator.TargetItems() {
 		displayData[v.JobName] = target.LinkJSON{Link: v.Link.Link}
 	}
 	s.jsonHandler(c.Writer, displayData)
+}
+
+func (s *Server) LivenessProbeHandler(c *gin.Context) {
+	c.Status(http.StatusOK)
 }
 
 func (s *Server) PrometheusMiddleware(c *gin.Context) {

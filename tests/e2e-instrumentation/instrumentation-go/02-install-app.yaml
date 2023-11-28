@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment-with-sidecar
+spec:
+  selector:
+    matchLabels:
+      app: my-pod-with-sidecar
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-pod-with-sidecar
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+        instrumentation.opentelemetry.io/inject-go: "true"
+        instrumentation.opentelemetry.io/otel-go-auto-target-exe: /usr/src/app/productcatalogservice
+    spec:
+      serviceAccountName: otel-instrumentation-go
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 3000
+        fsGroup: 2000
+      containers:
+      - name: productcatalogservice
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-golang:main

@@ -24,8 +24,8 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
+	policyV1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -35,6 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -59,7 +60,7 @@ type Task struct {
 	BailOnError bool
 }
 
-// Params is the set of options to build a new openTelemetryCollectorReconciler.
+// Params is the set of options to build a new OpenTelemetryCollectorReconciler.
 type Params struct {
 	client.Client
 	Recorder record.EventRecorder
@@ -114,6 +115,17 @@ func (r *OpenTelemetryCollectorReconciler) removeRouteTask(ora autodetect.OpenSh
 	return nil
 }
 
+func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
+	return manifests.Params{
+		Config:   r.config,
+		Client:   r.Client,
+		OtelCol:  instance,
+		Log:      r.log,
+		Scheme:   r.scheme,
+		Recorder: r.recorder,
+	}
+}
+
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
 func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	r := &OpenTelemetryCollectorReconciler{
@@ -126,70 +138,25 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	}
 
 	if len(r.tasks) == 0 {
-		r.tasks = []Task{
-			{
-				reconcile.ConfigMaps,
-				"config maps",
-				true,
-			},
-			{
-				reconcile.ServiceAccounts,
-				"service accounts",
-				true,
-			},
-			{
-				reconcile.Services,
-				"services",
-				true,
-			},
-			{
-				reconcile.Deployments,
-				"deployments",
-				true,
-			},
-			{
-				reconcile.HorizontalPodAutoscalers,
-				"horizontal pod autoscalers",
-				true,
-			},
-			{
-				reconcile.DaemonSets,
-				"daemon sets",
-				true,
-			},
-			{
-				reconcile.StatefulSets,
-				"stateful sets",
-				true,
-			},
-			{
-				reconcile.Ingresses,
-				"ingresses",
-				true,
-			},
-			{
-				reconcile.ServiceMonitors,
-				"service monitors",
-				true,
-			},
-			{
-				reconcile.Self,
-				"opentelemetry",
-				true,
-			},
-		}
+		// TODO: put this in line with the rest of how we generate manifests
+		// https://github.com/open-telemetry/opentelemetry-operator/issues/2108
 		r.config.RegisterOpenShiftRoutesChangeCallback(r.onOpenShiftRoutesChange)
 	}
 	return r
 }
 
+// +kubebuilder:rbac:groups="",resources=pods;configmaps;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
-// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
-// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
 func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -206,27 +173,28 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	// We have a deletion, short circuit and let the deletion happen
+	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
+		return ctrl.Result{}, nil
+	}
 
-	if instance.Spec.ManagementState != v1alpha1.ManagementStateManaged {
+	if instance.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
 		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
 		return ctrl.Result{}, nil
 	}
 
-	params := manifests.Params{
-		Config:   r.config,
-		Client:   r.Client,
-		Instance: instance,
-		Log:      log,
-		Scheme:   r.scheme,
-		Recorder: r.recorder,
-	}
-
+	params := r.getParams(instance)
 	if err := r.RunTasks(ctx, params); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	desiredObjects, buildErr := BuildCollector(params)
+	if buildErr != nil {
+		return ctrl.Result{}, buildErr
+	}
+	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
+	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
 // RunTasks runs all the tasks associated with this reconciler.
@@ -237,7 +205,7 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 		if err := task.Do(ctx, params); err != nil {
 			// If we get an error that occurs because a pod is being terminated, then exit this loop
 			if apierrors.IsForbidden(err) && apierrors.HasStatusCause(err, corev1.NamespaceTerminatingCause) {
-				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.Instance.Namespace)
+				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.OtelCol.Namespace)
 				return nil
 			}
 			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
@@ -246,13 +214,12 @@ func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params 
 			}
 		}
 	}
-
 	return nil
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	err := r.config.AutoDetect() // We need to call this so we can get the correct autodetect version
+	err := r.config.AutoDetect() // We need to call this, so we can get the correct autodetect version
 	if err != nil {
 		return err
 	}
@@ -263,17 +230,12 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{})
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
+		Owns(&policyV1.PodDisruptionBudget{})
 
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
-	}
-
-	autoscalingVersion := r.config.AutoscalingVersion()
-	if autoscalingVersion == autodetect.AutoscalingVersionV2 {
-		builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
-	} else {
-		builder = builder.Owns(&autoscalingv2beta2.HorizontalPodAutoscaler{})
 	}
 
 	return builder.Complete(r)

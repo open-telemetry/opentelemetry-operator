@@ -48,10 +48,17 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 	}
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "otelcol-sample",
+			Name:      "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-characters",
 			Namespace: "some-app",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
 			InitContainers: []corev1.Container{
 				{
 					Name: "test",
@@ -74,7 +81,8 @@ processors:
 	require.Len(t, changed.Spec.Containers, 2)
 	require.Len(t, changed.Spec.InitContainers, 2)
 	require.Len(t, changed.Spec.Volumes, 1)
-	assert.Equal(t, "some-app.otelcol-sample", changed.Labels["sidecar.opentelemetry.io/injected"])
+	assert.Equal(t, "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-cha",
+		changed.Labels["sidecar.opentelemetry.io/injected"])
 	assert.Equal(t, corev1.Container{
 		Name:  "otc-container",
 		Image: "some-default-image",

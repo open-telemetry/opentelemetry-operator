@@ -34,7 +34,7 @@ type FileWatcher struct {
 	closer         chan bool
 }
 
-func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (*FileWatcher, error) {
+func NewFileWatcher(logger logr.Logger, configFilePath string) (*FileWatcher, error) {
 	fileWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		logger.Error(err, "Can't start the watcher")
@@ -43,19 +43,20 @@ func NewFileWatcher(logger logr.Logger, config config.CLIConfig) (*FileWatcher, 
 
 	return &FileWatcher{
 		logger:         logger,
-		configFilePath: *config.ConfigFilePath,
+		configFilePath: configFilePath,
 		watcher:        fileWatcher,
 		closer:         make(chan bool),
 	}, nil
 }
 
 func (f *FileWatcher) LoadConfig(_ context.Context) (*promconfig.Config, error) {
-	cfg, err := config.Load(f.configFilePath)
+	cfg := config.CreateDefaultConfig()
+	err := config.LoadFromFile(f.configFilePath, &cfg)
 	if err != nil {
 		f.logger.Error(err, "Unable to load configuration")
 		return nil, err
 	}
-	return cfg.Config, nil
+	return cfg.PromConfig, nil
 }
 
 func (f *FileWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
@@ -69,7 +70,9 @@ func (f *FileWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error
 		case <-f.closer:
 			return nil
 		case fileEvent := <-f.watcher.Events:
-			if fileEvent.Op == fsnotify.Create {
+			// Using Op.Has as per this doc - https://github.com/fsnotify/fsnotify/blob/9342b6df577910c6eac718dc62845d8c95f8548b/fsnotify.go#L30
+			if fileEvent.Op.Has(fsnotify.Create) || fileEvent.Op.Has(fsnotify.Write) {
+				f.logger.Info("File change detected", "event", fileEvent.Op.String())
 				upstreamEvents <- Event{
 					Source:  EventSourceConfigMap,
 					Watcher: Watcher(f),

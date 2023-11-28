@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kuttl-multi-cluster
+  namespace: kuttl-multi-cluster-send
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kuttl-multi-cluster
+rules:
+- apiGroups: ["config.openshift.io"]
+  resources: ["infrastructures", "infrastructures/status"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: ["apps"]
+  resources: ["replicasets"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "watch", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kuttl-multi-cluster
+subjects:
+- kind: ServiceAccount
+  name: kuttl-multi-cluster
+  namespace: kuttl-multi-cluster-send
+roleRef:
+  kind: ClusterRole
+  name: kuttl-multi-cluster
+  apiGroup: rbac.authorization.k8s.io
+
+---
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- script: ./create_otlp_sender.sh

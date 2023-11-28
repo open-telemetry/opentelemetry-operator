@@ -34,7 +34,7 @@ func Test_collectorKeyFromKey(t *testing.T) {
 		{
 			name: "base case",
 			args: args{
-				key: "good/namespace",
+				key: "namespace/good",
 			},
 			want: collectorKey{
 				name:      "good",
@@ -86,12 +86,12 @@ func Test_collectorKey_String(t *testing.T) {
 				name:      "good",
 				namespace: "namespace",
 			},
-			want: "good/namespace",
+			want: "namespace/good",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			k := newCollectorKey(tt.fields.name, tt.fields.namespace)
+			k := newCollectorKey(tt.fields.namespace, tt.fields.name)
 			assert.Equalf(t, tt.want, k.String(), "String()")
 		})
 	}

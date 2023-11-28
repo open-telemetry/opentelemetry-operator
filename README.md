@@ -48,21 +48,21 @@ spec:
         timeout: 10s
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 EOF
 ```
 
 **_WARNING:_** Until the OpenTelemetry Collector format is stable, changes may be required in the above example to remain
 compatible with the latest version of the OpenTelemetry Collector image being referenced.
 
-This will create an OpenTelemetry Collector instance named `simplest`, exposing a `jaeger-grpc` port to consume spans from your instrumented applications and exporting those spans via `logging`, which writes the spans to the console (`stdout`) of the OpenTelemetry Collector instance that receives the span.
+This will create an OpenTelemetry Collector instance named `simplest`, exposing a `jaeger-grpc` port to consume spans from your instrumented applications and exporting those spans via `debug`, which writes the spans to the console (`stdout`) of the OpenTelemetry Collector instance that receives the span.
 
 The `config` node holds the `YAML` that should be passed down as-is to the underlying OpenTelemetry Collector instances. Refer to the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) documentation for a reference of the possible entries.
 
@@ -113,14 +113,14 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [jaeger]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 EOF
 
 kubectl apply -f - <<EOF
@@ -191,7 +191,7 @@ When using sidecar mode the OpenTelemetry collector container will have the envi
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -225,6 +225,13 @@ spec:
       # See https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/888e2cd216c77d12e56b54ee91dafbc4e7452a52/docs/config.md#otlp
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://otel-collector:4318
+  go:
+    env:
+      # Required if endpoint is set to 4317.
+      # Go autoinstrumentation uses http/proto by default
+      # so data must be sent to 4318 instead of 4317.
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://otel-collector:4318
 EOF
 ```
 
@@ -256,9 +263,14 @@ Python:
 instrumentation.opentelemetry.io/inject-python: "true"
 ```
 
-DotNet:
+.NET:
+.NET auto-instrumentation also honors an annotation that will be used to set the .NET [Runtime Identifiers](https://learn.microsoft.com/en-us/dotnet/core/rid-catalog)(RIDs).
+Currently, only two RIDs are supported: `linux-x64` and `linux-musl-x64`.
+By default `linux-x64` is used.
 ```bash
 instrumentation.opentelemetry.io/inject-dotnet: "true"
+instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-x64" # for Linux glibc based images, this is default value and can be omitted
+instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl-x64"  # for Linux musl based images
 ```
 
 Go:
@@ -276,9 +288,6 @@ Go auto-instrumentation also requires elevated permissions. The below permission
 
 ```yaml
 securityContext:
-    capabilities:
-     add:
-     - SYS_PTRACE
     privileged: true
     runAsUser: 0
 ```
@@ -286,6 +295,11 @@ securityContext:
 Apache HTTPD:
 ```bash
 instrumentation.opentelemetry.io/inject-apache-httpd: "true"
+```
+
+Nginx:
+```bash
+instrumentation.opentelemetry.io/inject-nginx: "true"
 ```
 
 OpenTelemetry SDK environment variables only:
@@ -299,10 +313,10 @@ The possible values for the annotation can be
 * `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
 
-
 >**Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitely.
 
-#### Multi-container pods
+#### Multi-container pods with single instrumentation
+
 
 If nothing else is specified, instrumentation is performed on the first container available in the pod spec.
 In some cases (for example in the case of the injection of an Istio sidecar) it becomes necessary to specify on which container(s) this injection must be performed.
@@ -342,6 +356,90 @@ In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3
 
 > 🚨 **NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first pod should be the only pod you want instrumented.
 
+#### Multi-container pods with multiple instrumentations
+
+Works only when `operator.autoinstrumentation.multi-instrumentation` feature is `enabled`.
+
+Annotations defining which language instrumentation will be injected are required. When feature is enabled, specific for Instrumentation language containers annotations are used:
+
+Java:
+```bash
+instrumentation.opentelemetry.io/java-container-names: "java1,java2"
+```
+
+NodeJS:
+```bash
+instrumentation.opentelemetry.io/nodejs-container-names: "nodejs1,nodejs2"
+```
+
+Python:
+```bash
+instrumentation.opentelemetry.io/python-container-names: "python1,python3"
+```
+
+DotNet:
+```bash
+instrumentation.opentelemetry.io/dotnet-container-names: "dotnet1,dotnet2"
+```
+
+Go:
+```bash
+instrumentation.opentelemetry.io/go-container-names: "go1"
+```
+
+ApacheHttpD:
+```bash
+instrumentation.opentelemetry.io/apache-httpd-container-names: "apache1,apache2"
+```
+
+SDK:
+```bash
+instrumentation.opentelemetry.io/sdk-container-names: "app1,app2"
+```
+
+If language instrumentation specific container names are not specified, instrumentation is performed on the first container available in the pod spec (only if single instrumentation injection is configured).
+
+In some cases containers in the pod are using different technologies. It becomes necessary to specify language instrumentation for container(s) on which this injection must be performed.
+
+For this, we will use language instrumentation specific container names annotation for which we will indicate one or more container names (`.spec.containers.name`) on which the injection must be made:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment-with-multi-containers-multi-instrumentations
+spec:
+  selector:
+    matchLabels:
+      app: my-pod-with-multi-containers-multi-instrumentations
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-pod-with-multi-containers-multi-instrumentations
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/java-container-names: "myapp,myapp2"
+        instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/python-container-names: "myapp3"
+    spec:
+      containers:
+      - name: myapp
+        image: myImage1
+      - name: myapp2
+        image: myImage2
+      - name: myapp3
+        image: myImage3
+```
+
+In the above case, `myapp` and `myapp2` containers will be instrumented using Java and `myapp3` using Python instrumentation.
+
+**NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first container should be the only you want to instrument.
+
+**NOTE**: This type of instrumentation **does not** allow to instrument a container with multiple language instrumentations.
+
+**NOTE**: `instrumentation.opentelemetry.io/container-names` annotation is not used for this feature.
+
 #### Use customized or vendor instrumentation
 
 By default, the operator uses upstream auto-instrumentation libraries. Custom auto-instrumentation can be configured by
@@ -365,6 +463,8 @@ spec:
     image: your-customized-auto-instrumentation-image:go
   apacheHttpd:
     image: your-customized-auto-instrumentation-image:apache-httpd
+  nginx:
+    image: your-customized-auto-instrumentation-image:nginx
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).
@@ -390,6 +490,26 @@ metadata:
 ```
 List of all available attributes can be found at [otel-webserver-module](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module)
 
+#### Using Nginx autoinstrumentation
+
+For `Nginx` autoinstrumentation, Nginx versions 1.22.0, 1.23.0, and 1.23.1 are supported at this time. The Nginx configuration file is expected to be `/etc/nginx/nginx.conf` by default, if it's different, see following example on how to change it. Instrumentation at this time also expects, that `conf.d` directory is present in the directory, where configuration file resides and that there is a `include <config-file-dir-path>/conf.d/*.conf;` directive in the `http { ... }` section of Nginx configuration file (like it is in the default configuration file of Nginx). You can also adjust OpenTelemetry SDK attributes. Example:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+  nginx:
+    image: your-customized-auto-instrumentation-image:nginx # if custom instrumentation image is needed
+    configFile: /my/custom-dir/custom-nginx.conf
+    attrs:
+    - name: NginxModuleOtelMaxQueueSize
+      value: "4096"
+    - name: ...
+      value: ...
+```
+List of all available attributes can be found at [otel-webserver-module](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module)
+
 #### Inject OpenTelemetry SDK environment variables only
 
 You can configure the OpenTelemetry SDK for applications which can't currently be autoinstrumented by using `inject-sdk` in place of `inject-python` or `inject-java`, for example. This will inject environment variables like `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_TRACES_SAMPLER`, and `OTEL_EXPORTER_OTLP_ENDPOINT`, that you can configure in the `Instrumentation`, but will not actually provide the SDK.
@@ -403,8 +523,8 @@ instrumentation.opentelemetry.io/inject-sdk: "true"
 The operator allows specifying, via the feature gates,  which languages the Instrumentation resource may instrument.
 These feature gates must be passed to the operator via the `--feature-gates` flag.
 The flag allows for a comma-delimited list of feature gate identifiers.
-Prefix a gate with '-' to disable support for the corresponding language.
-Prefixing a gate with '+' or no prefix will enable support for the corresponding language.
+Prefix a gate with '-' to disable support for the corresponding language or multi instrumentation feature.
+Prefixing a gate with '+' or no prefix will enable support for the corresponding language or multi instrumentation feature.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
 
 | Language      | Gate                                        | Default Value |
@@ -415,12 +535,22 @@ If a language is enabled by default its gate only needs to be supplied when disa
 | DotNet        | `operator.autoinstrumentation.dotnet`       | enabled       |
 | ApacheHttpD   | `operator.autoinstrumentation.apache-httpd` | enabled       |
 | Go            | `operator.autoinstrumentation.go`           | disabled      |
+| Nginx         | `operator.autoinstrumentation.nginx`        | disabled      |
 
 Language not specified in the table are always supported and cannot be disabled.
 
+OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
+These features can be enabled using `operator.autoinstrumentation.multi-instrumentation` flag when installing the Operator via Helm. By default flag is `disabled`. For example:
+
+```sh
+helm install opentelemetry-operator open-telemetry/opentelemetry-operator --set manager.featureGates=operator.autoinstrumentation.multi-instrumentation
+```
+
+For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](#Multi-container-pods-with-multiple-instrumentations).
+
 ### Target Allocator
 
-The OpenTelemetry Operator comes with an optional component, the [Target Allocator](/cmd/otel-allocator/README.md) (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also change the Prometheus receiver configuration in the CR, so that it uses the [http_sd_config](https://prometheus.io/docs/prometheus/latest/http_sd/) from the TA. The following example shows how to get started with the Target Allocator:
+The OpenTelemetry Operator comes with an optional component, the [Target Allocator](/cmd/otel-allocator/README.md) (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also rewrite the Prometheus receiver configuration in the CR, so that it uses the deployed target allocator. The following example shows how to get started with the Target Allocator:
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
@@ -449,15 +579,16 @@ spec:
               replacement: $$1
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
+
 The usage of `$$` in the replacement keys in the example above is based on the information provided in the Prometheus receiver [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) documentation, which states:
 `Note: Since the collector configuration supports env variable substitution $ characters in your prometheus configuration are interpreted as environment variables. If you want to use $ characters in your prometheus configuration, you must escape them using $$.`
 
@@ -466,32 +597,21 @@ Behind the scenes, the OpenTelemetry Operator will convert the Collector’s con
 ```yaml
     receivers:
       prometheus:
-        config:
-          scrape_configs:
-          - job_name: otel-collector
-            scrape_interval: 10s
-            http_sd_configs:
-            - url: http://collector-with-ta-targetallocator:80/jobs/otel-collector/targets?collector_id=$POD_NAME
-            metric_relabel_configs:
-            - action: labeldrop
-              regex: (id|name)
-              replacement: $$1
-            - action: labelmap
-              regex: label_(.+)
-              replacement: $$1
+        target_allocator:
+          endpoint: http://collector-with-ta-targetallocator:80
+          interval: 30s
+          collector_id: $POD_NAME
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
-
-Note how the Operator removes any existing service discovery configurations (e.g., `static_configs`, `file_sd_configs`, etc.) from the `scrape_configs` section and adds an `http_sd_configs` configuration pointing to a Target Allocator instance it provisioned.
 
 The OpenTelemetry Operator will also convert the Target Allocator's Prometheus configuration after the reconciliation into the following:
 
@@ -510,40 +630,17 @@ The OpenTelemetry Operator will also convert the Target Allocator's Prometheus c
           regex: label_(.+)
           replacement: $1
 ```
+
 Note that in this case, the Operator replaces "$$" with a single "$" in the replacement keys. This is because the collector supports environment variable substitution, whereas the TA (Target Allocator) does not. Therefore, to ensure compatibility, the TA configuration should only contain a single "$" symbol.
 
 More info on the TargetAllocator can be found [here](cmd/otel-allocator/README.md).
 
-#### Target Allocator config rewriting
+#### Using Prometheus Custom Resources for service discovery
 
-Prometheus receiver now has explicit support for acquiring scrape targets from the target allocator. As such, it is now possible to have the
-Operator add the necessary target allocator configuration automatically. This feature currently requires the `operator.collector.rewritetargetallocator` feature flag to be enabled. With the flag enabled, the configuration from the previous section would be rendered as:
+The target allocator can use Custom Resources from the prometheus-operator ecosystem, like ServiceMonitors and PodMonitors, for service discovery, performing
+a function analogous to that of prometheus-operator itself. This is enabled via the `prometheusCR` section in the Collector CR.
 
-```yaml
-    receivers:
-      prometheus:
-        config:
-          global:
-            scrape_interval: 1m
-            scrape_timeout: 10s
-            evaluation_interval: 1m
-        target_allocator:
-          endpoint: http://collector-with-ta-targetallocator:80
-          interval: 30s
-          collector_id: $POD_NAME
-
-    exporters:
-      logging:
-
-    service:
-      pipelines:
-        metrics:
-          receivers: [prometheus]
-          processors: []
-          exporters: [logging]
-```
-
-This also allows for a more straightforward collector configuration for target discovery using prometheus-operator CRDs. See below for a minimal example:
+See below for a minimal example:
 
 ```yaml
 apiVersion: opentelemetry.io/v1alpha1
@@ -563,14 +660,14 @@ spec:
         config:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
           processors: []
-          exporters: [logging]
+          exporters: [debug]
 ```
 
 ## Compatibility matrix
@@ -594,6 +691,12 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.89.0                | v1.23 to v1.28       | v1                  |
+| v0.88.0                | v1.23 to v1.28       | v1                  |
+| v0.87.0                | v1.23 to v1.28       | v1                  |
+| v0.86.0                | v1.23 to v1.28       | v1                  |
+| v0.85.0                | v1.19 to v1.28       | v1                  |
+| v0.84.0                | v1.19 to v1.28       | v1                  |
 | v0.83.0                | v1.19 to v1.27       | v1                  |
 | v0.82.0                | v1.19 to v1.27       | v1                  |
 | v0.81.0                | v1.19 to v1.27       | v1                  |
@@ -611,12 +714,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.69.0                | v1.19 to v1.25       | v1                  |
 | v0.68.0                | v1.19 to v1.25       | v1                  |
 | v0.67.0                | v1.19 to v1.25       | v1                  |
-| v0.66.0                | v1.19 to v1.25       | v1                  |
-| v0.64.1                | v1.19 to v1.25       | v1                  |
-| v0.63.1                | v1.19 to v1.25       | v1                  |
-| v0.62.1                | v1.19 to v1.25       | v1                  |
-| v0.61.0                | v1.19 to v1.25       | v1                  |
-| v0.60.0                | v1.19 to v1.25       | v1                  |
 
 ## Contributing and Developing
 

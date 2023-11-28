@@ -1,0 +1,63 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: max-integer-collector
+  namespace: create-pdbs
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: create-pdbs.max-integer
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: max-integer-collector
+      app.kubernetes.io/part-of: opentelemetry
+      app.kubernetes.io/version: latest
+  maxUnavailable: 1
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: max-string-collector
+  namespace: create-pdbs
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: create-pdbs.max-string
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: max-string-collector
+      app.kubernetes.io/part-of: opentelemetry
+      app.kubernetes.io/version: latest
+  maxUnavailable: "10%"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: min-integer-collector
+  namespace: create-pdbs
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: create-pdbs.min-integer
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: min-integer-collector
+      app.kubernetes.io/part-of: opentelemetry
+      app.kubernetes.io/version: latest
+  minAvailable: 1
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: min-string-collector
+  namespace: create-pdbs
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: create-pdbs.min-string
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: min-string-collector
+      app.kubernetes.io/part-of: opentelemetry
+      app.kubernetes.io/version: latest
+  minAvailable: "10%"

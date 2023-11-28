@@ -41,6 +41,10 @@ updates:
         patterns:
           - "k8s.io/*"
           - "sigs.k8s.io/*"
+      otel:
+        patterns:
+          - go.opentelemetry.io/otel
+          - go.opentelemetry.io/otel/*
   - package-ecosystem: gomod
     directory: /cmd/otel-allocator
     schedule:
@@ -66,6 +70,10 @@ updates:
     directory: /
     schedule:
       interval: daily
+    groups:
+      gha-docker:
+        patterns:
+          - "docker/*"
 
   - package-ecosystem: docker
     directory: /

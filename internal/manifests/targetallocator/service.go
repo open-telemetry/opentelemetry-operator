@@ -15,26 +15,24 @@
 package targetallocator
 
 import (
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *corev1.Service {
-	name := naming.TAService(otelcol.Name)
-	labels := Labels(otelcol, name)
+func Service(params manifests.Params) *corev1.Service {
+	name := naming.TAService(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name)
 
-	selector := Labels(otelcol, name)
+	selector := Labels(params.OtelCol, name)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(otelcol.Name),
-			Namespace: otelcol.Namespace,
+			Name:      naming.TAService(params.OtelCol.Name),
+			Namespace: params.OtelCol.Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -42,7 +40,7 @@ func Service(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemet
 			Ports: []corev1.ServicePort{{
 				Name:       "targetallocation",
 				Port:       80,
-				TargetPort: intstr.FromInt(8080),
+				TargetPort: intstr.FromString("http"),
 			}},
 		},
 	}

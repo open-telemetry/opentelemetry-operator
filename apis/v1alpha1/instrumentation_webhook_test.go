@@ -15,43 +15,49 @@
 package v1alpha1
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 func TestInstrumentationDefaultingWebhook(t *testing.T) {
-	inst := &Instrumentation{
-		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{
-				AnnotationDefaultAutoInstrumentationJava:        "java-img:1",
-				AnnotationDefaultAutoInstrumentationNodeJS:      "nodejs-img:1",
-				AnnotationDefaultAutoInstrumentationPython:      "python-img:1",
-				AnnotationDefaultAutoInstrumentationDotNet:      "dotnet-img:1",
-				AnnotationDefaultAutoInstrumentationApacheHttpd: "apache-httpd-img:1",
-			},
-		},
-	}
-	inst.Default()
+	inst := &Instrumentation{}
+	err := InstrumentationWebhook{
+		cfg: config.New(
+			config.WithAutoInstrumentationJavaImage("java-img:1"),
+			config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
+			config.WithAutoInstrumentationPythonImage("python-img:1"),
+			config.WithAutoInstrumentationDotNetImage("dotnet-img:1"),
+			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd-img:1"),
+			config.WithAutoInstrumentationNginxImage("nginx-img:1"),
+		),
+	}.Default(context.Background(), inst)
+	assert.NoError(t, err)
 	assert.Equal(t, "java-img:1", inst.Spec.Java.Image)
 	assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python-img:1", inst.Spec.Python.Image)
 	assert.Equal(t, "dotnet-img:1", inst.Spec.DotNet.Image)
 	assert.Equal(t, "apache-httpd-img:1", inst.Spec.ApacheHttpd.Image)
+	assert.Equal(t, "nginx-img:1", inst.Spec.Nginx.Image)
 }
 
 func TestInstrumentationValidatingWebhook(t *testing.T) {
 	tests := []struct {
-		name string
-		err  string
-		inst Instrumentation
+		name     string
+		err      string
+		warnings admission.Warnings
+		inst     Instrumentation
 	}{
 		{
 			name: "all defaults",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{},
 			},
+			warnings: []string{"sampler type not set"},
 		},
 		{
 			name: "sampler configuration not present",
@@ -60,6 +66,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 					Sampler: Sampler{},
 				},
 			},
+			warnings: []string{"sampler type not set"},
 		},
 		{
 			name: "argument is not a number",
@@ -109,20 +116,22 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			ctx := context.Background()
 			if test.err == "" {
-				warnings, err := test.inst.ValidateCreate()
-				assert.Nil(t, warnings)
+				warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &test.inst)
+				assert.Equal(t, test.warnings, warnings)
 				assert.Nil(t, err)
-				warnings, err = test.inst.ValidateUpdate(nil)
-				assert.Nil(t, warnings)
+				warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
+				assert.Equal(t, test.warnings, warnings)
 				assert.Nil(t, err)
 			} else {
-				warnings, err := test.inst.ValidateCreate()
-				assert.Nil(t, warnings)
+				warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &test.inst)
+				assert.Equal(t, test.warnings, warnings)
 				assert.Contains(t, err.Error(), test.err)
-				warnings, err = test.inst.ValidateUpdate(nil)
-				assert.Nil(t, warnings)
+				warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
+				assert.Equal(t, test.warnings, warnings)
 				assert.Contains(t, err.Error(), test.err)
 			}
 		})
@@ -169,18 +178,19 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 						},
 					},
 				}
+				ctx := context.Background()
 				if test.err == "" {
-					warnings, err := inst.ValidateCreate()
+					warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &inst)
 					assert.Nil(t, warnings)
 					assert.Nil(t, err)
-					warnings, err = inst.ValidateUpdate(nil)
+					warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &inst)
 					assert.Nil(t, warnings)
 					assert.Nil(t, err)
 				} else {
-					warnings, err := inst.ValidateCreate()
+					warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &inst)
 					assert.Nil(t, warnings)
 					assert.Contains(t, err.Error(), test.err)
-					warnings, err = inst.ValidateUpdate(nil)
+					warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &inst)
 					assert.Nil(t, warnings)
 					assert.Contains(t, err.Error(), test.err)
 				}

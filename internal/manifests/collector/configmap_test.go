@@ -52,32 +52,38 @@ receivers:
           - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
 
 exporters:
-  logging:
+  debug:
 
 service:
   pipelines:
     metrics:
       receivers: [prometheus, jaeger]
       processors: []
-      exporters: [logging]`,
+      exporters: [debug]`,
 		}
 
 		param := deploymentParams()
-		actual := ConfigMap(param.Config, param.Log, param.Instance)
+		actual, err := ConfigMap(param)
 
+		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
 	})
 
-	t.Run("should return expected collector config map with http_sd_config", func(t *testing.T) {
+	t.Run("should return expected collector config map with http_sd_config if rewrite flag disabled", func(t *testing.T) {
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		})
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
-  logging: null
+  debug: null
 processors: null
 receivers:
   jaeger:
@@ -94,7 +100,7 @@ service:
   pipelines:
     metrics:
       exporters:
-      - logging
+      - debug
       processors: []
       receivers:
       - prometheus
@@ -103,23 +109,30 @@ service:
 		}
 
 		param := deploymentParams()
-		param.Instance.Spec.TargetAllocator.Enabled = true
-		actual := ConfigMap(param.Config, param.Log, param.Instance)
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actual, err := ConfigMap(param)
 
+		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.GetName())
 		assert.Equal(t, expectedLables, actual.GetLabels())
 		assert.Equal(t, expectedData, actual.Data)
 
 	})
 
-	t.Run("should return expected escaped collector config map with http_sd_config", func(t *testing.T) {
+	t.Run("should return expected escaped collector config map with http_sd_config if rewrite flag disabled", func(t *testing.T) {
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		})
+
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
 		expectedLables["app.kubernetes.io/version"] = "latest"
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
-  logging: null
+  debug: null
 processors: null
 receivers:
   prometheus:
@@ -138,7 +151,7 @@ service:
   pipelines:
     metrics:
       exporters:
-      - logging
+      - debug
       processors: []
       receivers:
       - prometheus
@@ -147,9 +160,10 @@ service:
 
 		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test_ta_set.yaml")
 		assert.NoError(t, err)
-		param.Instance.Spec.TargetAllocator.Enabled = true
-		actual := ConfigMap(param.Config, param.Log, param.Instance)
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actual, err := ConfigMap(param)
 
+		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
@@ -163,12 +177,10 @@ service:
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
 		expectedLables["app.kubernetes.io/version"] = "latest"
-		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
-		assert.NoError(t, err)
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
-  logging: null
+  debug: null
 processors: null
 receivers:
   prometheus:
@@ -181,7 +193,7 @@ service:
   pipelines:
     metrics:
       exporters:
-      - logging
+      - debug
       processors: []
       receivers:
       - prometheus
@@ -190,16 +202,16 @@ service:
 
 		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml")
 		assert.NoError(t, err)
-		param.Instance.Spec.TargetAllocator.Enabled = true
-		actual := ConfigMap(param.Config, param.Log, param.Instance)
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actual, err := ConfigMap(param)
 
+		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
 		// Reset the value
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
-		err = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
 		assert.NoError(t, err)
 
 	})

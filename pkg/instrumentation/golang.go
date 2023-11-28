@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -36,9 +37,17 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 		return pod, fmt.Errorf("shared process namespace has been explicitly disabled")
 	}
 
-	containerNames, ok := pod.Annotations[annotationInjectContainerName]
+	// skip instrumentation when more than one containers provided
+	containerNames := ""
+	ok := false
+	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+		containerNames, ok = pod.Annotations[annotationInjectGoContainersName]
+	} else {
+		containerNames, ok = pod.Annotations[annotationInjectContainerName]
+	}
+
 	if ok && len(strings.Split(containerNames, ",")) > 1 {
-		return pod, fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container")
+		return pod, fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured")
 	}
 
 	true := true
@@ -52,9 +61,6 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser:  &zero,
 			Privileged: &true,
-			Capabilities: &corev1.Capabilities{
-				Add: []corev1.Capability{"SYS_PTRACE"},
-			},
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{

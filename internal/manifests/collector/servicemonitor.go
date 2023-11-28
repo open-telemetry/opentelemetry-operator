@@ -23,40 +23,40 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // ServiceMonitor returns the service monitor for the given instance.
-func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) (*monitoringv1.ServiceMonitor, error) {
-	if !otelcol.Spec.Observability.Metrics.EnableMetrics {
-		logger.V(2).Info("Metrics disabled for this OTEL Collector",
-			"otelcol.name", otelcol.Name,
-			"otelcol.namespace", otelcol.Namespace,
+func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, error) {
+	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
+		params.Log.V(2).Info("Metrics disabled for this OTEL Collector",
+			"params.OtelCol.name", params.OtelCol.Name,
+			"params.OtelCol.namespace", params.OtelCol.Namespace,
 		)
 		return nil, nil
 	}
 
 	sm := monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: otelcol.Namespace,
-			Name:      naming.ServiceMonitor(otelcol.Name),
+			Namespace: params.OtelCol.Namespace,
+			Name:      naming.ServiceMonitor(params.OtelCol.Name),
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.ServiceMonitor(otelcol.Name),
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name),
+				"app.kubernetes.io/name":       naming.ServiceMonitor(params.OtelCol.Name),
+				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 				"app.kubernetes.io/managed-by": "opentelemetry-operator",
 			},
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: []monitoringv1.Endpoint{},
 			NamespaceSelector: monitoringv1.NamespaceSelector{
-				MatchNames: []string{otelcol.Namespace},
+				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelcol.Namespace, otelcol.Name),
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 				},
 			},
 		},
@@ -68,7 +68,7 @@ func ServiceMonitor(cfg config.Config, logger logr.Logger, otelcol v1alpha1.Open
 		},
 	}
 
-	sm.Spec.Endpoints = append(endpoints, endpointsFromConfig(logger, otelcol)...)
+	sm.Spec.Endpoints = append(endpoints, endpointsFromConfig(params.Log, params.OtelCol)...)
 	return &sm, nil
 }
 
@@ -79,7 +79,7 @@ func endpointsFromConfig(logger logr.Logger, otelcol v1alpha1.OpenTelemetryColle
 		return []monitoringv1.Endpoint{}
 	}
 
-	exporterPorts, err := adapters.ConfigToExporterPorts(logger, c)
+	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, c)
 	if err != nil {
 		logger.Error(err, "couldn't build service monitors from configuration")
 		return []monitoringv1.Endpoint{}

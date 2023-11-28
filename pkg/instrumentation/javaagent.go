@@ -21,8 +21,11 @@ import (
 )
 
 const (
-	envJavaToolsOptions = "JAVA_TOOL_OPTIONS"
-	javaJVMArgument     = " -javaagent:/otel-auto-instrumentation/javaagent.jar"
+	envJavaToolsOptions   = "JAVA_TOOL_OPTIONS"
+	javaJVMArgument       = " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
+	javaInitContainerName = initContainerName + "-java"
+	javaVolumeName        = volumeName + "-java"
+	javaInstrMountPath    = "/otel-auto-instrumentation-java"
 )
 
 func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
@@ -53,26 +56,28 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      volumeName,
-		MountPath: "/otel-auto-instrumentation",
+		Name:      javaVolumeName,
+		MountPath: javaInstrMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container.
-	if isInitContainerMissing(pod) {
+	if isInitContainerMissing(pod, javaInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: volumeName,
+			Name: javaVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: volumeSize(javaSpec.VolumeSizeLimit),
+				},
 			}})
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:      initContainerName,
+			Name:      javaInitContainerName,
 			Image:     javaSpec.Image,
-			Command:   []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation/javaagent.jar"},
+			Command:   []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
 			Resources: javaSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      volumeName,
-				MountPath: "/otel-auto-instrumentation",
+				Name:      javaVolumeName,
+				MountPath: javaInstrMountPath,
 			}},
 		})
 	}

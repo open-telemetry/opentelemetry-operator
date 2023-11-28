@@ -19,10 +19,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestInjectGoSDK(t *testing.T) {
@@ -33,9 +36,10 @@ func TestInjectGoSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.Go
-		pod      corev1.Pod
-		expected corev1.Pod
-		err      error
+		pod             corev1.Pod
+		expected        corev1.Pod
+		err             error
+		setFeatureGates func(t *testing.T)
 	}{
 		{
 			name: "shared process namespace disabled",
@@ -51,6 +55,32 @@ func TestInjectGoSDK(t *testing.T) {
 				},
 			},
 			err: fmt.Errorf("shared process namespace has been explicitly disabled"),
+		},
+		{
+			name: "using go-container-names",
+			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/go-container-names": "foo,bar",
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/go-container-names": "foo,bar",
+					},
+				},
+			},
+			err: fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured"),
+			setFeatureGates: func(t *testing.T) {
+				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
+				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
+				t.Cleanup(func() {
+					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalVal))
+				})
+			},
 		},
 		{
 			name: "using container-names",
@@ -69,7 +99,7 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("go instrumentation cannot be injected into a pod using instrumentation.opentelemetry.io/container-names with more than 1 container"),
+			err: fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured"),
 		},
 		{
 			name: "pod annotation takes precedence",
@@ -106,9 +136,6 @@ func TestInjectGoSDK(t *testing.T) {
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
 								Privileged: &true,
-								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{"SYS_PTRACE"},
-								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -151,14 +178,14 @@ func TestInjectGoSDK(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/container-names": "foo",
+						"instrumentation.opentelemetry.io/go-container-names": "foo",
 					},
 				},
 			},
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/container-names": "foo",
+						"instrumentation.opentelemetry.io/go-container-names": "foo",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -170,9 +197,6 @@ func TestInjectGoSDK(t *testing.T) {
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
 								Privileged: &true,
-								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{"SYS_PTRACE"},
-								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -227,9 +251,6 @@ func TestInjectGoSDK(t *testing.T) {
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
 								Privileged: &true,
-								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{"SYS_PTRACE"},
-								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -266,6 +287,9 @@ func TestInjectGoSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			if test.setFeatureGates != nil {
+				test.setFeatureGates(t)
+			}
 			pod, err := injectGoSDK(test.Go, test.pod)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)

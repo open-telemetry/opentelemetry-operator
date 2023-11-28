@@ -41,6 +41,15 @@ spec:
     enabled: true
     image: "local/opentelemetry-operator-targetallocator:e2e"
     serviceAccount: ta
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: ingress-ready
+                  operator: In
+                  values:
+                    - "true"
     prometheusCR:
       enabled: true
     env:
@@ -73,10 +82,10 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
     service:
       pipelines:
         traces:
           receivers: [jaeger]
           processors: []
-          exporters: [logging]
+          exporters: [debug]

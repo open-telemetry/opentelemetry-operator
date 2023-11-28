@@ -24,7 +24,6 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -38,24 +37,27 @@ func TestExpectedRoutes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
-		params.Instance.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
+		params.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+		params.OtelCol.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 
-		routes := collector.Routes(params.Config, params.Log, params.Instance)
+		var routes []*routev1.Route
+		routes, err = collector.Routes(params)
+		assert.NoError(t, err)
 		err = expectedRoutes(ctx, params, routes)
 		assert.NoError(t, err)
 
-		nns := types.NamespacedName{Namespace: params.Instance.Namespace, Name: "otlp-grpc-test-route"}
+		nns := types.NamespacedName{Namespace: params.OtelCol.Namespace, Name: "otlp-grpc-test-route"}
 		exists, err := populateObjectIfExists(t, &routev1.Route{}, nns)
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
 		// update fields
 		const expectHostname = "something-else.com"
-		params.Instance.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
-		params.Instance.Spec.Ingress.Hostname = expectHostname
+		params.OtelCol.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
+		params.OtelCol.Spec.Ingress.Hostname = expectHostname
 
-		routes = collector.Routes(params.Config, params.Log, params.Instance)
+		routes, err = collector.Routes(params)
+		assert.NoError(t, err)
 		err = expectedRoutes(ctx, params, routes)
 		assert.NoError(t, err)
 
@@ -83,9 +85,11 @@ func TestDeleteRoutes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		myParams.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+		myParams.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 
-		routes := collector.Routes(myParams.Config, myParams.Log, myParams.Instance)
+		var routes []*routev1.Route
+		routes, err = collector.Routes(myParams)
+		assert.NoError(t, err)
 		err = expectedRoutes(ctx, myParams, routes)
 		assert.NoError(t, err)
 
@@ -104,22 +108,4 @@ func TestDeleteRoutes(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	})
-}
-
-func TestRoutes(t *testing.T) {
-	t.Run("wrong mode", func(t *testing.T) {
-		ctx := context.Background()
-		err := Routes(ctx, params())
-		assert.Nil(t, err)
-	})
-
-	t.Run("supported mode and service exists", func(t *testing.T) {
-		ctx := context.Background()
-		myParams := params()
-		err := expectedServices(context.Background(), myParams, []*corev1.Service{service("test-collector", params().Instance.Spec.Ports)})
-		assert.NoError(t, err)
-
-		assert.Nil(t, Routes(ctx, myParams))
-	})
-
 }

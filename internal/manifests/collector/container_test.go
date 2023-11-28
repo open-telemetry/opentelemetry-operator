@@ -15,9 +15,11 @@
 package collector_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -37,7 +39,31 @@ var metricContainerPort = corev1.ContainerPort{
 
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	var defaultConfig = `receivers:
+		otlp:
+			protocols:
+			http:
+			grpc:
+	exporters:
+		debug:
+	service:
+		pipelines:
+			metrics:
+				receivers: [otlp]
+				exporters: [debug]`
+
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+			Config: defaultConfig,
+		},
+	}
 	cfg := config.New(config.WithCollectorImage("default-image"))
 
 	// test
@@ -68,12 +94,13 @@ func TestContainerPorts(t *testing.T) {
 	var goodConfig = `receivers:
   examplereceiver:
     endpoint: "0.0.0.0:12345"
+exporters:
+  debug:
 service:
   pipelines:
     metrics:
       receivers: [examplereceiver]
-      exporters: [logging]
-`
+      exporters: [debug]`
 
 	tests := []struct {
 		description   string
@@ -88,9 +115,15 @@ service:
 			expectedPorts: []corev1.ContainerPort{},
 		},
 		{
-			description:   "couldn't build ports from spec config",
-			specConfig:    "",
-			specPorts:     nil,
+			description: "couldn't build ports from spec config",
+			specConfig:  "",
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{metricContainerPort},
 		},
 		{
@@ -108,6 +141,11 @@ service:
 		{
 			description: "ports in spec ContainerPorts",
 			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
 				{
 					Name: "testport1",
 					Port: 12345,
@@ -182,15 +220,30 @@ service:
 			specConfig: `exporters:
     prometheus:
         endpoint: "0.0.0.0:9090"
+	debug:
 service:
     pipelines:
         metrics:
-            exporters: [prometheus]
+			receivers: [otlp]
+            exporters: [prometheus, debug]
 `,
-
-			specPorts: []corev1.ServicePort{},
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name: "prometheus",
+					Port: 9090,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{
-				metricContainerPort,
+				{
+					Name:          "metrics",
+					ContainerPort: 8888,
+					Protocol:      corev1.ProtocolTCP,
+				},
 				{
 					Name:          "prometheus",
 					ContainerPort: 9090,
@@ -204,12 +257,27 @@ service:
         endpoint: "0.0.0.0:9090"
     prometheus/dev:
         endpoint: "0.0.0.0:9091"
+	debug:
 service:
     pipelines:
         metrics:
-            exporters: [prometheus/prod, prometheus/dev]
+            exporters: [prometheus/prod, prometheus/dev, debug]
 `,
-			specPorts: []corev1.ServicePort{},
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name: "prometheus-dev",
+					Port: 9091,
+				},
+				{
+					Name: "prometheus-prod",
+					Port: 9090,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{
 				metricContainerPort,
 				{
@@ -227,7 +295,13 @@ service:
 			specConfig: `exporters:
     prometheusremotewrite/prometheus:
         endpoint: http://prometheus-server.monitoring/api/v1/write`,
-			specPorts:     []corev1.ServicePort{},
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{metricContainerPort},
 		},
 		{
@@ -239,11 +313,26 @@ service:
         endpoint: "0.0.0.0:9091"
     prometheusremotewrite/prometheus:
         endpoint: http://prometheus-server.monitoring/api/v1/write
+	debug:
 service:
     pipelines:
         metrics:
-            exporters: [prometheus/prod, prometheus/dev, prometheusremotewrite/prometheus]`,
-			specPorts: []corev1.ServicePort{},
+            exporters: [prometheus/prod, prometheus/dev, prometheusremotewrite/prometheus, debug]`,
+			specPorts: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name: "prometheus-dev",
+					Port: 9091,
+				},
+				{
+					Name: "prometheus-prod",
+					Port: 9090,
+				},
+			},
 			expectedPorts: []corev1.ContainerPort{
 				metricContainerPort,
 				{
@@ -267,11 +356,11 @@ service:
 					Ports:  testCase.specPorts,
 				},
 			}
+
 			cfg := config.New(config.WithCollectorImage("default-image"))
 
 			// test
 			c := Container(cfg, logger, otelcol, true)
-
 			// verify
 			assert.ElementsMatch(t, testCase.expectedPorts, c.Ports, testCase.description)
 		})
@@ -316,6 +405,32 @@ func TestContainerCustomVolumes(t *testing.T) {
 	// verify
 	assert.Len(t, c.VolumeMounts, 2)
 	assert.Equal(t, "custom-volume-mount", c.VolumeMounts[1].Name)
+}
+
+func TestContainerCustomConfigMapsVolumes(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
+				Name:      "test",
+				MountPath: "/",
+			}, {
+				Name:      "test2",
+				MountPath: "/dir",
+			}},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	assert.Len(t, c.VolumeMounts, 3)
+	assert.Equal(t, "configmap-test", c.VolumeMounts[1].Name)
+	assert.Equal(t, "/var/conf/configmap-test", c.VolumeMounts[1].MountPath)
+	assert.Equal(t, "configmap-test2", c.VolumeMounts[2].Name)
+	assert.Equal(t, "/var/conf/dir/configmap-test2", c.VolumeMounts[2].MountPath)
 }
 
 func TestContainerCustomSecurityContext(t *testing.T) {
@@ -381,6 +496,26 @@ func TestContainerDefaultEnvVars(t *testing.T) {
 	// verify
 	assert.Len(t, c.Env, 1)
 	assert.Equal(t, c.Env[0].Name, "POD_NAME")
+}
+
+func TestContainerProxyEnvVars(t *testing.T) {
+	err := os.Setenv("NO_PROXY", "localhost")
+	require.NoError(t, err)
+	defer os.Unsetenv("NO_PROXY")
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	require.Len(t, c.Env, 3)
+	assert.Equal(t, "POD_NAME", c.Env[0].Name)
+	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[1])
+	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[2])
 }
 
 func TestContainerResourceRequirements(t *testing.T) {

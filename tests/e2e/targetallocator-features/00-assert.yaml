@@ -47,6 +47,15 @@ metadata:
 spec:
   template:
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: ingress-ready
+                    operator: In
+                    values:
+                      - "true"
       containers:
         - name: ta-container
           args:
@@ -58,16 +67,23 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-          resources:
-            limits:
-              cpu: 200m
-              memory: 500Mi
-            requests:
-              cpu: 100m
-              memory: 250Mi
           volumeMounts:
           - mountPath: /conf
             name: ta-internal
+          readinessProbe:
+            httpGet:
+              path: /readyz
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /livez
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
       volumes:
         - configMap:
             items:

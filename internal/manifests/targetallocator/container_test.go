@@ -15,11 +15,14 @@
 package targetallocator
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -58,6 +61,27 @@ func TestContainerWithImageOverridden(t *testing.T) {
 
 	// verify
 	assert.Equal(t, "overridden-image", c.Image)
+}
+
+func TestContainerPorts(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+				Image:   "default-image",
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Len(t, c.Ports, 1)
+	assert.Equal(t, "http", c.Ports[0].Name)
+	assert.Equal(t, int32(8080), c.Ports[0].ContainerPort)
 }
 
 func TestContainerVolumes(t *testing.T) {
@@ -166,6 +190,29 @@ func TestContainerHasEnvVars(t *testing.T) {
 				SubPathExpr:      "",
 			},
 		},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "http",
+				ContainerPort: 8080,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+		ReadinessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/readyz",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/livez",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
 	}
 
 	// test
@@ -173,6 +220,36 @@ func TestContainerHasEnvVars(t *testing.T) {
 
 	// verify
 	assert.Equal(t, expected, c)
+}
+
+func TestContainerHasProxyEnvVars(t *testing.T) {
+	err := os.Setenv("NO_PROXY", "localhost")
+	require.NoError(t, err)
+	defer os.Unsetenv("NO_PROXY")
+
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+				Env: []corev1.EnvVar{
+					{
+						Name:  "TEST_ENV",
+						Value: "test",
+					},
+				},
+			},
+		},
+	}
+	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	require.Len(t, c.Env, 4)
+	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[2])
+	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[3])
 }
 
 func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
@@ -211,6 +288,29 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 				SubPathExpr:      "",
 			},
 		},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "http",
+				ContainerPort: 8080,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+		ReadinessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/readyz",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/livez",
+					Port: intstr.FromInt(8080),
+				},
+			},
+		},
 	}
 
 	// test
@@ -218,4 +318,53 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 
 	// verify
 	assert.Equal(t, expected, c)
+}
+func TestReadinessProbe(t *testing.T) {
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+			},
+		},
+	}
+	cfg := config.New()
+	expected := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/readyz",
+				Port: intstr.FromInt(8080),
+			},
+		},
+	}
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, expected, c.ReadinessProbe)
+}
+func TestLivenessProbe(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+			},
+		},
+	}
+	cfg := config.New()
+	expected := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/livez",
+				Port: intstr.FromInt(8080),
+			},
+		},
+	}
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, expected, c.LivenessProbe)
 }

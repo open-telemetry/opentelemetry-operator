@@ -20,6 +20,7 @@ import (
 
 	"github.com/prometheus/prometheus/discovery/http"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"gopkg.in/yaml.v2"
 
@@ -32,7 +33,12 @@ func TestPrometheusParser(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("should update config with http_sd_config", func(t *testing.T) {
-		actualConfig, err := ReplaceConfig(param.Instance)
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		})
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		// prepare
@@ -63,14 +69,10 @@ func TestPrometheusParser(t *testing.T) {
 		assert.True(t, cfg.TargetAllocConfig == nil)
 	})
 
-	t.Run("should update config with targetAllocator block", func(t *testing.T) {
-		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
-		param.Instance.Spec.TargetAllocator.Enabled = true
-		assert.NoError(t, err)
-
+	t.Run("should update config with targetAllocator block if block not present", func(t *testing.T) {
 		// Set up the test scenario
-		param.Instance.Spec.TargetAllocator.Enabled = true
-		actualConfig, err := ReplaceConfig(param.Instance)
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		// Verify the expected changes in the config
@@ -87,15 +89,38 @@ func TestPrometheusParser(t *testing.T) {
 			"collector_id": "${POD_NAME}",
 		}
 		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
+		assert.NoError(t, err)
+	})
 
-		// Disable the feature flag
-		err = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+	t.Run("should update config with targetAllocator block if block already present", func(t *testing.T) {
+		// Set up the test scenario
+		paramTa, err := newParams("test/test-img", "testdata/http_sd_config_ta_test.yaml")
+		require.NoError(t, err)
+		paramTa.OtelCol.Spec.TargetAllocator.Enabled = true
+
+		actualConfig, err := ReplaceConfig(paramTa.OtelCol)
+		assert.NoError(t, err)
+
+		// Verify the expected changes in the config
+		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
+		assert.NoError(t, err)
+
+		prometheusConfig := promCfgMap["config"].(map[interface{}]interface{})
+
+		assert.NotContains(t, prometheusConfig, "scrape_configs")
+
+		expectedTAConfig := map[interface{}]interface{}{
+			"endpoint":     "http://test-targetallocator:80",
+			"interval":     "30s",
+			"collector_id": "${POD_NAME}",
+		}
+		assert.Equal(t, expectedTAConfig, promCfgMap["target_allocator"])
 		assert.NoError(t, err)
 	})
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
-		param.Instance.Spec.TargetAllocator.Enabled = false
-		actualConfig, err := ReplaceConfig(param.Instance)
+		param.OtelCol.Spec.TargetAllocator.Enabled = false
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		// prepare
@@ -133,25 +158,44 @@ func TestReplaceConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("should not modify config when TargetAllocator is disabled", func(t *testing.T) {
-		param.Instance.Spec.TargetAllocator.Enabled = false
+		param.OtelCol.Spec.TargetAllocator.Enabled = false
 		expectedConfigBytes, err := os.ReadFile("testdata/relabel_config_original.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
-		actualConfig, err := ReplaceConfig(param.Instance)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expectedConfig, actualConfig)
 	})
 
 	t.Run("should rewrite scrape configs with SD config when TargetAllocator is enabled and feature flag is not set", func(t *testing.T) {
-		param.Instance.Spec.TargetAllocator.Enabled = true
+		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
+		})
+
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
 
 		expectedConfigBytes, err := os.ReadFile("testdata/relabel_config_expected_with_sd_config.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
-		actualConfig, err := ReplaceConfig(param.Instance)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
+		assert.NoError(t, err)
+
+		assert.Equal(t, expectedConfig, actualConfig)
+	})
+
+	t.Run("should remove scrape configs if TargetAllocator is enabled and feature flag is set", func(t *testing.T) {
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+
+		expectedConfigBytes, err := os.ReadFile("testdata/config_expected_targetallocator.yaml")
+		assert.NoError(t, err)
+		expectedConfig := string(expectedConfigBytes)
+
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expectedConfig, actualConfig)

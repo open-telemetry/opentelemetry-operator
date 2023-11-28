@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment-with-sidecar
+spec:
+  selector:
+    matchLabels:
+      app: my-pod-with-sidecar
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-pod-with-sidecar
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+        instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/container-names: "myrabbit"
+    spec:
+      containers:
+      - name: myapp
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+      - name: myrabbit
+        image: rabbitmq:3

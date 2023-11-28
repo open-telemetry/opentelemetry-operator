@@ -17,12 +17,14 @@ package receiver
 import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 )
 
 const parserNameStatsd = "__statsd"
 
 // NewStatsdReceiverParser builds a new parser for Statsd receivers, from the contrib repository.
-func NewStatsdReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewStatsdReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:          logger,
 		name:            name,

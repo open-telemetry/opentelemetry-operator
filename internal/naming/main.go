@@ -25,14 +25,29 @@ func TAConfigMap(otelcol string) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
 }
 
+// OpAMPBridgeConfigMap builds the name for the config map used in the OpAMPBridge containers.
+func OpAMPBridgeConfigMap(opampBridge string) string {
+	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
+}
+
 // ConfigMapVolume returns the name to use for the config map's volume in the pod.
 func ConfigMapVolume() string {
 	return "otc-internal"
 }
 
+// ConfigMapExtra returns the prefix to use for the extras mounted configmaps in the pod.
+func ConfigMapExtra(extraConfigMapName string) string {
+	return DNSName(Truncate("configmap-%s", 63, extraConfigMapName))
+}
+
 // TAConfigMapVolume returns the name to use for the config map's volume in the TargetAllocator pod.
 func TAConfigMapVolume() string {
 	return "ta-internal"
+}
+
+// OpAMPBridgeConfigMapVolume returns the name to use for the config map's volume in the OpAMPBridge pod.
+func OpAMPBridgeConfigMapVolume() string {
+	return "opamp-bridge-internal"
 }
 
 // Container returns the name to use for the container in the pod.
@@ -45,6 +60,11 @@ func TAContainer() string {
 	return "ta-container"
 }
 
+// OpAMPBridgeContainer returns the name to use for the container in the OpAMPBridge pod.
+func OpAMPBridgeContainer() string {
+	return "opamp-bridge-container"
+}
+
 // Collector builds the collector (deployment/daemonset) name based on the instance.
 func Collector(otelcol string) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol))
@@ -52,6 +72,11 @@ func Collector(otelcol string) string {
 
 // HorizontalPodAutoscaler builds the autoscaler name based on the instance.
 func HorizontalPodAutoscaler(otelcol string) string {
+	return DNSName(Truncate("%s-collector", 63, otelcol))
+}
+
+// HorizontalPodAutoscaler builds the autoscaler name based on the instance.
+func PodDisruptionBudget(otelcol string) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol))
 }
 
@@ -68,6 +93,11 @@ func OpenTelemetryCollectorName(otelcolName string) string {
 // TargetAllocator returns the TargetAllocator deployment resource name.
 func TargetAllocator(otelcol string) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
+}
+
+// OpAMPBridge returns the OpAMPBridge deployment resource name.
+func OpAMPBridge(opampBridge string) string {
+	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
 }
 
 // HeadlessService builds the name for the headless service based on the instance.
@@ -100,6 +130,11 @@ func TAService(otelcol string) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
 }
 
+// OpAMPBridgeService returns the name to use for the OpAMPBridge service.
+func OpAMPBridgeService(opampBridge string) string {
+	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
+}
+
 // ServiceAccount builds the service account name based on the instance.
 func ServiceAccount(otelcol string) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol))
@@ -113,4 +148,9 @@ func ServiceMonitor(otelcol string) string {
 // TargetAllocatorServiceAccount returns the TargetAllocator service account resource name.
 func TargetAllocatorServiceAccount(otelcol string) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
+}
+
+// OpAMPBridgeServiceAccount builds the service account name based on the instance.
+func OpAMPBridgeServiceAccount(opampBridge string) string {
+	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
 }

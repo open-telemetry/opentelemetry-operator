@@ -15,10 +15,13 @@
 package collector
 
 import (
+	"errors"
 	"fmt"
+	"path"
 	"sort"
 
 	"github.com/go-logr/logr"
+	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -40,7 +43,8 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	// build container ports from service ports
-	ports := getConfigContainerPorts(logger, otelcol.Spec.Config)
+	ports, err := getConfigContainerPorts(logger, otelcol.Spec.Config)
+	logger.Error(err, "container ports config")
 	for _, p := range otelcol.Spec.Ports {
 		ports[p.Name] = corev1.ContainerPort{
 			Name:          p.Name,
@@ -104,6 +108,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		},
 	})
 
+	if len(otelcol.Spec.ConfigMaps) > 0 {
+		for keyCfgMap := range otelcol.Spec.ConfigMaps {
+			volumeMounts = append(volumeMounts, corev1.VolumeMount{
+				Name:      naming.ConfigMapExtra(otelcol.Spec.ConfigMaps[keyCfgMap].Name),
+				MountPath: path.Join("/var/conf", otelcol.Spec.ConfigMaps[keyCfgMap].MountPath, naming.ConfigMapExtra(otelcol.Spec.ConfigMaps[keyCfgMap].Name)),
+			})
+		}
+	}
+
 	if otelcol.Spec.TargetAllocator.Enabled {
 		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
 		// added by default by the Prometheus operator's config generator.
@@ -117,14 +130,19 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	var livenessProbe *corev1.Probe
-	if config, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
-		if probe, err := getLivenessProbe(config, otelcol.Spec.LivenessProbe); err == nil {
+	if configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config); err == nil {
+		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
+		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
+			logger.Info("extensions not configured, skipping liveness probe creation")
+		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
+			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
 		} else {
-			logger.Error(err, "Cannot create liveness probe.")
+			logger.Error(err, "cannot create liveness probe.")
 		}
 	}
 
+	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
 		Name:            naming.Container(),
 		Image:           image,
@@ -141,14 +159,17 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 }
 
-func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.ContainerPort {
+func getConfigContainerPorts(logger logr.Logger, cfg string) (map[string]corev1.ContainerPort, error) {
 	ports := map[string]corev1.ContainerPort{}
 	c, err := adapters.ConfigFromString(cfg)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration")
-		return ports
+		return ports, err
 	}
-	ps := adapters.ConfigToPorts(logger, c)
+	ps, err := adapters.ConfigToPorts(logger, c)
+	if err != nil {
+		return ports, err
+	}
 	if len(ps) > 0 {
 		for _, p := range ps {
 			truncName := naming.Truncate(p.Name, maxPortLen)
@@ -182,7 +203,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) map[string]corev1.C
 		Protocol:      corev1.ProtocolTCP,
 	}
 
-	return ports
+	return ports, nil
 }
 
 func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPort {

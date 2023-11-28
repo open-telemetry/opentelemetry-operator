@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -98,7 +99,7 @@ func TestDesiredService(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			Instance: v1alpha1.OpenTelemetryCollector{
+			OtelCol: v1alpha1.OpenTelemetryCollector{
 				Spec: v1alpha1.OpenTelemetryCollectorSpec{Config: `receivers:
       test:
         protocols:
@@ -106,11 +107,12 @@ func TestDesiredService(t *testing.T) {
 			},
 		}
 
-		actual := Service(params.Config, params.Log, params.Instance)
+		actual, err := Service(params)
+		assert.ErrorContains(t, err, "no enabled receivers available as part of the configuration")
 		assert.Nil(t, actual)
 
 	})
-	t.Run("should return service with port mentioned in Instance.Spec.Ports and inferred ports", func(t *testing.T) {
+	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {
 
 		grpc := "grpc"
 		jaegerPorts := v1.ServicePort{
@@ -120,10 +122,11 @@ func TestDesiredService(t *testing.T) {
 			AppProtocol: &grpc,
 		}
 		params := deploymentParams()
-		ports := append(params.Instance.Spec.Ports, jaegerPorts)
+		ports := append(params.OtelCol.Spec.Ports, jaegerPorts)
 		expected := service("test-collector", ports)
-		actual := Service(params.Config, params.Log, params.Instance)
 
+		actual, err := Service(params)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, *actual)
 
 	})
@@ -138,12 +141,15 @@ func TestDesiredService(t *testing.T) {
 		}
 
 		params := deploymentParams()
-		params.Instance.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
-		actual := Service(params.Config, params.Log, params.Instance)
 
-		ports := append(params.Instance.Spec.Ports, jaegerPort)
+		params.OtelCol.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
+		actual, err := Service(params)
+
+		ports := append(params.OtelCol.Spec.Ports, jaegerPort)
 		expected := service("test-collector", ports)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, *actual)
+
 	})
 
 	t.Run("should return service with local internal traffic policy", func(t *testing.T) {
@@ -156,18 +162,36 @@ func TestDesiredService(t *testing.T) {
 			AppProtocol: &grpc,
 		}
 		p := paramsWithMode(v1alpha1.ModeDaemonSet)
-		ports := append(p.Instance.Spec.Ports, jaegerPorts)
+		ports := append(p.OtelCol.Spec.Ports, jaegerPorts)
 		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
-		actual := Service(p.Config, p.Log, p.Instance)
+
+		actual, err := Service(p)
+		assert.NoError(t, err)
 
 		assert.Equal(t, expected, *actual)
+	})
+
+	t.Run("should return nil unable to parse config", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1alpha1.OpenTelemetryCollector{
+				Spec: v1alpha1.OpenTelemetryCollectorSpec{Config: `!!!`},
+			},
+		}
+
+		actual, err := Service(params)
+		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
+		assert.Nil(t, actual)
+
 	})
 }
 
 func TestHeadlessService(t *testing.T) {
 	t.Run("should return headless service", func(t *testing.T) {
 		param := deploymentParams()
-		actual := HeadlessService(param.Config, param.Log, param.Instance)
+		actual, err := HeadlessService(param)
+		assert.NoError(t, err)
 		assert.Equal(t, actual.GetAnnotations()["service.beta.openshift.io/serving-cert-secret-name"], "test-collector-headless-tls")
 		assert.Equal(t, actual.Spec.ClusterIP, "None")
 	})
@@ -180,7 +204,10 @@ func TestMonitoringService(t *testing.T) {
 			Port: 8888,
 		}}
 		param := deploymentParams()
-		actual := MonitoringService(param.Config, param.Log, param.Instance)
+
+		actual, err := MonitoringService(param)
+		assert.NoError(t, err)
+
 		assert.Equal(t, expected, actual.Spec.Ports)
 	})
 
@@ -190,12 +217,15 @@ func TestMonitoringService(t *testing.T) {
 			Port: 9090,
 		}}
 		params := deploymentParams()
-		params.Instance.Spec.Config = `service:
+		params.OtelCol.Spec.Config = `service:
     telemetry:
         metrics:
             level: detailed
             address: 0.0.0.0:9090`
-		actual := MonitoringService(params.Config, params.Log, params.Instance)
+
+		actual, err := MonitoringService(params)
+		assert.NoError(t, err)
+
 		assert.NotNil(t, actual)
 		assert.Equal(t, expected, actual.Spec.Ports)
 	})
@@ -207,18 +237,18 @@ func service(name string, ports []v1.ServicePort) v1.Service {
 
 func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
 	params := deploymentParams()
-	labels := Labels(params.Instance, name, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	return v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   "default",
 			Labels:      labels,
-			Annotations: params.Instance.Annotations,
+			Annotations: params.OtelCol.Annotations,
 		},
 		Spec: v1.ServiceSpec{
 			InternalTrafficPolicy: &internalTrafficPolicy,
-			Selector:              SelectorLabels(params.Instance),
+			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP:             "",
 			Ports:                 ports,
 		},

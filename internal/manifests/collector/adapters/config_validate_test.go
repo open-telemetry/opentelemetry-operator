@@ -17,12 +17,8 @@ package adapters
 import (
 	"testing"
 
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	"github.com/stretchr/testify/require"
 )
-
-var logger = logf.Log.WithName("unit-tests")
 
 func TestConfigValidate(t *testing.T) {
 	// prepare
@@ -44,16 +40,16 @@ receivers:
 processors:
 
 exporters:
-  logging:
+  debug:
 
 service:
   pipelines:
     metrics:
       receivers: [httpd/mtls, jaeger]
-      exporters: [logging]
+      exporters: [debug]
     metrics/1:
       receivers: [httpd/mtls, jaeger]
-      exporters: [logging]
+      exporters: [debug]
 `
 	// // prepare
 	config, err := ConfigFromString(configStr)
@@ -61,7 +57,7 @@ service:
 	require.NotEmpty(t, config)
 
 	// test
-	check := GetEnabledReceivers(logger, config)
+	check := getEnabledComponents(config, ComponentTypeReceiver)
 	require.NotEmpty(t, check)
 }
 
@@ -85,7 +81,7 @@ receivers:
 processors:
 
 exporters:
-  logging:
+  debug:
 
 service:
   pipelines:
@@ -102,6 +98,6 @@ service:
 	require.NotEmpty(t, config)
 
 	// test
-	check := GetEnabledReceivers(logger, config)
+	check := getEnabledComponents(config, ComponentTypeReceiver)
 	require.Empty(t, check)
 }

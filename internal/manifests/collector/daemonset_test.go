@@ -18,29 +18,35 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 func TestDaemonSetNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-instance",
-			Namespace: "my-namespace",
+	params := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-instance",
+				Namespace: "my-namespace",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Tolerations: testTolerationValues,
+			},
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Tolerations: testTolerationValues,
-		},
+		Log: logger,
 	}
-	cfg := config.New()
 
 	// test
-	d := DaemonSet(cfg, logger, otelcol)
+	d := DaemonSet(params)
 
 	// verify
 	assert.Equal(t, "my-instance-collector", d.Name)
@@ -86,19 +92,37 @@ func TestDaemonSetNewDefault(t *testing.T) {
 }
 
 func TestDaemonsetHostNetwork(t *testing.T) {
+	params1 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-instance",
+				Namespace: "my-namespace",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+		},
+		Log: logger,
+	}
 	// test
-	d1 := DaemonSet(config.New(), logger, v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
-	})
+	d1 := DaemonSet(params1)
 	assert.False(t, d1.Spec.Template.Spec.HostNetwork)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// verify custom
-	d2 := DaemonSet(config.New(), logger, v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
+	params2 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-instance",
+				Namespace: "my-namespace",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				HostNetwork: true,
+			},
 		},
-	})
+		Log: logger,
+	}
+	d2 := DaemonSet(params2)
 	assert.True(t, d2.Spec.Template.Spec.HostNetwork)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -116,8 +140,14 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
 	// test
-	ds := DaemonSet(cfg, logger, otelcol)
+	ds := DaemonSet(params)
 
 	// Add sha256 podAnnotation
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -156,7 +186,13 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 
 	cfg := config.New()
 
-	d := DaemonSet(cfg, logger, otelcol)
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	d := DaemonSet(params)
 
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
@@ -179,7 +215,13 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
 
-	d := DaemonSet(cfg, logger, otelcol)
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	d := DaemonSet(params)
 
 	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
@@ -197,7 +239,13 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := DaemonSet(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+
+	d1 := DaemonSet(params1)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
@@ -216,7 +264,13 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := DaemonSet(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+
+	d2 := DaemonSet(params2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
@@ -229,7 +283,13 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := DaemonSet(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+
+	d1 := DaemonSet(params1)
 	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
@@ -245,7 +305,13 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := DaemonSet(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+
+	d2 := DaemonSet(params2)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
 
@@ -258,7 +324,13 @@ func TestDaemonSetAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := DaemonSet(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+
+	d1 := DaemonSet(params1)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
 	otelcol2 := v1alpha1.OpenTelemetryCollector{
@@ -272,7 +344,13 @@ func TestDaemonSetAffinity(t *testing.T) {
 
 	cfg = config.New()
 
-	d2 := DaemonSet(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+
+	d2 := DaemonSet(params2)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
@@ -294,8 +372,14 @@ func TestDaemonSetInitContainer(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
 	// test
-	d := DaemonSet(cfg, logger, otelcol)
+	d := DaemonSet(params)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
@@ -321,8 +405,14 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
 	// test
-	d := DaemonSet(cfg, logger, otelcol)
+	d := DaemonSet(params)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
@@ -330,4 +420,72 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
 	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[0])
+}
+
+func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: "RollingUpdate",
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	// test
+	d := DaemonSet(params)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("RollingUpdate"), d.Spec.UpdateStrategy.Type)
+	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
+	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+}
+
+func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: "OnDelete",
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	// test
+	d := DaemonSet(params)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
+	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("OnDelete"), d.Spec.UpdateStrategy.Type)
+	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
+	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
 }

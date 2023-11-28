@@ -26,11 +26,18 @@ import (
 	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
+	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,6 +46,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
 	// +kubebuilder:scaffold:imports
 )
@@ -51,6 +60,17 @@ var (
 	cancel     context.CancelFunc
 	err        error
 	cfg        *rest.Config
+
+	instanceUID = uuid.NewUUID()
+)
+
+const (
+	defaultCollectorImage    = "default-collector"
+	defaultTaAllocationImage = "default-ta-allocator"
+	defaultOpAMPBridgeImage  = "default-opamp-bridge"
+	promFile                 = "testdata/test.yaml"
+	updatedPromFile          = "testdata/test_ta_update.yaml"
+	testFileIngress          = "testdata/ingress_testdata.yaml"
 )
 
 func TestMain(m *testing.M) {
@@ -106,7 +126,12 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = (&v1alpha1.OpenTelemetryCollector{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New()); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
+		os.Exit(1)
+	}
+
+	if err = v1alpha1.SetupOpAMPBridgeWebhook(mgr, config.New()); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
@@ -159,4 +184,270 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
+}
+
+func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
+	replicas := int32(2)
+	return paramsWithModeAndReplicas(mode, replicas)
+}
+
+func paramsWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) manifests.Params {
+	configYAML, err := os.ReadFile("testdata/test.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+	return manifests.Params{
+		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
+		Client: k8sClient,
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
+				Replicas: &replicas,
+				Config:   string(configYAML),
+				Mode:     mode,
+			},
+		},
+		Scheme:   testScheme,
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
+func newParams(taContainerImage string, file string) (manifests.Params, error) {
+	replicas := int32(1)
+	var configYAML []byte
+	var err error
+
+	if file == "" {
+		configYAML, err = os.ReadFile("testdata/test.yaml")
+	} else {
+		configYAML, err = os.ReadFile(file)
+	}
+	if err != nil {
+		return manifests.Params{}, fmt.Errorf("Error getting yaml file: %w", err)
+	}
+
+	cfg := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
+
+	return manifests.Params{
+		Config: cfg,
+		Client: k8sClient,
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Mode: v1alpha1.ModeStatefulSet,
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
+				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+					Enabled: true,
+					Image:   taContainerImage,
+				},
+				Replicas: &replicas,
+				Config:   string(configYAML),
+			},
+		},
+		Scheme: testScheme,
+		Log:    logger,
+	}, nil
+}
+
+func paramsWithHPA(minReps, maxReps int32) manifests.Params {
+	configYAML, err := os.ReadFile("testdata/test.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+
+	cpuUtilization := int32(90)
+
+	configuration := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
+
+	return manifests.Params{
+		Config: configuration,
+		Client: k8sClient,
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hpatest",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
+				Config: string(configYAML),
+				Autoscaler: &v1alpha1.AutoscalerSpec{
+					MinReplicas:          &minReps,
+					MaxReplicas:          &maxReps,
+					TargetCPUUtilization: &cpuUtilization,
+				},
+			},
+		},
+		Scheme:   testScheme,
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
+func paramsWithPolicy(minAvailable, maxUnavailable int32) manifests.Params {
+	configYAML, err := os.ReadFile("testdata/test.yaml")
+	if err != nil {
+		fmt.Printf("Error getting yaml file: %v", err)
+	}
+
+	configuration := config.New(config.WithAutoDetect(mockAutoDetector), config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
+	err = configuration.AutoDetect()
+	if err != nil {
+		logger.Error(err, "configuration.autodetect failed")
+	}
+
+	pdb := &v1alpha1.PodDisruptionBudgetSpec{}
+
+	if maxUnavailable > 0 && minAvailable > 0 {
+		fmt.Printf("worng configuration: %v", fmt.Errorf("minAvailable and maxUnavailable cannot be both set"))
+	}
+	if maxUnavailable > 0 {
+		pdb.MaxUnavailable = &intstr.IntOrString{
+			Type:   intstr.Int,
+			IntVal: maxUnavailable,
+		}
+	} else {
+		pdb.MinAvailable = &intstr.IntOrString{
+			Type:   intstr.Int,
+			IntVal: minAvailable,
+		}
+	}
+
+	return manifests.Params{
+		Config: configuration,
+		Client: k8sClient,
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "policytest",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Ports: []v1.ServicePort{{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}},
+				Config:              string(configYAML),
+				PodDisruptionBudget: pdb,
+			},
+		},
+		Scheme:   testScheme,
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
+func opampBridgeParams() manifests.Params {
+	return manifests.Params{
+		Config: config.New(config.WithOperatorOpAMPBridgeImage(defaultOpAMPBridgeImage)),
+		Client: k8sClient,
+		OpAMPBridge: v1alpha1.OpAMPBridge{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "opentelemetry.io",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				UID:       instanceUID,
+			},
+			Spec: v1alpha1.OpAMPBridgeSpec{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
+				Ports: []v1.ServicePort{
+					{
+						Name: "metrics",
+						Port: 8081,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 8081,
+						},
+					},
+				},
+				Endpoint: "ws://127.0.0.1:4320/v1/opamp",
+				Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
+					v1alpha1.OpAMPBridgeCapabilityReportsStatus:                  true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,
+					v1alpha1.OpAMPBridgeCapabilityReportsEffectiveConfig:         true,
+					v1alpha1.OpAMPBridgeCapabilityReportsOwnTraces:               true,
+					v1alpha1.OpAMPBridgeCapabilityReportsOwnMetrics:              true,
+					v1alpha1.OpAMPBridgeCapabilityReportsOwnLogs:                 true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsOpAMPConnectionSettings: true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsOtherConnectionSettings: true,
+					v1alpha1.OpAMPBridgeCapabilityAcceptsRestartCommand:          true,
+					v1alpha1.OpAMPBridgeCapabilityReportsHealth:                  true,
+					v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig:            true,
+				},
+				ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"logging"}},
+			},
+		},
+		Scheme:   testScheme,
+		Log:      logger,
+		Recorder: record.NewFakeRecorder(10),
+	}
+}
+
+func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
+	t.Helper()
+	err := k8sClient.Get(context.Background(), namespacedName, object)
+	if errors.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

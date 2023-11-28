@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-with-multi-instrumentation
+spec:
+  selector:
+    matchLabels:
+      app: pod-with-multi-instrumentation
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pod-with-multi-instrumentation
+      annotations:
+        instrumentation.opentelemetry.io/container-names: "shouldnt-be-instrumented"
+        instrumentation.opentelemetry.io/dotnet-container-names: "dotnetapp"
+        instrumentation.opentelemetry.io/inject-dotnet: "true"
+        instrumentation.opentelemetry.io/inject-java: "true"
+        instrumentation.opentelemetry.io/inject-nodejs: "true"
+        instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/java-container-names: "javaapp"
+        instrumentation.opentelemetry.io/nodejs-container-names: "nodejsapp"
+        instrumentation.opentelemetry.io/python-container-names: "pythonapp"
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      containers:
+        - name: dotnetapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main
+        - name: javaapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+        - name: nodejsapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
+        - name: pythonapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+        - name: shouldnt-be-instrumented
+          image: rabbitmq:3
+          env:
+            - name: TEST
+              value: test

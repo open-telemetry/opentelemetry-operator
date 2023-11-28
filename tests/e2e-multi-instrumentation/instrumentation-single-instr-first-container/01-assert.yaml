@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-nodejs: "true"
+    sidecar.opentelemetry.io/inject: "true"
+  labels:
+    app: pod-single-instr-first-container
+spec:
+  containers:
+    - name: nodejsapp
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: nodejsapp
+        - name: NODE_OPTIONS
+          value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
+        - name: OTEL_TRACES_SAMPLER
+          value: parentbased_traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.85"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://localhost:4317
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+        - name: OTEL_PROPAGATORS
+          value: jaeger,b3
+        - name: OTEL_RESOURCE_ATTRIBUTES
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /otel-auto-instrumentation-nodejs
+          name: opentelemetry-auto-instrumentation-nodejs
+    - name: pythonapp
+      env:
+        - name: TEST
+          value: test
+    - name: otc-container
+status:
+  phase: Running
