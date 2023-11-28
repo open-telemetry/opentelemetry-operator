@@ -29,9 +29,9 @@ var _ Allocator = &leastWeightedAllocator{}
 const leastWeightedStrategyName = "least-weighted"
 
 /*
-	Load balancer will serve on an HTTP server exposing /jobs/<job_id>/targets
+	Target Allocator will serve on an HTTP server exposing /jobs/<job_id>/targets
 	The targets are allocated using the least connection method
-	Load balancer will need information about the collectors in order to set the URLs
+	Target Allocator will need information about the collectors in order to set the URLs
 	Keep a Map of what each collector currently holds and update it based on new scrape target updates
 */
 
