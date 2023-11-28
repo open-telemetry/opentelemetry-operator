@@ -46,8 +46,12 @@ func Routes(ctx context.Context, params manifests.Params) error {
 
 	var desired []*routev1.Route
 	if isSupportedMode {
-		if r := collector.Routes(params); r != nil {
+		r, err := collector.Routes(params)
+		if r != nil {
 			desired = append(desired, r...)
+		}
+		if err != nil {
+			return err
 		}
 	}
 

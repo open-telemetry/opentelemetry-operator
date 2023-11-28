@@ -532,6 +532,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					config.WithTargetAllocatorImage("default-ta-allocator"),
 				),
 			})
+
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
 			firstCheck := tt.want[0]
 			// Check for this before create, otherwise it's blown away.
