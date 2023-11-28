@@ -124,6 +124,15 @@ func Ingress(otelcol string) string {
 func Route(otelcol string, prefix string) string {
 	return DNSName(Truncate("%s-%s-route", 63, prefix, otelcol))
 }
+// ClusterRole builds the cluster role name based on the instance.
+func ClusterRole(otelcol string, namespace string) string {
+	return DNSName(Truncate("%s-%s-cluster-role", 63, otelcol, namespace))
+}
+
+// ClusterRoleBinding builds the cluster role binding name based on the instance.
+func ClusterRoleBinding(otelcol string) string {
+	return DNSName(Truncate("%s-cluster-role-binding", 63, otelcol))
+}
 
 // TAService returns the name to use for the TargetAllocator service.
 func TAService(otelcol string) string {
