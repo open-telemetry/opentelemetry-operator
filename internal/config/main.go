@@ -90,12 +90,6 @@ func New(opts ...Option) Config {
 	}
 }
 
-// StartAutoDetect attempts to automatically detect relevant information for this operator. This will block until the first
-// run is executed and will schedule periodic updates.
-func (c *Config) StartAutoDetect() error {
-	return c.AutoDetect()
-}
-
 // AutoDetect attempts to automatically detect relevant information for this operator.
 func (c *Config) AutoDetect() error {
 	c.logger.V(2).Info("auto-detecting the configuration based on the environment")
