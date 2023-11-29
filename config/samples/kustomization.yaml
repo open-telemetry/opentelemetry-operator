@@ -1,4 +1,6 @@
-## This file is auto-generated, do not modify ##
+## Append samples you want in your CSV to this file as resources ##
 resources:
 - core_v1alpha1_opentelemetrycollector.yaml
 - instrumentation_v1alpha1_instrumentation.yaml
+- _v1alpha1_opampbridge.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

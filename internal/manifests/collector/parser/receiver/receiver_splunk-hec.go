@@ -14,12 +14,16 @@
 
 package receiver
 
-import "github.com/go-logr/logr"
+import (
+	"github.com/go-logr/logr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+)
 
 const parserNameSplunkHec = "__splunk_hec"
 
 // NewSplunkHecReceiverParser builds a new parser for Splunk Hec receivers, from the contrib repository.
-func NewSplunkHecReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewSplunkHecReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

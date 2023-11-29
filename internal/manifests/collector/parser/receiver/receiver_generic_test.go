@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
@@ -59,7 +60,7 @@ func TestFailedToParseEndpoint(t *testing.T) {
 
 func TestDownstreamParsers(t *testing.T) {
 	for _, tt := range []struct {
-		builder      func(logr.Logger, string, map[interface{}]interface{}) receiver.ReceiverParser
+		builder      func(logr.Logger, string, map[interface{}]interface{}) parser.ComponentPortParser
 		desc         string
 		receiverName string
 		parserName   string

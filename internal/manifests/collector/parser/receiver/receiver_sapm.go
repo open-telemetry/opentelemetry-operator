@@ -14,12 +14,16 @@
 
 package receiver
 
-import "github.com/go-logr/logr"
+import (
+	"github.com/go-logr/logr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+)
 
 const parserNameSAPM = "__sapm"
 
 // NewSAPMReceiverParser builds a new parser for SAPM receivers, from the contrib repository.
-func NewSAPMReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewSAPMReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

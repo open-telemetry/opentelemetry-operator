@@ -20,10 +20,11 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-var _ ReceiverParser = &JaegerReceiverParser{}
+var _ parser.ComponentPortParser = &JaegerReceiverParser{}
 
 const (
 	parserNameJaeger = "__jaeger"
@@ -42,7 +43,7 @@ type JaegerReceiverParser struct {
 }
 
 // NewJaegerReceiverParser builds a new parser for Jaeger receivers.
-func NewJaegerReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewJaegerReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	if protocols, ok := config["protocols"].(map[interface{}]interface{}); ok {
 		return &JaegerReceiverParser{
 			logger: logger,

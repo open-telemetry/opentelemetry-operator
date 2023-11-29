@@ -30,6 +30,7 @@ const (
 	listenAddrFlagName          = "listen-addr"
 	prometheusCREnabledFlagName = "enable-prometheus-cr-watcher"
 	kubeConfigPathFlagName      = "kubeconfig-path"
+	reloadConfigFlagName        = "reload-config"
 )
 
 // We can't bind this flag to our FlagSet, so we need to handle it separately.
@@ -41,6 +42,7 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet.String(listenAddrFlagName, ":8080", "The address where this service serves.")
 	flagSet.Bool(prometheusCREnabledFlagName, false, "Enable Prometheus CRs as target sources")
 	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
+	flagSet.Bool(reloadConfigFlagName, false, "Enable automatic configuration reloading. This functionality is deprecated and will be removed in a future release.")
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
@@ -61,4 +63,8 @@ func getListenAddr(flagSet *pflag.FlagSet) (string, error) {
 
 func getPrometheusCREnabled(flagSet *pflag.FlagSet) (bool, error) {
 	return flagSet.GetBool(prometheusCREnabledFlagName)
+}
+
+func getConfigReloadEnabled(flagSet *pflag.FlagSet) (bool, error) {
+	return flagSet.GetBool(reloadConfigFlagName)
 }

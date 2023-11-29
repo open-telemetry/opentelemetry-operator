@@ -25,31 +25,20 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// ExporterParser is an interface that should be implemented by all exporter parsers.
-type ExporterParser interface {
-	// Ports returns the service ports parsed based on the exporter's configuration
-	Ports() ([]corev1.ServicePort, error)
-
-	// ParserName returns the name of this parser
-	ParserName() string
-}
-
-// Builder specifies the signature required for parser builders.
-type Builder func(logr.Logger, string, map[interface{}]interface{}) ExporterParser
-
-// registry holds a record of all known parsers.
-var registry = make(map[string]Builder)
+// registry holds a record of all known exporter parsers.
+var registry = make(map[string]parser.Builder)
 
 // BuilderFor returns a parser builder for the given exporter name.
-func BuilderFor(name string) Builder {
+func BuilderFor(name string) parser.Builder {
 	return registry[exporterType(name)]
 }
 
 // For returns a new parser for the given exporter name + config.
-func For(logger logr.Logger, name string, config map[interface{}]interface{}) (ExporterParser, error) {
+func For(logger logr.Logger, name string, config map[interface{}]interface{}) (parser.ComponentPortParser, error) {
 	builder := BuilderFor(name)
 	if builder == nil {
 		return nil, fmt.Errorf("no builders for %s", name)
@@ -58,7 +47,7 @@ func For(logger logr.Logger, name string, config map[interface{}]interface{}) (E
 }
 
 // Register adds a new parser builder to the list of known builders.
-func Register(name string, builder Builder) {
+func Register(name string, builder parser.Builder) {
 	registry[name] = builder
 }
 

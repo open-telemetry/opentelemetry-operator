@@ -295,6 +295,11 @@ func (c CollectorWebhook) validate(r *OpenTelemetryCollector) (admission.Warning
 		}
 	}
 
+	// validate updateStrategy for DaemonSet
+	if r.Spec.Mode != ModeDaemonSet && len(r.Spec.UpdateStrategy.Type) > 0 {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'updateStrategy'", r.Spec.Mode)
+	}
+
 	return warnings, nil
 }
 

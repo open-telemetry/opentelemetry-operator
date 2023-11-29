@@ -132,7 +132,6 @@ func (c *Config) AutoDetect() error {
 			c.logger.Error(err, "configuration change notification failed for callback")
 		}
 	}
-
 	return nil
 }
 

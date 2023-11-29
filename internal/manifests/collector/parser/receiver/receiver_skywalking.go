@@ -21,10 +21,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-var _ ReceiverParser = &SkywalkingReceiverParser{}
+var _ parser.ComponentPortParser = &SkywalkingReceiverParser{}
 
 const (
 	parserNameSkywalking = "__skywalking"
@@ -41,7 +42,7 @@ type SkywalkingReceiverParser struct {
 }
 
 // NewSkywalkingReceiverParser builds a new parser for Skywalking receivers.
-func NewSkywalkingReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewSkywalkingReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	if protocols, ok := config["protocols"].(map[interface{}]interface{}); ok {
 		return &SkywalkingReceiverParser{
 			logger: logger,

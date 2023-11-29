@@ -5,8 +5,6 @@ metadata:
 allowHostDirVolumePlugin: true
 allowPrivilegeEscalation: true
 allowPrivilegedContainer: true
-allowedCapabilities:
-- 'SYS_PTRACE'
 fsGroup:
   type: RunAsAny
 runAsUser:

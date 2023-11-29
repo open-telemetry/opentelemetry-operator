@@ -8,6 +8,9 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:98765
+exporters:
+  logging:
+    loglevel: debug
 
 service:
   pipelines:

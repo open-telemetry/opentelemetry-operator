@@ -2434,9 +2434,6 @@ func TestMutatePod(t *testing.T) {
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
 								Privileged: &true,
-								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{"SYS_PTRACE"},
-								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -5142,6 +5139,7 @@ func TestMutatePod(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
 			if test.setFeatureGates != nil {
 				test.setFeatureGates(t)

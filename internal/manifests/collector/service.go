@@ -35,10 +35,10 @@ const (
 	headlessExists = "Exists"
 )
 
-func HeadlessService(params manifests.Params) *corev1.Service {
-	h := Service(params)
-	if h == nil {
-		return h
+func HeadlessService(params manifests.Params) (*corev1.Service, error) {
+	h, err := Service(params)
+	if h == nil || err != nil {
+		return h, err
 	}
 
 	h.Name = naming.HeadlessService(params.OtelCol.Name)
@@ -54,24 +54,22 @@ func HeadlessService(params manifests.Params) *corev1.Service {
 	h.Annotations = annotations
 
 	h.Spec.ClusterIP = "None"
-	return h
+	return h, nil
 }
 
-func MonitoringService(params manifests.Params) *corev1.Service {
+func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	name := naming.MonitoringService(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	c, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
-	// TODO: Update this to properly return an error https://github.com/open-telemetry/opentelemetry-operator/issues/1972
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration")
-		return nil
+		return nil, err
 	}
 
 	metricsPort, err := adapters.ConfigToMetricsPort(params.Log, c)
 	if err != nil {
-		params.Log.V(2).Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
-		metricsPort = 8888
+		return nil, err
 	}
 
 	return &corev1.Service{
@@ -89,20 +87,23 @@ func MonitoringService(params manifests.Params) *corev1.Service {
 				Port: metricsPort,
 			}},
 		},
-	}
+	}, nil
 }
 
-func Service(params manifests.Params) *corev1.Service {
+func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	configFromString, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil
+		return nil, err
 	}
 
-	ports := adapters.ConfigToPorts(params.Log, configFromString)
+	ports, err := adapters.ConfigToPorts(params.Log, configFromString)
+	if err != nil {
+		return nil, err
+	}
 
 	// set appProtocol to h2c for grpc ports on OpenShift.
 	// OpenShift uses HA proxy that uses appProtocol for its configuration.
@@ -134,8 +135,9 @@ func Service(params manifests.Params) *corev1.Service {
 
 	// if we have no ports, we don't need a service
 	if len(ports) == 0 {
+
 		params.Log.V(1).Info("the instance's configuration didn't yield any ports to open, skipping service", "instance.name", params.OtelCol.Name, "instance.namespace", params.OtelCol.Namespace)
-		return nil
+		return nil, err
 	}
 
 	trafficPolicy := corev1.ServiceInternalTrafficPolicyCluster
@@ -156,7 +158,7 @@ func Service(params manifests.Params) *corev1.Service {
 			ClusterIP:             "",
 			Ports:                 ports,
 		},
-	}
+	}, nil
 }
 
 func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {

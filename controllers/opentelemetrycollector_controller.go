@@ -145,7 +145,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	return r
 }
 
-// +kubebuilder:rbac:groups="",resources=configmaps;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods;configmaps;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
@@ -172,6 +172,10 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	// We have a deletion, short circuit and let the deletion happen
+	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
+		return ctrl.Result{}, nil
 	}
 
 	if instance.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
@@ -226,14 +230,13 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{})
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
+		Owns(&policyV1.PodDisruptionBudget{})
 
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 	}
-
-	builder = builder.Owns(&autoscalingv2.HorizontalPodAutoscaler{})
-	builder = builder.Owns(&policyV1.PodDisruptionBudget{})
 
 	return builder.Complete(r)
 }

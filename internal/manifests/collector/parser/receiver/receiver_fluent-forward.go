@@ -14,12 +14,16 @@
 
 package receiver
 
-import "github.com/go-logr/logr"
+import (
+	"github.com/go-logr/logr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+)
 
 const parserNameFluentForward = "__fluentforward"
 
 // NewFluentForwardReceiverParser builds a new parser for FluentForward receivers, from the contrib repository.
-func NewFluentForwardReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+func NewFluentForwardReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

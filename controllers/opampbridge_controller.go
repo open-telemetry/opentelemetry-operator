@@ -92,6 +92,10 @@ func (r *OpAMPBridgeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	// We have a deletion, short circuit and let the deletion happen
+	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
+		return ctrl.Result{}, nil
+	}
 
 	params := r.getParams(instance)
 

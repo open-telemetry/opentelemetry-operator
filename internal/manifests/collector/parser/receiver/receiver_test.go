@@ -22,6 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -118,7 +119,8 @@ func TestIgnorekubeletstatsEndpoint(t *testing.T) {
 
 func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
 	// test
-	p := For(logger, "myreceiver", map[interface{}]interface{}{})
+	p, err := For(logger, "myreceiver", map[interface{}]interface{}{})
+	assert.NoError(t, err)
 
 	// test
 	assert.Equal(t, "__generic", p.ParserName())
@@ -127,13 +129,13 @@ func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
 func TestReceiverShouldFindRegisteredParser(t *testing.T) {
 	// prepare
 	builderCalled := false
-	Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) ReceiverParser {
+	Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 		builderCalled = true
 		return &mockParser{}
 	})
 
 	// test
-	For(logger, "mock", map[interface{}]interface{}{})
+	_, _ = For(logger, "mock", map[interface{}]interface{}{})
 
 	// verify
 	assert.True(t, builderCalled)

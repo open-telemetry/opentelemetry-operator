@@ -52,6 +52,13 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Namespace: "some-app",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
 			InitContainers: []corev1.Container{
 				{
 					Name: "test",

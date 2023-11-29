@@ -27,7 +27,8 @@ func TestSkywalkingSelfRegisters(t *testing.T) {
 
 func TestSkywalkingIsFoundByName(t *testing.T) {
 	// test
-	p := For(logger, "skywalking", map[interface{}]interface{}{})
+	p, err := For(logger, "skywalking", map[interface{}]interface{}{})
+	assert.NoError(t, err)
 
 	// verify
 	assert.Equal(t, "__skywalking", p.ParserName())

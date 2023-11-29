@@ -2,6 +2,49 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.89.0
+
+### 🛑 Breaking changes 🛑
+
+- `autoinstrumentation`: Bump Go auto instrumentation version to v0.8.0-alpha (#2358)
+  The default export protocol was switched from `grpc` to `http/proto`
+- `target allocator`: Disable configuration hot reload (#2032)
+  This feature can be re-enabled by passing the --reload-config flag to the target allocator.
+  However, this is deprecated and will be removed in an upcoming release.
+
+### 💡 Enhancements 💡
+
+- `target allocator`: add healthcheck endpoint to TA (#2258)
+- `OpAMP Bridge`: Sends a heartbeat from the bridge and brings the annotation to spec. (#2132)
+- `operator`: Added updateStrategy for DaemonSet mode. (#2107)
+- `operator`: add target allocator affinity configuration (#2263)
+- `Operator`: Added the service.instance.id as the pod.UID into the traces resource Env. (#1921)
+- `operator`: Support configuring images via RELATED_IMAGE_ environment variables (#2326)
+- `target allocator`: Declare and use ContainerPort for Target Allocator (#2312)
+- `target allocator`: Add logging for prometheus operator in TargetAllocator's config generator (#2348)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Update file watcher to detect file write events (#2349)
+- `target allocator`: Run the target allocator as a non-root user (#738)
+  Some Kubernetes configurations do not allow running images as root, so
+  provide a non-zero UID in the Docker image.
+
+- `operator`: Truncate `sidecar.opentelemetry.io/injected` sidecar pod label to 63 characters (#1031)
+
+### Components
+
+* [OpenTelemetry Collector - v0.89.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.89.0)
+* [OpenTelemetry Contrib - v0.89.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.89.0)
+* [Java auto-instrumentation - 1.31.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.31.0)
+* [.NET auto-instrumentation - 1.1.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.1.0)
+* [Node.JS - 0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.44.0)
+* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Go - v0.8.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.8.0-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+* [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
+
+
 ## 0.88.0
 
 ### 🛑 Breaking changes 🛑
@@ -9,7 +52,7 @@ Changes by Version
 - `OpAMP Bridge`: Currently, the bridge doesn't adhere to the spec for the naming structure. This changes the bridge to use the <namespace>/<otelcol> structure as described. (#2131)
   * Updates the bridge to get collectors using the reporting annotation
   * Fixes a bug where we were using the incorrect structure for the collectors
-  
+
 
 ### 💡 Enhancements 💡
 
@@ -45,7 +88,7 @@ Changes by Version
 - `operator`: Enable Target Allocator Rewrite by default (#2208)
   See [the documentation](/README.md#target-allocator) for details.
   Use the `--feature-gates=-operator.collector.rewritetargetallocator` command line option to switch back to the old behaviour.
-  
+
 
 ### 💡 Enhancements 💡
 
@@ -78,7 +121,7 @@ Changes by Version
   Kubernetes 1.23 is the minimum available version everywhere after 1.22 deprecation,
   due to it, the minimum required version has been updated to it, dropping support for
   autoscaling/v2beta2
-  
+
 
 ### 💡 Enhancements 💡
 
@@ -171,12 +214,12 @@ Changes by Version
 ### 🛑 Breaking changes 🛑
 
 - `operator`: Make sure OTLP export can report data to OTLP ingress/route without additional configuration (#1967)
-  The ingress can be configured to create a single host with multiple paths or 
+  The ingress can be configured to create a single host with multiple paths or
   multiple hosts with subdomains (one per receiver port).
   The path from OpenShift route was removed.
   The port names are truncate to 15 characters. Users with custom receivers
   which create ports with longer name might need to update their configuration.
-  
+
 
 ### 💡 Enhancements 💡
 

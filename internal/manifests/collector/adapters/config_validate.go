@@ -14,22 +14,13 @@
 
 package adapters
 
-import (
-	"github.com/go-logr/logr"
-)
+import "fmt"
 
 // Following Otel Doc: Configuring a receiver does not enable it. The receivers are enabled via pipelines within the service section.
-// GetEnabledReceivers returns all enabled receivers as a true flag set. If it can't find any receiver, it will return a nil interface.
-func GetEnabledReceivers(_ logr.Logger, config map[interface{}]interface{}) map[interface{}]bool {
-	return getEnabledComponents(config, "receivers")
-}
-
-func GetEnabledExporters(_ logr.Logger, config map[interface{}]interface{}) map[interface{}]bool {
-	return getEnabledComponents(config, "exporters")
-}
-
-func getEnabledComponents(config map[interface{}]interface{}, componentType string) map[interface{}]bool {
-	cfgComponents, ok := config[componentType]
+// getEnabledComponents returns all enabled components as a true flag set. If it can't find any receiver, it will return a nil interface.
+func getEnabledComponents(config map[interface{}]interface{}, componentType ComponentType) map[interface{}]bool {
+	componentTypePlural := fmt.Sprintf("%ss", componentType)
+	cfgComponents, ok := config[componentTypePlural]
 	if !ok {
 		return nil
 	}
@@ -85,7 +76,7 @@ func getEnabledComponents(config map[interface{}]interface{}, componentType stri
 					return nil
 				}
 				for pipSpecID, pipSpecCfg := range pipelineDesc {
-					if pipSpecID.(string) == componentType {
+					if pipSpecID.(string) == componentTypePlural {
 						receiversList, ok := pipSpecCfg.([]interface{})
 						if !ok {
 							continue
