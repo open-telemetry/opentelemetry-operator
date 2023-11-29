@@ -16,7 +16,6 @@ package watcher
 
 import (
 	"context"
-	// "fmt"
 	"os"
 	"testing"
 	"time"

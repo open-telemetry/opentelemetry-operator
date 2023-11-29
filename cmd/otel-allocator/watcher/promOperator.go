@@ -34,15 +34,11 @@ import (
 	"github.com/prometheus-operator/prometheus-operator/pkg/prometheus"
 	prometheusgoclient "github.com/prometheus/client_golang/prometheus"
 
-	// "github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
-	// "github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	// "k8s.io/apimachinery/pkg/fields"
-	// "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
@@ -152,11 +148,8 @@ func getNamespaceInformer(ctx context.Context, allowList map[string]struct{}, pr
 
 	kubernetesVersion, err := clientset.Discovery().ServerVersion()
 	if err != nil {
-		// level.Error(logger).Log("msg", "failed to request Kubernetes server version", "err", err)
-		// cancel()
 		return nil, err
 	}
-	// cfg.KubernetesVersion = *kubernetesVersion
 	lw, _, err := listwatch.NewNamespaceListWatchFromClient(
 		ctx,
 		promOperatorLogger,
@@ -170,20 +163,11 @@ func getNamespaceInformer(ctx context.Context, allowList map[string]struct{}, pr
 		return nil, err
 	}
 
-	// level.Debug(o.logger).Log("msg", "creating namespace informer", "privileged", privileged)
 	return cache.NewSharedIndexInformer(
 		operatorMetrics.NewInstrumentedListerWatcher(lw),
 		&v1.Namespace{}, resyncPeriod, cache.Indexers{},
 	), nil
 
-	// nsInf := cache.NewSharedIndexInformer(
-	// 	operatorMetrics.NewInstrumentedListerWatcher(
-	// 		listwatch.NewUnprivilegedNamespaceListWatchFromClient(ctx, promOperatorLogger, clientset.CoreV1().RESTClient(), allowList, map[string]struct{}{}, fields.Everything()),
-	// 	),
-	// 	&v1.Namespace{}, resyncPeriod, cache.Indexers{},
-	// )
-
-	// return nsInf, nil
 }
 
 // getInformers returns a map of informers for the given resources.
