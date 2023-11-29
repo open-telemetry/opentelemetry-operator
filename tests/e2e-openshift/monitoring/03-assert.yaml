@@ -1,0 +1,5 @@
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- script: ./tests/e2e-openshift/monitoring/check_metrics.sh
