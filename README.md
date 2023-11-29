@@ -223,6 +223,13 @@ spec:
       # See https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/888e2cd216c77d12e56b54ee91dafbc4e7452a52/docs/config.md#otlp
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://otel-collector:4318
+  go:
+    env:
+      # Required if endpoint is set to 4317.
+      # Go autoinstrumentation uses http/proto by default
+      # so data must be sent to 4318 instead of 4317.
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://otel-collector:4318
 EOF
 ```
 
@@ -279,9 +286,6 @@ Go auto-instrumentation also requires elevated permissions. The below permission
 
 ```yaml
 securityContext:
-    capabilities:
-     add:
-     - SYS_PTRACE
     privileged: true
     runAsUser: 0
 ```
@@ -534,7 +538,7 @@ OpenTelemetry Operator allows to instrument multiple containers using multiple l
 These features can be enabled using `operator.autoinstrumentation.multi-instrumentation` flag when installing the Operator via Helm. By default flag is `disabled`. For example:
 
 ```sh
-helm install opentelemetry-operator open-telemetry/opentelemetry-operator --set manager.featureGates=operator.autoinstrumentation.multi-instrumentation=enabled
+helm install opentelemetry-operator open-telemetry/opentelemetry-operator --set manager.featureGates=operator.autoinstrumentation.multi-instrumentation
 ```
 
 For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](#Multi-container-pods-with-multiple-instrumentations).
@@ -682,6 +686,7 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.89.0                | v1.23 to v1.28       | v1                  |
 | v0.88.0                | v1.23 to v1.28       | v1                  |
 | v0.87.0                | v1.23 to v1.28       | v1                  |
 | v0.86.0                | v1.23 to v1.28       | v1                  |
@@ -704,7 +709,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.69.0                | v1.19 to v1.25       | v1                  |
 | v0.68.0                | v1.19 to v1.25       | v1                  |
 | v0.67.0                | v1.19 to v1.25       | v1                  |
-| v0.66.0                | v1.19 to v1.25       | v1                  |
 
 ## Contributing and Developing
 

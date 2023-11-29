@@ -25,6 +25,7 @@ gh pr create
 * Install [Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/).
 * Install [Operator SDK](https://sdk.operatorframework.io/docs/installation/).
 * Have a Kubernetes cluster ready for development. We recommend `minikube` or `kind`.
+* Docker version 23.0.0 or greater.
 
 ### Adding new components - webhook, API
 

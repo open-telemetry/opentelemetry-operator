@@ -12,30 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package config contains the operator's runtime configuration.
-package config
+package openshift
 
-import (
-	"testing"
+// RoutesAvailability holds the auto-detected OpenShift Routes availability API.
+type RoutesAvailability int
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+const (
+	// RoutesAvailable represents the route.openshift.io API is available.
+	RoutesAvailable RoutesAvailability = iota
+
+	// RoutesNotAvailable represents the route.openshift.io API is not available.
+	RoutesNotAvailable
 )
 
-func TestChangeHandler(t *testing.T) {
-	// prepare
-	internal := 0
-	callback := func() error {
-		internal += 1
-		return nil
-	}
-	h := newOnChange()
-
-	h.Register(callback)
-
-	for i := 0; i < 5; i++ {
-		assert.Equal(t, i, internal)
-		require.NoError(t, h.Do())
-		assert.Equal(t, i+1, internal)
-	}
+func (p RoutesAvailability) String() string {
+	return [...]string{"Available", "NotAvailable"}[p]
 }

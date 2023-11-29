@@ -47,6 +47,15 @@ metadata:
 spec:
   template:
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: ingress-ready
+                    operator: In
+                    values:
+                      - "true"
       containers:
         - name: ta-container
           args:
@@ -61,6 +70,20 @@ spec:
           volumeMounts:
           - mountPath: /conf
             name: ta-internal
+          readinessProbe:
+            httpGet:
+              path: /readyz
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /livez
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
       volumes:
         - configMap:
             items:

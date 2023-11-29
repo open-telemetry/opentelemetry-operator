@@ -26,6 +26,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
@@ -83,7 +84,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	require.NotEmpty(t, config)
 
 	// test
-	ports, err := adapters.ConfigToReceiverPorts(logger, config)
+	ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
 	assert.NoError(t, err)
 	assert.Len(t, ports, 10)
 
@@ -116,12 +117,12 @@ func TestNoPortsParsed(t *testing.T) {
 		configStr string
 	}{
 		{
-			expected:  adapters.ErrNoReceivers,
+			expected:  errors.New("no receivers available as part of the configuration"),
 			desc:      "empty",
 			configStr: "",
 		},
 		{
-			expected:  adapters.ErrReceiversNotAMap,
+			expected:  errors.New("receivers doesn't contain valid components"),
 			desc:      "not a map",
 			configStr: "receivers: some-string",
 		},
@@ -132,7 +133,7 @@ func TestNoPortsParsed(t *testing.T) {
 			require.NoError(t, err)
 
 			// test
-			ports, err := adapters.ConfigToReceiverPorts(logger, config)
+			ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
 
 			// verify
 			assert.Nil(t, ports)
@@ -161,7 +162,7 @@ func TestInvalidReceivers(t *testing.T) {
 			require.NoError(t, err)
 
 			// test
-			ports, err := adapters.ConfigToReceiverPorts(logger, config)
+			ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
 
 			// verify
 			assert.NoError(t, err)
@@ -179,7 +180,7 @@ func TestParserFailed(t *testing.T) {
 			return nil, errors.New("mocked error")
 		},
 	}
-	receiver.Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) receiver.ReceiverParser {
+	receiver.Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
 		return mockParser
 	})
 
@@ -197,7 +198,7 @@ func TestParserFailed(t *testing.T) {
 	}
 
 	// test
-	ports, err := adapters.ConfigToReceiverPorts(logger, config)
+	ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
 
 	// verify
 	assert.Len(t, ports, 0)
@@ -266,8 +267,10 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
-			_, err := adapters.ConfigToMetricsPort(logger, tt.config)
-			assert.Error(t, err)
+			// these are acceptable failures, we return to the collector's default metric port
+			port, err := adapters.ConfigToMetricsPort(logger, tt.config)
+			assert.NoError(t, err)
+			assert.Equal(t, int32(8888), port)
 		})
 	}
 }

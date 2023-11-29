@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-traces
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: telemetrygen-traces
+    spec:
+      containers:
+        - name: telemetrygen-traces
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=cluster-collector-collector-headless:4317"
+            - "--otlp-insecure=true"
+            - "--rate=1"
+            - "--duration=5s"
+            - "--otlp-attributes=telemetrygen=\"traces\""
+            - "--otlp-header=telemetrygen=\"traces\""
+            - "traces"
+      restartPolicy: Never

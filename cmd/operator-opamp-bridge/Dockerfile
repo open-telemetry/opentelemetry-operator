@@ -16,4 +16,6 @@ COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-ce
 # Copy binary built on the host
 COPY bin/opampbridge_${TARGETARCH} ./main
 
+# "nonroot"
+USER 65532:65532
 ENTRYPOINT ["./main"]

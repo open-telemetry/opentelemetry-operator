@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -275,6 +276,11 @@ type OpenTelemetryCollectorSpec struct {
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
 	ConfigMaps []ConfigMapsSpec `json:"configmaps,omitempty"`
+	// UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
+	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
+	// This is only applicable to Daemonset mode.
+	// +optional
+	UpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
@@ -309,6 +315,9 @@ type OpenTelemetryTargetAllocator struct {
 	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
+	// If specified, indicates the pod's scheduling constraints
+	// +optional
+	Affinity *v1.Affinity `json:"affinity,omitempty"`
 	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
@@ -398,6 +407,7 @@ type OpenTelemetryCollectorStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector

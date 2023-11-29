@@ -43,13 +43,13 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		params.Log.V(5).Info("not building sidecar...")
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
-		manifests.FactoryWithoutError(ConfigMap),
+		manifests.Factory(ConfigMap),
 		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
 		manifests.FactoryWithoutError(ServiceAccount),
-		manifests.FactoryWithoutError(Service),
-		manifests.FactoryWithoutError(HeadlessService),
-		manifests.FactoryWithoutError(MonitoringService),
-		manifests.FactoryWithoutError(Ingress),
+		manifests.Factory(Service),
+		manifests.Factory(HeadlessService),
+		manifests.Factory(MonitoringService),
+		manifests.Factory(Ingress),
 	}...)
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
@@ -62,7 +62,10 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
-	routes := Routes(params)
+	routes, err := Routes(params)
+	if err != nil {
+		return nil, err
+	}
 	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
 	for _, route := range routes {
 		resourceManifests = append(resourceManifests, route)

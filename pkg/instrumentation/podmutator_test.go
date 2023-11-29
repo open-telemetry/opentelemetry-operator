@@ -2434,9 +2434,6 @@ func TestMutatePod(t *testing.T) {
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:  &zero,
 								Privileged: &true,
-								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{"SYS_PTRACE"},
-								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -2991,7 +2988,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=nginx,k8s.namespace.name=req-namespace,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=my-nginx-6c44bcbdd",
+									Value: "k8s.container.name=nginx,k8s.namespace.name=req-namespace,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=my-nginx-6c44bcbdd,service.instance.id=req-namespace.my-nginx-6c44bcbdd.nginx",
 								},
 							},
 						},
@@ -5142,6 +5139,7 @@ func TestMutatePod(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
 			if test.setFeatureGates != nil {
 				test.setFeatureGates(t)
