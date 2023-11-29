@@ -74,6 +74,7 @@ func main() {
 
 	if validationErr := config.ValidateConfig(cfg); validationErr != nil {
 		setupLog.Error(validationErr, "Invalid configuration")
+		os.Exit(1)
 	}
 
 	cfg.RootLogger.Info("Starting the Target Allocator")
