@@ -16,7 +16,7 @@ package watcher
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"os"
 	"testing"
 	"time"
@@ -724,7 +724,7 @@ func TestLoadConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := getTestPrometheuCRWatcher(t, tt.serviceMonitors, tt.podMonitors, tt.cfg)
+			w := getTestPrometheusCRWatcher(t, tt.serviceMonitors, tt.podMonitors, tt.cfg)
 
 			// Start namespace informers in order to populate cache.
 			go w.nsInformer.Run(w.stopChannel)
@@ -771,8 +771,9 @@ func TestRateLimit(t *testing.T) {
 	}
 	events := make(chan Event, 1)
 	eventInterval := 5 * time.Millisecond
+	cfg := allocatorconfig.Config{}
 
-	w := getTestPrometheusCRWatcher(t, nil, nil)
+	w := getTestPrometheusCRWatcher(t, nil, nil, cfg)
 	defer w.Close()
 	w.eventInterval = eventInterval
 
@@ -833,9 +834,9 @@ func TestRateLimit(t *testing.T) {
 
 }
 
-// getTestPrometheuCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
+// getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
-func getTestPrometheuCRWatcher(t *testing.T, svcMonitors []*monitoringv1.ServiceMonitor, podMonitors []*monitoringv1.PodMonitor, cfg allocatorconfig.Config) *PrometheusCRWatcher {
+func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.ServiceMonitor, podMonitors []*monitoringv1.PodMonitor, cfg allocatorconfig.Config) *PrometheusCRWatcher {
 	mClient := fakemonitoringclient.NewSimpleClientset()
 	for _, sm := range svcMonitors {
 		if sm != nil {
