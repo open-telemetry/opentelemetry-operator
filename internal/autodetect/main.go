@@ -18,13 +18,15 @@ package autodetect
 import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 )
 
 var _ AutoDetect = (*autoDetect)(nil)
 
 // AutoDetect provides an assortment of routines that auto-detect traits based on the runtime.
 type AutoDetect interface {
-	OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error)
+	OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error)
 }
 
 type autoDetect struct {
@@ -47,18 +49,18 @@ func New(restConfig *rest.Config) (AutoDetect, error) {
 }
 
 // OpenShiftRoutesAvailability checks if OpenShift Route are available.
-func (a *autoDetect) OpenShiftRoutesAvailability() (OpenShiftRoutesAvailability, error) {
+func (a *autoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
-		return OpenShiftRoutesNotAvailable, err
+		return openshift.RoutesNotAvailable, err
 	}
 
 	apiGroups := apiList.Groups
 	for i := 0; i < len(apiGroups); i++ {
 		if apiGroups[i].Name == "route.openshift.io" {
-			return OpenShiftRoutesAvailable, nil
+			return openshift.RoutesAvailable, nil
 		}
 	}
 
-	return OpenShiftRoutesNotAvailable, nil
+	return openshift.RoutesNotAvailable, nil
 }

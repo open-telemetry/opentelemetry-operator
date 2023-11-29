@@ -26,6 +26,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -97,7 +98,11 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 		return manifests.Params{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}
 
-	cfg := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
+	cfg := config.New(
+		config.WithCollectorImage(defaultCollectorImage),
+		config.WithTargetAllocatorImage(defaultTaAllocationImage),
+		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
+	)
 
 	return manifests.Params{
 		Config: cfg,
