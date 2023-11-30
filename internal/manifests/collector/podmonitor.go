@@ -29,7 +29,7 @@ import (
 )
 
 // ServiceMonitor returns the service monitor for the given instance.
-func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, error) {
+func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		params.Log.V(2).Info("Metrics disabled for this OTEL Collector",
 			"params.OtelCol.name", params.OtelCol.Name,
@@ -37,21 +37,22 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 		)
 		return nil, nil
 	}
-	var sm monitoringv1.ServiceMonitor
+	var pm monitoringv1.PodMonitor
 
-	if params.OtelCol.Spec.Mode != v1alpha1.ModeSidecar {
-		sm = monitoringv1.ServiceMonitor{
+	if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
+		pm = monitoringv1.PodMonitor{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: params.OtelCol.Namespace,
-				Name:      naming.ServiceMonitor(params.OtelCol.Name),
+				Name:      naming.PodMonitor(params.OtelCol.Name),
 				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.ServiceMonitor(params.OtelCol.Name),
+					"app.kubernetes.io/name":       naming.PodMonitor(params.OtelCol.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
 			},
-			Spec: monitoringv1.ServiceMonitorSpec{
-				Endpoints: []monitoringv1.Endpoint{},
+			Spec: monitoringv1.PodMonitorSpec{
+				JobLabel:        "app.kubernetes.io/instance",
+				PodTargetLabels: []string{"app.kubernetes.io/name", "app.kubernetes.io/instance", "app.kubernetes.io/managed-by"},
 				NamespaceSelector: monitoringv1.NamespaceSelector{
 					MatchNames: []string{params.OtelCol.Namespace},
 				},
@@ -63,41 +64,35 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 				},
 			},
 		}
-
-		endpoints := []monitoringv1.Endpoint{
+		podMetricsEndpoints := []monitoringv1.PodMetricsEndpoint{
 			{
 				Port: "monitoring",
 			},
 		}
-
-		sm.Spec.Endpoints = append(endpoints, endpointsFromConfig(params.Log, params.OtelCol)...)
+		pm.Spec.PodMetricsEndpoints = append(podMetricsEndpoints, metricsEndpointsFromConfig(params.Log, params.OtelCol)...)
 	}
-
-	return &sm, nil
+	return &pm, nil
 }
 
-func endpointsFromConfig(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []monitoringv1.Endpoint {
-	c, err := adapters.ConfigFromString(otelcol.Spec.Config)
+func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []monitoringv1.PodMetricsEndpoint {
+	config, err := adapters.ConfigFromString(otelcol.Spec.Config)
 	if err != nil {
 		logger.V(2).Error(err, "Error while parsing the configuration")
-		return []monitoringv1.Endpoint{}
+		return []monitoringv1.PodMetricsEndpoint{}
 	}
-
-	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, c)
+	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, config)
 	if err != nil {
-		logger.Error(err, "couldn't build service monitors from configuration")
-		return []monitoringv1.Endpoint{}
+		logger.Error(err, "couldn't build endpoints to podMonitors from configuration")
+		return []monitoringv1.PodMetricsEndpoint{}
 	}
-
-	endpoints := []monitoringv1.Endpoint{}
-
+	metricsEndpoints := []monitoringv1.PodMetricsEndpoint{}
 	for _, port := range exporterPorts {
 		if strings.Contains(port.Name, "prometheus") {
-			e := monitoringv1.Endpoint{
+			e := monitoringv1.PodMetricsEndpoint{
 				Port: port.Name,
 			}
-			endpoints = append(endpoints, e)
+			metricsEndpoints = append(metricsEndpoints, e)
 		}
 	}
-	return endpoints
+	return metricsEndpoints
 }
