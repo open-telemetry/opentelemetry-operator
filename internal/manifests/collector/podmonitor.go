@@ -39,38 +39,42 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	}
 	var pm monitoringv1.PodMonitor
 
-	if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
-		pm = monitoringv1.PodMonitor{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: params.OtelCol.Namespace,
-				Name:      naming.PodMonitor(params.OtelCol.Name),
-				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.PodMonitor(params.OtelCol.Name),
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-				},
-			},
-			Spec: monitoringv1.PodMonitorSpec{
-				JobLabel:        "app.kubernetes.io/instance",
-				PodTargetLabels: []string{"app.kubernetes.io/name", "app.kubernetes.io/instance", "app.kubernetes.io/managed-by"},
-				NamespaceSelector: monitoringv1.NamespaceSelector{
-					MatchNames: []string{params.OtelCol.Namespace},
-				},
-				Selector: metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-						"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					},
-				},
-			},
-		}
-		podMetricsEndpoints := []monitoringv1.PodMetricsEndpoint{
-			{
-				Port: "monitoring",
-			},
-		}
-		pm.Spec.PodMetricsEndpoints = append(podMetricsEndpoints, metricsEndpointsFromConfig(params.Log, params.OtelCol)...)
+	if params.OtelCol.Spec.Mode != v1alpha1.ModeSidecar {
+		return nil, nil
 	}
+
+	pm = monitoringv1.PodMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: params.OtelCol.Namespace,
+			Name:      naming.PodMonitor(params.OtelCol.Name),
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       naming.PodMonitor(params.OtelCol.Name),
+				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
+				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			},
+		},
+		Spec: monitoringv1.PodMonitorSpec{
+			JobLabel:        "app.kubernetes.io/instance",
+			PodTargetLabels: []string{"app.kubernetes.io/name", "app.kubernetes.io/instance", "app.kubernetes.io/managed-by"},
+			NamespaceSelector: monitoringv1.NamespaceSelector{
+				MatchNames: []string{params.OtelCol.Namespace},
+			},
+			Selector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
+				},
+			},
+		},
+	}
+
+	podMetricsEndpoints := []monitoringv1.PodMetricsEndpoint{
+		{
+			Port: "monitoring",
+		},
+	}
+	pm.Spec.PodMetricsEndpoints = append(podMetricsEndpoints, metricsEndpointsFromConfig(params.Log, params.OtelCol)...)
+
 	return &pm, nil
 }
 
