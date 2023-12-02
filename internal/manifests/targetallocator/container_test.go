@@ -34,11 +34,11 @@ var logger = logf.Log.WithName("unit-tests")
 
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{}
+	targetAllocator := v1beta1.TargetAllocator{}
 	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, "default-image", c.Image)
@@ -46,18 +46,17 @@ func TestContainerNewDefault(t *testing.T) {
 
 func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
-				Image:   "overridden-image",
+	targetAllocator := v1beta1.TargetAllocator{
+		Spec: v1beta1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Image: "overridden-image",
 			},
 		},
 	}
 	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, "overridden-image", c.Image)
@@ -65,18 +64,11 @@ func TestContainerWithImageOverridden(t *testing.T) {
 
 func TestContainerPorts(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
-				Image:   "default-image",
-			},
-		},
-	}
+	targetAllocator := v1beta1.TargetAllocator{}
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Len(t, c.Ports, 1)
@@ -86,18 +78,11 @@ func TestContainerPorts(t *testing.T) {
 
 func TestContainerVolumes(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
-				Image:   "default-image",
-			},
-		},
-	}
+	targetAllocator := v1beta1.TargetAllocator{}
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Len(t, c.VolumeMounts, 1)
@@ -105,9 +90,9 @@ func TestContainerVolumes(t *testing.T) {
 }
 
 func TestContainerResourceRequirements(t *testing.T) {
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+	targetAllocator := v1beta1.TargetAllocator{
+		Spec: v1beta1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -134,7 +119,7 @@ func TestContainerResourceRequirements(t *testing.T) {
 		},
 	}
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 	resourcesValues := c.Resources
 
 	// verify
@@ -143,10 +128,9 @@ func TestContainerResourceRequirements(t *testing.T) {
 
 func TestContainerHasEnvVars(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
+	targetAllocator := v1beta1.TargetAllocator{
+		Spec: v1beta1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Env: []corev1.EnvVar{
 					{
 						Name:  "TEST_ENV",
@@ -216,7 +200,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, expected, c)
@@ -228,10 +212,9 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 	defer os.Unsetenv("NO_PROXY")
 
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
+	targetAllocator := v1beta1.TargetAllocator{
+		Spec: v1beta1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Env: []corev1.EnvVar{
 					{
 						Name:  "TEST_ENV",
@@ -244,7 +227,7 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	require.Len(t, c.Env, 4)
@@ -254,10 +237,9 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 
 func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
+	targetAllocator := v1beta1.TargetAllocator{
+		Spec: v1beta1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Env: []corev1.EnvVar{
 					{
 						Name:  "OTELCOL_NAMESPACE",
@@ -314,19 +296,13 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, expected, c)
 }
 func TestReadinessProbe(t *testing.T) {
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
-			},
-		},
-	}
+	targetAllocator := v1beta1.TargetAllocator{}
 	cfg := config.New()
 	expected := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
@@ -338,20 +314,14 @@ func TestReadinessProbe(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, expected, c.ReadinessProbe)
 }
 func TestLivenessProbe(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
-			},
-		},
-	}
+	targetAllocator := v1beta1.TargetAllocator{}
 	cfg := config.New()
 	expected := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
@@ -363,7 +333,7 @@ func TestLivenessProbe(t *testing.T) {
 	}
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, expected, c.LivenessProbe)
@@ -375,10 +345,9 @@ func TestSecurityContext(t *testing.T) {
 		RunAsNonRoot: &runAsNonRoot,
 	}
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled:         true,
+	targetAllocator := v1beta1.TargetAllocator{
+		Spec: v1beta1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				SecurityContext: securityContext,
 			},
 		},
@@ -386,7 +355,7 @@ func TestSecurityContext(t *testing.T) {
 	cfg := config.New()
 
 	// test
-	c := Container(cfg, logger, otelcol)
+	c := Container(cfg, logger, targetAllocator)
 
 	// verify
 	assert.Equal(t, securityContext, c.SecurityContext)
