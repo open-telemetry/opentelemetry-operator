@@ -10,9 +10,12 @@ metadata:
   name: min-integer
   namespace: create-pdbs-target-allocator
 spec:
+  mode: statefulset
   targetAllocator:
     enabled: true
     allocationStrategy: consistent-hashing
+    prometheusCR:
+      enabled: true
     podDisruptionBudget:
       minAvailable: 1
   resources:
@@ -25,19 +28,15 @@ spec:
 
   config: |
     receivers:
-      otlp:
-        protocols:
-          grpc:
-          http:
-    processors:
-
+      prometheus:
+        config:
+          scrape_configs: []
     exporters:
       logging:
-
     service:
       pipelines:
-        traces:
-          receivers: [otlp]
+        metrics:
+          receivers: [prometheus]
           processors: []
           exporters: [logging]
 ---
@@ -47,9 +46,12 @@ metadata:
   name: min-string
   namespace: create-pdbs-target-allocator
 spec:
+  mode: statefulset
   targetAllocator:
     enabled: true
     allocationStrategy: consistent-hashing
+    prometheusCR:
+      enabled: true
     podDisruptionBudget:
       minAvailable: 10%
   resources:
@@ -62,19 +64,15 @@ spec:
 
   config: |
     receivers:
-      otlp:
-        protocols:
-          grpc:
-          http:
-    processors:
-
+      prometheus:
+        config:
+          scrape_configs: []
     exporters:
       logging:
-
     service:
       pipelines:
-        traces:
-          receivers: [otlp]
+        metrics:
+          receivers: [prometheus]
           processors: []
           exporters: [logging]
 ---
@@ -84,9 +82,12 @@ metadata:
   name: max-integer
   namespace: create-pdbs-target-allocator
 spec:
+  mode: statefulset
   targetAllocator:
     enabled: true
     allocationStrategy: consistent-hashing
+    prometheusCR:
+      enabled: true
     podDisruptionBudget:
       maxUnavailable: 1
   resources:
@@ -99,19 +100,15 @@ spec:
 
   config: |
     receivers:
-      otlp:
-        protocols:
-          grpc:
-          http:
-    processors:
-
+      prometheus:
+        config:
+          scrape_configs: []
     exporters:
       logging:
-
     service:
       pipelines:
-        traces:
-          receivers: [otlp]
+        metrics:
+          receivers: [prometheus]
           processors: []
           exporters: [logging]
 ---
@@ -121,9 +118,12 @@ metadata:
   name: max-string
   namespace: create-pdbs-target-allocator
 spec:
+  mode: statefulset
   targetAllocator:
     enabled: true
     allocationStrategy: consistent-hashing
+    prometheusCR:
+      enabled: true
     podDisruptionBudget:
       maxUnavailable: "10%"
   resources:
@@ -136,18 +136,14 @@ spec:
 
   config: |
     receivers:
-      otlp:
-        protocols:
-          grpc:
-          http:
-    processors:
-
+      prometheus:
+        config:
+          scrape_configs: []
     exporters:
       logging:
-
     service:
       pipelines:
-        traces:
-          receivers: [otlp]
+        metrics:
+          receivers: [prometheus]
           processors: []
           exporters: [logging]
