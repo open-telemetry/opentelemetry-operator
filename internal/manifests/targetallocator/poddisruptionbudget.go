@@ -12,30 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package collector
+package targetallocator
 
 import (
+	"strings"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	policyV1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget {
-	// defaulting webhook should always set this, but if unset then return nil.
-	if params.OtelCol.Spec.PodDisruptionBudget == nil {
-		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
-		return nil
+func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget, error) {
+	if params.OtelCol.Spec.TargetAllocator.AllocationStrategy != v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing {
+		params.Log.Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
+		return nil, nil
 	}
 
-	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	annotations := Annotations(params.OtelCol)
+	// defaulting webhook should always set this, but if unset then return nil.
+	if params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget == nil {
+		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
+		return nil, nil
+	}
+
+	name := naming.TAPodDisruptionBudget(params.OtelCol.Name)
+	version := strings.Split(params.OtelCol.Spec.Image, ":")
+	labels := Labels(params.OtelCol, name)
+	if len(version) > 1 {
+		labels["app.kubernetes.io/version"] = version[len(version)-1]
+	} else {
+		labels["app.kubernetes.io/version"] = "latest"
+	}
+
+	annotations := Annotations(params.OtelCol, nil)
 
 	objectMeta := metav1.ObjectMeta{
-		Name:        naming.PodDisruptionBudget(params.OtelCol.Name),
+		Name:        name,
 		Namespace:   params.OtelCol.Namespace,
 		Labels:      labels,
 		Annotations: annotations,
@@ -44,11 +57,11 @@ func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget 
 	return &policyV1.PodDisruptionBudget{
 		ObjectMeta: objectMeta,
 		Spec: policyV1.PodDisruptionBudgetSpec{
-			MinAvailable:   params.OtelCol.Spec.PodDisruptionBudget.MinAvailable,
-			MaxUnavailable: params.OtelCol.Spec.PodDisruptionBudget.MaxUnavailable,
+			MinAvailable:   params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget.MinAvailable,
+			MaxUnavailable: params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget.MaxUnavailable,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: objectMeta.Labels,
 			},
 		},
-	}
+	}, nil
 }

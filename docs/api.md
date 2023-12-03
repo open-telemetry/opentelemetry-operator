@@ -18061,6 +18061,13 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorpoddisruptionbudget">podDisruptionBudget</a></b></td>
+        <td>object</td>
+        <td>
+          PodDisruptionBudget specifies the pod disruption budget configuration to use for the target allocator workload.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscr">prometheusCR</a></b></td>
         <td>object</td>
         <td>
@@ -19650,6 +19657,40 @@ Selects a key of a secret in the pod's namespace
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.podDisruptionBudget
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
+
+
+
+PodDisruptionBudget specifies the pod disruption budget configuration to use for the target allocator workload.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxUnavailable</b></td>
+        <td>int or string</td>
+        <td>
+          An eviction is allowed if at most "maxUnavailable" pods selected by "selector" are unavailable after the eviction, i.e. even in absence of the evicted pod.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minAvailable</b></td>
+        <td>int or string</td>
+        <td>
+          An eviction is allowed if at least "minAvailable" pods selected by "selector" will still be available after the eviction, i.e. even in the absence of the evicted pod.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
