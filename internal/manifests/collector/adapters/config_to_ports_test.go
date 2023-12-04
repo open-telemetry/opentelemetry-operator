@@ -267,8 +267,10 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
-			_, err := adapters.ConfigToMetricsPort(logger, tt.config)
-			assert.Error(t, err)
+			// these are acceptable failures, we return to the collector's default metric port
+			port, err := adapters.ConfigToMetricsPort(logger, tt.config)
+			assert.NoError(t, err)
+			assert.Equal(t, int32(8888), port)
 		})
 	}
 }

@@ -31,13 +31,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -530,8 +534,10 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				Config: config.New(
 					config.WithCollectorImage("default-collector"),
 					config.WithTargetAllocatorImage("default-ta-allocator"),
+					config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
 				),
 			})
+
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
 			firstCheck := tt.want[0]
 			// Check for this before create, otherwise it's blown away.
@@ -746,6 +752,43 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSkipWhenInstanceDoesNotExist(t *testing.T) {
+	// prepare
+	cfg := config.New()
+	nsn := types.NamespacedName{Name: "non-existing-my-instance", Namespace: "default"}
+	reconciler := controllers.NewReconciler(controllers.Params{
+		Client: k8sClient,
+		Log:    logger,
+		Scheme: scheme.Scheme,
+		Config: cfg,
+	})
+
+	// test
+	req := k8sreconcile.Request{
+		NamespacedName: nsn,
+	}
+	_, err := reconciler.Reconcile(context.Background(), req)
+
+	// verify
+	assert.NoError(t, err)
+}
+
+func TestRegisterWithManager(t *testing.T) {
+	t.Skip("this test requires a real cluster, otherwise the GetConfigOrDie will die")
+
+	// prepare
+	mgr, err := manager.New(k8sconfig.GetConfigOrDie(), manager.Options{})
+	require.NoError(t, err)
+
+	reconciler := controllers.NewReconciler(controllers.Params{})
+
+	// test
+	err = reconciler.SetupWithManager(mgr)
+
+	// verify
+	assert.NoError(t, err)
 }
 
 func namespacedObjectName(name string, namespace string) types.NamespacedName {

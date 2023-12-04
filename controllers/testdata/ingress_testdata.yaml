@@ -8,9 +8,10 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:12346
-
+exporters:
+  debug:
 service:
   pipelines:
     traces:
       receivers: [otlp, otlp/test]
-      exporters: [nop]
+      exporters: [debug]

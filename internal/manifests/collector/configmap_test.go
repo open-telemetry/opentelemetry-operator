@@ -63,8 +63,9 @@ service:
 		}
 
 		param := deploymentParams()
-		actual := ConfigMap(param)
+		actual, err := ConfigMap(param)
 
+		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
@@ -109,8 +110,9 @@ service:
 
 		param := deploymentParams()
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
-		actual := ConfigMap(param)
+		actual, err := ConfigMap(param)
 
+		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.GetName())
 		assert.Equal(t, expectedLables, actual.GetLabels())
 		assert.Equal(t, expectedData, actual.Data)
@@ -159,8 +161,9 @@ service:
 		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test_ta_set.yaml")
 		assert.NoError(t, err)
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
-		actual := ConfigMap(param)
+		actual, err := ConfigMap(param)
 
+		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
@@ -200,8 +203,9 @@ service:
 		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml")
 		assert.NoError(t, err)
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
-		actual := ConfigMap(param)
+		actual, err := ConfigMap(param)
 
+		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)

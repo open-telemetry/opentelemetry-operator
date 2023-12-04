@@ -28,7 +28,7 @@ func TestCanSetSingleTarget(t *testing.T) {
 	actualTargetItems := c.TargetItems()
 	assert.Len(t, actualTargetItems, 1)
 	for _, item := range actualTargetItems {
-		assert.Equal(t, "collector-2", item.CollectorName)
+		assert.Equal(t, "collector-0", item.CollectorName)
 	}
 }
 

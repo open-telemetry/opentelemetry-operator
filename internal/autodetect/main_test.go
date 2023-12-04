@@ -25,17 +25,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 )
 
 func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 	for _, tt := range []struct {
 		apiGroupList *metav1.APIGroupList
-		expected     autodetect.OpenShiftRoutesAvailability
+		expected     openshift.RoutesAvailability
 	}{
 		{
 			&metav1.APIGroupList{},
-			autodetect.OpenShiftRoutesNotAvailable,
+			openshift.RoutesNotAvailable,
 		},
 		{
 			&metav1.APIGroupList{
@@ -45,7 +46,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 					},
 				},
 			},
-			autodetect.OpenShiftRoutesAvailable,
+			openshift.RoutesAvailable,
 		},
 	} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

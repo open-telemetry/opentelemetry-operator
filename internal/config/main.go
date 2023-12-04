@@ -16,14 +16,14 @@
 package config
 
 import (
-	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
 const (
@@ -50,24 +50,20 @@ type Config struct {
 	operatorOpAMPBridgeConfigMapEntry   string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
-	onOpenShiftRoutesChange             changeHandler
+	openshiftRoutesAvailability         openshift.RoutesAvailability
 	labelsFilter                        []string
-	openshiftRoutes                     openshiftRoutesStore
-	autoDetectFrequency                 time.Duration
 }
 
 // New constructs a new configuration based on the given options.
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
-		autoDetectFrequency:               defaultAutoDetectFrequency,
+		openshiftRoutesAvailability:       openshift.RoutesNotAvailable,
 		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
 		logger:                            logf.Log.WithName("config"),
-		openshiftRoutes:                   newOpenShiftRoutesWrapper(),
 		version:                           version.Get(),
-		onOpenShiftRoutesChange:           newOnChange(),
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -75,7 +71,6 @@ func New(opts ...Option) Config {
 
 	return Config{
 		autoDetect:                          o.autoDetect,
-		autoDetectFrequency:                 o.autoDetectFrequency,
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
 		targetAllocatorImage:                o.targetAllocatorImage,
@@ -83,8 +78,7 @@ func New(opts ...Option) Config {
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry:   o.operatorOpAMPBridgeConfigMapEntry,
 		logger:                              o.logger,
-		openshiftRoutes:                     o.openshiftRoutes,
-		onOpenShiftRoutesChange:             o.onOpenShiftRoutesChange,
+		openshiftRoutesAvailability:         o.openshiftRoutesAvailability,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
@@ -96,25 +90,6 @@ func New(opts ...Option) Config {
 	}
 }
 
-// StartAutoDetect attempts to automatically detect relevant information for this operator. This will block until the first
-// run is executed and will schedule periodic updates.
-func (c *Config) StartAutoDetect() error {
-	err := c.AutoDetect()
-	go c.periodicAutoDetect()
-
-	return err
-}
-
-func (c *Config) periodicAutoDetect() {
-	ticker := time.NewTicker(c.autoDetectFrequency)
-
-	for range ticker.C {
-		if err := c.AutoDetect(); err != nil {
-			c.logger.Info("auto-detection failed", "error", err)
-		}
-	}
-}
-
 // AutoDetect attempts to automatically detect relevant information for this operator.
 func (c *Config) AutoDetect() error {
 	c.logger.V(2).Info("auto-detecting the configuration based on the environment")
@@ -123,16 +98,7 @@ func (c *Config) AutoDetect() error {
 	if err != nil {
 		return err
 	}
-
-	if c.openshiftRoutes.Get() != ora {
-		c.logger.V(1).Info("openshift routes detected", "available", ora)
-		c.openshiftRoutes.Set(ora)
-		if err = c.onOpenShiftRoutesChange.Do(); err != nil {
-			// Don't fail if the callback failed, as auto-detection itself worked.
-			c.logger.Error(err, "configuration change notification failed for callback")
-		}
-	}
-
+	c.openshiftRoutesAvailability = ora
 	return nil
 }
 
@@ -166,9 +132,9 @@ func (c *Config) OperatorOpAMPBridgeConfigMapEntry() string {
 	return c.operatorOpAMPBridgeConfigMapEntry
 }
 
-// OpenShiftRoutes represents the availability of the OpenShift Routes API.
-func (c *Config) OpenShiftRoutes() autodetect.OpenShiftRoutesAvailability {
-	return c.openshiftRoutes.Get()
+// OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
+func (c *Config) OpenShiftRoutesAvailability() openshift.RoutesAvailability {
+	return c.openshiftRoutesAvailability
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
@@ -209,39 +175,4 @@ func (c *Config) AutoInstrumentationNginxImage() string {
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
-}
-
-// RegisterOpenShiftRoutesChangeCallback registers the given function as a callback that
-// is called when the OpenShift Routes detection detects a change.
-func (c *Config) RegisterOpenShiftRoutesChangeCallback(f func() error) {
-	c.onOpenShiftRoutesChange.Register(f)
-}
-
-type openshiftRoutesStore interface {
-	Set(ora autodetect.OpenShiftRoutesAvailability)
-	Get() autodetect.OpenShiftRoutesAvailability
-}
-
-func newOpenShiftRoutesWrapper() openshiftRoutesStore {
-	return &openshiftRoutesWrapper{
-		current: autodetect.OpenShiftRoutesNotAvailable,
-	}
-}
-
-type openshiftRoutesWrapper struct {
-	mu      sync.Mutex
-	current autodetect.OpenShiftRoutesAvailability
-}
-
-func (p *openshiftRoutesWrapper) Set(ora autodetect.OpenShiftRoutesAvailability) {
-	p.mu.Lock()
-	p.current = ora
-	p.mu.Unlock()
-}
-
-func (p *openshiftRoutesWrapper) Get() autodetect.OpenShiftRoutesAvailability {
-	p.mu.Lock()
-	ora := p.current
-	p.mu.Unlock()
-	return ora
 }

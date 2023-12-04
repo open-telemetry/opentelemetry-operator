@@ -22,18 +22,19 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func Routes(params manifests.Params) []*routev1.Route {
-	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute {
-		return nil
+func Routes(params manifests.Params) ([]*routev1.Route, error) {
+	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability() != openshift.RoutesAvailable {
+		return nil, nil
 	}
 
 	if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
 		params.Log.V(3).Info("ingress settings are not supported in sidecar mode")
-		return nil
+		return nil, nil
 	}
 
 	var tlsCfg *routev1.TLSConfig
@@ -47,19 +48,19 @@ func Routes(params manifests.Params) []*routev1.Route {
 	case v1alpha1.TLSRouteTerminationTypeReencrypt:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationReencrypt}
 	default: // NOTE: if unsupported, end here.
-		return nil
+		return nil, nil
 	}
 
-	ports := servicePortsFromCfg(params.Log, params.OtelCol)
+	ports, err := servicePortsFromCfg(params.Log, params.OtelCol)
 
 	// if we have no ports, we don't need a ingress entry
-	if len(ports) == 0 {
+	if len(ports) == 0 || err != nil {
 		params.Log.V(1).Info(
 			"the instance's configuration didn't yield any ports to open, skipping ingress",
 			"instance.name", params.OtelCol.Name,
 			"instance.namespace", params.OtelCol.Namespace,
 		)
-		return nil
+		return nil, err
 	}
 
 	routes := make([]*routev1.Route, len(ports))
@@ -96,5 +97,5 @@ func Routes(params manifests.Params) []*routev1.Route {
 			},
 		}
 	}
-	return routes
+	return routes, nil
 }

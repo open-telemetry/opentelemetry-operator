@@ -35,14 +35,14 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
 var opampBridgeLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
 var opampBridgeMockAutoDetector = &mockAutoDetect{
-	OpenShiftRoutesAvailabilityFunc: func() (autodetect.OpenShiftRoutesAvailability, error) {
-		return autodetect.OpenShiftRoutesAvailable, nil
+	OpenShiftRoutesAvailabilityFunc: func() (openshift.RoutesAvailability, error) {
+		return openshift.RoutesAvailable, nil
 	},
 }
 
