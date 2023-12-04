@@ -96,7 +96,7 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 		case ComponentTypeReceiver:
 			cmptParser, err = receiverParser.For(logger, cmptName, exporter)
 		case ComponentTypeProcessor:
-			logger.V(2).Info("processors don't provide a way to enable associated ports", "name", key)
+			logger.V(4).Info("processors don't provide a way to enable associated ports", "name", key)
 		}
 
 		if err != nil {

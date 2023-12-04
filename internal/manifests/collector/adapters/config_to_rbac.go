@@ -34,11 +34,11 @@ func ConfigToRBAC(logger logr.Logger, config map[interface{}]interface{}) []rbac
 		return nil
 	}
 
-	enabledExporters := getEnabledComponents(config, ComponentTypeProcessor)
+	enabledProcessors := getEnabledComponents(config, ComponentTypeProcessor)
 
 	var policyRules []rbacv1.PolicyRule
 	for key, val := range processors {
-		if !enabledExporters[key] {
+		if !enabledProcessors[key] {
 			continue
 		}
 
