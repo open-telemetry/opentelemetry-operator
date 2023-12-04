@@ -1,0 +1,17 @@
+endpoint: ws://127.0.0.1:4320/v1/opamp
+headers:
+  authentication: "access-12345-token"
+  my-header-key: "my-header-value"
+capabilities:
+  AcceptsRemoteConfig: true
+  ReportsEffectiveConfig: true
+  AcceptsPackages: false
+  ReportsPackageStatuses: false
+  ReportsOwnTraces: true
+  ReportsOwnMetrics: true
+  ReportsOwnLogs: true
+  AcceptsOpAMPConnectionSettings: true
+  AcceptsOtherConnectionSettings: true
+  AcceptsRestartCommand: true
+  ReportsHealth: true
+  ReportsRemoteConfig: true
