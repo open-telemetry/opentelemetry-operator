@@ -94,7 +94,7 @@ type Config struct {
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	ComponentsAllowed map[string][]string `yaml:"componentsAllowed,omitempty"`
 	Endpoint          string              `yaml:"endpoint"`
-	Headers           map[string]string   `yaml:"headers,omitempty"`
+	Headers           Headers             `yaml:"headers,omitempty"`
 	Capabilities      map[Capability]bool `yaml:"capabilities"`
 	HeartbeatInterval time.Duration       `yaml:"heartbeatInterval,omitempty"`
 	Name              string              `yaml:"name,omitempty"`
