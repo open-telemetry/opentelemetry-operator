@@ -3698,6 +3698,13 @@ OpAMPBridgeSpec defines the desired state of OpAMPBridge.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>headers</b></td>
+        <td>map[string]string</td>
+        <td>
+          Headers is an optional map of headers to use when connecting to the OpAMP Server, typically used to set access tokens or other authorization headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>hostNetwork</b></td>
         <td>boolean</td>
         <td>
