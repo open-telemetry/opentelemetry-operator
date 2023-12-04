@@ -146,6 +146,7 @@ func (agent *Agent) Start() error {
 	agent.startTime = uint64(agent.clock.Now().UnixNano())
 	settings := types.StartSettings{
 		OpAMPServerURL: agent.config.Endpoint,
+		Header:         agent.config.Headers.ToHTTPHeader(),
 		InstanceUid:    agent.instanceId.String(),
 		Callbacks: types.CallbacksStruct{
 			OnConnectFunc:              agent.onConnect,
