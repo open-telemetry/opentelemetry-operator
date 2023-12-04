@@ -10,7 +10,7 @@ metadata:
   name: pod-view
 rules:
 - apiGroups: [""]
-  resources: [ "pods" ]
+  resources: [ "pods", "namespaces" ]
   verbs: [ "get", "list", "watch"]
 ---
 apiVersion: kuttl.dev/v1beta1
