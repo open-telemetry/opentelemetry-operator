@@ -18061,6 +18061,13 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorobservability">observability</a></b></td>
+        <td>object</td>
+        <td>
+          ObservabilitySpec defines how telemetry data gets handled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscr">prometheusCR</a></b></td>
         <td>object</td>
         <td>
@@ -19650,6 +19657,60 @@ Selects a key of a secret in the pod's namespace
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.observability
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
+
+
+
+ObservabilitySpec defines how telemetry data gets handled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorobservabilitymetrics">metrics</a></b></td>
+        <td>object</td>
+        <td>
+          Metrics defines the metrics configuration for operands.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.observability.metrics
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorobservability)</sup></sup>
+
+
+
+Metrics defines the metrics configuration for operands.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enableMetrics</b></td>
+        <td>boolean</td>
+        <td>
+          EnableMetrics specifies if ServiceMonitor should be created for the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

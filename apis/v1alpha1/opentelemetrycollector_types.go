@@ -336,6 +336,12 @@ type OpenTelemetryTargetAllocator struct {
 	// consumed in the config file for the TargetAllocator.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
+	// ObservabilitySpec defines how telemetry data gets handled.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
+	Observability ObservabilitySpec `json:"observability,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {
