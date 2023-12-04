@@ -45,9 +45,9 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
-const minEventInterval = time.Second * 5
 const (
-	resyncPeriod = 5 * time.Minute
+	resyncPeriod     = 5 * time.Minute
+	minEventInterval = time.Second * 5
 )
 
 func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
