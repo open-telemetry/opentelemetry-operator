@@ -199,7 +199,12 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 		success = false
 	}
 
-	w.nsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	// The controller needs to watch the namespaces in which the service/pod
+	// monitors live because a label change on a namespace may
+	// trigger a configuration change.
+	// It doesn't need to watch on addition/deletion though because it's
+	// already covered by the event handlers on service/pod monitors.
+	_, _ = w.nsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			old := oldObj.(*v1.Namespace)
 			cur := newObj.(*v1.Namespace)
