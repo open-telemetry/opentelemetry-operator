@@ -52,7 +52,11 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(Ingress),
 	}...)
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
-		manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
+		if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
+			manifestFactories = append(manifestFactories, manifests.Factory(PodMonitor))
+		} else {
+			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
+		}
 	}
 	for _, factory := range manifestFactories {
 		res, err := factory(params)

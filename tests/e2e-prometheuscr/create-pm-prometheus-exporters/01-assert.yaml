@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    sidecar.opentelemetry.io/inject: "true"
+  labels:
+    app: pod-with-sidecar
+  namespace: create-pm-prometheus
+spec:
+  containers:
+    - name: myapp
+    - name: otc-container
+      env:
+        - name: POD_NAME
+        - name: OTEL_CONFIG
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_UID
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+        - name: OTEL_RESOURCE_ATTRIBUTES
+status:
+  phase: Running
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: create-pm-prometheus.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-collector
+  name: simplest-collector
+  namespace: create-pm-prometheus
+spec:
+  jobLabel: "app.kubernetes.io/instance"
+  podMetricsEndpoints:
+    - port: monitoring
+    - port: prometheus-dev
+    - port: prometheus-prod
+  namespaceSelector:
+    matchNames:
+      - create-pm-prometheus
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/instance: create-pm-prometheus.simplest
