@@ -18108,7 +18108,7 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b><a href="#opentelemetrycollectorspectargetallocatortopologyspreadconstraintsindex">topologySpreadConstraints</a></b></td>
         <td>[]object</td>
         <td>
-          PodSecurityContext configures the pod security context for the targetallocator.<br/>
+          TopologySpreadConstraints embedded kubernetes pod configuration option, controls how pods are spread across your cluster among failure-domains such as regions, zones, nodes, and other user-defined top<br/>
         </td>
         <td>false</td>
       </tr></tbody>
