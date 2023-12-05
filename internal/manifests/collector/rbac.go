@@ -43,7 +43,7 @@ func ClusterRole(params manifests.Params) *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Annotations: params.OtelCol.Annotations,
-			Labels: labels,
+			Labels:      labels,
 		},
 		Rules: rules,
 	}
@@ -68,7 +68,7 @@ func ClusterRoleBinding(params manifests.Params) *rbacv1.ClusterRoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Annotations: params.OtelCol.Annotations,
-			Labels: labels,
+			Labels:      labels,
 		},
 		Subjects: []rbacv1.Subject{
 			{
