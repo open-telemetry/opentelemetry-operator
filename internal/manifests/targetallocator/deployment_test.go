@@ -67,8 +67,8 @@ var testAffinityValue = &v1.Affinity{
 	},
 }
 
-var testSecurityContextValue = &v1.SecurityContext{
-	RunAsUser: pointer.Int64Ptr(1000),
+var testSecurityContextValue = &v1.PodSecurityContext{
+	RunAsUser: func(i int64) *int64 ( return &i ) (1000),
 }
 
 func TestDeploymentNewDefault(t *testing.T) {
@@ -243,7 +243,10 @@ func TestDeploymentSecurityContext(t *testing.T) {
 		Config:  cfg,
 		Log:     logger,
 	}
-	d1 := Deployment(params1)
+	d1, err := Deployment(params1)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Empty(t, d1.Spec.Template.Spec.SecurityContext)
 
 	// Test SecurityContext
@@ -266,7 +269,10 @@ func TestDeploymentSecurityContext(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := Deployment(params2)
+	d2, err := Deployment(params2)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, *testSecurityContextValue, *d2.Spec.Template.Spec.SecurityContext)
 }
 
