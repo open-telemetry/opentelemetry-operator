@@ -1,6 +1,2 @@
 resources:
 - manager.yaml
-kind: Kustomization
-images:
-- name: controller
-  newName: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
