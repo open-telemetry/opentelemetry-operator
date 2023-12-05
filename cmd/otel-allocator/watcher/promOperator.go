@@ -45,12 +45,13 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
+const minEventInterval = time.Second * 5
 const (
-	resyncPeriod     = 5 * time.Minute
-	minEventInterval = time.Second * 5
+	resyncPeriod = 5 * time.Minute
 )
 
 func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
+	var resourceSelector *prometheus.ResourceSelector
 	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
 	if err != nil {
 		return nil, err
@@ -102,10 +103,11 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 
 	nsMonInf, err := getNamespaceInformer(ctx, map[string]struct{}{v1.NamespaceAll: {}}, promOperatorLogger, clientset, operatorMetrics)
 	if err != nil {
-		return nil, err
-	}
+		logger.Error(err, "Failed to create namespace informer in promOperator CRD watcher")
 
-	resourceSelector := prometheus.NewResourceSelector(promOperatorLogger, prom, store, nsMonInf, operatorMetrics)
+	} else {
+		resourceSelector = prometheus.NewResourceSelector(promOperatorLogger, prom, store, nsMonInf, operatorMetrics)
+	}
 
 	return &PrometheusCRWatcher{
 		logger:               logger,
@@ -194,48 +196,47 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 	// this channel needs to be buffered because notifications are asynchronous and neither producers nor consumers wait
 	notifyEvents := make(chan struct{}, 1)
 
-	go w.nsInformer.Run(w.stopChannel)
-	if ok := cache.WaitForNamedCacheSync("namespace", w.stopChannel, w.nsInformer.HasSynced); !ok {
-		success = false
-	}
+	if w.nsInformer != nil {
+		go w.nsInformer.Run(w.stopChannel)
+		if ok := cache.WaitForNamedCacheSync("namespace", w.stopChannel, w.nsInformer.HasSynced); !ok {
+			success = false
+		}
 
-	// The controller needs to watch the namespaces in which the service/pod
-	// monitors live because a label change on a namespace may
-	// trigger a configuration change.
-	// It doesn't need to watch on addition/deletion though because it's
-	// already covered by the event handlers on service/pod monitors.
-	_, _ = w.nsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			old := oldObj.(*v1.Namespace)
-			cur := newObj.(*v1.Namespace)
+		w.nsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				old := oldObj.(*v1.Namespace)
+				cur := newObj.(*v1.Namespace)
 
-			// Periodic resync may resend the Namespace without changes
-			// in-between.
-			if old.ResourceVersion == cur.ResourceVersion {
-				return
-			}
-
-			for name, selector := range map[string]*metav1.LabelSelector{
-				"PodMonitorNamespaceSelector":     w.podMonitorNamespaceSelector,
-				"ServiceMonitorNamespaceSelector": w.serviceMonitorNamespaceSelector,
-			} {
-
-				sync, err := k8sutil.LabelSelectionHasChanged(old.Labels, cur.Labels, selector)
-				if err != nil {
-					w.logger.Error(err, "Failed to check label selection between namespaces while handling namespace updates", "selector", name)
+				// Periodic resync may resend the Namespace without changes
+				// in-between.
+				if old.ResourceVersion == cur.ResourceVersion {
 					return
 				}
 
-				if sync {
-					select {
-					case notifyEvents <- struct{}{}:
-					default:
+				for name, selector := range map[string]*metav1.LabelSelector{
+					"PodMonitorNamespaceSelector":     w.podMonitorNamespaceSelector,
+					"ServiceMonitorNamespaceSelector": w.serviceMonitorNamespaceSelector,
+				} {
+
+					sync, err := k8sutil.LabelSelectionHasChanged(old.Labels, cur.Labels, selector)
+					if err != nil {
+						w.logger.Error(err, "Failed to check label selection between namespaces while handling namespace updates", "selector", name)
+						return
 					}
-					return
+
+					if sync {
+						select {
+						case notifyEvents <- struct{}{}:
+						default:
+						}
+						return
+					}
 				}
-			}
-		},
-	})
+			},
+		})
+	} else {
+		w.logger.Info("Unable to watch namespaces since namespace informer is nil")
+	}
 
 	for name, resource := range w.informers {
 		resource.Start(w.stopChannel)
@@ -317,53 +318,59 @@ func (w *PrometheusCRWatcher) Close() error {
 }
 
 func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Config, error) {
-	serviceMonitorInstances, err := w.resourceSelector.SelectServiceMonitors(ctx, w.informers[monitoringv1.ServiceMonitorName].ListAllByNamespace)
-	if err != nil {
-		return nil, err
-	}
-
-	podMonitorInstances, err := w.resourceSelector.SelectPodMonitors(ctx, w.informers[monitoringv1.PodMonitorName].ListAllByNamespace)
-	if err != nil {
-		return nil, err
-	}
-
-	generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
-		ctx,
-		"30s",
-		"",
-		nil,
-		nil,
-		monitoringv1.TSDBSpec{},
-		nil,
-		nil,
-		serviceMonitorInstances,
-		podMonitorInstances,
-		map[string]*monitoringv1.Probe{},
-		map[string]*promv1alpha1.ScrapeConfig{},
-		w.store,
-		nil,
-		nil,
-		nil,
-		[]string{})
-	if err != nil {
-		return nil, err
-	}
-
 	promCfg := &promconfig.Config{}
-	unmarshalErr := yaml.Unmarshal(generatedConfig, promCfg)
-	if unmarshalErr != nil {
-		return nil, unmarshalErr
-	}
 
-	// set kubeconfig path to service discovery configs, else kubernetes_sd will always attempt in-cluster
-	// authentication even if running with a detected kubeconfig
-	for _, scrapeConfig := range promCfg.ScrapeConfigs {
-		for _, serviceDiscoveryConfig := range scrapeConfig.ServiceDiscoveryConfigs {
-			if serviceDiscoveryConfig.Name() == "kubernetes" {
-				sdConfig := interface{}(serviceDiscoveryConfig).(*kubeDiscovery.SDConfig)
-				sdConfig.KubeConfig = w.kubeConfigPath
+	if w.resourceSelector != nil {
+		serviceMonitorInstances, err := w.resourceSelector.SelectServiceMonitors(ctx, w.informers[monitoringv1.ServiceMonitorName].ListAllByNamespace)
+		if err != nil {
+			return nil, err
+		}
+
+		podMonitorInstances, err := w.resourceSelector.SelectPodMonitors(ctx, w.informers[monitoringv1.PodMonitorName].ListAllByNamespace)
+		if err != nil {
+			return nil, err
+		}
+
+		generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
+			ctx,
+			"30s",
+			"",
+			nil,
+			nil,
+			monitoringv1.TSDBSpec{},
+			nil,
+			nil,
+			serviceMonitorInstances,
+			podMonitorInstances,
+			map[string]*monitoringv1.Probe{},
+			map[string]*promv1alpha1.ScrapeConfig{},
+			w.store,
+			nil,
+			nil,
+			nil,
+			[]string{})
+		if err != nil {
+			return nil, err
+		}
+
+		unmarshalErr := yaml.Unmarshal(generatedConfig, promCfg)
+		if unmarshalErr != nil {
+			return nil, unmarshalErr
+		}
+
+		// set kubeconfig path to service discovery configs, else kubernetes_sd will always attempt in-cluster
+		// authentication even if running with a detected kubeconfig
+		for _, scrapeConfig := range promCfg.ScrapeConfigs {
+			for _, serviceDiscoveryConfig := range scrapeConfig.ServiceDiscoveryConfigs {
+				if serviceDiscoveryConfig.Name() == "kubernetes" {
+					sdConfig := interface{}(serviceDiscoveryConfig).(*kubeDiscovery.SDConfig)
+					sdConfig.KubeConfig = w.kubeConfigPath
+				}
 			}
 		}
+		return promCfg, nil
+	} else {
+		w.logger.Info("Unable to load config since resource selector is nil, returning empty prometheus config")
+		return promCfg, nil
 	}
-	return promCfg, nil
 }
