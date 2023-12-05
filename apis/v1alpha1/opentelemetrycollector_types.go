@@ -327,6 +327,10 @@ type OpenTelemetryTargetAllocator struct {
 	// such as regions, zones, nodes, and other user-defined topology domains
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
+	SecurityContext *v1.PodSecurityContext `json:"securityContext,omitempty"`
+	// PodSecurityContext configures the pod security context for the
+	// TargetAllocator.
+	// optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Toleration embedded kubernetes pod configuration option,
 	// controls how pods can be scheduled with matching taints
