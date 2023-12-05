@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: create-pm-prometheus
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: create-pm-prometheus
+spec:
+  mode: sidecar
+  observability:
+    metrics:
+      enableMetrics: true
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    exporters:
+      prometheus/prod:
+        endpoint: 0.0.0.0:8884
+
+      prometheus/dev:
+        endpoint: 0.0.0.0:8885
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: []
+          exporters: [prometheus/dev, prometheus/prod]
