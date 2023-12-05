@@ -107,6 +107,9 @@ spec:
     image: "local/opentelemetry-operator-targetallocator:e2e"
     prometheusCR:
       enabled: true
+    observability:
+      metrics:
+        enableMetrics: true
   config: |
     receivers:
       prometheus:
