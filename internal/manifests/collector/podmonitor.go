@@ -65,15 +65,14 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 				},
 			},
+			PodMetricsEndpoints: append(
+				[]monitoringv1.PodMetricsEndpoint{
+					{
+						Port: "monitoring",
+					},
+				}, metricsEndpointsFromConfig(params.Log, params.OtelCol)...),
 		},
 	}
-
-	podMetricsEndpoints := []monitoringv1.PodMetricsEndpoint{
-		{
-			Port: "monitoring",
-		},
-	}
-	pm.Spec.PodMetricsEndpoints = append(podMetricsEndpoints, metricsEndpointsFromConfig(params.Log, params.OtelCol)...)
 
 	return &pm, nil
 }

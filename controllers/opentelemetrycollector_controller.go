@@ -142,6 +142,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
+		builder.Owns(&monitoringv1.PodMonitor{})
 	}
 
 	return builder.Complete(r)

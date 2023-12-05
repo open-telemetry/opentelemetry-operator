@@ -16,5 +16,6 @@ commands:
   - command: make enable-prometheus-feature-flag deploy install-prometheus-operator
   - command: go run hack/check-operator-ready.go
 testDirs:
-  - ./tests/e2e-prometheuscr/
+  - ./tests/e2e-prometheuscr/create-pm-prometheus-exporters
+  - ./tests/e2e-prometheuscr/create-sm-prometheus-exporters
 timeout: 300

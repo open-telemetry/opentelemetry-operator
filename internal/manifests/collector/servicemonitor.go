@@ -53,7 +53,11 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 			},
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
-			Endpoints: []monitoringv1.Endpoint{},
+			Endpoints: append([]monitoringv1.Endpoint{
+				{
+					Port: "monitoring",
+				},
+			}, endpointsFromConfig(params.Log, params.OtelCol)...),
 			NamespaceSelector: monitoringv1.NamespaceSelector{
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
@@ -65,14 +69,6 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 			},
 		},
 	}
-
-	endpoints := []monitoringv1.Endpoint{
-		{
-			Port: "monitoring",
-		},
-	}
-
-	sm.Spec.Endpoints = append(endpoints, endpointsFromConfig(params.Log, params.OtelCol)...)
 
 	return &sm, nil
 }
