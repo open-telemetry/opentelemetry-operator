@@ -15,6 +15,7 @@
 package targetallocator
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -26,15 +27,18 @@ import (
 )
 
 func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget, error) {
-	if params.OtelCol.Spec.TargetAllocator.AllocationStrategy != v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing {
-		params.Log.Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
-		return nil, nil
-	}
-
-	// defaulting webhook should always set this, but if unset then return nil.
+	// defaulting webhook should set this if the strategy is compatible, but if unset then return nil.
 	if params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget == nil {
 		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
 		return nil, nil
+	}
+
+	// defaulter doesn't set PodDisruptionBudget if the strategy isn't valid,
+	// if PodDisruptionBudget != nil and stategy isn't correct, users have set
+	// it wrongly
+	if params.OtelCol.Spec.TargetAllocator.AllocationStrategy != v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing {
+		params.Log.Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
+		return nil, fmt.Errorf("target allocator pdb has been configured but the allocation strategy isn't not compatible")
 	}
 
 	name := naming.TAPodDisruptionBudget(params.OtelCol.Name)

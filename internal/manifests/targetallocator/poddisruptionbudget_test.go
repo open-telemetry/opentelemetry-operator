@@ -122,8 +122,31 @@ func TestPDBWithNotValidStrategy(t *testing.T) {
 			})
 
 			// verify
-			assert.NoError(t, err)
+			assert.Error(t, err)
 			assert.Nil(t, pdb)
 		})
 	}
+}
+
+func TestNoPDB(t *testing.T) {
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				AllocationStrategy: v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted,
+			},
+		},
+	}
+	configuration := config.New()
+	pdb, err := PodDisruptionBudget(manifests.Params{
+		Log:     logger,
+		Config:  configuration,
+		OtelCol: otelcol,
+	})
+
+	// verify
+	assert.NoError(t, err)
+	assert.Nil(t, pdb)
 }
