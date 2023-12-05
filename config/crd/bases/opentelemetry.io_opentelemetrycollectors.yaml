@@ -5048,10 +5048,8 @@ spec:
                         type: object
                     type: object
                   securityContext:
-                    description: TopologySpreadConstraints embedded kubernetes pod
-                      configuration option, controls how pods are spread across your
-                      cluster among failure-domains such as regions, zones, nodes,
-                      and other user-defined top
+                    description: PodSecurityContext configures the pod security context
+                      for the targetallocator.
                     properties:
                       fsGroup:
                         description: "A special supplemental group that applies to
