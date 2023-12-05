@@ -67,6 +67,10 @@ var testAffinityValue = &v1.Affinity{
 	},
 }
 
+var testSecurityContextValue = &v1.SecurityContext{
+	RunAsUser:                pointer.Int64Ptr(1000),
+}
+
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	otelcol := collectorInstance()
@@ -222,6 +226,48 @@ func TestDeploymentAffinity(t *testing.T) {
 	d2, err := Deployment(params2)
 	assert.NoError(t, err)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
+}
+
+func TestDeploymentSecurityContext(t *testing.T) {
+	// Test default
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+	d1 := Deployment(params1)
+	assert.Empty(t, d1.Spec.Template.Spec.SecurityContext)
+
+	// Test SecurityContext
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-securitycontext",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				SecurityContext: testSecurityContextValue,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
+	assert.Equal(t, *testSecurityContextValue, *d2.Spec.Template.Spec.SecurityContext)
 }
 
 func TestDeploymentTolerations(t *testing.T) {
