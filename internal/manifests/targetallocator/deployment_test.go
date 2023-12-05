@@ -67,6 +67,10 @@ var testAffinityValue = &v1.Affinity{
 	},
 }
 
+var testSecurityContextValue = &v1.SecurityContext{
+	RunAsUser: pointer.Int64Ptr(1000),
+}
+
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
 	otelcol := collectorInstance()

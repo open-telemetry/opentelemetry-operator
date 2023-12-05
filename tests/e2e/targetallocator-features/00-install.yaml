@@ -41,6 +41,8 @@ spec:
     enabled: true
     image: "local/opentelemetry-operator-targetallocator:e2e"
     serviceAccount: ta
+    securityContext:
+      runAsUser: 1000
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
