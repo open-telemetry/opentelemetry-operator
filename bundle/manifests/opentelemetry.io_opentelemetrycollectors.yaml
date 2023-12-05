@@ -4966,6 +4966,21 @@ spec:
                     description: NodeSelector to schedule OpenTelemetry TargetAllocator
                       pods.
                     type: object
+                  observability:
+                    description: ObservabilitySpec defines how telemetry data gets
+                      handled.
+                    properties:
+                      metrics:
+                        description: Metrics defines the metrics configuration for
+                          operands.
+                        properties:
+                          enableMetrics:
+                            description: EnableMetrics specifies if ServiceMonitor
+                              should be created for the OpenTelemetry Collector and
+                              Prometheus Exporters. The operator.observability.
+                            type: boolean
+                        type: object
+                    type: object
                   prometheusCR:
                     description: PrometheusCR defines the configuration for the retrieval
                       of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1
