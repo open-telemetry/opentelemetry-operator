@@ -37,7 +37,7 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 	// if PodDisruptionBudget != nil and stategy isn't correct, users have set
 	// it wrongly
 	if params.OtelCol.Spec.TargetAllocator.AllocationStrategy != v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing {
-		params.Log.Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
+		params.Log.V(4).Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
 		return nil, fmt.Errorf("target allocator pdb has been configured but the allocation strategy isn't not compatible")
 	}
 
