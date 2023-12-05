@@ -135,6 +135,35 @@ func TestLoad(t *testing.T) {
 				return assert.ErrorContains(t, err, "error unmarshaling YAML", i...)
 			},
 		},
+		{
+			name: "base case with headers",
+			args: args{
+				file: "./testdata/agentwithheaders.yaml",
+			},
+			want: &Config{
+				RootLogger: logr.Discard(),
+				Endpoint:   "ws://127.0.0.1:4320/v1/opamp",
+				Headers: map[string]string{
+					"authentication": "access-12345-token",
+					"my-header-key":  "my-header-value",
+				},
+				Capabilities: map[Capability]bool{
+					AcceptsRemoteConfig:            true,
+					ReportsEffectiveConfig:         true,
+					ReportsOwnTraces:               true,
+					ReportsOwnMetrics:              true,
+					ReportsOwnLogs:                 true,
+					AcceptsOpAMPConnectionSettings: true,
+					AcceptsOtherConnectionSettings: true,
+					AcceptsRestartCommand:          true,
+					ReportsHealth:                  true,
+					ReportsRemoteConfig:            true,
+					AcceptsPackages:                false,
+					ReportsPackageStatuses:         false,
+				},
+			},
+			wantErr: assert.NoError,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
