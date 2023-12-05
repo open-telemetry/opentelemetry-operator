@@ -17287,7 +17287,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor should be created for the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
