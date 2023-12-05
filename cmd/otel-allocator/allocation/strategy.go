@@ -106,6 +106,7 @@ var _ consistent.Member = Collector{}
 // This struct can be extended with information like annotations and labels in the future.
 type Collector struct {
 	Name       string
+	Node       string
 	NumTargets int
 }
 
@@ -117,8 +118,8 @@ func (c Collector) String() string {
 	return c.Name
 }
 
-func NewCollector(name string) *Collector {
-	return &Collector{Name: name}
+func NewCollector(name, node string) *Collector {
+	return &Collector{Name: name, Node: node}
 }
 
 func init() {
@@ -127,6 +128,10 @@ func init() {
 		panic(err)
 	}
 	err = Register(consistentHashingStrategyName, newConsistentHashingAllocator)
+	if err != nil {
+		panic(err)
+	}
+	err = Register(perNodeStrategyName, newPerNodeAllocator)
 	if err != nil {
 		panic(err)
 	}

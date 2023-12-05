@@ -191,7 +191,7 @@ func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Col
 	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
-		allocator.collectors[i.Name] = NewCollector(i.Name)
+		allocator.collectors[i.Name] = NewCollector(i.Name, i.Node)
 	}
 	if allocateTargets {
 		for _, item := range allocator.targetItems {

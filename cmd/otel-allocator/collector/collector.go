@@ -77,7 +77,7 @@ func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(
 	for i := range pods.Items {
 		pod := pods.Items[i]
 		if pod.GetObjectMeta().GetDeletionTimestamp() == nil {
-			collectorMap[pod.Name] = allocation.NewCollector(pod.Name)
+			collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
 		}
 	}
 
@@ -130,7 +130,7 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 
 			switch event.Type { //nolint:exhaustive
 			case watch.Added:
-				collectorMap[pod.Name] = allocation.NewCollector(pod.Name)
+				collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
 			case watch.Deleted:
 				delete(collectorMap, pod.Name)
 			}
