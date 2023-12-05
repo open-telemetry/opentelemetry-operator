@@ -243,6 +243,63 @@ func TestLoadConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "bearer token, authorization field (podMonitor)",
+			podMonitor: &monitoringv1.PodMonitor{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "bearer",
+					Namespace: "test",
+				},
+				Spec: monitoringv1.PodMonitorSpec{
+					JobLabel: "bearer",
+					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+						{
+							Port: "web",
+							Authorization: &monitoringv1.SafeAuthorization{
+								Credentials: &v1.SecretKeySelector{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: "bearer",
+									},
+									Key: "token",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &promconfig.Config{
+				GlobalConfig: promconfig.GlobalConfig{},
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "podMonitor/test/bearer/0",
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeTimeout:   model.Duration(10 * time.Second),
+						HonorTimestamps: true,
+						HonorLabels:     false,
+						Scheme:          "http",
+						MetricsPath:     "/metrics",
+						ServiceDiscoveryConfigs: []discovery.Config{
+							&kubeDiscovery.SDConfig{
+								Role: "pod",
+								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
+									Names:               []string{"test"},
+									IncludeOwnNamespace: false,
+								},
+								HTTPClientConfig: config.DefaultHTTPClientConfig,
+							},
+						},
+						HTTPClientConfig: config.HTTPClientConfig{
+							FollowRedirects: true,
+							EnableHTTP2:     true,
+							Authorization: &config.Authorization{
+								Type:        "Bearer",
+								Credentials: "bearer-token",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
