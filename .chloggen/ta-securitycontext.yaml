@@ -5,7 +5,7 @@ change_type: enhancement
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: add targetallocator securityContext configuration
+note: add target allocator securityContext configuration
 
 # One or more tracking issues related to the change
 issues: [2397]
