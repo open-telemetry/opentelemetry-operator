@@ -900,6 +900,13 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+              headers:
+                additionalProperties:
+                  type: string
+                description: Headers is an optional map of headers to use when connecting
+                  to the OpAMP Server, typically used to set access tokens or other
+                  authorization headers.
+                type: object
               hostNetwork:
                 description: HostNetwork indicates if the pod should run in the host
                   networking namespace.
