@@ -20,6 +20,22 @@ git commit -sam "Add feature X"
 gh pr create
 ```
 
+#### Make changes to the project manifests
+
+The following command should be run to make sure the project manifests are up-to-date:
+
+```bash
+make generate manifests bundle api-docs reset
+```
+
+The local changes after running the command should be added to the pull request:
+
+The following `make` target is run on CI to verify the project structure:
+
+```bash
+make ensure-generate-is-noop
+```
+
 ### Pre-requisites
 * Install [Go](https://golang.org/doc/install).
 * Install [Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/).
@@ -58,16 +74,16 @@ The environment variable `CERTMANAGER_VERSION` can be used to override the cert-
 CERTMANAGER_VERSION=1.60 make cert-manager
 ```
 
-When deploying the operator into the cluster using `make deploy`, an image in the format `ghcr.io/${USER}/opentelemetry-operator` is generated. If this format isn't suitable, it can be overridden by:
+When deploying the operator into the cluster using `make deploy`, an image in the format `ghcr.io/${DOCKER_USER}/opentelemetry-operator` is generated. If this format isn't suitable, it can be overridden by:
 
 * `IMG_PREFIX`, to override the registry, namespace and image name
-* `USER`, to override the namespace
+* `DOCKER_USER`, to override the namespace
 * `IMG_REPO`, to override the repository (`opentelemetry-operator`)
 * `VERSION`, to override only the version part
 * `IMG`, to override the entire image specification
 
 ```bash
-IMG=docker.io/${USER}/opentelemetry-operator:dev-$(git rev-parse --short HEAD)-$(date +%s) make generate bundle container container-push deploy
+IMG=docker.io/${DOKCER_USER}/opentelemetry-operator:dev-$(git rev-parse --short HEAD)-$(date +%s) make generate container container-push deploy
 ```
 
 Your operator will be available in the `opentelemetry-operator-system` namespace.
@@ -188,7 +204,7 @@ BUNDLE_IMG=docker.io/${USER}/opentelemetry-operator-bundle:latest IMG=docker.io/
 ### Install the operator
 
 ```bash
-operator-sdk run bundle docker.io/${USER}/opentelemetry-operator-bundle:latest
+operator-sdk run bundle docker.io/${DOCKER_USER}/opentelemetry-operator-bundle:latest
 ```
 
 ### Uninstall the operator

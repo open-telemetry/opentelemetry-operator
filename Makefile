@@ -18,7 +18,8 @@ OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.build
 ARCH ?= $(shell go env GOARCH)
 
 # Image URL to use all building/pushing image targets
-IMG_PREFIX ?= ghcr.io/${USER}/opentelemetry-operator
+DOCKER_USER ?= open-telemetry
+IMG_PREFIX ?= ghcr.io/${DOCKER_USER}/opentelemetry-operator
 IMG_REPO ?= opentelemetry-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
@@ -82,7 +83,7 @@ SED ?= $(shell which gsed 2>/dev/null || which sed)
 
 .PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
-ensure-generate-is-noop: USER=open-telemetry
+ensure-generate-is-noop: DOCKER_USER=open-telemetry
 ensure-generate-is-noop: set-image-controller generate bundle
 	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
 	@git restore config/manager/kustomization.yaml
@@ -178,7 +179,7 @@ lint: golangci-lint
 
 # Generate code
 .PHONY: generate
-generate: controller-gen api-docs
+generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # end-to-tests
@@ -441,6 +442,15 @@ bundle: kustomize operator-sdk manifests set-image-controller
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
+
+.PHONY: reset
+reset: kustomize operator-sdk manifests
+	$(MAKE) VERSION=${OPERATOR_VERSION} set-image-controller
+	$(OPERATOR_SDK)  generate kustomize manifests -q
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version ${OPERATOR_VERSION} $(BUNDLE_METADATA_OPTS)
+	$(OPERATOR_SDK) bundle validate ./bundle
+	./hack/ignore-createdAt-bundle.sh
+	git checkout config/manager/kustomization.yaml
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build
