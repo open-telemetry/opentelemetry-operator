@@ -60,6 +60,8 @@ spec:
         - name: ta-container
           args:
             - --enable-prometheus-cr-watcher
+          securityContext:
+            runAsUser: 1000
           env:
           - name: TEST_ENV
             value: "test"
