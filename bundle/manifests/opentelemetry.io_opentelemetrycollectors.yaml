@@ -5223,8 +5223,10 @@ spec:
                       type: object
                     type: array
                   topologySpreadConstraints:
-                    description: PodSecurityContext configures the pod security context
-                      for the targetallocator.
+                    description: TopologySpreadConstraints embedded kubernetes pod
+                      configuration option, controls how pods are spread across your
+                      cluster among failure-domains such as regions, zones, nodes,
+                      and other user-defined top
                     items:
                       description: TopologySpreadConstraint specifies how to spread
                         matching pods among the given topology.
