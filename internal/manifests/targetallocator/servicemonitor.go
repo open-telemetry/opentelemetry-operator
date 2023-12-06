@@ -20,13 +20,14 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // ServiceMonitor returns the service monitor for the given instance.
 func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, error) {
-	if !params.OtelCol.Spec.TargetAllocator.Observability.Metrics.EnableMetrics {
+	if !params.OtelCol.Spec.TargetAllocator.Observability.Metrics.EnableMetrics || params.OtelCol.Spec.Mode != v1alpha1.ModeStatefulSet {
 		params.Log.V(2).Info("Metrics disabled for this OTEL Collector",
 			"params.OtelCol.name", params.OtelCol.Name,
 			"params.OtelCol.namespace", params.OtelCol.Namespace,
