@@ -47,7 +47,12 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 			},
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
-			Endpoints: []monitoringv1.Endpoint{},
+			Endpoints: []monitoringv1.Endpoint{
+				{
+					Port: "targetallocation",
+				},
+			},
+
 			NamespaceSelector: monitoringv1.NamespaceSelector{
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
@@ -58,12 +63,6 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 					"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 				},
 			},
-		},
-	}
-
-	sm.Spec.Endpoints = []monitoringv1.Endpoint{
-		{
-			Port: "targetallocation",
 		},
 	}
 
