@@ -81,9 +81,10 @@ spec:
       - description: Metrics defines the metrics configuration for operands.
         displayName: Metrics Config
         path: observability.metrics
-      - description: EnableMetrics specifies if ServiceMonitor should be created for
-          the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.prometheus
-          feature gate must be enabled to use this feature.
+      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
+          mode) should be created for the OpenTelemetry Collector and Prometheus Exporters.
+          The operator.observability.prometheus feature gate must be enabled to use
+          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       - description: ObservabilitySpec defines how telemetry data gets handled.

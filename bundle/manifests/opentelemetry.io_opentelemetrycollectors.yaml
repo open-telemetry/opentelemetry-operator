@@ -3707,9 +3707,9 @@ spec:
                     description: Metrics defines the metrics configuration for operands.
                     properties:
                       enableMetrics:
-                        description: EnableMetrics specifies if ServiceMonitor should
-                          be created for the OpenTelemetry Collector and Prometheus
-                          Exporters. The operator.observability.
+                        description: EnableMetrics specifies if ServiceMonitor or
+                          PodMonitor(for sidecar mode) should be created for the OpenTelemetry
+                          Collector and Prometheus Exporters. The operator.observability.
                         type: boolean
                     type: object
                 type: object

@@ -24,6 +24,10 @@ type OpAMPBridgeSpec struct {
 	// OpAMP backend Server endpoint
 	// +required
 	Endpoint string `json:"endpoint"`
+	// Headers is an optional map of headers to use when connecting to the OpAMP Server,
+	// typically used to set access tokens or other authorization headers.
+	// +optional
+	Headers map[string]string `json:"headers,omitempty"`
 	// Capabilities supported by the OpAMP Bridge
 	// +required
 	Capabilities map[OpAMPBridgeCapability]bool `json:"capabilities"`
