@@ -4973,8 +4973,9 @@ spec:
                         properties:
                           enableMetrics:
                             description: EnableMetrics specifies if ServiceMonitor
-                              should be created for the OpenTelemetry Collector and
-                              Prometheus Exporters. The operator.observability.
+                              or PodMonitor(for sidecar mode) should be created for
+                              the OpenTelemetry Collector and Prometheus Exporters.
+                              The operator.observability.
                             type: boolean
                         type: object
                     type: object
