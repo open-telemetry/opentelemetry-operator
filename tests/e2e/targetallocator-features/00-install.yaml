@@ -12,6 +12,9 @@ rules:
 - apiGroups: [""]
   resources: [ "pods" ]
   verbs: [ "get", "list", "watch"]
+- apiGroups: ["monitoring.coreos.com"]
+  resources: ["servicemonitors"]
+  verbs: ["get", "list", "watch"]
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
