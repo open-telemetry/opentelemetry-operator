@@ -56,12 +56,12 @@ spec:
                     operator: In
                     values:
                       - "true"
+      securityContext:
+        runAsUser: 1000
       containers:
         - name: ta-container
           args:
             - --enable-prometheus-cr-watcher
-          securityContext:
-            runAsUser: 1000
           env:
           - name: TEST_ENV
             value: "test"
