@@ -27,6 +27,18 @@ Changes by Version
 - `operator`: check if service account specified in otelcol before creating service account resource for collectors (#2372)
 - `target allocator`: Save targets discovered before collector instances come up (#2350)
 
+### Components
+
+* [OpenTelemetry Collector - v0.90.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.90.1)
+* [OpenTelemetry Contrib - v0.90.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.90.1)
+* [Java auto-instrumentation - 1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
+* [.NET auto-instrumentation - 1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.2.0)
+* [Node.JS - 0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.44.0)
+* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Go - v0.8.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.8.0-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+* [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
+
 ## 0.89.0
 
 ### 🛑 Breaking changes 🛑
