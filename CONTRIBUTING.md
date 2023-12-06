@@ -53,7 +53,7 @@ Refer to the [Operator SDK documentation](https://sdk.operatorframework.io/docs/
 
 Build the manifests, install the CRD and run the operator as a local process:
 ```bash
-make bundle install run
+make install run
 ```
 
 ### Deployment with webhooks
