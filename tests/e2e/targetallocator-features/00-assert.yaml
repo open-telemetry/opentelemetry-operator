@@ -56,6 +56,8 @@ spec:
                     operator: In
                     values:
                       - "true"
+      securityContext:
+        runAsUser: 1000
       containers:
         - name: ta-container
           args:
