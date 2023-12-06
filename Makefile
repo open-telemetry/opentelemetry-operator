@@ -451,6 +451,7 @@ reset: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
 	git checkout config/manager/kustomization.yaml
+	OPERATOR_IMG=local/opentelemetry-operator:e2e TARGETALLOCATOR_IMG=local/opentelemetry-operator-targetallocator:e2e OPERATOROPAMPBRIDGE_IMG=local/opentelemetry-operator-opamp-bridge:e2e DEFAULT_OPERATOR_IMG=$(IMG) DEFAULT_TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) DEFAULT_OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build

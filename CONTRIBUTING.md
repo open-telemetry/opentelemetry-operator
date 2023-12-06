@@ -124,6 +124,8 @@ Once they are installed, the tests can be executed with `make prepare-e2e`, whic
 
 The tests are located under `tests/e2e` and are written to be used with `kuttl`. Refer to their documentation to understand how tests are written.
 
+To evert the changes made by the `make prepare-e2e` run `make reset`.
+
 ### OpenShift End to End tests
 To run the end-to-end tests written for OpenShift, you'll need a OpenShift cluster. 
 
