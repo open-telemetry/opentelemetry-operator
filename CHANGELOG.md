@@ -2,6 +2,31 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.90.0
+
+### 💡 Enhancements 💡
+
+- `autoinstrumentation`: Bump OpenTelemetry .NET Automatic Instrumentation to 1.2.0 (#2382)
+- `operator`: add liveness probe to target allocator deployment generation (#2258)
+- `operator`: added reconciliation errors for CRD events (#1972)
+- `operator`: removes the old way of running autodetection for openshift routes being available (#2108)
+- `bridge`: adds request headers to the opamp bridge config (#2410)
+- `bridge`: adds Headers to opamp bridge spec and configmap generation (#2410)
+- `operator`: Create PodMonitor when deploying collector in sidecar mode and Prometheus exporters are used. (#2306)
+- `operator`: add readiness probe to target allocator deployment generation (#2258)
+- `target allocator`: add readyz endpoint to TA (#2258)
+- `target allocator`: add target allocator securityContext configuration (#2397)
+- `target allocator`: Use only target address for allocation in consistent-hashing strategy (#2280)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: fixes ability to do a foreground cascading delete (#2364)
+- `operator`: fix error logging in collector container creation (#2420)
+- `operator`: lifecycle spec removed from cloned initContainer (#2366)
+- `operator`: add missing pod in the rbac (#1679)
+- `operator`: check if service account specified in otelcol before creating service account resource for collectors (#2372)
+- `target allocator`: Save targets discovered before collector instances come up (#2350)
+
 ## 0.89.0
 
 ### 🛑 Breaking changes 🛑
