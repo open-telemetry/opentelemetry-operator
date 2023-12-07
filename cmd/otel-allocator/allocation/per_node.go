@@ -29,9 +29,15 @@ var _ Allocator = &perNodeAllocator{}
 const (
 	perNodeStrategyName = "per-node"
 
-	nodeNameLabel model.LabelName = "__meta_kubernetes_pod_node_name"
+	podNodeNameLabel model.LabelName = "__meta_kubernetes_pod_node_name"
 )
 
+// perNodeAllocator makes decisions to distribute work among
+// a number of OpenTelemetry collectors based on the node on which
+// the collector is running. This allocator should be used only when
+// collectors are running as daemon set (agent) on each node.
+// Users need to call SetTargets when they have new targets in their
+// clusters and call SetCollectors when the collectors have changed.
 type perNodeAllocator struct {
 	// m protects collectors and targetItems for concurrent use.
 	m sync.RWMutex
@@ -48,6 +54,8 @@ type perNodeAllocator struct {
 	filter Filter
 }
 
+// SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
+// This method is called when Collectors are added or removed.
 func (allocator *perNodeAllocator) SetCollectors(collectors map[string]*Collector) {
 	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetCollectors", perNodeStrategyName))
 	defer timer.ObserveDuration()
@@ -68,6 +76,8 @@ func (allocator *perNodeAllocator) SetCollectors(collectors map[string]*Collecto
 	}
 }
 
+// handleCollectors receives the new and removed collectors and reconciles the current state.
+// Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map.
 func (allocator *perNodeAllocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
@@ -82,6 +92,9 @@ func (allocator *perNodeAllocator) handleCollectors(diff diff.Changes[*Collector
 	}
 }
 
+// SetTargets accepts a list of targets that will be used to make
+// load balancing decisions. This method should be called when there are
+// new targets discovered or existing targets are shutdown.
 func (allocator *perNodeAllocator) SetTargets(targets map[string]*target.Item) {
 	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", perNodeStrategyName))
 	defer timer.ObserveDuration()
@@ -138,12 +151,19 @@ func (allocator *perNodeAllocator) SetTargets(targets map[string]*target.Item) {
 		allocator.handleTargets(targetsDiff)
 	}
 }
+
+// handleTargets receives the new and removed targets and reconciles the current state.
+// Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector.
+// Any net-new additions are assigned to the collector on the same node as the target.
 func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]) {
 	// Check for removals
 	for k, item := range allocator.targetItems {
 		// if the current item is in the removals list
 		if _, ok := diff.Removals()[k]; ok {
-			c := allocator.collectors[item.CollectorName]
+			c, ok := allocator.collectors[item.CollectorName]
+			if !ok {
+				continue
+			}
 			c.NumTargets--
 			delete(allocator.targetItems, k)
 			delete(allocator.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
@@ -163,9 +183,15 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 	}
 }
 
+// addTargetToTargetItems assigns a target to the  collector and adds it to the allocator's targetItems
+// This method is called from within SetTargets and SetCollectors, which acquire the needed lock.
+// This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap.
+// INVARIANT: allocator.collectors must have at least 1 collector set.
+// NOTE: by not creating a new target item, there is the potential for a race condition where we modify this target
+// item while it's being encoded by the server JSON handler.
+// Also, any targets that cannot be assigned to a collector due to no matching node name will be dropped.
 func (allocator *perNodeAllocator) addTargetToTargetItems(tg *target.Item) {
 	chosenCollector := allocator.findCollector(tg.Labels)
-	// TODO: How to handle this edge case? Can we have items without a collector?
 	if chosenCollector == nil {
 		allocator.log.V(2).Info("Couldn't find a collector for the target item", "item", tg, "collectors", allocator.collectors)
 		return
@@ -177,11 +203,15 @@ func (allocator *perNodeAllocator) addTargetToTargetItems(tg *target.Item) {
 	TargetsPerCollector.WithLabelValues(chosenCollector.Name, leastWeightedStrategyName).Set(float64(chosenCollector.NumTargets))
 }
 
+// findCollector finds the collector that matches the node of the target, on the basis of the
+// pod node label.
+// This method is called from within SetTargets and SetCollectors, whose caller
+// acquires the needed lock. This method assumes there are is at least 1 collector set.
 func (allocator *perNodeAllocator) findCollector(labels model.LabelSet) *Collector {
 	var col *Collector
 	for _, v := range allocator.collectors {
-		if nodeNameLabelValue, ok := labels[nodeNameLabel]; ok {
-			if v.Node == string(nodeNameLabelValue) {
+		if podNodeNameLabelValue, ok := labels[podNodeNameLabel]; ok {
+			if v.Node == string(podNodeNameLabelValue) {
 				col = v
 				break
 			}
@@ -191,6 +221,9 @@ func (allocator *perNodeAllocator) findCollector(labels model.LabelSet) *Collect
 	return col
 }
 
+// addCollectorTargetItemMapping keeps track of which collector has which jobs and targets
+// this allows the allocator to respond without any extra allocations to http calls. The caller of this method
+// has to acquire a lock.
 func (allocator *perNodeAllocator) addCollectorTargetItemMapping(tg *target.Item) {
 	if allocator.targetItemsPerJobPerCollector[tg.CollectorName] == nil {
 		allocator.targetItemsPerJobPerCollector[tg.CollectorName] = make(map[string]map[string]bool)
@@ -201,6 +234,7 @@ func (allocator *perNodeAllocator) addCollectorTargetItemMapping(tg *target.Item
 	allocator.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName][tg.Hash()] = true
 }
 
+// TargetItems returns a shallow copy of the targetItems map.
 func (allocator *perNodeAllocator) TargetItems() map[string]*target.Item {
 	allocator.m.RLock()
 	defer allocator.m.RUnlock()
@@ -211,6 +245,7 @@ func (allocator *perNodeAllocator) TargetItems() map[string]*target.Item {
 	return targetItemsCopy
 }
 
+// Collectors returns a shallow copy of the collectors map.
 func (allocator *perNodeAllocator) Collectors() map[string]*Collector {
 	allocator.m.RLock()
 	defer allocator.m.RUnlock()
@@ -239,6 +274,7 @@ func (allocator *perNodeAllocator) GetTargetsForCollectorAndJob(collector string
 	return targetItemsCopy
 }
 
+// SetFilter sets the filtering hook to use.
 func (allocator *perNodeAllocator) SetFilter(filter Filter) {
 	allocator.filter = filter
 }
