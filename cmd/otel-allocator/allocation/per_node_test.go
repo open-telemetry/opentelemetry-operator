@@ -14,4 +14,69 @@
 
 package allocation
 
-// TODO: Add tests
+import (
+	"testing"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
+	"github.com/prometheus/common/model"
+	"github.com/stretchr/testify/assert"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+var loggerPerNode = logf.Log.WithName("unit-tests")
+
+// Tests that two targets with the same target url and job name but different label set are both added.
+func TestAllocationPerNode(t *testing.T) {
+	// prepare allocator with initial targets and collectors
+	s, _ := New("per-node", loggerPerNode)
+
+	cols := MakeNCollectors(3, 0)
+	s.SetCollectors(cols)
+	firstLabels := model.LabelSet{
+		"test":           "test1",
+		podNodeNameLabel: "node-0",
+	}
+	secondLabels := model.LabelSet{
+		"test":           "test2",
+		podNodeNameLabel: "node-1",
+	}
+	// no label, should be skipped
+	thirdLabels := model.LabelSet{
+		"test": "test3",
+	}
+	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
+	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
+	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "")
+
+	targetList := map[string]*target.Item{
+		firstTarget.Hash():  firstTarget,
+		secondTarget.Hash(): secondTarget,
+		thirdTarget.Hash():  thirdTarget,
+	}
+
+	// test that targets and collectors are added properly
+	s.SetTargets(targetList)
+
+	// verify length
+	actualItems := s.TargetItems()
+
+	// one target should be skipped
+	expectedTargetLen := len(targetList) - 1
+	assert.Len(t, actualItems, expectedTargetLen)
+
+	// verify allocation to nodes
+	for targetHash, item := range targetList {
+		actualItem, found := actualItems[targetHash]
+		// if third target, should be skipped
+		if targetHash != thirdTarget.Hash() {
+			assert.True(t, found, "target with hash %s not found", item.Hash())
+		} else {
+			assert.False(t, found, "target with hash %s should not be found", item.Hash())
+			return
+		}
+
+		itemsForCollector := s.GetTargetsForCollectorAndJob(actualItem.CollectorName, actualItem.JobName)
+		assert.Len(t, itemsForCollector, 1)
+		assert.Equal(t, actualItem, itemsForCollector[0])
+	}
+}
