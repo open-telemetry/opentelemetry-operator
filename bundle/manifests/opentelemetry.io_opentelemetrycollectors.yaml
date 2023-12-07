@@ -4832,11 +4832,12 @@ spec:
                   allocationStrategy:
                     description: AllocationStrategy determines which strategy the
                       target allocator should use for allocation. The current options
-                      are least-weighted and consistent-hashing. The default option
-                      is least-weighted
+                      are least-weighted, consistent-hashing and per-node. The default
+                      is least-weighted.
                     enum:
                     - least-weighted
                     - consistent-hashing
+                    - per-node
                     type: string
                   enabled:
                     description: Enabled indicates whether to use a target allocation
