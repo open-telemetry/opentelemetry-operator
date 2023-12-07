@@ -43,7 +43,6 @@ type Config struct {
 	KubeConfigFilePath     string             `yaml:"kube_config_file_path,omitempty"`
 	ClusterConfig          *rest.Config       `yaml:"-"`
 	RootLogger             logr.Logger        `yaml:"-"`
-	ReloadConfig           bool               `yaml:"-"`
 	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
 	PromConfig             *promconfig.Config `yaml:"config"`
 	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
@@ -111,11 +110,6 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	}
 
-	target.ReloadConfig, err = getConfigReloadEnabled(flagSet)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -139,13 +133,13 @@ func CreateDefaultConfig() Config {
 	}
 }
 
-func Load() (*Config, string, error) {
+func Load() (*Config, error) {
 	var err error
 
 	flagSet := getFlagSet(pflag.ExitOnError)
 	err = flagSet.Parse(os.Args)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	config := CreateDefaultConfig()
@@ -153,19 +147,19 @@ func Load() (*Config, string, error) {
 	// load the config from the config file
 	configFilePath, err := getConfigFilePath(flagSet)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	err = LoadFromFile(configFilePath, &config)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	err = LoadFromCLI(&config, flagSet)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return &config, configFilePath, nil
+	return &config, nil
 }
 
 // ValidateConfig validates the cli and file configs together.
