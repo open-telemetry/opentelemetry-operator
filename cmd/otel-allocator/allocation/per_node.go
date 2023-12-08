@@ -27,11 +27,7 @@ import (
 
 var _ Allocator = &perNodeAllocator{}
 
-const (
-	perNodeStrategyName = "per-node"
-
-	podNodeNameLabel model.LabelName = "__meta_kubernetes_pod_node_name"
-)
+const perNodeStrategyName = "per-node"
 
 // perNodeAllocator makes decisions to distribute work among
 // a number of OpenTelemetry collectors based on the node on which
@@ -53,6 +49,15 @@ type perNodeAllocator struct {
 	log logr.Logger
 
 	filter Filter
+}
+
+// nodeLabels are labels that are used to identify the node on which the given
+// target is residing. To learn more about these labels, please refer to:
+// https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config
+var nodeLabels = []model.LabelName{
+	"__meta_kubernetes_pod_node_name",
+	"__meta_kubernetes_node_name",
+	"__meta_kubernetes_endpoint_node_name",
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
@@ -211,10 +216,13 @@ func (allocator *perNodeAllocator) addTargetToTargetItems(tg *target.Item) {
 func (allocator *perNodeAllocator) findCollector(labels model.LabelSet) *Collector {
 	var col *Collector
 	for _, v := range allocator.collectors {
-		if podNodeNameLabelValue, ok := labels[podNodeNameLabel]; ok {
-			if v.Node == string(podNodeNameLabelValue) {
-				col = v
-				break
+		// Try to match against a node label.
+		for _, l := range nodeLabels {
+			if nodeNameLabelValue, ok := labels[l]; ok {
+				if v.Node == string(nodeNameLabelValue) {
+					col = v
+					break
+				}
 			}
 		}
 	}

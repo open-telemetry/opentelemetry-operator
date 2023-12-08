@@ -34,12 +34,12 @@ func TestAllocationPerNode(t *testing.T) {
 	cols := MakeNCollectors(3, 0)
 	s.SetCollectors(cols)
 	firstLabels := model.LabelSet{
-		"test":           "test1",
-		podNodeNameLabel: "node-0",
+		"test":                            "test1",
+		"__meta_kubernetes_pod_node_name": "node-0",
 	}
 	secondLabels := model.LabelSet{
-		"test":           "test2",
-		podNodeNameLabel: "node-1",
+		"test":                        "test2",
+		"__meta_kubernetes_node_name": "node-1",
 	}
 	// no label, should be skipped
 	thirdLabels := model.LabelSet{
