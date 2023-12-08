@@ -17,9 +17,10 @@ package allocation
 import (
 	"sync"
 
-	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/diff"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
+
+	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 )
