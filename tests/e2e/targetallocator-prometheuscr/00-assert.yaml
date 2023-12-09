@@ -46,6 +46,17 @@ data:
           receivers:
           - prometheus
 ---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus-cr-targetallocator
+spec:
+  endpoints:
+  - port: targetallocation
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: opentelemetry-operator
+---
 # Print TA pod logs if test fails
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
