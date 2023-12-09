@@ -65,12 +65,6 @@ func TestFlagGetters(t *testing.T) {
 			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getPrometheusCREnabled(fs) },
 		},
 		{
-			name:          "GetConfigReloadEnabled",
-			flagArgs:      []string{"--" + reloadConfigFlagName, "true"},
-			expectedValue: true,
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getConfigReloadEnabled(fs) },
-		},
-		{
 			name:        "InvalidFlag",
 			flagArgs:    []string{"--invalid-flag", "value"},
 			expectedErr: true,
