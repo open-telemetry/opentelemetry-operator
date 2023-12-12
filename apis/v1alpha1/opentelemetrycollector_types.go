@@ -493,7 +493,7 @@ type PodDisruptionBudgetSpec struct {
 
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
-	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the OpenTelemetry Collector and Prometheus Exporters.
+	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
 	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional

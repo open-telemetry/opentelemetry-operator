@@ -82,7 +82,7 @@ spec:
         displayName: Metrics Config
         path: observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
-          mode) should be created for the OpenTelemetry Collector and Prometheus Exporters.
+          mode) should be created for the service managed by the OpenTelemetry Operator.
           The operator.observability.prometheus feature gate must be enabled to use
           this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
@@ -94,7 +94,7 @@ spec:
         displayName: Metrics Config
         path: targetAllocator.observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
-          mode) should be created for the OpenTelemetry Collector and Prometheus Exporters.
+          mode) should be created for the service managed by the OpenTelemetry Operator.
           The operator.observability.prometheus feature gate must be enabled to use
           this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
