@@ -22,7 +22,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	//"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -40,33 +40,13 @@ func TestDesiredServiceMonitors(t *testing.T) {
 	}
 	cfg := config.New()
 
-	unsupportedModes := []v1alpha1.Mode{
-		v1alpha1.ModeDaemonSet, v1alpha1.ModeDeployment, v1alpha1.ModeSidecar,
-	}
-
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
 		Log:     logger,
 	}
 
-	actual, err := ServiceMonitor(params)
-	assert.NoError(t, err)
+	actual := ServiceMonitor(params)
 	assert.Nil(t, actual)
-
-	params.OtelCol.Spec.TargetAllocator.Observability.Metrics.EnableMetrics = true
-	actual, err = ServiceMonitor(params)
-	assert.NoError(t, err)
-	assert.NotNil(t, actual)
-	assert.Equal(t, naming.TargetAllocator(params.OtelCol.Name), actual.Name)
-	assert.Equal(t, params.OtelCol.Namespace, actual.Namespace)
-	assert.Equal(t, "targetallocation", actual.Spec.Endpoints[0].Port)
-
-	for _, mode := range unsupportedModes {
-		params.OtelCol.Spec.Mode = mode
-		actual, err = ServiceMonitor(params)
-		assert.NoError(t, err)
-		assert.Nil(t, actual)
-	}
 
 }

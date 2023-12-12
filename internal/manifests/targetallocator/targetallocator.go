@@ -35,7 +35,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	}
 
 	if params.OtelCol.Spec.TargetAllocator.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
-		resourceFactories = append(resourceFactories, manifests.Factory(ServiceMonitor))
+		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 
 	for _, factory := range resourceFactories {
