@@ -29,11 +29,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 )
 
 var (
@@ -1865,7 +1866,10 @@ service:
 			if len(tt.featuregates) > 0 {
 				fg := strings.Join(tt.featuregates, ",")
 				flagset := featuregate.Flags(colfeaturegate.GlobalRegistry())
-				flagset.Set(featuregate.FeatureGatesFlag, fg)
+				if err := flagset.Set(featuregate.FeatureGatesFlag, fg); err != nil {
+					t.Errorf("featuregate setting error = %v", err)
+					return
+				}
 			}
 			got, err := BuildCollector(params)
 			if (err != nil) != tt.wantErr {
