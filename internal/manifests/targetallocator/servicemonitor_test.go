@@ -15,6 +15,7 @@
 package targetallocator
 
 import (
+	"fmt"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,6 +47,9 @@ func TestDesiredServiceMonitors(t *testing.T) {
 	}
 
 	actual := ServiceMonitor(params)
-	assert.Nil(t, actual)
+	assert.NotNil(t, actual)
+	assert.Equal(t, fmt.Sprintf("%s-targetallocator", params.OtelCol.Name), actual.Name)
+	assert.Equal(t, params.OtelCol.Namespace, actual.Namespace)
+	assert.Equal(t, "targetallocation", actual.Spec.Endpoints[0].Port)
 
 }
