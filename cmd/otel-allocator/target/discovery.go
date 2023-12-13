@@ -85,7 +85,7 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *confi
 		}
 	}
 
-	hash, err := getScrapeConfigHash(jobToScrapeConfig)
+	hash, err := GetScrapeConfigHash(jobToScrapeConfig)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (m *Discoverer) Close() {
 
 // Calculate a hash for a scrape config map.
 // This is done by marshaling to YAML because it's the most straightforward and doesn't run into problems with unexported fields.
-func getScrapeConfigHash(jobToScrapeConfig map[string]*config.ScrapeConfig) (hash.Hash64, error) {
+func GetScrapeConfigHash(jobToScrapeConfig map[string]*config.ScrapeConfig) (hash.Hash64, error) {
 	var err error
 	hash := fnv.New64()
 	yamlEncoder := yaml.NewEncoder(hash)
