@@ -1,9 +1,6 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 artifactsDir: ./tests/_build/artifacts/
-commands:
-  - command: make undeploy
-  - command: make enable-prometheus-feature-flag deploy
 testDirs:
   - ./tests/e2e/
 timeout: 150
