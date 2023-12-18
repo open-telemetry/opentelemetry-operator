@@ -43,6 +43,7 @@ func TestLabelsCommonSet(t *testing.T) {
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-targetallocator", labels["app.kubernetes.io/component"])
+	assert.Equal(t, "latest", labels["app.kubernetes.io/version"])
 	assert.Equal(t, name, labels["app.kubernetes.io/name"])
 }
 
@@ -61,7 +62,7 @@ func TestLabelsPropagateDown(t *testing.T) {
 	labels := Labels(otelcol, name)
 
 	// verify
-	assert.Len(t, labels, 6)
+	assert.Len(t, labels, 7)
 	assert.Equal(t, "mycomponent", labels["myapp"])
 	assert.Equal(t, "test", labels["app.kubernetes.io/name"])
 }

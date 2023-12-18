@@ -187,6 +187,9 @@ func collectorInstance() v1alpha1.OpenTelemetryCollector {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Image:  "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
 			Config: string(configYAML),
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-targetallocator:0.47.0",
+			},
 		},
 	}
 }

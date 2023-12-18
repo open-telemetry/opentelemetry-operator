@@ -16,8 +16,6 @@ package targetallocator
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -42,13 +40,7 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 	}
 
 	name := naming.TAPodDisruptionBudget(params.OtelCol.Name)
-	version := strings.Split(params.OtelCol.Spec.Image, ":")
 	labels := Labels(params.OtelCol, name)
-	if len(version) > 1 {
-		labels["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
-		labels["app.kubernetes.io/version"] = "latest"
-	}
 
 	annotations := Annotations(params.OtelCol, nil)
 
