@@ -15,8 +15,6 @@
 package targetallocator
 
 import (
-	"fmt"
-
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -26,16 +24,14 @@ import (
 
 // ServiceMonitor returns the service monitor for the given instance.
 func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
+	name := naming.TargetAllocator(params.OtelCol.Name)
+	labels := Labels(params.OtelCol, name)
+
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: params.OtelCol.Namespace,
-			Name:      naming.TargetAllocator(params.OtelCol.Name),
-			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.TargetAllocator(params.OtelCol.Name),
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-				"app.kubernetes.io/component":  "opentelemetry-targetallocator",
-			},
+			Name:      name,
+			Labels:    labels,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: []monitoringv1.Endpoint{
@@ -48,11 +44,7 @@ func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-					"app.kubernetes.io/component":  "opentelemetry-targetallocator",
-				},
+				MatchLabels: labels,
 			},
 		},
 	}
