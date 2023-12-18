@@ -12,11 +12,19 @@ rules:
 - apiGroups: [""]
   resources: [ "pods" ]
   verbs: [ "get", "list", "watch"]
+- apiGroups: ["monitoring.coreos.com"]
+  resources: ["servicemonitors"]
+  verbs: ["get", "list", "watch"]
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
   - command: kubectl -n $NAMESPACE create rolebinding default-view-$NAMESPACE --role=pod-view --serviceaccount=$NAMESPACE:ta
+  # Annotate the namespace to allow the application to run using an specific group and user in OpenShift
+  # https://docs.openshift.com/dedicated/authentication/managing-security-context-constraints.html
+  # This annotation has no effect in Kubernetes
+  - command: kubectl annotate namespace ${NAMESPACE} openshift.io/sa.scc.uid-range=1000/1000 --overwrite
+  - command: kubectl annotate namespace ${NAMESPACE} openshift.io/sa.scc.supplemental-groups=3000/1000 --overwrite
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
@@ -41,6 +49,13 @@ spec:
     enabled: true
     image: "local/opentelemetry-operator-targetallocator:e2e"
     serviceAccount: ta
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 3000
+      fsGroup: 3000
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:

@@ -136,6 +136,11 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			wantSvcMonitor := desired.(*monitoringv1.ServiceMonitor)
 			mutateServiceMonitor(svcMonitor, wantSvcMonitor)
 
+		case *monitoringv1.PodMonitor:
+			podMonitor := existing.(*monitoringv1.PodMonitor)
+			wantPodMonitor := desired.(*monitoringv1.PodMonitor)
+			mutatePodMonitor(podMonitor, wantPodMonitor)
+
 		case *networkingv1.Ingress:
 			ing := existing.(*networkingv1.Ingress)
 			wantIng := desired.(*networkingv1.Ingress)
@@ -240,6 +245,12 @@ func mutateRoute(existing, desired *routev1.Route) {
 }
 
 func mutateServiceMonitor(existing, desired *monitoringv1.ServiceMonitor) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
+}
+
+func mutatePodMonitor(existing, desired *monitoringv1.PodMonitor) {
 	existing.Annotations = desired.Annotations
 	existing.Labels = desired.Labels
 	existing.Spec = desired.Spec
