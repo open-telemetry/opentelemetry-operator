@@ -31,7 +31,9 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(Deployment),
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.FactoryWithoutError(Service),
+		manifests.Factory(PodDisruptionBudget),
 	}
+
 	for _, factory := range resourceFactories {
 		res, err := factory(params)
 		if err != nil {
