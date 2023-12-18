@@ -340,6 +340,11 @@ type OpenTelemetryTargetAllocator struct {
 	// consumed in the config file for the TargetAllocator.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
+	// PodDisruptionBudget specifies the pod disruption budget configuration to use
+	// for the target allocator workload.
+	//
+	// +optional
+	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {

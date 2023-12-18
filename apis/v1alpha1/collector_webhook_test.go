@@ -242,7 +242,7 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 			},
 		},
 		{
-			name: "Defined PDB",
+			name: "Defined PDB for collector",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
@@ -270,6 +270,133 @@ func TestOTELColDefaultingWebhook(t *testing.T) {
 							Type:   intstr.String,
 							StrVal: "10%",
 						},
+					},
+				},
+			},
+		},
+		{
+			name: "Defined PDB for target allocator",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					TargetAllocator: OpenTelemetryTargetAllocator{
+						Enabled:            true,
+						AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MinAvailable: &intstr.IntOrString{
+								Type:   intstr.String,
+								StrVal: "10%",
+							},
+						},
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:            ModeDeployment,
+					Replicas:        &one,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					ManagementState: ManagementStateManaged,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
+					TargetAllocator: OpenTelemetryTargetAllocator{
+						Enabled:            true,
+						Replicas:           &one,
+						AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MinAvailable: &intstr.IntOrString{
+								Type:   intstr.String,
+								StrVal: "10%",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Undefined PDB for target allocator and consistent-hashing strategy",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					TargetAllocator: OpenTelemetryTargetAllocator{
+						Enabled:            true,
+						Replicas:           &one,
+						AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing,
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:            ModeDeployment,
+					Replicas:        &one,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					ManagementState: ManagementStateManaged,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
+					TargetAllocator: OpenTelemetryTargetAllocator{
+						Enabled:            true,
+						Replicas:           &one,
+						AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Undefined PDB for target allocator and not consistent-hashing strategy",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					TargetAllocator: OpenTelemetryTargetAllocator{
+						Enabled:            true,
+						AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted,
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:            ModeDeployment,
+					Replicas:        &one,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					ManagementState: ManagementStateManaged,
+					PodDisruptionBudget: &PodDisruptionBudgetSpec{
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
+					TargetAllocator: OpenTelemetryTargetAllocator{
+						Enabled:            true,
+						Replicas:           &one,
+						AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted,
 					},
 				},
 			},
