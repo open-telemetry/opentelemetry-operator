@@ -150,7 +150,7 @@ func TestDeploymentNewDefault(t *testing.T) {
 	assert.Len(t, d.Spec.Template.Annotations, 1)
 
 	// the pod selector should match the pod spec's labels
-	assert.Equal(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
+	assert.Subset(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
 }
 
 func TestDeploymentPodAnnotations(t *testing.T) {

@@ -16,6 +16,7 @@ package targetallocator
 
 import (
 	"fmt"
+
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -57,7 +58,7 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 			MinAvailable:   params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget.MinAvailable,
 			MaxUnavailable: params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget.MaxUnavailable,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: objectMeta.Labels,
+				MatchLabels: SelectorLabels(params.OtelCol),
 			},
 		},
 	}, nil

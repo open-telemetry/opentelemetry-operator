@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 const (
@@ -65,4 +66,22 @@ func TestLabelsPropagateDown(t *testing.T) {
 	assert.Len(t, labels, 7)
 	assert.Equal(t, "mycomponent", labels["myapp"])
 	assert.Equal(t, "test", labels["app.kubernetes.io/name"])
+}
+
+func TestSelectorLabels(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+
+	// test
+	labels := SelectorLabels(otelcol)
+	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
+	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
+	assert.Equal(t, "opentelemetry-targetallocator", labels["app.kubernetes.io/component"])
+	assert.Equal(t, naming.TargetAllocator(otelcol.Name), labels["app.kubernetes.io/name"])
 }
