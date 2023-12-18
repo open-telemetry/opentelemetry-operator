@@ -22,9 +22,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func ClusterRole(params manifests.Params) *rbacv1.ClusterRole {
+	if !featuregate.CreateRBACPermissions.IsEnabled() {
+		params.Log.V(3).Info("cluster role will not be created automatically because the feature flag is not enabled")
+	}
+
 	configFromString, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
@@ -50,6 +55,10 @@ func ClusterRole(params manifests.Params) *rbacv1.ClusterRole {
 }
 
 func ClusterRoleBinding(params manifests.Params) *rbacv1.ClusterRoleBinding {
+	if !featuregate.CreateRBACPermissions.IsEnabled() {
+		params.Log.V(3).Info("cluster role binding will not be created automatically because the feature flag is not enabled")
+	}
+
 	configFromString, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
