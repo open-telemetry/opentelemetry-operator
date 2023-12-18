@@ -180,8 +180,12 @@ func (c CollectorWebhook) validate(r *OpenTelemetryCollector) (admission.Warning
 	}
 
 	// validate target allocation
-	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
+	if r.Spec.TargetAllocator.Enabled && (r.Spec.Mode != ModeStatefulSet && r.Spec.Mode != ModeDaemonSet) {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
+	}
+
+	if r.Spec.TargetAllocator.AllocationStrategy == OpenTelemetryTargetAllocatorAllocationStrategyPerNode && r.Spec.Mode != ModeDaemonSet {
+		return warnings, fmt.Errorf("target allocation strategy %s is only supported in OpenTelemetry Collector mode %s", OpenTelemetryTargetAllocatorAllocationStrategyPerNode, ModeDaemonSet)
 	}
 
 	// validate Prometheus config for target allocation
