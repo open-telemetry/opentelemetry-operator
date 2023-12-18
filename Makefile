@@ -233,6 +233,11 @@ e2e-multi-instrumentation:
 e2e-opampbridge:
 	$(KUTTL) test --config kuttl-test-opampbridge.yaml
 
+# Target allocator end-to-tests
+.PHONY: e2e-targetallocator
+e2e-targetallocator:
+	$(KUTTL) test --config kuttl-test-targetallocator.yaml
+
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh

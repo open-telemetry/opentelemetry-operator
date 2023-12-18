@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ta
+automountServiceAccountToken: true
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: collector
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ta
+rules:
+- apiGroups: [""]
+  resources:
+    - pods
+    - nodes
+    - services
+    - endpoints
+    - configmaps
+    - secrets
+    - namespaces
+  verbs:
+    - get
+    - watch
+    - list
+- apiGroups: ["apps"]
+  resources:
+    - statefulsets
+    - daemonsets
+    - services
+    - endpoints
+  verbs:
+    - get
+    - watch
+    - list
+- apiGroups: ["discovery.k8s.io"]
+  resources:
+    - endpointslices
+  verbs:
+    - get
+    - watch
+    - list
+- apiGroups: ["networking.k8s.io"]
+  resources:
+    - ingresses
+  verbs:
+    - get
+    - watch
+    - list
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: collector
+rules:
+- apiGroups: [""]
+  resources:
+    - pods
+    - nodes
+    - nodes/metrics
+    - services
+    - endpoints
+  verbs:
+    - get
+    - watch
+    - list
+- apiGroups: ["networking.k8s.io"]
+  resources:
+    - ingresses
+  verbs:
+    - get
+    - watch
+    - list
+- nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+  verbs: ["get"]
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl create clusterrolebinding ta-$NAMESPACE --clusterrole=ta --serviceaccount=$NAMESPACE:ta
+  - command: kubectl create clusterrolebinding collector-$NAMESPACE --clusterrole=collector --serviceaccount=$NAMESPACE:collector
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: prometheus-kubernetessd
+spec:
+  mode: daemonset
+  serviceAccount: collector
+  targetAllocator:
+    enabled: true
+    serviceAccount: ta
+    image: "local/opentelemetry-operator-targetallocator:e2e"
+    prometheusCR:
+      enabled: false
+  config: |
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: kubelet
+            scheme: https
+            authorization:
+              credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: node
+            metric_relabel_configs:
+              - action: keep
+                regex: "kubelet_running_pods"
+                source_labels: [__name__]
+
+    processors:
+
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: []
+          exporters: [prometheus]

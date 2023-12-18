@@ -1,0 +1,49 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-metrics
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-kubernetessd-collector:9090/metrics | grep "kubelet_running_pods{"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-jobs
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-kubernetessd-targetallocator/scrape_configs | grep "kubelet"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-scrape-configs
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            # First get the collector pod name, subsequently check that the targets for the collector include the node name label.
+            - curl -s http://prometheus-kubernetessd-targetallocator/jobs/kubelet/targets?collector_id=$(curl -s http://prometheus-kubernetessd-targetallocator/jobs/kubelet/targets | grep -oE "prometheus-kubernetessd-collector-.{5}") | grep "__meta_kubernetes_node_name"
