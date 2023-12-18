@@ -26,7 +26,7 @@ kind: OpAMPBridge
 metadata:
   name: test
 spec:
-  image: "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:v0.90.0-14-g082e678"
+  image: "local/opentelemetry-operator-opamp-bridge:e2e"
   endpoint: ws://opamp-server:4320/v1/opamp
   capabilities:
     AcceptsOpAMPConnectionSettings: true

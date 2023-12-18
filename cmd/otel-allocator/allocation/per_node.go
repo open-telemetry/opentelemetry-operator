@@ -191,6 +191,7 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 			}
 		}
 	}
+
 	// Check for unassigned targets
 	if len(unassignedTargetsForJobs) > 0 {
 		jobs := make([]string, 0, len(unassignedTargetsForJobs))
@@ -200,7 +201,6 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 
 		allocator.log.Info("Could not assign targets for the following jobs due to missing node labels", "jobs", jobs)
 	}
-
 }
 
 // addTargetToTargetItems assigns a target to the  collector and adds it to the allocator's targetItems
