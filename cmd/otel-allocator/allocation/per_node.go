@@ -178,15 +178,29 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 	}
 
 	// Check for additions
+	unassignedTargetsForJobs := make(map[string]struct{})
 	for k, item := range diff.Additions() {
 		// Do nothing if the item is already there
 		if _, ok := allocator.targetItems[k]; ok {
 			continue
 		} else {
 			// Add item to item pool and assign a collector
-			allocator.addTargetToTargetItems(item)
+			collectorAssigned := allocator.addTargetToTargetItems(item)
+			if !collectorAssigned {
+				unassignedTargetsForJobs[item.JobName] = struct{}{}
+			}
 		}
 	}
+	// Check for unassigned targets
+	if len(unassignedTargetsForJobs) > 0 {
+		jobs := make([]string, 0, len(unassignedTargetsForJobs))
+		for j := range unassignedTargetsForJobs {
+			jobs = append(jobs, j)
+		}
+
+		allocator.log.Info("Could not assign targets for the following jobs due to missing node labels", "jobs", jobs)
+	}
+
 }
 
 // addTargetToTargetItems assigns a target to the  collector and adds it to the allocator's targetItems
@@ -195,18 +209,21 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 // INVARIANT: allocator.collectors must have at least 1 collector set.
 // NOTE: by not creating a new target item, there is the potential for a race condition where we modify this target
 // item while it's being encoded by the server JSON handler.
-// Also, any targets that cannot be assigned to a collector due to no matching node name will be dropped.
-func (allocator *perNodeAllocator) addTargetToTargetItems(tg *target.Item) {
+// Also, any targets that cannot be assigned to a collector, due to no matching node name, will remain unassigned. These
+// targets are still "silently" added to the targetItems map, to prevent them from being reported as unassigned on each new
+// target items setting.
+func (allocator *perNodeAllocator) addTargetToTargetItems(tg *target.Item) bool {
+	allocator.targetItems[tg.Hash()] = tg
 	chosenCollector := allocator.findCollector(tg.Labels)
 	if chosenCollector == nil {
 		allocator.log.V(2).Info("Couldn't find a collector for the target item", "item", tg, "collectors", allocator.collectors)
-		return
+		return false
 	}
 	tg.CollectorName = chosenCollector.Name
-	allocator.targetItems[tg.Hash()] = tg
 	allocator.addCollectorTargetItemMapping(tg)
 	chosenCollector.NumTargets++
-	TargetsPerCollector.WithLabelValues(chosenCollector.Name, leastWeightedStrategyName).Set(float64(chosenCollector.NumTargets))
+	TargetsPerCollector.WithLabelValues(chosenCollector.Name, perNodeStrategyName).Set(float64(chosenCollector.NumTargets))
+	return true
 }
 
 // findCollector finds the collector that matches the node of the target, on the basis of the

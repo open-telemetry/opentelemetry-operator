@@ -62,21 +62,23 @@ func TestAllocationPerNode(t *testing.T) {
 	actualItems := s.TargetItems()
 
 	// one target should be skipped
-	expectedTargetLen := len(targetList) - 1
+	expectedTargetLen := len(targetList)
 	assert.Len(t, actualItems, expectedTargetLen)
 
 	// verify allocation to nodes
 	for targetHash, item := range targetList {
 		actualItem, found := actualItems[targetHash]
 		// if third target, should be skipped
-		if targetHash != thirdTarget.Hash() {
-			assert.True(t, found, "target with hash %s not found", item.Hash())
-		} else {
-			assert.False(t, found, "target with hash %s should not be found", item.Hash())
-			return
-		}
+		assert.True(t, found, "target with hash %s not found", item.Hash())
 
+		// only the first two targets should be allocated
 		itemsForCollector := s.GetTargetsForCollectorAndJob(actualItem.CollectorName, actualItem.JobName)
+
+		// first two should be assigned one to each collector; if third target, should not be assigned
+		if targetHash == thirdTarget.Hash() {
+			assert.Len(t, itemsForCollector, 0)
+			continue
+		}
 		assert.Len(t, itemsForCollector, 1)
 		assert.Equal(t, actualItem, itemsForCollector[0])
 	}
