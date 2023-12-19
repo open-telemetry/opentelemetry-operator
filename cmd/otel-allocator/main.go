@@ -80,8 +80,8 @@ func main() {
 	ctx := context.Background()
 	log := ctrl.Log.WithName("allocator")
 
-	allocatorPrehook = prehook.New(cfg.GetTargetsFilterStrategy(), log)
-	allocator, err = allocation.New(cfg.GetAllocationStrategy(), log, allocation.WithFilter(allocatorPrehook))
+	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
+	allocator, err = allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook))
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
@@ -134,11 +134,16 @@ func main() {
 	runGroup.Add(
 		func() error {
 			// Initial loading of the config file's scrape config
-			err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.PromConfig)
-			if err != nil {
-				setupLog.Error(err, "Unable to apply initial configuration")
-				return err
+			if cfg.PromConfig != nil {
+				err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.PromConfig.ScrapeConfigs)
+				if err != nil {
+					setupLog.Error(err, "Unable to apply initial configuration")
+					return err
+				}
+			} else {
+				setupLog.Info("Prometheus config empty, skipping initial discovery configuration")
 			}
+
 			err := targetDiscoverer.Watch(allocator.SetTargets)
 			setupLog.Info("Target discoverer exited")
 			return err
@@ -180,7 +185,7 @@ func main() {
 						setupLog.Error(err, "Unable to load configuration")
 						continue
 					}
-					err = targetDiscoverer.ApplyConfig(event.Source, loadConfig)
+					err = targetDiscoverer.ApplyConfig(event.Source, loadConfig.ScrapeConfigs)
 					if err != nil {
 						setupLog.Error(err, "Unable to apply configuration")
 						continue
