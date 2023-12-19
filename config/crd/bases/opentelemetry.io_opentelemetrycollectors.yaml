@@ -3835,8 +3835,8 @@ spec:
                     properties:
                       enableMetrics:
                         description: EnableMetrics specifies if ServiceMonitor or
-                          PodMonitor(for sidecar mode) should be created for the OpenTelemetry
-                          Collector and Prometheus Exporters. The operator.observability.
+                          PodMonitor(for sidecar mode) should be created for the service
+                          managed by the OpenTelemetry Operator. The operator.observability.
                         type: boolean
                     type: object
                 type: object
@@ -5156,6 +5156,22 @@ spec:
                       type: string
                     description: NodeSelector to schedule OpenTelemetry TargetAllocator
                       pods.
+                    type: object
+                  observability:
+                    description: ObservabilitySpec defines how telemetry data gets
+                      handled.
+                    properties:
+                      metrics:
+                        description: Metrics defines the metrics configuration for
+                          operands.
+                        properties:
+                          enableMetrics:
+                            description: EnableMetrics specifies if ServiceMonitor
+                              or PodMonitor(for sidecar mode) should be created for
+                              the service managed by the OpenTelemetry Operator. The
+                              operator.observability.
+                            type: boolean
+                        type: object
                     type: object
                   podDisruptionBudget:
                     description: PodDisruptionBudget specifies the pod disruption
