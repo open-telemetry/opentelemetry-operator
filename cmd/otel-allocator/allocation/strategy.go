@@ -106,7 +106,7 @@ var _ consistent.Member = Collector{}
 // This struct can be extended with information like annotations and labels in the future.
 type Collector struct {
 	Name       string
-	Node       string
+	NodeName   string
 	NumTargets int
 }
 
@@ -119,7 +119,7 @@ func (c Collector) String() string {
 }
 
 func NewCollector(name, node string) *Collector {
-	return &Collector{Name: name, Node: node}
+	return &Collector{Name: name, NodeName: node}
 }
 
 func init() {

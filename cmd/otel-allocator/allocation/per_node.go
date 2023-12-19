@@ -22,7 +22,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/model"
 )
 
 var _ Allocator = &perNodeAllocator{}
@@ -38,7 +37,7 @@ const perNodeStrategyName = "per-node"
 type perNodeAllocator struct {
 	// m protects collectors and targetItems for concurrent use.
 	m sync.RWMutex
-	// collectors is a map from a Collector's name to a Collector instance
+	// collectors is a map from a Collector's node name to a Collector instance
 	collectors map[string]*Collector
 	// targetItems is a map from a target item's hash to the target items allocated state
 	targetItems map[string]*target.Item
@@ -49,15 +48,6 @@ type perNodeAllocator struct {
 	log logr.Logger
 
 	filter Filter
-}
-
-// nodeLabels are labels that are used to identify the node on which the given
-// target is residing. To learn more about these labels, please refer to:
-// https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config
-var nodeLabels = []model.LabelName{
-	"__meta_kubernetes_pod_node_name",
-	"__meta_kubernetes_node_name",
-	"__meta_kubernetes_endpoint_node_name",
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
@@ -87,14 +77,14 @@ func (allocator *perNodeAllocator) SetCollectors(collectors map[string]*Collecto
 func (allocator *perNodeAllocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
-		delete(allocator.collectors, k.Name)
+		delete(allocator.collectors, k.NodeName)
 		delete(allocator.targetItemsPerJobPerCollector, k.Name)
 		TargetsPerCollector.WithLabelValues(k.Name, perNodeStrategyName).Set(0)
 	}
 
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
-		allocator.collectors[i.Name] = NewCollector(i.Name, i.Node)
+		allocator.collectors[i.NodeName] = NewCollector(i.Name, i.NodeName)
 	}
 }
 
@@ -166,7 +156,7 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 	for k, item := range allocator.targetItems {
 		// if the current item is in the removals list
 		if _, ok := diff.Removals()[k]; ok {
-			c, ok := allocator.collectors[item.CollectorName]
+			c, ok := allocator.collectors[item.GetNodeName()]
 			if !ok {
 				continue
 			}
@@ -214,8 +204,8 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 // target items setting.
 func (allocator *perNodeAllocator) addTargetToTargetItems(tg *target.Item) bool {
 	allocator.targetItems[tg.Hash()] = tg
-	chosenCollector := allocator.findCollector(tg.Labels)
-	if chosenCollector == nil {
+	chosenCollector, ok := allocator.collectors[tg.GetNodeName()]
+	if !ok {
 		allocator.log.V(2).Info("Couldn't find a collector for the target item", "item", tg, "collectors", allocator.collectors)
 		return false
 	}
@@ -224,27 +214,6 @@ func (allocator *perNodeAllocator) addTargetToTargetItems(tg *target.Item) bool 
 	chosenCollector.NumTargets++
 	TargetsPerCollector.WithLabelValues(chosenCollector.Name, perNodeStrategyName).Set(float64(chosenCollector.NumTargets))
 	return true
-}
-
-// findCollector finds the collector that matches the node of the target, on the basis of the
-// pod node label.
-// This method is called from within SetTargets and SetCollectors, whose caller
-// acquires the needed lock. This method assumes there are is at least 1 collector set.
-func (allocator *perNodeAllocator) findCollector(labels model.LabelSet) *Collector {
-	var col *Collector
-	for _, v := range allocator.collectors {
-		// Try to match against a node label.
-		for _, l := range nodeLabels {
-			if nodeNameLabelValue, ok := labels[l]; ok {
-				if v.Node == string(nodeNameLabelValue) {
-					col = v
-					break
-				}
-			}
-		}
-	}
-
-	return col
 }
 
 // addCollectorTargetItemMapping keeps track of which collector has which jobs and targets

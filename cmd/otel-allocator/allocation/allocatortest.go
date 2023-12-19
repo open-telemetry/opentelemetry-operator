@@ -52,7 +52,7 @@ func MakeNCollectors(n int, startingIndex int) map[string]*Collector {
 		toReturn[collector] = &Collector{
 			Name:       collector,
 			NumTargets: 0,
-			Node:       fmt.Sprintf("node-%d", i),
+			NodeName:   fmt.Sprintf("node-%d", i),
 		}
 	}
 	return toReturn

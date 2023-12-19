@@ -161,7 +161,7 @@ func (c *consistentHashingAllocator) handleCollectors(diff diff.Changes[*Collect
 	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
-		c.collectors[i.Name] = NewCollector(i.Name, i.Node)
+		c.collectors[i.Name] = NewCollector(i.Name, i.NodeName)
 		c.consistentHasher.Add(c.collectors[i.Name])
 	}
 
