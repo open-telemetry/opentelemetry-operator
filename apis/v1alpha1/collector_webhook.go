@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	v1 "k8s.io/api/authorization/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -29,11 +30,17 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/rbac"
 )
 
 var (
-	_ admission.CustomValidator = &CollectorWebhook{}
-	_ admission.CustomDefaulter = &CollectorWebhook{}
+	_                           admission.CustomValidator = &CollectorWebhook{}
+	_                           admission.CustomDefaulter = &CollectorWebhook{}
+	targetAllocatorNamespaceRes                           = &v1.ResourceAttributes{
+		Namespace: "",
+		Verb:      "list",
+		Resource:  "namespaces",
+	}
 )
 
 // +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1alpha1,name=mopentelemetrycollector.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -42,9 +49,10 @@ var (
 // +kubebuilder:object:generate=false
 
 type CollectorWebhook struct {
-	logger logr.Logger
-	cfg    config.Config
-	scheme *runtime.Scheme
+	logger   logr.Logger
+	cfg      config.Config
+	scheme   *runtime.Scheme
+	reviewer *rbac.Reviewer
 }
 
 func (c CollectorWebhook) Default(ctx context.Context, obj runtime.Object) error {
@@ -60,7 +68,7 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 	if !ok {
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
 	}
-	return c.validate(otelcol)
+	return c.validate(ctx, otelcol)
 }
 
 func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
@@ -68,7 +76,7 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 	if !ok {
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", newObj)
 	}
-	return c.validate(otelcol)
+	return c.validate(ctx, otelcol)
 }
 
 func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
@@ -76,7 +84,7 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object
 	if !ok || otelcol == nil {
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
 	}
-	return c.validate(otelcol)
+	return c.validate(ctx, otelcol)
 }
 
 func (c CollectorWebhook) defaulter(r *OpenTelemetryCollector) error {
@@ -153,7 +161,7 @@ func (c CollectorWebhook) defaulter(r *OpenTelemetryCollector) error {
 	return nil
 }
 
-func (c CollectorWebhook) validate(r *OpenTelemetryCollector) (admission.Warnings, error) {
+func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
@@ -197,6 +205,11 @@ func (c CollectorWebhook) validate(r *OpenTelemetryCollector) (admission.Warning
 		err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
 		if err != nil {
 			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+		}
+		if ok, err := c.reviewer.CanAccess(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorNamespaceRes); err != nil {
+			return warnings, fmt.Errorf("unable to check rbac rules %w", err)
+		} else if !ok {
+			warnings = append(warnings, "target allocator's serviceaccount is missing a permission for listing namespaces.")
 		}
 	}
 
@@ -344,11 +357,12 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	return nil
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config) error {
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer) error {
 	cvw := &CollectorWebhook{
-		logger: mgr.GetLogger().WithValues("handler", "CollectorWebhook"),
-		scheme: mgr.GetScheme(),
-		cfg:    cfg,
+		reviewer: reviewer,
+		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook"),
+		scheme:   mgr.GetScheme(),
+		cfg:      cfg,
 	}
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).

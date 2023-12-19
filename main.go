@@ -30,6 +30,7 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/record"
@@ -53,6 +54,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 	// +kubebuilder:scaffold:imports
 )
@@ -235,7 +237,7 @@ func main() {
 		},
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
+	mgr, err := ctrl.NewManager(restConfig, mgrOptions)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -247,6 +249,11 @@ func main() {
 		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
 		os.Exit(1)
 	}
+	clientset, clientErr := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(clientErr, "failed to create kubernetes clientset")
+	}
+	reviewer := rbac.NewReviewer(clientset)
 
 	if err = controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
@@ -271,7 +278,7 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg); err != nil {
+		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
