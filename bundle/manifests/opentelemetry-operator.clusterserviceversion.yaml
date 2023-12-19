@@ -65,13 +65,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2023-12-19T02:25:50Z"
+    createdAt: "2023-12-19T02:48:46Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.90.0-40-gb1ddba3
+  name: opentelemetry-operator.v0.90.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -393,7 +393,7 @@ spec:
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
                 - --feature-gates=+operator.autoinstrumentation.go,+operator.autoinstrumentation.nginx
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.90.0-40-gb1ddba3
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.90.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -501,7 +501,7 @@ spec:
   minKubeVersion: 1.23.0
   provider:
     name: OpenTelemetry Community
-  version: 0.90.0-40-gb1ddba3
+  version: 0.90.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
