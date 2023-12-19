@@ -32,6 +32,7 @@ jobs:
          - e2e-multi-instrumentation
          - e2e-pdb
          - e2e-opampbridge
+         - e2e-targetallocator
 
     steps:
     - name: Check out code into the Go module directory
