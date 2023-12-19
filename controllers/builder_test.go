@@ -1316,7 +1316,31 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"targetallocator.yaml": "allocation_strategy: least-weighted\nconfig:\n  scrape_configs:\n  - job_name: example\n    metric_relabel_configs:\n    - replacement: $1_$2\n      source_labels:\n      - job\n      target_label: job\n    relabel_configs:\n    - replacement: my_service_$1\n      source_labels:\n      - __meta_service_id\n      target_label: job\n    - replacement: $1\n      source_labels:\n      - __meta_service_name\n      target_label: instance\nlabel_selector:\n  app.kubernetes.io/component: opentelemetry-collector\n  app.kubernetes.io/instance: test.test\n  app.kubernetes.io/managed-by: opentelemetry-operator\n  app.kubernetes.io/part-of: opentelemetry\n",
+						"targetallocator.yaml": `allocation_strategy: least-weighted
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+config:
+  scrape_configs:
+  - job_name: example
+    metric_relabel_configs:
+    - replacement: $1_$2
+      source_labels:
+      - job
+      target_label: job
+    relabel_configs:
+    - replacement: my_service_$1
+      source_labels:
+      - __meta_service_id
+      target_label: job
+    - replacement: $1
+      source_labels:
+      - __meta_service_name
+      target_label: instance
+`,
 					},
 				},
 				&appsv1.Deployment{
@@ -1348,7 +1372,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "4d1911fd40106e9e2dd3d928f067a6c8c9eab0c569f737ba3701c6f5a9aad6d7",
+									"opentelemetry-targetallocator-config/hash": "40afbbdb738923bf9cb4a117648cd86030cc5b748601d19120226eb1ee74c91a",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1676,7 +1700,31 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"targetallocator.yaml": "allocation_strategy: least-weighted\nconfig:\n  scrape_configs:\n  - job_name: example\n    metric_relabel_configs:\n    - replacement: $1_$2\n      source_labels:\n      - job\n      target_label: job\n    relabel_configs:\n    - replacement: my_service_$1\n      source_labels:\n      - __meta_service_id\n      target_label: job\n    - replacement: $1\n      source_labels:\n      - __meta_service_name\n      target_label: instance\nlabel_selector:\n  app.kubernetes.io/component: opentelemetry-collector\n  app.kubernetes.io/instance: test.test\n  app.kubernetes.io/managed-by: opentelemetry-operator\n  app.kubernetes.io/part-of: opentelemetry\n",
+						"targetallocator.yaml": `allocation_strategy: least-weighted
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: test.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+config:
+  scrape_configs:
+  - job_name: example
+    metric_relabel_configs:
+    - replacement: $1_$2
+      source_labels:
+      - job
+      target_label: job
+    relabel_configs:
+    - replacement: my_service_$1
+      source_labels:
+      - __meta_service_id
+      target_label: job
+    - replacement: $1
+      source_labels:
+      - __meta_service_name
+      target_label: instance
+`,
 					},
 				},
 				&appsv1.Deployment{
@@ -1708,7 +1756,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "4d1911fd40106e9e2dd3d928f067a6c8c9eab0c569f737ba3701c6f5a9aad6d7",
+									"opentelemetry-targetallocator-config/hash": "40afbbdb738923bf9cb4a117648cd86030cc5b748601d19120226eb1ee74c91a",
 								},
 							},
 							Spec: corev1.PodSpec{

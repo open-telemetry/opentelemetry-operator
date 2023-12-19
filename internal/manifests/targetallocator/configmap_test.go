@@ -40,6 +40,12 @@ func TestDesiredConfigMap(t *testing.T) {
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: least-weighted
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -48,11 +54,6 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.my-instance
-  app.kubernetes.io/managed-by: opentelemetry-operator
-  app.kubernetes.io/part-of: opentelemetry
 `,
 		}
 		instance := collectorInstance()
@@ -76,6 +77,12 @@ label_selector:
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: least-weighted
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -84,11 +91,6 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.my-instance
-  app.kubernetes.io/managed-by: opentelemetry-operator
-  app.kubernetes.io/part-of: opentelemetry
 pod_monitor_selector:
   release: my-instance
 service_monitor_selector:
@@ -122,6 +124,12 @@ service_monitor_selector:
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: least-weighted
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -130,11 +138,6 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.my-instance
-  app.kubernetes.io/managed-by: opentelemetry-operator
-  app.kubernetes.io/part-of: opentelemetry
 prometheus_cr:
   scrape_interval: 30s
 `,
