@@ -346,6 +346,11 @@ type OpenTelemetryTargetAllocator struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
 	Observability ObservabilitySpec `json:"observability,omitempty"`
+	// PodDisruptionBudget specifies the pod disruption budget configuration to use
+	// for the target allocator workload.
+	//
+	// +optional
+	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {

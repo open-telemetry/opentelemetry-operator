@@ -18068,10 +18068,17 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         </td>
         <td>false</td>
       </tr><tr>
+<<<<<<< HEAD
         <td><b><a href="#opentelemetrycollectorspectargetallocatorobservability">observability</a></b></td>
         <td>object</td>
         <td>
           ObservabilitySpec defines how telemetry data gets handled.<br/>
+=======
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorpoddisruptionbudget">podDisruptionBudget</a></b></td>
+        <td>object</td>
+        <td>
+          PodDisruptionBudget specifies the pod disruption budget configuration to use for the target allocator workload.<br/>
+>>>>>>> upstream/main
         </td>
         <td>false</td>
       </tr><tr>
@@ -19677,12 +19684,20 @@ Selects a key of a secret in the pod's namespace
 </table>
 
 
+<<<<<<< HEAD
 ### OpenTelemetryCollector.spec.targetAllocator.observability
+=======
+### OpenTelemetryCollector.spec.targetAllocator.podDisruptionBudget
+>>>>>>> upstream/main
 <sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
 
 
 
+<<<<<<< HEAD
 ObservabilitySpec defines how telemetry data gets handled.
+=======
+PodDisruptionBudget specifies the pod disruption budget configuration to use for the target allocator workload.
+>>>>>>> upstream/main
 
 <table>
     <thead>
@@ -19694,6 +19709,7 @@ ObservabilitySpec defines how telemetry data gets handled.
         </tr>
     </thead>
     <tbody><tr>
+<<<<<<< HEAD
         <td><b><a href="#opentelemetrycollectorspectargetallocatorobservabilitymetrics">metrics</a></b></td>
         <td>object</td>
         <td>
@@ -19725,6 +19741,19 @@ Metrics defines the metrics configuration for operands.
         <td>boolean</td>
         <td>
           EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the OpenTelemetry Collector and Prometheus Exporters. The operator.observability.<br/>
+=======
+        <td><b>maxUnavailable</b></td>
+        <td>int or string</td>
+        <td>
+          An eviction is allowed if at most "maxUnavailable" pods selected by "selector" are unavailable after the eviction, i.e. even in absence of the evicted pod.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minAvailable</b></td>
+        <td>int or string</td>
+        <td>
+          An eviction is allowed if at least "minAvailable" pods selected by "selector" will still be available after the eviction, i.e. even in the absence of the evicted pod.<br/>
+>>>>>>> upstream/main
         </td>
         <td>false</td>
       </tr></tbody>

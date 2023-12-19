@@ -32,6 +32,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(Deployment),
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.FactoryWithoutError(Service),
+		manifests.Factory(PodDisruptionBudget),
 	}
 
 	if params.OtelCol.Spec.TargetAllocator.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
