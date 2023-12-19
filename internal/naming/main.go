@@ -160,6 +160,11 @@ func TargetAllocatorServiceAccount(otelcol string) string {
 	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
 }
 
+// TargetAllocatorServiceMonitor returns the TargetAllocator service account resource name.
+func TargetAllocatorServiceMonitor(otelcol string) string {
+	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
+}
+
 // OpAMPBridgeServiceAccount builds the service account name based on the instance.
 func OpAMPBridgeServiceAccount(opampBridge string) string {
 	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
