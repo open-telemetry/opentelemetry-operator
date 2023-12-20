@@ -23,15 +23,19 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
+	authv1 "k8s.io/api/authorization/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
+	kubeTesting "k8s.io/client-go/testing"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/rbac"
 )
 
 var (
@@ -438,6 +442,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 		otelcol          OpenTelemetryCollector
 		expectedErr      string
 		expectedWarnings []string
+		shouldFailSar    bool
 	}{
 		{
 			name:    "valid empty spec",
@@ -454,6 +459,117 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					UpgradeStrategy: "adhoc",
 					TargetAllocator: OpenTelemetryTargetAllocator{
 						Enabled: true,
+					},
+					Config: `receivers:
+  examplereceiver:
+    endpoint: "0.0.0.0:12345"
+  examplereceiver/settings:
+    endpoint: "0.0.0.0:12346"
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: otel-collector
+          scrape_interval: 10s
+  jaeger/custom:
+    protocols:
+      thrift_http:
+        endpoint: 0.0.0.0:15268
+`,
+					Ports: []v1.ServicePort{
+						{
+							Name: "port1",
+							Port: 5555,
+						},
+						{
+							Name:     "port2",
+							Port:     5554,
+							Protocol: v1.ProtocolUDP,
+						},
+					},
+					Autoscaler: &AutoscalerSpec{
+						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+							ScaleDown: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &three,
+							},
+							ScaleUp: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &five,
+							},
+						},
+						TargetCPUUtilization: &five,
+					},
+				},
+			},
+		},
+		{
+			name:          "prom CR admissions warning",
+			shouldFailSar: true, // force failure
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:            ModeStatefulSet,
+					MinReplicas:     &one,
+					Replicas:        &three,
+					MaxReplicas:     &five,
+					UpgradeStrategy: "adhoc",
+					TargetAllocator: OpenTelemetryTargetAllocator{
+						Enabled:      true,
+						PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{Enabled: true},
+					},
+					Config: `receivers:
+  examplereceiver:
+    endpoint: "0.0.0.0:12345"
+  examplereceiver/settings:
+    endpoint: "0.0.0.0:12346"
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: otel-collector
+          scrape_interval: 10s
+  jaeger/custom:
+    protocols:
+      thrift_http:
+        endpoint: 0.0.0.0:15268
+`,
+					Ports: []v1.ServicePort{
+						{
+							Name: "port1",
+							Port: 5555,
+						},
+						{
+							Name:     "port2",
+							Port:     5554,
+							Protocol: v1.ProtocolUDP,
+						},
+					},
+					Autoscaler: &AutoscalerSpec{
+						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+							ScaleDown: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &three,
+							},
+							ScaleUp: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &five,
+							},
+						},
+						TargetCPUUtilization: &five,
+					},
+				},
+			},
+			expectedWarnings: []string{
+				"target allocator's serviceaccount is missing a permission for listing namespaces.",
+			},
+		},
+		{
+			name:          "prom CR no admissions warning",
+			shouldFailSar: false, // force SAR okay
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode:            ModeStatefulSet,
+					MinReplicas:     &one,
+					Replicas:        &three,
+					MaxReplicas:     &five,
+					UpgradeStrategy: "adhoc",
+					TargetAllocator: OpenTelemetryTargetAllocator{
+						Enabled:      true,
+						PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{Enabled: true},
 					},
 					Config: `receivers:
   examplereceiver:
@@ -923,6 +1039,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					config.WithCollectorImage("collector:v0.0.0"),
 					config.WithTargetAllocatorImage("ta:v0.0.0"),
 				),
+				reviewer: getReviewer(test.shouldFailSar),
 			}
 			ctx := context.Background()
 			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)
@@ -938,4 +1055,24 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			assert.ErrorContains(t, err, test.expectedErr)
 		})
 	}
+}
+
+func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
+	c := fake.NewSimpleClientset()
+	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
+		// check our expectation here
+		if !action.Matches("create", "subjectaccessreviews") {
+			return false, nil, fmt.Errorf("must be a create for a SAR")
+		}
+		sar, ok := action.(kubeTesting.CreateAction).GetObject().DeepCopyObject().(*authv1.SubjectAccessReview)
+		if !ok || sar == nil {
+			return false, nil, fmt.Errorf("bad object")
+		}
+		sar.Status = authv1.SubjectAccessReviewStatus{
+			Allowed: !shouldFailSAR,
+			Denied:  shouldFailSAR,
+		}
+		return true, sar, nil
+	})
+	return rbac.NewReviewer(c)
 }

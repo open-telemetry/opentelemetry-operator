@@ -37,8 +37,9 @@ func NewReviewer(c kubernetes.Interface) *Reviewer {
 	}
 }
 
-// CanAccess checks if the given serviceAccount is able to access the requested resource attributes. The operator
-// uses this functionality to ensure that users have the right RBAC configured for collector related service accounts.
+// CanAccess checks if the given serviceAccount is able to access a single requested resource attribute.
+// The operator uses this functionality to ensure that users have the right RBAC configured for collector
+// related service accounts.
 func (r *Reviewer) CanAccess(ctx context.Context, serviceAccount, serviceAccountNamespace string, res *v1.ResourceAttributes) (bool, error) {
 	sar := &v1.SubjectAccessReview{
 		Spec: v1.SubjectAccessReviewSpec{
@@ -53,5 +54,4 @@ func (r *Reviewer) CanAccess(ctx context.Context, serviceAccount, serviceAccount
 	} else {
 		return resp.Status.Allowed, nil
 	}
-
 }

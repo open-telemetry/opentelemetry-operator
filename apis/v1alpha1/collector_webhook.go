@@ -222,10 +222,13 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 		if err != nil {
 			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 		}
-		if ok, err := c.reviewer.CanAccess(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorNamespaceRes); err != nil {
-			return warnings, fmt.Errorf("unable to check rbac rules %w", err)
-		} else if !ok {
-			warnings = append(warnings, "target allocator's serviceaccount is missing a permission for listing namespaces.")
+		// if the prometheusCR is enabled, it needs a suite of permissions to function
+		if r.Spec.TargetAllocator.PrometheusCR.Enabled {
+			if ok, err := c.reviewer.CanAccess(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorNamespaceRes); err != nil {
+				return warnings, fmt.Errorf("unable to check rbac rules %w", err)
+			} else if !ok {
+				warnings = append(warnings, "target allocator's serviceaccount is missing a permission for listing namespaces.")
+			}
 		}
 	}
 
