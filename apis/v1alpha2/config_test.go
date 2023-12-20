@@ -15,6 +15,8 @@
 package v1alpha2
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,17 +24,27 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var cfg = `
+var collectorCfg = `
 receivers:
   jaeger:
     protocols:
      thrift_compact:
+     grpc:
+       endpoint: 0.0.0.0:14250
+  kafka:
+    protocol_version: 2.0.0
+  
+  test_types:
+    number_float:
+      value: 12.1
+    number_int:
+      value: 12
 
 processors:
   batch:
 
 exporters:
-  debug: null
+  debug:
 
 service:
   pipelines:
@@ -43,16 +55,18 @@ service:
 `
 
 func TestConfigMarshalling(t *testing.T) {
-	jsonCfg, err := yaml.YAMLToJSON([]byte(cfg))
+	jsonCfg, err := yaml.YAMLToJSON([]byte(collectorCfg))
 	require.NoError(t, err)
 
+	fmt.Println(string(jsonCfg))
 	c := &Config{}
-	err = c.UnmarshalJSON(jsonCfg)
+	err = json.Unmarshal(jsonCfg, c)
 	require.NoError(t, err)
-	assert.Equal(t, map[string]interface{}{"batch": nil}, c.cfg["processors"])
-	assert.Equal(t, map[string]interface{}{"debug": nil}, c.cfg["exporters"])
 
-	json, err := c.MarshalJSON()
+	jsonConfig, err := json.Marshal(c)
 	require.NoError(t, err)
-	assert.Equal(t, jsonCfg, json)
+	assert.JSONEq(t, string(jsonCfg), string(jsonConfig))
+
+	yamlCfg, err := yaml.JSONToYAML(jsonConfig)
+	assert.YAMLEq(t, collectorCfg, string(yamlCfg))
 }
