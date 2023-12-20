@@ -14,7 +14,6 @@ opentelemetry-propagator-ot-trace==0.43b0
 # except for aws-lambda
 opentelemetry-instrumentation-aio-pika==0.43b0
 opentelemetry-instrumentation-aiohttp-client==0.43b0
-opentelemetry-instrumentation-aiohttp-server==0.43b0
 opentelemetry-instrumentation-aiopg==0.43b0
 opentelemetry-instrumentation-asgi==0.43b0
 opentelemetry-instrumentation-asyncpg==0.43b0
