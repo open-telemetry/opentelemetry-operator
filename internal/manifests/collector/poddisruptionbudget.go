@@ -17,14 +17,13 @@ package collector
 import (
 	policyV1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func PodDisruptionBudget(params manifests.Params) client.Object {
+func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget {
 	// defaulting webhook should always set this, but if unset then return nil.
 	if params.OtelCol.Spec.PodDisruptionBudget == nil {
 		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")

@@ -10,6 +10,7 @@ ${SED_BIN} -i "s#${DEFAULT_TARGETALLOCATOR_IMG}#${TARGETALLOCATOR_IMG}#g" tests/
 ${SED_BIN} -i "s#${DEFAULT_TARGETALLOCATOR_IMG}#${TARGETALLOCATOR_IMG}#g" tests/e2e/targetallocator-features/00-install.yaml
 ${SED_BIN} -i "s#${DEFAULT_TARGETALLOCATOR_IMG}#${TARGETALLOCATOR_IMG}#g" tests/e2e/prometheus-config-validation/*.yaml
 ${SED_BIN} -i "s#${DEFAULT_TARGETALLOCATOR_IMG}#${TARGETALLOCATOR_IMG}#g" tests/e2e/targetallocator-prometheuscr/*.yaml
+${SED_BIN} -i "s#${DEFAULT_TARGETALLOCATOR_IMG}#${TARGETALLOCATOR_IMG}#g" tests/e2e-prometheuscr/create-sm-prometheus-exporters/*.yaml
 
 ${SED_BIN} -i "s#${DEFAULT_OPERATOR_IMG}#${OPERATOR_IMG}#g" tests/e2e-multi-instrumentation/*.yaml
 

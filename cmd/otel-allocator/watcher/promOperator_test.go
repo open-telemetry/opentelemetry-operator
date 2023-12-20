@@ -200,11 +200,14 @@ func TestLoadConfig(t *testing.T) {
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
 							Port: "web",
-							BearerTokenSecret: v1.SecretKeySelector{
-								LocalObjectReference: v1.LocalObjectReference{
-									Name: "bearer",
+							Authorization: &monitoringv1.SafeAuthorization{
+								Type: "Bearer",
+								Credentials: &v1.SecretKeySelector{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: "bearer",
+									},
+									Key: "token",
 								},
-								Key: "token",
 							},
 						},
 					},
