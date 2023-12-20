@@ -22,21 +22,21 @@ import (
 )
 
 func ConfigToRBAC(logger logr.Logger, config map[interface{}]interface{}) []rbacv1.PolicyRule {
+	var policyRules []rbacv1.PolicyRule
 	processorsRaw, ok := config["processors"]
 	if !ok {
 		logger.V(2).Info("no processors available as part of the configuration")
-		return nil
+		return policyRules
 	}
 
 	processors, ok := processorsRaw.(map[interface{}]interface{})
 	if !ok {
 		logger.V(2).Info("processors doesn't contain valid components")
-		return nil
+		return policyRules
 	}
 
 	enabledProcessors := getEnabledComponents(config, ComponentTypeProcessor)
 
-	var policyRules []rbacv1.PolicyRule
 	for key, val := range processors {
 		if !enabledProcessors[key] {
 			continue

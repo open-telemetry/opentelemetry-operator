@@ -50,9 +50,8 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(HeadlessService),
 		manifests.Factory(MonitoringService),
 		manifests.Factory(Ingress),
-		manifests.FactoryWithoutError(ClusterRole),
-		manifests.FactoryWithoutError(ClusterRoleBinding),
 	}...)
+
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
 			manifestFactories = append(manifestFactories, manifests.Factory(PodMonitor))
@@ -60,6 +59,14 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
 		}
 	}
+
+	if !featuregate.CreateRBACPermissions.IsEnabled() {
+		manifestFactories = append(manifestFactories,
+			manifests.FactoryWithoutError(ClusterRole),
+			manifests.FactoryWithoutError(ClusterRoleBinding),
+		)
+	}
+
 	for _, factory := range manifestFactories {
 		res, err := factory(params)
 		if err != nil {

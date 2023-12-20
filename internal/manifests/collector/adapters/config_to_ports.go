@@ -39,7 +39,7 @@ const (
 )
 
 func (c ComponentType) String() string {
-	return [...]string{"receiver", "exporter"}[c]
+	return [...]string{"receiver", "exporter", "processor"}[c]
 }
 
 // ConfigToComponentPorts converts the incoming configuration object into a set of service ports required by the exporters.

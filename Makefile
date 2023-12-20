@@ -234,16 +234,12 @@ e2e-opampbridge:
 	$(KUTTL) test --config kuttl-test-opampbridge.yaml
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller enable-rbac-creation-feature-flag container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 .PHONY: enable-prometheus-feature-flag
 enable-prometheus-feature-flag:
 	$(SED) -i "s#--feature-gates=+operator.autoinstrumentation.go#--feature-gates=+operator.autoinstrumentation.go,+operator.observability.prometheus#g" config/default/manager_auth_proxy_patch.yaml
-
-.PHONY: enable-rbac-creation-feature-flag
-enable-rbac-creation-feature-flag:
-	$(SED) -i "s#--feature-gates=+operator.autoinstrumentation.go#--feature-gates=+operator.autoinstrumentation.go,+operator.collector.createrbacpremissions#g" config/default/manager_auth_proxy_patch.yaml
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
