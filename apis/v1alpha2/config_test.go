@@ -68,5 +68,6 @@ func TestConfigMarshalling(t *testing.T) {
 	assert.JSONEq(t, string(jsonCfg), string(jsonConfig))
 
 	yamlCfg, err := yaml.JSONToYAML(jsonConfig)
+	require.NoError(t, err)
 	assert.YAMLEq(t, collectorCfg, string(yamlCfg))
 }
