@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // Build creates the manifest for the TargetAllocator resource.
@@ -32,6 +33,10 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.FactoryWithoutError(Service),
 		manifests.Factory(PodDisruptionBudget),
+	}
+
+	if params.OtelCol.Spec.TargetAllocator.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 
 	for _, factory := range resourceFactories {

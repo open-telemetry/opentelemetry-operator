@@ -1000,6 +1000,7 @@ func (in *OpenTelemetryTargetAllocator) DeepCopyInto(out *OpenTelemetryTargetAll
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	out.Observability = in.Observability
 	if in.PodDisruptionBudget != nil {
 		in, out := &in.PodDisruptionBudget, &out.PodDisruptionBudget
 		*out = new(PodDisruptionBudgetSpec)
