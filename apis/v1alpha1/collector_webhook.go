@@ -34,9 +34,11 @@ import (
 )
 
 var (
-	_                           admission.CustomValidator = &CollectorWebhook{}
-	_                           admission.CustomDefaulter = &CollectorWebhook{}
-	targetAllocatorNamespaceRes                           = &v1.ResourceAttributes{
+	_ admission.CustomValidator = &CollectorWebhook{}
+	_ admission.CustomDefaulter = &CollectorWebhook{}
+
+	// targetAllocatorNamespaceRes is the resource attributes required for the newest target allocator capability
+	targetAllocatorNamespaceRes = &v1.ResourceAttributes{
 		Namespace: "",
 		Verb:      "list",
 		Resource:  "namespaces",
