@@ -215,6 +215,9 @@ type OpenTelemetryCollectorSpec struct {
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
+	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
+	// +optional
+	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`
 	// If specified, indicates the pod's priority.
 	// If not specified, the pod priority will be default or zero if there is no
 	// default.

@@ -554,3 +554,44 @@ func TestDeploymentAdditionalContainers(t *testing.T) {
 	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
 	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[0])
 }
+
+func TestDeploymentShareProcessNamespace(t *testing.T) {
+	// Test default
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     logger,
+	}
+
+	d1 := Deployment(params1)
+	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
+
+	// Test hostNetwork=true
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-with-shareprocessnamespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ShareProcessNamespace: true,
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     logger,
+	}
+
+	d2 := Deployment(params2)
+	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
+}
