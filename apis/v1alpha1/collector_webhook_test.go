@@ -499,6 +499,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
+			expectedWarnings: []string{
+				"MaxReplicas is deprecated",
+				"MinReplicas is deprecated",
+			},
 		},
 		{
 			name:          "prom CR admissions warning",
@@ -554,7 +558,33 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedWarnings: []string{
-				"target allocator's serviceaccount is missing a permission for listing namespaces.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:*,Group:monitoring.coreos.com,Version:,Resource:servicemonitors,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:*,Group:monitoring.coreos.com,Version:,Resource:podmonitors,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:get,Group:,Version:,Resource:nodes,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:get,Group:,Version:,Resource:nodes/metrics,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:get,Group:,Version:,Resource:services,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:get,Group:,Version:,Resource:endpoints,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:get,Group:,Version:,Resource:pods,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:list,Group:,Version:,Resource:nodes,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:list,Group:,Version:,Resource:nodes/metrics,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:list,Group:,Version:,Resource:services,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:list,Group:,Version:,Resource:endpoints,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:list,Group:,Version:,Resource:pods,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:watch,Group:,Version:,Resource:nodes,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:watch,Group:,Version:,Resource:nodes/metrics,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:watch,Group:,Version:,Resource:services,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:watch,Group:,Version:,Resource:endpoints,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:watch,Group:,Version:,Resource:pods,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:get,Group:,Version:,Resource:configmaps,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:get,Group:discovery.k8s.io,Version:,Resource:endpointslices,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:list,Group:discovery.k8s.io,Version:,Resource:endpointslices,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:watch,Group:discovery.k8s.io,Version:,Resource:endpointslices,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:get,Group:networking.k8s.io,Version:,Resource:ingresses,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:list,Group:networking.k8s.io,Version:,Resource:ingresses,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &ResourceAttributes{Namespace:,Verb:watch,Group:networking.k8s.io,Version:,Resource:ingresses,Subresource:,Name:,}.",
+				"target allocator's serviceaccount is missing a permission for &NonResourceAttributes{Path:/metrics,Verb:get,}.",
+				"MaxReplicas is deprecated",
+				"MinReplicas is deprecated",
 			},
 		},
 		{
@@ -563,9 +593,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					Mode:            ModeStatefulSet,
-					MinReplicas:     &one,
 					Replicas:        &three,
-					MaxReplicas:     &five,
 					UpgradeStrategy: "adhoc",
 					TargetAllocator: OpenTelemetryTargetAllocator{
 						Enabled:      true,
@@ -1045,14 +1073,11 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)
 			if test.expectedErr == "" {
 				assert.NoError(t, err)
-				return
-			}
-			if len(test.expectedWarnings) == 0 {
-				assert.Empty(t, warnings, test.expectedWarnings)
 			} else {
-				assert.ElementsMatch(t, warnings, test.expectedWarnings)
+				assert.ErrorContains(t, err, test.expectedErr)
 			}
-			assert.ErrorContains(t, err, test.expectedErr)
+			assert.Equal(t, len(test.expectedWarnings), len(warnings))
+			assert.ElementsMatch(t, warnings, test.expectedWarnings)
 		})
 	}
 }

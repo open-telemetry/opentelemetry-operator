@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/authorization/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -37,11 +37,32 @@ var (
 	_ admission.CustomValidator = &CollectorWebhook{}
 	_ admission.CustomDefaulter = &CollectorWebhook{}
 
-	// targetAllocatorNamespaceRes is the resource attributes required for the newest target allocator capability
-	targetAllocatorNamespaceRes = &v1.ResourceAttributes{
-		Namespace: "",
-		Verb:      "list",
-		Resource:  "namespaces",
+	// targetAllocatorCRPolicyRules are the policy rules required for the CR functionality
+	targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"monitoring.coreos.com"},
+			Resources: []string{"servicemonitors", "podmonitors"},
+			Verbs:     []string{"*"},
+		}, {
+			APIGroups: []string{""},
+			Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			APIGroups: []string{""},
+			Resources: []string{"configmaps"},
+			Verbs:     []string{"get"},
+		}, {
+			APIGroups: []string{"discovery.k8s.io"},
+			Resources: []string{"endpointslices"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			APIGroups: []string{"networking.k8s.io"},
+			Resources: []string{"ingresses"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			NonResourceURLs: []string{"/metrics"},
+			Verbs:           []string{"get"},
+		},
 	}
 )
 
@@ -226,10 +247,16 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 		}
 		// if the prometheusCR is enabled, it needs a suite of permissions to function
 		if r.Spec.TargetAllocator.PrometheusCR.Enabled {
-			if ok, err := c.reviewer.CanAccess(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorNamespaceRes); err != nil {
+			if subjectAccessReviews, err := c.reviewer.CheckPolicyRules(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorCRPolicyRules...); err != nil {
 				return warnings, fmt.Errorf("unable to check rbac rules %w", err)
-			} else if !ok {
-				warnings = append(warnings, "target allocator's serviceaccount is missing a permission for listing namespaces.")
+			} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
+				for _, review := range deniedReviews {
+					if review.Spec.ResourceAttributes != nil {
+						warnings = append(warnings, fmt.Sprintf("target allocator's serviceaccount is missing a permission for %s.", review.Spec.ResourceAttributes.String()))
+					} else if review.Spec.NonResourceAttributes != nil {
+						warnings = append(warnings, fmt.Sprintf("target allocator's serviceaccount is missing a permission for %s.", review.Spec.NonResourceAttributes))
+					}
+				}
 			}
 		}
 	}

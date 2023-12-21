@@ -51,7 +51,6 @@ var (
 	cancel     context.CancelFunc
 	err        error
 	cfg        *rest.Config
-	conf       = config.New()
 )
 
 func TestMain(m *testing.M) {
