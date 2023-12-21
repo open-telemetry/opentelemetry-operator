@@ -21,6 +21,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
+const (
+	ComponentOpenTelemetryTargetAllocator = "opentelemetry-targetallocator"
+)
+
 // Build creates the manifest for the TargetAllocator resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
