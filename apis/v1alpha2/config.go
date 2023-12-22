@@ -16,6 +16,9 @@ package v1alpha2
 
 import (
 	"encoding/json"
+	"fmt"
+	"reflect"
+	"sort"
 )
 
 // AnyConfig represent parts of the config.
@@ -82,16 +85,63 @@ type Config struct {
 }
 
 type Service struct {
-	Extensions *[]string         `json:"extensions,omitempty"`
-	Telemetry  *ServiceTelemetry `json:"telemetry,omitempty"`
+	Extensions *[]string `json:"extensions,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Telemetry *AnyConfig `json:"telemetry,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Pipelines AnyConfig `json:"pipelines"`
 }
 
-type ServiceTelemetry struct {
-	Metrics MetricsTelemetry `json:"metrics,omitempty"`
+// Returns null objects in the config.
+func (c Config) nullObjects() []string {
+	var nullKeys []string
+	if nulls := hasNullValue(c.Receivers.Object); len(nulls) > 0 {
+		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
+	}
+	if nulls := hasNullValue(c.Exporters.Object); len(nulls) > 0 {
+		nullKeys = append(nullKeys, addPrefix("exporters.", nulls)...)
+	}
+	if c.Processors != nil {
+		if nulls := hasNullValue(c.Processors.Object); len(nulls) > 0 {
+			nullKeys = append(nullKeys, addPrefix("processors.", nulls)...)
+		}
+	}
+	if c.Extensions != nil {
+		if nulls := hasNullValue(c.Extensions.Object); len(nulls) > 0 {
+			nullKeys = append(nullKeys, addPrefix("extensions.", nulls)...)
+		}
+	}
+	if c.Connectors != nil {
+		if nulls := hasNullValue(c.Connectors.Object); len(nulls) > 0 {
+			nullKeys = append(nullKeys, addPrefix("connectors.", nulls)...)
+		}
+	}
+	// Make the return deterministic. The config uses maps therefore processing order is non-deterministic.
+	sort.Strings(nullKeys)
+	return nullKeys
 }
 
-type MetricsTelemetry struct {
-	Address string `json:"address,omitempty"`
+func hasNullValue(cfg map[string]interface{}) []string {
+	var nullKeys []string
+	for k, v := range cfg {
+		if v == nil {
+			nullKeys = append(nullKeys, fmt.Sprintf("%s:", k))
+		}
+		if reflect.ValueOf(v).Kind() == reflect.Map {
+			nulls := hasNullValue(v.(map[string]interface{}))
+			if len(nulls) > 0 {
+				prefixed := addPrefix(k+".", nulls)
+				nullKeys = append(nullKeys, prefixed...)
+			}
+		}
+	}
+	return nullKeys
+}
+
+func addPrefix(prefix string, arr []string) []string {
+	var prefixed []string
+	for _, v := range arr {
+		prefixed = append(prefixed, fmt.Sprintf("%s%s", prefix, v))
+	}
+	return prefixed
 }

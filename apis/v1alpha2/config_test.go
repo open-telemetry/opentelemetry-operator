@@ -16,7 +16,9 @@ package v1alpha2
 
 import (
 	"encoding/json"
-	"fmt"
+	"os"
+	"path"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,50 +26,48 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var collectorCfg = `
-receivers:
-  jaeger:
-    protocols:
-     thrift_compact:
-     grpc:
-       endpoint: 0.0.0.0:14250
-  kafka:
-    protocol_version: 2.0.0
-  
-  test_types:
-    number_float:
-      value: 12.1
-    number_int:
-      value: 12
-
-processors:
-  batch:
-
-exporters:
-  debug:
-
-service:
-  pipelines:
-   traces:
-    receivers: [jaeger]
-    processors: []
-    exporters: [debug]
-`
-
-func TestConfigMarshalling(t *testing.T) {
-	jsonCfg, err := yaml.YAMLToJSON([]byte(collectorCfg))
+func TestConfigFiles(t *testing.T) {
+	files, err := os.ReadDir("./testdata")
 	require.NoError(t, err)
 
-	fmt.Println(string(jsonCfg))
-	c := &Config{}
-	err = json.Unmarshal(jsonCfg, c)
+	for _, file := range files {
+		if !strings.HasPrefix(file.Name(), "otelcol-") {
+			continue
+		}
+
+		testFile := path.Join("./testdata", file.Name())
+		t.Run(testFile, func(t *testing.T) {
+			collectorYaml, err := os.ReadFile(testFile)
+			require.NoError(t, err)
+
+			collectorJson, err := yaml.YAMLToJSON(collectorYaml)
+			require.NoError(t, err)
+
+			cfg := &Config{}
+			err = json.Unmarshal(collectorJson, cfg)
+			require.NoError(t, err)
+			jsonCfg, err := json.Marshal(cfg)
+			require.NoError(t, err)
+
+			assert.JSONEq(t, string(collectorJson), string(jsonCfg))
+			yamlCfg, err := yaml.JSONToYAML(jsonCfg)
+			require.NoError(t, err)
+			assert.YAMLEq(t, string(collectorJson), string(yamlCfg))
+		})
+	}
+}
+
+func TestNullObjects(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/otelcol-null-values.yaml")
 	require.NoError(t, err)
 
-	jsonConfig, err := json.Marshal(c)
+	collectorJson, err := yaml.YAMLToJSON(collectorYaml)
 	require.NoError(t, err)
-	assert.JSONEq(t, string(jsonCfg), string(jsonConfig))
 
-	yamlCfg, err := yaml.JSONToYAML(jsonConfig)
+	cfg := &Config{}
+	err = json.Unmarshal(collectorJson, cfg)
 	require.NoError(t, err)
-	assert.YAMLEq(t, collectorCfg, string(yamlCfg))
+
+	nullObjects := cfg.nullObjects()
+	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
 }
