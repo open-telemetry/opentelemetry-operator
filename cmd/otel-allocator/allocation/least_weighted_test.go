@@ -15,6 +15,7 @@
 package allocation
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"testing"
@@ -50,7 +51,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	cols := MakeNCollectors(3, 0)
 	s.SetCollectors(cols)
 
-	initTargets := MakeNNewTargets(6, 3, 0)
+	initTargets := MakeNNewTargetsWithPreAssigningCollectors(6, 3, 0)
 
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
@@ -60,7 +61,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	assert.Len(t, s.TargetItems(), expectedTargetLen)
 
 	// prepare second round of targets
-	tar := MakeNNewTargets(4, 3, 0)
+	tar := MakeNNewTargetsWithPreAssigningCollectors(4, 3, 0)
 
 	// test that fewer targets are found - removed
 	s.SetTargets(tar)
@@ -125,7 +126,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 	for _, i := range cols {
 		assert.NotNil(t, s.Collectors()[i.Name])
 	}
-	initTargets := MakeNNewTargets(6, 3, 0)
+	initTargets := MakeNNewTargetsWithPreAssigningCollectors(6, 3, 0)
 
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
@@ -144,6 +145,56 @@ func TestNoCollectorReassignment(t *testing.T) {
 
 }
 
+// Tests that the newly added collector instance does not get assigned any target when the targets remain the same
+func TestNoAssignmentToNewCollector(t *testing.T) {
+	s, _ := New("least-weighted", logger)
+
+	// instantiate only 1 collector
+	cols := MakeNCollectors(1, 0)
+	s.SetCollectors(cols)
+
+	expectedColLen := len(cols)
+	assert.Len(t, s.Collectors(), expectedColLen)
+
+	for _, i := range cols {
+		assert.NotNil(t, s.Collectors()[i.Name])
+	}
+
+	initialColsBeforeAddingNewCol := s.Collectors()
+	initTargets := MakeNNewTargetsWithoutPreAssigningCollectors(6, 0)
+
+	// test that targets and collectors are added properly
+	s.SetTargets(initTargets)
+
+	// verify
+	expectedTargetLen := len(initTargets)
+	targetItems := s.TargetItems()
+	assert.Len(t, targetItems, expectedTargetLen)
+
+	// add another collector
+	newColName := fmt.Sprintf("collector-%d", len(cols))
+	cols[newColName] = &Collector{
+		Name:       newColName,
+		NumTargets: 0,
+	}
+	s.SetCollectors(cols)
+
+	// targets shall not change
+	newTargetItems := s.TargetItems()
+	assert.Equal(t, targetItems, newTargetItems)
+
+	// initial collectors still should have the same targets
+	for colName, col := range s.Collectors() {
+		if colName != newColName {
+			assert.Equal(t, initialColsBeforeAddingNewCol[colName], col)
+		}
+	}
+
+	// new collector should have no targets
+	newCollector := s.Collectors()[newColName]
+	assert.Equal(t, newCollector.NumTargets, 0)
+}
+
 func TestSmartCollectorReassignment(t *testing.T) {
 	t.Skip("This test is flaky and fails frequently, see issue 1291")
 	s, _ := New("least-weighted", logger)
@@ -157,7 +208,7 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	for _, i := range cols {
 		assert.NotNil(t, s.Collectors()[i.Name])
 	}
-	initTargets := MakeNNewTargets(6, 0, 0)
+	initTargets := MakeNNewTargetsWithPreAssigningCollectors(6, 0, 0)
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
 
@@ -202,7 +253,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	cols := MakeNCollectors(3, 0)
 	s.SetCollectors(cols)
 
-	targets := MakeNNewTargets(27, 3, 0)
+	targets := MakeNNewTargetsWithPreAssigningCollectors(27, 3, 0)
 	s.SetTargets(targets)
 
 	// Divisor needed to get 15%
@@ -241,7 +292,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 	// adding targets at 'random'
-	for _, item := range MakeNNewTargets(13, 3, 100) {
+	for _, item := range MakeNNewTargetsWithPreAssigningCollectors(13, 3, 100) {
 		targets[item.Hash()] = item
 	}
 	s.SetTargets(targets)

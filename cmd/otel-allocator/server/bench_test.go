@@ -50,7 +50,7 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 		for _, v := range table {
 			a, _ := allocation.New(allocatorName, logger)
 			cols := allocation.MakeNCollectors(v.numCollectors, 0)
-			targets := allocation.MakeNNewTargets(v.numJobs, v.numCollectors, 0)
+			targets := allocation.MakeNNewTargetsWithPreAssigningCollectors(v.numJobs, v.numCollectors, 0)
 			listenAddr := ":8080"
 			a.SetCollectors(cols)
 			a.SetTargets(targets)
