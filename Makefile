@@ -138,15 +138,22 @@ uninstall: manifests kustomize
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 
+.PHONY: add-operator-arg
+add-operator-arg: PATCH = [{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"$(OPERATOR_ARG)"}]
+add-operator-arg: manifests kustomize
+	cd config/manager && $(KUSTOMIZE) edit add patch --kind Deployment --patch '$(PATCH)'
+
 .PHONY: add-image-targetallocator
-add-image-targetallocator: PATCH = [{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--target-allocator-image=$(TARGETALLOCATOR_IMG)"}]
-add-image-targetallocator: manifests kustomize
-	cd $(KUSTOMIZATION_DIR) && $(KUSTOMIZE) edit add patch --kind Deployment --patch '$(PATCH)'
+add-image-targetallocator:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--target-allocator-image=$(TARGETALLOCATOR_IMG)
 
 .PHONY: add-image-opampbridge
-add-image-opampbridge: PATCH = [{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--operator-opamp-bridge-image=$(OPERATOROPAMPBRIDGE_IMG)"}]
-add-image-opampbridge: manifests kustomize
-	cd $(KUSTOMIZATION_DIR) && $(KUSTOMIZE) edit add patch --kind Deployment --patch '$(PATCH)'
+add-image-opampbridge:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--operator-opamp-bridge-image=$(OPERATOROPAMPBRIDGE_IMG)
+
+.PHONY: enable-operator-featuregates
+enable-operator-featuregates: OPERATOR_ARG = --feature-gates=$(FEATUREGATES)
+enable-operator-featuregates: add-operator-arg
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
@@ -245,12 +252,9 @@ e2e-opampbridge:
 
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
-	OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
-.PHONY: enable-prometheus-feature-flag
-enable-prometheus-feature-flag:
-	$(SED) -i "s#--feature-gates=+operator.autoinstrumentation.go#--feature-gates=+operator.autoinstrumentation.go,+operator.observability.prometheus#g" config/default/manager_auth_proxy_patch.yaml
-
+.PHONY: prepare-e2e-with-featuregates
+prepare-e2e-with-featuregates: kuttl enable-operator-featuregates prepare-e2e
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -461,7 +465,6 @@ reset: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
 	git checkout config/manager/kustomization.yaml
-	OPERATOR_IMG=local/opentelemetry-operator:e2e DEFAULT_OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build
