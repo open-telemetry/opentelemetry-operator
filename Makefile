@@ -143,6 +143,11 @@ add-image-targetallocator: PATCH = [{"op":"add","path":"/spec/template/spec/cont
 add-image-targetallocator: manifests kustomize
 	cd $(KUSTOMIZATION_DIR) && $(KUSTOMIZE) edit add patch --kind Deployment --patch '$(PATCH)'
 
+.PHONY: add-image-opampbridge
+add-image-opampbridge: PATCH = [{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--operator-opamp-bridge-image=$(OPERATOROPAMPBRIDGE_IMG)"}]
+add-image-opampbridge: manifests kustomize
+	cd $(KUSTOMIZATION_DIR) && $(KUSTOMIZE) edit add patch --kind Deployment --patch '$(PATCH)'
+
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
@@ -239,8 +244,8 @@ e2e-opampbridge:
 	$(KUTTL) test --config kuttl-test-opampbridge.yaml
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller add-image-targetallocator container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
-	OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+prepare-e2e: kuttl set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+	OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 .PHONY: enable-prometheus-feature-flag
 enable-prometheus-feature-flag:
@@ -456,7 +461,7 @@ reset: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
 	git checkout config/manager/kustomization.yaml
-	OPERATOR_IMG=local/opentelemetry-operator:e2e TARGETALLOCATOR_IMG=local/opentelemetry-operator-targetallocator:e2e OPERATOROPAMPBRIDGE_IMG=local/opentelemetry-operator-opamp-bridge:e2e DEFAULT_OPERATOR_IMG=$(IMG) DEFAULT_TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) DEFAULT_OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+	OPERATOR_IMG=local/opentelemetry-operator:e2e DEFAULT_OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build
