@@ -47,7 +47,6 @@ spec:
             storage: 1Gi
   targetAllocator:
     enabled: true
-    image: "local/opentelemetry-operator-targetallocator:e2e"
     serviceAccount: ta
     securityContext:
       runAsUser: 1000

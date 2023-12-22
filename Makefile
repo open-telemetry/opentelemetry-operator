@@ -1,10 +1,10 @@
 # Current Operator version
-VERSION ?= "$(shell git describe --tags | sed 's/^v//')"
+VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/version"
 OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
 OPERATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')"
-TARGETALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')"
+TARGETALLOCATOR_VERSION ?= $(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')
 OPERATOR_OPAMP_BRIDGE_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator-opamp-bridge | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-java | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-nodejs | awk -F= '{print $$2}')"
@@ -138,6 +138,11 @@ uninstall: manifests kustomize
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 
+.PHONY: add-image-targetallocator
+add-image-targetallocator: PATCH = [{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--target-allocator-image=$(TARGETALLOCATOR_IMG)"}]
+add-image-targetallocator: manifests kustomize
+	cd $(KUSTOMIZATION_DIR) && $(KUSTOMIZE) edit add patch --kind Deployment --patch '$(PATCH)'
+
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
@@ -234,8 +239,8 @@ e2e-opampbridge:
 	$(KUTTL) test --config kuttl-test-opampbridge.yaml
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
-	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+prepare-e2e: kuttl set-image-controller add-image-targetallocator container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+	OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
 
 .PHONY: enable-prometheus-feature-flag
 enable-prometheus-feature-flag:
@@ -276,7 +281,7 @@ container-operator-opamp-bridge: operator-opamp-bridge
 .PHONY: start-kind
 start-kind:
 ifeq (true,$(START_KIND_CLUSTER))
-	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
+	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG) || true
 endif
 
 .PHONY: install-metrics-server
