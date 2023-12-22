@@ -44,7 +44,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 		Spec: appsv1.DeploymentSpec{
 			Replicas: params.OtelCol.Spec.TargetAllocator.Replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: SelectorLabels(params.OtelCol),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

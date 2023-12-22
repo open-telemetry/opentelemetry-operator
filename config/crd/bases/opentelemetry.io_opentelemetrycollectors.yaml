@@ -308,6 +308,18 @@ spec:
                               required:
                               - port
                               type: object
+                            sleep:
+                              description: Sleep represents the duration that the
+                                container should sleep before being terminated.
+                              properties:
+                                seconds:
+                                  description: Seconds is the number of seconds to
+                                    sleep.
+                                  format: int64
+                                  type: integer
+                              required:
+                              - seconds
+                              type: object
                             tcpSocket:
                               description: Deprecated. TCPSocket is NOT supported
                                 as a LifecycleHandler and kept for the backward compatibility.
@@ -391,6 +403,18 @@ spec:
                                   type: string
                               required:
                               - port
+                              type: object
+                            sleep:
+                              description: Sleep represents the duration that the
+                                container should sleep before being terminated.
+                              properties:
+                                seconds:
+                                  description: Seconds is the number of seconds to
+                                    sleep.
+                                  format: int64
+                                  type: integer
+                              required:
+                              - seconds
                               type: object
                             tcpSocket:
                               description: Deprecated. TCPSocket is NOT supported
@@ -1357,7 +1381,8 @@ spec:
                               properties:
                                 labelSelector:
                                   description: A label query over a set of resources,
-                                    in this case pods.
+                                    in this case pods. If it's null, this PodAffinityTerm
+                                    matches with no Pods.
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -1401,6 +1426,20 @@ spec:
                                       type: object
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                matchLabelKeys:
+                                  description: MatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                mismatchLabelKeys:
+                                  description: MismatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 namespaceSelector:
                                   description: A label query over the set of namespaces
                                     that the term applies to. The term is applied
@@ -1490,7 +1529,8 @@ spec:
                           properties:
                             labelSelector:
                               description: A label query over a set of resources,
-                                in this case pods.
+                                in this case pods. If it's null, this PodAffinityTerm
+                                matches with no Pods.
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label
@@ -1531,6 +1571,20 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: MatchLabelKeys is a set of pod label keys
+                                to select which pods will be taken into consideration.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            mismatchLabelKeys:
+                              description: MismatchLabelKeys is a set of pod label
+                                keys to select which pods will be taken into consideration.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             namespaceSelector:
                               description: A label query over the set of namespaces
                                 that the term applies to. The term is applied to the
@@ -1615,7 +1669,8 @@ spec:
                               properties:
                                 labelSelector:
                                   description: A label query over a set of resources,
-                                    in this case pods.
+                                    in this case pods. If it's null, this PodAffinityTerm
+                                    matches with no Pods.
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -1659,6 +1714,20 @@ spec:
                                       type: object
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                matchLabelKeys:
+                                  description: MatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                mismatchLabelKeys:
+                                  description: MismatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 namespaceSelector:
                                   description: A label query over the set of namespaces
                                     that the term applies to. The term is applied
@@ -1748,7 +1817,8 @@ spec:
                           properties:
                             labelSelector:
                               description: A label query over a set of resources,
-                                in this case pods.
+                                in this case pods. If it's null, this PodAffinityTerm
+                                matches with no Pods.
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label
@@ -1789,6 +1859,20 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: MatchLabelKeys is a set of pod label keys
+                                to select which pods will be taken into consideration.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            mismatchLabelKeys:
+                              description: MismatchLabelKeys is a set of pod label
+                                keys to select which pods will be taken into consideration.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             namespaceSelector:
                               description: A label query over the set of namespaces
                                 that the term applies to. The term is applied to the
@@ -2606,6 +2690,18 @@ spec:
                               required:
                               - port
                               type: object
+                            sleep:
+                              description: Sleep represents the duration that the
+                                container should sleep before being terminated.
+                              properties:
+                                seconds:
+                                  description: Seconds is the number of seconds to
+                                    sleep.
+                                  format: int64
+                                  type: integer
+                              required:
+                              - seconds
+                              type: object
                             tcpSocket:
                               description: Deprecated. TCPSocket is NOT supported
                                 as a LifecycleHandler and kept for the backward compatibility.
@@ -2689,6 +2785,18 @@ spec:
                                   type: string
                               required:
                               - port
+                              type: object
+                            sleep:
+                              description: Sleep represents the duration that the
+                                container should sleep before being terminated.
+                              properties:
+                                seconds:
+                                  description: Seconds is the number of seconds to
+                                    sleep.
+                                  format: int64
+                                  type: integer
+                              required:
+                              - seconds
                               type: object
                             tcpSocket:
                               description: Deprecated. TCPSocket is NOT supported
@@ -3518,6 +3626,17 @@ spec:
                         required:
                         - port
                         type: object
+                      sleep:
+                        description: Sleep represents the duration that the container
+                          should sleep before being terminated.
+                        properties:
+                          seconds:
+                            description: Seconds is the number of seconds to sleep.
+                            format: int64
+                            type: integer
+                        required:
+                        - seconds
+                        type: object
                       tcpSocket:
                         description: Deprecated. TCPSocket is NOT supported as a LifecycleHandler
                           and kept for the backward compatibility.
@@ -3600,6 +3719,17 @@ spec:
                             type: string
                         required:
                         - port
+                        type: object
+                      sleep:
+                        description: Sleep represents the duration that the container
+                          should sleep before being terminated.
+                        properties:
+                          seconds:
+                            description: Seconds is the number of seconds to sleep.
+                            format: int64
+                            type: integer
+                        required:
+                        - seconds
                         type: object
                       tcpSocket:
                         description: Deprecated. TCPSocket is NOT supported as a LifecycleHandler
@@ -3705,8 +3835,8 @@ spec:
                     properties:
                       enableMetrics:
                         description: EnableMetrics specifies if ServiceMonitor or
-                          PodMonitor(for sidecar mode) should be created for the OpenTelemetry
-                          Collector and Prometheus Exporters. The operator.observability.
+                          PodMonitor(for sidecar mode) should be created for the service
+                          managed by the OpenTelemetry Operator. The operator.observability.
                         type: boolean
                     type: object
                 type: object
@@ -4306,7 +4436,8 @@ spec:
                                   properties:
                                     labelSelector:
                                       description: A label query over a set of resources,
-                                        in this case pods.
+                                        in this case pods. If it's null, this PodAffinityTerm
+                                        matches with no Pods.
                                       properties:
                                         matchExpressions:
                                           description: matchExpressions is a list
@@ -4351,6 +4482,22 @@ spec:
                                           type: object
                                       type: object
                                       x-kubernetes-map-type: atomic
+                                    matchLabelKeys:
+                                      description: MatchLabelKeys is a set of pod
+                                        label keys to select which pods will be taken
+                                        into consideration.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                    mismatchLabelKeys:
+                                      description: MismatchLabelKeys is a set of pod
+                                        label keys to select which pods will be taken
+                                        into consideration.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
                                     namespaceSelector:
                                       description: A label query over the set of namespaces
                                         that the term applies to. The term is applied
@@ -4442,7 +4589,8 @@ spec:
                               properties:
                                 labelSelector:
                                   description: A label query over a set of resources,
-                                    in this case pods.
+                                    in this case pods. If it's null, this PodAffinityTerm
+                                    matches with no Pods.
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -4486,6 +4634,20 @@ spec:
                                       type: object
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                matchLabelKeys:
+                                  description: MatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                mismatchLabelKeys:
+                                  description: MismatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 namespaceSelector:
                                   description: A label query over the set of namespaces
                                     that the term applies to. The term is applied
@@ -4576,7 +4738,8 @@ spec:
                                   properties:
                                     labelSelector:
                                       description: A label query over a set of resources,
-                                        in this case pods.
+                                        in this case pods. If it's null, this PodAffinityTerm
+                                        matches with no Pods.
                                       properties:
                                         matchExpressions:
                                           description: matchExpressions is a list
@@ -4621,6 +4784,22 @@ spec:
                                           type: object
                                       type: object
                                       x-kubernetes-map-type: atomic
+                                    matchLabelKeys:
+                                      description: MatchLabelKeys is a set of pod
+                                        label keys to select which pods will be taken
+                                        into consideration.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                    mismatchLabelKeys:
+                                      description: MismatchLabelKeys is a set of pod
+                                        label keys to select which pods will be taken
+                                        into consideration.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
                                     namespaceSelector:
                                       description: A label query over the set of namespaces
                                         that the term applies to. The term is applied
@@ -4712,7 +4891,8 @@ spec:
                               properties:
                                 labelSelector:
                                   description: A label query over a set of resources,
-                                    in this case pods.
+                                    in this case pods. If it's null, this PodAffinityTerm
+                                    matches with no Pods.
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -4756,6 +4936,20 @@ spec:
                                       type: object
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                matchLabelKeys:
+                                  description: MatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                mismatchLabelKeys:
+                                  description: MismatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 namespaceSelector:
                                   description: A label query over the set of namespaces
                                     that the term applies to. The term is applied
@@ -4962,6 +5156,43 @@ spec:
                       type: string
                     description: NodeSelector to schedule OpenTelemetry TargetAllocator
                       pods.
+                    type: object
+                  observability:
+                    description: ObservabilitySpec defines how telemetry data gets
+                      handled.
+                    properties:
+                      metrics:
+                        description: Metrics defines the metrics configuration for
+                          operands.
+                        properties:
+                          enableMetrics:
+                            description: EnableMetrics specifies if ServiceMonitor
+                              or PodMonitor(for sidecar mode) should be created for
+                              the service managed by the OpenTelemetry Operator. The
+                              operator.observability.
+                            type: boolean
+                        type: object
+                    type: object
+                  podDisruptionBudget:
+                    description: PodDisruptionBudget specifies the pod disruption
+                      budget configuration to use for the target allocator workload.
+                    properties:
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: An eviction is allowed if at most "maxUnavailable"
+                          pods selected by "selector" are unavailable after the eviction,
+                          i.e. even in absence of the evicted pod.
+                        x-kubernetes-int-or-string: true
+                      minAvailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: An eviction is allowed if at least "minAvailable"
+                          pods selected by "selector" will still be available after
+                          the eviction, i.e. even in the absence of the evicted pod.
+                        x-kubernetes-int-or-string: true
                     type: object
                   prometheusCR:
                     description: PrometheusCR defines the configuration for the retrieval
@@ -5581,28 +5812,6 @@ spec:
                           description: resources represents the minimum resources
                             the volume should have.
                           properties:
-                            claims:
-                              description: "Claims lists the names of resources, defined
-                                in spec.resourceClaims, that are used by this container.
-                                \n This is an alpha field and requires enabling the
-                                DynamicResourceAllocation feature gate."
-                              items:
-                                description: ResourceClaim references one entry in
-                                  PodSpec.ResourceClaims.
-                                properties:
-                                  name:
-                                    description: Name must match the name of one entry
-                                      in pod.spec.resourceClaims of the Pod where
-                                      this field is used. It makes that resource available
-                                      inside a container.
-                                    type: string
-                                required:
-                                - name
-                                type: object
-                              type: array
-                              x-kubernetes-list-map-keys:
-                              - name
-                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -5668,6 +5877,10 @@ spec:
                         storageClassName:
                           description: 'storageClassName is the name of the StorageClass
                             required by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                          type: string
+                        volumeAttributesClassName:
+                          description: volumeAttributesClassName may be used to set
+                            the VolumeAttributesClass used by this claim.
                           type: string
                         volumeMode:
                           description: volumeMode defines what type of volume is required
@@ -5760,6 +5973,27 @@ spec:
                             - type
                             type: object
                           type: array
+                        currentVolumeAttributesClassName:
+                          description: currentVolumeAttributesClassName is the current
+                            name of the VolumeAttributesClass the PVC is using.
+                          type: string
+                        modifyVolumeStatus:
+                          description: ModifyVolumeStatus represents the status object
+                            of ControllerModifyVolume operation. When this is unset,
+                            there is no ModifyVolume operation being attempted.
+                          properties:
+                            status:
+                              description: status is the status of the ControllerModifyVolume
+                                operation.
+                              type: string
+                            targetVolumeAttributesClassName:
+                              description: targetVolumeAttributesClassName is the
+                                name of the VolumeAttributesClass the PVC currently
+                                being reconciled
+                              type: string
+                          required:
+                          - status
+                          type: object
                         phase:
                           description: phase represents the current phase of PersistentVolumeClaim.
                           type: string
@@ -6257,30 +6491,6 @@ spec:
                                   description: resources represents the minimum resources
                                     the volume should have.
                                   properties:
-                                    claims:
-                                      description: "Claims lists the names of resources,
-                                        defined in spec.resourceClaims, that are used
-                                        by this container. \n This is an alpha field
-                                        and requires enabling the DynamicResourceAllocation
-                                        feature gate."
-                                      items:
-                                        description: ResourceClaim references one
-                                          entry in PodSpec.ResourceClaims.
-                                        properties:
-                                          name:
-                                            description: Name must match the name
-                                              of one entry in pod.spec.resourceClaims
-                                              of the Pod where this field is used.
-                                              It makes that resource available inside
-                                              a container.
-                                            type: string
-                                        required:
-                                        - name
-                                        type: object
-                                      type: array
-                                      x-kubernetes-list-map-keys:
-                                      - name
-                                      x-kubernetes-list-type: map
                                     limits:
                                       additionalProperties:
                                         anyOf:
@@ -6352,6 +6562,11 @@ spec:
                                   description: 'storageClassName is the name of the
                                     StorageClass required by the claim. More info:
                                     https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                                  type: string
+                                volumeAttributesClassName:
+                                  description: volumeAttributesClassName may be used
+                                    to set the VolumeAttributesClass used by this
+                                    claim.
                                   type: string
                                 volumeMode:
                                   description: volumeMode defines what type of volume
@@ -6699,6 +6914,84 @@ spec:
                             description: Projection that may be projected along with
                               other supported volume types
                             properties:
+                              clusterTrustBundle:
+                                description: "ClusterTrustBundle allows a pod to access
+                                  the `.spec.trustBundle` field of ClusterTrustBundle
+                                  objects in an auto-updating file. \n Alpha, gated
+                                  by the ClusterTrustBundleProjection feature gate."
+                                properties:
+                                  labelSelector:
+                                    description: Select all ClusterTrustBundles that
+                                      match this label selector.  Only has effect
+                                      if signerName is set.  Mutually-exclusive with
+                                      name.  If unset, interpreted as "match nothing".
+                                    properties:
+                                      matchExpressions:
+                                        description: matchExpressions is a list of
+                                          label selector requirements. The requirements
+                                          are ANDed.
+                                        items:
+                                          description: A label selector requirement
+                                            is a selector that contains values, a
+                                            key, and an operator that relates the
+                                            key and values.
+                                          properties:
+                                            key:
+                                              description: key is the label key that
+                                                the selector applies to.
+                                              type: string
+                                            operator:
+                                              description: operator represents a key's
+                                                relationship to a set of values. Valid
+                                                operators are In, NotIn, Exists and
+                                                DoesNotExist.
+                                              type: string
+                                            values:
+                                              description: values is an array of string
+                                                values. If the operator is In or NotIn,
+                                                the values array must be non-empty.
+                                                If the operator is Exists or DoesNotExist,
+                                                the values array must be empty.
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        description: matchLabels is a map of {key,value}
+                                          pairs.
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  name:
+                                    description: Select a single ClusterTrustBundle
+                                      by object name.  Mutually-exclusive with signerName
+                                      and labelSelector.
+                                    type: string
+                                  optional:
+                                    description: If true, don't block pod startup
+                                      if the referenced ClusterTrustBundle(s) aren't
+                                      available.  If using name, then the named ClusterTrustBundle
+                                      is allowed not to exist.
+                                    type: boolean
+                                  path:
+                                    description: Relative path from the volume root
+                                      to write the bundle.
+                                    type: string
+                                  signerName:
+                                    description: Select all ClusterTrustBundles that
+                                      match this signer name. Mutually-exclusive with
+                                      name.  The contents of all selected ClusterTrustBundles
+                                      will be unified and deduplicated.
+                                    type: string
+                                required:
+                                - path
+                                type: object
                               configMap:
                                 description: configMap information about the configMap
                                   data to project

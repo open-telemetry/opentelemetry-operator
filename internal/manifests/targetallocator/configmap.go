@@ -15,8 +15,6 @@
 package targetallocator
 
 import (
-	"strings"
-
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,13 +33,7 @@ const (
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(params.OtelCol.Name)
-	version := strings.Split(params.OtelCol.Spec.Image, ":")
 	labels := Labels(params.OtelCol, name)
-	if len(version) > 1 {
-		labels["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
-		labels["app.kubernetes.io/version"] = "latest"
-	}
 
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA ConfigMap should have a single "$", as it does not support env var substitution
