@@ -145,7 +145,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 
 }
 
-// Tests that the newly added collector instance does not get assigned any target when the targets remain the same
+// Tests that the newly added collector instance does not get assigned any target when the targets remain the same.
 func TestNoAssignmentToNewCollector(t *testing.T) {
 	s, _ := New("least-weighted", logger)
 
