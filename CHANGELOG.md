@@ -2,6 +2,28 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.91.0
+
+### 🛑 Breaking changes 🛑
+
+- `target allocator`: Remove configuration hot reloading from target allocator (#2032)
+  This only affects use of target allocator without the operator.
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Create ServiceMonitor to monitor target allocator (#2311)
+- `collector`: Add Loki parser to extract loki service port from config (#1825)
+- `operator`: Bump Apache httpd version (#2463)
+- `operator`: Bump NodeJS dependencies. (#2459)
+- `operator`: Bump python autoinstrumentation version to 1.22.0/0.43b0 (#2460)
+- `operator`: Add version label to target allocator resources (#2454)
+- `operator`: Support for Kubernetes 1.29 version. (#2458)
+- `target allocator`: PDB support for target allocator (#2261)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Fix ServiceAccount naming for target allocator (#2443)
+
 ## 0.90.0
 
 ### 💡 Enhancements 💡
