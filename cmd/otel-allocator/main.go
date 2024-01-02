@@ -149,7 +149,7 @@ func main() {
 		})
 	runGroup.Add(
 		func() error {
-			err := collectorWatcher.Watch(ctx, &cfg.CollectorSelector, allocator.SetCollectors)
+			err := collectorWatcher.Watch(ctx, cfg.CollectorSelector, allocator.SetCollectors)
 			setupLog.Info("Collector watcher exited")
 			return err
 		},

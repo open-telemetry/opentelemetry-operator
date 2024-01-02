@@ -40,17 +40,17 @@ const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
 
 type Config struct {
-	ListenAddr             string               `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath     string               `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig          *rest.Config         `yaml:"-"`
-	RootLogger             logr.Logger          `yaml:"-"`
-	CollectorSelector      metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	PromConfig             *promconfig.Config   `yaml:"config"`
-	AllocationStrategy     *string              `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy         *string              `yaml:"filter_strategy,omitempty"`
-	PrometheusCR           PrometheusCRConfig   `yaml:"prometheus_cr,omitempty"`
-	PodMonitorSelector     map[string]string    `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector map[string]string    `yaml:"service_monitor_selector,omitempty"`
+	ListenAddr             string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath     string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig          *rest.Config          `yaml:"-"`
+	RootLogger             logr.Logger           `yaml:"-"`
+	CollectorSelector      *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	PromConfig             *promconfig.Config    `yaml:"config"`
+	AllocationStrategy     *string               `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy         *string               `yaml:"filter_strategy,omitempty"`
+	PrometheusCR           PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	PodMonitorSelector     map[string]string     `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector map[string]string     `yaml:"service_monitor_selector,omitempty"`
 }
 
 type PrometheusCRConfig struct {

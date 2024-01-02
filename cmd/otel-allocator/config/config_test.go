@@ -45,7 +45,7 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/config_test.yaml",
 			},
 			want: Config{
-				CollectorSelector: metav1.LabelSelector{
+				CollectorSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app.kubernetes.io/instance":   "default.test",
 						"app.kubernetes.io/managed-by": "opentelemetry-operator",
@@ -111,7 +111,7 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/pod_service_selector_test.yaml",
 			},
 			want: Config{
-				CollectorSelector: metav1.LabelSelector{
+				CollectorSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app.kubernetes.io/instance":   "default.test",
 						"app.kubernetes.io/managed-by": "opentelemetry-operator",

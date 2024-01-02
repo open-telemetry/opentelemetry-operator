@@ -54,6 +54,11 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
+label_selector:
+  app.kubernetes.io/component: opentelemetry-collector
+  app.kubernetes.io/instance: default.my-instance
+  app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/part-of: opentelemetry
 `,
 		}
 		instance := collectorInstance()
@@ -91,6 +96,11 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
+label_selector:
+  app.kubernetes.io/component: opentelemetry-collector
+  app.kubernetes.io/instance: default.my-instance
+  app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/part-of: opentelemetry
 pod_monitor_selector:
   release: my-instance
 service_monitor_selector:
@@ -138,6 +148,11 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
+label_selector:
+  app.kubernetes.io/component: opentelemetry-collector
+  app.kubernetes.io/instance: default.my-instance
+  app.kubernetes.io/managed-by: opentelemetry-operator
+  app.kubernetes.io/part-of: opentelemetry
 prometheus_cr:
   scrape_interval: 30s
 `,
