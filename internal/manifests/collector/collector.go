@@ -60,7 +60,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 	}
 
-	if !featuregate.CreateRBACPermissions.IsEnabled() {
+	if !params.Config.CreateRBACPermissions() {
 		manifestFactories = append(manifestFactories,
 			manifests.FactoryWithoutError(ClusterRole),
 			manifests.FactoryWithoutError(ClusterRoleBinding),

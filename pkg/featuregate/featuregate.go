@@ -90,14 +90,6 @@ var (
 		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"),
 		featuregate.WithRegisterFromVersion("v0.82.0"),
 	)
-
-	// CreateRBACPermissions is the feature gate that enables the automatic creation of RBAC permissions depending on the used processors.
-	CreateRBACPermissions = featuregate.GlobalRegistry().MustRegister(
-		"operator.collector.createrbacpremissions",
-		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("enables the automatic creation of RBAC permissions depending on the used processors"),
-		featuregate.WithRegisterFromVersion("v0.91.0"),
-	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

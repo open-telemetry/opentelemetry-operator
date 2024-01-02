@@ -41,6 +41,7 @@ type options struct {
 	autoInstrumentationNginxImage       string
 	collectorImage                      string
 	collectorConfigMapEntry             string
+	createRBACPermissions               bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
@@ -72,6 +73,11 @@ func WithCollectorImage(s string) Option {
 func WithCollectorConfigMapEntry(s string) Option {
 	return func(o *options) {
 		o.collectorConfigMapEntry = s
+	}
+}
+func WithCreateRBACPermissions(s bool) Option {
+	return func(o *options) {
+		o.createRBACPermissions = s
 	}
 }
 func WithTargetAllocatorConfigMapEntry(s string) Option {
