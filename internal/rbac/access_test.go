@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/authorization/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,7 +68,7 @@ func TestReviewer_CanAccess(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name: "can't access",
+			name: "cannot access",
 			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{
 				Denied: true,
 			}, nil),
@@ -125,9 +126,9 @@ func TestReviewer_CanAccess(t *testing.T) {
 				return
 			}
 			if got.Status.Denied && got.Status.Denied != !tt.want {
-				t.Errorf("CanAccess() got = %v, want %v", got.Status.Denied, tt.want)
+				assert.Equal(t, tt.want, got.Status.Denied)
 			} else if got.Status.Allowed != tt.want {
-				t.Errorf("CanAccess() got = %v, want %v", got, tt.want)
+				assert.Equal(t, tt.want, got.Status.Allowed)
 			}
 		})
 	}
@@ -148,7 +149,7 @@ func TestReviewer_CheckPolicyRules(t *testing.T) {
 		numFailedReviews int
 	}{
 		{
-			name: "can't access",
+			name: "cannot access",
 			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{
 				Denied: true,
 			}, nil),
@@ -227,11 +228,9 @@ func TestReviewer_CheckPolicyRules(t *testing.T) {
 				return
 			}
 			ok, deniedReviews := AllSubjectAccessReviewsAllowed(got)
-			if ok != tt.want {
-				t.Errorf("CheckPolicyRules() got = %v, want %v", ok, tt.want)
-			}
-			if !ok && len(deniedReviews) != tt.numFailedReviews {
-				t.Errorf("CheckPolicyRules() deniedReviews got = %v, want %v", len(deniedReviews), tt.numFailedReviews)
+			assert.Equal(t, tt.want, ok)
+			if !ok {
+				assert.Equal(t, tt.numFailedReviews, len(deniedReviews))
 			}
 		})
 	}

@@ -35,7 +35,7 @@ import (
 	kubeTesting "k8s.io/client-go/testing"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
 var (

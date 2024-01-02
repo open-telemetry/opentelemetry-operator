@@ -29,8 +29,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/rbac"
 )
 
 var (

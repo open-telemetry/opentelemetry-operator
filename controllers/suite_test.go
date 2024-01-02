@@ -53,7 +53,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	// +kubebuilder:scaffold:imports
 )
 
