@@ -51,7 +51,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	cols := MakeNCollectors(3, 0)
 	s.SetCollectors(cols)
 
-	initTargets := MakeNNewTargetsWithPreAssigningCollectors(6, 3, 0)
+	initTargets := MakeNNewTargets(6, 3, 0)
 
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
@@ -61,7 +61,7 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 	assert.Len(t, s.TargetItems(), expectedTargetLen)
 
 	// prepare second round of targets
-	tar := MakeNNewTargetsWithPreAssigningCollectors(4, 3, 0)
+	tar := MakeNNewTargets(4, 3, 0)
 
 	// test that fewer targets are found - removed
 	s.SetTargets(tar)
@@ -126,7 +126,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 	for _, i := range cols {
 		assert.NotNil(t, s.Collectors()[i.Name])
 	}
-	initTargets := MakeNNewTargetsWithPreAssigningCollectors(6, 3, 0)
+	initTargets := MakeNNewTargets(6, 3, 0)
 
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
@@ -161,7 +161,7 @@ func TestNoAssignmentToNewCollector(t *testing.T) {
 	}
 
 	initialColsBeforeAddingNewCol := s.Collectors()
-	initTargets := MakeNNewTargetsWithoutPreAssigningCollectors(6, 0)
+	initTargets := MakeNNewTargets(6, 0, 0)
 
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
@@ -208,7 +208,7 @@ func TestSmartCollectorReassignment(t *testing.T) {
 	for _, i := range cols {
 		assert.NotNil(t, s.Collectors()[i.Name])
 	}
-	initTargets := MakeNNewTargetsWithPreAssigningCollectors(6, 0, 0)
+	initTargets := MakeNNewTargets(6, 0, 0)
 	// test that targets and collectors are added properly
 	s.SetTargets(initTargets)
 
@@ -253,7 +253,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	cols := MakeNCollectors(3, 0)
 	s.SetCollectors(cols)
 
-	targets := MakeNNewTargetsWithPreAssigningCollectors(27, 3, 0)
+	targets := MakeNNewTargets(27, 3, 0)
 	s.SetTargets(targets)
 
 	// Divisor needed to get 15%
@@ -292,7 +292,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 	// adding targets at 'random'
-	for _, item := range MakeNNewTargetsWithPreAssigningCollectors(13, 3, 100) {
+	for _, item := range MakeNNewTargets(13, 3, 100) {
 		targets[item.Hash()] = item
 	}
 	s.SetTargets(targets)
