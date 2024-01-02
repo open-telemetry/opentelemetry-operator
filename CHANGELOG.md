@@ -24,6 +24,18 @@ Changes by Version
 
 - `target allocator`: Fix ServiceAccount naming for target allocator (#2443)
 
+### Components
+
+* [OpenTelemetry Collector - v0.91.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.91.0)
+* [OpenTelemetry Contrib - v0.91.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.91.0)
+* [Java auto-instrumentation - 1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
+* [.NET auto-instrumentation - 1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.2.0)
+* [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
+* [Python - 0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.43b0)
+* [Go - v0.8.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.8.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)]
+
 ## 0.90.0
 
 ### 💡 Enhancements 💡

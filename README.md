@@ -709,7 +709,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.71.0                | v1.19 to v1.25       | v1                  |
 | v0.70.0                | v1.19 to v1.25       | v1                  |
 | v0.69.0                | v1.19 to v1.25       | v1                  |
-| v0.68.0                | v1.19 to v1.25       | v1                  |
 
 ## Contributing and Developing
 
