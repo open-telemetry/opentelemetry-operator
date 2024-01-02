@@ -37,7 +37,7 @@ var (
 	_ admission.CustomValidator = &CollectorWebhook{}
 	_ admission.CustomDefaulter = &CollectorWebhook{}
 
-	// targetAllocatorCRPolicyRules are the policy rules required for the CR functionality
+	// targetAllocatorCRPolicyRules are the policy rules required for the CR functionality.
 	targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
 		{
 			APIGroups: []string{"monitoring.coreos.com"},
