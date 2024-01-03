@@ -68,7 +68,7 @@ func (c Config) GetTargetsFilterStrategy() string {
 	if c.FilterStrategy != nil {
 		return *c.FilterStrategy
 	}
-	return ""
+	return "relabel-config"
 }
 
 func LoadFromFile(file string, target *Config) error {
