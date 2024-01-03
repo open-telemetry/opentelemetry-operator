@@ -61,7 +61,7 @@ func (c Config) GetAllocationStrategy() string {
 	if c.AllocationStrategy != nil {
 		return *c.AllocationStrategy
 	}
-	return "least-weighted"
+	return "consistent-hashing"
 }
 
 func (c Config) GetTargetsFilterStrategy() string {
