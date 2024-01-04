@@ -407,6 +407,9 @@ func warningsGroupedByResource(reviews []*v1.SubjectAccessReview) []string {
 	for _, review := range reviews {
 		if review.Spec.ResourceAttributes != nil {
 			key := fmt.Sprintf("%s/%s", review.Spec.ResourceAttributes.Group, review.Spec.ResourceAttributes.Resource)
+			if len(review.Spec.ResourceAttributes.Group) == 0 {
+				key = review.Spec.ResourceAttributes.Resource
+			}
 			fullResourceToVerbs[key] = append(fullResourceToVerbs[key], review.Spec.ResourceAttributes.Verb)
 		} else if review.Spec.NonResourceAttributes != nil {
 			key := fmt.Sprintf("nonResourceURL: %s", review.Spec.NonResourceAttributes.Path)
