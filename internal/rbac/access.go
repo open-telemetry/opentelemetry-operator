@@ -39,7 +39,8 @@ func NewReviewer(c kubernetes.Interface) *Reviewer {
 	}
 }
 
-// AllSubjectAccessReviewsAllowed checks if all of subjectAccessReviews are explicitly allowed.
+// AllSubjectAccessReviewsAllowed checks if all of subjectAccessReviews are explicitly allowed. If false, the method
+// returns the reviews that were denied.
 func AllSubjectAccessReviewsAllowed(subjectAccessReviews []*v1.SubjectAccessReview) (bool, []*v1.SubjectAccessReview) {
 	allowed := true
 	var deniedReviews []*v1.SubjectAccessReview
