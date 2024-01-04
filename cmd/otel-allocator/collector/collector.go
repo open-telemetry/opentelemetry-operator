@@ -128,6 +128,11 @@ func runWatch(ctx context.Context, k *Client, c <-chan watch.Event, collectorMap
 				return ""
 			}
 
+			if pod.Spec.NodeName == "" {
+				k.log.Info("Node name is missing from the spec. Restarting watch routine")
+				return ""
+			}
+
 			switch event.Type { //nolint:exhaustive
 			case watch.Added:
 				collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)

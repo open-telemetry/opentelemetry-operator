@@ -86,6 +86,12 @@ func (allocator *perNodeAllocator) handleCollectors(diff diff.Changes[*Collector
 	for _, i := range diff.Additions() {
 		allocator.collectors[i.NodeName] = NewCollector(i.Name, i.NodeName)
 	}
+
+	// For a case where a collector is removed and added back, we need
+	// to re-allocate any already existing targets.
+	for _, item := range allocator.targetItems {
+		allocator.addTargetToTargetItems(item)
+	}
 }
 
 // SetTargets accepts a list of targets that will be used to make
