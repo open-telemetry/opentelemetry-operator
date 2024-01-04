@@ -290,7 +290,7 @@ func LoadFromFile(cfg *Config, configFile string) error {
 	if err != nil {
 		return err
 	}
-	if err = yaml.UnmarshalStrict(yamlFile, cfg); err != nil {
+	if err = yaml.Unmarshal(yamlFile, cfg); err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
 	return nil

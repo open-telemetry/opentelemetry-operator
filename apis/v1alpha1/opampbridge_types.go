@@ -15,8 +15,6 @@
 package v1alpha1
 
 import (
-	"time"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,19 +24,19 @@ type Healthcheck struct {
 	// Enabled determines whether the bridge should health check collector pods.
 	// +optional
 	// +kubebuilder:default:="false"
-	Enabled bool `yaml:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 
 	// Path is the path for the healthcheck endpoint.
 	//
 	// +optional
 	// +kubebuilder:default:="/"
-	Path string `yaml:"path,omitempty"`
+	Path string `json:"path,omitempty"`
 
 	// Port is the port the collector uses for health checks.
 	//
 	// +optional
 	// +kubebuilder:default:=13133
-	Port int `yaml:"port,omitempty"`
+	Port int `json:"port,omitempty"`
 
 	// Interval is how often the bridge should health check the collectors it monitors.
 	// default is 30s.
@@ -46,7 +44,7 @@ type Healthcheck struct {
 	// +optional
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
-	Interval time.Duration `yaml:"interval,omitempty"`
+	Interval *metav1.Duration `json:"interval,omitempty"`
 }
 
 // OpAMPBridgeSpec defines the desired state of OpAMPBridge.
@@ -58,6 +56,11 @@ type OpAMPBridgeSpec struct {
 	// typically used to set access tokens or other authorization headers.
 	// +optional
 	Headers map[string]string `json:"headers,omitempty"`
+	// Healthcheck is an optional configuration for the bridge which controls the bridge's health check capability.
+	// If enabled, the bridge will issue requests against the specified endpoint/port on the specified interval and
+	// report the status as part of its OpAMP Component Health
+	// +optional
+	Healthcheck *Healthcheck `json:"healthcheck,omitempty"`
 	// Capabilities supported by the OpAMP Bridge
 	// +required
 	Capabilities map[OpAMPBridgeCapability]bool `json:"capabilities"`

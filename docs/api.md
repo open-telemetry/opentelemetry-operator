@@ -3705,6 +3705,13 @@ OpAMPBridgeSpec defines the desired state of OpAMPBridge.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opampbridgespechealthcheck">healthcheck</a></b></td>
+        <td>object</td>
+        <td>
+          Healthcheck is an optional configuration for the bridge which controls the bridge's health check capability.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>hostNetwork</b></td>
         <td>boolean</td>
         <td>
@@ -5539,6 +5546,63 @@ The Secret to select from
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.healthcheck
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+Healthcheck is an optional configuration for the bridge which controls the bridge's health check capability.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled determines whether the bridge should health check collector pods.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>interval</b></td>
+        <td>string</td>
+        <td>
+          Interval is how often the bridge should health check the collectors it monitors. default is 30s.<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path is the path for the healthcheck endpoint.<br/>
+          <br/>
+            <i>Default</i>: /<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port is the port the collector uses for health checks.<br/>
+          <br/>
+            <i>Default</i>: 13133<br/>
         </td>
         <td>false</td>
       </tr></tbody>

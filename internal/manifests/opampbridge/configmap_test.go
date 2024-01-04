@@ -15,9 +15,10 @@
 package opampbridge
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"testing"
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -61,6 +62,11 @@ componentsAllowed:
 endpoint: ws://opamp-server:4320/v1/opamp
 headers:
   authorization: access-12345-token
+healthCheck:
+  enabled: true
+  interval: 15s
+  path: /test
+  port: 8000
 `}
 
 		opampBridge := v1alpha1.OpAMPBridge{
@@ -72,6 +78,14 @@ headers:
 				Image:    "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
 				Endpoint: "ws://opamp-server:4320/v1/opamp",
 				Headers:  map[string]string{"authorization": "access-12345-token"},
+				Healthcheck: &v1alpha1.Healthcheck{
+					Enabled: true,
+					Path:    "/test",
+					Port:    8000,
+					Interval: &metav1.Duration{
+						Duration: 15 * time.Second,
+					},
+				},
 				Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
 					v1alpha1.OpAMPBridgeCapabilityReportsStatus:                  true,
 					v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,

@@ -48,6 +48,15 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		config["headers"] = params.OpAMPBridge.Spec.Headers
 	}
 
+	if params.OpAMPBridge.Spec.Healthcheck != nil && params.OpAMPBridge.Spec.Healthcheck.Enabled {
+		healthcheck := map[interface{}]interface{}{}
+		healthcheck["enabled"] = params.OpAMPBridge.Spec.Healthcheck.Enabled
+		healthcheck["path"] = params.OpAMPBridge.Spec.Healthcheck.Path
+		healthcheck["port"] = params.OpAMPBridge.Spec.Healthcheck.Port
+		healthcheck["interval"] = params.OpAMPBridge.Spec.Healthcheck.Interval.Duration.String()
+		config["healthCheck"] = healthcheck
+	}
+
 	if params.OpAMPBridge.Spec.Capabilities != nil {
 		config["capabilities"] = params.OpAMPBridge.Spec.Capabilities
 	}

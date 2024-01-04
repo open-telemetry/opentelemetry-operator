@@ -970,6 +970,30 @@ spec:
                   to the OpAMP Server, typically used to set access tokens or other
                   authorization headers.
                 type: object
+              healthcheck:
+                description: Healthcheck is an optional configuration for the bridge
+                  which controls the bridge's health check capability.
+                properties:
+                  enabled:
+                    default: "false"
+                    description: Enabled determines whether the bridge should health
+                      check collector pods.
+                    type: boolean
+                  interval:
+                    default: 30s
+                    description: Interval is how often the bridge should health check
+                      the collectors it monitors. default is 30s.
+                    format: duration
+                    type: string
+                  path:
+                    default: /
+                    description: Path is the path for the healthcheck endpoint.
+                    type: string
+                  port:
+                    default: 13133
+                    description: Port is the port the collector uses for health checks.
+                    type: integer
+                type: object
               hostNetwork:
                 description: HostNetwork indicates if the pod should run in the host
                   networking namespace.
