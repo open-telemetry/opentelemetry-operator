@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/healthchecker"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
 )
@@ -48,6 +49,7 @@ type Agent struct {
 
 	opampClient         client.OpAMPClient
 	metricReporter      *metrics.MetricReporter
+	healthchecker       healthchecker.HealthChecker
 	config              *config.Config
 	applier             operator.ConfigApplier
 	remoteConfigEnabled bool
@@ -56,7 +58,12 @@ type Agent struct {
 	ticker *time.Ticker
 }
 
-func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config.Config, opampClient client.OpAMPClient) *Agent {
+func NewAgent(
+	logger logr.Logger,
+	applier operator.ConfigApplier,
+	config *config.Config,
+	opampClient client.OpAMPClient,
+	healthchecker healthchecker.HealthChecker) *Agent {
 	var t *time.Ticker
 	if config.HeartbeatInterval > 0 {
 		t = time.NewTicker(config.HeartbeatInterval)
@@ -65,6 +72,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 		config:              config,
 		applier:             applier,
 		logger:              logger,
+		healthchecker:       healthchecker,
 		appliedKeys:         map[collectorKey]bool{},
 		instanceId:          config.GetNewInstanceId(),
 		agentDescription:    config.GetDescription(),
@@ -103,7 +111,6 @@ func (agent *Agent) getHealth() *protobufs.ComponentHealth {
 }
 
 // generateComponentHealthMap allows the bridge to report the status of the collector pools it owns.
-// TODO: implement enhanced health messaging.
 func (agent *Agent) generateComponentHealthMap() (map[string]*protobufs.ComponentHealth, error) {
 	cols, err := agent.applier.ListInstances()
 	if err != nil {
@@ -116,6 +123,9 @@ func (agent *Agent) generateComponentHealthMap() (map[string]*protobufs.Componen
 			StartTimeUnixNano:  uint64(col.ObjectMeta.GetCreationTimestamp().UnixNano()),
 			StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
 			Status:             col.Status.Scale.StatusReplicas,
+		}
+		if agent.config.HealthCheckConfig.Enabled {
+			healthMap[key.String()].ComponentHealthMap = agent.healthchecker.GetComponentHealth(col.Status.Scale.Selector)
 		}
 	}
 	return healthMap, nil
@@ -177,6 +187,9 @@ func (agent *Agent) Start() error {
 	}
 
 	if agent.config.HeartbeatInterval > 0 {
+		if agent.config.HealthCheckConfig.Enabled {
+			agent.healthchecker.Start()
+		}
 		go agent.runHeartbeat()
 	}
 
@@ -226,7 +239,9 @@ func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.Effectiv
 		return nil, err
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
+	var selectors []string
 	for _, instance := range instances {
+		selectors = append(selectors, instance.Status.Scale.Selector)
 		marshaled, err := yaml.Marshal(instance)
 		if err != nil {
 			agent.logger.Error(err, "failed to marhsal config")
@@ -237,6 +252,9 @@ func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.Effectiv
 			Body:        marshaled,
 			ContentType: "yaml",
 		}
+	}
+	if agent.config.HealthCheckConfig.Enabled {
+		agent.healthchecker.SetCollectors(selectors)
 	}
 	return &protobufs.EffectiveConfig{
 		ConfigMap: &protobufs.AgentConfigMap{

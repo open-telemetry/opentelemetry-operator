@@ -22,6 +22,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/agent"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/healthchecker"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
 )
 
@@ -48,8 +49,13 @@ func main() {
 	}
 	operatorClient := operator.NewClient(cfg.Name, l.WithName("operator-client"), kubeClient, cfg.GetComponentsAllowed())
 
+	var checker healthchecker.HealthChecker
+	if cfg.HealthCheckConfig.Enabled {
+		checker = healthchecker.NewClient(l.WithName("healthchecker"), cfg.HealthCheckConfig, kubeClient)
+	}
+
 	opampClient := cfg.CreateClient()
-	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient)
+	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient, checker)
 
 	if err := opampAgent.Start(); err != nil {
 		l.Error(err, "Cannot start OpAMP client")

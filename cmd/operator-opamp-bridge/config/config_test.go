@@ -164,6 +164,37 @@ func TestLoad(t *testing.T) {
 			},
 			wantErr: assert.NoError,
 		},
+		{
+			name: "base case w/ healthcheck",
+			args: args{
+				file: "./testdata/agenthealthcheck.yaml",
+			},
+			want: &Config{
+				RootLogger: logr.Discard(),
+				Endpoint:   "ws://127.0.0.1:4320/v1/opamp",
+				HealthCheckConfig: HealthCheckConfig{
+					Enabled:  true,
+					Path:     "/",
+					Port:     13133,
+					Interval: 15 * time.Second,
+				},
+				Capabilities: map[Capability]bool{
+					AcceptsRemoteConfig:            true,
+					ReportsEffectiveConfig:         true,
+					ReportsOwnTraces:               true,
+					ReportsOwnMetrics:              true,
+					ReportsOwnLogs:                 true,
+					AcceptsOpAMPConnectionSettings: true,
+					AcceptsOtherConnectionSettings: true,
+					AcceptsRestartCommand:          true,
+					ReportsHealth:                  true,
+					ReportsRemoteConfig:            true,
+					AcceptsPackages:                false,
+					ReportsPackageStatuses:         false,
+				},
+			},
+			wantErr: assert.NoError,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

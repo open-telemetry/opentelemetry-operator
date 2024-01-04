@@ -314,7 +314,7 @@ endif
 
 
 .PHONY: load-image-operator-opamp-bridge
-load-image-operator-opamp-bridge:
+load-image-operator-opamp-bridge: container-operator-opamp-bridge
 	kind load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
 
 .PHONY: cert-manager

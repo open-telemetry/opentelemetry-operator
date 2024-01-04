@@ -15,9 +15,39 @@
 package v1alpha1
 
 import (
+	"time"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// Healthcheck defines the state of the bridge's healthchecking capability.
+type Healthcheck struct {
+	// Enabled determines whether the bridge should health check collector pods.
+	// +optional
+	// +kubebuilder:default:="false"
+	Enabled bool `yaml:"enabled,omitempty"`
+
+	// Path is the path for the healthcheck endpoint.
+	//
+	// +optional
+	// +kubebuilder:default:="/"
+	Path string `yaml:"path,omitempty"`
+
+	// Port is the port the collector uses for health checks.
+	//
+	// +optional
+	// +kubebuilder:default:=13133
+	Port int `yaml:"port,omitempty"`
+
+	// Interval is how often the bridge should health check the collectors it monitors.
+	// default is 30s.
+	//
+	// +optional
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
+	Interval time.Duration `yaml:"interval,omitempty"`
+}
 
 // OpAMPBridgeSpec defines the desired state of OpAMPBridge.
 type OpAMPBridgeSpec struct {

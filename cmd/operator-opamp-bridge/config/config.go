@@ -83,6 +83,22 @@ const (
 	ReportsRemoteConfig            Capability = "ReportsRemoteConfig"
 )
 
+// HealthCheckConfig is the configuration used for running health checks against collector instances.
+// Currently, the bridge uses the default HTTP transport.
+type HealthCheckConfig struct {
+	Enabled bool `yaml:"enabled,omitempty"`
+
+	// Path is the path for the healthcheck endpoint.
+	Path string `yaml:"path,omitempty"`
+
+	// Port is the port the collector uses for health checks.
+	Port int `yaml:"port,omitempty"`
+
+	// Interval is how often the bridge should health check the collectors it monitors.
+	// default is 30s.
+	Interval time.Duration `yaml:"interval,omitempty"`
+}
+
 type Config struct {
 	// KubeConfigFilePath is empty if InClusterConfig() should be used, otherwise it's a path to where a valid
 	// kubernetes configuration file.
@@ -93,6 +109,7 @@ type Config struct {
 
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	ComponentsAllowed map[string][]string `yaml:"componentsAllowed,omitempty"`
+	HealthCheckConfig HealthCheckConfig   `yaml:"healthCheck,omitempty"`
 	Endpoint          string              `yaml:"endpoint"`
 	Headers           Headers             `yaml:"headers,omitempty"`
 	Capabilities      map[Capability]bool `yaml:"capabilities"`
@@ -104,6 +121,10 @@ func NewConfig(logger logr.Logger) *Config {
 	return &Config{
 		RootLogger: logger,
 	}
+}
+
+func (c *Config) GetHealthCheckConfig() HealthCheckConfig {
+	return c.HealthCheckConfig
 }
 
 func (c *Config) CreateClient() opampclient.OpAMPClient {

@@ -56,7 +56,6 @@ type Client struct {
 	log               logr.Logger
 	componentsAllowed map[string]map[string]bool
 	k8sClient         client.Client
-	close             chan bool
 	name              string
 }
 
@@ -67,7 +66,6 @@ func NewClient(name string, log logr.Logger, c client.Client, componentsAllowed 
 		log:               log,
 		componentsAllowed: componentsAllowed,
 		k8sClient:         c,
-		close:             make(chan bool, 1),
 		name:              name,
 	}
 }
