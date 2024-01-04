@@ -972,7 +972,7 @@ spec:
                   which controls the bridge's health check capability.
                 properties:
                   enabled:
-                    default: "false"
+                    default: false
                     description: Enabled determines whether the bridge should health
                       check collector pods.
                     type: boolean

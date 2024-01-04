@@ -23,7 +23,7 @@ import (
 type Healthcheck struct {
 	// Enabled determines whether the bridge should health check collector pods.
 	// +optional
-	// +kubebuilder:default:="false"
+	// +kubebuilder:default:=false
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Path is the path for the healthcheck endpoint.
