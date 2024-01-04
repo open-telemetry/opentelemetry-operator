@@ -200,6 +200,10 @@ func (c CollectorWebhook) validate(r *OpenTelemetryCollector) (admission.Warning
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
 	}
 
+	if r.Spec.TargetAllocator.Enabled && (r.Spec.Mode == ModeDaemonSet && r.Spec.TargetAllocator.AllocationStrategy != OpenTelemetryTargetAllocatorAllocationStrategyPerNode) {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which must be used with target allocation strategy %s ", r.Spec.Mode, OpenTelemetryTargetAllocatorAllocationStrategyPerNode)
+	}
+
 	if r.Spec.TargetAllocator.AllocationStrategy == OpenTelemetryTargetAllocatorAllocationStrategyPerNode && r.Spec.Mode != ModeDaemonSet {
 		return warnings, fmt.Errorf("target allocation strategy %s is only supported in OpenTelemetry Collector mode %s", OpenTelemetryTargetAllocatorAllocationStrategyPerNode, ModeDaemonSet)
 	}

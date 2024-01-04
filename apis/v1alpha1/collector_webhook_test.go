@@ -540,6 +540,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec Prometheus configuration is incorrect",
 		},
 		{
+			name: "invalid target allocation strategy",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDaemonSet,
+					TargetAllocator: OpenTelemetryTargetAllocator{
+						Enabled:            true,
+						AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted,
+					},
+				},
+			},
+			expectedErr: "does not support the target allocation deployment",
+		},
+		{
 			name: "invalid port name",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
