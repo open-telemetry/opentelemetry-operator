@@ -450,7 +450,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 								"app.kubernetes.io/part-of":    "opentelemetry",
 							}
 							taConfig["config"] = promConfig["config"]
-							taConfig["allocation_strategy"] = "least-weighted"
+							taConfig["allocation_strategy"] = "consistent-hashing"
 							taConfig["prometheus_cr"] = map[string]string{
 								"scrape_interval": "30s",
 							}
