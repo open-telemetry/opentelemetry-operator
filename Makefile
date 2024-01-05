@@ -97,6 +97,11 @@ all: manager
 .PHONY: ci
 ci: test
 
+# helper to get your gomod up-to-date
+.PHONY: gomod
+gomod:
+	go mod tidy && go mod vendor && (cd cmd/otel-allocator && go mod tidy) && (cd cmd/operator-opamp-bridge && go mod tidy)
+
 # Run tests
 # setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
 .PHONY: test
