@@ -53,7 +53,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	if len(params.OtelCol.Spec.TargetAllocator.AllocationStrategy) > 0 {
 		taConfig["allocation_strategy"] = params.OtelCol.Spec.TargetAllocator.AllocationStrategy
 	} else {
-		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
+		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
 	}
 
 	if len(params.OtelCol.Spec.TargetAllocator.FilterStrategy) > 0 {
