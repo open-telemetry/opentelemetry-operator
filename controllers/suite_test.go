@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -52,6 +53,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
+	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -147,8 +149,13 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to start webhook server: %v", mgrErr)
 		os.Exit(1)
 	}
+	clientset, clientErr := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		fmt.Printf("failed to setup kubernetes clientset %v", clientErr)
+	}
+	reviewer := rbac.NewReviewer(clientset)
 
-	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New()); err != nil {
+	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
