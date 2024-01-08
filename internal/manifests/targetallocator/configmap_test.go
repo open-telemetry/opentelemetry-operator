@@ -40,6 +40,12 @@ func TestDesiredConfigMap(t *testing.T) {
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -76,6 +82,12 @@ label_selector:
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -122,6 +134,12 @@ service_monitor_selector:
 
 		expectedData := map[string]string{
 			"targetallocator.yaml": `allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
 config:
   scrape_configs:
   - job_name: otel-collector
