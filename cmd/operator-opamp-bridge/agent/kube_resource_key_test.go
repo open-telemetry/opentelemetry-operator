@@ -28,7 +28,7 @@ func Test_collectorKeyFromKey(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    collectorKey
+		want    kubeResourceKey
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
@@ -36,7 +36,7 @@ func Test_collectorKeyFromKey(t *testing.T) {
 			args: args{
 				key: "namespace/good",
 			},
-			want: collectorKey{
+			want: kubeResourceKey{
 				name:      "good",
 				namespace: "namespace",
 			},
@@ -47,7 +47,7 @@ func Test_collectorKeyFromKey(t *testing.T) {
 			args: args{
 				key: "badnamespace",
 			},
-			want:    collectorKey{},
+			want:    kubeResourceKey{},
 			wantErr: assert.Error,
 		},
 		{
@@ -55,17 +55,17 @@ func Test_collectorKeyFromKey(t *testing.T) {
 			args: args{
 				key: "too/many/slashes",
 			},
-			want:    collectorKey{},
+			want:    kubeResourceKey{},
 			wantErr: assert.Error,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := collectorKeyFromKey(tt.args.key)
-			if !tt.wantErr(t, err, fmt.Sprintf("collectorKeyFromKey(%v)", tt.args.key)) {
+			got, err := kubeResourceFromKey(tt.args.key)
+			if !tt.wantErr(t, err, fmt.Sprintf("kubeResourceFromKey(%v)", tt.args.key)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "collectorKeyFromKey(%v)", tt.args.key)
+			assert.Equalf(t, tt.want, got, "kubeResourceFromKey(%v)", tt.args.key)
 		})
 	}
 }
@@ -91,7 +91,7 @@ func Test_collectorKey_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			k := newCollectorKey(tt.fields.namespace, tt.fields.name)
+			k := newKubeResourceKey(tt.fields.namespace, tt.fields.name)
 			assert.Equalf(t, tt.want, k.String(), "String()")
 		})
 	}
