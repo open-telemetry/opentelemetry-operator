@@ -44,7 +44,7 @@ func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: SelectorLabels(params.OtelCol),
 			},
 		},
 	}

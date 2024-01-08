@@ -22,7 +22,7 @@ jobs:
        # should be compatible with them.
        kube-version:
        - "1.23"
-       - "1.28"
+       - "1.29"
        group:
          - e2e
          - e2e-instrumentation
