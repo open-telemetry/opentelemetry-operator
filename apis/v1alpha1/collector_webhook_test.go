@@ -680,7 +680,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "does not support the target allocation deployment",
+			expectedErr: "mode is set to daemonset, which must be used with target allocation strategy per-node",
 		},
 		{
 			name: "invalid port name",
