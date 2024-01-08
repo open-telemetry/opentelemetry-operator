@@ -17,7 +17,6 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -27,14 +26,6 @@ import (
 type OpenTelemetryCollectorSpec struct {
 	// Common defines fields that are common to all OpenTelemetry CRD workloads.
 	Common OpenTelemetryCommonFields `json:",inline"`
-	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
-	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Spec.Common.Autoscaler.MinReplicas" instead.
-	MinReplicas *int32 `json:"minReplicas,omitempty"`
-	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
-	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Spec.Common.Autoscaler.MaxReplicas" instead.
-	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	TargetAllocator v1alpha1.OpenTelemetryTargetAllocator `json:"targetAllocator,omitempty"`
@@ -56,22 +47,6 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *v1alpha1.Probe `json:"livenessProbe,omitempty"`
-
-	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
-	// These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping
-	// metrics to their cloud, or in general sidecars that do not support automatic injection. This option only
-	// applies to Deployment, DaemonSet, and StatefulSet deployment modes of the collector. It does not apply to the sidecar
-	// deployment mode. More info about sidecars:
-	// https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
-	//
-	// Container names managed by the operator:
-	// * `otc-container`
-	//
-	// Overriding containers managed by the operator is outside the scope of what the maintainers will support and by
-	// doing so, you wil accept the risk of it breaking things.
-	//
-	// +optional
-	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
