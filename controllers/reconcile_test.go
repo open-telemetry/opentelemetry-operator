@@ -443,6 +443,14 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 
 							taConfig := make(map[interface{}]interface{})
+							taConfig["collector_selector"] = map[string]any{
+								"matchlabels": map[string]string{
+									"app.kubernetes.io/instance":   "default.test",
+									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/component":  "opentelemetry-collector",
+									"app.kubernetes.io/part-of":    "opentelemetry",
+								},
+							}
 							taConfig["label_selector"] = map[string]string{
 								"app.kubernetes.io/instance":   "default.test",
 								"app.kubernetes.io/managed-by": "opentelemetry-operator",
