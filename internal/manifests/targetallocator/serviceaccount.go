@@ -27,7 +27,7 @@ import (
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
 func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
 	if len(instance.Spec.TargetAllocator.ServiceAccount) == 0 {
-		return naming.ServiceAccount(instance.Name)
+		return naming.TargetAllocatorServiceAccount(instance.Name)
 	}
 
 	return instance.Spec.TargetAllocator.ServiceAccount
@@ -35,6 +35,10 @@ func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
 
 // ServiceAccount returns the service account for the given instance.
 func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
+	if len(params.OtelCol.Spec.TargetAllocator.ServiceAccount) > 0 {
+		return nil
+	}
+
 	name := naming.TargetAllocatorServiceAccount(params.OtelCol.Name)
 	labels := Labels(params.OtelCol, name)
 

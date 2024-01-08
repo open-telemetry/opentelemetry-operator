@@ -18,8 +18,10 @@ spec:
             - "--otlp-endpoint=cluster-collector-collector-headless:4317"
             - "--otlp-insecure=true"
             - "--rate=1"
-            - "--duration=5s"
+            - "--duration=3m"
             - "--otlp-attributes=telemetrygen=\"traces\""
             - "--otlp-header=telemetrygen=\"traces\""
+            - "--span-duration=1s"
+            - "--workers=1"
             - "traces"
       restartPolicy: Never

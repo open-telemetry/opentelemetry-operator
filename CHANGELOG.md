@@ -2,6 +2,79 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.91.0
+
+### 🛑 Breaking changes 🛑
+
+- `target allocator`: Remove configuration hot reloading from target allocator (#2032)
+  This only affects use of target allocator without the operator.
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Create ServiceMonitor to monitor target allocator (#2311)
+- `collector`: Add Loki parser to extract loki service port from config (#1825)
+- `operator`: Bump Apache httpd version (#2463)
+- `operator`: Bump NodeJS dependencies. (#2459)
+- `operator`: Bump python autoinstrumentation version to 1.22.0/0.43b0 (#2460)
+- `operator`: Add version label to target allocator resources (#2454)
+- `operator`: Support for Kubernetes 1.29 version. (#2458)
+- `target allocator`: PDB support for target allocator (#2261)
+- `operator`: enables the operator to create subject access reviews for different required permissions.(#2426)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Fix ServiceAccount naming for target allocator (#2443)
+- `operator`: add missing appProtocol in opencensus receiver(#2487)
+
+### Components
+
+* [OpenTelemetry Collector - v0.91.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.91.0)
+* [OpenTelemetry Contrib - v0.91.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.91.0)
+* [Java auto-instrumentation - 1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
+* [.NET auto-instrumentation - 1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.2.0)
+* [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
+* [Python - 0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.43b0)
+* [Go - v0.8.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.8.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)]
+
+## 0.90.0
+
+### 💡 Enhancements 💡
+
+- `autoinstrumentation`: Bump OpenTelemetry .NET Automatic Instrumentation to 1.2.0 (#2382)
+- `operator`: add liveness probe to target allocator deployment generation (#2258)
+- `operator`: added reconciliation errors for CRD events (#1972)
+- `operator`: removes the old way of running autodetection for openshift routes being available (#2108)
+- `bridge`: adds request headers to the opamp bridge config (#2410)
+- `bridge`: adds Headers to opamp bridge spec and configmap generation (#2410)
+- `operator`: Create PodMonitor when deploying collector in sidecar mode and Prometheus exporters are used. (#2306)
+- `operator`: add readiness probe to target allocator deployment generation (#2258)
+- `target allocator`: add readyz endpoint to TA (#2258)
+- `target allocator`: add target allocator securityContext configuration (#2397)
+- `target allocator`: Use only target address for allocation in consistent-hashing strategy (#2280)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: fixes ability to do a foreground cascading delete (#2364)
+- `operator`: fix error logging in collector container creation (#2420)
+- `operator`: lifecycle spec removed from cloned initContainer (#2366)
+- `operator`: add missing pod in the rbac (#1679)
+- `operator`: check if service account specified in otelcol before creating service account resource for collectors (#2372)
+- `target allocator`: Save targets discovered before collector instances come up (#2350)
+
+### Components
+
+* [OpenTelemetry Collector - v0.90.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.90.1)
+* [OpenTelemetry Contrib - v0.90.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.90.1)
+* [Java auto-instrumentation - 1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
+* [.NET auto-instrumentation - 1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.2.0)
+* [Node.JS - 0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.44.0)
+* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Go - v0.8.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.8.0-alpha)
+* [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
+* [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
+
 ## 0.89.0
 
 ### 🛑 Breaking changes 🛑

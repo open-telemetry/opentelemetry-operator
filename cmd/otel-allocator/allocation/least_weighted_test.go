@@ -15,6 +15,7 @@
 package allocation
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"testing"
@@ -142,6 +143,56 @@ func TestNoCollectorReassignment(t *testing.T) {
 	newTargetItems := s.TargetItems()
 	assert.Equal(t, targetItems, newTargetItems)
 
+}
+
+// Tests that the newly added collector instance does not get assigned any target when the targets remain the same.
+func TestNoAssignmentToNewCollector(t *testing.T) {
+	s, _ := New("least-weighted", logger)
+
+	// instantiate only 1 collector
+	cols := MakeNCollectors(1, 0)
+	s.SetCollectors(cols)
+
+	expectedColLen := len(cols)
+	assert.Len(t, s.Collectors(), expectedColLen)
+
+	for _, i := range cols {
+		assert.NotNil(t, s.Collectors()[i.Name])
+	}
+
+	initialColsBeforeAddingNewCol := s.Collectors()
+	initTargets := MakeNNewTargets(6, 0, 0)
+
+	// test that targets and collectors are added properly
+	s.SetTargets(initTargets)
+
+	// verify
+	expectedTargetLen := len(initTargets)
+	targetItems := s.TargetItems()
+	assert.Len(t, targetItems, expectedTargetLen)
+
+	// add another collector
+	newColName := fmt.Sprintf("collector-%d", len(cols))
+	cols[newColName] = &Collector{
+		Name:       newColName,
+		NumTargets: 0,
+	}
+	s.SetCollectors(cols)
+
+	// targets shall not change
+	newTargetItems := s.TargetItems()
+	assert.Equal(t, targetItems, newTargetItems)
+
+	// initial collectors still should have the same targets
+	for colName, col := range s.Collectors() {
+		if colName != newColName {
+			assert.Equal(t, initialColsBeforeAddingNewCol[colName], col)
+		}
+	}
+
+	// new collector should have no targets
+	newCollector := s.Collectors()[newColName]
+	assert.Equal(t, newCollector.NumTargets, 0)
 }
 
 func TestSmartCollectorReassignment(t *testing.T) {

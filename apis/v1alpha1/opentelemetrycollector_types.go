@@ -322,6 +322,10 @@ type OpenTelemetryTargetAllocator struct {
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
 	PrometheusCR OpenTelemetryTargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// SecurityContext configures the container security context for
+	// the targetallocator.
+	// +optional
+	SecurityContext *v1.PodSecurityContext `json:"securityContext,omitempty"`
 	// TopologySpreadConstraints embedded kubernetes pod configuration option,
 	// controls how pods are spread across your cluster among failure-domains
 	// such as regions, zones, nodes, and other user-defined topology domains
@@ -336,6 +340,17 @@ type OpenTelemetryTargetAllocator struct {
 	// consumed in the config file for the TargetAllocator.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
+	// ObservabilitySpec defines how telemetry data gets handled.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
+	Observability ObservabilitySpec `json:"observability,omitempty"`
+	// PodDisruptionBudget specifies the pod disruption budget configuration to use
+	// for the target allocator workload.
+	//
+	// +optional
+	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 }
 
 type OpenTelemetryTargetAllocatorPrometheusCR struct {
@@ -483,7 +498,7 @@ type PodDisruptionBudgetSpec struct {
 
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
-	// EnableMetrics specifies if ServiceMonitor should be created for the OpenTelemetry Collector and Prometheus Exporters.
+	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
 	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional
