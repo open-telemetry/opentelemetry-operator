@@ -21,25 +21,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEmptyObjectWarnings(t *testing.T) {
-	webhook := CollectorWebhook{}
-	warnings, err := webhook.validate(&OpenTelemetryCollector{
-		Spec: OpenTelemetryCollectorSpec{
-			Config: Config{
-				Processors: &AnyConfig{
-					Object: map[string]interface{}{
-						"batch": nil,
-						"foo":   nil,
-					},
-				},
-				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"foo": nil,
+func TestValidate(t *testing.T) {
+	tests := []struct {
+		name      string
+		collector OpenTelemetryCollector
+		warnings  []string
+		err       string
+	}{
+		{
+			name: "Test ",
+			collector: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Config: Config{
+						Processors: &AnyConfig{
+							Object: map[string]interface{}{
+								"batch": nil,
+								"foo":   nil,
+							},
+						},
+						Extensions: &AnyConfig{
+							Object: map[string]interface{}{
+								"foo": nil,
+							},
+						},
 					},
 				},
 			},
+
+			warnings: []string{
+				"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:. For compatibility tooling (kustomize and kubectl edit) it is recommended to use empty obejects e.g. batch: {}.",
+			},
 		},
-	})
-	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:. For compatibility tooling (kustomize and kubectl edit) it is recommended to use empty obejects e.g. batch: {}."}, warnings)
+	}
+	for _, tt := range tests {
+		webhook := CollectorWebhook{}
+		t.Run(tt.name, func(t *testing.T) {
+			warnings, err := webhook.validate(&tt.collector)
+			if tt.err == "" {
+				require.NoError(t, err)
+			} else {
+				assert.Equal(t, tt.err, err.Error())
+			}
+			assert.ElementsMatch(t, tt.warnings, warnings)
+		})
+	}
 }
