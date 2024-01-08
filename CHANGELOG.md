@@ -19,10 +19,12 @@ Changes by Version
 - `operator`: Add version label to target allocator resources (#2454)
 - `operator`: Support for Kubernetes 1.29 version. (#2458)
 - `target allocator`: PDB support for target allocator (#2261)
+- `operator`: enables the operator to create subject access reviews for different required permissions.(#2426)
 
 ### 🧰 Bug fixes 🧰
 
 - `target allocator`: Fix ServiceAccount naming for target allocator (#2443)
+- `operator`: add missing appProtocol in opencensus receiver(#2487)
 
 ### Components
 
