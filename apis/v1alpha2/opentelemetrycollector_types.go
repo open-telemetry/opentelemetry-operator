@@ -36,8 +36,10 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	UpgradeStrategy v1alpha1.UpgradeStrategy `json:"upgradeStrategy"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
+	// The empty objects e.g. batch: should be written as batch: {} otherwise they won't work with kustomize or kubectl edit.
 	// +required
-	Config string `json:"config,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Config Config `json:"config"`
 	// Ingress is used to specify how OpenTelemetry Collector is exposed. This
 	// functionality is only available if one of the valid modes is set.
 	// Valid modes are: deployment, daemonset and statefulset.
