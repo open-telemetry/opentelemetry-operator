@@ -7,7 +7,6 @@ spec:
   targetAllocator:
     enabled: true
     serviceAccount: ta
-    image: "local/opentelemetry-operator-targetallocator:e2e"
     prometheusCR:
       enabled: true
       serviceMonitorSelector:
