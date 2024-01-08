@@ -1377,7 +1377,7 @@ label_selector:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "85dd70e4e372d98b949fe1176b2bab3380f6b544a1392a8d7ba171d65649329a",
+									"opentelemetry-targetallocator-config/hash": "9126d0bb3bde858f655580a9ae6d4557c69ee430b4ab9f72e08c66334efe7989",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1766,7 +1766,7 @@ label_selector:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "85dd70e4e372d98b949fe1176b2bab3380f6b544a1392a8d7ba171d65649329a",
+									"opentelemetry-targetallocator-config/hash": "9126d0bb3bde858f655580a9ae6d4557c69ee430b4ab9f72e08c66334efe7989",
 								},
 							},
 							Spec: corev1.PodSpec{
