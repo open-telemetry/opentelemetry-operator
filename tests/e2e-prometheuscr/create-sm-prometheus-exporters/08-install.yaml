@@ -72,7 +72,6 @@ spec:
   targetAllocator:
     serviceAccount: ta
     enabled: true
-    image: "local/opentelemetry-operator-targetallocator:e2e"
     prometheusCR:
       enabled: true
     observability:

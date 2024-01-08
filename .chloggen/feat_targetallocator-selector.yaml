@@ -5,12 +5,14 @@ change_type: breaking
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Remove configuration hot reloading from target allocator
+note: Use standard K8s label selectors for collectors in target allocator config
 
 # One or more tracking issues related to the change
-issues: [2032]
+issues: [2422]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext: This only affects use of target allocator without the operator.
+subtext: |
+  This is a breaking change only for users of standalone target allocator. Operator users are unaffected.
+  The operator is still compatible with previous target allocator versions, and will be for the next 3 releases.
