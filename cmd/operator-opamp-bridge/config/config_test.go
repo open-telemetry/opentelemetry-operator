@@ -127,10 +127,7 @@ func TestLoad(t *testing.T) {
 			args: args{
 				file: "./testdata/agentbadconf.yaml",
 			},
-			want: &Config{
-				// We do unmarshal partially
-				Endpoint: "http://127.0.0.1:4320/v1/opamp",
-			},
+			want: &Config{},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
 				return assert.ErrorContains(t, err, "error unmarshaling YAML", i...)
 			},

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/yaml"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
@@ -37,7 +39,7 @@ import (
 type Agent struct {
 	logger logr.Logger
 
-	appliedKeys map[collectorKey]bool
+	appliedKeys map[kubeResourceKey]bool
 	clock       clock.Clock
 	startTime   uint64
 	lastHash    []byte
@@ -65,7 +67,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 		config:              config,
 		applier:             applier,
 		logger:              logger,
-		appliedKeys:         map[collectorKey]bool{},
+		appliedKeys:         map[kubeResourceKey]bool{},
 		instanceId:          config.GetNewInstanceId(),
 		agentDescription:    config.GetDescription(),
 		remoteConfigEnabled: config.RemoteConfigEnabled(),
@@ -85,7 +87,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 
 // getHealth is called every heartbeat interval to report health.
 func (agent *Agent) getHealth() *protobufs.ComponentHealth {
-	healthMap, err := agent.generateComponentHealthMap()
+	healthMap, err := agent.generateCollectorPoolHealth()
 	if err != nil {
 		return &protobufs.ComponentHealth{
 			Healthy:           false,
@@ -102,20 +104,70 @@ func (agent *Agent) getHealth() *protobufs.ComponentHealth {
 	}
 }
 
-// generateComponentHealthMap allows the bridge to report the status of the collector pools it owns.
-// TODO: implement enhanced health messaging.
-func (agent *Agent) generateComponentHealthMap() (map[string]*protobufs.ComponentHealth, error) {
+// generateCollectorPoolHealth allows the bridge to report the status of the collector pools it owns.
+// TODO: implement enhanced health messaging using the collector's new healthcheck extension:
+// https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/26661
+func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.ComponentHealth, error) {
 	cols, err := agent.applier.ListInstances()
 	if err != nil {
 		return nil, err
 	}
 	healthMap := map[string]*protobufs.ComponentHealth{}
 	for _, col := range cols {
-		key := newCollectorKey(col.GetNamespace(), col.GetName())
+		key := newKubeResourceKey(col.GetNamespace(), col.GetName())
+		podMap, err := agent.generateCollectorHealth(agent.getCollectorSelector(col), col.GetNamespace())
+		if err != nil {
+			return nil, err
+		}
 		healthMap[key.String()] = &protobufs.ComponentHealth{
 			StartTimeUnixNano:  uint64(col.ObjectMeta.GetCreationTimestamp().UnixNano()),
 			StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
 			Status:             col.Status.Scale.StatusReplicas,
+			ComponentHealthMap: podMap,
+		}
+	}
+	return healthMap, nil
+}
+
+// getCollectorSelector destructures the collectors scale selector if present, if uses the labelmap from the operator.
+func (agent *Agent) getCollectorSelector(col v1alpha1.OpenTelemetryCollector) map[string]string {
+	if len(col.Status.Scale.Selector) > 0 {
+		selMap := map[string]string{}
+		for _, kvPair := range strings.Split(col.Status.Scale.Selector, ",") {
+			kv := strings.Split(kvPair, "=")
+			// skip malformed pairs
+			if len(kv) != 2 {
+				continue
+			}
+			selMap[kv[0]] = kv[1]
+		}
+		return selMap
+	}
+	return map[string]string{
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", col.GetNamespace(), col.GetName()),
+		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+	}
+}
+
+func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, namespace string) (map[string]*protobufs.ComponentHealth, error) {
+	pods, err := agent.applier.GetCollectorPods(selectorLabels, namespace)
+	if err != nil {
+		return nil, err
+	}
+	healthMap := map[string]*protobufs.ComponentHealth{}
+	for _, item := range pods.Items {
+		key := newKubeResourceKey(item.GetNamespace(), item.GetName())
+		healthy := true
+		if item.Status.Phase != "Running" {
+			healthy = false
+		}
+		healthMap[key.String()] = &protobufs.ComponentHealth{
+			StartTimeUnixNano:  uint64(item.Status.StartTime.UnixNano()),
+			StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
+			Status:             string(item.Status.Phase),
+			Healthy:            healthy,
 		}
 	}
 	return healthMap, nil
@@ -232,7 +284,7 @@ func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.Effectiv
 			agent.logger.Error(err, "failed to marhsal config")
 			return nil, err
 		}
-		mapKey := newCollectorKey(instance.GetNamespace(), instance.GetName())
+		mapKey := newKubeResourceKey(instance.GetNamespace(), instance.GetName())
 		instanceMap[mapKey.String()] = &protobufs.AgentConfigFile{
 			Body:        marshaled,
 			ContentType: "yaml",
@@ -277,7 +329,7 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 		if len(key) == 0 || len(file.Body) == 0 {
 			continue
 		}
-		colKey, err := collectorKeyFromKey(key)
+		colKey, err := kubeResourceFromKey(key)
 		if err != nil {
 			multiErr = multierr.Append(multiErr, err)
 			continue
