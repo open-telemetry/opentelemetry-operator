@@ -13,4 +13,4 @@ issues: [2489]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: this change adds a requirement for a new permission for the bridge to list and get pods.
