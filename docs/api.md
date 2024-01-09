@@ -18466,9 +18466,10 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>allocationStrategy</b></td>
         <td>enum</td>
         <td>
-          AllocationStrategy determines which strategy the target allocator should use for allocation. The current options are least-weighted, consistent-hashing and per-node. The default option is least-weighted<br/>
+          AllocationStrategy determines which strategy the target allocator should use for allocation. The current options are least-weighted, consistent-hashing and per-node. The default is consistent-hashing.<br/>
           <br/>
             <i>Enum</i>: least-weighted, consistent-hashing, per-node<br/>
+            <i>Default</i>: consistent-hashing<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20405,27 +20406,45 @@ SecurityContext configures the container security context for the targetallocato
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>fsGroup</b></td>
-        <td>integer</td>
+        <td><b>allowPrivilegeEscalation</b></td>
+        <td>boolean</td>
         <td>
-          A special supplemental group that applies to all containers in a pod. Some volume types allow the Kubelet to change the ownership of that volume to be owned by the pod: 
- 1.<br/>
-          <br/>
-            <i>Format</i>: int64<br/>
+          AllowPrivilegeEscalation controls whether a process can gain more privileges than its parent process. This bool directly controls if the no_new_privs flag will be set on the container process.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>fsGroupChangePolicy</b></td>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorsecuritycontextcapabilities">capabilities</a></b></td>
+        <td>object</td>
+        <td>
+          The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime. Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>privileged</b></td>
+        <td>boolean</td>
+        <td>
+          Run container in privileged mode. Processes in privileged containers are essentially equivalent to root on the host. Defaults to false. Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>procMount</b></td>
         <td>string</td>
         <td>
-          fsGroupChangePolicy defines behavior of changing ownership and permission of the volume before being exposed inside Pod.<br/>
+          procMount denotes the type of proc mount to use for the containers. The default is DefaultProcMount which uses the container runtime defaults for readonly paths and masked paths.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>readOnlyRootFilesystem</b></td>
+        <td>boolean</td>
+        <td>
+          Whether this container has a read-only root filesystem. Default is false. Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>runAsGroup</b></td>
         <td>integer</td>
         <td>
-          The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in SecurityContext.<br/>
+          The GID to run the entrypoint of the container process. Uses runtime default if unset. May also be set in PodSecurityContext.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -20441,7 +20460,7 @@ SecurityContext configures the container security context for the targetallocato
         <td><b>runAsUser</b></td>
         <td>integer</td>
         <td>
-          The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in SecurityContext.<br/>
+          The UID to run the entrypoint of the container process. Defaults to user specified in image metadata if unspecified. May also be set in PodSecurityContext.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -20450,35 +20469,55 @@ SecurityContext configures the container security context for the targetallocato
         <td><b><a href="#opentelemetrycollectorspectargetallocatorsecuritycontextselinuxoptions">seLinuxOptions</a></b></td>
         <td>object</td>
         <td>
-          The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.<br/>
+          The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorsecuritycontextseccompprofile">seccompProfile</a></b></td>
         <td>object</td>
         <td>
-          The seccomp options to use by the containers in this pod. Note that this field cannot be set when spec.os.name is windows.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>supplementalGroups</b></td>
-        <td>[]integer</td>
-        <td>
-          A list of groups applied to the first process run in each container, in addition to the container's primary GID, the fsGroup (if specified), and group memberships defined in the container image for th<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatorsecuritycontextsysctlsindex">sysctls</a></b></td>
-        <td>[]object</td>
-        <td>
-          Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported sysctls (by the container runtime) might fail to launch. Note that this field cannot be set when spec.os.<br/>
+          The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorsecuritycontextwindowsoptions">windowsOptions</a></b></td>
         <td>object</td>
         <td>
-          The Windows specific settings applied to all containers. If unspecified, the options within a container's SecurityContext will be used.<br/>
+          The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.securityContext.capabilities
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorsecuritycontext)</sup></sup>
+
+
+
+The capabilities to add/drop when running containers. Defaults to the default set of capabilities granted by the container runtime. Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>add</b></td>
+        <td>[]string</td>
+        <td>
+          Added capabilities<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>drop</b></td>
+        <td>[]string</td>
+        <td>
+          Removed capabilities<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20490,7 +20529,7 @@ SecurityContext configures the container security context for the targetallocato
 
 
 
-The SELinux context to be applied to all containers. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in SecurityContext.
+The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container.  May also be set in PodSecurityContext.
 
 <table>
     <thead>
@@ -20538,7 +20577,7 @@ The SELinux context to be applied to all containers. If unspecified, the contain
 
 
 
-The seccomp options to use by the containers in this pod. Note that this field cannot be set when spec.os.name is windows.
+The seccomp options to use by this container. If seccomp options are provided at both the pod & container level, the container options override the pod options.
 
 <table>
     <thead>
@@ -20568,46 +20607,12 @@ The seccomp options to use by the containers in this pod. Note that this field c
 </table>
 
 
-### OpenTelemetryCollector.spec.targetAllocator.securityContext.sysctls[index]
-<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorsecuritycontext)</sup></sup>
-
-
-
-Sysctl defines a kernel parameter to be set
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name of a property to set<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>value</b></td>
-        <td>string</td>
-        <td>
-          Value of a property to set<br/>
-        </td>
-        <td>true</td>
-      </tr></tbody>
-</table>
-
-
 ### OpenTelemetryCollector.spec.targetAllocator.securityContext.windowsOptions
 <sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorsecuritycontext)</sup></sup>
 
 
 
-The Windows specific settings applied to all containers. If unspecified, the options within a container's SecurityContext will be used.
+The Windows specific settings applied to all containers. If unspecified, the options from the PodSecurityContext will be used.
 
 <table>
     <thead>

@@ -5021,10 +5021,11 @@ spec:
                         type: object
                     type: object
                   allocationStrategy:
+                    default: consistent-hashing
                     description: AllocationStrategy determines which strategy the
                       target allocator should use for allocation. The current options
                       are least-weighted, consistent-hashing and per-node. The default
-                      is least-weighted.
+                      is consistent-hashing.
                     enum:
                     - least-weighted
                     - consistent-hashing
