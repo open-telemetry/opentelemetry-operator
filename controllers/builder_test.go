@@ -1316,7 +1316,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"targetallocator.yaml": `allocation_strategy: least-weighted
+						"targetallocator.yaml": `allocation_strategy: consistent-hashing
 collector_selector:
   matchlabels:
     app.kubernetes.io/component: opentelemetry-collector
@@ -1377,7 +1377,7 @@ label_selector:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "20c09760c240d08287ff05bd2375985220b577d938e82efd85467e17174690e0",
+									"opentelemetry-targetallocator-config/hash": "9126d0bb3bde858f655580a9ae6d4557c69ee430b4ab9f72e08c66334efe7989",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1705,7 +1705,7 @@ label_selector:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"targetallocator.yaml": `allocation_strategy: least-weighted
+						"targetallocator.yaml": `allocation_strategy: consistent-hashing
 collector_selector:
   matchlabels:
     app.kubernetes.io/component: opentelemetry-collector
@@ -1766,7 +1766,7 @@ label_selector:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "20c09760c240d08287ff05bd2375985220b577d938e82efd85467e17174690e0",
+									"opentelemetry-targetallocator-config/hash": "9126d0bb3bde858f655580a9ae6d4557c69ee430b4ab9f72e08c66334efe7989",
 								},
 							},
 							Spec: corev1.PodSpec{
