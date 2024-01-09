@@ -96,8 +96,8 @@ spec:
   serviceAccount: collector
   targetAllocator:
     enabled: true
+    allocationStrategy: "per-node"
     serviceAccount: ta
-    image: "local/opentelemetry-operator-targetallocator:e2e"
     prometheusCR:
       enabled: false
   config: |

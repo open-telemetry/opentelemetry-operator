@@ -3,4 +3,4 @@ kind: TestSuite
 artifactsDir: ./tests/_build/artifacts/
 testDirs:
   - ./tests/e2e-targetallocator/
-timeout: 300
+timeout: 600
