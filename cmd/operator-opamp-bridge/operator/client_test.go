@@ -156,7 +156,6 @@ func Test_collectorUpdate(t *testing.T) {
 	var reportingCol v1alpha1.OpenTelemetryCollector
 	err = yaml.Unmarshal(reportingColConfig, &reportingCol)
 	require.NoError(t, err, "Should be no error on unmarshal")
-	reportingCol.Default()
 	reportingCol.TypeMeta.Kind = CollectorResource
 	reportingCol.TypeMeta.APIVersion = v1alpha1.GroupVersion.String()
 	reportingCol.ObjectMeta.Name = "simplest"
