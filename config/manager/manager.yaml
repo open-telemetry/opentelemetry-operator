@@ -28,7 +28,11 @@ spec:
     spec:
       containers:
       - args:
-        - --enable-leader-election
+        - "--metrics-addr=127.0.0.1:8080"
+        - "--enable-leader-election"
+        - "--zap-log-level=info"
+        - "--zap-time-encoding=rfc3339nano"
+        - "--feature-gates=+operator.autoinstrumentation.go,+operator.autoinstrumentation.nginx"
         image: controller
         name: manager
         livenessProbe:

@@ -27,6 +27,7 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
@@ -39,17 +40,17 @@ const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
 const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
 
 type Config struct {
-	ListenAddr             string             `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath     string             `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig          *rest.Config       `yaml:"-"`
-	RootLogger             logr.Logger        `yaml:"-"`
-	LabelSelector          map[string]string  `yaml:"label_selector,omitempty"`
-	PromConfig             *promconfig.Config `yaml:"config"`
-	AllocationStrategy     *string            `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy         *string            `yaml:"filter_strategy,omitempty"`
-	PrometheusCR           PrometheusCRConfig `yaml:"prometheus_cr,omitempty"`
-	PodMonitorSelector     map[string]string  `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector map[string]string  `yaml:"service_monitor_selector,omitempty"`
+	ListenAddr             string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath     string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig          *rest.Config          `yaml:"-"`
+	RootLogger             logr.Logger           `yaml:"-"`
+	CollectorSelector      *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	PromConfig             *promconfig.Config    `yaml:"config"`
+	AllocationStrategy     *string               `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy         *string               `yaml:"filter_strategy,omitempty"`
+	PrometheusCR           PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	PodMonitorSelector     map[string]string     `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector map[string]string     `yaml:"service_monitor_selector,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -114,7 +115,6 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 }
 
 func unmarshal(cfg *Config, configFile string) error {
-
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err

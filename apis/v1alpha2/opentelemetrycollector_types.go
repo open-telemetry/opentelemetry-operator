@@ -100,8 +100,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
+	// The empty objects e.g. batch: should be written as batch: {} otherwise they won't work with kustomize or kubectl edit.
 	// +required
-	Config string `json:"config,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Config Config `json:"config"`
+
 	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
 	// +optional
 	// +listType=atomic
