@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -44,6 +45,9 @@ type ConfigApplier interface {
 
 	// GetInstance retrieves an OpenTelemetryCollector CRD given a name and namespace.
 	GetInstance(name string, namespace string) (*v1alpha1.OpenTelemetryCollector, error)
+
+	// GetCollectorPods retrieves all pods that match the given collector's selector labels and namespace.
+	GetCollectorPods(selectorLabels map[string]string, namespace string) (*v1.PodList, error)
 
 	// ListInstances retrieves all OpenTelemetryCollector CRDs created by the operator-opamp-bridge agent.
 	ListInstances() ([]v1alpha1.OpenTelemetryCollector, error)
@@ -217,6 +221,13 @@ func (c Client) GetInstance(name string, namespace string) (*v1alpha1.OpenTeleme
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (c Client) GetCollectorPods(selectorLabels map[string]string, namespace string) (*v1.PodList, error) {
+	ctx := context.Background()
+	podList := &v1.PodList{}
+	err := c.k8sClient.List(ctx, podList, client.MatchingLabels(selectorLabels), client.InNamespace(namespace))
+	return podList, err
 }
 
 func (c Client) validate(spec v1alpha1.OpenTelemetryCollectorSpec) ([]string, error) {
