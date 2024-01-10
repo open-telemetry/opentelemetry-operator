@@ -45,12 +45,14 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/config_test.yaml",
 			},
 			want: Config{
+				AllocationStrategy: DefaultAllocationStrategy,
 				CollectorSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app.kubernetes.io/instance":   "default.test",
 						"app.kubernetes.io/managed-by": "opentelemetry-operator",
 					},
 				},
+				FilterStrategy: DefaultFilterStrategy,
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: model.Duration(time.Second * 60),
 				},
@@ -111,12 +113,14 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/pod_service_selector_test.yaml",
 			},
 			want: Config{
+				AllocationStrategy: DefaultAllocationStrategy,
 				CollectorSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app.kubernetes.io/instance":   "default.test",
 						"app.kubernetes.io/managed-by": "opentelemetry-operator",
 					},
 				},
+				FilterStrategy: DefaultFilterStrategy,
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: DefaultCRScrapeInterval,
 				},
