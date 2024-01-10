@@ -15,10 +15,74 @@
 package v1alpha2
 
 import (
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+// ManagementStateType defines the type for CR management states.
+//
+// +kubebuilder:validation:Enum=managed;unmanaged
+type ManagementStateType string
+
+const (
+	// ManagementStateManaged when the OpenTelemetryCollector custom resource should be
+	// reconciled by the operator.
+	ManagementStateManaged ManagementStateType = "managed"
+
+	// ManagementStateUnmanaged when the OpenTelemetryCollector custom resource should not be
+	// reconciled by the operator.
+	ManagementStateUnmanaged ManagementStateType = "unmanaged"
+)
+
+// MetricSpec defines a subset of metrics to be defined for the HPA's metric array
+// more metric type can be supported as needed.
+// See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
+type MetricSpec struct {
+	Type autoscalingv2.MetricSourceType  `json:"type"`
+	Pods *autoscalingv2.PodsMetricSource `json:"pods,omitempty"`
+}
+
+// AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
+type AutoscalerSpec struct {
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// +optional
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
+	// +optional
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+	// +optional
+	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
+	// Metrics is meant to provide a customizable way to configure HPA metrics.
+	// currently the only supported custom metrics is type=Pod.
+	// Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.
+	// +optional
+	Metrics []MetricSpec `json:"metrics,omitempty"`
+	// TargetCPUUtilization sets the target average CPU used across all replicas.
+	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
+	// +optional
+	TargetCPUUtilization *int32 `json:"targetCPUUtilization,omitempty"`
+	// +optional
+	// TargetMemoryUtilization sets the target average memory utilization across all replicas
+	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
+}
+
+// PodDisruptionBudgetSpec defines the OpenTelemetryCollector's pod disruption budget specification.
+type PodDisruptionBudgetSpec struct {
+	// An eviction is allowed if at least "minAvailable" pods selected by
+	// "selector" will still be available after the eviction, i.e. even in the
+	// absence of the evicted pod.  So for example you can prevent all voluntary
+	// evictions by specifying "100%".
+	// +optional
+	MinAvailable *intstr.IntOrString `json:"minAvailable,omitempty"`
+
+	// An eviction is allowed if at most "maxUnavailable" pods selected by
+	// "selector" are unavailable after the eviction, i.e. even in absence of
+	// the evicted pod. For example, one can prevent all voluntary evictions
+	// by specifying 0. This is a mutually exclusive setting with "minAvailable".
+	// +optional
+	MaxUnavailable *intstr.IntOrString `json:"maxUnavailable,omitempty"`
+}
 
 type OpenTelemetryCommonFields struct {
 	// ManagementState defines if the CR should be managed by the operator or not.
@@ -27,7 +91,7 @@ type OpenTelemetryCommonFields struct {
 	// +required
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=managed
-	ManagementState v1alpha1.ManagementStateType `json:"managementState,omitempty"`
+	ManagementState ManagementStateType `json:"managementState,omitempty"`
 	// Resources to set on generated pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
@@ -44,11 +108,11 @@ type OpenTelemetryCommonFields struct {
 	// Autoscaler specifies the pod autoscaling configuration to use
 	// for the workload.
 	// +optional
-	Autoscaler *v1alpha1.AutoscalerSpec `json:"autoscaler,omitempty"`
+	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the generated workload.
 	// +optional
-	PodDisruptionBudget *v1alpha1.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 	// SecurityContext configures the container security context for
 	// the generated main container.
 	//
