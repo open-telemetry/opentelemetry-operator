@@ -5021,10 +5021,11 @@ spec:
                         type: object
                     type: object
                   allocationStrategy:
+                    default: consistent-hashing
                     description: AllocationStrategy determines which strategy the
                       target allocator should use for allocation. The current options
                       are least-weighted and consistent-hashing. The default option
-                      is least-weighted
+                      is consistent-hashing
                     enum:
                     - least-weighted
                     - consistent-hashing
@@ -5282,22 +5283,54 @@ spec:
                     description: SecurityContext configures the container security
                       context for the targetallocator.
                     properties:
-                      fsGroup:
-                        description: "A special supplemental group that applies to
-                          all containers in a pod. Some volume types allow the Kubelet
-                          to change the ownership of that volume to be owned by the
-                          pod: \n 1."
-                        format: int64
-                        type: integer
-                      fsGroupChangePolicy:
-                        description: fsGroupChangePolicy defines behavior of changing
-                          ownership and permission of the volume before being exposed
-                          inside Pod.
+                      allowPrivilegeEscalation:
+                        description: AllowPrivilegeEscalation controls whether a process
+                          can gain more privileges than its parent process. This bool
+                          directly controls if the no_new_privs flag will be set on
+                          the container process.
+                        type: boolean
+                      capabilities:
+                        description: The capabilities to add/drop when running containers.
+                          Defaults to the default set of capabilities granted by the
+                          container runtime. Note that this field cannot be set when
+                          spec.os.name is windows.
+                        properties:
+                          add:
+                            description: Added capabilities
+                            items:
+                              description: Capability represent POSIX capabilities
+                                type
+                              type: string
+                            type: array
+                          drop:
+                            description: Removed capabilities
+                            items:
+                              description: Capability represent POSIX capabilities
+                                type
+                              type: string
+                            type: array
+                        type: object
+                      privileged:
+                        description: Run container in privileged mode. Processes in
+                          privileged containers are essentially equivalent to root
+                          on the host. Defaults to false. Note that this field cannot
+                          be set when spec.os.name is windows.
+                        type: boolean
+                      procMount:
+                        description: procMount denotes the type of proc mount to use
+                          for the containers. The default is DefaultProcMount which
+                          uses the container runtime defaults for readonly paths and
+                          masked paths.
                         type: string
+                      readOnlyRootFilesystem:
+                        description: Whether this container has a read-only root filesystem.
+                          Default is false. Note that this field cannot be set when
+                          spec.os.name is windows.
+                        type: boolean
                       runAsGroup:
                         description: The GID to run the entrypoint of the container
                           process. Uses runtime default if unset. May also be set
-                          in SecurityContext.
+                          in PodSecurityContext.
                         format: int64
                         type: integer
                       runAsNonRoot:
@@ -5307,14 +5340,14 @@ spec:
                       runAsUser:
                         description: The UID to run the entrypoint of the container
                           process. Defaults to user specified in image metadata if
-                          unspecified. May also be set in SecurityContext.
+                          unspecified. May also be set in PodSecurityContext.
                         format: int64
                         type: integer
                       seLinuxOptions:
-                        description: The SELinux context to be applied to all containers.
+                        description: The SELinux context to be applied to the container.
                           If unspecified, the container runtime will allocate a random
                           SELinux context for each container.  May also be set in
-                          SecurityContext.
+                          PodSecurityContext.
                         properties:
                           level:
                             description: Level is SELinux level label that applies
@@ -5334,9 +5367,9 @@ spec:
                             type: string
                         type: object
                       seccompProfile:
-                        description: The seccomp options to use by the containers
-                          in this pod. Note that this field cannot be set when spec.os.name
-                          is windows.
+                        description: The seccomp options to use by this container.
+                          If seccomp options are provided at both the pod & container
+                          level, the container options override the pod options.
                         properties:
                           localhostProfile:
                             description: localhostProfile indicates a profile defined
@@ -5351,38 +5384,10 @@ spec:
                         required:
                         - type
                         type: object
-                      supplementalGroups:
-                        description: A list of groups applied to the first process
-                          run in each container, in addition to the container's primary
-                          GID, the fsGroup (if specified), and group memberships defined
-                          in the container image for th
-                        items:
-                          format: int64
-                          type: integer
-                        type: array
-                      sysctls:
-                        description: Sysctls hold a list of namespaced sysctls used
-                          for the pod. Pods with unsupported sysctls (by the container
-                          runtime) might fail to launch. Note that this field cannot
-                          be set when spec.os.
-                        items:
-                          description: Sysctl defines a kernel parameter to be set
-                          properties:
-                            name:
-                              description: Name of a property to set
-                              type: string
-                            value:
-                              description: Value of a property to set
-                              type: string
-                          required:
-                          - name
-                          - value
-                          type: object
-                        type: array
                       windowsOptions:
                         description: The Windows specific settings applied to all
-                          containers. If unspecified, the options within a container's
-                          SecurityContext will be used.
+                          containers. If unspecified, the options from the PodSecurityContext
+                          will be used.
                         properties:
                           gmsaCredentialSpec:
                             description: GMSACredentialSpec is where the GMSA admission

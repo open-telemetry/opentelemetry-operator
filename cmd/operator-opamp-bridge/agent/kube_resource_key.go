@@ -20,24 +20,24 @@ import (
 	"strings"
 )
 
-type collectorKey struct {
+type kubeResourceKey struct {
 	name      string
 	namespace string
 }
 
-func newCollectorKey(namespace string, name string) collectorKey {
-	return collectorKey{name: name, namespace: namespace}
+func newKubeResourceKey(namespace string, name string) kubeResourceKey {
+	return kubeResourceKey{name: name, namespace: namespace}
 }
 
-func collectorKeyFromKey(key string) (collectorKey, error) {
+func kubeResourceFromKey(key string) (kubeResourceKey, error) {
 	s := strings.Split(key, "/")
 	// We expect map keys to be of the form name/namespace
 	if len(s) != 2 {
-		return collectorKey{}, errors.New("invalid key")
+		return kubeResourceKey{}, errors.New("invalid key")
 	}
-	return newCollectorKey(s[0], s[1]), nil
+	return newKubeResourceKey(s[0], s[1]), nil
 }
 
-func (k collectorKey) String() string {
+func (k kubeResourceKey) String() string {
 	return fmt.Sprintf("%s/%s", k.namespace, k.name)
 }

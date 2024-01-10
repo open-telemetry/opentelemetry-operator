@@ -297,8 +297,9 @@ type OpenTelemetryTargetAllocator struct {
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
-	// The current options are least-weighted and consistent-hashing. The default option is least-weighted
+	// The current options are least-weighted and consistent-hashing. The default option is consistent-hashing
 	// +optional
+	// +kubebuilder:default:=consistent-hashing
 	AllocationStrategy OpenTelemetryTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
@@ -325,7 +326,7 @@ type OpenTelemetryTargetAllocator struct {
 	// SecurityContext configures the container security context for
 	// the targetallocator.
 	// +optional
-	SecurityContext *v1.PodSecurityContext `json:"securityContext,omitempty"`
+	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
 	// TopologySpreadConstraints embedded kubernetes pod configuration option,
 	// controls how pods are spread across your cluster among failure-domains
 	// such as regions, zones, nodes, and other user-defined topology domains
