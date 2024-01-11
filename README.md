@@ -89,7 +89,7 @@ See below for examples of each deployment mode:
 - [`Deployment`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/ingress/00-install.yaml)
 - [`DaemonSet`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/daemonset-features/01-install.yaml)
 - [`StatefulSet`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/smoke-statefulset/00-install.yaml)
-- [`Sidecar`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/instrumentation-python/00-install-collector.yaml)
+- [`Sidecar`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/smoke-sidecar/00-install.yaml)
 
 #### Sidecar injection
 
