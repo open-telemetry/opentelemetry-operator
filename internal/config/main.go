@@ -42,6 +42,7 @@ type Config struct {
 	autoInstrumentationPythonImage      string
 	collectorImage                      string
 	collectorConfigMapEntry             string
+	createRBACPermissions               bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -73,6 +74,7 @@ func New(opts ...Option) Config {
 		autoDetect:                          o.autoDetect,
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
+		createRBACPermissions:               o.createRBACPermissions,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -110,6 +112,11 @@ func (c *Config) CollectorImage() string {
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
 func (c *Config) CollectorConfigMapEntry() string {
 	return c.collectorConfigMapEntry
+}
+
+// CreateRBACPermissions is true when the operator can create RBAC permissions for SAs running a collector instance. Immutable.
+func (c *Config) CreateRBACPermissions() bool {
+	return c.createRBACPermissions
 }
 
 // TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
