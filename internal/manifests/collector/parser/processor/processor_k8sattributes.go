@@ -16,6 +16,7 @@ package processor
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -89,9 +90,17 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 					Verbs:     []string{"get", "watch", "list"},
 				},
 			)
-			break // No more permissions to add
+		} else if strings.Contains(metadataField, "k8s.node") {
+			prs = append(prs,
+				rbacv1.PolicyRule{
+					APIGroups: []string{""},
+					Resources: []string{"nodes"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			)
 		}
 	}
+
 	return prs
 }
 
