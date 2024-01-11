@@ -9,7 +9,7 @@ mkdir -p "$CERT_DIR"
 hostname_domain="*.apps.$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')"
 
 # Set certificate information
-CERT_SUBJECT="/C=US/ST=California/L=San Francisco/O=My Organization/CN=$hostname_domain"
+CERT_SUBJECT="/C=US/ST=California/L=San Francisco/O=My Organization/CN=opentelemetry"
 
 # Create a temporary OpenSSL configuration file for SANs
 openssl_config="$CERT_DIR/openssl.cnf"
@@ -23,7 +23,8 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = $hostname_domain
+DNS.1 = opentelemetry
+DNS.2 = $hostname_domain
 EOF
 
 # Generate private key for the server
