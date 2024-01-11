@@ -84,15 +84,17 @@ service:
 	}
 
 	var logger = logf.Log.WithName("collector-unit-tests")
-	for _, test := range tests {
-		// prepare
-		config, err := ConfigFromString(test.config)
-		require.NoError(t, err, test.desc)
-		require.NotEmpty(t, config, test.desc)
 
-		// test
-		rules := ConfigToRBAC(logger, config)
-		assert.NoError(t, err)
-		assert.Equal(t, test.expectedRules, rules, test.desc)
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			config, err := ConfigFromString(tt.config)
+			require.NoError(t, err, tt.desc)
+			require.NotEmpty(t, config, tt.desc)
+
+			// test
+			rules := ConfigToRBAC(logger, config)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedRules, rules, tt.desc)
+		})
 	}
 }

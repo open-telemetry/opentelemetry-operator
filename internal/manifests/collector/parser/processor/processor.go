@@ -23,11 +23,13 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
+// ProcessorParser specifies the methods to implement to parse a processor.
 type ProcessorParser interface {
 	ParserName() string
 	GetRBACRules() []rbacv1.PolicyRule
 }
 
+// Builder specifies the signature required for parser builders.
 type Builder func(logr.Logger, string, map[interface{}]interface{}) ProcessorParser
 
 // registry holds a record of all known processor parsers.

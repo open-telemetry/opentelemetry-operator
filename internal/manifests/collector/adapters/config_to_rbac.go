@@ -21,6 +21,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/processor"
 )
 
+// ConfigToRBAC parses the OpenTelemetry Collector configuration and checks what RBAC resources are needed to be created.
 func ConfigToRBAC(logger logr.Logger, config map[interface{}]interface{}) []rbacv1.PolicyRule {
 	var policyRules []rbacv1.PolicyRule
 	processorsRaw, ok := config["processors"]
