@@ -59,6 +59,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 					Tolerations:               params.OtelCol.Spec.TargetAllocator.Tolerations,
 					TopologySpreadConstraints: params.OtelCol.Spec.TargetAllocator.TopologySpreadConstraints,
 					Affinity:                  params.OtelCol.Spec.TargetAllocator.Affinity,
+					SecurityContext:           params.OtelCol.Spec.TargetAllocator.PodSecurityContext,
 				},
 			},
 		},
