@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
         - name: telemetrygen-traces
-          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0
           command: ["./telemetrygen"]
           args:
             - "--otlp-endpoint=kafka-exporter-collector-headless.kuttl-kafka.svc:4317"
