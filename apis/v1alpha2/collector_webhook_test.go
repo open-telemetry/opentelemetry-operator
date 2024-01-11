@@ -56,6 +56,7 @@ func TestValidate(t *testing.T) {
 	for _, tt := range tests {
 		webhook := CollectorWebhook{}
 		t.Run(tt.name, func(t *testing.T) {
+			tt := tt
 			warnings, err := webhook.validate(&tt.collector)
 			if tt.err == "" {
 				require.NoError(t, err)
