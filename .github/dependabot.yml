@@ -21,50 +21,10 @@ updates:
         patterns:
           - "k8s.io/*"
           - "sigs.k8s.io/*"
-  - package-ecosystem: gomod
-    directory: /cmd/operator-opamp-bridge
-    schedule:
-      interval: daily
-    groups:
-      golang-org-x:
-        patterns:
-          - "golang.org/x/*"
-      prometheus:
-        patterns:
-          - "github.com/prometheus-operator/prometheus-operator"
-          - "github.com/prometheus-operator/prometheus-operator/*"
-          - "github.com/prometheus/prometheus"
-          - "github.com/prometheus/prometheus/*"
-          - "github.com/prometheus/client_go"
-          - "github.com/prometheus/client_go/*"
-      kubernetes:
-        patterns:
-          - "k8s.io/*"
-          - "sigs.k8s.io/*"
       otel:
         patterns:
-          - go.opentelemetry.io/otel
-          - go.opentelemetry.io/otel/*
-  - package-ecosystem: gomod
-    directory: /cmd/otel-allocator
-    schedule:
-      interval: daily
-    groups:
-      golang-org-x:
-        patterns:
-          - "golang.org/x/*"
-      prometheus:
-        patterns:
-          - "github.com/prometheus-operator/prometheus-operator"
-          - "github.com/prometheus-operator/prometheus-operator/*"
-          - "github.com/prometheus/prometheus"
-          - "github.com/prometheus/prometheus/*"
-          - "github.com/prometheus/client_go"
-          - "github.com/prometheus/client_go/*"
-      kubernetes:
-        patterns:
-          - "k8s.io/*"
-          - "sigs.k8s.io/*"
+          - "go.opentelemetry.io/otel"
+          - "go.opentelemetry.io/otel/*"
 
   - package-ecosystem: github-actions
     directory: /
