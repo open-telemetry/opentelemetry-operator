@@ -2,7 +2,7 @@ Changes by Version
 ==================
 <!-- next version -->
 
-## 0.91.0-20-gd013d45
+## 0.92.0
 
 ### 🛑 Breaking changes 🛑
 
