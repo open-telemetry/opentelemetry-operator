@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	resyncPeriod = 5 * time.Minute
+	resyncPeriod     = 5 * time.Minute
 	minEventInterval = time.Second * 5
 )
 
@@ -202,7 +202,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 			success = false
 		}
 
-		w.nsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		_, _ = w.nsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				old := oldObj.(*v1.Namespace)
 				cur := newObj.(*v1.Namespace)
