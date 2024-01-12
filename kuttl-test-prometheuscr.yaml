@@ -11,10 +11,6 @@
 # create a new one when the selector changed.
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
-commands:
-  - command: make undeploy
-  - command: make enable-prometheus-feature-flag deploy install-prometheus-operator
-  - command: go run hack/check-operator-ready.go
 testDirs:
   - ./tests/e2e-prometheuscr/
 timeout: 300

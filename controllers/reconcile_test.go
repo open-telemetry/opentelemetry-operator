@@ -443,6 +443,14 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 
 							taConfig := make(map[interface{}]interface{})
+							taConfig["collector_selector"] = map[string]any{
+								"matchlabels": map[string]string{
+									"app.kubernetes.io/instance":   "default.test",
+									"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									"app.kubernetes.io/component":  "opentelemetry-collector",
+									"app.kubernetes.io/part-of":    "opentelemetry",
+								},
+							}
 							taConfig["label_selector"] = map[string]string{
 								"app.kubernetes.io/instance":   "default.test",
 								"app.kubernetes.io/managed-by": "opentelemetry-operator",
@@ -450,7 +458,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 								"app.kubernetes.io/part-of":    "opentelemetry",
 							}
 							taConfig["config"] = promConfig["config"]
-							taConfig["allocation_strategy"] = "least-weighted"
+							taConfig["allocation_strategy"] = "consistent-hashing"
 							taConfig["prometheus_cr"] = map[string]string{
 								"scrape_interval": "30s",
 							}

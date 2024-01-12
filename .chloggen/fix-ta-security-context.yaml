@@ -1,0 +1,16 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: breaking
+
+# The name of the component, or a single word describing the area of concern, (e.g. operator, target allocator, github action)
+component: target allocator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Use container securityContext for target allocator
+
+# One or more tracking issues related to the change
+issues: [2490]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: This is really a bug fix, as the current behaviour is not intended. We've marked it as breaking in case anyone started depending on it.

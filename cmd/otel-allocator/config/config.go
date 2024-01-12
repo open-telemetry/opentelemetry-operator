@@ -27,6 +27,7 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
@@ -34,23 +35,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-const DefaultResyncTime = 5 * time.Minute
-const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
-const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
+const (
+	DefaultResyncTime                        = 5 * time.Minute
+	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                = "consistent-hashing"
+	DefaultFilterStrategy                    = "relabel-config"
+)
 
 type Config struct {
-	ListenAddr                      string             `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath              string             `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig                   *rest.Config       `yaml:"-"`
-	RootLogger                      logr.Logger        `yaml:"-"`
-	ReloadConfig                    bool               `yaml:"-"`
-	LabelSelector                   map[string]string  `yaml:"label_selector,omitempty"`
-	PromConfig                      *promconfig.Config `yaml:"config"`
-	AllocationStrategy              *string            `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy                  *string            `yaml:"filter_strategy,omitempty"`
-	PrometheusCR                    PrometheusCRConfig `yaml:"prometheus_cr,omitempty"`
-	PodMonitorSelector              map[string]string  `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector          map[string]string  `yaml:"service_monitor_selector,omitempty"`
+	ListenAddr             string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath     string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig          *rest.Config          `yaml:"-"`
+	RootLogger             logr.Logger           `yaml:"-"`
+	CollectorSelector      *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	PromConfig             *promconfig.Config    `yaml:"config"`
+	AllocationStrategy     string                `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy         string                `yaml:"filter_strategy,omitempty"`
+	PrometheusCR           PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	PodMonitorSelector     map[string]string     `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector map[string]string     `yaml:"service_monitor_selector,omitempty"`
 	ServiceMonitorNamespaceSelector map[string]string  `yaml:"service_monitor_namespace_selector,omitempty"`
 	PodMonitorNamespaceSelector     map[string]string  `yaml:"pod_monitor_namespace_selector,omitempty"`
 }
@@ -58,20 +62,6 @@ type Config struct {
 type PrometheusCRConfig struct {
 	Enabled        bool           `yaml:"enabled,omitempty"`
 	ScrapeInterval model.Duration `yaml:"scrape_interval,omitempty"`
-}
-
-func (c Config) GetAllocationStrategy() string {
-	if c.AllocationStrategy != nil {
-		return *c.AllocationStrategy
-	}
-	return "least-weighted"
-}
-
-func (c Config) GetTargetsFilterStrategy() string {
-	if c.FilterStrategy != nil {
-		return *c.FilterStrategy
-	}
-	return ""
 }
 
 func LoadFromFile(file string, target *Config) error {
@@ -113,21 +103,15 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	}
 
-	target.ReloadConfig, err = getConfigReloadEnabled(flagSet)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func unmarshal(cfg *Config, configFile string) error {
-
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
 	}
-	if err = yaml.UnmarshalStrict(yamlFile, cfg); err != nil {
+	if err = yaml.Unmarshal(yamlFile, cfg); err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
 	return nil
@@ -135,19 +119,21 @@ func unmarshal(cfg *Config, configFile string) error {
 
 func CreateDefaultConfig() Config {
 	return Config{
+		AllocationStrategy: DefaultAllocationStrategy,
+		FilterStrategy:     DefaultFilterStrategy,
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},
 	}
 }
 
-func Load() (*Config, string, error) {
+func Load() (*Config, error) {
 	var err error
 
 	flagSet := getFlagSet(pflag.ExitOnError)
 	err = flagSet.Parse(os.Args)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	config := CreateDefaultConfig()
@@ -155,19 +141,19 @@ func Load() (*Config, string, error) {
 	// load the config from the config file
 	configFilePath, err := getConfigFilePath(flagSet)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	err = LoadFromFile(configFilePath, &config)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	err = LoadFromCLI(&config, flagSet)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return &config, configFilePath, nil
+	return &config, nil
 }
 
 // ValidateConfig validates the cli and file configs together.

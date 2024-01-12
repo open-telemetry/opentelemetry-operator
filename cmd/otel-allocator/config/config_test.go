@@ -21,6 +21,7 @@ import (
 
 	commonconfig "github.com/prometheus/common/config"
 	promconfig "github.com/prometheus/prometheus/config"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
@@ -44,10 +45,14 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/config_test.yaml",
 			},
 			want: Config{
-				LabelSelector: map[string]string{
-					"app.kubernetes.io/instance":   "default.test",
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/instance":   "default.test",
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
 				},
+				FilterStrategy: DefaultFilterStrategy,
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: model.Duration(time.Second * 60),
 				},
@@ -108,10 +113,14 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/pod_service_selector_test.yaml",
 			},
 			want: Config{
-				LabelSelector: map[string]string{
-					"app.kubernetes.io/instance":   "default.test",
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/instance":   "default.test",
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
 				},
+				FilterStrategy: DefaultFilterStrategy,
 				PrometheusCR: PrometheusCRConfig{
 					ScrapeInterval: DefaultCRScrapeInterval,
 				},

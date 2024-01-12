@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   e2e-tests:
-    name: End-to-end tests
+    name: End-to-end tests ${{ matrix.group }} on K8s ${{ matrix.kube-version }}
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -21,30 +21,31 @@ jobs:
        # All Kubernetes version in between expose the same APIs, hence the operator
        # should be compatible with them.
        kube-version:
-       - "1.23"
-       - "1.28"
+         - "1.23"
+         - "1.29"
        group:
          - e2e
          - e2e-instrumentation
          - e2e-upgrade
-         - e2e-prometheuscr
          - e2e-autoscale
-         - e2e-multi-instrumentation
          - e2e-pdb
          - e2e-opampbridge
+         - e2e-prometheuscr
+         - e2e-multi-instrumentation
+       include:
+         - group: e2e-prometheuscr
+           setup: "prepare-e2e-with-featuregates FEATUREGATES=+operator.observability.prometheus"
+         - group: e2e-multi-instrumentation
+           setup: "prepare-e2e-with-featuregates FEATUREGATES=+operator.autoinstrumentation.multi-instrumentation"
 
     steps:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: "~1.21.3"
-        cache-dependency-path: |
-          go.sum
-          cmd/otel-allocator/go.sum
-          cmd/operator-opamp-bridge/go.sum
 
     - name: Setup kind
       env:
@@ -57,7 +58,9 @@ jobs:
     - name: "run tests"
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
-      run: make prepare-e2e ${{ matrix.group }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
+      run: |
+        make ${{ matrix.setup != '' && matrix.setup || 'prepare-e2e' }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
+        make ${{ matrix.group }}
 
     - name: "log operator if failed"
       if: ${{ failure() }}

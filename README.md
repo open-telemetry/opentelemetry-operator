@@ -89,7 +89,7 @@ See below for examples of each deployment mode:
 - [`Deployment`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/ingress/00-install.yaml)
 - [`DaemonSet`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/daemonset-features/01-install.yaml)
 - [`StatefulSet`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/smoke-statefulset/00-install.yaml)
-- [`Sidecar`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/instrumentation-python/00-install-collector.yaml)
+- [`Sidecar`](https://github.com/open-telemetry/opentelemetry-operator/blob/main/tests/e2e/smoke-sidecar/00-install.yaml)
 
 #### Sidecar injection
 
@@ -686,6 +686,8 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.91.0                | v1.23 to v1.29       | v1                  |
+| v0.90.0                | v1.23 to v1.28       | v1                  |
 | v0.89.0                | v1.23 to v1.28       | v1                  |
 | v0.88.0                | v1.23 to v1.28       | v1                  |
 | v0.87.0                | v1.23 to v1.28       | v1                  |
@@ -707,8 +709,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.71.0                | v1.19 to v1.25       | v1                  |
 | v0.70.0                | v1.19 to v1.25       | v1                  |
 | v0.69.0                | v1.19 to v1.25       | v1                  |
-| v0.68.0                | v1.19 to v1.25       | v1                  |
-| v0.67.0                | v1.19 to v1.25       | v1                  |
 
 ## Contributing and Developing
 

@@ -2,10 +2,14 @@ endpoint: http://127.0.0.1:4320/v1/opamp
 cawdawapabilities:
   AcceptsRemoteConfig: true
   ReportsEffectiveConfig: true
-  AcceptsPackages: false
+  AcceptsPackages:
+  false
   ReportsPackageStatuses: false
-  ReportsOwnTraces: true
-  ReportsOwnMetrics: true
+  Report
+    sOwnTraces: true
+  Re
+
+    portsOwnMetrics: true
   ReportsOwnLogs: true
   AcceptsOpAMPConnectionSettings: true
   AcceptsOtherConnectionSettings: true
