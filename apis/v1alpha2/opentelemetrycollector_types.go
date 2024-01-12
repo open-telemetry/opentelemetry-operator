@@ -115,8 +115,8 @@ type OpenShiftRoute struct {
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
-	// Common defines fields that are common to all OpenTelemetry CRD workloads.
-	Common OpenTelemetryCommonFields `json:",inline"`
+	// OpenTelemetryCommonFields are fields that are on all OpenTelemetry CRD workloads.
+	OpenTelemetryCommonFields `json:",inline"`
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	TargetAllocator v1alpha1.OpenTelemetryTargetAllocator `json:"targetAllocator,omitempty"`
