@@ -2,6 +2,40 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.91.0-20-gd013d45
+
+### 🛑 Breaking changes 🛑
+
+- `target allocator`: Use standard K8s label selectors for collectors in target allocator config (#2422)
+  This is a breaking change only for users of standalone target allocator. Operator users are unaffected.
+  The operator is still compatible with previous target allocator versions, and will be for the next 3 releases.
+  
+- `target allocator`: Use container securityContext for target allocator (#2490)
+  This is really a bug fix, as the current behaviour is not intended. We've marked it as breaking in case anyone started depending on it.
+
+### 💡 Enhancements 💡
+
+- `operator`: Automate the creation of the permissions needed by the resourcedetection processor (#2393)
+- `operator`: Automate the creation of the permissions needed by the k8sattributes processor (#2395)
+- `target allocator`: Change default allocation and filtering strategy (#2477)
+- `operator`: Introduce common fields to the v1alpha2 types that can be reused for any CRDs. (#901)
+- `target allocator`: Use Pod securityContext for target allocator (#2495)
+  Bring back PodSecurityContext as it was removed in the previous changes.
+- `bridge`: Sets pods in the component health map (#2489)
+  this change adds a requirement for a new permission for the bridge to list and get pods.
+
+### Components
+
+* [OpenTelemetry Collector - v0.91.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.91.0)
+* [OpenTelemetry Contrib - v0.91.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.91.0)
+* [Java auto-instrumentation - 1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
+* [.NET auto-instrumentation - 1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.2.0)
+* [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
+* [Python - 0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.43b0)
+* [Go - v0.10.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)]
+
 ## 0.91.0
 
 ### 🛑 Breaking changes 🛑
