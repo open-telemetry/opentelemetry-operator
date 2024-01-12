@@ -26,8 +26,8 @@ Changes by Version
 
 ### Components
 
-* [OpenTelemetry Collector - v0.91.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.91.0)
-* [OpenTelemetry Contrib - v0.91.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.91.0)
+* [OpenTelemetry Collector - v0.92.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.92.0)
+* [OpenTelemetry Contrib - v0.92.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.92.0)
 * [Java auto-instrumentation - 1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
 * [.NET auto-instrumentation - 1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.2.0)
 * [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
