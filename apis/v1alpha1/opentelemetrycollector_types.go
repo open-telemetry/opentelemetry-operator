@@ -303,8 +303,9 @@ type OpenTelemetryTargetAllocator struct {
 	AllocationStrategy OpenTelemetryTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
-	// Filtering is disabled by default.
+	// The default is relabel-config.
 	// +optional
+	// +kubebuilder:default:=relabel-config
 	FilterStrategy string `json:"filterStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
