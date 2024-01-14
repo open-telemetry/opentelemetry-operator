@@ -1,11 +1,14 @@
 name: "Prepare the release"
 on:
-  push:
-    tags: [ 'v*' ]
+  workflow_run:
+    workflows: [Publish container images]
+    types:
+      - completed
 
 jobs:
   release:
     runs-on: ubuntu-22.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
     - name: Set up Go
       uses: actions/setup-go@v5
