@@ -15,6 +15,13 @@ rules:
   - opentelemetrycollectors
   verbs:
   - '*'
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - 'list'
+  - 'get'
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep

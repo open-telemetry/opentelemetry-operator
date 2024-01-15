@@ -35,9 +35,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-const DefaultResyncTime = 5 * time.Minute
-const DefaultConfigFilePath string = "/conf/targetallocator.yaml"
-const DefaultCRScrapeInterval model.Duration = model.Duration(time.Second * 30)
+const (
+	DefaultResyncTime                        = 5 * time.Minute
+	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                = "consistent-hashing"
+	DefaultFilterStrategy                    = "relabel-config"
+)
 
 type Config struct {
 	ListenAddr             string                `yaml:"listen_addr,omitempty"`
@@ -46,8 +50,8 @@ type Config struct {
 	RootLogger             logr.Logger           `yaml:"-"`
 	CollectorSelector      *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
 	PromConfig             *promconfig.Config    `yaml:"config"`
-	AllocationStrategy     *string               `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy         *string               `yaml:"filter_strategy,omitempty"`
+	AllocationStrategy     string                `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy         string                `yaml:"filter_strategy,omitempty"`
 	PrometheusCR           PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	PodMonitorSelector     map[string]string     `yaml:"pod_monitor_selector,omitempty"`
 	ServiceMonitorSelector map[string]string     `yaml:"service_monitor_selector,omitempty"`
@@ -56,20 +60,6 @@ type Config struct {
 type PrometheusCRConfig struct {
 	Enabled        bool           `yaml:"enabled,omitempty"`
 	ScrapeInterval model.Duration `yaml:"scrape_interval,omitempty"`
-}
-
-func (c Config) GetAllocationStrategy() string {
-	if c.AllocationStrategy != nil {
-		return *c.AllocationStrategy
-	}
-	return "consistent-hashing"
-}
-
-func (c Config) GetTargetsFilterStrategy() string {
-	if c.FilterStrategy != nil {
-		return *c.FilterStrategy
-	}
-	return "relabel-config"
 }
 
 func LoadFromFile(file string, target *Config) error {
@@ -127,6 +117,8 @@ func unmarshal(cfg *Config, configFile string) error {
 
 func CreateDefaultConfig() Config {
 	return Config{
+		AllocationStrategy: DefaultAllocationStrategy,
+		FilterStrategy:     DefaultFilterStrategy,
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},

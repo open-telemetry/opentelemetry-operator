@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opamp-go/protobufs"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -44,6 +45,9 @@ type ConfigApplier interface {
 
 	// GetInstance retrieves an OpenTelemetryCollector CRD given a name and namespace.
 	GetInstance(name string, namespace string) (*v1alpha1.OpenTelemetryCollector, error)
+
+	// GetCollectorPods retrieves all pods that match the given collector's selector labels and namespace.
+	GetCollectorPods(selectorLabels map[string]string, namespace string) (*v1.PodList, error)
 
 	// ListInstances retrieves all OpenTelemetryCollector CRDs created by the operator-opamp-bridge agent.
 	ListInstances() ([]v1alpha1.OpenTelemetryCollector, error)
@@ -84,7 +88,6 @@ func (c Client) labelSetContainsLabel(instance *v1alpha1.OpenTelemetryCollector,
 
 func (c Client) create(ctx context.Context, name string, namespace string, collector *v1alpha1.OpenTelemetryCollector) error {
 	// Set the defaults
-	collector.Default()
 	collector.TypeMeta.Kind = CollectorResource
 	collector.TypeMeta.APIVersion = v1alpha1.GroupVersion.String()
 	collector.ObjectMeta.Name = name
@@ -94,13 +97,6 @@ func (c Client) create(ctx context.Context, name string, namespace string, colle
 		collector.ObjectMeta.Labels = map[string]string{}
 	}
 	collector.ObjectMeta.Labels[ResourceIdentifierKey] = ResourceIdentifierValue
-	warnings, err := collector.ValidateCreate()
-	if err != nil {
-		return err
-	}
-	if warnings != nil {
-		c.log.Info("Some warnings present on collector", "warnings", warnings)
-	}
 	c.log.Info("Creating collector")
 	return c.k8sClient.Create(ctx, collector)
 }
@@ -108,13 +104,6 @@ func (c Client) create(ctx context.Context, name string, namespace string, colle
 func (c Client) update(ctx context.Context, old *v1alpha1.OpenTelemetryCollector, new *v1alpha1.OpenTelemetryCollector) error {
 	new.ObjectMeta = old.ObjectMeta
 	new.TypeMeta = old.TypeMeta
-	warnings, err := new.ValidateUpdate(old)
-	if err != nil {
-		return err
-	}
-	if warnings != nil {
-		c.log.Info("Some warnings present on collector", "warnings", warnings)
-	}
 	c.log.Info("Updating collector")
 	return c.k8sClient.Update(ctx, new)
 }
@@ -217,6 +206,13 @@ func (c Client) GetInstance(name string, namespace string) (*v1alpha1.OpenTeleme
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (c Client) GetCollectorPods(selectorLabels map[string]string, namespace string) (*v1.PodList, error) {
+	ctx := context.Background()
+	podList := &v1.PodList{}
+	err := c.k8sClient.List(ctx, podList, client.MatchingLabels(selectorLabels), client.InNamespace(namespace))
+	return podList, err
 }
 
 func (c Client) validate(spec v1alpha1.OpenTelemetryCollectorSpec) ([]string, error) {
