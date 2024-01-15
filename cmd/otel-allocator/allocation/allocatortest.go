@@ -35,9 +35,8 @@ func MakeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*ta
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
 		label := model.LabelSet{
-			"collector": model.LabelValue(collector),
-			"i":         model.LabelValue(strconv.Itoa(i)),
-			"total":     model.LabelValue(strconv.Itoa(n + startingIndex)),
+			"i":     model.LabelValue(strconv.Itoa(i)),
+			"total": model.LabelValue(strconv.Itoa(n + startingIndex)),
 		}
 		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), fmt.Sprintf("test-url-%d", i), label, collector)
 		toReturn[newTarget.Hash()] = newTarget

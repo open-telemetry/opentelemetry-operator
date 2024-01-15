@@ -89,14 +89,15 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
-		Name:           naming.TAContainer(),
-		Image:          image,
-		Ports:          ports,
-		Env:            envVars,
-		VolumeMounts:   volumeMounts,
-		Resources:      otelcol.Spec.TargetAllocator.Resources,
-		Args:           args,
-		LivenessProbe:  livenessProbe,
-		ReadinessProbe: readinessProbe,
+		Name:            naming.TAContainer(),
+		Image:           image,
+		Ports:           ports,
+		Env:             envVars,
+		VolumeMounts:    volumeMounts,
+		Resources:       otelcol.Spec.TargetAllocator.Resources,
+		Args:            args,
+		LivenessProbe:   livenessProbe,
+		ReadinessProbe:  readinessProbe,
+		SecurityContext: otelcol.Spec.TargetAllocator.SecurityContext,
 	}
 }

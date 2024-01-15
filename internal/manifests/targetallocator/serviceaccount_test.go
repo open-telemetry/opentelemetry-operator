@@ -18,12 +18,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
-func TestServiceAccountNewDefault(t *testing.T) {
+func TestServiceAccountDefaultName(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -32,13 +34,13 @@ func TestServiceAccountNewDefault(t *testing.T) {
 	}
 
 	// test
-	sa := ServiceAccountName(otelcol)
+	saName := ServiceAccountName(otelcol)
 
 	// verify
-	assert.Equal(t, "my-instance-collector", sa)
+	assert.Equal(t, "my-instance-targetallocator", saName)
 }
 
-func TestServiceAccountOverride(t *testing.T) {
+func TestServiceAccountOverrideName(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -56,4 +58,46 @@ func TestServiceAccountOverride(t *testing.T) {
 
 	// verify
 	assert.Equal(t, "my-special-sa", sa)
+}
+
+func TestServiceAccountDefault(t *testing.T) {
+	params := manifests.Params{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-instance",
+			},
+		},
+	}
+	expected := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-instance-targetallocator",
+			Namespace:   params.OtelCol.Namespace,
+			Labels:      Labels(params.OtelCol, "my-instance-targetallocator"),
+			Annotations: params.OtelCol.Annotations,
+		},
+	}
+
+	saName := ServiceAccountName(params.OtelCol)
+	sa := ServiceAccount(params)
+
+	assert.Equal(t, sa.Name, saName)
+	assert.Equal(t, expected, sa)
+}
+
+func TestServiceAccountOverride(t *testing.T) {
+	params := manifests.Params{
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-instance",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+					ServiceAccount: "my-special-sa",
+				},
+			},
+		},
+	}
+	sa := ServiceAccount(params)
+
+	assert.Nil(t, sa)
 }

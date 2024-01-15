@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	policyV1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -81,13 +80,12 @@ func TestPDB(t *testing.T) {
 					MaxUnavailable: test.MaxUnavailable,
 				}
 				configuration := config.New()
-				raw := PodDisruptionBudget(manifests.Params{
+				pdb := PodDisruptionBudget(manifests.Params{
 					Log:     logger,
 					Config:  configuration,
 					OtelCol: otelcol,
 				})
 
-				pdb := raw.(*policyV1.PodDisruptionBudget)
 				// verify
 				assert.Equal(t, "my-instance-collector", pdb.Name)
 				assert.Equal(t, "my-instance-collector", pdb.Labels["app.kubernetes.io/name"])

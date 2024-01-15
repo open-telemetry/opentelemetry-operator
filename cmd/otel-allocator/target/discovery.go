@@ -22,7 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/config"
+	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v3"
@@ -41,7 +41,7 @@ type Discoverer struct {
 	log                  logr.Logger
 	manager              *discovery.Manager
 	close                chan struct{}
-	configsMap           map[allocatorWatcher.EventSource]*config.Config
+	configsMap           map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig
 	hook                 discoveryHook
 	scrapeConfigsHash    hash.Hash
 	scrapeConfigsUpdater scrapeConfigsUpdater
@@ -52,7 +52,7 @@ type discoveryHook interface {
 }
 
 type scrapeConfigsUpdater interface {
-	UpdateScrapeConfigResponse(map[string]*config.ScrapeConfig) error
+	UpdateScrapeConfigResponse(map[string]*promconfig.ScrapeConfig) error
 }
 
 func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater) *Discoverer {
@@ -60,25 +60,22 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 		log:                  log,
 		manager:              manager,
 		close:                make(chan struct{}),
-		configsMap:           make(map[allocatorWatcher.EventSource]*config.Config),
+		configsMap:           make(map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig),
 		hook:                 hook,
+		scrapeConfigsHash:    nil, // we want the first update to succeed even if the config is empty
 		scrapeConfigsUpdater: scrapeConfigsUpdater,
 	}
 }
 
-func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, cfg *config.Config) error {
-	if cfg == nil {
-		m.log.Info("Service Discovery got empty Prometheus config", "source", source.String())
-		return nil
-	}
-	m.configsMap[source] = cfg
-	jobToScrapeConfig := make(map[string]*config.ScrapeConfig)
+func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConfigs []*promconfig.ScrapeConfig) error {
+	m.configsMap[source] = scrapeConfigs
+	jobToScrapeConfig := make(map[string]*promconfig.ScrapeConfig)
 
 	discoveryCfg := make(map[string]discovery.Configs)
 	relabelCfg := make(map[string][]*relabel.Config)
 
-	for _, value := range m.configsMap {
-		for _, scrapeConfig := range value.ScrapeConfigs {
+	for _, configs := range m.configsMap {
+		for _, scrapeConfig := range configs {
 			jobToScrapeConfig[scrapeConfig.JobName] = scrapeConfig
 			discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
 			relabelCfg[scrapeConfig.JobName] = scrapeConfig.RelabelConfigs
@@ -137,7 +134,7 @@ func (m *Discoverer) Close() {
 
 // Calculate a hash for a scrape config map.
 // This is done by marshaling to YAML because it's the most straightforward and doesn't run into problems with unexported fields.
-func getScrapeConfigHash(jobToScrapeConfig map[string]*config.ScrapeConfig) (hash.Hash64, error) {
+func getScrapeConfigHash(jobToScrapeConfig map[string]*promconfig.ScrapeConfig) (hash.Hash64, error) {
 	var err error
 	hash := fnv.New64()
 	yamlEncoder := yaml.NewEncoder(hash)

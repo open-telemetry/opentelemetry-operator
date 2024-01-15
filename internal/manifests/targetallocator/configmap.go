@@ -15,8 +15,6 @@
 package targetallocator
 
 import (
-	"strings"
-
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,13 +33,7 @@ const (
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(params.OtelCol.Name)
-	version := strings.Split(params.OtelCol.Spec.Image, ":")
 	labels := Labels(params.OtelCol, name)
-	if len(version) > 1 {
-		labels["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
-		labels["app.kubernetes.io/version"] = "latest"
-	}
 
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA ConfigMap should have a single "$", as it does not support env var substitution
@@ -52,7 +44,13 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	taConfig := make(map[interface{}]interface{})
 	prometheusCRConfig := make(map[interface{}]interface{})
-	taConfig["label_selector"] = manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)
+	collectorSelectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)
+	taConfig["collector_selector"] = map[string]any{
+		"matchlabels": collectorSelectorLabels,
+	}
+	// The below instruction is here for compatibility with the previous target allocator version
+	// TODO: Drop it after 3 more versions
+	taConfig["label_selector"] = collectorSelectorLabels
 	// We only take the "config" from the returned object, if it's present
 	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
 		taConfig["config"] = prometheusConfig
@@ -61,7 +59,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	if len(params.OtelCol.Spec.TargetAllocator.AllocationStrategy) > 0 {
 		taConfig["allocation_strategy"] = params.OtelCol.Spec.TargetAllocator.AllocationStrategy
 	} else {
-		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
+		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
 	}
 
 	if len(params.OtelCol.Spec.TargetAllocator.FilterStrategy) > 0 {

@@ -31,9 +31,11 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	testingclock "k8s.io/utils/clock/testing"
+	runtimeClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -49,9 +51,11 @@ const (
 	testNamespace      = "testnamespace"
 	testCollectorName  = "collector"
 	otherCollectorName = "other"
+	thirdCollectorName = "third"
 	emptyConfigHash    = ""
 	testCollectorKey   = testNamespace + "/" + testCollectorName
 	otherCollectorKey  = testNamespace + "/" + otherCollectorName
+	thirdCollectorKey  = otherCollectorName + "/" + thirdCollectorName
 
 	agentTestFileName                       = "testdata/agent.yaml"
 	agentTestFileHttpName                   = "testdata/agenthttpbasic.yaml"
@@ -73,6 +77,32 @@ var (
 	invalidYamlConfigHash      = getConfigHash(testCollectorKey, collectorInvalidFile)
 	updatedYamlConfigHash      = getConfigHash(testCollectorKey, collectorUpdatedFile)
 	otherUpdatedYamlConfigHash = getConfigHash(otherCollectorKey, collectorUpdatedFile)
+
+	podTime     = metav1.NewTime(time.UnixMicro(1704748549000000))
+	mockPodList = &v1.PodList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PodList",
+			APIVersion: "v1",
+		},
+		Items: []v1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      thirdCollectorName + "-1",
+					Namespace: otherCollectorName,
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+						"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otherCollectorName, thirdCollectorName),
+						"app.kubernetes.io/part-of":    "opentelemetry",
+						"app.kubernetes.io/component":  "opentelemetry-collector",
+					},
+				},
+				Spec: v1.PodSpec{},
+				Status: v1.PodStatus{
+					StartTime: &podTime,
+					Phase:     v1.PodRunning,
+				},
+			},
+		}}
 )
 
 func getConfigHash(key, file string) string {
@@ -130,16 +160,17 @@ func (m *mockOpampClient) SetPackageStatuses(_ *protobufs.PackageStatuses) error
 	return nil
 }
 
-func getFakeApplier(t *testing.T, conf *config.Config) *operator.Client {
+func getFakeApplier(t *testing.T, conf *config.Config, lists ...runtimeClient.ObjectList) *operator.Client {
 	schemeBuilder := runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
 		s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.OpenTelemetryCollector{}, &v1alpha1.OpenTelemetryCollectorList{})
+		s.AddKnownTypes(v1.SchemeGroupVersion, &v1.Pod{}, &v1.PodList{})
 		metav1.AddToGroupVersion(s, v1alpha1.GroupVersion)
 		return nil
 	})
 	scheme := runtime.NewScheme()
 	err := schemeBuilder.AddToScheme(scheme)
 	require.NoError(t, err, "Should be able to add custom types")
-	c := fake.NewClientBuilder().WithScheme(scheme)
+	c := fake.NewClientBuilder().WithLists(lists...).WithScheme(scheme)
 	return operator.NewClient("test-bridge", l, c.Build(), conf.GetComponentsAllowed())
 }
 
@@ -205,6 +236,7 @@ func TestAgent_getHealth(t *testing.T) {
 							LastError:          "",
 							Status:             "",
 							StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+							ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
 						},
 					},
 				},
@@ -236,6 +268,7 @@ func TestAgent_getHealth(t *testing.T) {
 							LastError:          "",
 							Status:             "",
 							StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+							ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
 						},
 						"testnamespace/other": {
 							Healthy:            false, // we're working with mocks so the status will never be reconciled.
@@ -243,6 +276,45 @@ func TestAgent_getHealth(t *testing.T) {
 							LastError:          "",
 							Status:             "",
 							StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+							ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "with pod health",
+			fields: fields{
+				configFile: agentTestFileName,
+			},
+			args: args{
+				ctx: context.Background(),
+				configs: []map[string]string{
+					{
+						thirdCollectorKey: collectorBasicFile,
+					},
+				},
+			},
+			want: []*protobufs.ComponentHealth{
+				{
+					Healthy:            true,
+					StartTimeUnixNano:  uint64(fakeClock.Now().UnixNano()),
+					StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+					ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+						"other/third": {
+							Healthy:            false, // we're working with mocks so the status will never be reconciled.
+							StartTimeUnixNano:  collectorStartTime,
+							LastError:          "",
+							Status:             "",
+							StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+							ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+								otherCollectorName + "/" + thirdCollectorName + "-1": {
+									Healthy:            true,
+									Status:             "Running",
+									StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+									StartTimeUnixNano:  uint64(podTime.UnixNano()),
+								},
+							},
 						},
 					},
 				},
@@ -255,7 +327,7 @@ func TestAgent_getHealth(t *testing.T) {
 			conf := config.NewConfig(logr.Discard())
 			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
 			require.NoError(t, loadErr, "should be able to load config")
-			applier := getFakeApplier(t, conf)
+			applier := getFakeApplier(t, conf, mockPodList)
 			agent := NewAgent(l, applier, conf, mockClient)
 			agent.clock = fakeClock
 			err := agent.Start()
@@ -489,7 +561,6 @@ func TestAgent_onMessage(t *testing.T) {
 						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: []",
-						"replicas: 1",
 						"status:",
 					},
 				},
@@ -536,7 +607,6 @@ func TestAgent_onMessage(t *testing.T) {
 						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: []",
-						"replicas: 1",
 						"status:",
 					},
 				},
@@ -551,7 +621,6 @@ func TestAgent_onMessage(t *testing.T) {
 						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
 						"processors: []",
-						"replicas: 1",
 						"status:",
 					},
 				},

@@ -59,6 +59,8 @@ componentsAllowed:
   receivers:
   - otlp
 endpoint: ws://opamp-server:4320/v1/opamp
+headers:
+  authorization: access-12345-token
 `}
 
 		opampBridge := v1alpha1.OpAMPBridge{
@@ -69,6 +71,7 @@ endpoint: ws://opamp-server:4320/v1/opamp
 			Spec: v1alpha1.OpAMPBridgeSpec{
 				Image:    "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.69.0",
 				Endpoint: "ws://opamp-server:4320/v1/opamp",
+				Headers:  map[string]string{"authorization": "access-12345-token"},
 				Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
 					v1alpha1.OpAMPBridgeCapabilityReportsStatus:                  true,
 					v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,

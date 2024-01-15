@@ -1,10 +1,10 @@
 # Current Operator version
-VERSION ?= "$(shell git describe --tags | sed 's/^v//')"
+VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/version"
 OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
 OPERATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')"
-TARGETALLOCATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')"
+TARGETALLOCATOR_VERSION ?= $(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')
 OPERATOR_OPAMP_BRIDGE_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator-opamp-bridge | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-java | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-nodejs | awk -F= '{print $$2}')"
@@ -18,7 +18,8 @@ OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.build
 ARCH ?= $(shell go env GOARCH)
 
 # Image URL to use all building/pushing image targets
-IMG_PREFIX ?= ghcr.io/${USER}/opentelemetry-operator
+DOCKER_USER ?= open-telemetry
+IMG_PREFIX ?= ghcr.io/${DOCKER_USER}/opentelemetry-operator
 IMG_REPO ?= opentelemetry-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
@@ -82,7 +83,7 @@ SED ?= $(shell which gsed 2>/dev/null || which sed)
 
 .PHONY: ensure-generate-is-noop
 ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
-ensure-generate-is-noop: USER=open-telemetry
+ensure-generate-is-noop: DOCKER_USER=open-telemetry
 ensure-generate-is-noop: set-image-controller generate bundle
 	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
 	@git restore config/manager/kustomization.yaml
@@ -101,8 +102,6 @@ ci: test
 .PHONY: test
 test: generate fmt vet ensure-generate-is-noop envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
-	cd cmd/otel-allocator && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
-	cd cmd/operator-opamp-bridge && KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
 
 # Build manager binary
 .PHONY: manager
@@ -111,11 +110,11 @@ manager: generate fmt vet
 
 # Build target allocator binary
 targetallocator:
-	cd cmd/otel-allocator && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" .
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o cmd/otel-allocator/bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/otel-allocator
 
 # Build opamp bridge binary
 operator-opamp-bridge:
-	cd cmd/operator-opamp-bridge && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o bin/opampbridge_${ARCH} -ldflags "${COMMON_LDFLAGS}" .
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -136,6 +135,23 @@ uninstall: manifests kustomize
 .PHONY: set-image-controller
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+
+.PHONY: add-operator-arg
+add-operator-arg: PATCH = [{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"$(OPERATOR_ARG)"}]
+add-operator-arg: manifests kustomize
+	cd config/manager && $(KUSTOMIZE) edit add patch --kind Deployment --patch '$(PATCH)'
+
+.PHONY: add-image-targetallocator
+add-image-targetallocator:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--target-allocator-image=$(TARGETALLOCATOR_IMG)
+
+.PHONY: add-image-opampbridge
+add-image-opampbridge:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--operator-opamp-bridge-image=$(OPERATOROPAMPBRIDGE_IMG)
+
+.PHONY: enable-operator-featuregates
+enable-operator-featuregates: OPERATOR_ARG = --feature-gates=$(FEATUREGATES)
+enable-operator-featuregates: add-operator-arg
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
@@ -173,12 +189,10 @@ vet:
 .PHONY: lint
 lint: golangci-lint
 	$(GOLANGCI_LINT) run
-	cd cmd/otel-allocator && $(GOLANGCI_LINT) run
-	cd cmd/operator-opamp-bridge && $(GOLANGCI_LINT) run
 
 # Generate code
 .PHONY: generate
-generate: controller-gen api-docs
+generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # end-to-tests
@@ -233,13 +247,10 @@ e2e-opampbridge:
 	$(KUTTL) test --config kuttl-test-opampbridge.yaml
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
-	TARGETALLOCATOR_IMG=$(TARGETALLOCATOR_IMG) OPERATOROPAMPBRIDGE_IMG=$(OPERATOROPAMPBRIDGE_IMG) OPERATOR_IMG=$(IMG) SED_BIN="$(SED)" ./hack/modify-test-images.sh
+prepare-e2e: kuttl set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
-.PHONY: enable-prometheus-feature-flag
-enable-prometheus-feature-flag:
-	$(SED) -i "s#--feature-gates=+operator.autoinstrumentation.go#--feature-gates=+operator.autoinstrumentation.go,+operator.observability.prometheus#g" config/default/manager_auth_proxy_patch.yaml
-
+.PHONY: prepare-e2e-with-featuregates
+prepare-e2e-with-featuregates: kuttl enable-operator-featuregates prepare-e2e
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -262,6 +273,10 @@ container-push:
 container-target-allocator-push:
 	docker push ${TARGETALLOCATOR_IMG}
 
+.PHONY: container-operator-opamp-bridge-push
+container-operator-opamp-bridge-push:
+	docker push ${OPERATOROPAMPBRIDGE_IMG}
+
 .PHONY: container-target-allocator
 container-target-allocator: GOOS = linux
 container-target-allocator: targetallocator
@@ -275,7 +290,7 @@ container-operator-opamp-bridge: operator-opamp-bridge
 .PHONY: start-kind
 start-kind:
 ifeq (true,$(START_KIND_CLUSTER))
-	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
+	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG) || true
 endif
 
 .PHONY: install-metrics-server
@@ -313,7 +328,7 @@ endif
 
 
 .PHONY: load-image-operator-opamp-bridge
-load-image-operator-opamp-bridge:
+load-image-operator-opamp-bridge: container-operator-opamp-bridge
 	kind load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
 
 .PHONY: cert-manager
@@ -441,6 +456,15 @@ bundle: kustomize operator-sdk manifests set-image-controller
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
+
+.PHONY: reset
+reset: kustomize operator-sdk manifests
+	$(MAKE) VERSION=${OPERATOR_VERSION} set-image-controller
+	$(OPERATOR_SDK)  generate kustomize manifests -q
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version ${OPERATOR_VERSION} $(BUNDLE_METADATA_OPTS)
+	$(OPERATOR_SDK) bundle validate ./bundle
+	./hack/ignore-createdAt-bundle.sh
+	git checkout config/manager/kustomization.yaml
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build

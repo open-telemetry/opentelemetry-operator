@@ -7,7 +7,6 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
-    image: "local/opentelemetry-operator-targetallocator:e2e"
     serviceAccount: ta
     prometheusCR:
       enabled: true

@@ -1,0 +1,16 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+processors:
+  resourcedetection:
+    detectors: [kubernetes]
+exporters:
+  otlp:
+    endpoint: "otlp:4317"
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resourcedetection]
+      exporters: [otlp]

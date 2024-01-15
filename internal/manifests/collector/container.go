@@ -44,7 +44,10 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 
 	// build container ports from service ports
 	ports, err := getConfigContainerPorts(logger, otelcol.Spec.Config)
-	logger.Error(err, "container ports config")
+	if err != nil {
+		logger.Error(err, "container ports config")
+	}
+
 	for _, p := range otelcol.Spec.Ports {
 		ports[p.Name] = corev1.ContainerPort{
 			Name:          p.Name,

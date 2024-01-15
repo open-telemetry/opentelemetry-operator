@@ -89,7 +89,7 @@ func TestDiscovery(t *testing.T) {
 			err := config.LoadFromFile(tt.args.file, &cfg)
 			assert.NoError(t, err)
 			assert.True(t, len(cfg.PromConfig.ScrapeConfigs) > 0)
-			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.PromConfig)
+			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.PromConfig.ScrapeConfigs)
 			assert.NoError(t, err)
 
 			gotTargets := <-results
@@ -306,11 +306,11 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, tc.cfg)
+			err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, tc.cfg.ScrapeConfigs)
 			if !tc.expectErr {
 				expectedConfig = make(map[string]*promconfig.ScrapeConfig)
-				for _, value := range manager.configsMap {
-					for _, scrapeConfig := range value.ScrapeConfigs {
+				for _, configs := range manager.configsMap {
+					for _, scrapeConfig := range configs {
 						expectedConfig[scrapeConfig.JobName] = scrapeConfig
 					}
 				}
@@ -389,7 +389,7 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg)
+		err := manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.ScrapeConfigs)
 		require.NoError(b, err)
 	}
 }

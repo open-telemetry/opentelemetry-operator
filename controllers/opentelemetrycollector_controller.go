@@ -17,8 +17,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"sync"
 
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -26,6 +24,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	policyV1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -36,8 +35,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/reconcile"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -48,16 +45,6 @@ type OpenTelemetryCollectorReconciler struct {
 	scheme   *runtime.Scheme
 	log      logr.Logger
 	config   config.Config
-
-	tasks   []Task
-	muTasks sync.RWMutex
-}
-
-// Task represents a reconciliation task to be executed by the reconciler.
-type Task struct {
-	Do          func(context.Context, manifests.Params) error
-	Name        string
-	BailOnError bool
 }
 
 // Params is the set of options to build a new OpenTelemetryCollectorReconciler.
@@ -66,53 +53,7 @@ type Params struct {
 	Recorder record.EventRecorder
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
-	Tasks    []Task
 	Config   config.Config
-}
-
-func (r *OpenTelemetryCollectorReconciler) onOpenShiftRoutesChange() error {
-	plt := r.config.OpenShiftRoutes()
-	var (
-		routesIdx = -1
-	)
-	r.muTasks.Lock()
-	for i, t := range r.tasks {
-		// search for route reconciler
-		switch t.Name {
-		case "routes":
-			routesIdx = i
-		}
-	}
-	r.muTasks.Unlock()
-
-	if err := r.addRouteTask(plt, routesIdx); err != nil {
-		return err
-	}
-
-	return r.removeRouteTask(plt, routesIdx)
-}
-
-func (r *OpenTelemetryCollectorReconciler) addRouteTask(ora autodetect.OpenShiftRoutesAvailability, routesIdx int) error {
-	r.muTasks.Lock()
-	defer r.muTasks.Unlock()
-	// if exists and openshift routes are available
-	if routesIdx == -1 && ora == autodetect.OpenShiftRoutesAvailable {
-		r.tasks = append([]Task{{reconcile.Routes, "routes", true}}, r.tasks...)
-	}
-	return nil
-}
-
-func (r *OpenTelemetryCollectorReconciler) removeRouteTask(ora autodetect.OpenShiftRoutesAvailability, routesIdx int) error {
-	r.muTasks.Lock()
-	defer r.muTasks.Unlock()
-	if len(r.tasks) < routesIdx {
-		return fmt.Errorf("can not remove route task from reconciler")
-	}
-	// if exists and openshift routes are not available
-	if routesIdx != -1 && ora == autodetect.OpenShiftRoutesNotAvailable {
-		r.tasks = append(r.tasks[:routesIdx], r.tasks[routesIdx+1:]...)
-	}
-	return nil
 }
 
 func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
@@ -133,14 +74,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 		log:      p.Log,
 		scheme:   p.Scheme,
 		config:   p.Config,
-		tasks:    p.Tasks,
 		recorder: p.Recorder,
-	}
-
-	if len(r.tasks) == 0 {
-		// TODO: put this in line with the rest of how we generate manifests
-		// https://github.com/open-telemetry/opentelemetry-operator/issues/2108
-		r.config.RegisterOpenShiftRoutesChangeCallback(r.onOpenShiftRoutesChange)
 	}
 	return r
 }
@@ -150,10 +84,12 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;clusterroles,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
-// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures;infrastructures/status,verbs=get;list;watch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
@@ -185,9 +121,6 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	params := r.getParams(instance)
-	if err := r.RunTasks(ctx, params); err != nil {
-		return ctrl.Result{}, err
-	}
 
 	desiredObjects, buildErr := BuildCollector(params)
 	if buildErr != nil {
@@ -197,32 +130,8 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
 }
 
-// RunTasks runs all the tasks associated with this reconciler.
-func (r *OpenTelemetryCollectorReconciler) RunTasks(ctx context.Context, params manifests.Params) error {
-	r.muTasks.RLock()
-	defer r.muTasks.RUnlock()
-	for _, task := range r.tasks {
-		if err := task.Do(ctx, params); err != nil {
-			// If we get an error that occurs because a pod is being terminated, then exit this loop
-			if apierrors.IsForbidden(err) && apierrors.HasStatusCause(err, corev1.NamespaceTerminatingCause) {
-				r.log.V(2).Info("Exiting reconcile loop because namespace is being terminated", "namespace", params.OtelCol.Namespace)
-				return nil
-			}
-			r.log.Error(err, fmt.Sprintf("failed to reconcile %s", task.Name))
-			if task.BailOnError {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	err := r.config.AutoDetect() // We need to call this, so we can get the correct autodetect version
-	if err != nil {
-		return err
-	}
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.OpenTelemetryCollector{}).
 		Owns(&corev1.ConfigMap{}).
@@ -232,10 +141,13 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
-		Owns(&policyV1.PodDisruptionBudget{})
+		Owns(&policyV1.PodDisruptionBudget{}).
+		Owns(&rbacv1.ClusterRoleBinding{}).
+		Owns(&rbacv1.ClusterRole{})
 
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
+		builder.Owns(&monitoringv1.PodMonitor{})
 	}
 
 	return builder.Complete(r)

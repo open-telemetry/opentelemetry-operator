@@ -27,7 +27,7 @@ func Service(params manifests.Params) *corev1.Service {
 	name := naming.TAService(params.OtelCol.Name)
 	labels := Labels(params.OtelCol, name)
 
-	selector := Labels(params.OtelCol, name)
+	selector := SelectorLabels(params.OtelCol)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

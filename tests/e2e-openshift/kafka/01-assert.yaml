@@ -1,0 +1,13 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: otlp-spans
+  namespace: kuttl-kafka
+spec:
+  config:
+    retention.ms: 300000
+    segment.bytes: 1073741824
+  partitions: 1
+  replicas: 1
+status:
+  topicName: otlp-spans

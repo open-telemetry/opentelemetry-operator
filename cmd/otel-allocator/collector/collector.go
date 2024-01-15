@@ -24,7 +24,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -63,11 +62,15 @@ func NewClient(logger logr.Logger, kubeConfig *rest.Config) (*Client, error) {
 	}, nil
 }
 
-func (k *Client) Watch(ctx context.Context, labelMap map[string]string, fn func(collectors map[string]*allocation.Collector)) error {
+func (k *Client) Watch(ctx context.Context, labelSelector *metav1.LabelSelector, fn func(collectors map[string]*allocation.Collector)) error {
 	collectorMap := map[string]*allocation.Collector{}
 
+	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	if err != nil {
+		return err
+	}
 	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labelMap).String(),
+		LabelSelector: selector.String(),
 	}
 	pods, err := k.k8sClient.CoreV1().Pods(ns).List(ctx, opts)
 	if err != nil {

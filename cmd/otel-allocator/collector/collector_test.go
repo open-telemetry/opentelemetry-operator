@@ -28,7 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
@@ -42,14 +41,16 @@ func getTestClient() (Client, watch.Interface) {
 		close:     make(chan struct{}),
 		log:       logger,
 	}
-
-	labelMap := map[string]string{
-		"app.kubernetes.io/instance":   "default.test",
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+	labelSelector := metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"app.kubernetes.io/instance":   "default.test",
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		},
 	}
+	selector, _ := metav1.LabelSelectorAsSelector(&labelSelector)
 
 	opts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labelMap).String(),
+		LabelSelector: selector.String(),
 	}
 	watcher, err := kubeClient.k8sClient.CoreV1().Pods("test-ns").Watch(context.Background(), opts)
 	if err != nil {

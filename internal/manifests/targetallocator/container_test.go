@@ -368,3 +368,26 @@ func TestLivenessProbe(t *testing.T) {
 	// verify
 	assert.Equal(t, expected, c.LivenessProbe)
 }
+
+func TestSecurityContext(t *testing.T) {
+	runAsNonRoot := true
+	securityContext := &corev1.SecurityContext{
+		RunAsNonRoot: &runAsNonRoot,
+	}
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled:         true,
+				SecurityContext: securityContext,
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, otelcol)
+
+	// verify
+	assert.Equal(t, securityContext, c.SecurityContext)
+}

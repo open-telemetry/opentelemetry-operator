@@ -1,0 +1,22 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: kafka-receiver
+  namespace: kuttl-kafka
+spec:
+  mode: "deployment"
+  config: |
+    receivers:
+      kafka/traces:
+        brokers: ["my-cluster-kafka-brokers.kuttl-kafka.svc:9092"]
+        protocol_version: 3.5.0
+        topic: otlp-spans
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        traces:
+          receivers: [kafka/traces]
+          processors: []
+          exporters: [debug]

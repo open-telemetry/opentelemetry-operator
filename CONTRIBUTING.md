@@ -20,6 +20,22 @@ git commit -sam "Add feature X"
 gh pr create
 ```
 
+#### Make changes to the project manifests
+
+The following command should be run to make sure the project manifests are up-to-date:
+
+```bash
+make generate manifests bundle api-docs reset
+```
+
+The local changes after running the command should be added to the pull request:
+
+The following `make` target is run on CI to verify the project structure:
+
+```bash
+make ensure-generate-is-noop
+```
+
 ### Pre-requisites
 * Install [Go](https://golang.org/doc/install).
 * Install [Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/).
@@ -37,7 +53,7 @@ Refer to the [Operator SDK documentation](https://sdk.operatorframework.io/docs/
 
 Build the manifests, install the CRD and run the operator as a local process:
 ```bash
-make bundle install run
+make install run
 ```
 
 ### Deployment with webhooks
@@ -58,16 +74,16 @@ The environment variable `CERTMANAGER_VERSION` can be used to override the cert-
 CERTMANAGER_VERSION=1.60 make cert-manager
 ```
 
-When deploying the operator into the cluster using `make deploy`, an image in the format `ghcr.io/${USER}/opentelemetry-operator` is generated. If this format isn't suitable, it can be overridden by:
+When deploying the operator into the cluster using `make deploy`, an image in the format `ghcr.io/${DOCKER_USER}/opentelemetry-operator` is generated. If this format isn't suitable, it can be overridden by:
 
 * `IMG_PREFIX`, to override the registry, namespace and image name
-* `USER`, to override the namespace
+* `DOCKER_USER`, to override the namespace
 * `IMG_REPO`, to override the repository (`opentelemetry-operator`)
 * `VERSION`, to override only the version part
 * `IMG`, to override the entire image specification
 
 ```bash
-IMG=docker.io/${USER}/opentelemetry-operator:dev-$(git rev-parse --short HEAD)-$(date +%s) make generate bundle container container-push deploy
+IMG=docker.io/${DOCKER_USER}/opentelemetry-operator:dev-$(git rev-parse --short HEAD)-$(date +%s) make generate container container-push deploy
 ```
 
 Your operator will be available in the `opentelemetry-operator-system` namespace.
@@ -107,6 +123,8 @@ To run the end-to-end tests, you'll need [`kind`](https://kind.sigs.k8s.io) and 
 Once they are installed, the tests can be executed with `make prepare-e2e`, which will build an image to use with the tests, followed by `make e2e`. Each call to the `e2e` target will setup a fresh `kind` cluster, making it safe to be executed multiple times with a single `prepare-e2e` step.
 
 The tests are located under `tests/e2e` and are written to be used with `kuttl`. Refer to their documentation to understand how tests are written.
+
+To evert the changes made by the `make prepare-e2e` run `make reset`.
 
 ### OpenShift End to End tests
 To run the end-to-end tests written for OpenShift, you'll need a OpenShift cluster. 
@@ -188,7 +206,7 @@ BUNDLE_IMG=docker.io/${USER}/opentelemetry-operator-bundle:latest IMG=docker.io/
 ### Install the operator
 
 ```bash
-operator-sdk run bundle docker.io/${USER}/opentelemetry-operator-bundle:latest
+operator-sdk run bundle docker.io/${DOCKER_USER}/opentelemetry-operator-bundle:latest
 ```
 
 ### Uninstall the operator
