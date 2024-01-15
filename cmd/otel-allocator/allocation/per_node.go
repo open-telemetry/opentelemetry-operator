@@ -190,12 +190,8 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 
 	// Check for unassigned targets
 	if len(unassignedTargetsForJobs) > 0 {
-		jobs := make([]string, 0, len(unassignedTargetsForJobs))
-		for j := range unassignedTargetsForJobs {
-			jobs = append(jobs, j)
-		}
-
-		allocator.log.Info("Could not assign targets for the following jobs due to missing node labels", "jobs", jobs)
+		allocator.log.Info("Could not assign targets for some jobs due to missing node labels", "jobs", unassignedTargetsForJobs)
+		RecordJobsWithUnassignedTargets(unassignedTargetsForJobs)
 	}
 }
 

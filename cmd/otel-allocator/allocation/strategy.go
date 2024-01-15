@@ -49,6 +49,10 @@ var (
 		Name: "opentelemetry_allocator_targets_remaining",
 		Help: "Number of targets kept after filtering.",
 	})
+	jobsUnassigned = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "opentelemetry_allocator_jobs_with_unassigned_targets",
+		Help: "Number of jobs with targets that could not be assigned due to missing node label.",
+	})
 )
 
 type AllocationOption func(Allocator)
@@ -65,6 +69,10 @@ func WithFilter(filter Filter) AllocationOption {
 
 func RecordTargetsKept(targets map[string]*target.Item) {
 	targetsRemaining.Add(float64(len(targets)))
+}
+
+func RecordJobsWithUnassignedTargets(jobs map[string]struct{}) {
+	jobsUnassigned.Add(float64(len(jobs)))
 }
 
 func New(name string, log logr.Logger, opts ...AllocationOption) (Allocator, error) {
