@@ -2218,6 +2218,37 @@ spec:
                   - name
                   type: object
                 type: array
+              deploymentUpdateStrategy:
+                description: UpdateStrategy represents the strategy the operator will
+                  take replacing existing Deployment pods with new pods https://kubernetes.
+                properties:
+                  rollingUpdate:
+                    description: 'Rolling update config params. Present only if DeploymentStrategyType
+                      = RollingUpdate. --- TODO: Update this to follow our convention
+                      for oneOf, whatever we decide it to be.'
+                    properties:
+                      maxSurge:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: 'The maximum number of pods that can be scheduled
+                          above the desired number of pods. Value can be an absolute
+                          number (ex: 5) or a percentage of desired pods (ex: 10%).'
+                        x-kubernetes-int-or-string: true
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: 'The maximum number of pods that can be unavailable
+                          during the update. Value can be an absolute number (ex:
+                          5) or a percentage of desired pods (ex: 10%).'
+                        x-kubernetes-int-or-string: true
+                    type: object
+                  type:
+                    description: Type of deployment. Can be "Recreate" or "RollingUpdate".
+                      Default is RollingUpdate.
+                    type: string
+                type: object
               env:
                 description: ENV vars to set on the OpenTelemetry Collector's Pods.
                   These can then in certain cases be consumed in the config file for
