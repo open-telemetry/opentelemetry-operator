@@ -1,7 +1,7 @@
 # Current Operator version
 VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
-VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/version"
+VERSION_PKG ?= github.com/open-telemetry/opentelemetry-operator/internal/version
 OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
 OPERATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')"
 TARGETALLOCATOR_VERSION ?= $(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')
@@ -14,7 +14,7 @@ AUTO_INSTRUMENTATION_GO_VERSION ?= "$(shell grep -v '\#' versions.txt | grep aut
 AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-apache-httpd | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_NGINX_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-nginx | awk -F= '{print $$2}')"
 COMMON_LDFLAGS ?= -s -w
-OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.operatorOpAMPBridge=${OPERATOR_OPAMP_BRIDGE_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationGo=${AUTO_INSTRUMENTATION_GO_VERSION} -X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION} -X ${VERSION_PKG}.autoInstrumentationNginx=${AUTO_INSTRUMENTATION_NGINX_VERSION}
+OPERATOR_LDFLAGS ?= "-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.operatorOpAMPBridge=${OPERATOR_OPAMP_BRIDGE_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationGo=${AUTO_INSTRUMENTATION_GO_VERSION} -X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION} -X ${VERSION_PKG}.autoInstrumentationNginx=${AUTO_INSTRUMENTATION_NGINX_VERSION}"
 ARCH ?= $(shell go env GOARCH)
 
 # Image URL to use all building/pushing image targets
