@@ -18,8 +18,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -201,6 +203,37 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
 	assert.Equal(t, &runasGroup, d.Spec.Template.Spec.SecurityContext.RunAsGroup)
+}
+
+func TestDeploymentUpdateStrategy(t *testing.T) {
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			DeploymentUpdateStrategy: appsv1.DeploymentStrategy{
+				Type: "RollingUpdate",
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+				},
+			},
+		},
+	}
+
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	d := Deployment(params)
+
+	assert.Equal(t, "RollingUpdate", string(d.Spec.Strategy.Type))
+	assert.Equal(t, 1, d.Spec.Strategy.RollingUpdate.MaxSurge.IntValue())
+	assert.Equal(t, 1, d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntValue())
 }
 
 func TestDeploymentHostNetwork(t *testing.T) {
