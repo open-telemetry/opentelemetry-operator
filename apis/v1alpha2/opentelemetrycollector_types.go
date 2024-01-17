@@ -17,6 +17,7 @@
 package v1alpha2
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -152,6 +153,16 @@ type OpenTelemetryCollectorSpec struct {
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
 	ConfigMaps []v1alpha1.ConfigMapsSpec `json:"configmaps,omitempty"`
+	// UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
+	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
+	// This is only applicable to Daemonset mode.
+	// +optional
+	DaemonSetUpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"daemonSetUpdateStrategy,omitempty"`
+	// UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods
+	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/#DeploymentSpec
+	// This is only applicable to Deployment mode.
+	// +optional
+	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
