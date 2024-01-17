@@ -62,9 +62,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
 	}
 
-	if len(params.OtelCol.Spec.TargetAllocator.FilterStrategy) > 0 {
-		taConfig["filter_strategy"] = params.OtelCol.Spec.TargetAllocator.FilterStrategy
-	}
+	taConfig["filter_strategy"] = params.OtelCol.Spec.TargetAllocator.FilterStrategy
 
 	if params.OtelCol.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Size() > 0 {
 		prometheusCRConfig["scrape_interval"] = params.OtelCol.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Duration
