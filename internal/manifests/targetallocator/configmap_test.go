@@ -54,6 +54,7 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
+filter_strategy: relabel-config
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.my-instance
@@ -96,6 +97,7 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
+filter_strategy: relabel-config
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.my-instance
@@ -148,6 +150,7 @@ config:
     - targets:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
+filter_strategy: relabel-config
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: default.my-instance

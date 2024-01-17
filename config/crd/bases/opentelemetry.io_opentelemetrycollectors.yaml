@@ -5175,6 +5175,7 @@ spec:
                       type: object
                     type: array
                   filterStrategy:
+                    default: relabel-config
                     description: FilterStrategy determines how to filter targets before
                       allocating them among the collectors. The only current option
                       is relabel-config (drops targets based on prom relabel_config).

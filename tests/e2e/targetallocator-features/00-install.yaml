@@ -67,6 +67,7 @@ spec:
                     - "true"
     prometheusCR:
       enabled: true
+      filterStrategy: ""
     env:
       - name: TEST_ENV
         value: "test"
