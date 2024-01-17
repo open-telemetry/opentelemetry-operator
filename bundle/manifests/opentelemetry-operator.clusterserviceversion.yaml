@@ -65,7 +65,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2024-01-12T11:13:24Z"
+    createdAt: "2024-01-17T15:53:32Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -343,19 +343,6 @@ spec:
           - policy
           resources:
           - poddisruptionbudgets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - rbac.authorization.k8s.io
-          resources:
-          - clusterrolebindings
-          - clusterroles
           verbs:
           - create
           - delete
