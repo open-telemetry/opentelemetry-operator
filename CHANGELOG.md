@@ -2,6 +2,16 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.92.1
+
+### 💡 Enhancements 💡
+
+- `operator`: Adds deployment rollout strategy to CRD fields (#2512)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fix ClusterRole and ClusterRoleBinding reconciliation (#2525)
+
 ## 0.92.0
 
 ### 🛑 Breaking changes 🛑
@@ -9,7 +19,7 @@ Changes by Version
 - `target allocator`: Use standard K8s label selectors for collectors in target allocator config (#2422)
   This is a breaking change only for users of standalone target allocator. Operator users are unaffected.
   The operator is still compatible with previous target allocator versions, and will be for the next 3 releases.
-  
+
 - `target allocator`: Use container securityContext for target allocator (#2490)
   This is really a bug fix, as the current behaviour is not intended. We've marked it as breaking in case anyone started depending on it.
 
