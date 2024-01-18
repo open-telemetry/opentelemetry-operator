@@ -100,7 +100,6 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 	store := assets.NewStore(clientset.CoreV1(), clientset.CoreV1())
 	promRegisterer := prometheusgoclient.NewRegistry()
 	operatorMetrics := operator.NewMetrics(promRegisterer)
-	// eventRecorderFactory := operator.NewEventRecorderFactory(false)
 	eventRecorder := operator.NewEventRecorder(clientset, "target-allocator")
 
 	nsMonInf, err := getNamespaceInformer(ctx, map[string]struct{}{v1.NamespaceAll: {}}, promOperatorLogger, clientset, operatorMetrics)
@@ -219,7 +218,6 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 					"PodMonitorNamespaceSelector":     w.podMonitorNamespaceSelector,
 					"ServiceMonitorNamespaceSelector": w.serviceMonitorNamespaceSelector,
 				} {
-
 					sync, err := k8sutil.LabelSelectionHasChanged(old.Labels, cur.Labels, selector)
 					if err != nil {
 						w.logger.Error(err, "Failed to check label selection between namespaces while handling namespace updates", "selector", name)

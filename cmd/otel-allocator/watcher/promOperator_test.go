@@ -16,10 +16,6 @@ package watcher
 
 import (
 	"context"
-	"os"
-	"testing"
-	"time"
-
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -41,6 +37,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 	fcache "k8s.io/client-go/tools/cache/testing"
+	"os"
+	"testing"
+	"time"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
@@ -724,72 +723,10 @@ func TestLoadConfig(t *testing.T) {
 				},
 			},
 		},
-		// {
-		// 	name: "pod monitor namespace label update test",
-		// 	podMonitors: []*monitoringv1.PodMonitor{
-		// 		{
-		// 			ObjectMeta: metav1.ObjectMeta{
-		// 				Name:      "pm-1",
-		// 				Namespace: "labellednamespace",
-		// 			},
-		// 			Spec: monitoringv1.PodMonitorSpec{
-		// 				JobLabel: "test",
-		// 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
-		// 					{
-		// 						Port: "web",
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 		{
-		// 			ObjectMeta: metav1.ObjectMeta{
-		// 				Name:      "pm-2",
-		// 				Namespace: "test",
-		// 			},
-		// 			Spec: monitoringv1.PodMonitorSpec{
-		// 				JobLabel: "test",
-		// 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
-		// 					{
-		// 						Port: "web",
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	cfg: allocatorconfig.Config{
-		// 		PodMonitorNamespaceSelector: map[string]string{
-		// 			"label1": "label1",
-		// 		},
-		// 	},
-		// 	want: &promconfig.Config{
-		// 		ScrapeConfigs: []*promconfig.ScrapeConfig{
-		// 			{
-		// 				JobName:         "podMonitor/labellednamespace/pm-1/0",
-		// 				ScrapeInterval:  model.Duration(30 * time.Second),
-		// 				ScrapeTimeout:   model.Duration(10 * time.Second),
-		// 				HonorTimestamps: true,
-		// 				HonorLabels:     false,
-		// 				Scheme:          "http",
-		// 				MetricsPath:     "/metrics",
-		// 				ServiceDiscoveryConfigs: []discovery.Config{
-		// 					&kubeDiscovery.SDConfig{
-		// 						Role: "pod",
-		// 						NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-		// 							Names:               []string{"labellednamespace"},
-		// 							IncludeOwnNamespace: false,
-		// 						},
-		// 						HTTPClientConfig: config.DefaultHTTPClientConfig,
-		// 					},
-		// 				},
-		// 				HTTPClientConfig: config.DefaultHTTPClientConfig,
-		// 			},
-		// 		},
-		// 	},
-		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := getTestPrometheusCRWatcher(t, tt.serviceMonitors, tt.podMonitors, tt.cfg)
+			w, _ := getTestPrometheusCRWatcher(t, tt.serviceMonitors, tt.podMonitors, tt.cfg)
 
 			// Start namespace informers in order to populate cache.
 			go w.nsInformer.Run(w.stopChannel)
@@ -818,6 +755,122 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
+func TestNamespaceLabelUpdate(t *testing.T) {
+	var err error
+	podMonitors := []*monitoringv1.PodMonitor{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "pm-1",
+				Namespace: "labellednamespace",
+			},
+			Spec: monitoringv1.PodMonitorSpec{
+				JobLabel: "test",
+				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+					{
+						Port: "web",
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "pm-2",
+				Namespace: "test",
+			},
+			Spec: monitoringv1.PodMonitorSpec{
+				JobLabel: "test",
+				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+					{
+						Port: "web",
+					},
+				},
+			},
+		},
+	}
+
+	cfg := allocatorconfig.Config{
+		PodMonitorNamespaceSelector: map[string]string{
+			"label1": "label1",
+		},
+	}
+
+	want_before := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{
+			{
+				JobName:         "podMonitor/labellednamespace/pm-1/0",
+				ScrapeInterval:  model.Duration(30 * time.Second),
+				ScrapeTimeout:   model.Duration(10 * time.Second),
+				HonorTimestamps: true,
+				HonorLabels:     false,
+				Scheme:          "http",
+				MetricsPath:     "/metrics",
+				ServiceDiscoveryConfigs: []discovery.Config{
+					&kubeDiscovery.SDConfig{
+						Role: "pod",
+						NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
+							Names:               []string{"labellednamespace"},
+							IncludeOwnNamespace: false,
+						},
+						HTTPClientConfig: config.DefaultHTTPClientConfig,
+					},
+				},
+				HTTPClientConfig: config.DefaultHTTPClientConfig,
+			},
+		},
+	}
+
+	want_after := &promconfig.Config{
+		ScrapeConfigs: []*promconfig.ScrapeConfig{},
+	}
+
+	w, source := getTestPrometheusCRWatcher(t, nil, podMonitors, cfg)
+	events := make(chan Event, 1)
+	eventInterval := 5 * time.Millisecond
+
+	defer w.Close()
+	w.eventInterval = eventInterval
+
+	go func() {
+		watchErr := w.Watch(events, make(chan error))
+		require.NoError(t, watchErr)
+	}()
+
+	if success := cache.WaitForNamedCacheSync("namespace", w.stopChannel, w.nsInformer.HasSynced); !success {
+		require.True(t, success)
+	}
+
+	for _, informer := range w.informers {
+		success := cache.WaitForCacheSync(w.stopChannel, informer.HasSynced)
+		require.True(t, success)
+	}
+
+	got, err := w.LoadConfig(context.Background())
+	assert.NoError(t, err)
+
+	sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
+	assert.Equal(t, want_before.ScrapeConfigs, got.ScrapeConfigs)
+
+	require.Eventually(t, func() bool {
+		source.Modify(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{
+			Name: "labellednamespace",
+			Labels: map[string]string{
+				"label2": "label2",
+			},
+		}})
+
+		select {
+		case <-events:
+			got, err := w.LoadConfig(context.Background())
+			assert.NoError(t, err)
+
+			sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
+			return assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
+		default:
+			return false
+		}
+	}, eventInterval*2, time.Millisecond)
+}
+
 func TestRateLimit(t *testing.T) {
 	var err error
 	serviceMonitor := &monitoringv1.ServiceMonitor{
@@ -838,7 +891,7 @@ func TestRateLimit(t *testing.T) {
 	eventInterval := 5 * time.Millisecond
 	cfg := allocatorconfig.Config{}
 
-	w := getTestPrometheusCRWatcher(t, nil, nil, cfg)
+	w, _ := getTestPrometheusCRWatcher(t, nil, nil, cfg)
 	defer w.Close()
 	w.eventInterval = eventInterval
 
@@ -901,7 +954,7 @@ func TestRateLimit(t *testing.T) {
 
 // getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
-func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.ServiceMonitor, podMonitors []*monitoringv1.PodMonitor, cfg allocatorconfig.Config) *PrometheusCRWatcher {
+func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.ServiceMonitor, podMonitors []*monitoringv1.PodMonitor, cfg allocatorconfig.Config) (*PrometheusCRWatcher, *fcache.FakeControllerSource) {
 	mClient := fakemonitoringclient.NewSimpleClientset()
 	for _, sm := range svcMonitors {
 		if sm != nil {
@@ -989,7 +1042,7 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 		}}})
 
 	// create the shared informer and resync every 1s
-	nsMonInf := cache.NewSharedInformer(source, &v1.Pod{}, 1*time.Second).(cache.SharedIndexInformer)
+	nsMonInf := cache.NewSharedInformer(source, &v1.Namespace{}, 1*time.Second).(cache.SharedIndexInformer)
 
 	resourceSelector := prometheus.NewResourceSelector(promOperatorLogger, prom, store, nsMonInf, operatorMetrics, eventRecorder)
 
@@ -1000,9 +1053,15 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 		nsInformer:           nsMonInf,
 		stopChannel:          make(chan struct{}),
 		configGenerator:      generator,
-		resourceSelector:     resourceSelector,
-		store:                store,
-	}
+		podMonitorNamespaceSelector: &metav1.LabelSelector{
+			MatchLabels: cfg.PodMonitorNamespaceSelector,
+		},
+		serviceMonitorNamespaceSelector: &metav1.LabelSelector{
+			MatchLabels: cfg.ServiceMonitorNamespaceSelector,
+		},
+		resourceSelector: resourceSelector,
+		store:            store,
+	}, source
 
 }
 
