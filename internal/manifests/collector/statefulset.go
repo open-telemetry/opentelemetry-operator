@@ -56,6 +56,7 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 					Volumes:                   Volumes(params.Config, params.OtelCol),
 					DNSPolicy:                 getDNSPolicy(params.OtelCol),
 					HostNetwork:               params.OtelCol.Spec.HostNetwork,
+					ShareProcessNamespace:     &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:               params.OtelCol.Spec.Tolerations,
 					NodeSelector:              params.OtelCol.Spec.NodeSelector,
 					SecurityContext:           params.OtelCol.Spec.PodSecurityContext,
