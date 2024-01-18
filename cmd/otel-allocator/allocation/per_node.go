@@ -174,7 +174,7 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 	}
 
 	// Check for additions
-	unassignedTargetsForJobs := make(map[string]struct{})
+	var unassignedTargets int
 	for k, item := range diff.Additions() {
 		// Do nothing if the item is already there
 		if _, ok := allocator.targetItems[k]; ok {
@@ -183,15 +183,15 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 			// Add item to item pool and assign a collector
 			collectorAssigned := allocator.addTargetToTargetItems(item)
 			if !collectorAssigned {
-				unassignedTargetsForJobs[item.JobName] = struct{}{}
+				unassignedTargets++
 			}
 		}
 	}
 
 	// Check for unassigned targets
-	if len(unassignedTargetsForJobs) > 0 {
-		allocator.log.Info("Could not assign targets for some jobs due to missing node labels", "jobs", unassignedTargetsForJobs)
-		RecordJobsWithUnassignedTargets(unassignedTargetsForJobs)
+	if unassignedTargets > 0 {
+		allocator.log.Info("Could not assign targets for some jobs due to missing node labels", "targets", unassignedTargets)
+		TargetsUnassigned.Add(float64(unassignedTargets))
 	}
 }
 

@@ -231,11 +231,11 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 	// validate target allocator configs
 	if r.Spec.TargetAllocator.Enabled {
 		taWarnings, err := c.validateTargetAllocatorConfig(ctx, r)
-		if err != nil {
-			return warnings, err
-		}
 		if taWarnings != nil {
 			warnings = append(warnings, taWarnings...)
+		}
+		if err != nil {
+			return warnings, err
 		}
 	}
 
