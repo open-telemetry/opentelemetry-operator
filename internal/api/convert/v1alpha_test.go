@@ -49,7 +49,8 @@ service:
 		},
 	}
 
-	cfgV2 := V1Alpha1to2(cfgV1)
+	cfgV2, err := V1Alpha1to2(cfgV1)
+	assert.Nil(t, err)
 	assert.NotNil(t, cfgV2)
 
 	jsonCfg, err := json.Marshal(&cfgV2.Spec.Config)

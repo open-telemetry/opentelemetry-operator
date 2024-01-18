@@ -93,7 +93,7 @@ func TestHPA(t *testing.T) {
 					},
 					Log: logger,
 				}
-				raw := HorizontalPodAutoscaler(params)
+				raw, _ := HorizontalPodAutoscaler(params)
 
 				hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
 

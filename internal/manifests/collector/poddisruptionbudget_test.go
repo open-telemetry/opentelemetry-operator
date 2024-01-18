@@ -80,7 +80,7 @@ func TestPDB(t *testing.T) {
 					MaxUnavailable: test.MaxUnavailable,
 				}
 				configuration := config.New()
-				pdb := PodDisruptionBudget(manifests.Params{
+				pdb, _ := PodDisruptionBudget(manifests.Params{
 					Log:     logger,
 					Config:  configuration,
 					OtelCol: otelcol,

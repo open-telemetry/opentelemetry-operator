@@ -27,8 +27,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func HorizontalPodAutoscaler(params manifests.Params) client.Object {
-	otelCol := convert.V1Alpha1to2(params.OtelCol)
+func HorizontalPodAutoscaler(params manifests.Params) (client.Object, error) {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
 	name := naming.Collector(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 	annotations := Annotations(otelCol)
@@ -44,7 +47,7 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 	// defaulting webhook should always set this, but if unset then return nil.
 	if otelCol.Spec.Autoscaler == nil {
 		params.Log.Info("hpa field is unset in Spec, skipping autoscaler creation")
-		return nil
+		return nil, nil
 	}
 
 	if otelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MaxReplicas == nil {
@@ -123,5 +126,5 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 	}
 	result = &autoscaler
 
-	return result
+	return result, nil
 }

@@ -26,8 +26,11 @@ import (
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(params manifests.Params) *appsv1.Deployment {
-	otelCol := convert.V1Alpha1to2(params.OtelCol)
+func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
 	name := naming.Collector(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
@@ -70,5 +73,5 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 				},
 			},
 		},
-	}
+	}, nil
 }

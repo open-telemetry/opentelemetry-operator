@@ -46,7 +46,7 @@ func TestDaemonSetNewDefault(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, _ := DaemonSet(params)
 
 	// verify
 	assert.Equal(t, "my-instance-collector", d.Name)
@@ -104,7 +104,7 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 		Log: logger,
 	}
 	// test
-	d1 := DaemonSet(params1)
+	d1, _ := DaemonSet(params1)
 	assert.False(t, d1.Spec.Template.Spec.HostNetwork)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
@@ -122,7 +122,7 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 		},
 		Log: logger,
 	}
-	d2 := DaemonSet(params2)
+	d2, _ := DaemonSet(params2)
 	assert.True(t, d2.Spec.Template.Spec.HostNetwork)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -147,7 +147,7 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	}
 
 	// test
-	ds := DaemonSet(params)
+	ds, _ := DaemonSet(params)
 
 	// Add sha256 podAnnotation
 	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d"
@@ -192,7 +192,7 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 		Log:     logger,
 	}
 
-	d := DaemonSet(params)
+	d, _ := DaemonSet(params)
 
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
@@ -221,7 +221,7 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 		Log:     logger,
 	}
 
-	d := DaemonSet(params)
+	d, _ := DaemonSet(params)
 
 	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
@@ -245,7 +245,7 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := DaemonSet(params1)
+	d1, _ := DaemonSet(params1)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
@@ -270,7 +270,7 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := DaemonSet(params2)
+	d2, _ := DaemonSet(params2)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
@@ -289,7 +289,7 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := DaemonSet(params1)
+	d1, _ := DaemonSet(params1)
 	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
@@ -311,7 +311,7 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := DaemonSet(params2)
+	d2, _ := DaemonSet(params2)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
 
@@ -330,7 +330,7 @@ func TestDaemonSetAffinity(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := DaemonSet(params1)
+	d1, _ := DaemonSet(params1)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
 	otelcol2 := v1alpha1.OpenTelemetryCollector{
@@ -350,7 +350,7 @@ func TestDaemonSetAffinity(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := DaemonSet(params2)
+	d2, _ := DaemonSet(params2)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
@@ -379,7 +379,7 @@ func TestDaemonSetInitContainer(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, _ := DaemonSet(params)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
@@ -412,7 +412,7 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, _ := DaemonSet(params)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
@@ -448,7 +448,7 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, _ := DaemonSet(params)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("RollingUpdate"), d.Spec.UpdateStrategy.Type)
@@ -482,7 +482,7 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, _ := DaemonSet(params)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("OnDelete"), d.Spec.UpdateStrategy.Type)
@@ -502,7 +502,7 @@ func TestDaemonsetShareProcessNamespace(t *testing.T) {
 		Log: logger,
 	}
 	// test
-	d1 := DaemonSet(params1)
+	d1, _ := DaemonSet(params1)
 	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
 
 	// verify custom
@@ -518,6 +518,6 @@ func TestDaemonsetShareProcessNamespace(t *testing.T) {
 		},
 		Log: logger,
 	}
-	d2 := DaemonSet(params2)
+	d2, _ := DaemonSet(params2)
 	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
 }

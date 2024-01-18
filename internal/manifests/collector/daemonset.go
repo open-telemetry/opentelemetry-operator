@@ -26,8 +26,11 @@ import (
 )
 
 // DaemonSet builds the deployment for the given instance.
-func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
-	otelCol := convert.V1Alpha1to2(params.OtelCol)
+func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
 	name := naming.Collector(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
@@ -66,5 +69,5 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 			},
 			UpdateStrategy: params.OtelCol.Spec.UpdateStrategy,
 		},
-	}
+	}, nil
 }

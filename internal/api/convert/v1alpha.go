@@ -16,6 +16,7 @@ package convert
 
 import (
 	"encoding/json"
+	"errors"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/yaml"
@@ -24,7 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
-func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) v1alpha2.OpenTelemetryCollector {
+func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
 	out := v1alpha2.OpenTelemetryCollector{
 		TypeMeta:   copy.TypeMeta,
@@ -33,12 +34,12 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) v1alpha2.OpenTelemetryColle
 
 	collectorJson, err := yaml.YAMLToJSON([]byte(in.Spec.Config))
 	if err != nil {
-		return v1alpha2.OpenTelemetryCollector{}
+		return v1alpha2.OpenTelemetryCollector{}, errors.New("could not convert yaml config to json")
 	}
 
 	cfg := &v1alpha2.Config{}
 	if err := json.Unmarshal(collectorJson, cfg); err != nil {
-		return v1alpha2.OpenTelemetryCollector{}
+		return v1alpha2.OpenTelemetryCollector{}, errors.New("could not convert config json to v1alpha2.Config")
 	}
 	out.Spec.Config = *cfg
 
@@ -150,5 +151,5 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) v1alpha2.OpenTelemetryColle
 	out.Spec.DeploymentUpdateStrategy.Type = copy.Spec.DeploymentUpdateStrategy.Type
 	out.Spec.DeploymentUpdateStrategy.RollingUpdate = copy.Spec.DeploymentUpdateStrategy.RollingUpdate
 
-	return out
+	return out, nil
 }

@@ -28,26 +28,29 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func ClusterRole(params manifests.Params) *rbacv1.ClusterRole {
-	otelCol := convert.V1Alpha1to2(params.OtelCol)
+func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
 	confJson, err := json.Marshal(&otelCol.Spec.Config)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	confStr, err := yaml.JSONToYAML(confJson)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	configFromString, err := adapters.ConfigFromString(string(confStr))
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil
+		return nil, nil
 	}
 	rules := adapters.ConfigToRBAC(params.Log, configFromString)
 
 	if len(rules) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	name := naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace)
@@ -60,28 +63,31 @@ func ClusterRole(params manifests.Params) *rbacv1.ClusterRole {
 			Labels:      labels,
 		},
 		Rules: rules,
-	}
+	}, nil
 }
 
-func ClusterRoleBinding(params manifests.Params) *rbacv1.ClusterRoleBinding {
-	otelCol := convert.V1Alpha1to2(params.OtelCol)
+func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, error) {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
 	confJson, err := json.Marshal(&otelCol.Spec.Config)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	confStr, err := yaml.JSONToYAML(confJson)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	configFromString, err := adapters.ConfigFromString(string(confStr))
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil
+		return nil, nil
 	}
 	rules := adapters.ConfigToRBAC(params.Log, configFromString)
 
 	if len(rules) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	name := naming.ClusterRoleBinding(otelCol.Name)
@@ -105,5 +111,5 @@ func ClusterRoleBinding(params manifests.Params) *rbacv1.ClusterRoleBinding {
 			Name:     naming.ClusterRole(otelCol.Name, otelCol.Namespace),
 			APIGroup: "rbac.authorization.k8s.io",
 		},
-	}
+	}, nil
 }

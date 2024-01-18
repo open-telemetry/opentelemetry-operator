@@ -26,8 +26,11 @@ import (
 )
 
 // StatefulSet builds the statefulset for the given instance.
-func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
-	otelCol := convert.V1Alpha1to2(params.OtelCol)
+func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
 	name := naming.Collector(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
@@ -71,5 +74,5 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 			PodManagementPolicy:  "Parallel",
 			VolumeClaimTemplates: VolumeClaimTemplates(otelCol),
 		},
-	}
+	}, nil
 }

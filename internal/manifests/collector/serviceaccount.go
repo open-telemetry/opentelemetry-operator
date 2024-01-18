@@ -35,11 +35,15 @@ func ServiceAccountName(instance v1alpha2.OpenTelemetryCollector) string {
 }
 
 // ServiceAccount returns the service account for the given instance.
-func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
-	otelCol := convert.V1Alpha1to2(params.OtelCol)
-	if otelCol.Spec.ServiceAccount != "" {
-		return nil
+func ServiceAccount(params manifests.Params) (*corev1.ServiceAccount, error) {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
 	}
+	if otelCol.Spec.ServiceAccount != "" {
+		return nil, nil
+	}
+
 	name := naming.ServiceAccount(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
@@ -50,5 +54,5 @@ func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
 			Labels:      labels,
 			Annotations: otelCol.Annotations,
 		},
-	}
+	}, nil
 }
