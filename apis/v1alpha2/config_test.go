@@ -52,7 +52,7 @@ func TestConfigFiles(t *testing.T) {
 			assert.JSONEq(t, string(collectorJson), string(jsonCfg))
 			yamlCfg, err := yaml.JSONToYAML(jsonCfg)
 			require.NoError(t, err)
-			assert.YAMLEq(t, string(collectorJson), string(yamlCfg))
+			assert.YAMLEq(t, string(collectorYaml), string(yamlCfg))
 		})
 	}
 }
