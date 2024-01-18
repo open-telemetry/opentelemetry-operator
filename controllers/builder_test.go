@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
@@ -209,8 +210,9 @@ service:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "test-collector",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "test-collector",
 							},
 						},
 					},
@@ -452,8 +454,9 @@ service:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "test-collector",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "test-collector",
 							},
 						},
 					},
@@ -728,8 +731,9 @@ service:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "my-special-sa",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "my-special-sa",
 							},
 						},
 					},
@@ -1238,8 +1242,9 @@ service:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "test-collector",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "test-collector",
 							},
 						},
 						PodManagementPolicy: "Parallel",
@@ -1629,8 +1634,9 @@ label_selector:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "test-collector",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "test-collector",
 							},
 						},
 						PodManagementPolicy: "Parallel",
