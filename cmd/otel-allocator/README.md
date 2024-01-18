@@ -142,7 +142,7 @@ rules:
 - apiGroups: [""]
   resources:
   - namespaces
-  verbs: ["list", "watch"]
+  verbs: ["get", "list", "watch"]
 ```
 In addition, the TargetAllocator needs the same permissions as a Prometheus instance would to find the matching targets
 from the CR instances.
