@@ -9829,6 +9829,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>shareProcessNamespace</b></td>
+        <td>boolean</td>
+        <td>
+          ShareProcessNamespace indicates if the pod's containers should share process namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocator">targetAllocator</a></b></td>
         <td>object</td>
         <td>
@@ -18566,6 +18573,8 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td>string</td>
         <td>
           FilterStrategy determines how to filter targets before allocating them among the collectors. The only current option is relabel-config (drops targets based on prom relabel_config).<br/>
+          <br/>
+            <i>Default</i>: relabel-config<br/>
         </td>
         <td>false</td>
       </tr><tr>
