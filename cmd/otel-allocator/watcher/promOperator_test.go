@@ -16,6 +16,10 @@ package watcher
 
 import (
 	"context"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -37,9 +41,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 	fcache "k8s.io/client-go/tools/cache/testing"
-	"os"
-	"testing"
-	"time"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
