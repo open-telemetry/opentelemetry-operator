@@ -16,13 +16,14 @@ package collector
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.
-func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+func Annotations(instance v1alpha2.OpenTelemetryCollector) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
@@ -40,6 +41,7 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 			annotations[k] = v
 		}
 	}
+
 	// make sure sha256 for configMap is always calculated
 	annotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
 
@@ -47,7 +49,7 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 }
 
 // PodAnnotations return the spec annotations for OpenTelemetryCollector pod.
-func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+func PodAnnotations(instance v1alpha2.OpenTelemetryCollector) map[string]string {
 	// new map every time, so that we don't touch the instance's annotations
 	podAnnotations := map[string]string{}
 
@@ -69,7 +71,11 @@ func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string 
 	return podAnnotations
 }
 
-func getConfigMapSHA(config string) string {
-	h := sha256.Sum256([]byte(config))
+func getConfigMapSHA(config v1alpha2.Config) string {
+	b, err := json.Marshal(&config)
+	if err != nil {
+		return "invalid"
+	}
+	h := sha256.Sum256(b)
 	return fmt.Sprintf("%x", h)
 }

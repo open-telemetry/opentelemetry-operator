@@ -22,6 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -39,7 +40,7 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCo
 		return pod, err
 	}
 
-	container := collector.Container(cfg, logger, otelcol, false)
+	container := collector.Container(cfg, logger, convert.V1Alpha1to2(otelcol), false)
 	container.Args = append(container.Args, fmt.Sprintf("--config=env:%s", confEnvVar))
 
 	container.Env = append(container.Env, corev1.EnvVar{Name: confEnvVar, Value: otelColCfg})

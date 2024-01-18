@@ -15,9 +15,13 @@
 package collector
 
 import (
+	"encoding/json"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -25,7 +29,17 @@ import (
 )
 
 func ClusterRole(params manifests.Params) *rbacv1.ClusterRole {
-	configFromString, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
+	otelCol := convert.V1Alpha1to2(params.OtelCol)
+	confJson, err := json.Marshal(&otelCol.Spec.Config)
+	if err != nil {
+		return nil
+	}
+	confStr, err := yaml.JSONToYAML(confJson)
+	if err != nil {
+		return nil
+	}
+
+	configFromString, err := adapters.ConfigFromString(string(confStr))
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
 		return nil
@@ -50,7 +64,16 @@ func ClusterRole(params manifests.Params) *rbacv1.ClusterRole {
 }
 
 func ClusterRoleBinding(params manifests.Params) *rbacv1.ClusterRoleBinding {
-	configFromString, err := adapters.ConfigFromString(params.OtelCol.Spec.Config)
+	otelCol := convert.V1Alpha1to2(params.OtelCol)
+	confJson, err := json.Marshal(&otelCol.Spec.Config)
+	if err != nil {
+		return nil
+	}
+	confStr, err := yaml.JSONToYAML(confJson)
+	if err != nil {
+		return nil
+	}
+	configFromString, err := adapters.ConfigFromString(string(confStr))
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
 		return nil
@@ -61,25 +84,25 @@ func ClusterRoleBinding(params manifests.Params) *rbacv1.ClusterRoleBinding {
 		return nil
 	}
 
-	name := naming.ClusterRoleBinding(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	name := naming.ClusterRoleBinding(otelCol.Name)
+	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: otelCol.Annotations,
 			Labels:      labels,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      ServiceAccountName(params.OtelCol),
-				Namespace: params.OtelCol.Namespace,
+				Name:      ServiceAccountName(otelCol),
+				Namespace: otelCol.Namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
-			Name:     naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace),
+			Name:     naming.ClusterRole(otelCol.Name, otelCol.Namespace),
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
