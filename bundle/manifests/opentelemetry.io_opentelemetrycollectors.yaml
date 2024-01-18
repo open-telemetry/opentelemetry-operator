@@ -4257,6 +4257,10 @@ spec:
                   account to use with this instance. When set, the operator will not
                   automatically create a ServiceAccount for the collector.
                 type: string
+              shareProcessNamespace:
+                description: ShareProcessNamespace indicates if the pod's containers
+                  should share process namespace.
+                type: boolean
               targetAllocator:
                 description: TargetAllocator indicates a value which determines whether
                   to spawn a target allocation resource or not.
@@ -5178,6 +5182,7 @@ spec:
                       type: object
                     type: array
                   filterStrategy:
+                    default: relabel-config
                     description: FilterStrategy determines how to filter targets before
                       allocating them among the collectors. The only current option
                       is relabel-config (drops targets based on prom relabel_config).

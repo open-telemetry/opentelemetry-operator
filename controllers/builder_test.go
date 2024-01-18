@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
@@ -209,8 +210,9 @@ service:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "test-collector",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "test-collector",
 							},
 						},
 					},
@@ -452,8 +454,9 @@ service:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "test-collector",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "test-collector",
 							},
 						},
 					},
@@ -728,8 +731,9 @@ service:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "my-special-sa",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "my-special-sa",
 							},
 						},
 					},
@@ -1129,7 +1133,8 @@ service:
 						Image:    "test",
 						Config:   goodConfig,
 						TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-							Enabled: true,
+							Enabled:        true,
+							FilterStrategy: "relabel-config",
 							PrometheusCR: v1alpha1.OpenTelemetryTargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
@@ -1237,8 +1242,9 @@ service:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "test-collector",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "test-collector",
 							},
 						},
 						PodManagementPolicy: "Parallel",
@@ -1340,6 +1346,7 @@ config:
       source_labels:
       - __meta_service_name
       target_label: instance
+filter_strategy: relabel-config
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: test.test
@@ -1377,7 +1384,7 @@ label_selector:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "9126d0bb3bde858f655580a9ae6d4557c69ee430b4ab9f72e08c66334efe7989",
+									"opentelemetry-targetallocator-config/hash": "bf084cbbdcb09d03a40ad2352e0869ccf75d01f5dec977938b94d5a3239ea491",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1517,6 +1524,7 @@ label_selector:
 							PrometheusCR: v1alpha1.OpenTelemetryTargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
+							FilterStrategy: "relabel-config",
 							Observability: v1alpha1.ObservabilitySpec{
 								Metrics: v1alpha1.MetricsConfigSpec{
 									EnableMetrics: true,
@@ -1626,8 +1634,9 @@ label_selector:
 										},
 									},
 								},
-								DNSPolicy:          "ClusterFirst",
-								ServiceAccountName: "test-collector",
+								ShareProcessNamespace: ptr.To(false),
+								DNSPolicy:             "ClusterFirst",
+								ServiceAccountName:    "test-collector",
 							},
 						},
 						PodManagementPolicy: "Parallel",
@@ -1729,6 +1738,7 @@ config:
       source_labels:
       - __meta_service_name
       target_label: instance
+filter_strategy: relabel-config
 label_selector:
   app.kubernetes.io/component: opentelemetry-collector
   app.kubernetes.io/instance: test.test
@@ -1766,7 +1776,7 @@ label_selector:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "9126d0bb3bde858f655580a9ae6d4557c69ee430b4ab9f72e08c66334efe7989",
+									"opentelemetry-targetallocator-config/hash": "bf084cbbdcb09d03a40ad2352e0869ccf75d01f5dec977938b94d5a3239ea491",
 								},
 							},
 							Spec: corev1.PodSpec{

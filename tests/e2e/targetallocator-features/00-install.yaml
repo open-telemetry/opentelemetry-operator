@@ -50,12 +50,17 @@ spec:
     serviceAccount: ta
     securityContext:
       runAsUser: 1000
-      runAsGroup: 3000
-      privileged: true
+      runAsGroup: 1000
+      privileged: false
+      capabilities:
+        add:
+        - NET_BIND_SERVICE
+        drop:
+        - ALL
     podSecurityContext:
       runAsUser: 1000
       runAsGroup: 3000
-      fsGroup: 2000
+      fsGroup: 3000
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
@@ -67,6 +72,7 @@ spec:
                     - "true"
     prometheusCR:
       enabled: true
+      filterStrategy: ""
     env:
       - name: TEST_ENV
         value: "test"

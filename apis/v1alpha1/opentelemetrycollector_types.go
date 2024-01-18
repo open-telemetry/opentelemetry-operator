@@ -215,6 +215,9 @@ type OpenTelemetryCollectorSpec struct {
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
+	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
+	// +optional
+	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`
 	// If specified, indicates the pod's priority.
 	// If not specified, the pod priority will be default or zero if there is no
 	// default.
@@ -308,8 +311,9 @@ type OpenTelemetryTargetAllocator struct {
 	AllocationStrategy OpenTelemetryTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
-	// Filtering is disabled by default.
+	// The default is relabel-config.
 	// +optional
+	// +kubebuilder:default:=relabel-config
 	FilterStrategy string `json:"filterStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
