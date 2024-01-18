@@ -9643,6 +9643,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecdeploymentupdatestrategy">deploymentUpdateStrategy</a></b></td>
+        <td>object</td>
+        <td>
+          UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods https://kubernetes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -14208,6 +14215,74 @@ target specifies the target value for the given metric
           Configmap defines name and path where the configMaps should be mounted.<br/>
         </td>
         <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.deploymentUpdateStrategy
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods https://kubernetes.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecdeploymentupdatestrategyrollingupdate">rollingUpdate</a></b></td>
+        <td>object</td>
+        <td>
+          Rolling update config params. Present only if DeploymentStrategyType = RollingUpdate. --- TODO: Update this to follow our convention for oneOf, whatever we decide it to be.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type of deployment. Can be "Recreate" or "RollingUpdate". Default is RollingUpdate.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.deploymentUpdateStrategy.rollingUpdate
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecdeploymentupdatestrategy)</sup></sup>
+
+
+
+Rolling update config params. Present only if DeploymentStrategyType = RollingUpdate. --- TODO: Update this to follow our convention for oneOf, whatever we decide it to be.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxSurge</b></td>
+        <td>int or string</td>
+        <td>
+          The maximum number of pods that can be scheduled above the desired number of pods. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxUnavailable</b></td>
+        <td>int or string</td>
+        <td>
+          The maximum number of pods that can be unavailable during the update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
