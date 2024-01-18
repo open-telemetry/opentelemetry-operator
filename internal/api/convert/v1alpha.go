@@ -15,7 +15,6 @@
 package convert
 
 import (
-	"encoding/json"
 	"errors"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,13 +31,8 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 		ObjectMeta: copy.ObjectMeta,
 	}
 
-	collectorJson, err := yaml.YAMLToJSON([]byte(in.Spec.Config))
-	if err != nil {
-		return v1alpha2.OpenTelemetryCollector{}, errors.New("could not convert yaml config to json")
-	}
-
 	cfg := &v1alpha2.Config{}
-	if err := json.Unmarshal(collectorJson, cfg); err != nil {
+	if err := yaml.Unmarshal([]byte(in.Spec.Config), cfg); err != nil {
 		return v1alpha2.OpenTelemetryCollector{}, errors.New("could not convert config json to v1alpha2.Config")
 	}
 	out.Spec.Config = *cfg

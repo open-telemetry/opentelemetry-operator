@@ -15,8 +15,6 @@
 package collector
 
 import (
-	"encoding/json"
-
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -33,11 +31,8 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 	if err != nil {
 		return nil, err
 	}
-	confJson, err := json.Marshal(&otelCol.Spec.Config)
-	if err != nil {
-		return nil, err
-	}
-	confStr, err := yaml.JSONToYAML(confJson)
+
+	confStr, err := yaml.Marshal(&otelCol.Spec.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -71,11 +66,7 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 	if err != nil {
 		return nil, err
 	}
-	confJson, err := json.Marshal(&otelCol.Spec.Config)
-	if err != nil {
-		return nil, err
-	}
-	confStr, err := yaml.JSONToYAML(confJson)
+	confStr, err := yaml.Marshal(&otelCol.Spec.Config)
 	if err != nil {
 		return nil, err
 	}
