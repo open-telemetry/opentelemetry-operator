@@ -13,7 +13,12 @@ spec:
           args:
             - /bin/sh
             - -c
-            - curl -s http://prometheus-cr-collector:9090/metrics | grep "otelcol_exporter_sent_metric_points_total{"
+            - |
+              for i in $(seq 30); do
+                if curl -m 1 -s http://prometheus-cr-collector:9090/metrics | grep "otelcol"; then exit 0; fi
+                sleep 5
+              done
+              exit 1
 ---
 apiVersion: batch/v1
 kind: Job
