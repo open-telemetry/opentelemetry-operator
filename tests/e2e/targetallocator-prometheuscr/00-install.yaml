@@ -104,6 +104,7 @@ spec:
   targetAllocator:
     enabled: true
     serviceAccount: ta
+    scrapeInterval: 1s
     prometheusCR:
       enabled: true
   config: |
