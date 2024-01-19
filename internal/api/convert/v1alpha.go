@@ -17,7 +17,6 @@ package convert
 import (
 	"errors"
 
-	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -141,7 +140,7 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 	out.Spec.Observability.Metrics.EnableMetrics = copy.Spec.Observability.Metrics.EnableMetrics
 
 	out.Spec.ConfigMaps = copy.Spec.ConfigMaps
-	out.Spec.DaemonSetUpdateStrategy = appsv1.DaemonSetUpdateStrategy{} // NOTE: N/A in v1alpha1
+	out.Spec.DaemonSetUpdateStrategy = copy.Spec.UpdateStrategy
 	out.Spec.DeploymentUpdateStrategy.Type = copy.Spec.DeploymentUpdateStrategy.Type
 	out.Spec.DeploymentUpdateStrategy.RollingUpdate = copy.Spec.DeploymentUpdateStrategy.RollingUpdate
 
