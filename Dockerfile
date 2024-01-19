@@ -7,6 +7,7 @@ RUN apk --no-cache add ca-certificates
 FROM scratch
 
 ARG TARGETARCH
+ARG BINARY_NAME=manager
 
 WORKDIR /
 
@@ -14,8 +15,8 @@ WORKDIR /
 COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy binary built on the host
-COPY bin/manager_${TARGETARCH} manager
+COPY bin/${BINARY_NAME}_${TARGETARCH} main
 
 USER 65532:65532
 
-ENTRYPOINT ["/manager"]
+ENTRYPOINT ["/main"]

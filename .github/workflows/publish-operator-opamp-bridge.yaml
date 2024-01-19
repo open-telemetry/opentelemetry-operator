@@ -84,9 +84,10 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: cmd/operator-opamp-bridge
+          context: .
           platforms: ${{ env.PLATFORMS }}
           push: true
+          build-args: "BINARY_NAME=opampbridge"
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
