@@ -80,12 +80,8 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 				PodMonitorSelector: &metav1.LabelSelector{
 					MatchLabels: cfg.PodMonitorSelector,
 				},
-				ServiceMonitorNamespaceSelector: &metav1.LabelSelector{
-					MatchLabels: cfg.ServiceMonitorNamespaceSelector,
-				},
-				PodMonitorNamespaceSelector: &metav1.LabelSelector{
-					MatchLabels: cfg.PodMonitorNamespaceSelector,
-				},
+				ServiceMonitorNamespaceSelector: cfg.ServiceMonitorNamespaceSelector,
+				PodMonitorNamespaceSelector:     cfg.PodMonitorNamespaceSelector,
 			},
 		},
 	}
@@ -111,23 +107,19 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 	}
 
 	return &PrometheusCRWatcher{
-		logger:               logger,
-		kubeMonitoringClient: mClient,
-		k8sClient:            clientset,
-		informers:            monitoringInformers,
-		nsInformer:           nsMonInf,
-		stopChannel:          make(chan struct{}),
-		eventInterval:        minEventInterval,
-		configGenerator:      generator,
-		kubeConfigPath:       cfg.KubeConfigFilePath,
-		podMonitorNamespaceSelector: &metav1.LabelSelector{
-			MatchLabels: cfg.PodMonitorNamespaceSelector,
-		},
-		serviceMonitorNamespaceSelector: &metav1.LabelSelector{
-			MatchLabels: cfg.ServiceMonitorNamespaceSelector,
-		},
-		resourceSelector: resourceSelector,
-		store:            store,
+		logger:                          logger,
+		kubeMonitoringClient:            mClient,
+		k8sClient:                       clientset,
+		informers:                       monitoringInformers,
+		nsInformer:                      nsMonInf,
+		stopChannel:                     make(chan struct{}),
+		eventInterval:                   minEventInterval,
+		configGenerator:                 generator,
+		kubeConfigPath:                  cfg.KubeConfigFilePath,
+		podMonitorNamespaceSelector:     cfg.PodMonitorNamespaceSelector,
+		serviceMonitorNamespaceSelector: cfg.ServiceMonitorNamespaceSelector,
+		resourceSelector:                resourceSelector,
+		store:                           store,
 	}, nil
 }
 

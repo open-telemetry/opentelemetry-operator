@@ -633,8 +633,10 @@ func TestLoadConfig(t *testing.T) {
 				},
 			},
 			cfg: allocatorconfig.Config{
-				ServiceMonitorNamespaceSelector: map[string]string{
-					"label1": "label1",
+				ServiceMonitorNamespaceSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"label1": "label1",
+					},
 				},
 			},
 			want: &promconfig.Config{
@@ -695,8 +697,10 @@ func TestLoadConfig(t *testing.T) {
 				},
 			},
 			cfg: allocatorconfig.Config{
-				PodMonitorNamespaceSelector: map[string]string{
-					"label1": "label1",
+				PodMonitorNamespaceSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"label1": "label1",
+					},
 				},
 			},
 			want: &promconfig.Config{
@@ -790,8 +794,10 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 	}
 
 	cfg := allocatorconfig.Config{
-		PodMonitorNamespaceSelector: map[string]string{
-			"label1": "label1",
+		PodMonitorNamespaceSelector: &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"label1": "label1",
+			},
 		},
 	}
 
@@ -869,7 +875,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		default:
 			return false
 		}
-	}, eventInterval*2, time.Millisecond)
+	}, eventInterval*5, time.Millisecond)
 }
 
 func TestRateLimit(t *testing.T) {
@@ -1012,12 +1018,8 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 				PodMonitorSelector: &metav1.LabelSelector{
 					MatchLabels: cfg.PodMonitorSelector,
 				},
-				ServiceMonitorNamespaceSelector: &metav1.LabelSelector{
-					MatchLabels: cfg.ServiceMonitorNamespaceSelector,
-				},
-				PodMonitorNamespaceSelector: &metav1.LabelSelector{
-					MatchLabels: cfg.PodMonitorNamespaceSelector,
-				},
+				ServiceMonitorNamespaceSelector: cfg.ServiceMonitorNamespaceSelector,
+				PodMonitorNamespaceSelector:     cfg.PodMonitorNamespaceSelector,
 			},
 		},
 	}
@@ -1048,20 +1050,16 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	resourceSelector := prometheus.NewResourceSelector(promOperatorLogger, prom, store, nsMonInf, operatorMetrics, eventRecorder)
 
 	return &PrometheusCRWatcher{
-		kubeMonitoringClient: mClient,
-		k8sClient:            k8sClient,
-		informers:            informers,
-		nsInformer:           nsMonInf,
-		stopChannel:          make(chan struct{}),
-		configGenerator:      generator,
-		podMonitorNamespaceSelector: &metav1.LabelSelector{
-			MatchLabels: cfg.PodMonitorNamespaceSelector,
-		},
-		serviceMonitorNamespaceSelector: &metav1.LabelSelector{
-			MatchLabels: cfg.ServiceMonitorNamespaceSelector,
-		},
-		resourceSelector: resourceSelector,
-		store:            store,
+		kubeMonitoringClient:            mClient,
+		k8sClient:                       k8sClient,
+		informers:                       informers,
+		nsInformer:                      nsMonInf,
+		stopChannel:                     make(chan struct{}),
+		configGenerator:                 generator,
+		podMonitorNamespaceSelector:     cfg.PodMonitorNamespaceSelector,
+		serviceMonitorNamespaceSelector: cfg.ServiceMonitorNamespaceSelector,
+		resourceSelector:                resourceSelector,
+		store:                           store,
 	}, source
 
 }

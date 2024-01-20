@@ -55,8 +55,8 @@ type Config struct {
 	PrometheusCR                    PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	PodMonitorSelector              map[string]string     `yaml:"pod_monitor_selector,omitempty"`
 	ServiceMonitorSelector          map[string]string     `yaml:"service_monitor_selector,omitempty"`
-	ServiceMonitorNamespaceSelector map[string]string     `yaml:"service_monitor_namespace_selector,omitempty"`
-	PodMonitorNamespaceSelector     map[string]string     `yaml:"pod_monitor_namespace_selector,omitempty"`
+	ServiceMonitorNamespaceSelector *metav1.LabelSelector `yaml:"service_monitor_namespace_selector,omitempty"`
+	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 }
 
 type PrometheusCRConfig struct {
