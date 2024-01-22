@@ -5,18 +5,18 @@ metadata:
 automountServiceAccountToken: true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: pod-view
 rules:
 - apiGroups: [""]
-  resources: [ "pods" ]
+  resources: [ "pods", "namespaces" ]
   verbs: [ "get", "list", "watch"]
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: kubectl -n $NAMESPACE create rolebinding default-view-$NAMESPACE --role=pod-view --serviceaccount=$NAMESPACE:ta
+  - command: kubectl -n $NAMESPACE create clusterrolebinding default-view-$NAMESPACE --clusterrole=pod-view --serviceaccount=$NAMESPACE:ta
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
