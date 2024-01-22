@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-
-	"gopkg.in/yaml.v3"
 )
 
 // AnyConfig represent parts of the config.
@@ -52,8 +50,6 @@ func (in *AnyConfig) DeepCopy() *AnyConfig {
 
 var _ json.Marshaler = &AnyConfig{}
 var _ json.Unmarshaler = &AnyConfig{}
-var _ yaml.Marshaler = &AnyConfig{}
-var _ yaml.Unmarshaler = &AnyConfig{}
 
 // UnmarshalJSON implements an alternative parser for this field.
 func (c *AnyConfig) UnmarshalJSON(b []byte) error {
@@ -71,24 +67,6 @@ func (c *AnyConfig) MarshalJSON() ([]byte, error) {
 		return []byte("{}"), nil
 	}
 	return json.Marshal(c.Object)
-}
-
-// UnmarshalYAML implements an alternative parser this field.
-func (c *AnyConfig) UnmarshalYAML(value *yaml.Node) error {
-	vals := map[string]interface{}{}
-	if err := value.Decode(&vals); err != nil {
-		return err
-	}
-	c.Object = vals
-	return nil
-}
-
-// MarshalYAML specifies how to convert this object into YAML.
-func (c *AnyConfig) MarshalYAML() (interface{}, error) {
-	if c == nil {
-		return map[string]interface{}{}, nil
-	}
-	return c.Object, nil
 }
 
 // Config encapsulates collector config.
@@ -150,16 +128,11 @@ func hasNullValue(cfg map[string]interface{}) []string {
 			nullKeys = append(nullKeys, fmt.Sprintf("%s:", k))
 		}
 		if reflect.ValueOf(v).Kind() == reflect.Map {
-			val := make(map[string]interface{})
-			switch t := v.(type) {
-			case map[string]interface{}:
-				val = t
-			case map[interface{}]interface{}:
-				for kk, vv := range t {
-					val[fmt.Sprintf("%v", kk)] = vv
-				}
+			var nulls []string
+			val, ok := v.(map[string]interface{})
+			if ok {
+				nulls = hasNullValue(val)
 			}
-			nulls := hasNullValue(val)
 			if len(nulls) > 0 {
 				prefixed := addPrefix(k+".", nulls)
 				nullKeys = append(nullKeys, prefixed...)
