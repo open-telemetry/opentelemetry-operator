@@ -23,7 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	go_yaml "gopkg.in/yaml.v2"
+	go_yaml "gopkg.in/yaml.v3"
 	"sigs.k8s.io/yaml"
 )
 

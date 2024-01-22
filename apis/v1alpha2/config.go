@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+
+	"gopkg.in/yaml.v3"
 )
 
 // AnyConfig represent parts of the config.
@@ -50,6 +52,8 @@ func (in *AnyConfig) DeepCopy() *AnyConfig {
 
 var _ json.Marshaler = &AnyConfig{}
 var _ json.Unmarshaler = &AnyConfig{}
+var _ yaml.Marshaler = &AnyConfig{}
+var _ yaml.Unmarshaler = &AnyConfig{}
 
 // UnmarshalJSON implements an alternative parser for this field.
 func (c *AnyConfig) UnmarshalJSON(b []byte) error {
@@ -70,9 +74,9 @@ func (c *AnyConfig) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalYAML implements an alternative parser this field.
-func (c *AnyConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (c *AnyConfig) UnmarshalYAML(value *yaml.Node) error {
 	vals := map[string]interface{}{}
-	if err := unmarshal(&vals); err != nil {
+	if err := value.Decode(&vals); err != nil {
 		return err
 	}
 	c.Object = vals
