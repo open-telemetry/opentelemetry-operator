@@ -489,3 +489,35 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxSurge)
 	assert.Equal(t, &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)}, d.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
 }
+
+func TestDaemonsetShareProcessNamespace(t *testing.T) {
+	params1 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-instance",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+		},
+		Log: logger,
+	}
+	// test
+	d1 := DaemonSet(params1)
+	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
+
+	// verify custom
+	params2 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1alpha1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-instance-with-shareprocessnamespace",
+			},
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				ShareProcessNamespace: true,
+			},
+		},
+		Log: logger,
+	}
+	d2 := DaemonSet(params2)
+	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
+}
