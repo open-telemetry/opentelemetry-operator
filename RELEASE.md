@@ -4,6 +4,7 @@ Steps to release a new version of the OpenTelemetry Operator:
 
 1. Change the `versions.txt`, so that it lists the target version of the OpenTelemetry Collector (operand), and the desired version for the target allocator and the operator. The `major.minor` should typically match, with the patch portion being possibly different.
 2. Change the `autoinstrumentation-*` versions in `versions.txt` as per the latest supported versions in `autoinstrumentation/`.
+   - :warning: DO NOT BUMP JAVA PAST `1.32.X` AND DO NOT BUMP .NET PAST `1.2.0`. :warning: Upgrades past these versions will introduce breaking HTTP semantic convention changes. 
 3. Run `make bundle DOCKER_USER=open-telemetry VERSION=0.38.0`, using the version that will be released.
 4. Change the compatibility matrix in the [readme](./README.md) file, using the OpenTelemetry Operator version to be released and the current latest Kubernetes version as the latest supported version. Remove the oldest entry.
 5. Add the changes to the changelog. Manually add versions of all operator components.
