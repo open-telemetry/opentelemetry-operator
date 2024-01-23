@@ -121,6 +121,8 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 	out.Spec.Mode = v1alpha2.Mode(copy.Spec.Mode)
 	out.Spec.UpgradeStrategy = v1alpha2.UpgradeStrategy(copy.Spec.UpgradeStrategy)
 	out.Spec.Ingress.Type = v1alpha2.IngressType(copy.Spec.Ingress.Type)
+	out.Spec.Ingress.RuleType = v1alpha2.IngressRuleType(copy.Spec.Ingress.RuleType)
+	out.Spec.Ingress.Hostname = copy.Spec.Ingress.Hostname
 	out.Spec.Ingress.Annotations = copy.Spec.Ingress.Annotations
 	out.Spec.Ingress.TLS = copy.Spec.Ingress.TLS
 	out.Spec.Ingress.IngressClassName = copy.Spec.Ingress.IngressClassName

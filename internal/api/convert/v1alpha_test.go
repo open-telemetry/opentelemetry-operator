@@ -15,7 +15,6 @@
 package convert
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,8 +23,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-func Test_V1Alpha1to2_Config(t *testing.T) {
-	config := `---
+func Test_V1Alpha1to2(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		config := `---
 receivers:
   otlp:
     protocols:
@@ -43,19 +43,29 @@ service:
       processors: [resourcedetection]
       exporters: [otlp]
 `
-	cfgV1 := v1alpha1.OpenTelemetryCollector{
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: config,
-		},
-	}
+		cfgV1 := v1alpha1.OpenTelemetryCollector{
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Config: config,
+			},
+		}
 
-	cfgV2, err := V1Alpha1to2(cfgV1)
-	assert.Nil(t, err)
-	assert.NotNil(t, cfgV2)
+		cfgV2, err := V1Alpha1to2(cfgV1)
+		assert.Nil(t, err)
+		assert.NotNil(t, cfgV2)
 
-	jsonCfg, err := json.Marshal(&cfgV2.Spec.Config)
-	assert.Nil(t, err)
-	yamlCfg, err := yaml.JSONToYAML(jsonCfg)
-	assert.Nil(t, err)
-	assert.YAMLEq(t, config, string(yamlCfg))
+		yamlCfg, err := yaml.Marshal(&cfgV2.Spec.Config)
+		assert.Nil(t, err)
+		assert.YAMLEq(t, config, string(yamlCfg))
+	})
+	t.Run("invalid config", func(t *testing.T) {
+		config := `!!!`
+		cfgV1 := v1alpha1.OpenTelemetryCollector{
+			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Config: config,
+			},
+		}
+
+		_, err := V1Alpha1to2(cfgV1)
+		assert.ErrorContains(t, err, "could not convert config json to v1alpha2.Config")
+	})
 }
