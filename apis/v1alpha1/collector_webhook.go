@@ -47,7 +47,7 @@ var (
 			Verbs:     []string{"*"},
 		}, {
 			APIGroups: []string{""},
-			Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods"},
+			Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods", "namespaces"},
 			Verbs:     []string{"get", "list", "watch"},
 		}, {
 			APIGroups: []string{""},
