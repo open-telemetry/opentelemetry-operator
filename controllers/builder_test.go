@@ -232,7 +232,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: \"0.0.0.0:12345\"\nexporters:\n  logging:\nservice:\n  pipelines:\n    metrics:\n      receivers: [examplereceiver]\n      exporters: [logging]\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -476,7 +476,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: \"0.0.0.0:12345\"\nexporters:\n  logging:\nservice:\n  pipelines:\n    metrics:\n      receivers: [examplereceiver]\n      exporters: [logging]\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -753,7 +753,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: \"0.0.0.0:12345\"\nexporters:\n  logging:\nservice:\n  pipelines:\n    metrics:\n      receivers: [examplereceiver]\n      exporters: [logging]\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
 					},
 				},
 				&corev1.Service{
@@ -1265,7 +1265,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n  logging: null\nreceivers:\n  prometheus:\n    config: {}\n    target_allocator:\n      collector_id: ${POD_NAME}\n      endpoint: http://test-targetallocator:80\n      interval: 30s\nservice:\n  pipelines:\n    metrics:\n      exporters:\n      - logging\n      receivers:\n      - prometheus\n",
+						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -1664,7 +1664,7 @@ prometheus_cr:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n  logging: null\nreceivers:\n  prometheus:\n    config: {}\n    target_allocator:\n      collector_id: ${POD_NAME}\n      endpoint: http://test-targetallocator:80\n      interval: 30s\nservice:\n  pipelines:\n    metrics:\n      exporters:\n      - logging\n      receivers:\n      - prometheus\n",
+						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{

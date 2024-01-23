@@ -19,7 +19,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -77,7 +76,7 @@ processors:
 		},
 	)
 	require.NoError(t, err)
-	otelcolYaml, err := yaml.Marshal(otelcol.Spec.Config)
+	otelcolYaml, err := otelcol.Spec.Config.Yaml()
 	require.NoError(t, err)
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
