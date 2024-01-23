@@ -37,7 +37,6 @@ func TestDesiredConfigMap(t *testing.T) {
 		expectedLables["app.kubernetes.io/name"] = "test-collector"
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
 
-		const filenameCollector = "collector.yaml"
 		expectedData := map[string]string{
 			"collector.yaml": `receivers:
   jaeger:
