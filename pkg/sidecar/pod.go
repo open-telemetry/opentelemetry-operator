@@ -21,8 +21,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -34,17 +33,13 @@ const (
 )
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
-func add(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
+func add(cfg config.Config, logger logr.Logger, otelcol v1alpha2.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
 	otelColCfg, err := collector.ReplaceConfig(otelcol)
 	if err != nil {
 		return pod, err
 	}
 
-	otc, err := convert.V1Alpha1to2(otelcol)
-	if err != nil {
-		return corev1.Pod{}, err
-	}
-	container := collector.Container(cfg, logger, otc, false)
+	container := collector.Container(cfg, logger, otelcol, false)
 	container.Args = append(container.Args, fmt.Sprintf("--config=env:%s", confEnvVar))
 
 	container.Env = append(container.Env, corev1.EnvVar{Name: confEnvVar, Value: otelColCfg})
