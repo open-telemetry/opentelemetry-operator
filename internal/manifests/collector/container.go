@@ -15,7 +15,6 @@
 package collector
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"path"
@@ -25,7 +24,6 @@ import (
 	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
-	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -44,20 +42,14 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha2.OpenTelem
 		image = cfg.CollectorImage()
 	}
 
-	configJson, err := json.Marshal(&otelcol.Spec.Config)
-	if err != nil {
-		logger.Error(err, "could not marshal config to json")
-		return corev1.Container{}
-	}
-
-	configYaml, err := yaml.JSONToYAML(configJson)
+	configYaml, err := otelcol.Spec.Config.Yaml()
 	if err != nil {
 		logger.Error(err, "could not convert json to yaml")
 		return corev1.Container{}
 	}
 
 	// build container ports from service ports
-	ports, err := getConfigContainerPorts(logger, string(configYaml))
+	ports, err := getConfigContainerPorts(logger, configYaml)
 	if err != nil {
 		logger.Error(err, "container ports config")
 	}
@@ -147,7 +139,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha2.OpenTelem
 	}
 
 	var livenessProbe *corev1.Probe
-	if configFromString, err := adapters.ConfigFromString(string(configYaml)); err == nil {
+	if configFromString, err := adapters.ConfigFromString(configYaml); err == nil {
 		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
 		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {

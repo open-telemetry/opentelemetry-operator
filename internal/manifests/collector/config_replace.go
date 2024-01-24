@@ -43,7 +43,7 @@ type Config struct {
 }
 
 func ReplaceConfig(instance v1alpha2.OpenTelemetryCollector) (string, error) {
-	cfgStr, err := yaml.Marshal(&instance.Spec.Config)
+	cfgStr, err := instance.Spec.Config.Yaml()
 	if err != nil {
 		return "", err
 	}
@@ -52,12 +52,12 @@ func ReplaceConfig(instance v1alpha2.OpenTelemetryCollector) (string, error) {
 		return string(cfgStr), nil
 	}
 
-	config, err := adapters.ConfigFromString(string(cfgStr))
+	config, err := adapters.ConfigFromString(cfgStr)
 	if err != nil {
 		return "", err
 	}
 
-	promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(string(cfgStr))
+	promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(cfgStr)
 	if getCfgPromErr != nil {
 		return "", getCfgPromErr
 	}

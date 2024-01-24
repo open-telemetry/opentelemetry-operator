@@ -15,16 +15,15 @@
 package collector_test
 
 import (
-	"encoding/json"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
@@ -795,13 +794,8 @@ func TestContainerLifecycle(t *testing.T) {
 }
 
 func mustUnmarshalToConfig(t *testing.T, config string) v1alpha2.Config {
-	collectorJson, err := yaml.YAMLToJSON([]byte(config))
-	if err != nil {
-		t.Fatalf("could not convert yaml to json, err: %s", err)
-	}
-
 	cfg := v1alpha2.Config{}
-	if err := json.Unmarshal(collectorJson, &cfg); err != nil {
+	if err := yaml.Unmarshal([]byte(config), &cfg); err != nil {
 		t.Fatal(err)
 	}
 	return cfg

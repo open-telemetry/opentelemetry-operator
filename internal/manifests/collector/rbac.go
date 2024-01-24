@@ -17,7 +17,6 @@ package collector
 import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -32,12 +31,12 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 		return nil, err
 	}
 
-	confStr, err := yaml.Marshal(&otelCol.Spec.Config)
+	confStr, err := otelCol.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
 
-	configFromString, err := adapters.ConfigFromString(string(confStr))
+	configFromString, err := adapters.ConfigFromString(confStr)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
 		return nil, nil
@@ -66,11 +65,11 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 	if err != nil {
 		return nil, err
 	}
-	confStr, err := yaml.Marshal(&otelCol.Spec.Config)
+	confStr, err := otelCol.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
-	configFromString, err := adapters.ConfigFromString(string(confStr))
+	configFromString, err := adapters.ConfigFromString(confStr)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
 		return nil, nil

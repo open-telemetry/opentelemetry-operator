@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -143,11 +142,11 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 }
 
 func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha2.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
-	out, err := yaml.Marshal(&otelcol.Spec.Config)
+	out, err := otelcol.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
-	configFromString, err := adapters.ConfigFromString(string(out))
+	configFromString, err := adapters.ConfigFromString(out)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration from the context")
 		return nil, err

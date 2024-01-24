@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -73,12 +72,12 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	name := naming.MonitoringService(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
-	out, err := yaml.Marshal(&otelCol.Spec.Config)
+	out, err := otelCol.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
 
-	c, err := adapters.ConfigFromString(string(out))
+	c, err := adapters.ConfigFromString(out)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration")
 		return nil, err
@@ -115,12 +114,12 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
-	out, err := yaml.Marshal(&otelCol.Spec.Config)
+	out, err := otelCol.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
 
-	configFromString, err := adapters.ConfigFromString(string(out))
+	configFromString, err := adapters.ConfigFromString(out)
 	if err != nil {
 		params.Log.Error(err, "couldn't extract the configuration from the context")
 		return nil, err
