@@ -53,15 +53,15 @@ type Config struct {
 	AllocationStrategy              string                `yaml:"allocation_strategy,omitempty"`
 	FilterStrategy                  string                `yaml:"filter_strategy,omitempty"`
 	PrometheusCR                    PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	PodMonitorSelector              map[string]string     `yaml:"pod_monitor_selector,omitempty"`
-	ServiceMonitorSelector          map[string]string     `yaml:"service_monitor_selector,omitempty"`
 	ServiceMonitorNamespaceSelector *metav1.LabelSelector `yaml:"service_monitor_namespace_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 }
 
 type PrometheusCRConfig struct {
-	Enabled        bool           `yaml:"enabled,omitempty"`
-	ScrapeInterval model.Duration `yaml:"scrape_interval,omitempty"`
+	Enabled                bool                  `yaml:"enabled,omitempty"`
+	PodMonitorSelector     *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
+	ServiceMonitorSelector *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
+	ScrapeInterval         model.Duration        `yaml:"scrape_interval,omitempty"`
 }
 
 func LoadFromFile(file string, target *Config) error {

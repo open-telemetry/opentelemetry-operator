@@ -73,13 +73,9 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 	prom := &monitoringv1.Prometheus{
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval: monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
-				ServiceMonitorSelector: &metav1.LabelSelector{
-					MatchLabels: cfg.ServiceMonitorSelector,
-				},
-				PodMonitorSelector: &metav1.LabelSelector{
-					MatchLabels: cfg.PodMonitorSelector,
-				},
+				ScrapeInterval:                  monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
+				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
+				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
 				ServiceMonitorNamespaceSelector: cfg.ServiceMonitorNamespaceSelector,
 				PodMonitorNamespaceSelector:     cfg.PodMonitorNamespaceSelector,
 			},
