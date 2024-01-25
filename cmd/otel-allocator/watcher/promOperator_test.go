@@ -88,7 +88,12 @@ func TestLoadConfig(t *testing.T) {
 					},
 				},
 			},
-			cfg: allocatorconfig.Config{},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+					PodMonitorSelector:     &metav1.LabelSelector{},
+				},
+			},
 			want: &promconfig.Config{
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
@@ -171,7 +176,12 @@ func TestLoadConfig(t *testing.T) {
 					},
 				},
 			},
-			cfg: allocatorconfig.Config{},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+					PodMonitorSelector:     &metav1.LabelSelector{},
+				},
+			},
 			want: &promconfig.Config{
 				GlobalConfig: promconfig.GlobalConfig{},
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
@@ -232,7 +242,12 @@ func TestLoadConfig(t *testing.T) {
 					},
 				},
 			},
-			cfg: allocatorconfig.Config{},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+					PodMonitorSelector:     &metav1.LabelSelector{},
+				},
+			},
 			want: &promconfig.Config{
 				GlobalConfig: promconfig.GlobalConfig{},
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
@@ -322,7 +337,12 @@ func TestLoadConfig(t *testing.T) {
 					},
 				},
 			},
-			cfg: allocatorconfig.Config{},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+					PodMonitorSelector:     &metav1.LabelSelector{},
+				},
+			},
 			want: &promconfig.Config{
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
@@ -424,7 +444,12 @@ func TestLoadConfig(t *testing.T) {
 					},
 				},
 			},
-			cfg: allocatorconfig.Config{},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+					PodMonitorSelector:     &metav1.LabelSelector{},
+				},
+			},
 			want: &promconfig.Config{
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
@@ -506,8 +531,12 @@ func TestLoadConfig(t *testing.T) {
 				},
 			},
 			cfg: allocatorconfig.Config{
-				ServiceMonitorSelector: map[string]string{
-					"testsvc": "testsvc",
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"testsvc": "testsvc",
+						},
+					},
 				},
 			},
 			want: &promconfig.Config{
@@ -571,8 +600,12 @@ func TestLoadConfig(t *testing.T) {
 				},
 			},
 			cfg: allocatorconfig.Config{
-				PodMonitorSelector: map[string]string{
-					"testpod": "testpod",
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"testpod": "testpod",
+						},
+					},
 				},
 			},
 			want: &promconfig.Config{
@@ -633,9 +666,13 @@ func TestLoadConfig(t *testing.T) {
 				},
 			},
 			cfg: allocatorconfig.Config{
-				ServiceMonitorNamespaceSelector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"label1": "label1",
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+					PodMonitorSelector:     &metav1.LabelSelector{},
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"label1": "label1",
+						},
 					},
 				},
 			},
@@ -697,9 +734,13 @@ func TestLoadConfig(t *testing.T) {
 				},
 			},
 			cfg: allocatorconfig.Config{
-				PodMonitorNamespaceSelector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"label1": "label1",
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+					PodMonitorSelector:     &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"label1": "label1",
+						},
 					},
 				},
 			},
@@ -794,9 +835,13 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 	}
 
 	cfg := allocatorconfig.Config{
-		PodMonitorNamespaceSelector: &metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"label1": "label1",
+		PrometheusCR: allocatorconfig.PrometheusCRConfig{
+			ServiceMonitorSelector: &metav1.LabelSelector{},
+			PodMonitorSelector:     &metav1.LabelSelector{},
+			PodMonitorNamespaceSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"label1": "label1",
+				},
 			},
 		},
 	}
@@ -1011,15 +1056,11 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	prom := &monitoringv1.Prometheus{
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval: monitoringv1.Duration("30s"),
-				ServiceMonitorSelector: &metav1.LabelSelector{
-					MatchLabels: cfg.ServiceMonitorSelector,
-				},
-				PodMonitorSelector: &metav1.LabelSelector{
-					MatchLabels: cfg.PodMonitorSelector,
-				},
-				ServiceMonitorNamespaceSelector: cfg.ServiceMonitorNamespaceSelector,
-				PodMonitorNamespaceSelector:     cfg.PodMonitorNamespaceSelector,
+				ScrapeInterval:                  monitoringv1.Duration("30s"),
+				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
+				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
+				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
+				PodMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
 			},
 		},
 	}
@@ -1056,8 +1097,8 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 		nsInformer:                      nsMonInf,
 		stopChannel:                     make(chan struct{}),
 		configGenerator:                 generator,
-		podMonitorNamespaceSelector:     cfg.PodMonitorNamespaceSelector,
-		serviceMonitorNamespaceSelector: cfg.ServiceMonitorNamespaceSelector,
+		podMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
+		serviceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
 		resourceSelector:                resourceSelector,
 		store:                           store,
 	}, source

@@ -68,10 +68,20 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		prometheusCRConfig["scrape_interval"] = params.OtelCol.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Duration
 	}
 
+	prometheusCRConfig["service_monitor_selector"] = &metav1.LabelSelector{
+		MatchLabels: params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector,
+	}
+	// The below instruction is here for compatibility with the previous target allocator version
+	// TODO: Drop it after 3 more versions
 	if params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
 		taConfig["service_monitor_selector"] = &params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
 	}
 
+	prometheusCRConfig["pod_monitor_selector"] = &metav1.LabelSelector{
+		MatchLabels: params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector,
+	}
+	// The below instruction is here for compatibility with the previous target allocator version
+	// TODO: Drop it after 3 more versions
 	if params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
 		taConfig["pod_monitor_selector"] = &params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
 	}
