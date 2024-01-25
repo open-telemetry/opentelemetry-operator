@@ -76,8 +76,8 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 				ScrapeInterval:                  monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
 				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
-				ServiceMonitorNamespaceSelector: cfg.ServiceMonitorNamespaceSelector,
-				PodMonitorNamespaceSelector:     cfg.PodMonitorNamespaceSelector,
+				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
+				PodMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
 			},
 		},
 	}
@@ -112,8 +112,8 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		eventInterval:                   minEventInterval,
 		configGenerator:                 generator,
 		kubeConfigPath:                  cfg.KubeConfigFilePath,
-		podMonitorNamespaceSelector:     cfg.PodMonitorNamespaceSelector,
-		serviceMonitorNamespaceSelector: cfg.ServiceMonitorNamespaceSelector,
+		podMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
+		serviceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
 		resourceSelector:                resourceSelector,
 		store:                           store,
 	}, nil
