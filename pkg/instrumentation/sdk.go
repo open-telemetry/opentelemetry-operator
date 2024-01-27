@@ -30,11 +30,13 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
+	v1obj "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -402,52 +404,174 @@ func chooseServiceVersion(pod corev1.Pod, index int) string {
 	return tag
 }
 
-// create/reserve namespace
+func getAllResourceLabels(ctx context.Context, clientset kubernetes.Interface) map[string]string {
+	labels := make(map[string]string)
 
-func (i *sdkInjector) createReservedNamespace(ctx context.Context) (bool, error) {
-	err := i.client.Get(ctx, types.NamespacedName{Name: constants.ReservedNamespace}, &corev1.Namespace{})
+	resources := []string{"pods", "services", "deployments"}
+
+	// use all namespaces
+
+	ns, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			ns := corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: constants.ReservedNamespace,
-				},
-			}
-			err = i.client.Create(ctx, &ns)
-			if err != nil {
-				return false, err
+		panic(err.Error())
+	}
+
+	for _, n := range ns.Items {
+		for _, resource := range resources {
+			switch resource {
+			case "pods":
+				pods, err := clientset.CoreV1().Pods(n.Name).List(context.Background(), metav1.ListOptions{})
+				if err != nil {
+					fmt.Printf("Error fetching pods: %v\n", err)
+					continue
+				}
+
+				extLabels := extractLabelsFromPods(pods.Items)
+				for key, value := range extLabels {
+					labels[key] = value
+				}
+
+			case "services":
+				services, err := clientset.CoreV1().Services(n.Name).List(context.Background(), metav1.ListOptions{})
+				if err != nil {
+					fmt.Printf("Error fetching services: %v\n", err)
+					continue
+				}
+
+				extLabels := extractLabelsFromServices(services.Items)
+				for key, value := range extLabels {
+					labels[key] = value
+				}
+
+			case "deployments":
+				deployments, err := clientset.AppsV1().Deployments(n.Name).List(context.Background(), metav1.ListOptions{})
+				if err != nil {
+					panic(err.Error())
+				}
+
+				extLabels := extractLabelsFromDeployments(deployments.Items)
+				for key, value := range extLabels {
+					labels[key] = value
+				}
+
+			case "statefulsets":
+				statefulSets, err := clientset.AppsV1().StatefulSets(n.Name).List(context.Background(), metav1.ListOptions{})
+				if err != nil {
+					panic(err.Error())
+				}
+
+				extLabels := extractLabelsFromStatefulSets(statefulSets.Items)
+				for key, value := range extLabels {
+					labels[key] = value
+				}
+
+			case "daemonsets":
+				daemonSets, err := clientset.AppsV1().DaemonSets(n.Name).List(context.Background(), metav1.ListOptions{})
+				if err != nil {
+					panic(err.Error())
+				}
+
+				extLabels := extractLabelsFromDaemonSets(daemonSets.Items)
+				for key, value := range extLabels {
+					labels[key] = value
+				}
+
+			case "replicasets":
+				replicaSets, err := clientset.AppsV1().ReplicaSets(n.Name).List(context.Background(), metav1.ListOptions{})
+				if err != nil {
+					panic(err.Error())
+				}
+
+				extLabels := extractLabelsFromReplicaSets(replicaSets.Items)
+				for key, value := range extLabels {
+					labels[key] = value
+				}
+
+			default:
+				fmt.Println("resource not supported")
 			}
 		}
 	}
-	return true, nil
+
+	return labels
 }
 
-// recognizeUserDefinedValues recognizes user defined values assigned with opentelemetry.io/ prefix
-func (i *sdkInjector) recognizeUserDefinedValues(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, deployment appsv1.Deployment, index int) map[string]string {
-
-	existingRes := map[string]bool{}
-	existingResourceEnvIdx := getIndexOfEnv(pod.Spec.Containers[index].Env, constants.EnvOTELResourceAttrs)
-
-	if existingResourceEnvIdx > -1 {
-		existingResArr := strings.Split(pod.Spec.Containers[index].Env[existingResourceEnvIdx].Value, ",")
-		for _, kv := range existingResArr {
-			keyValueArr := strings.Split(strings.TrimSpace(kv), "=")
-			if len(keyValueArr) != 2 {
-				continue
+func extractLabelsFromPods(pods []corev1.Pod) map[string]string {
+	res := make(map[string]string)
+	for _, pod := range pods {
+		for key, _ := range pod.ObjectMeta.Labels {
+			if strings.HasPrefix(key, constants.ReservedNamespace) {
+				res["pod/"+pod.Namespace] = pod.Name
 			}
-			existingRes[keyValueArr[0]] = true
 		}
 	}
 
-	resMap := map[string]string{}
+	return res
+}
 
-	for key := range existingRes {
-		if strings.HasPrefix(key, constants.ReservedNamespace+"/") {
-			// now if it has the prefix opentelemetry.io/ then we need to check if the attribute name is already present in the resource attributes
-			// then do the operation accordingly
+func extractLabelsFromServices(services []corev1.Service) map[string]string {
+	res := make(map[string]string)
+	for _, service := range services {
+		for key, _ := range service.ObjectMeta.Labels {
+			if strings.HasPrefix(key, constants.ReservedNamespace) {
+				res["service/"+service.Namespace] = service.Name
+			}
 		}
 	}
-	return resMap
+
+	return res
+}
+
+func extractLabelsFromDeployments(deployments []v1obj.Deployment) map[string]string {
+	res := make(map[string]string)
+	for _, deployment := range deployments {
+		for key, _ := range deployment.ObjectMeta.Labels {
+			if strings.HasPrefix(key, constants.ReservedNamespace) {
+				res["deployment/"+deployment.Namespace] = deployment.Name
+			}
+		}
+	}
+
+	return res
+}
+
+func extractLabelsFromStatefulSets(statefulSets []v1obj.StatefulSet) map[string]string {
+	res := make(map[string]string)
+	for _, statefulSet := range statefulSets {
+		for key, _ := range statefulSet.ObjectMeta.Labels {
+			if strings.HasPrefix(key, constants.ReservedNamespace) {
+				res["statefulset/"+statefulSet.Namespace] = statefulSet.Name
+			}
+		}
+	}
+
+	return res
+}
+
+func extractLabelsFromDaemonSets(daemonSets []v1obj.DaemonSet) map[string]string {
+	res := make(map[string]string)
+	for _, daemonSet := range daemonSets {
+		for key, _ := range daemonSet.ObjectMeta.Labels {
+			if strings.HasPrefix(key, constants.ReservedNamespace) {
+				res["daemonset/"+daemonSet.Namespace] = daemonSet.Name
+			}
+		}
+	}
+
+	return res
+}
+
+func extractLabelsFromReplicaSets(replicaSets []v1obj.ReplicaSet) map[string]string {
+	res := make(map[string]string)
+	for _, replicaSet := range replicaSets {
+		for key, _ := range replicaSet.ObjectMeta.Labels {
+			if strings.HasPrefix(key, "opentelemetry.io/") {
+				res["replicaset/"+replicaSet.Namespace] = replicaSet.Name
+			}
+		}
+	}
+
+	return res
 }
 
 // creates the service.instance.id following the semantic defined by
