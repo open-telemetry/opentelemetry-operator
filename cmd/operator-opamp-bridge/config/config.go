@@ -18,7 +18,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/oklog/ulid"
 	"io/fs"
 	"net/url"
 	"os"
@@ -26,6 +25,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/oklog/ulid/v2"
 	opampclient "github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/spf13/pflag"
