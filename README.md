@@ -573,7 +573,6 @@ spec:
             metric_relabel_configs:
             - action: labeldrop
               regex: (id|name)
-              replacement: $$1
             - action: labelmap
               regex: label_(.+)
               replacement: $$1
@@ -625,7 +624,6 @@ The OpenTelemetry Operator will also convert the Target Allocator's Prometheus c
         metric_relabel_configs:
         - action: labeldrop
           regex: (id|name)
-          replacement: $1
         - action: labelmap
           regex: label_(.+)
           replacement: $1
