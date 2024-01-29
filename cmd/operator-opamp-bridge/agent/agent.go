@@ -163,8 +163,14 @@ func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, na
 		if item.Status.Phase != "Running" {
 			healthy = false
 		}
+		var startTime int64
+		if item.Status.StartTime != nil {
+			startTime = item.Status.StartTime.UnixNano()
+		} else {
+			healthy = false
+		}
 		healthMap[key.String()] = &protobufs.ComponentHealth{
-			StartTimeUnixNano:  uint64(item.Status.StartTime.UnixNano()),
+			StartTimeUnixNano:  uint64(startTime),
 			StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
 			Status:             string(item.Status.Phase),
 			Healthy:            healthy,

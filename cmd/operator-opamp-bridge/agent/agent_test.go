@@ -103,6 +103,30 @@ var (
 				},
 			},
 		}}
+	mockPodListUnhealthy = &v1.PodList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PodList",
+			APIVersion: "v1",
+		},
+		Items: []v1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      thirdCollectorName + "-1",
+					Namespace: otherCollectorName,
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+						"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otherCollectorName, thirdCollectorName),
+						"app.kubernetes.io/part-of":    "opentelemetry",
+						"app.kubernetes.io/component":  "opentelemetry-collector",
+					},
+				},
+				Spec: v1.PodSpec{},
+				Status: v1.PodStatus{
+					StartTime: nil,
+					Phase:     v1.PodRunning,
+				},
+			},
+		}}
 )
 
 func getConfigHash(key, file string) string {
@@ -187,6 +211,7 @@ func TestAgent_getHealth(t *testing.T) {
 		ctx context.Context
 		// List of mappings from namespace/name to a config file, tests are run in order of list
 		configs []map[string]string
+		podList *v1.PodList
 	}
 	tests := []struct {
 		name   string
@@ -203,6 +228,7 @@ func TestAgent_getHealth(t *testing.T) {
 			args: args{
 				ctx:     context.Background(),
 				configs: nil,
+				podList: mockPodList,
 			},
 			want: []*protobufs.ComponentHealth{
 				{
@@ -227,6 +253,7 @@ func TestAgent_getHealth(t *testing.T) {
 						testCollectorKey: collectorBasicFile,
 					},
 				},
+				podList: mockPodList,
 			},
 			want: []*protobufs.ComponentHealth{
 				{
@@ -259,6 +286,7 @@ func TestAgent_getHealth(t *testing.T) {
 						otherCollectorKey: collectorUpdatedFile,
 					},
 				},
+				podList: mockPodList,
 			},
 			want: []*protobufs.ComponentHealth{
 				{
@@ -298,6 +326,7 @@ func TestAgent_getHealth(t *testing.T) {
 						thirdCollectorKey: collectorBasicFile,
 					},
 				},
+				podList: mockPodList,
 			},
 			want: []*protobufs.ComponentHealth{
 				{
@@ -324,6 +353,45 @@ func TestAgent_getHealth(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "with pod health, nil start time",
+			fields: fields{
+				configFile: agentTestFileName,
+			},
+			args: args{
+				ctx: context.Background(),
+				configs: []map[string]string{
+					{
+						thirdCollectorKey: collectorBasicFile,
+					},
+				},
+				podList: mockPodListUnhealthy,
+			},
+			want: []*protobufs.ComponentHealth{
+				{
+					Healthy:            true,
+					StartTimeUnixNano:  uint64(fakeClock.Now().UnixNano()),
+					StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+					ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+						"other/third": {
+							Healthy:            false, // we're working with mocks so the status will never be reconciled.
+							StartTimeUnixNano:  collectorStartTime,
+							LastError:          "",
+							Status:             "",
+							StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+							ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+								otherCollectorName + "/" + thirdCollectorName + "-1": {
+									Healthy:            false,
+									Status:             "Running",
+									StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
+									StartTimeUnixNano:  uint64(0),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -331,7 +399,7 @@ func TestAgent_getHealth(t *testing.T) {
 			conf := config.NewConfig(logr.Discard())
 			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
 			require.NoError(t, loadErr, "should be able to load config")
-			applier := getFakeApplier(t, conf, mockPodList)
+			applier := getFakeApplier(t, conf, tt.args.podList)
 			agent := NewAgent(l, applier, conf, mockClient)
 			agent.clock = fakeClock
 			err := agent.Start()
