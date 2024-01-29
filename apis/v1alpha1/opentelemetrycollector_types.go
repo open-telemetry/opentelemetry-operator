@@ -521,6 +521,9 @@ type MetricsConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
 	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
+	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
+	DisablePrometheusAnnotations bool `json:"DisablePrometheusAnnotations,omitempty"`
 }
 
 // ObservabilitySpec defines how telemetry data gets handled.
