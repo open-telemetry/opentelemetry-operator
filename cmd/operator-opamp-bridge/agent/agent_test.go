@@ -121,6 +121,10 @@ type mockOpampClient struct {
 	settings            types.StartSettings
 }
 
+func (m *mockOpampClient) RequestConnectionSettings(request *protobufs.ConnectionSettingsRequest) error {
+	return nil
+}
+
 func (m *mockOpampClient) Start(_ context.Context, settings types.StartSettings) error {
 	m.settings = settings
 	return nil

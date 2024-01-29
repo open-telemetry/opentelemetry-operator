@@ -174,17 +174,17 @@ func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, na
 }
 
 // onConnect is called when an agent is successfully connected to a server.
-func (agent *Agent) onConnect() {
+func (agent *Agent) onConnect(ctx context.Context) {
 	agent.logger.V(3).Info("Connected to the server.")
 }
 
 // onConnectFailed is called when an agent was unable to connect to a server.
-func (agent *Agent) onConnectFailed(err error) {
+func (agent *Agent) onConnectFailed(ctx context.Context, err error) {
 	agent.logger.Error(err, "failed to connect to the server")
 }
 
 // onError is called when an agent receives an error response from the server.
-func (agent *Agent) onError(err *protobufs.ServerErrorResponse) {
+func (agent *Agent) onError(ctx context.Context, err *protobufs.ServerErrorResponse) {
 	agent.logger.Error(fmt.Errorf(err.GetErrorMessage()), "server returned an error response")
 }
 
