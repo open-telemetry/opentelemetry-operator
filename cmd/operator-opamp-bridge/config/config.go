@@ -18,6 +18,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/oklog/ulid"
 	"io/fs"
 	"net/url"
 	"os"
@@ -25,7 +26,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/oklog/ulid/v2"
 	opampclient "github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/spf13/pflag"
@@ -268,6 +268,10 @@ func LoadFromFile(cfg *Config, configFile string) error {
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
+	}
+	envExpandedYaml := os.ExpandEnv(string(yamlFile))
+	if err = yaml.UnmarshalStrict([]byte(envExpandedYaml), cfg); err != nil {
+		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
 	if err = yaml.Unmarshal(yamlFile, cfg); err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
