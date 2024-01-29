@@ -63,6 +63,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
+					"app.kubernetes.io/name":       "otel-collector-monitoring",
 				},
 			},
 			PodMetricsEndpoints: append(
