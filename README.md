@@ -187,6 +187,27 @@ EOF
 
 When using sidecar mode the OpenTelemetry collector container will have the environment variable `OTEL_RESOURCE_ATTRIBUTES`set with Kubernetes resource attributes, ready to be consumed by the [resourcedetection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) processor.
 
+### Using imagePullSecrets
+
+The OpenTelemetry Collector defines a ServiceAccount field which could be set to run collector instances with a specific Service and their properties (e.g. imagePullSecrets). Therefore, if you have a constraint to run your collector with a private container registry, you should follow the procedure below:
+
+* Create Service Account.
+````bash
+kubectl create serviceaccount <service-account-name>
+````
+
+* Create an imagePullSecret.
+````bash
+kubectl create secret docker-registry <secret-name> --docker-server=<registry name> \
+        --docker-username=DUMMY_USERNAME --docker-password=DUMMY_DOCKER_PASSWORD \
+        --docker-email=DUMMY_DOCKER_EMAIL
+````
+
+* Add image pull secret to service account
+````bash
+kubectl patch serviceaccount <service-account-name> -p '{"imagePullSecrets": [{"name": "<secret-name>"}]}'
+````
+
 ### OpenTelemetry auto-instrumentation injection
 
 The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
@@ -649,55 +670,6 @@ spec:
     serviceAccount: everything-prometheus-operator-needs
     prometheusCR:
       enabled: true
-  config: |
-    receivers:
-      prometheus:
-        config:
-
-    exporters:
-      debug:
-
-    service:
-      pipelines:
-        metrics:
-          receivers: [prometheus]
-          processors: []
-          exporters: [debug]
-```
-
-#### Using imagePullSecrets
-
-The OpenTelemetry Collector defines a ServiceAccount field which could be set to run collector instances with a specific Service and their properties (e.g. imagePullSecrets). Therefore, if you have a constraint to run your collector with a private container registry, you should follow the procedure below:
-
-* Create Service Account.
-````bash
-kubectl create serviceaccount <service-account-name>
-````
-
-* Create an imagePullSecret.
-
-````bash
-kubectl create secret docker-registry <secret-name> --docker-server=<registry name> \
-        --docker-username=DUMMY_USERNAME --docker-password=DUMMY_DOCKER_PASSWORD \
-        --docker-email=DUMMY_DOCKER_EMAIL
-
-````
-
-* Add image pull secret to service account
-````bash
-kubectl patch serviceaccount <service-account-name> -p '{"imagePullSecrets": [{"name": "<secret-name>"}]}'
-````
-
-* Create the OpenTelemetryCollector instance.
-```yaml
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
-metadata:
-  name: private-collector
-spec:
-  mode: deployment
-  image: 
-  serviceAccount: <service-account-name>
   config: |
     receivers:
       prometheus:
