@@ -18,7 +18,6 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -26,11 +25,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func HorizontalPodAutoscaler(params manifests.Params) client.Object {
+func HorizontalPodAutoscaler(params manifests.Params) *autoscalingv2.HorizontalPodAutoscaler {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 	annotations := Annotations(params.OtelCol)
-	var result client.Object
+	var result *autoscalingv2.HorizontalPodAutoscaler
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        naming.HorizontalPodAutoscaler(params.OtelCol.Name),
