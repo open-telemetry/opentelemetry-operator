@@ -523,6 +523,9 @@ type MetricsConfigSpec struct {
 	EnableMetrics bool `json:"enableMetrics,omitempty"`
 	// DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
 	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
 	DisablePrometheusAnnotations bool `json:"DisablePrometheusAnnotations,omitempty"`
 }
 
