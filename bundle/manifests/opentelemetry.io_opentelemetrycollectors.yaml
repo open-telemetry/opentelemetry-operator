@@ -3867,6 +3867,11 @@ spec:
                   metrics:
                     description: Metrics defines the metrics configuration for operands.
                     properties:
+                      DisablePrometheusAnnotations:
+                        description: DisablePrometheusAnnotations controls the automatic
+                          addition of default Prometheus annotations ('prometheus.io/scrape',
+                          'prometheus.io/port', and 'prometheus.io/path')
+                        type: boolean
                       enableMetrics:
                         description: EnableMetrics specifies if ServiceMonitor or
                           PodMonitor(for sidecar mode) should be created for the service
@@ -5205,6 +5210,11 @@ spec:
                         description: Metrics defines the metrics configuration for
                           operands.
                         properties:
+                          DisablePrometheusAnnotations:
+                            description: DisablePrometheusAnnotations controls the
+                              automatic addition of default Prometheus annotations
+                              ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
+                            type: boolean
                           enableMetrics:
                             description: EnableMetrics specifies if ServiceMonitor
                               or PodMonitor(for sidecar mode) should be created for
