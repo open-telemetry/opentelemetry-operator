@@ -81,3 +81,13 @@ func SelectorLabels(instance metav1.ObjectMeta, component string) map[string]str
 		"app.kubernetes.io/component":  component,
 	}
 }
+
+func SelectorMatchLabels(instance metav1.ObjectMeta, component string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name),
+		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/component":  component,
+		"app.kubernetes.io/name":       "otel-collector-monitoring",
+	}
+}

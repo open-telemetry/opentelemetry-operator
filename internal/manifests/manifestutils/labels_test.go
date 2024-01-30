@@ -168,3 +168,23 @@ func TestSelectorLabels(t *testing.T) {
 	// verify
 	assert.Equal(t, expected, result)
 }
+
+func TestSelectorMatchLabels(t *testing.T) {
+	// prepare
+	expected := map[string]string{
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/instance":   "my-namespace.my-opentelemetry-collector",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/name":       "otel-collector-monitoring",
+	}
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{Name: "my-opentelemetry-collector", Namespace: "my-namespace"},
+	}
+
+	// test
+	result := SelectorMatchLabels(otelcol.ObjectMeta, "opentelemetry-collector")
+
+	// verify
+	assert.Equal(t, expected, result)
+}
