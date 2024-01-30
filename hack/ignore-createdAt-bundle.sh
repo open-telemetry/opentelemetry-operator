@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Since operator-sdk 1.26.0, `make bundle` changes the `createdAt` field from the bundle
 # even if it is patched:
 #   https://github.com/operator-framework/operator-sdk/pull/6136
