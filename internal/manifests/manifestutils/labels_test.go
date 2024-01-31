@@ -176,7 +176,7 @@ func TestSelectorMatchLabels(t *testing.T) {
 		"app.kubernetes.io/instance":   "my-namespace.my-opentelemetry-collector",
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/name":       "otel-collector-monitoring",
+		"app.kubernetes.io/name":       "my-opentelemetry-collector-monitoring",
 	}
 	otelcol := v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-opentelemetry-collector", Namespace: "my-namespace"},

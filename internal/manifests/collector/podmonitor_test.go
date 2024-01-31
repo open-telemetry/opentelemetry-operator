@@ -48,7 +48,7 @@ func TestDesiredPodMonitors(t *testing.T) {
 		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/name":       "otel-collector-monitoring",
+		"app.kubernetes.io/name":       fmt.Sprintf("%s-monitoring", params.OtelCol.Name),
 	}
 	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
 }
@@ -71,7 +71,7 @@ func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
 		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/name":       "otel-collector-monitoring",
+		"app.kubernetes.io/name":       fmt.Sprintf("%s-monitoring", params.OtelCol.Name),
 	}
 	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
 }
