@@ -454,8 +454,9 @@ operator-sdk:
 bundle: kustomize operator-sdk manifests set-image-controller api-docs
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
+	./hack/add-openshift-annotations.sh
+	$(OPERATOR_SDK) bundle validate ./bundle
 
 .PHONY: reset
 reset: kustomize operator-sdk manifests
