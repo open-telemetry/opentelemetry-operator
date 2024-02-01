@@ -34,8 +34,15 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 	name := naming.Collector(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
-	annotations := Annotations(otelCol)
-	podAnnotations := PodAnnotations(otelCol)
+	annotations, err := Annotations(otelCol)
+	if err != nil {
+		return nil, err
+	}
+	podAnnotations, err := PodAnnotations(otelCol)
+	if err != nil {
+		return nil, err
+	}
+
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Collector(otelCol.Name),

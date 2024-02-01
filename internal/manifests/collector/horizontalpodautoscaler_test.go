@@ -102,7 +102,6 @@ func TestHPA(t *testing.T) {
 				// verify
 				assert.Equal(t, "my-instance-collector", hpa.Name)
 				assert.Equal(t, "my-instance-collector", hpa.Labels["app.kubernetes.io/name"])
-				// require.NotNil(t, hpa.Spec.MinReplicas)
 				assert.Equal(t, &minReplicas, hpa.Spec.MinReplicas)
 				assert.Equal(t, maxReplicas, hpa.Spec.MaxReplicas)
 				assert.Equal(t, 2, len(hpa.Spec.Metrics))

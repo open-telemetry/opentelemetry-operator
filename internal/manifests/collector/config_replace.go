@@ -49,7 +49,7 @@ func ReplaceConfig(instance v1alpha2.OpenTelemetryCollector) (string, error) {
 	}
 	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
-		return string(cfgStr), nil
+		return cfgStr, nil
 	}
 
 	config, err := adapters.ConfigFromString(cfgStr)

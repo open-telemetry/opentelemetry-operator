@@ -34,7 +34,11 @@ func HorizontalPodAutoscaler(params manifests.Params) (client.Object, error) {
 	}
 	name := naming.Collector(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	annotations := Annotations(otelCol)
+	annotations, err := Annotations(otelCol)
+	if err != nil {
+		return nil, err
+	}
+
 	var result client.Object
 
 	objectMeta := metav1.ObjectMeta{

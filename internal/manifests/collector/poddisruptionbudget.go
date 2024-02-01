@@ -37,7 +37,10 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 
 	name := naming.Collector(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	annotations := Annotations(otelCol)
+	annotations, err := Annotations(otelCol)
+	if err != nil {
+		return nil, err
+	}
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        naming.PodDisruptionBudget(otelCol.Name),

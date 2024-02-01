@@ -34,8 +34,15 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	name := naming.Collector(otelCol.Name)
 	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
-	annotations := Annotations(otelCol)
-	podAnnotations := PodAnnotations(otelCol)
+	annotations, err := Annotations(otelCol)
+	if err != nil {
+		return nil, err
+	}
+
+	podAnnotations, err := PodAnnotations(otelCol)
+	if err != nil {
+		return nil, err
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

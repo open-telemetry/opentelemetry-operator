@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -44,8 +45,10 @@ func TestDefaultAnnotations(t *testing.T) {
 	}
 
 	// test
-	annotations := Annotations(otelcol)
-	podAnnotations := PodAnnotations(otelcol)
+	annotations, err := Annotations(otelcol)
+	require.NoError(t, err)
+	podAnnotations, err := PodAnnotations(otelcol)
+	require.NoError(t, err)
 
 	//verify
 	assert.Equal(t, "true", annotations["prometheus.io/scrape"])
@@ -76,8 +79,10 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 	}
 
 	// test
-	annotations := Annotations(otelcol)
-	podAnnotations := PodAnnotations(otelcol)
+	annotations, err := Annotations(otelcol)
+	require.NoError(t, err)
+	podAnnotations, err := PodAnnotations(otelcol)
+	require.NoError(t, err)
 
 	//verify
 	assert.NotContains(t, annotations, "prometheus.io/scrape", "Prometheus scrape annotation should not exist")
@@ -116,8 +121,10 @@ func TestUserAnnotations(t *testing.T) {
 	}
 
 	// test
-	annotations := Annotations(otelcol)
-	podAnnotations := PodAnnotations(otelcol)
+	annotations, err := Annotations(otelcol)
+	require.NoError(t, err)
+	podAnnotations, err := PodAnnotations(otelcol)
+	require.NoError(t, err)
 
 	//verify
 	assert.Equal(t, "false", annotations["prometheus.io/scrape"])
@@ -141,8 +148,10 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 	}
 
 	// test
-	annotations := Annotations(otelcol)
-	podAnnotations := PodAnnotations(otelcol)
+	annotations, err := Annotations(otelcol)
+	require.NoError(t, err)
+	podAnnotations, err := PodAnnotations(otelcol)
+	require.NoError(t, err)
 
 	// verify
 	assert.Len(t, annotations, 5)
