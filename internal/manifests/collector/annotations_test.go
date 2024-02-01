@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
@@ -60,13 +61,12 @@ func TestDefaultAnnotations(t *testing.T) {
 
 func TestNonDefaultPodAnnotation(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-ns",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: "test",
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			Observability: v1alpha1.ObservabilitySpec{
 				Metrics: v1alpha1.MetricsConfigSpec{
 					DisablePrometheusAnnotations: true,
@@ -83,12 +83,12 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 	assert.NotContains(t, annotations, "prometheus.io/scrape", "Prometheus scrape annotation should not exist")
 	assert.NotContains(t, annotations, "prometheus.io/port", "Prometheus port annotation should not exist")
 	assert.NotContains(t, annotations, "prometheus.io/path", "Prometheus path annotation should not exist")
-	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations["opentelemetry-operator-config/sha256"])
+	assert.Equal(t, "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d", annotations["opentelemetry-operator-config/sha256"])
 	//verify propagation from metadata.annotations to spec.template.spec.metadata.annotations
 	assert.NotContains(t, podAnnotations, "prometheus.io/scrape", "Prometheus scrape annotation should not exist in pod annotations")
 	assert.NotContains(t, podAnnotations, "prometheus.io/port", "Prometheus port annotation should not exist in pod annotations")
 	assert.NotContains(t, podAnnotations, "prometheus.io/path", "Prometheus path annotation should not exist in pod annotations")
-	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", podAnnotations["opentelemetry-operator-config/sha256"])
+	assert.Equal(t, "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d", podAnnotations["opentelemetry-operator-config/sha256"])
 }
 
 func TestUserAnnotations(t *testing.T) {
