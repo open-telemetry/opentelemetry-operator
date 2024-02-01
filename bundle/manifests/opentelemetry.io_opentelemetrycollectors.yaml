@@ -3867,6 +3867,11 @@ spec:
                   metrics:
                     description: Metrics defines the metrics configuration for operands.
                     properties:
+                      DisablePrometheusAnnotations:
+                        description: DisablePrometheusAnnotations controls the automatic
+                          addition of default Prometheus annotations ('prometheus.io/scrape',
+                          'prometheus.io/port', and 'prometheus.io/path')
+                        type: boolean
                       enableMetrics:
                         description: EnableMetrics specifies if ServiceMonitor or
                           PodMonitor(for sidecar mode) should be created for the service
@@ -4257,6 +4262,10 @@ spec:
                   account to use with this instance. When set, the operator will not
                   automatically create a ServiceAccount for the collector.
                 type: string
+              shareProcessNamespace:
+                description: ShareProcessNamespace indicates if the pod's containers
+                  should share process namespace.
+                type: boolean
               targetAllocator:
                 description: TargetAllocator indicates a value which determines whether
                   to spawn a target allocation resource or not.
@@ -5202,6 +5211,11 @@ spec:
                         description: Metrics defines the metrics configuration for
                           operands.
                         properties:
+                          DisablePrometheusAnnotations:
+                            description: DisablePrometheusAnnotations controls the
+                              automatic addition of default Prometheus annotations
+                              ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
+                            type: boolean
                           enableMetrics:
                             description: EnableMetrics specifies if ServiceMonitor
                               or PodMonitor(for sidecar mode) should be created for

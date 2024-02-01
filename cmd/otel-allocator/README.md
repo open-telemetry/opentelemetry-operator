@@ -124,7 +124,7 @@ to collector instance pods by default.
 
 
 ### RBAC
-The ServiceAccount that the TargetAllocator runs as, has to have access to the CRs. A role like this will provide that
+The ServiceAccount that the TargetAllocator runs as, has to have access to the CRs and the namespaces to watch for the pod and service monitors. A role like this will provide that
 access.
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -139,6 +139,10 @@ rules:
   - podmonitors
   verbs:
   - '*'
+- apiGroups: [""]
+  resources:
+  - namespaces
+  verbs: ["get", "list", "watch"]
 ```
 In addition, the TargetAllocator needs the same permissions as a Prometheus instance would to find the matching targets
 from the CR instances.

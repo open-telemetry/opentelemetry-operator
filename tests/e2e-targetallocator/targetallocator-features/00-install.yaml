@@ -5,12 +5,12 @@ metadata:
 automountServiceAccountToken: true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: pod-view
 rules:
 - apiGroups: [""]
-  resources: [ "pods" ]
+  resources: [ "pods", "namespaces" ]
   verbs: [ "get", "list", "watch"]
 - apiGroups: ["monitoring.coreos.com"]
   resources: ["servicemonitors"]
@@ -19,7 +19,7 @@ rules:
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: kubectl -n $NAMESPACE create rolebinding default-view-$NAMESPACE --role=pod-view --serviceaccount=$NAMESPACE:ta
+  - command: kubectl -n $NAMESPACE create clusterrolebinding default-view-$NAMESPACE --clusterrole=pod-view --serviceaccount=$NAMESPACE:ta
   # Annotate the namespace to allow the application to run using an specific group and user in OpenShift
   # https://docs.openshift.com/dedicated/authentication/managing-security-context-constraints.html
   # This annotation has no effect in Kubernetes
@@ -50,12 +50,17 @@ spec:
     serviceAccount: ta
     securityContext:
       runAsUser: 1000
-      runAsGroup: 3000
-      privileged: true
+      runAsGroup: 1000
+      privileged: false
+      capabilities:
+        add:
+        - NET_BIND_SERVICE
+        drop:
+        - ALL
     podSecurityContext:
       runAsUser: 1000
       runAsGroup: 3000
-      fsGroup: 2000
+      fsGroup: 3000
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:

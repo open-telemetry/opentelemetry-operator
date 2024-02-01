@@ -563,6 +563,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				"missing the following rules for nodes/metrics: [get,list,watch]",
 				"missing the following rules for services: [get,list,watch]",
 				"missing the following rules for endpoints: [get,list,watch]",
+				"missing the following rules for namespaces: [get,list,watch]",
 				"missing the following rules for networking.k8s.io/ingresses: [get,list,watch]",
 				"missing the following rules for nodes: [get,list,watch]",
 				"missing the following rules for pods: [get,list,watch]",

@@ -551,3 +551,44 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 	assert.Len(t, s.Spec.Template.Spec.Containers, 2)
 	assert.Equal(t, v1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[0])
 }
+
+func TestStatefulSetShareProcessNamespace(t *testing.T) {
+	// Test default
+	otelcol1 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d1 := StatefulSet(params1)
+	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
+
+	// Test shareProcessNamespace=true
+	otelcol2 := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-with-shareprocessnamespace",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			ShareProcessNamespace: true,
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d2 := StatefulSet(params2)
+	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
+}

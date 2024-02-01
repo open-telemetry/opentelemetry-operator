@@ -1,7 +1,7 @@
 # Current Operator version
 VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
-VERSION_PKG ?= "github.com/open-telemetry/opentelemetry-operator/internal/version"
+VERSION_PKG ?= github.com/open-telemetry/opentelemetry-operator/internal/version
 OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
 OPERATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')"
 TARGETALLOCATOR_VERSION ?= $(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')
@@ -119,7 +119,7 @@ operator-opamp-bridge:
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
 run: generate fmt vet manifests
-	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) go run -ldflags ${OPERATOR_LDFLAGS} ./main.go --zap-devel
+	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) go run -ldflags "${OPERATOR_LDFLAGS}" ./main.go --zap-devel
 
 # Install CRDs into a cluster
 .PHONY: install
@@ -456,11 +456,12 @@ operator-sdk:
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
-bundle: kustomize operator-sdk manifests set-image-controller
+bundle: kustomize operator-sdk manifests set-image-controller api-docs
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
+	./hack/add-openshift-annotations.sh
+	$(OPERATOR_SDK) bundle validate ./bundle
 
 .PHONY: reset
 reset: kustomize operator-sdk manifests

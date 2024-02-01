@@ -51,6 +51,39 @@ func TestDefaultAnnotations(t *testing.T) {
 	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", podAnnotations["opentelemetry-operator-config/sha256"])
 }
 
+func TestNonDefaultPodAnnotation(t *testing.T) {
+	// prepare
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-ns",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Config: "test",
+			Observability: v1alpha1.ObservabilitySpec{
+				Metrics: v1alpha1.MetricsConfigSpec{
+					DisablePrometheusAnnotations: true,
+				},
+			},
+		},
+	}
+
+	// test
+	annotations := Annotations(otelcol)
+	podAnnotations := PodAnnotations(otelcol)
+
+	//verify
+	assert.NotContains(t, annotations, "prometheus.io/scrape", "Prometheus scrape annotation should not exist")
+	assert.NotContains(t, annotations, "prometheus.io/port", "Prometheus port annotation should not exist")
+	assert.NotContains(t, annotations, "prometheus.io/path", "Prometheus path annotation should not exist")
+	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", annotations["opentelemetry-operator-config/sha256"])
+	//verify propagation from metadata.annotations to spec.template.spec.metadata.annotations
+	assert.NotContains(t, podAnnotations, "prometheus.io/scrape", "Prometheus scrape annotation should not exist in pod annotations")
+	assert.NotContains(t, podAnnotations, "prometheus.io/port", "Prometheus port annotation should not exist in pod annotations")
+	assert.NotContains(t, podAnnotations, "prometheus.io/path", "Prometheus path annotation should not exist in pod annotations")
+	assert.Equal(t, "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", podAnnotations["opentelemetry-operator-config/sha256"])
+}
+
 func TestUserAnnotations(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{

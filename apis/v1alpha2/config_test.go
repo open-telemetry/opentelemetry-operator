@@ -23,6 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	go_yaml "gopkg.in/yaml.v3"
 	"sigs.k8s.io/yaml"
 )
 
@@ -52,7 +53,7 @@ func TestConfigFiles(t *testing.T) {
 			assert.JSONEq(t, string(collectorJson), string(jsonCfg))
 			yamlCfg, err := yaml.JSONToYAML(jsonCfg)
 			require.NoError(t, err)
-			assert.YAMLEq(t, string(collectorJson), string(yamlCfg))
+			assert.YAMLEq(t, string(collectorYaml), string(yamlCfg))
 		})
 	}
 }
@@ -66,6 +67,44 @@ func TestNullObjects(t *testing.T) {
 
 	cfg := &Config{}
 	err = json.Unmarshal(collectorJson, cfg)
+	require.NoError(t, err)
+
+	nullObjects := cfg.nullObjects()
+	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
+}
+
+func TestConfigFiles_go_yaml(t *testing.T) {
+	files, err := os.ReadDir("./testdata")
+	require.NoError(t, err)
+
+	for _, file := range files {
+		if !strings.HasPrefix(file.Name(), "otelcol-") {
+			continue
+		}
+
+		testFile := path.Join("./testdata", file.Name())
+		t.Run(testFile, func(t *testing.T) {
+			collectorYaml, err := os.ReadFile(testFile)
+			require.NoError(t, err)
+
+			cfg := &Config{}
+			err = go_yaml.Unmarshal(collectorYaml, cfg)
+			require.NoError(t, err)
+			yamlCfg, err := go_yaml.Marshal(cfg)
+			require.NoError(t, err)
+
+			require.NoError(t, err)
+			assert.YAMLEq(t, string(collectorYaml), string(yamlCfg))
+		})
+	}
+}
+
+func TestNullObjects_go_yaml(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/otelcol-null-values.yaml")
+	require.NoError(t, err)
+
+	cfg := &Config{}
+	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 
 	nullObjects := cfg.nullObjects()

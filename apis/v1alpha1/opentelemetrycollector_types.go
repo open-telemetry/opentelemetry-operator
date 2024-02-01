@@ -215,6 +215,9 @@ type OpenTelemetryCollectorSpec struct {
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
+	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
+	// +optional
+	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`
 	// If specified, indicates the pod's priority.
 	// If not specified, the pod priority will be default or zero if there is no
 	// default.
@@ -378,11 +381,13 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	// PodMonitors to be selected for target discovery.
 	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
 	// PodMonitor's meta labels. The requirements are ANDed.
+	// Empty or nil map matches all pod monitors.
 	// +optional
 	PodMonitorSelector map[string]string `json:"podMonitorSelector,omitempty"`
 	// ServiceMonitors to be selected for target discovery.
 	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
 	// ServiceMonitor's meta labels. The requirements are ANDed.
+	// Empty or nil map matches all service monitors.
 	// +optional
 	ServiceMonitorSelector map[string]string `json:"serviceMonitorSelector,omitempty"`
 }
@@ -517,6 +522,12 @@ type MetricsConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
 	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
+	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	DisablePrometheusAnnotations bool `json:"DisablePrometheusAnnotations,omitempty"`
 }
 
 // ObservabilitySpec defines how telemetry data gets handled.
