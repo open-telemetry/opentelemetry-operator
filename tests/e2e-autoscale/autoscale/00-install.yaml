@@ -9,17 +9,17 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  # TODO: these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
-  # deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
-  # still supported but should eventually be updated.
-  # minReplicas: 1
-  # maxReplicas: 2
-  # autoscaler:
-  #   behavior:
-  #     scaleUp:
-  #       stabilizationWindowSeconds: 10
-  #     scaleDown:
-  #       stabilizationWindowSeconds: 15
+# TODO: these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
+# deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
+# still supported but should eventually be updated.
+  minReplicas: 1
+  maxReplicas: 2
+  autoscaler:
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 10
+      scaleDown:
+        stabilizationWindowSeconds: 15
   resources:
     limits:
       cpu: 500m
@@ -51,13 +51,13 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest-set-utilization
 spec:
-  # minReplicas: 1
-  # maxReplicas: 2
-  # autoscaler:
-  #   targetCPUUtilization: 99
-  #   behavior:
-  #     scaleUp:
-  #       stabilizationWindowSeconds: 300
+  minReplicas: 1
+  maxReplicas: 2
+  autoscaler:
+    targetCPUUtilization: 99
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 300
   resources:
     limits:
       cpu: 250m
