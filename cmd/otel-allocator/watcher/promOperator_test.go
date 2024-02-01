@@ -920,7 +920,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		default:
 			return false
 		}
-	}, eventInterval*5, time.Millisecond)
+	}, time.Second, time.Millisecond)
 }
 
 func TestRateLimit(t *testing.T) {
