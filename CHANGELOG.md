@@ -2,6 +2,40 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.93.0
+
+### 🛑 Breaking changes 🛑
+
+  This version brings stable semantic convention for network and HTTP. It includes new metrics and attributes names.
+- `target allocator`: Use standard K8s label selectors for Prometheus CRs in target allocator config (#1907)
+  This is a breaking change only for users of standalone target allocator. Operator users are unaffected.
+  The operator is still compatible with previous target allocator versions, and will be for the next 3 releases.
+- `target allocator`: Use recommended interfaces(resource selector) by the prometheus-operator for watching CRs. (#2309)
+  The target allocator now requires get/list/watch permissions for namespaces. Update your RBAC permissions for the attached role, if necessary.
+
+### 💡 Enhancements 💡
+
+- `operator`: Add SharedProcessNamespace capabilities to the OpenTelemetryCollector CRD (#2472)
+- `opamp bridge`: Added env variable parsing to opamp bridge config loading (#2577)
+- `target allocator`: Set the default filter strategy in the CRD (#2477)
+- `operator, target allocator`: Adding a feature flag to disable default prometheus annotations (#2554)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fix annotations required by the OpenShift Operator Hub (#2557)
+
+### Components
+
+* [OpenTelemetry Collector - v0.92.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.93.0)
+* [OpenTelemetry Contrib - v0.92.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.93.0)
+* [Java auto-instrumentation - 1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
+* [.NET auto-instrumentation - 1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.2.0)
+* [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
+* [Python - 0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.43b0)
+* [Go - v0.10.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)]
+
 ## 0.92.1
 
 ### 💡 Enhancements 💡
