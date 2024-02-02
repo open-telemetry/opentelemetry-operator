@@ -19,7 +19,6 @@ Changes by Version
 - `opamp bridge`: Added env variable parsing to opamp bridge config loading (#2577)
 - `target allocator`: Set the default filter strategy in the CRD (#2477)
 - `operator, target allocator`: Adding a feature flag to disable default prometheus annotations (#2554)
-- `operator`: Switch ()
 
 ### 🧰 Bug fixes 🧰
 
