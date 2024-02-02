@@ -288,9 +288,9 @@ container-operator-opamp-bridge: operator-opamp-bridge
 	docker build -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
 .PHONY: start-kind
-start-kind:
+start-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
-	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG) || true
+	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG) || true
 endif
 
 .PHONY: install-metrics-server
@@ -310,26 +310,26 @@ install-targetallocator-prometheus-crds:
 load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge
 
 .PHONY: load-image-operator
-load-image-operator: container
+load-image-operator: container kind
 ifeq (true,$(START_KIND_CLUSTER))
-	kind load --name $(KIND_CLUSTER_NAME) docker-image $(IMG)
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image $(IMG)
 else
 	$(MAKE) container-push
 endif
 
 
 .PHONY: load-image-target-allocator
-load-image-target-allocator: container-target-allocator
+load-image-target-allocator: container-target-allocator kind
 ifeq (true,$(START_KIND_CLUSTER))
-	kind load --name $(KIND_CLUSTER_NAME) docker-image $(TARGETALLOCATOR_IMG)
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image $(TARGETALLOCATOR_IMG)
 else
 	$(MAKE) container-target-allocator-push
 endif
 
 
 .PHONY: load-image-operator-opamp-bridge
-load-image-operator-opamp-bridge: container-operator-opamp-bridge
-	kind load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
+load-image-operator-opamp-bridge: container-operator-opamp-bridge kind
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
 
 .PHONY: cert-manager
 cert-manager: cmctl
@@ -355,6 +355,7 @@ cmctl:
 	}
 
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
+KIND ?= $(LOCALBIN)/kind
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
@@ -363,14 +364,20 @@ GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
 GOLANGCI_LINT_VERSION ?= v1.54.0
+KIND_VERSION ?= v0.20.0
 
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
+.PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
 	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+
+.PHONY: kind
+kind: ## Download kind locally if necessary.
+	$(call go-get-tool,$(KIND),sigs.k8s.io/kind,$(KIND_VERSION))
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
@@ -419,21 +426,6 @@ ifeq (, $(shell which kubectl-kuttl))
 	}
 else
 KUTTL=$(shell which kubectl-kuttl)
-endif
-
-.PHONY: kind
-kind:
-ifeq (, $(shell which kind))
-	@{ \
-	set -e ;\
-	echo "" ;\
-	echo "ERROR: kind not found." ;\
-	echo "Please check https://kind.sigs.k8s.io/docs/user/quick-start/#installation for installation instructions and try again." ;\
-	echo "" ;\
-	exit 1 ;\
-	}
-else
-KIND=$(shell which kind)
 endif
 
 OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
