@@ -368,6 +368,8 @@ GOLANGCI_LINT_VERSION ?= v1.54.0
 KIND_VERSION ?= v0.20.0
 KUTTL_VERSION ?= 0.15.0
 
+.PHONY: install-tools
+install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kuttl kind operator-sdk
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
@@ -384,12 +386,12 @@ kind: ## Download kind locally if necessary.
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 $(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+	@test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	@test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 CRDOC = $(shell pwd)/bin/crdoc
 .PHONY: crdoc
@@ -412,12 +414,12 @@ rm -rf $$TMP_DIR ;\
 endef
 
 .PHONY: kuttl
-kuttl:
+kuttl: $(LOCALBIN)
 	@KUTTL=$(KUTTL) KUTTL_VERSION=$(KUTTL_VERSION) ./hack/install-kuttl.sh
 
 OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
 .PHONY: operator-sdk
-operator-sdk:
+operator-sdk: $(LOCALBIN)
 	@{ \
 	set -e ;\
 	if (`pwd`/bin/operator-sdk version | grep ${OPERATOR_SDK_VERSION}) > /dev/null 2>&1 ; then \

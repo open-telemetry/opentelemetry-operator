@@ -47,6 +47,15 @@ jobs:
       with:
         go-version: "~1.21.3"
 
+    - name: Cache tools
+      uses: actions/cache@v4
+      with:
+        path: bin
+        key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
+
+    - name: Install tools
+      run: make install-tools
+
     - name: "run tests"
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
