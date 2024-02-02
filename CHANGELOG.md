@@ -6,7 +6,6 @@ Changes by Version
 
 ### 🛑 Breaking changes 🛑
 
-- `autoinstrumentation`: Bump OpenTelemetry .NET Automatic Instrumentation to 1.3.0 (#2538)
   This version brings stable semantic convention for network and HTTP. It includes new metrics and attributes names.
 - `target allocator`: Use standard K8s label selectors for Prometheus CRs in target allocator config (#1907)
   This is a breaking change only for users of standalone target allocator. Operator users are unaffected.
