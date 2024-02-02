@@ -88,6 +88,18 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	}
 	deploymentExtraPorts := paramsWithModeAndReplicas(v1alpha1.ModeDeployment, 3)
 	deploymentExtraPorts.OtelCol.Spec.Ports = append(deploymentExtraPorts.OtelCol.Spec.Ports, extraPorts)
+	deploymentExtraPorts.OtelCol.Spec.DeploymentUpdateStrategy = appsv1.DeploymentStrategy{
+		RollingUpdate: &appsv1.RollingUpdateDeployment{
+			MaxUnavailable: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 1,
+			},
+			MaxSurge: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 1,
+			},
+		},
+	}
 	ingressParams := newParamsAssertNoErr(t, "", testFileIngress)
 	ingressParams.OtelCol.Spec.Ingress.Type = "ingress"
 	updatedIngressParams := newParamsAssertNoErr(t, "", testFileIngress)
@@ -143,6 +155,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.Equal(t, int32(2), *d.Spec.Replicas)
 							assert.Contains(t, d.Annotations, annotationName)
 							assert.Contains(t, d.Labels, labelName)
+							// confirm the initial strategy is unset
+							assert.Equal(t, d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntVal, int32(0))
+							assert.Equal(t, d.Spec.Strategy.RollingUpdate.MaxSurge.IntVal, int32(0))
 							exists, err = populateObjectIfExists(t, &v1.Service{}, namespacedObjectName(naming.Service(params.OtelCol.Name), params.OtelCol.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
@@ -163,6 +178,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Equal(t, int32(3), *d.Spec.Replicas)
+							// confirm the strategy has been changed
+							assert.Equal(t, d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntVal, int32(1))
+							assert.Equal(t, d.Spec.Strategy.RollingUpdate.MaxSurge.IntVal, int32(1))
 							// confirm that we don't remove annotations and labels even if we don't set them
 							assert.Contains(t, d.Annotations, annotationName)
 							assert.Contains(t, d.Labels, labelName)
