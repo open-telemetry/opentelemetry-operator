@@ -38,12 +38,12 @@ In order to have more people comfortable with the release process, and in order 
 
 The operator should be released within a week after the [OpenTelemetry collector release](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/release.md#release-schedule).
 
-| Version | Release manager |
-|---------|-----------------|
-| v0.93.0 | @VineethReddy02 |
-| v0.94.0 | @TylerHelmuth   |
-| v0.95.0 | @swiatekm-sumo  |
-| v0.96.0 | @frzifus        |
-| v0.97.0 | @jaronoff97     |
-| v0.98.0 | @yuriolisa      |
-| v0.99.0 | @pavolloffay    |
+| Version  | Release manager |
+|----------|-----------------|
+| v0.94.0  | @TylerHelmuth   |
+| v0.95.0  | @swiatekm-sumo  |
+| v0.96.0  | @frzifus        |
+| v0.97.0  | @jaronoff97     |
+| v0.98.0  | @yuriolisa      |
+| v0.99.0  | @pavolloffay    |
+| v0.100.0 | @VineethReddy02 |
