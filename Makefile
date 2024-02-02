@@ -356,6 +356,7 @@ cmctl:
 
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 KIND ?= $(LOCALBIN)/kind
+KUTTL ?= $(LOCALBIN)/kubectl-kuttl
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
@@ -365,6 +366,7 @@ KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
 GOLANGCI_LINT_VERSION ?= v1.54.0
 KIND_VERSION ?= v0.20.0
+KUTTL_VERSION ?= 0.15.0
 
 
 .PHONY: kustomize
@@ -411,22 +413,7 @@ endef
 
 .PHONY: kuttl
 kuttl:
-ifeq (, $(shell which kubectl-kuttl))
-	echo ${PATH}
-	ls -l /usr/local/bin
-	which kubectl-kuttl
-
-	@{ \
-	set -e ;\
-	echo "" ;\
-	echo "ERROR: kuttl not found." ;\
-	echo "Please check https://kuttl.dev/docs/cli.html for installation instructions and try again." ;\
-	echo "" ;\
-	exit 1 ;\
-	}
-else
-KUTTL=$(shell which kubectl-kuttl)
-endif
+	@KUTTL=$(KUTTL) KUTTL_VERSION=$(KUTTL_VERSION) ./hack/install-kuttl.sh
 
 OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
 .PHONY: operator-sdk

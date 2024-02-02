@@ -47,9 +47,6 @@ jobs:
       with:
         go-version: "~1.21.3"
 
-    - name: "install kuttl"
-      run: ./hack/install-kuttl.sh
-
     - name: "run tests"
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
