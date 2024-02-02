@@ -110,11 +110,11 @@ manager: generate fmt vet
 
 # Build target allocator binary
 targetallocator:
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o cmd/otel-allocator/bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/otel-allocator
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/otel-allocator/bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/otel-allocator
 
 # Build opamp bridge binary
 operator-opamp-bridge:
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -a -installsuffix cgo -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
