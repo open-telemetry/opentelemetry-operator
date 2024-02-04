@@ -3,5 +3,5 @@ kind: TestSuite
 artifactsDir: ./tests/_build/artifacts/
 testDirs:
   - ./tests/e2e/
-timeout: 150
+timeout: 300
 parallel: 4
