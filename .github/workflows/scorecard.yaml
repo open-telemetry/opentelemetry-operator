@@ -27,21 +27,22 @@ jobs:
         with:
           go-version: "~1.21.1"
 
-      - name: Setup kind
-        env:
-          KIND_VERSION: "0.20.0"
-        run: go install sigs.k8s.io/kind@v${KIND_VERSION}
-
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
 
-      - name: "install kuttl and kind"
-        run: ./hack/install-kuttl.sh
+      - name: Cache tools
+        uses: actions/cache@v4
+        with:
+          path: bin
+          key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
+
+      - name: Install tools
+        run: make install-tools
 
       - name: "start kind"
         env:
           KUBE_VERSION: ${{ matrix.kube-version }}
-        run: kind create cluster --config kind-$KUBE_VERSION.yaml
+        run: make start-kind
 
       - name: "wait until cluster is ready"
         run:  kubectl wait --timeout=5m --for=condition=available deployment/coredns -n kube-system
