@@ -2,6 +2,7 @@ apiVersion: scorecard.operatorframework.io/v1alpha3
 kind: Configuration
 metadata:
   name: config
+serviceaccount: scorecard-admin
 stages:
 - parallel: true
   tests: []

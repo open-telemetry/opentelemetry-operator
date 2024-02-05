@@ -2,6 +2,7 @@ apiVersion: scorecard.operatorframework.io/v1alpha3
 kind: Configuration
 metadata:
   name: config
+serviceaccount: scorecard-admin
 stages:
 - parallel: true
   tests:
@@ -42,6 +43,12 @@ stages:
     labels:
       suite: olm
       test: olm-crds-have-resources-test
+    storage:
+      spec:
+        mountPath: {}
+  - image: docker.io/andreasgerstmayr/scorecard-test-kuttl:1681909083
+    labels:
+      suite: kuttl
     storage:
       spec:
         mountPath: {}

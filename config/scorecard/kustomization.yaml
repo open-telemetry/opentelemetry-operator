@@ -13,4 +13,10 @@ patchesJson6902:
     version: v1alpha3
     kind: Configuration
     name: config
+- path: patches/kuttl.config.yaml
+  target:
+    group: scorecard.operatorframework.io
+    version: v1alpha3
+    kind: Configuration
+    name: config
 #+kubebuilder:scaffold:patchesJson6902

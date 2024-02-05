@@ -68,6 +68,11 @@ OPERATOR_SDK_VERSION ?= 1.29.0
 
 CERTMANAGER_VERSION ?= 1.10.0
 
+SCORECARD_KUTTL_TESTS := \
+	smoke-simplest \
+	smoke-sidecar \
+	instrumentation-java
+
 ifndef ignore-not-found
   ignore-not-found = false
 endif
@@ -253,8 +258,9 @@ prepare-e2e: kuttl set-image-controller add-image-targetallocator add-image-opam
 prepare-e2e-with-featuregates: kuttl enable-operator-featuregates prepare-e2e
 
 .PHONY: scorecard-tests
-scorecard-tests: operator-sdk
-	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
+scorecard-tests: operator-sdk bundle-scorecard-kuttl-tests
+	kubectl apply -f tests/scorecard/rbac.yaml
+	$(OPERATOR_SDK) scorecard -w=15m bundle || (echo "scorecard test failed" && exit 1)
 
 
 # Build the container image, used only for local dev purposes
@@ -466,6 +472,11 @@ reset: kustomize operator-sdk manifests
 	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
 	git checkout config/manager/kustomization.yaml
+
+# Copy selected e2e tests to the kuttl scorecard tests of the bundle
+.PHONY: bundle-scorecard-kuttl-tests
+bundle-scorecard-kuttl-tests:
+	for t in $(SCORECARD_KUTTL_TESTS); do cp -r tests/e2e/$$t bundle/tests/scorecard/kuttl; done
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build
