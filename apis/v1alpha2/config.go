@@ -15,10 +15,13 @@
 package v1alpha2
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
+
+	"gopkg.in/yaml.v3"
 )
 
 // AnyConfig represent parts of the config.
@@ -82,6 +85,17 @@ type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Extensions *AnyConfig `json:"extensions,omitempty" yaml:"extensions,omitempty"`
 	Service    Service    `json:"service" yaml:"service"`
+}
+
+// Yaml encodes the current object and returns it as a string.
+func (c Config) Yaml() (string, error) {
+	var buf bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&buf)
+	yamlEncoder.SetIndent(2)
+	if err := yamlEncoder.Encode(&c); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 type Service struct {

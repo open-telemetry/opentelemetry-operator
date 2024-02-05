@@ -27,24 +27,23 @@ metadata:
 data:
   collector.yaml: |
     exporters:
-      prometheus:
-        endpoint: 0.0.0.0:9090
-    processors: null
+        prometheus:
+            endpoint: 0.0.0.0:9090
     receivers:
-      prometheus:
-        config: {}
-        target_allocator:
-          collector_id: ${POD_NAME}
-          endpoint: http://prometheus-cr-targetallocator:80
-          interval: 30s
+        prometheus:
+            config: {}
+            target_allocator:
+                collector_id: ${POD_NAME}
+                endpoint: http://prometheus-cr-targetallocator:80
+                interval: 30s
     service:
-      pipelines:
-        metrics:
-          exporters:
-          - prometheus
-          processors: []
-          receivers:
-          - prometheus
+        pipelines:
+            metrics:
+                exporters:
+                    - prometheus
+                processors: []
+                receivers:
+                    - prometheus
 ---
 # Print TA pod logs if test fails
 apiVersion: kuttl.dev/v1beta1
