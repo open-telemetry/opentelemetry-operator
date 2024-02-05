@@ -18,14 +18,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
-func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
+func ServiceAccountName(instance v1alpha2.OpenTelemetryCollector) string {
 	if len(instance.Spec.ServiceAccount) == 0 {
 		return naming.ServiceAccount(instance.Name)
 	}
@@ -34,19 +35,24 @@ func ServiceAccountName(instance v1alpha1.OpenTelemetryCollector) string {
 }
 
 // ServiceAccount returns the service account for the given instance.
-func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
-	if params.OtelCol.Spec.ServiceAccount != "" {
-		return nil
+func ServiceAccount(params manifests.Params) (*corev1.ServiceAccount, error) {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
 	}
-	name := naming.ServiceAccount(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	if otelCol.Spec.ServiceAccount != "" {
+		return nil, nil
+	}
+
+	name := naming.ServiceAccount(otelCol.Name)
+	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   params.OtelCol.Namespace,
+			Namespace:   otelCol.Namespace,
 			Labels:      labels,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: otelCol.Annotations,
 		},
-	}
+	}, nil
 }

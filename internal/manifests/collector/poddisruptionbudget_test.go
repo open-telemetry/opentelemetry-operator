@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -80,11 +81,12 @@ func TestPDB(t *testing.T) {
 					MaxUnavailable: test.MaxUnavailable,
 				}
 				configuration := config.New()
-				pdb := PodDisruptionBudget(manifests.Params{
+				pdb, err := PodDisruptionBudget(manifests.Params{
 					Log:     logger,
 					Config:  configuration,
 					OtelCol: otelcol,
 				})
+				require.NoError(t, err)
 
 				// verify
 				assert.Equal(t, "my-instance-collector", pdb.Name)

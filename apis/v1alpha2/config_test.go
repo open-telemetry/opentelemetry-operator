@@ -110,3 +110,77 @@ func TestNullObjects_go_yaml(t *testing.T) {
 	nullObjects := cfg.nullObjects()
 	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
 }
+
+func TestConfigYaml(t *testing.T) {
+	cfg := &Config{
+		Receivers: AnyConfig{
+			Object: map[string]interface{}{
+				"otlp": nil,
+			},
+		},
+		Processors: &AnyConfig{
+			Object: map[string]interface{}{
+				"modify_2000": "enabled",
+			},
+		},
+		Exporters: AnyConfig{
+			Object: map[string]interface{}{
+				"otlp/exporter": nil,
+			},
+		},
+		Connectors: &AnyConfig{
+			Object: map[string]interface{}{
+				"con": "magic",
+			},
+		},
+		Extensions: &AnyConfig{
+			Object: map[string]interface{}{
+				"addon": "option1",
+			},
+		},
+		Service: Service{
+			Extensions: &[]string{"addon"},
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"insights": "yeah!",
+				},
+			},
+			Pipelines: AnyConfig{
+				Object: map[string]interface{}{
+					"receivers":  []string{"otlp"},
+					"processors": []string{"modify_2000"},
+					"exporters":  []string{"otlp/exporter", "con"},
+				},
+			},
+		},
+	}
+	yamlCollector, err := cfg.Yaml()
+	require.NoError(t, err)
+
+	const expected = `receivers:
+  otlp: null
+exporters:
+  otlp/exporter: null
+processors:
+  modify_2000: enabled
+connectors:
+  con: magic
+extensions:
+  addon: option1
+service:
+  extensions:
+    - addon
+  telemetry:
+    insights: yeah!
+  pipelines:
+    exporters:
+      - otlp/exporter
+      - con
+    processors:
+      - modify_2000
+    receivers:
+      - otlp
+`
+
+	assert.Equal(t, expected, yamlCollector)
+}

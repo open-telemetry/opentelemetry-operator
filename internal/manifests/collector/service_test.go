@@ -108,9 +108,8 @@ func TestDesiredService(t *testing.T) {
 		}
 
 		actual, err := Service(params)
-		assert.ErrorContains(t, err, "no enabled receivers available as part of the configuration")
 		assert.Nil(t, actual)
-
+		assert.NoError(t, err)
 	})
 	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {
 
@@ -181,7 +180,7 @@ func TestDesiredService(t *testing.T) {
 		}
 
 		actual, err := Service(params)
-		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
+		assert.ErrorContains(t, err, "could not convert config json to v1alpha2.Config")
 		assert.Nil(t, actual)
 
 	})

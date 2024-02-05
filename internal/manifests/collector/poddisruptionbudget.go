@@ -18,25 +18,33 @@ import (
 	policyV1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget {
+func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget, error) {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
 	// defaulting webhook should always set this, but if unset then return nil.
-	if params.OtelCol.Spec.PodDisruptionBudget == nil {
+	if otelCol.Spec.PodDisruptionBudget == nil {
 		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
-		return nil
+		return nil, nil
 	}
 
-	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	annotations := Annotations(params.OtelCol)
+	name := naming.Collector(otelCol.Name)
+	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	annotations, err := Annotations(otelCol)
+	if err != nil {
+		return nil, err
+	}
 
 	objectMeta := metav1.ObjectMeta{
-		Name:        naming.PodDisruptionBudget(params.OtelCol.Name),
-		Namespace:   params.OtelCol.Namespace,
+		Name:        naming.PodDisruptionBudget(otelCol.Name),
+		Namespace:   otelCol.Namespace,
 		Labels:      labels,
 		Annotations: annotations,
 	}
@@ -44,11 +52,11 @@ func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget 
 	return &policyV1.PodDisruptionBudget{
 		ObjectMeta: objectMeta,
 		Spec: policyV1.PodDisruptionBudgetSpec{
-			MinAvailable:   params.OtelCol.Spec.PodDisruptionBudget.MinAvailable,
-			MaxUnavailable: params.OtelCol.Spec.PodDisruptionBudget.MaxUnavailable,
+			MinAvailable:   otelCol.Spec.PodDisruptionBudget.MinAvailable,
+			MaxUnavailable: otelCol.Spec.PodDisruptionBudget.MaxUnavailable,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: objectMeta.Labels,
 			},
 		},
-	}
+	}, nil
 }
