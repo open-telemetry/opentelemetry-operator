@@ -83,3 +83,46 @@ func TestAllocationPerNode(t *testing.T) {
 		assert.Equal(t, actualItem, itemsForCollector[0])
 	}
 }
+
+func TestTargetsWithNoCollectorsPerNode(t *testing.T) {
+	// prepare allocator with initial targets and collectors
+	c, _ := New("per-node", loggerPerNode)
+
+	// Adding 10 new targets
+	numItems := 10
+	c.SetTargets(MakeNNewTargetsWithEmptyCollectors(numItems, 0))
+	actualTargetItems := c.TargetItems()
+	assert.Len(t, actualTargetItems, numItems)
+
+	// Adding 5 new targets, and removing the old 10 targets
+	numItemsUpdate := 5
+	c.SetTargets(MakeNNewTargetsWithEmptyCollectors(numItemsUpdate, 10))
+	actualTargetItemsUpdated := c.TargetItems()
+	assert.Len(t, actualTargetItemsUpdated, numItemsUpdate)
+
+	// Adding 5 new targets, and one existing target
+	numItemsUpdate = 6
+	c.SetTargets(MakeNNewTargetsWithEmptyCollectors(numItemsUpdate, 14))
+	actualTargetItemsUpdated = c.TargetItems()
+	assert.Len(t, actualTargetItemsUpdated, numItemsUpdate)
+
+	// Adding collectors to test allocation
+	numCols := 2
+	cols := MakeNCollectors(2, 0)
+	c.SetCollectors(cols)
+
+	// Checking to see that there is no change to number of targets
+	actualTargetItems = c.TargetItems()
+	assert.Len(t, actualTargetItems, numItemsUpdate)
+	// Checking to see collectors are added correctly
+	actualCollectors := c.Collectors()
+	assert.Len(t, actualCollectors, numCols)
+	// Based on lable all targets should be assigned to node-0
+	for name, ac := range actualCollectors {
+		if name == "node-0" {
+			assert.Equal(t, 6, ac.NumTargets)
+		} else {
+			assert.Equal(t, 0, ac.NumTargets)
+		}
+	}
+}
