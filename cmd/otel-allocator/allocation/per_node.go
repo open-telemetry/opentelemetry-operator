@@ -68,29 +68,20 @@ func (allocator *perNodeAllocator) SetCollectors(collectors map[string]*Collecto
 	// Check for collector changes
 	collectorsDiff := diff.Maps(allocator.collectors, collectors)
 	if len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0 {
-		allocator.handleCollectors(collectorsDiff)
-	}
-}
+		for _, k := range allocator.collectors {
+			delete(allocator.collectors, k.NodeName)
+			delete(allocator.targetItemsPerJobPerCollector, k.Name)
+			TargetsPerCollector.WithLabelValues(k.Name, perNodeStrategyName).Set(0)
+		}
 
-// handleCollectors receives the new and removed collectors and reconciles the current state.
-// Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map.
-func (allocator *perNodeAllocator) handleCollectors(diff diff.Changes[*Collector]) {
-	// Clear removed collectors
-	for _, k := range diff.Removals() {
-		delete(allocator.collectors, k.NodeName)
-		delete(allocator.targetItemsPerJobPerCollector, k.Name)
-		TargetsPerCollector.WithLabelValues(k.Name, perNodeStrategyName).Set(0)
-	}
+		for _, k := range collectors {
+			allocator.collectors[k.NodeName] = NewCollector(k.Name, k.NodeName)
+		}
 
-	// Insert the new collectors
-	for _, i := range diff.Additions() {
-		allocator.collectors[i.NodeName] = NewCollector(i.Name, i.NodeName)
-	}
-
-	// For a case where a collector is removed and added back, we need
-	// to re-allocate any already existing targets.
-	for _, item := range allocator.targetItems {
-		allocator.addTargetToTargetItems(item)
+		// Re-allocate any already existing targets.
+		for _, item := range allocator.targetItems {
+			allocator.addTargetToTargetItems(item)
+		}
 	}
 }
 
@@ -109,43 +100,6 @@ func (allocator *perNodeAllocator) SetTargets(targets map[string]*target.Item) {
 	allocator.m.Lock()
 	defer allocator.m.Unlock()
 
-	if len(allocator.collectors) == 0 {
-		allocator.log.Info("No collector instances present, saving targets to allocate to collector(s)")
-		// If there were no targets discovered previously, assign this as the new set of target items
-		if len(allocator.targetItems) == 0 {
-			allocator.log.Info("Not discovered any targets previously, saving targets found to the targetItems set")
-			for k, item := range targets {
-				allocator.targetItems[k] = item
-			}
-		} else {
-			// If there were previously discovered targets, add or remove accordingly
-			targetsDiffEmptyCollectorSet := diff.Maps(allocator.targetItems, targets)
-
-			// Check for additions
-			if len(targetsDiffEmptyCollectorSet.Additions()) > 0 {
-				allocator.log.Info("New targets discovered, adding new targets to the targetItems set")
-				for k, item := range targetsDiffEmptyCollectorSet.Additions() {
-					// Do nothing if the item is already there
-					if _, ok := allocator.targetItems[k]; ok {
-						continue
-					} else {
-						// Add item to item pool
-						allocator.targetItems[k] = item
-					}
-				}
-			}
-
-			// Check for deletions
-			if len(targetsDiffEmptyCollectorSet.Removals()) > 0 {
-				allocator.log.Info("Targets removed, Removing targets from the targetItems set")
-				for k := range targetsDiffEmptyCollectorSet.Removals() {
-					// Delete item from target items
-					delete(allocator.targetItems, k)
-				}
-			}
-		}
-		return
-	}
 	// Check for target changes
 	targetsDiff := diff.Maps(allocator.targetItems, targets)
 	// If there are any additions or removals
@@ -163,13 +117,12 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 		// if the current item is in the removals list
 		if _, ok := diff.Removals()[k]; ok {
 			c, ok := allocator.collectors[item.GetNodeName()]
-			if !ok {
-				continue
+			if ok {
+				c.NumTargets--
+				TargetsPerCollector.WithLabelValues(item.CollectorName, perNodeStrategyName).Set(float64(c.NumTargets))
 			}
-			c.NumTargets--
 			delete(allocator.targetItems, k)
 			delete(allocator.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
-			TargetsPerCollector.WithLabelValues(item.CollectorName, perNodeStrategyName).Set(float64(c.NumTargets))
 		}
 	}
 
@@ -191,19 +144,16 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 	// Check for unassigned targets
 	if unassignedTargets > 0 {
 		allocator.log.Info("Could not assign targets for some jobs due to missing node labels", "targets", unassignedTargets)
-		TargetsUnassigned.Add(float64(unassignedTargets))
+		TargetsUnassigned.Set(float64(unassignedTargets))
 	}
 }
 
 // addTargetToTargetItems assigns a target to the  collector and adds it to the allocator's targetItems
 // This method is called from within SetTargets and SetCollectors, which acquire the needed lock.
 // This is only called after the collectors are cleared or when a new target has been found in the tempTargetMap.
-// INVARIANT: allocator.collectors must have at least 1 collector set.
-// NOTE: by not creating a new target item, there is the potential for a race condition where we modify this target
-// item while it's being encoded by the server JSON handler.
 // Also, any targets that cannot be assigned to a collector, due to no matching node name, will remain unassigned. These
-// targets are still "silently" added to the targetItems map, to prevent them from being reported as unassigned on each new
-// target items setting.
+// targets are still "silently" added to the targetItems map, to make sure they exist if collector for a node is added
+// later and to prevent them from being reported as unassigned on each new target items setting.
 func (allocator *perNodeAllocator) addTargetToTargetItems(tg *target.Item) bool {
 	allocator.targetItems[tg.Hash()] = tg
 	chosenCollector, ok := allocator.collectors[tg.GetNodeName()]

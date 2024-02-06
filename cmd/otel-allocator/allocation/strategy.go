@@ -49,7 +49,7 @@ var (
 		Name: "opentelemetry_allocator_targets_remaining",
 		Help: "Number of targets kept after filtering.",
 	})
-	TargetsUnassigned = promauto.NewCounter(prometheus.CounterOpts{
+	TargetsUnassigned = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "opentelemetry_allocator_targets_unassigned",
 		Help: "Number of targets that could not be assigned due to missing node label.",
 	})
