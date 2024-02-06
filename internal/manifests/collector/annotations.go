@@ -16,13 +16,14 @@ package collector
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.
-func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+func Annotations(instance v1alpha2.OpenTelemetryCollector) (map[string]string, error) {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
@@ -40,14 +41,20 @@ func Annotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 			annotations[k] = v
 		}
 	}
-	// make sure sha256 for configMap is always calculated
-	annotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
 
-	return annotations
+	hash, err := getConfigMapSHA(instance.Spec.Config)
+	if err != nil {
+		return nil, err
+	}
+
+	// make sure sha256 for configMap is always calculated
+	annotations["opentelemetry-operator-config/sha256"] = hash
+
+	return annotations, nil
 }
 
 // PodAnnotations return the spec annotations for OpenTelemetryCollector pod.
-func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string {
+func PodAnnotations(instance v1alpha2.OpenTelemetryCollector) (map[string]string, error) {
 	// new map every time, so that we don't touch the instance's annotations
 	podAnnotations := map[string]string{}
 
@@ -56,20 +63,32 @@ func PodAnnotations(instance v1alpha1.OpenTelemetryCollector) map[string]string 
 		podAnnotations[k] = v
 	}
 
+	annotations, err := Annotations(instance)
+	if err != nil {
+		return nil, err
+	}
 	// propagating annotations from metadata.annotations
-	for kMeta, vMeta := range Annotations(instance) {
+	for kMeta, vMeta := range annotations {
 		if _, found := podAnnotations[kMeta]; !found {
 			podAnnotations[kMeta] = vMeta
 		}
 	}
 
+	hash, err := getConfigMapSHA(instance.Spec.Config)
+	if err != nil {
+		return nil, err
+	}
 	// make sure sha256 for configMap is always calculated
-	podAnnotations["opentelemetry-operator-config/sha256"] = getConfigMapSHA(instance.Spec.Config)
+	podAnnotations["opentelemetry-operator-config/sha256"] = hash
 
-	return podAnnotations
+	return podAnnotations, nil
 }
 
-func getConfigMapSHA(config string) string {
-	h := sha256.Sum256([]byte(config))
-	return fmt.Sprintf("%x", h)
+func getConfigMapSHA(config v1alpha2.Config) (string, error) {
+	b, err := json.Marshal(&config)
+	if err != nil {
+		return "", err
+	}
+	h := sha256.Sum256(b)
+	return fmt.Sprintf("%x", h), nil
 }

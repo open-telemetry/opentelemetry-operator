@@ -18,12 +18,12 @@ package collector
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 // VolumeClaimTemplates builds the volumeClaimTemplates for the given instance,
 // including the config map volume mount.
-func VolumeClaimTemplates(otelcol v1alpha1.OpenTelemetryCollector) []corev1.PersistentVolumeClaim {
+func VolumeClaimTemplates(otelcol v1alpha2.OpenTelemetryCollector) []corev1.PersistentVolumeClaim {
 	if otelcol.Spec.Mode != "statefulset" {
 		return []corev1.PersistentVolumeClaim{}
 	}

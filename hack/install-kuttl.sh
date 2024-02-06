@@ -1,5 +1,12 @@
 #!/bin/bash
 
-sudo curl -Lo /usr/local/bin/kubectl-kuttl https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64
-sudo chmod +x /usr/local/bin/kubectl-kuttl
-export PATH=$PATH:/usr/local/bin
+if (${KUTTL} version | grep ${KUTTL_VERSION}) > /dev/null 2>&1; then
+  exit 0;
+fi
+
+OS=$(go env GOOS)
+ARCH=$(uname -m)
+
+curl -Lo ${KUTTL} https://github.com/kudobuilder/kuttl/releases/download/v${KUTTL_VERSION}/kubectl-kuttl_${KUTTL_VERSION}_${OS}_${ARCH}
+chmod +x ${KUTTL}
+

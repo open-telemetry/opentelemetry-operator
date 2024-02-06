@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -51,7 +52,8 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	}
 
 	// test
-	ss := StatefulSet(params)
+	ss, err := StatefulSet(params)
+	require.NoError(t, err)
 
 	// verify
 	assert.Equal(t, "my-instance-collector", ss.Name)
@@ -65,7 +67,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
 		"prometheus.io/path":                   "/metrics",
 		"prometheus.io/port":                   "8888",
 		"prometheus.io/scrape":                 "true",
@@ -123,7 +125,8 @@ func TestStatefulSetReplicas(t *testing.T) {
 	}
 
 	// test
-	ss := StatefulSet(params)
+	ss, err := StatefulSet(params)
+	require.NoError(t, err)
 
 	// assert correct number of replicas
 	assert.Equal(t, int32(3), *ss.Spec.Replicas)
@@ -159,7 +162,8 @@ func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
 	}
 
 	// test
-	ss := StatefulSet(params)
+	ss, err := StatefulSet(params)
+	require.NoError(t, err)
 
 	// assert correct pvc name
 	assert.Equal(t, "added-volume", ss.Spec.VolumeClaimTemplates[0].Name)
@@ -191,14 +195,15 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 	}
 
 	// test
-	ss := StatefulSet(params)
+	ss, err := StatefulSet(params)
+	require.NoError(t, err)
 
 	// Add sha256 podAnnotation
-	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d"
 
 	expectedAnnotations := map[string]string{
 		"annotation-key":                       "annotation-value",
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
 		"prometheus.io/path":                   "/metrics",
 		"prometheus.io/port":                   "8888",
 		"prometheus.io/scrape":                 "true",
@@ -234,7 +239,8 @@ func TestStatefulSetPodSecurityContext(t *testing.T) {
 		Log:     logger,
 	}
 
-	d := StatefulSet(params)
+	d, err := StatefulSet(params)
+	require.NoError(t, err)
 
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
@@ -257,7 +263,8 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := StatefulSet(params1)
+	d1, err := StatefulSet(params1)
+	require.NoError(t, err)
 
 	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
@@ -280,7 +287,8 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := StatefulSet(params2)
+	d2, err := StatefulSet(params2)
+	require.NoError(t, err)
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -307,7 +315,8 @@ func TestStatefulSetFilterLabels(t *testing.T) {
 		Log:     logger,
 	}
 
-	d := StatefulSet(params)
+	d, err := StatefulSet(params)
+	require.NoError(t, err)
 
 	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
@@ -331,7 +340,8 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := StatefulSet(params1)
+	d1, err := StatefulSet(params1)
+	require.NoError(t, err)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
@@ -356,7 +366,8 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := StatefulSet(params2)
+	d2, err := StatefulSet(params2)
+	require.NoError(t, err)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
@@ -375,7 +386,8 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 		Log:     logger,
 	}
 
-	sts1 := StatefulSet(params1)
+	sts1, err := StatefulSet(params1)
+	require.NoError(t, err)
 	assert.Empty(t, sts1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
@@ -397,7 +409,8 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 		Log:     logger,
 	}
 
-	sts2 := StatefulSet(params2)
+	sts2, err := StatefulSet(params2)
+	require.NoError(t, err)
 	assert.Equal(t, priorityClassName, sts2.Spec.Template.Spec.PriorityClassName)
 }
 
@@ -416,7 +429,8 @@ func TestStatefulSetAffinity(t *testing.T) {
 		Log:     logger,
 	}
 
-	sts1 := Deployment(params1)
+	sts1, err := Deployment(params1)
+	require.NoError(t, err)
 	assert.Nil(t, sts1.Spec.Template.Spec.Affinity)
 
 	otelcol2 := v1alpha1.OpenTelemetryCollector{
@@ -436,7 +450,8 @@ func TestStatefulSetAffinity(t *testing.T) {
 		Log:     logger,
 	}
 
-	sts2 := StatefulSet(params2)
+	sts2, err := StatefulSet(params2)
+	require.NoError(t, err)
 	assert.NotNil(t, sts2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *sts2.Spec.Template.Spec.Affinity)
 }
@@ -465,7 +480,8 @@ func TestStatefulSetInitContainer(t *testing.T) {
 	}
 
 	// test
-	s := StatefulSet(params)
+	s, err := StatefulSet(params)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", s.Name)
 	assert.Equal(t, "my-instance-collector", s.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
@@ -489,7 +505,8 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 		Config:  cfg,
 		Log:     logger,
 	}
-	s1 := StatefulSet(params1)
+	s1, err := StatefulSet(params1)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", s1.Name)
 	assert.Empty(t, s1.Spec.Template.Spec.TopologySpreadConstraints)
 
@@ -511,7 +528,8 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 		Log:     logger,
 	}
 
-	s2 := StatefulSet(params2)
+	s2, err := StatefulSet(params2)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-topologyspreadconstraint-collector", s2.Name)
 	assert.NotNil(t, s2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, s2.Spec.Template.Spec.TopologySpreadConstraints)
@@ -542,7 +560,8 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 	}
 
 	// test
-	s := StatefulSet(params)
+	s, err := StatefulSet(params)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", s.Name)
 	assert.Equal(t, "my-instance-collector", s.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
@@ -568,7 +587,8 @@ func TestStatefulSetShareProcessNamespace(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := StatefulSet(params1)
+	d1, err := StatefulSet(params1)
+	require.NoError(t, err)
 	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
 
 	// Test shareProcessNamespace=true
@@ -589,6 +609,7 @@ func TestStatefulSetShareProcessNamespace(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := StatefulSet(params2)
+	d2, err := StatefulSet(params2)
+	require.NoError(t, err)
 	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
 }
