@@ -69,7 +69,7 @@ func TestDesiredRoutes(t *testing.T) {
 
 		actual, err := Routes(params)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
+		assert.ErrorContains(t, err, "could not convert config json to v1alpha2.Config")
 	})
 
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestDesiredRoutes(t *testing.T) {
 
 		actual, err := Routes(params)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "no receivers available as part of the configuration")
+		assert.NoError(t, err)
 	})
 
 	t.Run("should return nil unable to do something else", func(t *testing.T) {

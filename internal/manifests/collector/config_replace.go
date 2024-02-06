@@ -19,9 +19,9 @@ import (
 
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -42,18 +42,22 @@ type Config struct {
 	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
 }
 
-func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
+func ReplaceConfig(instance v1alpha2.OpenTelemetryCollector) (string, error) {
+	cfgStr, err := instance.Spec.Config.Yaml()
+	if err != nil {
+		return "", err
+	}
 	// Check if TargetAllocator is enabled, if not, return the original config
 	if !instance.Spec.TargetAllocator.Enabled {
-		return instance.Spec.Config, nil
+		return cfgStr, nil
 	}
 
-	config, err := adapters.ConfigFromString(instance.Spec.Config)
+	config, err := adapters.ConfigFromString(cfgStr)
 	if err != nil {
 		return "", err
 	}
 
-	promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(instance.Spec.Config)
+	promCfgMap, getCfgPromErr := ta.ConfigToPromConfig(cfgStr)
 	if getCfgPromErr != nil {
 		return "", getCfgPromErr
 	}
@@ -78,7 +82,6 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		if updCfgMarshalErr != nil {
 			return "", updCfgMarshalErr
 		}
-
 		return string(out), nil
 	}
 
@@ -89,6 +92,7 @@ func ReplaceConfig(instance v1alpha1.OpenTelemetryCollector) (string, error) {
 		return "", err
 	}
 
+	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 	// type coercion checks are handled in the ConfigToPromConfig method above
 	config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
 

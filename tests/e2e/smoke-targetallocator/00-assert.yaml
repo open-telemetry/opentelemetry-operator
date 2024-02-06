@@ -27,26 +27,25 @@ metadata:
 data:
   collector.yaml: |
     exporters:
-      debug: null
-    processors: null
+        debug: null
     receivers:
-      jaeger:
-        protocols:
-          grpc: null
-      prometheus:
-        config: {}
-        target_allocator:
-          collector_id: ${POD_NAME}
-          endpoint: http://stateful-targetallocator:80
-          interval: 30s
+        jaeger:
+            protocols:
+                grpc: null
+        prometheus:
+            config: {}
+            target_allocator:
+                collector_id: ${POD_NAME}
+                endpoint: http://stateful-targetallocator:80
+                interval: 30s
     service:
-      pipelines:
-        traces:
-          exporters:
-          - debug
-          processors: []
-          receivers:
-          - jaeger
+        pipelines:
+            traces:
+                exporters:
+                    - debug
+                processors: []
+                receivers:
+                    - jaeger
 ---
 # Print TA pod logs if test fails
 apiVersion: kuttl.dev/v1beta1

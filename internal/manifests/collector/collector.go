@@ -32,20 +32,20 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	var manifestFactories []manifests.K8sManifestFactory
 	switch params.OtelCol.Spec.Mode {
 	case v1alpha1.ModeDeployment:
-		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(Deployment))
-		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(PodDisruptionBudget))
+		manifestFactories = append(manifestFactories, manifests.Factory(Deployment))
+		manifestFactories = append(manifestFactories, manifests.Factory(PodDisruptionBudget))
 	case v1alpha1.ModeStatefulSet:
-		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(StatefulSet))
-		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(PodDisruptionBudget))
+		manifestFactories = append(manifestFactories, manifests.Factory(StatefulSet))
+		manifestFactories = append(manifestFactories, manifests.Factory(PodDisruptionBudget))
 	case v1alpha1.ModeDaemonSet:
-		manifestFactories = append(manifestFactories, manifests.FactoryWithoutError(DaemonSet))
+		manifestFactories = append(manifestFactories, manifests.Factory(DaemonSet))
 	case v1alpha1.ModeSidecar:
 		params.Log.V(5).Info("not building sidecar...")
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
 		manifests.Factory(ConfigMap),
-		manifests.FactoryWithoutError(HorizontalPodAutoscaler),
-		manifests.FactoryWithoutError(ServiceAccount),
+		manifests.Factory(HorizontalPodAutoscaler),
+		manifests.Factory(ServiceAccount),
 		manifests.Factory(Service),
 		manifests.Factory(HeadlessService),
 		manifests.Factory(MonitoringService),
@@ -62,8 +62,8 @@ func Build(params manifests.Params) ([]client.Object, error) {
 
 	if params.Config.CreateRBACPermissions() {
 		manifestFactories = append(manifestFactories,
-			manifests.FactoryWithoutError(ClusterRole),
-			manifests.FactoryWithoutError(ClusterRoleBinding),
+			manifests.Factory(ClusterRole),
+			manifests.Factory(ClusterRoleBinding),
 		)
 	}
 
