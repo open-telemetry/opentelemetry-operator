@@ -195,11 +195,14 @@ lint: golangci-lint
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+#########
+# KUTTL #
+#########
+
 # end-to-tests
 .PHONY: e2e
 e2e:
 	$(KUTTL) test
-
 
 # instrumentation end-to-tests
 .PHONY: e2e-instrumentation
@@ -245,6 +248,25 @@ e2e-multi-instrumentation:
 .PHONY: e2e-opampbridge
 e2e-opampbridge:
 	$(KUTTL) test --config kuttl-test-opampbridge.yaml
+
+############
+# CHAINSAW #
+############
+
+# end-to-end-test for testing pdb support
+.PHONY: chainsaw-e2e-pdb
+chainsaw-e2e-pdb:
+	chainsaw test --test-dir ./tests/e2e-pdb
+
+# end-to-end-test for PrometheusCR E2E tests
+.PHONY: chainsaw-e2e-prometheuscr
+chainsaw-e2e-prometheuscr:
+	chainsaw test --test-dir ./tests/e2e-prometheuscr
+
+# end-to-end-test for testing upgrading
+.PHONY: chainsaw-e2e-upgrade
+chainsaw-e2e-upgrade: undeploy
+	chainsaw test --test-dir ./tests/e2e-upgrade
 
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy

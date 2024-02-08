@@ -1,0 +1,6 @@
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  name: ta
+  namespace: create-sm-prometheus

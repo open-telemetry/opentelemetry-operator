@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-metrics
+  namespace: create-sm-prometheus
+spec:
+  template:
+    spec:
+      containers:
+      - args:
+        - /bin/sh
+        - -c
+        - curl -s http://simplest-targetallocator/jobs | grep "targetallocator"
+        image: curlimages/curl
+        name: check-metrics
+      restartPolicy: OnFailure

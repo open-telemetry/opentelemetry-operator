@@ -1,0 +1,32 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: create-sm-prometheus
+spec:
+  config: |
+    receivers:
+      prometheus:
+        config:
+          scrape_configs: []
+
+    processors:
+
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: []
+          exporters: [prometheus]
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    observability:
+      metrics:
+        enableMetrics: true
+    prometheusCR:
+      enabled: true
+    serviceAccount: ta
