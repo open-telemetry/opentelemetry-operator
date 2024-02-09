@@ -246,6 +246,11 @@ e2e-multi-instrumentation:
 e2e-opampbridge:
 	$(KUTTL) test --config kuttl-test-opampbridge.yaml
 
+# Target allocator end-to-tests
+.PHONY: e2e-targetallocator
+e2e-targetallocator:
+	$(KUTTL) test --config kuttl-test-targetallocator.yaml
+
 .PHONY: prepare-e2e
 prepare-e2e: kuttl set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
