@@ -89,11 +89,11 @@ func Benchmark_Setting(b *testing.B) {
 }
 
 func TestCollectorDiff(t *testing.T) {
-	collector0 := NewCollector("collector-0")
-	collector1 := NewCollector("collector-1")
-	collector2 := NewCollector("collector-2")
-	collector3 := NewCollector("collector-3")
-	collector4 := NewCollector("collector-4")
+	collector0 := NewCollector("collector-0", "")
+	collector1 := NewCollector("collector-1", "")
+	collector2 := NewCollector("collector-2", "")
+	collector3 := NewCollector("collector-3", "")
+	collector4 := NewCollector("collector-4", "")
 	type args struct {
 		current map[string]*Collector
 		new     map[string]*Collector
