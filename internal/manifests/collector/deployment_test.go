@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -71,13 +71,15 @@ var testTopologySpreadConstraintValue = []v1.TopologySpreadConstraint{
 
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Tolerations: testTolerationValues,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				Tolerations: testTolerationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -138,12 +140,14 @@ func TestDeploymentNewDefault(t *testing.T) {
 func TestDeploymentPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodAnnotations: testPodAnnotationValues,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				PodAnnotations: testPodAnnotationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -180,15 +184,17 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodSecurityContext: &v1.PodSecurityContext{
-				RunAsNonRoot: &runAsNonRoot,
-				RunAsUser:    &runAsUser,
-				RunAsGroup:   &runasGroup,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				PodSecurityContext: &v1.PodSecurityContext{
+					RunAsNonRoot: &runAsNonRoot,
+					RunAsUser:    &runAsUser,
+					RunAsGroup:   &runasGroup,
+				},
 			},
 		},
 	}
@@ -210,11 +216,11 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 }
 
 func TestDeploymentUpdateStrategy(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			DeploymentUpdateStrategy: appsv1.DeploymentStrategy{
 				Type: "RollingUpdate",
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
@@ -243,7 +249,7 @@ func TestDeploymentUpdateStrategy(t *testing.T) {
 
 func TestDeploymentHostNetwork(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -264,12 +270,14 @@ func TestDeploymentHostNetwork(t *testing.T) {
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// Test hostNetwork=true
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-hostnetwork",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				HostNetwork: true,
+			},
 		},
 	}
 
@@ -293,12 +301,12 @@ func TestDeploymentFilterLabels(t *testing.T) {
 		"app.foo.bar": "1",
 	}
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "my-instance",
 			Labels: excludedLabels,
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{},
 	}
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
@@ -320,7 +328,7 @@ func TestDeploymentFilterLabels(t *testing.T) {
 
 func TestDeploymentNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -340,14 +348,16 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
-			NodeSelector: map[string]string{
-				"node-key": "node-value",
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				HostNetwork: true,
+				NodeSelector: map[string]string{
+					"node-key": "node-value",
+				},
 			},
 		},
 	}
@@ -366,7 +376,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 }
 
 func TestDeploymentPriorityClassName(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -386,12 +396,14 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	priorityClassName := "test-class"
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PriorityClassName: priorityClassName,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				PriorityClassName: priorityClassName,
+			},
 		},
 	}
 
@@ -409,7 +421,7 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 }
 
 func TestDeploymentAffinity(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -427,12 +439,14 @@ func TestDeploymentAffinity(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Affinity: testAffinityValue,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				Affinity: testAffinityValue,
+			},
 		},
 	}
 
@@ -451,7 +465,7 @@ func TestDeploymentAffinity(t *testing.T) {
 }
 
 func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -471,12 +485,14 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 
 	gracePeriodSec := int64(60)
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-terminationGracePeriodSeconds",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			TerminationGracePeriodSeconds: &gracePeriodSec,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				TerminationGracePeriodSeconds: &gracePeriodSec,
+			},
 		},
 	}
 
@@ -496,15 +512,17 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 
 func TestDeploymentSetInitContainer(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			InitContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				InitContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -530,7 +548,7 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 
 func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -549,12 +567,14 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
 	// Test TopologySpreadConstraints
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-topologyspreadconstraint",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			TopologySpreadConstraints: testTopologySpreadConstraintValue,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				TopologySpreadConstraints: testTopologySpreadConstraintValue,
+			},
 		},
 	}
 
@@ -575,15 +595,17 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 
 func TestDeploymentAdditionalContainers(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			AdditionalContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				AdditionalContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -610,7 +632,7 @@ func TestDeploymentAdditionalContainers(t *testing.T) {
 
 func TestDeploymentShareProcessNamespace(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -629,12 +651,14 @@ func TestDeploymentShareProcessNamespace(t *testing.T) {
 	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
 
 	// Test hostNetwork=true
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-with-shareprocessnamespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			ShareProcessNamespace: true,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				ShareProcessNamespace: true,
+			},
 		},
 	}
 

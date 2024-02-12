@@ -21,20 +21,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func HorizontalPodAutoscaler(params manifests.Params) (client.Object, error) {
-	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
-	if err != nil {
-		return nil, err
-	}
-	name := naming.Collector(otelCol.Name)
-	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	annotations, err := Annotations(otelCol)
+	name := naming.Collector(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	annotations, err := Annotations(params.OtelCol)
 	if err != nil {
 		return nil, err
 	}
@@ -42,54 +37,42 @@ func HorizontalPodAutoscaler(params manifests.Params) (client.Object, error) {
 	var result client.Object
 
 	objectMeta := metav1.ObjectMeta{
-		Name:        naming.HorizontalPodAutoscaler(otelCol.Name),
-		Namespace:   otelCol.Namespace,
+		Name:        naming.HorizontalPodAutoscaler(params.OtelCol.Name),
+		Namespace:   params.OtelCol.Namespace,
 		Labels:      labels,
 		Annotations: annotations,
 	}
 
 	// defaulting webhook should always set this, but if unset then return nil.
-	if otelCol.Spec.Autoscaler == nil {
+	if params.OtelCol.Spec.Autoscaler == nil {
 		params.Log.Info("hpa field is unset in Spec, skipping autoscaler creation")
 		return nil, nil
 	}
 
-	if otelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MaxReplicas == nil {
-		otelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MaxReplicas = params.OtelCol.Spec.MaxReplicas
-	}
-
-	if otelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MinReplicas == nil {
-		if params.OtelCol.Spec.MinReplicas != nil {
-			otelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MinReplicas = params.OtelCol.Spec.MinReplicas
-		} else {
-			otelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MinReplicas = params.OtelCol.Spec.Replicas
-		}
-	}
-
 	metrics := []autoscalingv2.MetricSpec{}
 
-	if otelCol.Spec.Autoscaler.TargetMemoryUtilization != nil {
+	if params.OtelCol.Spec.Autoscaler.TargetMemoryUtilization != nil {
 		memoryTarget := autoscalingv2.MetricSpec{
 			Type: autoscalingv2.ResourceMetricSourceType,
 			Resource: &autoscalingv2.ResourceMetricSource{
 				Name: corev1.ResourceMemory,
 				Target: autoscalingv2.MetricTarget{
 					Type:               autoscalingv2.UtilizationMetricType,
-					AverageUtilization: otelCol.Spec.Autoscaler.TargetMemoryUtilization,
+					AverageUtilization: params.OtelCol.Spec.Autoscaler.TargetMemoryUtilization,
 				},
 			},
 		}
 		metrics = append(metrics, memoryTarget)
 	}
 
-	if otelCol.Spec.Autoscaler.TargetCPUUtilization != nil {
+	if params.OtelCol.Spec.Autoscaler.TargetCPUUtilization != nil {
 		cpuTarget := autoscalingv2.MetricSpec{
 			Type: autoscalingv2.ResourceMetricSourceType,
 			Resource: &autoscalingv2.ResourceMetricSource{
 				Name: corev1.ResourceCPU,
 				Target: autoscalingv2.MetricTarget{
 					Type:               autoscalingv2.UtilizationMetricType,
-					AverageUtilization: otelCol.Spec.Autoscaler.TargetCPUUtilization,
+					AverageUtilization: params.OtelCol.Spec.Autoscaler.TargetCPUUtilization,
 				},
 			},
 		}
@@ -102,24 +85,24 @@ func HorizontalPodAutoscaler(params manifests.Params) (client.Object, error) {
 			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
 				APIVersion: v1alpha1.GroupVersion.String(),
 				Kind:       "OpenTelemetryCollector",
-				Name:       naming.OpenTelemetryCollector(otelCol.Name),
+				Name:       naming.OpenTelemetryCollector(params.OtelCol.Name),
 			},
-			MinReplicas: otelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MinReplicas,
+			MinReplicas: params.OtelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MinReplicas,
 			MaxReplicas: func(max *int32) int32 {
 				if max == nil {
 					return 0
 				}
 				return *max
-			}(otelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MaxReplicas),
+			}(params.OtelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MaxReplicas),
 			Metrics: metrics,
 		},
 	}
-	if otelCol.Spec.Autoscaler.Behavior != nil {
-		autoscaler.Spec.Behavior = otelCol.Spec.Autoscaler.Behavior
+	if params.OtelCol.Spec.Autoscaler.Behavior != nil {
+		autoscaler.Spec.Behavior = params.OtelCol.Spec.Autoscaler.Behavior
 	}
 
 	// convert from v1alpha1.MetricSpec into a autoscalingv2.MetricSpec.
-	for _, metric := range otelCol.Spec.Autoscaler.Metrics {
+	for _, metric := range params.OtelCol.Spec.Autoscaler.Metrics {
 		if metric.Type == autoscalingv2.PodsMetricSourceType {
 			v2metric := autoscalingv2.MetricSpec{
 				Type: metric.Type,
