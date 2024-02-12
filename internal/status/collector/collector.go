@@ -32,11 +32,12 @@ import (
 
 func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.OpenTelemetryCollector) error {
 	if changed.Status.Version == "" {
-		// a version is not set, otherwise let the upgrade mechanism take care of it!
 		changed.Status.Version = version.OpenTelemetryCollector()
 	}
+
 	mode := changed.Spec.Mode
-	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet {
+
+	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet && mode != v1alpha1.ModeDaemonSet {
 		changed.Status.Scale.Replicas = 0
 		changed.Status.Scale.Selector = ""
 		return nil
@@ -44,7 +45,6 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 
 	name := naming.Collector(changed.Name)
 
-	// Set the scale selector
 	labels := manifestutils.Labels(changed.ObjectMeta, name, changed.Spec.Image, collector.ComponentOpenTelemetryCollector, []string{})
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
@@ -52,7 +52,6 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 	}
 	changed.Status.Scale.Selector = selector.String()
 
-	// Set the scale replicas
 	objKey := client.ObjectKey{
 		Namespace: changed.GetNamespace(),
 		Name:      naming.Collector(changed.Name),
@@ -63,7 +62,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 	var statusReplicas string
 	var statusImage string
 
-	switch mode { // nolint:exhaustive
+	switch mode {
 	case v1alpha1.ModeDeployment:
 		obj := &appsv1.Deployment{}
 		if err := cli.Get(ctx, objKey, obj); err != nil {
@@ -91,6 +90,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		}
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 	}
+
 	changed.Status.Scale.Replicas = replicas
 	changed.Status.Image = statusImage
 	changed.Status.Scale.StatusReplicas = statusReplicas
