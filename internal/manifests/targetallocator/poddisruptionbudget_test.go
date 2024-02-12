@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -66,11 +67,11 @@ var tests = []test{
 func TestPDBWithValidStrategy(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			otelcol := v1alpha1.OpenTelemetryCollector{
+			otelcol := v1alpha2.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-instance",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha2.OpenTelemetryCollectorSpec{
 					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 						PodDisruptionBudget: &v1alpha1.PodDisruptionBudgetSpec{
 							MinAvailable:   test.MinAvailable,
@@ -100,11 +101,11 @@ func TestPDBWithValidStrategy(t *testing.T) {
 func TestPDBWithNotValidStrategy(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			otelcol := v1alpha1.OpenTelemetryCollector{
+			otelcol := v1alpha2.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-instance",
 				},
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
+				Spec: v1alpha2.OpenTelemetryCollectorSpec{
 					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 						PodDisruptionBudget: &v1alpha1.PodDisruptionBudgetSpec{
 							MinAvailable:   test.MinAvailable,
@@ -129,11 +130,11 @@ func TestPDBWithNotValidStrategy(t *testing.T) {
 }
 
 func TestNoPDB(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				AllocationStrategy: v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted,
 			},

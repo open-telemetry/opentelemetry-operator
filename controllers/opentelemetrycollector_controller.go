@@ -134,8 +134,10 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
-	err = reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
-	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
+	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2620
+	// TODO: Change &instance to use params.OtelCol
+	err = reconcileDesiredObjects(ctx, r.Client, log, &instance, params.Scheme, desiredObjects...)
+	return collectorStatus.HandleReconcileStatus(ctx, log, params, instance, err)
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
