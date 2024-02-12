@@ -104,6 +104,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	deletedParams := paramsWithMode(v1alpha1.ModeDeployment)
 	now := metav1.NewTime(time.Now())
 	deletedParams.OtelCol.DeletionTimestamp = &now
+	deploymentWithoutHPA := paramsWithModeAndReplicas(v1alpha1.ModeDeployment, 1)
 
 	type args struct {
 		params manifests.Params
@@ -322,6 +323,45 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.Equal(t, int32(1), *actual.Spec.MinReplicas)
 							assert.Equal(t, int32(9), actual.Spec.MaxReplicas)
 							assert.True(t, exists)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+			},
+		},
+		{
+			name: "hpa v2 deployment collector deletion process",
+			args: args{
+				params:  paramsWithHPA(3, 5),
+				updates: []manifests.Params{deploymentWithoutHPA},
+			},
+			want: []want{
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, params manifests.Params) {
+							actual := autoscalingv2.HorizontalPodAutoscaler{}
+							exists, hpaErr := populateObjectIfExists(t, &actual, namespacedObjectName(naming.HorizontalPodAutoscaler(params.OtelCol.Name), params.OtelCol.Namespace))
+							assert.NoError(t, hpaErr)
+							require.Len(t, actual.Spec.Metrics, 1)
+							assert.Equal(t, int32(90), *actual.Spec.Metrics[0].Resource.Target.AverageUtilization)
+							assert.Equal(t, int32(3), *actual.Spec.MinReplicas)
+							assert.Equal(t, int32(5), actual.Spec.MaxReplicas)
+							assert.True(t, exists)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+				{
+					result: controllerruntime.Result{},
+					checks: []check{
+						func(t *testing.T, params manifests.Params) {
+							hpa := autoscalingv2.HorizontalPodAutoscaler{}
+							exists, err := populateObjectIfExists(t, &hpa, namespacedObjectName(naming.HorizontalPodAutoscaler(params.OtelCol.Name), params.OtelCol.Namespace))
+							assert.NoError(t, err)
+							assert.False(t, exists) // There should be no hpa anymore
 						},
 					},
 					wantErr:     assert.NoError,
