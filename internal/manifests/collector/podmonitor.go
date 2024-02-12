@@ -28,7 +28,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// ServiceMonitor returns the service monitor for the given instance.
+// PodMonitor returns the pod monitor for the given instance.
 func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		params.Log.V(2).Info("Metrics disabled for this OTEL Collector",
@@ -42,9 +42,9 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	if params.OtelCol.Spec.Mode != v1alpha1.ModeSidecar {
 		return nil, nil
 	}
-	name := naming.ServiceMonitor(params.OtelCol.Name)
+	name := naming.PodMonitor(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
-	selectorMatchLabels := manifestutils.SelectorMatchLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
+	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	pm = monitoringv1.PodMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: params.OtelCol.Namespace,
@@ -58,7 +58,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
-				MatchLabels: selectorMatchLabels,
+				MatchLabels: selectorLabels,
 			},
 			PodMetricsEndpoints: append(
 				[]monitoringv1.PodMetricsEndpoint{

@@ -83,6 +83,7 @@ func SelectorLabels(instance metav1.ObjectMeta, component string) map[string]str
 	}
 }
 
+// SelectorMatchLabels return the common labels that should be used on ServiceMonitor when the Spec.Observability.Metrics.EnableMetrics is true.
 func SelectorMatchLabels(instance metav1.ObjectMeta, component string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
