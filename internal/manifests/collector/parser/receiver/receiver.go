@@ -106,25 +106,6 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	var endpoint interface{}
 	var receiverType = receiverType(name)
 	switch {
-	// syslog receiver contains the endpoint
-	// that needs to be exposed one level down inside config
-	// i.e. either in tcp or udp section with field key
-	// as `listen_address`
-	case receiverType == "syslog":
-		var c map[interface{}]interface{}
-		if udp, isUDP := config["udp"]; isUDP && udp != nil {
-			c = udp.(map[interface{}]interface{})
-			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
-		} else if tcp, isTCP := config["tcp"]; isTCP && tcp != nil {
-			c = tcp.(map[interface{}]interface{})
-			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
-		}
-
-	// tcplog and udplog receivers hold the endpoint
-	// value in `listen_address` field
-	case receiverType == "tcplog" || receiverType == "udplog":
-		endpoint = getAddressFromConfig(logger, name, listenAddressKey, config)
-
 	// ignore the receiver as it holds the field key endpoint, and it
 	// is a scraper, we only expose endpoint through k8s service objects for
 	// receivers that aren't scrapers.
