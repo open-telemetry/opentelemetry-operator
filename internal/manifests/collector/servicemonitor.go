@@ -77,7 +77,7 @@ func endpointsFromConfig(logger logr.Logger, otelcol v1alpha2.OpenTelemetryColle
 	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2603
 	cfgStr, err := otelcol.Spec.Config.Yaml()
 	if err != nil {
-		logger.V(2).Error(err, "Error while marshalling to YAML")
+		logger.V(2).Error(err, "Error while marshaling to YAML")
 		return []monitoringv1.Endpoint{}
 	}
 	c, err := adapters.ConfigFromString(cfgStr)
