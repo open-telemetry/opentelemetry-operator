@@ -228,32 +228,14 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
 	}
 
-	// validate target allocation
-	if r.Spec.TargetAllocator.Enabled && r.Spec.Mode != ModeStatefulSet {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
-	}
-
-	// validate Prometheus config for target allocation
+	// validate target allocator configs
 	if r.Spec.TargetAllocator.Enabled {
-		promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
-		if err != nil {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+		taWarnings, err := c.validateTargetAllocatorConfig(ctx, r)
+		if taWarnings != nil {
+			warnings = append(warnings, taWarnings...)
 		}
-		err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
 		if err != nil {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-		}
-		err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
-		if err != nil {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-		}
-		// if the prometheusCR is enabled, it needs a suite of permissions to function
-		if r.Spec.TargetAllocator.PrometheusCR.Enabled {
-			if subjectAccessReviews, err := c.reviewer.CheckPolicyRules(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorCRPolicyRules...); err != nil {
-				return warnings, fmt.Errorf("unable to check rbac rules %w", err)
-			} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
-				warnings = append(warnings, warningsGroupedByResource(deniedReviews)...)
-			}
+			return warnings, err
 		}
 	}
 
@@ -363,6 +345,44 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 	}
 
 	return warnings, nil
+}
+
+func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *OpenTelemetryCollector) (admission.Warnings, error) {
+	if r.Spec.Mode != ModeStatefulSet && r.Spec.Mode != ModeDaemonSet {
+		return nil, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the target allocation deployment", r.Spec.Mode)
+	}
+
+	if r.Spec.Mode == ModeDaemonSet && r.Spec.TargetAllocator.AllocationStrategy != OpenTelemetryTargetAllocatorAllocationStrategyPerNode {
+		return nil, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which must be used with target allocation strategy %s ", r.Spec.Mode, OpenTelemetryTargetAllocatorAllocationStrategyPerNode)
+	}
+
+	if r.Spec.TargetAllocator.AllocationStrategy == OpenTelemetryTargetAllocatorAllocationStrategyPerNode && r.Spec.Mode != ModeDaemonSet {
+		return nil, fmt.Errorf("target allocation strategy %s is only supported in OpenTelemetry Collector mode %s", OpenTelemetryTargetAllocatorAllocationStrategyPerNode, ModeDaemonSet)
+	}
+
+	// validate Prometheus config for target allocation
+	promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
+	if err != nil {
+		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+	}
+	err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
+	if err != nil {
+		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+	}
+	err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
+	if err != nil {
+		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+	}
+	// if the prometheusCR is enabled, it needs a suite of permissions to function
+	if r.Spec.TargetAllocator.PrometheusCR.Enabled {
+		if subjectAccessReviews, err := c.reviewer.CheckPolicyRules(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorCRPolicyRules...); err != nil {
+			return nil, fmt.Errorf("unable to check rbac rules %w", err)
+		} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
+			return warningsGroupedByResource(deniedReviews), nil
+		}
+	}
+
+	return nil, nil
 }
 
 func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {

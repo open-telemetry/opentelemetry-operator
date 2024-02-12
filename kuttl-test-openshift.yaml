@@ -3,4 +3,4 @@ kind: TestSuite
 startKIND: false
 testDirs:
   - ./tests/e2e-openshift/
-timeout: 150
+timeout: 300

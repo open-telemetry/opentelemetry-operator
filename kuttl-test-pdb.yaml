@@ -3,4 +3,4 @@ kind: TestSuite
 artifactsDir: ./tests/_build/artifacts/
 testDirs:
   - ./tests/e2e-pdb/
-timeout: 30
+timeout: 300

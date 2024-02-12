@@ -17812,6 +17812,13 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>DisablePrometheusAnnotations</b></td>
+        <td>boolean</td>
+        <td>
+          DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
@@ -18548,9 +18555,9 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>allocationStrategy</b></td>
         <td>enum</td>
         <td>
-          AllocationStrategy determines which strategy the target allocator should use for allocation. The current options are least-weighted and consistent-hashing. The default option is consistent-hashing<br/>
+          AllocationStrategy determines which strategy the target allocator should use for allocation. The current options are least-weighted, consistent-hashing and per-node. The default is consistent-hashing.<br/>
           <br/>
-            <i>Enum</i>: least-weighted, consistent-hashing<br/>
+            <i>Enum</i>: least-weighted, consistent-hashing, per-node<br/>
             <i>Default</i>: consistent-hashing<br/>
         </td>
         <td>false</td>
@@ -20315,6 +20322,13 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>DisablePrometheusAnnotations</b></td>
+        <td>boolean</td>
+        <td>
+          DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>

@@ -3867,6 +3867,11 @@ spec:
                   metrics:
                     description: Metrics defines the metrics configuration for operands.
                     properties:
+                      DisablePrometheusAnnotations:
+                        description: DisablePrometheusAnnotations controls the automatic
+                          addition of default Prometheus annotations ('prometheus.io/scrape',
+                          'prometheus.io/port', and 'prometheus.io/path')
+                        type: boolean
                       enableMetrics:
                         description: EnableMetrics specifies if ServiceMonitor or
                           PodMonitor(for sidecar mode) should be created for the service
@@ -5062,11 +5067,12 @@ spec:
                     default: consistent-hashing
                     description: AllocationStrategy determines which strategy the
                       target allocator should use for allocation. The current options
-                      are least-weighted and consistent-hashing. The default option
-                      is consistent-hashing
+                      are least-weighted, consistent-hashing and per-node. The default
+                      is consistent-hashing.
                     enum:
                     - least-weighted
                     - consistent-hashing
+                    - per-node
                     type: string
                   enabled:
                     description: Enabled indicates whether to use a target allocation
@@ -5205,6 +5211,11 @@ spec:
                         description: Metrics defines the metrics configuration for
                           operands.
                         properties:
+                          DisablePrometheusAnnotations:
+                            description: DisablePrometheusAnnotations controls the
+                              automatic addition of default Prometheus annotations
+                              ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
+                            type: boolean
                           enableMetrics:
                             description: EnableMetrics specifies if ServiceMonitor
                               or PodMonitor(for sidecar mode) should be created for

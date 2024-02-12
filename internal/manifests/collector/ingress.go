@@ -22,18 +22,23 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
-	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeNginx {
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
+	if otelCol.Spec.Ingress.Type != v1alpha2.IngressTypeNginx {
 		return nil, nil
 	}
 
-	ports, err := servicePortsFromCfg(params.Log, params.OtelCol)
+	ports, err := servicePortsFromCfg(params.Log, otelCol)
 
 	// if we have no ports, we don't need a ingress entry
 	if len(ports) == 0 || err != nil {
@@ -46,28 +51,28 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 	}
 
 	var rules []networkingv1.IngressRule
-	switch params.OtelCol.Spec.Ingress.RuleType {
-	case v1alpha1.IngressRuleTypePath, "":
-		rules = []networkingv1.IngressRule{createPathIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)}
-	case v1alpha1.IngressRuleTypeSubdomain:
-		rules = createSubdomainIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)
+	switch otelCol.Spec.Ingress.RuleType {
+	case v1alpha2.IngressRuleTypePath, "":
+		rules = []networkingv1.IngressRule{createPathIngressRules(otelCol.Name, otelCol.Spec.Ingress.Hostname, ports)}
+	case v1alpha2.IngressRuleTypeSubdomain:
+		rules = createSubdomainIngressRules(otelCol.Name, otelCol.Spec.Ingress.Hostname, ports)
 	}
 
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Ingress(params.OtelCol.Name),
-			Namespace:   params.OtelCol.Namespace,
-			Annotations: params.OtelCol.Spec.Ingress.Annotations,
+			Name:        naming.Ingress(otelCol.Name),
+			Namespace:   otelCol.Namespace,
+			Annotations: otelCol.Spec.Ingress.Annotations,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
+				"app.kubernetes.io/name":       naming.Ingress(otelCol.Name),
+				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelCol.Namespace, otelCol.Name),
 				"app.kubernetes.io/managed-by": "opentelemetry-operator",
 			},
 		},
 		Spec: networkingv1.IngressSpec{
-			TLS:              params.OtelCol.Spec.Ingress.TLS,
+			TLS:              otelCol.Spec.Ingress.TLS,
 			Rules:            rules,
-			IngressClassName: params.OtelCol.Spec.Ingress.IngressClassName,
+			IngressClassName: otelCol.Spec.Ingress.IngressClassName,
 		},
 	}, nil
 }
@@ -136,8 +141,12 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 	return rules
 }
 
-func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
-	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
+func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha2.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
+	out, err := otelcol.Spec.Config.Yaml()
+	if err != nil {
+		return nil, err
+	}
+	configFromString, err := adapters.ConfigFromString(out)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration from the context")
 		return nil, err
