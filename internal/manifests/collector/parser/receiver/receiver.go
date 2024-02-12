@@ -104,12 +104,13 @@ func isScraperReceiver(name string) bool {
 
 func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *v1.ServicePort {
 	var endpoint interface{}
+	var receiverType = receiverType(name)
 	switch {
 	// syslog receiver contains the endpoint
 	// that needs to be exposed one level down inside config
 	// i.e. either in tcp or udp section with field key
 	// as `listen_address`
-	case name == "syslog":
+	case receiverType == "syslog":
 		var c map[interface{}]interface{}
 		if udp, isUDP := config["udp"]; isUDP && udp != nil {
 			c = udp.(map[interface{}]interface{})
@@ -121,13 +122,13 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 
 	// tcplog and udplog receivers hold the endpoint
 	// value in `listen_address` field
-	case name == "tcplog" || name == "udplog":
+	case receiverType == "tcplog" || receiverType == "udplog":
 		endpoint = getAddressFromConfig(logger, name, listenAddressKey, config)
 
 	// ignore the receiver as it holds the field key endpoint, and it
 	// is a scraper, we only expose endpoint through k8s service objects for
 	// receivers that aren't scrapers.
-	case isScraperReceiver(name):
+	case isScraperReceiver(receiverType):
 		return nil
 
 	default:
