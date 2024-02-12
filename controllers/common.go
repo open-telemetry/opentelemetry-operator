@@ -20,18 +20,28 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	routev1 "github.com/openshift/api/route/v1"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func isNamespaceScoped(obj client.Object) bool {
@@ -76,9 +86,71 @@ func BuildOpAMPBridge(params manifests.Params) ([]client.Object, error) {
 	return resources, nil
 }
 
+func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
+	ownedObjects := map[types.UID]client.Object{}
+	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
+	listOps := &client.ListOptions{
+		Namespace:     otelCol.Namespace,
+		LabelSelector: labels.SelectorFromSet(manifestutils.Labels(otelCol.ObjectMeta, otelCol.Name, otelCol.Spec.Image, collector.ComponentOpenTelemetryCollector, []string{})),
+	}
+
+	hpaList := &autoscalingv2.HorizontalPodAutoscalerList{}
+	err = r.List(ctx, hpaList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("Error listing HorizontalPodAutoscalers: %w", err)
+	}
+	for i := range hpaList.Items {
+		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
+	}
+
+	if otelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+		servicemonitorList := &monitoringv1.ServiceMonitorList{}
+		err := r.List(ctx, servicemonitorList, listOps)
+		if err != nil {
+			return nil, fmt.Errorf("Error listing ServiceMonitors: %w", err)
+		}
+		for i := range servicemonitorList.Items {
+			ownedObjects[servicemonitorList.Items[i].GetUID()] = servicemonitorList.Items[i]
+		}
+
+		podMonitorList := &monitoringv1.ServiceMonitorList{}
+		err = r.List(ctx, podMonitorList, listOps)
+		if err != nil {
+			return nil, fmt.Errorf("Error listing PodMonitors: %w", err)
+		}
+		for i := range podMonitorList.Items {
+			ownedObjects[podMonitorList.Items[i].GetUID()] = podMonitorList.Items[i]
+		}
+	}
+	ingressList := &networkingv1.IngressList{}
+	err = r.List(ctx, ingressList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("Error listing Ingresses: %w", err)
+	}
+	for i := range ingressList.Items {
+		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
+	}
+
+	if params.Config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+		routesList := &routev1.RouteList{}
+		err := r.List(ctx, routesList, listOps)
+		if err != nil {
+			return nil, fmt.Errorf("Error listing Routes: %w", err)
+		}
+		for i := range routesList.Items {
+			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
+		}
+	}
+	return ownedObjects, nil
+}
+
 // reconcileDesiredObjects runs the reconcile process using the mutateFn over the given list of objects.
-func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner metav1.Object, scheme *runtime.Scheme, desiredObjects ...client.Object) error {
+func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner metav1.Object, scheme *runtime.Scheme, desiredObjects []client.Object, ownedObjects map[types.UID]client.Object) error {
 	var errs []error
+	pruneObjects := ownedObjects
 	for _, desired := range desiredObjects {
 		l := logger.WithValues(
 			"object_name", desired.GetName(),
@@ -119,6 +191,25 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to create objects for %s: %w", owner.GetName(), errors.Join(errs...))
+	}
+	// Pruning owned objects in the cluster which are not should not be present after the reconciliation.
+	pruneErrs := []error{}
+	fmt.Printf("Part of prune - %d - ", len(pruneObjects))
+	for _, obj := range pruneObjects {
+		l := logger.WithValues(
+			"object_name", obj.GetName(),
+			"object_kind", obj.GetObjectKind().GroupVersionKind(),
+		)
+
+		l.Info("pruning unmanaged resource")
+		err := kubeClient.Delete(ctx, obj)
+		if err != nil {
+			l.Error(err, "failed to delete resource")
+			pruneErrs = append(pruneErrs, err)
+		}
+	}
+	if len(pruneErrs) > 0 {
+		return fmt.Errorf("failed to prune objects for %s: %w", owner.GetName(), errors.Join(pruneErrs...))
 	}
 	return nil
 }
