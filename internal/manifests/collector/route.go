@@ -22,28 +22,23 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func Routes(params manifests.Params) ([]*routev1.Route, error) {
-	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
-	if err != nil {
-		return nil, err
-	}
-	if otelCol.Spec.Ingress.Type != v1alpha2.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability() != openshift.RoutesAvailable {
+	if params.OtelCol.Spec.Ingress.Type != v1alpha2.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability() != openshift.RoutesAvailable {
 		return nil, nil
 	}
 
-	if otelCol.Spec.Mode == v1alpha2.ModeSidecar {
+	if params.OtelCol.Spec.Mode == v1alpha2.ModeSidecar {
 		params.Log.V(3).Info("ingress settings are not supported in sidecar mode")
 		return nil, nil
 	}
 
 	var tlsCfg *routev1.TLSConfig
-	switch otelCol.Spec.Ingress.Route.Termination {
+	switch params.OtelCol.Spec.Ingress.Route.Termination {
 	case v1alpha2.TLSRouteTerminationTypeInsecure:
 		// NOTE: insecure, no tls cfg.
 	case v1alpha2.TLSRouteTerminationTypeEdge:
@@ -56,14 +51,14 @@ func Routes(params manifests.Params) ([]*routev1.Route, error) {
 		return nil, nil
 	}
 
-	ports, err := servicePortsFromCfg(params.Log, otelCol)
+	ports, err := servicePortsFromCfg(params.Log, params.OtelCol)
 
 	// if we have no ports, we don't need a ingress entry
 	if len(ports) == 0 || err != nil {
 		params.Log.V(1).Info(
 			"the instance's configuration didn't yield any ports to open, skipping ingress",
-			"instance.name", otelCol.Name,
-			"instance.namespace", otelCol.Namespace,
+			"instance.name", params.OtelCol.Name,
+			"instance.namespace", params.OtelCol.Namespace,
 		)
 		return nil, err
 	}
@@ -72,18 +67,18 @@ func Routes(params manifests.Params) ([]*routev1.Route, error) {
 	for i, p := range ports {
 		portName := naming.PortName(p.Name, p.Port)
 		host := ""
-		if otelCol.Spec.Ingress.Hostname != "" {
+		if params.OtelCol.Spec.Ingress.Hostname != "" {
 			host = fmt.Sprintf("%s.%s", portName, params.OtelCol.Spec.Ingress.Hostname)
 		}
 
 		routes[i] = &routev1.Route{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        naming.Route(params.OtelCol.Name, p.Name),
-				Namespace:   otelCol.Namespace,
-				Annotations: otelCol.Spec.Ingress.Annotations,
+				Namespace:   params.OtelCol.Namespace,
+				Annotations: params.OtelCol.Spec.Ingress.Annotations,
 				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.Route(otelCol.Name, p.Name),
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelCol.Namespace, otelCol.Name),
+					"app.kubernetes.io/name":       naming.Route(params.OtelCol.Name, p.Name),
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 					"app.kubernetes.io/component":  "opentelemetry-collector",
 				},

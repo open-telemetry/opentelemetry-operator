@@ -18,7 +18,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -26,12 +25,7 @@ import (
 )
 
 func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
-	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
-	if err != nil {
-		return nil, err
-	}
-
-	confStr, err := otelCol.Spec.Config.Yaml()
+	confStr, err := params.OtelCol.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
@@ -61,11 +55,7 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 }
 
 func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, error) {
-	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
-	if err != nil {
-		return nil, err
-	}
-	confStr, err := otelCol.Spec.Config.Yaml()
+	confStr, err := params.OtelCol.Spec.Config.Yaml()
 	if err != nil {
 		return nil, err
 	}
@@ -80,25 +70,25 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 		return nil, nil
 	}
 
-	name := naming.ClusterRoleBinding(otelCol.Name)
-	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	name := naming.ClusterRoleBinding(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Annotations: otelCol.Annotations,
+			Annotations: params.OtelCol.Annotations,
 			Labels:      labels,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      ServiceAccountName(otelCol),
-				Namespace: otelCol.Namespace,
+				Name:      ServiceAccountName(params.OtelCol),
+				Namespace: params.OtelCol.Namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
-			Name:     naming.ClusterRole(otelCol.Name, otelCol.Namespace),
+			Name:     naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace),
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}, nil

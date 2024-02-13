@@ -17,7 +17,7 @@ package targetallocator
 import (
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 
@@ -35,7 +35,7 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 	// defaulter doesn't set PodDisruptionBudget if the strategy isn't valid,
 	// if PodDisruptionBudget != nil and stategy isn't correct, users have set
 	// it wrongly
-	if params.OtelCol.Spec.TargetAllocator.AllocationStrategy != v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing {
+	if params.OtelCol.Spec.TargetAllocator.AllocationStrategy != v1alpha2.TargetAllocatorAllocationStrategyConsistentHashing {
 		params.Log.V(4).Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
 		return nil, fmt.Errorf("target allocator pdb has been configured but the allocation strategy isn't not compatible")
 	}

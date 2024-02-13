@@ -22,6 +22,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
@@ -38,13 +39,14 @@ const (
 
 // HandleReconcileStatus handles updating the status of the CRDs managed by the operator.
 // TODO: make the status more useful https://github.com/open-telemetry/opentelemetry-operator/issues/1972
-func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, err error) (ctrl.Result, error) {
+// TODO: update status to use v1alpha2 https://github.com/open-telemetry/opentelemetry-operator/milestone/4
+func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, otelcol v1alpha1.OpenTelemetryCollector, err error) (ctrl.Result, error) {
 	log.V(2).Info("updating collector status")
 	if err != nil {
-		params.Recorder.Event(&params.OtelCol, eventTypeWarning, reasonError, err.Error())
+		params.Recorder.Event(&otelcol, eventTypeWarning, reasonError, err.Error())
 		return ctrl.Result{}, err
 	}
-	changed := params.OtelCol.DeepCopy()
+	changed := otelcol.DeepCopy()
 
 	up := &collectorupgrade.VersionUpgrade{
 		Log:      params.Log,
@@ -55,7 +57,7 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 	upgraded, upgradeErr := up.ManagedInstance(ctx, *changed)
 	if upgradeErr != nil {
 		// don't fail to allow setting the status
-		params.Log.Error(upgradeErr, "failed to upgrade the OpenTelemetry CR")
+		log.V(2).Error(upgradeErr, "failed to upgrade the OpenTelemetry CR")
 	}
 	changed = &upgraded
 	statusErr := UpdateCollectorStatus(ctx, params.Client, changed)
@@ -63,7 +65,7 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 		params.Recorder.Event(changed, eventTypeWarning, reasonStatusFailure, statusErr.Error())
 		return ctrl.Result{}, statusErr
 	}
-	statusPatch := client.MergeFrom(&params.OtelCol)
+	statusPatch := client.MergeFrom(&otelcol)
 	if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to apply status changes to the OpenTelemetry CR: %w", err)
 	}

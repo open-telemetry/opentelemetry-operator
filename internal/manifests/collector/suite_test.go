@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	go_yaml "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -25,7 +26,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -42,18 +43,23 @@ const (
 )
 
 func deploymentParams() manifests.Params {
-	return paramsWithMode(v1alpha1.ModeDeployment)
+	return paramsWithMode(v1alpha2.ModeDeployment)
 }
 
-func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
+func paramsWithMode(mode v1alpha2.Mode) manifests.Params {
 	replicas := int32(2)
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
+	cfg := v1alpha2.Config{}
+	err = go_yaml.Unmarshal(configYAML, &cfg)
+	if err != nil {
+		fmt.Printf("Error unmarshalling YAML: %v", err)
+	}
 	return manifests.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -63,20 +69,23 @@ func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
 				Namespace: "default",
 				UID:       instanceUID,
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				Replicas: &replicas,
-				Config:   string(configYAML),
-				Mode:     mode,
+			Spec: v1alpha2.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+
+					Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+					Ports: []v1.ServicePort{{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}},
+					Replicas: &replicas,
+				},
+				Config: cfg,
+				Mode:   mode,
 			},
 		},
 		Log:      logger,
@@ -95,7 +104,13 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 		configYAML, err = os.ReadFile(file)
 	}
 	if err != nil {
-		return manifests.Params{}, fmt.Errorf("Error getting yaml file: %w", err)
+		return manifests.Params{}, fmt.Errorf("error getting yaml file: %w", err)
+	}
+
+	colCfg := v1alpha2.Config{}
+	err = go_yaml.Unmarshal(configYAML, &colCfg)
+	if err != nil {
+		return manifests.Params{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
 	cfg := config.New(
@@ -106,7 +121,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 
 	return manifests.Params{
 		Config: cfg,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -116,23 +131,26 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 				Namespace: "default",
 				UID:       instanceUID,
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Mode: v1alpha1.ModeStatefulSet,
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			Spec: v1alpha2.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Ports: []v1.ServicePort{{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}},
+
+					Replicas: &replicas,
+				},
+				Mode: v1alpha2.ModeStatefulSet,
+				TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 					Enabled: true,
 					Image:   taContainerImage,
 				},
-				Replicas: &replicas,
-				Config:   string(configYAML),
+				Config: colCfg,
 			},
 		},
 		Log: logger,
