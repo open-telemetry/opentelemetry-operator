@@ -263,6 +263,11 @@ e2e-targetallocator:
 chainsaw-e2e:
 	chainsaw test --test-dir ./tests/e2e
 
+# end-to-end-test for testing autoscale
+.PHONY: chainsaw-e2e-autoscale
+chainsaw-e2e-autoscale:
+	chainsaw test --test-dir ./tests/e2e-autoscale
+
 # end-to-end-test for testing pdb support
 .PHONY: chainsaw-e2e-pdb
 chainsaw-e2e-pdb:
