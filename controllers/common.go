@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -92,11 +93,11 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
+
 	listOps := &client.ListOptions{
 		Namespace:     otelCol.Namespace,
-		LabelSelector: labels.SelectorFromSet(manifestutils.Labels(otelCol.ObjectMeta, otelCol.Name, otelCol.Spec.Image, collector.ComponentOpenTelemetryCollector, []string{})),
+		LabelSelector: labels.SelectorFromSet(manifestutils.Labels(otelCol.ObjectMeta, naming.Collector(otelCol.Name), otelCol.Spec.Image, collector.ComponentOpenTelemetryCollector, params.Config.LabelsFilter())),
 	}
-
 	hpaList := &autoscalingv2.HorizontalPodAutoscalerList{}
 	err = r.List(ctx, hpaList, listOps)
 	if err != nil {
@@ -163,7 +164,6 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 				continue
 			}
 		}
-
 		// existing is an object the controller runtime will hydrate for us
 		// we obtain the existing object by deep copying the desired object because it's the most convenient way
 		existing := desired.DeepCopyObject().(client.Object)
@@ -188,13 +188,14 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 		}
 
 		l.V(1).Info(fmt.Sprintf("desired has been %s", op))
+		// This object is still managed by the operator, remove it from the list of objects to prune
+		delete(pruneObjects, existing.GetUID())
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to create objects for %s: %w", owner.GetName(), errors.Join(errs...))
 	}
 	// Pruning owned objects in the cluster which are not should not be present after the reconciliation.
 	pruneErrs := []error{}
-	fmt.Printf("Part of prune - %d - ", len(pruneObjects))
 	for _, obj := range pruneObjects {
 		l := logger.WithValues(
 			"object_name", obj.GetName(),
