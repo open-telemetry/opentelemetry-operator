@@ -25,7 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -36,10 +36,10 @@ func TestDesiredRoutes(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressType("unknown"),
+			OtelCol: v1alpha2.OpenTelemetryCollector{
+				Spec: v1alpha2.OpenTelemetryCollectorSpec{
+					Ingress: v1alpha2.Ingress{
+						Type: v1alpha2.IngressType("unknown"),
 					},
 				},
 			},
@@ -50,39 +50,17 @@ func TestDesiredRoutes(t *testing.T) {
 		assert.Nil(t, actual)
 	})
 
-	t.Run("should return nil unable to parse config", func(t *testing.T) {
-		params := manifests.Params{
-			Config: config.Config{},
-			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Config: "!!!",
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeRoute,
-						Route: v1alpha1.OpenShiftRoute{
-							Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
-						},
-					},
-				},
-			},
-		}
-
-		actual, err := Routes(params)
-		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "could not convert config json to v1alpha2.Config")
-	})
-
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Config: "---",
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeRoute,
-						Route: v1alpha1.OpenShiftRoute{
-							Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			OtelCol: v1alpha2.OpenTelemetryCollector{
+				Spec: v1alpha2.OpenTelemetryCollectorSpec{
+					Config: v1alpha2.Config{},
+					Ingress: v1alpha2.Ingress{
+						Type: v1alpha2.IngressTypeRoute,
+						Route: v1alpha2.OpenShiftRoute{
+							Termination: v1alpha2.TLSRouteTerminationTypeInsecure,
 						},
 					},
 				},
@@ -106,12 +84,12 @@ func TestDesiredRoutes(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
-			Type:        v1alpha1.IngressTypeRoute,
+		params.OtelCol.Spec.Ingress = v1alpha2.Ingress{
+			Type:        v1alpha2.IngressTypeRoute,
 			Hostname:    hostname,
 			Annotations: map[string]string{"some.key": "some.value"},
-			Route: v1alpha1.OpenShiftRoute{
-				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			Route: v1alpha2.OpenShiftRoute{
+				Termination: v1alpha2.TLSRouteTerminationTypeInsecure,
 			},
 		}
 
@@ -156,11 +134,11 @@ func TestDesiredRoutes(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = "test"
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
+		params.OtelCol.Spec.Ingress = v1alpha2.Ingress{
 			Hostname: "example.com",
-			Type:     v1alpha1.IngressTypeRoute,
-			Route: v1alpha1.OpenShiftRoute{
-				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+			Type:     v1alpha2.IngressTypeRoute,
+			Route: v1alpha2.OpenShiftRoute{
+				Termination: v1alpha2.TLSRouteTerminationTypeInsecure,
 			},
 		}
 
@@ -178,10 +156,10 @@ func TestDesiredRoutes(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = "test"
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
-			Type: v1alpha1.IngressTypeRoute,
-			Route: v1alpha1.OpenShiftRoute{
-				Termination: v1alpha1.TLSRouteTerminationTypeInsecure,
+		params.OtelCol.Spec.Ingress = v1alpha2.Ingress{
+			Type: v1alpha2.IngressTypeRoute,
+			Route: v1alpha2.OpenShiftRoute{
+				Termination: v1alpha2.TLSRouteTerminationTypeInsecure,
 			},
 		}
 

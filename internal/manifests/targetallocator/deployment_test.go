@@ -20,10 +20,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	go_yaml "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -77,7 +79,7 @@ var testSecurityContextValue = &v1.PodSecurityContext{
 
 func TestDeploymentSecurityContext(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -97,11 +99,11 @@ func TestDeploymentSecurityContext(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.SecurityContext)
 
 	// Test SecurityContext
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-securitycontext",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				PodSecurityContext: testSecurityContextValue,
 			},
@@ -174,19 +176,26 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	assert.Subset(t, ds.Spec.Template.Annotations, testPodAnnotationValues)
 }
 
-func collectorInstance() v1alpha1.OpenTelemetryCollector {
+func collectorInstance() v1alpha2.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	return v1alpha1.OpenTelemetryCollector{
+	cfg := v1alpha2.Config{}
+	err = go_yaml.Unmarshal(configYAML, &cfg)
+	if err != nil {
+		fmt.Printf("Error unmarshalling YAML: %v", err)
+	}
+	return v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "default",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image:  "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-			Config: string(configYAML),
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+			},
+			Config: cfg,
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Image:          "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-targetallocator:0.47.0",
 				FilterStrategy: "relabel-config",
@@ -197,7 +206,7 @@ func collectorInstance() v1alpha1.OpenTelemetryCollector {
 
 func TestDeploymentNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -215,11 +224,11 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				NodeSelector: map[string]string{
 					"node-key": "node-value",
@@ -242,7 +251,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 }
 func TestDeploymentAffinity(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -260,11 +269,11 @@ func TestDeploymentAffinity(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.Affinity)
 
 	// Test affinity
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-affinity",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Affinity: testAffinityValue,
 			},
@@ -286,7 +295,7 @@ func TestDeploymentAffinity(t *testing.T) {
 
 func TestDeploymentTolerations(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -304,11 +313,11 @@ func TestDeploymentTolerations(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.Tolerations)
 
 	// Test Tolerations
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-toleration",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Tolerations: testTolerationValues,
 			},
@@ -330,7 +339,7 @@ func TestDeploymentTolerations(t *testing.T) {
 
 func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -349,11 +358,11 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
 	// Test TopologySpreadConstraints
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-topologyspreadconstraint",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				TopologySpreadConstraints: testTopologySpreadConstraintValue,
 			},

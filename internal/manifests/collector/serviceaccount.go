@@ -19,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -36,23 +35,19 @@ func ServiceAccountName(instance v1alpha2.OpenTelemetryCollector) string {
 
 // ServiceAccount returns the service account for the given instance.
 func ServiceAccount(params manifests.Params) (*corev1.ServiceAccount, error) {
-	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
-	if err != nil {
-		return nil, err
-	}
-	if otelCol.Spec.ServiceAccount != "" {
+	if params.OtelCol.Spec.ServiceAccount != "" {
 		return nil, nil
 	}
 
-	name := naming.ServiceAccount(otelCol.Name)
-	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	name := naming.ServiceAccount(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   otelCol.Namespace,
+			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
-			Annotations: otelCol.Annotations,
+			Annotations: params.OtelCol.Annotations,
 		},
 	}, nil
 }
