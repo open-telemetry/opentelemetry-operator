@@ -243,6 +243,8 @@ e2e-targetallocator:
 # end-to-end-test for testing upgrading
 .PHONY: e2e-upgrade
 e2e-upgrade: undeploy
+	kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.86.0.yaml
+	go run hack/check-operator-ready.go
 	chainsaw test --test-dir ./tests/e2e-upgrade
 
 .PHONY: prepare-e2e
