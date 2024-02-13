@@ -283,6 +283,11 @@ chainsaw-e2e-pdb:
 chainsaw-e2e-prometheuscr:
 	chainsaw test --test-dir ./tests/e2e-prometheuscr
 
+# Target allocator end-to-tests
+.PHONY: chainsaw-e2e-targetallocator
+chainsaw-e2e-targetallocator:
+	chainsaw test --test-dir ./tests/e2e-targetallocator
+
 # end-to-end-test for testing upgrading
 .PHONY: chainsaw-e2e-upgrade
 chainsaw-e2e-upgrade: undeploy
