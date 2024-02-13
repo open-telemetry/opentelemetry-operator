@@ -19,7 +19,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -27,19 +26,15 @@ import (
 
 // StatefulSet builds the statefulset for the given instance.
 func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
-	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
-	if err != nil {
-		return nil, err
-	}
-	name := naming.Collector(otelCol.Name)
-	labels := manifestutils.Labels(otelCol.ObjectMeta, name, otelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	name := naming.Collector(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
-	annotations, err := Annotations(otelCol)
+	annotations, err := Annotations(params.OtelCol)
 	if err != nil {
 		return nil, err
 	}
 
-	podAnnotations, err := PodAnnotations(otelCol)
+	podAnnotations, err := PodAnnotations(params.OtelCol)
 	if err != nil {
 		return nil, err
 	}
@@ -47,14 +42,14 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   otelCol.Namespace,
+			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName: naming.Service(otelCol.Name),
+			ServiceName: naming.Service(params.OtelCol.Name),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: manifestutils.SelectorLabels(otelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -62,24 +57,24 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:        ServiceAccountName(otelCol),
-					InitContainers:            otelCol.Spec.InitContainers,
-					Containers:                append(otelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, otelCol, true)),
-					Volumes:                   Volumes(params.Config, otelCol),
-					DNSPolicy:                 getDNSPolicy(otelCol),
-					HostNetwork:               otelCol.Spec.HostNetwork,
-					ShareProcessNamespace:     &otelCol.Spec.ShareProcessNamespace,
-					Tolerations:               otelCol.Spec.Tolerations,
-					NodeSelector:              otelCol.Spec.NodeSelector,
-					SecurityContext:           otelCol.Spec.PodSecurityContext,
-					PriorityClassName:         otelCol.Spec.PriorityClassName,
-					Affinity:                  otelCol.Spec.Affinity,
-					TopologySpreadConstraints: otelCol.Spec.TopologySpreadConstraints,
+					ServiceAccountName:        ServiceAccountName(params.OtelCol),
+					InitContainers:            params.OtelCol.Spec.InitContainers,
+					Containers:                append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
+					Volumes:                   Volumes(params.Config, params.OtelCol),
+					DNSPolicy:                 getDNSPolicy(params.OtelCol),
+					HostNetwork:               params.OtelCol.Spec.HostNetwork,
+					ShareProcessNamespace:     &params.OtelCol.Spec.ShareProcessNamespace,
+					Tolerations:               params.OtelCol.Spec.Tolerations,
+					NodeSelector:              params.OtelCol.Spec.NodeSelector,
+					SecurityContext:           params.OtelCol.Spec.PodSecurityContext,
+					PriorityClassName:         params.OtelCol.Spec.PriorityClassName,
+					Affinity:                  params.OtelCol.Spec.Affinity,
+					TopologySpreadConstraints: params.OtelCol.Spec.TopologySpreadConstraints,
 				},
 			},
-			Replicas:             otelCol.Spec.Replicas,
+			Replicas:             params.OtelCol.Spec.Replicas,
 			PodManagementPolicy:  "Parallel",
-			VolumeClaimTemplates: VolumeClaimTemplates(otelCol),
+			VolumeClaimTemplates: VolumeClaimTemplates(params.OtelCol),
 		},
 	}, nil
 }

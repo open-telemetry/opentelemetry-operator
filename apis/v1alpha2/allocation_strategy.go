@@ -31,5 +31,5 @@ const (
 	TargetAllocatorAllocationStrategyConsistentHashing TargetAllocatorAllocationStrategy = "consistent-hashing"
 
 	// TargetAllocatorFilterStrategyRelabelConfig targets will be consistently drops targets based on the relabel_config.
-	TargetAllocatorFilterStrategyRelabelConfig TargetAllocatorFilterStrategy = "consistent-hashing"
+	TargetAllocatorFilterStrategyRelabelConfig TargetAllocatorFilterStrategy = "relabel-config"
 )

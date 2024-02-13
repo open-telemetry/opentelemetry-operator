@@ -23,11 +23,9 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
@@ -39,10 +37,10 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressType("unknown"),
+			OtelCol: v1alpha2.OpenTelemetryCollector{
+				Spec: v1alpha2.OpenTelemetryCollectorSpec{
+					Ingress: v1alpha2.Ingress{
+						Type: v1alpha2.IngressType("unknown"),
 					},
 				},
 			},
@@ -53,37 +51,15 @@ func TestDesiredIngresses(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("should return nil unable to parse config", func(t *testing.T) {
-		params := manifests.Params{
-			Config: config.Config{},
-			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Config: "!!!",
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeNginx,
-					},
-				},
-			},
-		}
-
-		actual, err := Ingress(params)
-		fmt.Printf("error1: %+v", err)
-		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "could not convert config json to v1alpha2.Config")
-	})
-
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Config: `exporters:
-  nothing:
-`,
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeNginx,
+			OtelCol: v1alpha2.OpenTelemetryCollector{
+				Spec: v1alpha2.OpenTelemetryCollectorSpec{
+					Config: v1alpha2.Config{},
+					Ingress: v1alpha2.Ingress{
+						Type: v1alpha2.IngressTypeNginx,
 					},
 				},
 			},
@@ -106,11 +82,8 @@ func TestDesiredIngresses(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		otelCol, err := convert.V1Alpha1to2(params.OtelCol)
-		assert.Nil(t, err)
-
-		otelCol.Namespace = ns
-		otelCol.Spec.Ingress = v1alpha2.Ingress{
+		params.OtelCol.Namespace = ns
+		params.OtelCol.Spec.Ingress = v1alpha2.Ingress{
 			Type:             v1alpha2.IngressTypeNginx,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
@@ -124,12 +97,12 @@ func TestDesiredIngresses(t *testing.T) {
 
 		assert.NotEqual(t, &networkingv1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.Ingress(otelCol.Name),
+				Name:        naming.Ingress(params.OtelCol.Name),
 				Namespace:   ns,
-				Annotations: otelCol.Spec.Ingress.Annotations,
+				Annotations: params.OtelCol.Spec.Ingress.Annotations,
 				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.Ingress(otelCol.Name),
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelCol.Namespace, otelCol.Name),
+					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
 			},
@@ -197,11 +170,8 @@ func TestDesiredIngresses(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		otelCol, err := convert.V1Alpha1to2(params.OtelCol)
-		assert.Nil(t, err)
-
-		otelCol.Namespace = ns
-		otelCol.Spec.Ingress = v1alpha2.Ingress{
+		params.OtelCol.Namespace = ns
+		params.OtelCol.Spec.Ingress = v1alpha2.Ingress{
 			Type:             v1alpha2.IngressTypeNginx,
 			RuleType:         v1alpha2.IngressRuleTypeSubdomain,
 			Hostname:         hostname,
@@ -216,12 +186,12 @@ func TestDesiredIngresses(t *testing.T) {
 
 		assert.NotEqual(t, &networkingv1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.Ingress(otelCol.Name),
+				Name:        naming.Ingress(params.OtelCol.Name),
 				Namespace:   ns,
-				Annotations: otelCol.Spec.Ingress.Annotations,
+				Annotations: params.OtelCol.Spec.Ingress.Annotations,
 				Labels: map[string]string{
-					"app.kubernetes.io/name":       naming.Ingress(otelCol.Name),
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", otelCol.Namespace, otelCol.Name),
+					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
 				},
 			},

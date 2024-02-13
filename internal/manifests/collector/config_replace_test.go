@@ -24,15 +24,12 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"gopkg.in/yaml.v2"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestPrometheusParser(t *testing.T) {
 	param, err := newParams("test/test-img", "testdata/http_sd_config_test.yaml")
-	assert.NoError(t, err)
-	otelCol, err := convert.V1Alpha1to2(param.OtelCol)
 	assert.NoError(t, err)
 
 	t.Run("should update config with http_sd_config", func(t *testing.T) {
@@ -41,7 +38,7 @@ func TestPrometheusParser(t *testing.T) {
 		t.Cleanup(func() {
 			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
 		})
-		actualConfig, err := ReplaceConfig(otelCol)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		// prepare
@@ -74,8 +71,8 @@ func TestPrometheusParser(t *testing.T) {
 
 	t.Run("should update config with targetAllocator block if block not present", func(t *testing.T) {
 		// Set up the test scenario
-		otelCol.Spec.TargetAllocator.Enabled = true
-		actualConfig, err := ReplaceConfig(otelCol)
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		// Verify the expected changes in the config
@@ -99,12 +96,10 @@ func TestPrometheusParser(t *testing.T) {
 		// Set up the test scenario
 		paramTa, err := newParams("test/test-img", "testdata/http_sd_config_ta_test.yaml")
 		require.NoError(t, err)
-		otelColTa, err := convert.V1Alpha1to2(paramTa.OtelCol)
-		assert.NoError(t, err)
 
 		paramTa.OtelCol.Spec.TargetAllocator.Enabled = true
 
-		actualConfig, err := ReplaceConfig(otelColTa)
+		actualConfig, err := ReplaceConfig(paramTa.OtelCol)
 		assert.NoError(t, err)
 
 		// Verify the expected changes in the config
@@ -125,9 +120,9 @@ func TestPrometheusParser(t *testing.T) {
 	})
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
-		otelCol.Spec.TargetAllocator.Enabled = false
+		param.OtelCol.Spec.TargetAllocator.Enabled = false
 
-		actualConfig, err := ReplaceConfig(otelCol)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		// prepare
@@ -163,16 +158,14 @@ func TestPrometheusParser(t *testing.T) {
 func TestReplaceConfig(t *testing.T) {
 	param, err := newParams("test/test-img", "testdata/relabel_config_original.yaml")
 	assert.NoError(t, err)
-	otelCol, err := convert.V1Alpha1to2(param.OtelCol)
-	assert.NoError(t, err)
 
 	t.Run("should not modify config when TargetAllocator is disabled", func(t *testing.T) {
-		otelCol.Spec.TargetAllocator.Enabled = false
+		param.OtelCol.Spec.TargetAllocator.Enabled = false
 		expectedConfigBytes, err := os.ReadFile("testdata/relabel_config_original.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
-		actualConfig, err := ReplaceConfig(otelCol)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		assert.YAMLEq(t, expectedConfig, actualConfig)
@@ -185,26 +178,26 @@ func TestReplaceConfig(t *testing.T) {
 			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
 		})
 
-		otelCol.Spec.TargetAllocator.Enabled = true
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
 
 		expectedConfigBytes, err := os.ReadFile("testdata/relabel_config_expected_with_sd_config.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
-		actualConfig, err := ReplaceConfig(otelCol)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		assert.YAMLEq(t, expectedConfig, actualConfig)
 	})
 
 	t.Run("should remove scrape configs if TargetAllocator is enabled and feature flag is set", func(t *testing.T) {
-		otelCol.Spec.TargetAllocator.Enabled = true
+		param.OtelCol.Spec.TargetAllocator.Enabled = true
 
 		expectedConfigBytes, err := os.ReadFile("testdata/config_expected_targetallocator.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
-		actualConfig, err := ReplaceConfig(otelCol)
+		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
 		assert.YAMLEq(t, expectedConfig, actualConfig)

@@ -17,7 +17,7 @@ package collector
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -31,15 +31,15 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
 	var manifestFactories []manifests.K8sManifestFactory
 	switch params.OtelCol.Spec.Mode {
-	case v1alpha1.ModeDeployment:
+	case v1alpha2.ModeDeployment:
 		manifestFactories = append(manifestFactories, manifests.Factory(Deployment))
 		manifestFactories = append(manifestFactories, manifests.Factory(PodDisruptionBudget))
-	case v1alpha1.ModeStatefulSet:
+	case v1alpha2.ModeStatefulSet:
 		manifestFactories = append(manifestFactories, manifests.Factory(StatefulSet))
 		manifestFactories = append(manifestFactories, manifests.Factory(PodDisruptionBudget))
-	case v1alpha1.ModeDaemonSet:
+	case v1alpha2.ModeDaemonSet:
 		manifestFactories = append(manifestFactories, manifests.Factory(DaemonSet))
-	case v1alpha1.ModeSidecar:
+	case v1alpha2.ModeSidecar:
 		params.Log.V(5).Info("not building sidecar...")
 	}
 	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
@@ -53,7 +53,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	}...)
 
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
-		if params.OtelCol.Spec.Mode == v1alpha1.ModeSidecar {
+		if params.OtelCol.Spec.Mode == v1alpha2.ModeSidecar {
 			manifestFactories = append(manifestFactories, manifests.Factory(PodMonitor))
 		} else {
 			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))

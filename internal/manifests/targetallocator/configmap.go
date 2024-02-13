@@ -19,7 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -34,10 +34,15 @@ const (
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(params.OtelCol.Name)
 	labels := Labels(params.OtelCol, name)
+	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2603
+	cfgStr, err := params.OtelCol.Spec.Config.Yaml()
+	if err != nil {
+		return &corev1.ConfigMap{}, err
+	}
 
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA ConfigMap should have a single "$", as it does not support env var substitution
-	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(params.OtelCol.Spec.Config)
+	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(cfgStr)
 	if err != nil {
 		return &corev1.ConfigMap{}, err
 	}
@@ -59,7 +64,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	if len(params.OtelCol.Spec.TargetAllocator.AllocationStrategy) > 0 {
 		taConfig["allocation_strategy"] = params.OtelCol.Spec.TargetAllocator.AllocationStrategy
 	} else {
-		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
+		taConfig["allocation_strategy"] = v1alpha2.TargetAllocatorAllocationStrategyConsistentHashing
 	}
 
 	taConfig["filter_strategy"] = params.OtelCol.Spec.TargetAllocator.FilterStrategy
@@ -68,22 +73,20 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		prometheusCRConfig["scrape_interval"] = params.OtelCol.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Duration
 	}
 
-	prometheusCRConfig["service_monitor_selector"] = &metav1.LabelSelector{
-		MatchLabels: params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector,
-	}
+	prometheusCRConfig["service_monitor_selector"] = params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
+
 	// The below instruction is here for compatibility with the previous target allocator version
 	// TODO: Drop it after 3 more versions
 	if params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
-		taConfig["service_monitor_selector"] = &params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
+		taConfig["service_monitor_selector"] = &params.OtelCol.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector.MatchLabels
 	}
 
-	prometheusCRConfig["pod_monitor_selector"] = &metav1.LabelSelector{
-		MatchLabels: params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector,
-	}
+	prometheusCRConfig["pod_monitor_selector"] = params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
+
 	// The below instruction is here for compatibility with the previous target allocator version
 	// TODO: Drop it after 3 more versions
 	if params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
-		taConfig["pod_monitor_selector"] = &params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
+		taConfig["pod_monitor_selector"] = &params.OtelCol.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector.MatchLabels
 	}
 
 	if len(prometheusCRConfig) > 0 {
