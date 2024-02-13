@@ -25,7 +25,7 @@ jobs:
          - "1.29"
        group:
         #  - e2e
-         - e2e-instrumentation
+        #  - e2e-instrumentation
         #  - e2e-upgrade
         #  - e2e-autoscale
         #  - e2e-pdb
@@ -100,8 +100,8 @@ jobs:
          - "1.29"
        group:
          - e2e
-        #  - e2e-instrumentation
          - e2e-autoscale
+         - e2e-instrumentation
          - e2e-pdb
          - e2e-prometheuscr
          - e2e-upgrade

@@ -268,6 +268,11 @@ chainsaw-e2e:
 chainsaw-e2e-autoscale:
 	chainsaw test --test-dir ./tests/e2e-autoscale
 
+# instrumentation end-to-tests
+.PHONY: chainsaw-e2e-instrumentation
+chainsaw-e2e-instrumentation:
+	chainsaw test --test-dir ./tests/e2e-instrumentation
+
 # end-to-end-test for testing pdb support
 .PHONY: chainsaw-e2e-pdb
 chainsaw-e2e-pdb:
