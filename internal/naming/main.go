@@ -159,6 +159,10 @@ func ServiceAccount(otelcol string) string {
 func ServiceMonitor(otelcol string) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol))
 }
+// ServiceMonitorSelectorName builds the service Monitor name based on the instance.
+func ServiceMonitorSelectorName(otelcol string) string {
+	return DNSName(Truncate("%s-monitoring", 63, otelcol))
+}
 
 // PodMonitor builds the pod Monitor name based on the instance.
 func PodMonitor(otelcol string) string {
