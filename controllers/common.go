@@ -20,8 +20,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -37,11 +35,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -109,7 +109,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 
 	if otelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		servicemonitorList := &monitoringv1.ServiceMonitorList{}
-		err := r.List(ctx, servicemonitorList, listOps)
+		err = r.List(ctx, servicemonitorList, listOps)
 		if err != nil {
 			return nil, fmt.Errorf("Error listing ServiceMonitors: %w", err)
 		}
