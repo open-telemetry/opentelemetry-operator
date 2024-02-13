@@ -273,6 +273,11 @@ chainsaw-e2e-autoscale:
 chainsaw-e2e-instrumentation:
 	chainsaw test --test-dir ./tests/e2e-instrumentation
 
+# OpAMPBridge CR end-to-tests
+.PHONY: chainsaw-e2e-opampbridge
+chainsaw-e2e-opampbridge:
+	chainsaw test --test-dir ./tests/e2e-opampbridge
+
 # end-to-end-test for testing pdb support
 .PHONY: chainsaw-e2e-pdb
 chainsaw-e2e-pdb:

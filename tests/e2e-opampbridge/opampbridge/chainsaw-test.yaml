@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: opampbridge
+spec:
+  steps:
+  - catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
+    name: step-00
+    try:
+    - command:
+        args:
+        - -n
+        - $NAMESPACE
+        - create
+        - rolebinding
+        - default-opamp-bridge-$NAMESPACE
+        - --role=opamp-bridge
+        - --serviceaccount=$NAMESPACE:opamp-bridge
+        entrypoint: kubectl
+    - apply:
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
