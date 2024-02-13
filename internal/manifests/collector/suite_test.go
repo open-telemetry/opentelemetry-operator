@@ -26,7 +26,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -147,7 +146,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 					Replicas: &replicas,
 				},
 				Mode: v1alpha2.ModeStatefulSet,
-				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 					Enabled: true,
 					Image:   taContainerImage,
 				},

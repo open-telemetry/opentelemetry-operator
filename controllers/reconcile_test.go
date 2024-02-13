@@ -468,6 +468,8 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							taConfig["config"] = promConfig["config"]
 							taConfig["allocation_strategy"] = "consistent-hashing"
 							taConfig["filter_strategy"] = "relabel-config"
+							taConfig["pod_monitor_selector"] = map[string]string{}
+							taConfig["service_monitor_selector"] = map[string]string{}
 							taConfig["prometheus_cr"] = map[string]any{
 								"scrape_interval":          "30s",
 								"pod_monitor_selector":     &metav1.LabelSelector{},

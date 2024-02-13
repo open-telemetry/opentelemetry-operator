@@ -18,6 +18,7 @@ import (
 	"errors"
 
 	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
@@ -93,30 +94,7 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 	out.Spec.OpenTelemetryCommonFields.InitContainers = copy.Spec.InitContainers
 	out.Spec.OpenTelemetryCommonFields.AdditionalContainers = copy.Spec.AdditionalContainers
 
-	out.Spec.TargetAllocator.Replicas = copy.Spec.TargetAllocator.Replicas
-	out.Spec.TargetAllocator.NodeSelector = copy.Spec.TargetAllocator.NodeSelector
-	out.Spec.TargetAllocator.Resources = copy.Spec.TargetAllocator.Resources
-	out.Spec.TargetAllocator.AllocationStrategy = copy.Spec.TargetAllocator.AllocationStrategy
-	out.Spec.TargetAllocator.FilterStrategy = copy.Spec.TargetAllocator.FilterStrategy
-	out.Spec.TargetAllocator.ServiceAccount = copy.Spec.TargetAllocator.ServiceAccount
-	out.Spec.TargetAllocator.Image = copy.Spec.TargetAllocator.Image
-	out.Spec.TargetAllocator.Enabled = copy.Spec.TargetAllocator.Enabled
-	out.Spec.TargetAllocator.Affinity = copy.Spec.TargetAllocator.Affinity
-	out.Spec.TargetAllocator.PrometheusCR.Enabled = copy.Spec.TargetAllocator.PrometheusCR.Enabled
-	out.Spec.TargetAllocator.PrometheusCR.ScrapeInterval = copy.Spec.TargetAllocator.PrometheusCR.ScrapeInterval
-	out.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = copy.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
-	out.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = copy.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
-	out.Spec.TargetAllocator.SecurityContext = copy.Spec.TargetAllocator.SecurityContext
-	out.Spec.TargetAllocator.PodSecurityContext = copy.Spec.TargetAllocator.PodSecurityContext
-	out.Spec.TargetAllocator.TopologySpreadConstraints = copy.Spec.TargetAllocator.TopologySpreadConstraints
-	out.Spec.TargetAllocator.Tolerations = copy.Spec.TargetAllocator.Tolerations
-	out.Spec.TargetAllocator.Env = copy.Spec.TargetAllocator.Env
-	out.Spec.TargetAllocator.Observability = v1alpha1.ObservabilitySpec{
-		Metrics: v1alpha1.MetricsConfigSpec{
-			EnableMetrics: copy.Spec.TargetAllocator.Observability.Metrics.EnableMetrics,
-		},
-	}
-	out.Spec.TargetAllocator.PodDisruptionBudget = copy.Spec.TargetAllocator.PodDisruptionBudget
+	out.Spec.TargetAllocator = TargetAllocatorEmbedded(copy.Spec.TargetAllocator)
 
 	out.Spec.Mode = v1alpha2.Mode(copy.Spec.Mode)
 	out.Spec.UpgradeStrategy = v1alpha2.UpgradeStrategy(copy.Spec.UpgradeStrategy)
@@ -147,4 +125,43 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 	out.Spec.DeploymentUpdateStrategy.RollingUpdate = copy.Spec.DeploymentUpdateStrategy.RollingUpdate
 
 	return out, nil
+}
+
+func TargetAllocatorEmbedded(in v1alpha1.OpenTelemetryTargetAllocator) v1alpha2.TargetAllocatorEmbedded {
+	out := v1alpha2.TargetAllocatorEmbedded{}
+	out.Replicas = in.Replicas
+	out.NodeSelector = in.NodeSelector
+	out.Resources = in.Resources
+	out.AllocationStrategy = v1alpha2.TargetAllocatorAllocationStrategy(in.AllocationStrategy)
+	out.FilterStrategy = v1alpha2.TargetAllocatorFilterStrategy(in.FilterStrategy)
+	out.ServiceAccount = in.ServiceAccount
+	out.Image = in.Image
+	out.Enabled = in.Enabled
+	out.Affinity = in.Affinity
+	out.PrometheusCR.Enabled = in.PrometheusCR.Enabled
+	out.PrometheusCR.ScrapeInterval = in.PrometheusCR.ScrapeInterval
+	out.SecurityContext = in.SecurityContext
+	out.PodSecurityContext = in.PodSecurityContext
+	out.TopologySpreadConstraints = in.TopologySpreadConstraints
+	out.Tolerations = in.Tolerations
+	out.Env = in.Env
+	out.Observability = v1alpha1.ObservabilitySpec{
+		Metrics: v1alpha1.MetricsConfigSpec{
+			EnableMetrics: in.Observability.Metrics.EnableMetrics,
+		},
+	}
+
+	out.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
+		MatchLabels: in.PrometheusCR.PodMonitorSelector,
+	}
+	out.PrometheusCR.ServiceMonitorSelector = &metav1.LabelSelector{
+		MatchLabels: in.PrometheusCR.ServiceMonitorSelector,
+	}
+	if in.PodDisruptionBudget != nil {
+		out.PodDisruptionBudget = &v1alpha2.PodDisruptionBudgetSpec{
+			MinAvailable:   in.PodDisruptionBudget.MinAvailable,
+			MaxUnavailable: in.PodDisruptionBudget.MaxUnavailable,
+		}
+	}
+	return out
 }
