@@ -258,6 +258,11 @@ e2e-targetallocator:
 # CHAINSAW #
 ############
 
+# end-to-tests
+.PHONY: chainsaw-e2e
+chainsaw-e2e:
+	chainsaw test --test-dir ./tests/e2e
+
 # end-to-end-test for testing pdb support
 .PHONY: chainsaw-e2e-pdb
 chainsaw-e2e-pdb:
