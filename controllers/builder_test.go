@@ -86,8 +86,6 @@ service:
       exporters: [logging]
 `
 	one := int32(1)
-	maxReplicas := int32(2)
-	stabilizationWindowSeconds := int32(300)
 	type args struct {
 		instance v1alpha1.OpenTelemetryCollector
 	}
@@ -106,15 +104,6 @@ service:
 						Namespace: "test",
 					},
 					Spec: v1alpha1.OpenTelemetryCollectorSpec{
-						MinReplicas: &one,
-						MaxReplicas: &maxReplicas,
-						Autoscaler: &v1alpha1.AutoscalerSpec{
-							Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
-								ScaleUp: &autoscalingv2.HPAScalingRules{
-									StabilizationWindowSeconds: &stabilizationWindowSeconds,
-								},
-							},
-						},
 						Replicas: &one,
 						Mode:     "deployment",
 						Image:    "test",
