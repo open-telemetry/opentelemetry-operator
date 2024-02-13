@@ -195,44 +195,20 @@ lint: golangci-lint
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-#########
-# KUTTL #
-#########
-
 # end-to-tests
 .PHONY: e2e
 e2e:
-	$(KUTTL) test
-
-# instrumentation end-to-tests
-.PHONY: e2e-instrumentation
-e2e-instrumentation:
-	$(KUTTL) test --config kuttl-test-instrumentation.yaml
-
-# end-to-end-test for PrometheusCR E2E tests
-.PHONY: e2e-prometheuscr
-e2e-prometheuscr:
-	$(KUTTL) test --config kuttl-test-prometheuscr.yaml
-
-# end-to-end-test for testing upgrading
-.PHONY: e2e-upgrade
-e2e-upgrade: undeploy
-	$(KUTTL) test --config kuttl-test-upgrade.yaml
+	chainsaw test --test-dir ./tests/e2e
 
 # end-to-end-test for testing autoscale
 .PHONY: e2e-autoscale
 e2e-autoscale:
-	$(KUTTL) test --config kuttl-test-autoscale.yaml
+	chainsaw test --test-dir ./tests/e2e-autoscale
 
-# end-to-end-test for testing pdb support
-.PHONY: e2e-pdb
-e2e-pdb:
-	$(KUTTL) test --config kuttl-test-pdb.yaml
-
-# end-to-end-test for testing OpenShift cases
-.PHONY: e2e-openshift
-e2e-openshift:
-	$(KUTTL) test --config kuttl-test-openshift.yaml
+# instrumentation end-to-tests
+.PHONY: e2e-instrumentation
+e2e-instrumentation:
+	chainsaw test --test-dir ./tests/e2e-instrumentation
 
 .PHONY: e2e-log-operator
 e2e-log-operator:
@@ -242,72 +218,38 @@ e2e-log-operator:
 # end-to-tests for multi-instrumentation
 .PHONY: e2e-multi-instrumentation
 e2e-multi-instrumentation:
-	$(KUTTL) test --config kuttl-test-multi-instr.yaml
+	chainsaw test --test-dir ./tests/e2e-multi-instrumentation
 
 # OpAMPBridge CR end-to-tests
 .PHONY: e2e-opampbridge
 e2e-opampbridge:
-	$(KUTTL) test --config kuttl-test-opampbridge.yaml
+	chainsaw test --test-dir ./tests/e2e-opampbridge
+
+# end-to-end-test for testing pdb support
+.PHONY: e2e-pdb
+e2e-pdb:
+	chainsaw test --test-dir ./tests/e2e-pdb
+
+# end-to-end-test for PrometheusCR E2E tests
+.PHONY: e2e-prometheuscr
+e2e-prometheuscr:
+	chainsaw test --test-dir ./tests/e2e-prometheuscr
 
 # Target allocator end-to-tests
 .PHONY: e2e-targetallocator
 e2e-targetallocator:
-	$(KUTTL) test --config kuttl-test-targetallocator.yaml
-
-############
-# CHAINSAW #
-############
-
-# end-to-tests
-.PHONY: chainsaw-e2e
-chainsaw-e2e:
-	chainsaw test --test-dir ./tests/e2e
-
-# end-to-end-test for testing autoscale
-.PHONY: chainsaw-e2e-autoscale
-chainsaw-e2e-autoscale:
-	chainsaw test --test-dir ./tests/e2e-autoscale
-
-# instrumentation end-to-tests
-.PHONY: chainsaw-e2e-instrumentation
-chainsaw-e2e-instrumentation:
-	chainsaw test --test-dir ./tests/e2e-instrumentation
-
-# end-to-tests for multi-instrumentation
-.PHONY: chainsaw-e2e-multi-instrumentation
-chainsaw-e2e-multi-instrumentation:
-	chainsaw test --test-dir ./tests/e2e-multi-instrumentation
-
-# OpAMPBridge CR end-to-tests
-.PHONY: chainsaw-e2e-opampbridge
-chainsaw-e2e-opampbridge:
-	chainsaw test --test-dir ./tests/e2e-opampbridge
-
-# end-to-end-test for testing pdb support
-.PHONY: chainsaw-e2e-pdb
-chainsaw-e2e-pdb:
-	chainsaw test --test-dir ./tests/e2e-pdb
-
-# end-to-end-test for PrometheusCR E2E tests
-.PHONY: chainsaw-e2e-prometheuscr
-chainsaw-e2e-prometheuscr:
-	chainsaw test --test-dir ./tests/e2e-prometheuscr
-
-# Target allocator end-to-tests
-.PHONY: chainsaw-e2e-targetallocator
-chainsaw-e2e-targetallocator:
 	chainsaw test --test-dir ./tests/e2e-targetallocator
 
 # end-to-end-test for testing upgrading
-.PHONY: chainsaw-e2e-upgrade
-chainsaw-e2e-upgrade: undeploy
+.PHONY: e2e-upgrade
+e2e-upgrade: undeploy
 	chainsaw test --test-dir ./tests/e2e-upgrade
 
 .PHONY: prepare-e2e
-prepare-e2e: kuttl set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
 .PHONY: prepare-e2e-with-featuregates
-prepare-e2e-with-featuregates: kuttl enable-operator-featuregates prepare-e2e
+prepare-e2e-with-featuregates: enable-operator-featuregates prepare-e2e
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -413,7 +355,6 @@ cmctl:
 
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 KIND ?= $(LOCALBIN)/kind
-KUTTL ?= $(LOCALBIN)/kubectl-kuttl
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
@@ -423,10 +364,9 @@ KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
 GOLANGCI_LINT_VERSION ?= v1.54.0
 KIND_VERSION ?= v0.20.0
-KUTTL_VERSION ?= 0.15.0
 
 .PHONY: install-tools
-install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kuttl kind operator-sdk
+install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
@@ -469,10 +409,6 @@ GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
-
-.PHONY: kuttl
-kuttl: $(LOCALBIN)
-	@KUTTL=$(KUTTL) KUTTL_VERSION=$(KUTTL_VERSION) ./hack/install-kuttl.sh
 
 OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
 .PHONY: operator-sdk
