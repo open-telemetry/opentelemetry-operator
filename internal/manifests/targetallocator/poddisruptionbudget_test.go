@@ -21,7 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -72,12 +71,12 @@ func TestPDBWithValidStrategy(t *testing.T) {
 					Name: "my-instance",
 				},
 				Spec: v1alpha2.OpenTelemetryCollectorSpec{
-					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-						PodDisruptionBudget: &v1alpha1.PodDisruptionBudgetSpec{
+					TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
+						PodDisruptionBudget: &v1alpha2.PodDisruptionBudgetSpec{
 							MinAvailable:   test.MinAvailable,
 							MaxUnavailable: test.MaxUnavailable,
 						},
-						AllocationStrategy: v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing,
+						AllocationStrategy: v1alpha2.TargetAllocatorAllocationStrategyConsistentHashing,
 					},
 				},
 			}
@@ -106,12 +105,12 @@ func TestPDBWithNotValidStrategy(t *testing.T) {
 					Name: "my-instance",
 				},
 				Spec: v1alpha2.OpenTelemetryCollectorSpec{
-					TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-						PodDisruptionBudget: &v1alpha1.PodDisruptionBudgetSpec{
+					TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
+						PodDisruptionBudget: &v1alpha2.PodDisruptionBudgetSpec{
 							MinAvailable:   test.MinAvailable,
 							MaxUnavailable: test.MaxUnavailable,
 						},
-						AllocationStrategy: v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted,
+						AllocationStrategy: v1alpha2.TargetAllocatorAllocationStrategyLeastWeighted,
 					},
 				},
 			}
@@ -135,8 +134,8 @@ func TestNoPDB(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-				AllocationStrategy: v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted,
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
+				AllocationStrategy: v1alpha2.TargetAllocatorAllocationStrategyLeastWeighted,
 			},
 		},
 	}

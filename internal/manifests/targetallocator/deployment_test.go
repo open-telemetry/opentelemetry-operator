@@ -24,7 +24,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -104,7 +103,7 @@ func TestDeploymentSecurityContext(t *testing.T) {
 			Name: "my-instance-securitycontext",
 		},
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				PodSecurityContext: testSecurityContextValue,
 			},
 		},
@@ -196,7 +195,7 @@ func collectorInstance() v1alpha2.OpenTelemetryCollector {
 				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
 			},
 			Config: cfg,
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Image:          "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-targetallocator:0.47.0",
 				FilterStrategy: "relabel-config",
 			},
@@ -229,7 +228,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 			Name: "my-instance-nodeselector",
 		},
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				NodeSelector: map[string]string{
 					"node-key": "node-value",
 				},
@@ -274,7 +273,7 @@ func TestDeploymentAffinity(t *testing.T) {
 			Name: "my-instance-affinity",
 		},
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Affinity: testAffinityValue,
 			},
 		},
@@ -318,7 +317,7 @@ func TestDeploymentTolerations(t *testing.T) {
 			Name: "my-instance-toleration",
 		},
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Tolerations: testTolerationValues,
 			},
 		},
@@ -363,7 +362,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 			Name: "my-instance-topologyspreadconstraint",
 		},
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				TopologySpreadConstraints: testTopologySpreadConstraintValue,
 			},
 		},

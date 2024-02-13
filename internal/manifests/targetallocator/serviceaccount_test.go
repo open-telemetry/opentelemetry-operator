@@ -21,7 +21,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -48,7 +47,7 @@ func TestServiceAccountOverrideName(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				ServiceAccount: "my-special-sa",
 			},
 		},
@@ -92,7 +91,7 @@ func TestServiceAccountOverride(t *testing.T) {
 				Name: "my-instance",
 			},
 			Spec: v1alpha2.OpenTelemetryCollectorSpec{
-				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 					ServiceAccount: "my-special-sa",
 				},
 			},

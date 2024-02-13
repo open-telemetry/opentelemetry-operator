@@ -1150,10 +1150,10 @@ service:
 						},
 						Mode:   "statefulset",
 						Config: goodConfig,
-						TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+						TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 							Enabled:        true,
 							FilterStrategy: "relabel-config",
-							PrometheusCR: v1alpha1.OpenTelemetryTargetAllocatorPrometheusCR{
+							PrometheusCR: v1alpha2.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
 						},
@@ -1371,12 +1371,8 @@ label_selector:
   app.kubernetes.io/managed-by: opentelemetry-operator
   app.kubernetes.io/part-of: opentelemetry
 prometheus_cr:
-  pod_monitor_selector:
-    matchlabels: {}
-    matchexpressions: []
-  service_monitor_selector:
-    matchlabels: {}
-    matchexpressions: []
+  pod_monitor_selector: null
+  service_monitor_selector: null
 `,
 					},
 				},
@@ -1409,7 +1405,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "51477b182d2c9e7c0db27a2cbc9c7d35b24895b1cf0774d51a41b8d1753696ed",
+									"opentelemetry-targetallocator-config/hash": "59307aaa5652c8723f7803aa2d2b631389d1a0267444a4a8dc559878b5c4aa2c",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1546,9 +1542,9 @@ prometheus_cr:
 						},
 						Mode:   "statefulset",
 						Config: goodConfig,
-						TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+						TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 							Enabled: true,
-							PrometheusCR: v1alpha1.OpenTelemetryTargetAllocatorPrometheusCR{
+							PrometheusCR: v1alpha2.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
 							FilterStrategy: "relabel-config",
@@ -1772,12 +1768,8 @@ label_selector:
   app.kubernetes.io/managed-by: opentelemetry-operator
   app.kubernetes.io/part-of: opentelemetry
 prometheus_cr:
-  pod_monitor_selector:
-    matchlabels: {}
-    matchexpressions: []
-  service_monitor_selector:
-    matchlabels: {}
-    matchexpressions: []
+  pod_monitor_selector: null
+  service_monitor_selector: null
 `,
 					},
 				},
@@ -1810,7 +1802,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "51477b182d2c9e7c0db27a2cbc9c7d35b24895b1cf0774d51a41b8d1753696ed",
+									"opentelemetry-targetallocator-config/hash": "59307aaa5652c8723f7803aa2d2b631389d1a0267444a4a8dc559878b5c4aa2c",
 								},
 							},
 							Spec: corev1.PodSpec{
