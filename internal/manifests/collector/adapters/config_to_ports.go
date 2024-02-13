@@ -25,6 +25,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	exporterParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/exporter"
 	receiverParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
@@ -43,7 +44,7 @@ func (c ComponentType) String() string {
 }
 
 // ConfigToComponentPorts converts the incoming configuration object into a set of service ports required by the exporters.
-func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
+func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config v1alpha2.Config) ([]corev1.ServicePort, error) {
 	// now, we gather which ports we might need to open
 	// for that, we get all the exporters and check their `endpoint` properties,
 	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
@@ -122,7 +123,7 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 	return ports, nil
 }
 
-func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
+func ConfigToPorts(logger logr.Logger, config v1alpha2.Config) ([]corev1.ServicePort, error) {
 	ports, err := ConfigToComponentPorts(logger, ComponentTypeReceiver, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")

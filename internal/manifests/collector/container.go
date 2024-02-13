@@ -49,7 +49,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha2.OpenTelem
 	}
 
 	// build container ports from service ports
-	ports, err := getConfigContainerPorts(logger, configYaml)
+	ports, err := getConfigContainerPorts(logger, otelcol)
 	if err != nil {
 		logger.Error(err, "container ports config")
 	}
@@ -168,14 +168,9 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha2.OpenTelem
 	}
 }
 
-func getConfigContainerPorts(logger logr.Logger, cfg string) (map[string]corev1.ContainerPort, error) {
+func getConfigContainerPorts(logger logr.Logger, collector v1alpha2.OpenTelemetryCollector) (map[string]corev1.ContainerPort, error) {
 	ports := map[string]corev1.ContainerPort{}
-	c, err := adapters.ConfigFromString(cfg)
-	if err != nil {
-		logger.Error(err, "couldn't extract the configuration")
-		return ports, err
-	}
-	ps, err := adapters.ConfigToPorts(logger, c)
+	ps, err := adapters.ConfigToPorts(logger, collector.Spec.Config)
 	if err != nil {
 		return ports, err
 	}

@@ -111,7 +111,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	ports, err := adapters.ConfigToPorts(params.Log, configFromString)
+	ports, err := adapters.ConfigToPorts(params.Log, params.OtelCol.Spec.Config)
 	if err != nil {
 		return nil, err
 	}
