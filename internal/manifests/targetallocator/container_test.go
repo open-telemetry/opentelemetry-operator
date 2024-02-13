@@ -25,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -49,7 +48,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Enabled: true,
 				Image:   "overridden-image",
 			},
@@ -68,7 +67,7 @@ func TestContainerPorts(t *testing.T) {
 	// prepare
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Enabled: true,
 				Image:   "default-image",
 			},
@@ -89,7 +88,7 @@ func TestContainerVolumes(t *testing.T) {
 	// prepare
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Enabled: true,
 				Image:   "default-image",
 			},
@@ -108,7 +107,7 @@ func TestContainerVolumes(t *testing.T) {
 func TestContainerResourceRequirements(t *testing.T) {
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -146,7 +145,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 	// prepare
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Enabled: true,
 				Env: []corev1.EnvVar{
 					{
@@ -231,7 +230,7 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 	// prepare
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Enabled: true,
 				Env: []corev1.EnvVar{
 					{
@@ -257,7 +256,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	// prepare
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Enabled: true,
 				Env: []corev1.EnvVar{
 					{
@@ -323,7 +322,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 func TestReadinessProbe(t *testing.T) {
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Enabled: true,
 			},
 		},
@@ -348,7 +347,7 @@ func TestLivenessProbe(t *testing.T) {
 	// prepare
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Enabled: true,
 			},
 		},
@@ -378,7 +377,7 @@ func TestSecurityContext(t *testing.T) {
 	// prepare
 	otelcol := v1alpha2.OpenTelemetryCollector{
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+			TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
 				Enabled:         true,
 				SecurityContext: securityContext,
 			},
