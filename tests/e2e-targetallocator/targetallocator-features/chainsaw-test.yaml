@@ -43,9 +43,7 @@ spec:
         file: 00-assert.yaml
   - name: step-01
     try:
-    - command:
-        args:
-        - "35"
-        entrypoint: sleep
+    - sleep:
+        duration: 35s
     - assert:
         file: 01-assert.yaml
