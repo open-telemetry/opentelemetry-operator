@@ -23,7 +23,7 @@ jobs:
        kube-version:
          - "1.23"
          - "1.29"
-       group:
+       group: []
         #  - e2e
         #  - e2e-instrumentation
         #  - e2e-upgrade
@@ -32,7 +32,7 @@ jobs:
         #  - e2e-opampbridge
         #  - e2e-prometheuscr
         #  - e2e-targetallocator
-         - e2e-multi-instrumentation
+        #  - e2e-multi-instrumentation
        include:
          - group: e2e-prometheuscr
            setup: "prepare-e2e-with-featuregates FEATUREGATES=+operator.observability.prometheus"
@@ -107,7 +107,7 @@ jobs:
          - e2e-prometheuscr
          - e2e-targetallocator
          - e2e-upgrade
-        #  - e2e-multi-instrumentation
+         - e2e-multi-instrumentation
        include:
          - group: e2e-prometheuscr
            setup: "prepare-e2e-with-featuregates FEATUREGATES=+operator.observability.prometheus"
