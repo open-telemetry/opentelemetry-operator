@@ -249,6 +249,11 @@ e2e-multi-instrumentation:
 e2e-opampbridge:
 	$(KUTTL) test --config kuttl-test-opampbridge.yaml
 
+# Target allocator end-to-tests
+.PHONY: e2e-targetallocator
+e2e-targetallocator:
+	$(KUTTL) test --config kuttl-test-targetallocator.yaml
+
 ############
 # CHAINSAW #
 ############

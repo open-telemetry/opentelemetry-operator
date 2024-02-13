@@ -305,7 +305,8 @@ type OpenTelemetryTargetAllocator struct {
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
-	// The current options are least-weighted and consistent-hashing. The default option is consistent-hashing
+	// The current options are least-weighted, consistent-hashing and per-node. The default is
+	// consistent-hashing.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
 	AllocationStrategy OpenTelemetryTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
