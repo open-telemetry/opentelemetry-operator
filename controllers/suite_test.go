@@ -26,6 +26,7 @@ import (
 	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -215,12 +216,12 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func paramsWithMode(mode v1alpha1.Mode) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithMode(mode v1alpha1.Mode) v1alpha1.OpenTelemetryCollector {
 	replicas := int32(2)
-	return paramsWithModeAndReplicas(mode, replicas)
+	return testCollectorWithModeAndReplicas(mode, replicas)
 }
 
-func paramsWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) v1alpha1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
@@ -252,7 +253,16 @@ func paramsWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) v1alpha1.Open
 	}
 }
 
-func newParams(taContainerImage string, file string) (v1alpha1.OpenTelemetryCollector, error) {
+func testCollectorAssertNoErr(t *testing.T, taContainerImage string, file string) v1alpha1.OpenTelemetryCollector {
+	p, err := testCollectorWithConfigFile(taContainerImage, file)
+	assert.NoError(t, err)
+	if len(taContainerImage) == 0 {
+		p.Spec.TargetAllocator.Enabled = false
+	}
+	return p
+}
+
+func testCollectorWithConfigFile(taContainerImage string, file string) (v1alpha1.OpenTelemetryCollector, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -295,7 +305,7 @@ func newParams(taContainerImage string, file string) (v1alpha1.OpenTelemetryColl
 	}, nil
 }
 
-func paramsWithHPA(minReps, maxReps int32) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithHPA(minReps, maxReps int32) v1alpha1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
@@ -332,7 +342,7 @@ func paramsWithHPA(minReps, maxReps int32) v1alpha1.OpenTelemetryCollector {
 	}
 }
 
-func paramsWithPolicy(minAvailable, maxUnavailable int32) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
