@@ -289,6 +289,7 @@ type Nginx struct {
 type InstrumentationStatus struct {
 }
 
+// +kubebuilder:storageversion
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelinst;otelinsts
 // +kubebuilder:subresource:status
