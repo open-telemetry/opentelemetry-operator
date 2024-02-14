@@ -29,13 +29,13 @@ const (
 
 // PrometheusExporterParser parses the configuration for OTLP receivers.
 type ResourceDetectionParser struct {
-	config map[interface{}]interface{}
+	config map[string]interface{}
 	logger logr.Logger
 	name   string
 }
 
 // NewPrometheusExporterParser builds a new parser for OTLP receivers.
-func NewResourceDetectionParser(logger logr.Logger, name string, config map[interface{}]interface{}) ProcessorParser {
+func NewResourceDetectionParser(logger logr.Logger, name string, config map[string]interface{}) ProcessorParser {
 	return &ResourceDetectionParser{
 		logger: logger,
 		name:   name,

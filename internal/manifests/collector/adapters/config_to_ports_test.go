@@ -20,11 +20,12 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
@@ -79,12 +80,13 @@ service:
 
 func TestExtractPortsFromConfig(t *testing.T) {
 	// prepare
-	config, err := adapters.ConfigFromString(portConfigStr)
-	require.NoError(t, err)
-	require.NotEmpty(t, config)
+	cfg := v1alpha2.Config{}
+	if err := yaml.Unmarshal([]byte(portConfigStr), &cfg); err != nil {
+		t.Fatal(err)
+	}
 
 	// test
-	ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
+	ports, err := adapters.PortsForReceivers(logger, cfg)
 	assert.NoError(t, err)
 	assert.Len(t, ports, 10)
 
@@ -110,38 +112,6 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	assert.ElementsMatch(t, expectedPorts, ports)
 }
 
-func TestNoPortsParsed(t *testing.T) {
-	for _, tt := range []struct {
-		expected  error
-		desc      string
-		configStr string
-	}{
-		{
-			expected:  errors.New("no receivers available as part of the configuration"),
-			desc:      "empty",
-			configStr: "",
-		},
-		{
-			expected:  errors.New("receivers doesn't contain valid components"),
-			desc:      "not a map",
-			configStr: "receivers: some-string",
-		},
-	} {
-		t.Run(tt.desc, func(t *testing.T) {
-			// prepare
-			config, err := adapters.ConfigFromString(tt.configStr)
-			require.NoError(t, err)
-
-			// test
-			ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
-
-			// verify
-			assert.Nil(t, ports)
-			assert.Equal(t, tt.expected, err)
-		})
-	}
-}
-
 func TestInvalidReceivers(t *testing.T) {
 	for _, tt := range []struct {
 		desc      string
@@ -158,11 +128,13 @@ func TestInvalidReceivers(t *testing.T) {
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// prepare
-			config, err := adapters.ConfigFromString(tt.configStr)
-			require.NoError(t, err)
+			cfg := v1alpha2.Config{}
+			if err := yaml.Unmarshal([]byte(tt.configStr), &cfg); err != nil {
+				t.Fatal(err)
+			}
 
 			// test
-			ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
+			ports, err := adapters.PortsForReceivers(logger, cfg)
 
 			// verify
 			assert.NoError(t, err)
@@ -180,25 +152,29 @@ func TestParserFailed(t *testing.T) {
 			return nil, errors.New("mocked error")
 		},
 	}
-	receiver.Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+	receiver.Register("mock", func(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 		return mockParser
 	})
 
-	config := map[interface{}]interface{}{
-		"receivers": map[interface{}]interface{}{
-			"mock": map[string]interface{}{},
+	cfg := v1alpha2.Config{
+		Receivers: v1alpha2.AnyConfig{
+			Object: map[string]interface{}{
+				"mock": map[string]interface{}{},
+			},
 		},
-		"service": map[interface{}]interface{}{
-			"pipelines": map[interface{}]interface{}{
-				"metrics": map[interface{}]interface{}{
-					"receivers": []interface{}{"mock"},
+		Service: v1alpha2.Service{
+			Pipelines: v1alpha2.AnyConfig{
+				Object: map[string]interface{}{
+					"metrics": map[string]interface{}{
+						"receivers": []interface{}{"mock"},
+					},
 				},
 			},
 		},
 	}
 
 	// test
-	ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
+	ports, err := adapters.PortsForReceivers(logger, cfg)
 
 	// verify
 	assert.Len(t, ports, 0)
@@ -208,67 +184,57 @@ func TestParserFailed(t *testing.T) {
 
 func TestConfigToMetricsPort(t *testing.T) {
 	t.Run("custom port specified", func(t *testing.T) {
-		config := map[interface{}]interface{}{
-			"service": map[interface{}]interface{}{
-				"telemetry": map[interface{}]interface{}{
-					"metrics": map[interface{}]interface{}{
-						"address": "0.0.0.0:9090",
-					},
+		config := v1alpha2.Service{
+			Telemetry: &v1alpha2.Telemetry{
+				Metrics: v1alpha2.MetricsConfig{
+					Address: "0.0.0.0:9090",
 				},
 			},
 		}
 
-		port, err := adapters.ConfigToMetricsPort(logger, config)
+		port, err := adapters.ConfigToMetricsPort(config)
 		assert.NoError(t, err)
 		assert.Equal(t, int32(9090), port)
 	})
 
 	for _, tt := range []struct {
 		desc   string
-		config map[interface{}]interface{}
+		config v1alpha2.Service
 	}{
 		{
 			"bad address",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{
-					"telemetry": map[interface{}]interface{}{
-						"metrics": map[interface{}]interface{}{
-							"address": "0.0.0.0",
-						},
+			v1alpha2.Service{
+				Telemetry: &v1alpha2.Telemetry{
+					Metrics: v1alpha2.MetricsConfig{
+						Address: "0.0.0.0",
 					},
 				},
 			},
 		},
 		{
 			"missing address",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{
-					"telemetry": map[interface{}]interface{}{
-						"metrics": map[interface{}]interface{}{
-							"level": "detailed",
-						},
+			v1alpha2.Service{
+				Telemetry: &v1alpha2.Telemetry{
+					Metrics: v1alpha2.MetricsConfig{
+						Level: "detailed",
 					},
 				},
 			},
 		},
 		{
 			"missing metrics",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{
-					"telemetry": map[interface{}]interface{}{},
-				},
+			v1alpha2.Service{
+				Telemetry: &v1alpha2.Telemetry{},
 			},
 		},
 		{
 			"missing telemetry",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{},
-			},
+			v1alpha2.Service{},
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// these are acceptable failures, we return to the collector's default metric port
-			port, err := adapters.ConfigToMetricsPort(logger, tt.config)
+			port, err := adapters.ConfigToMetricsPort(tt.config)
 			assert.NoError(t, err)
 			assert.Equal(t, int32(8888), port)
 		})

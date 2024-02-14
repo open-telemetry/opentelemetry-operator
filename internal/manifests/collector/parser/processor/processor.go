@@ -30,7 +30,7 @@ type ProcessorParser interface {
 }
 
 // Builder specifies the signature required for parser builders.
-type Builder func(logr.Logger, string, map[interface{}]interface{}) ProcessorParser
+type Builder func(logr.Logger, string, map[string]interface{}) ProcessorParser
 
 // registry holds a record of all known processor parsers.
 var registry = make(map[string]Builder)
@@ -41,7 +41,7 @@ func BuilderFor(name string) Builder {
 }
 
 // For returns a new parser for the given processor name + config.
-func For(logger logr.Logger, name string, config map[interface{}]interface{}) (ProcessorParser, error) {
+func For(logger logr.Logger, name string, config map[string]interface{}) (ProcessorParser, error) {
 	builder := BuilderFor(name)
 	if builder == nil {
 		return nil, fmt.Errorf("no builders for %s", name)

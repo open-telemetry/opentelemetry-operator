@@ -42,12 +42,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha2.OpenTelem
 		image = cfg.CollectorImage()
 	}
 
-	configYaml, err := otelcol.Spec.Config.Yaml()
-	if err != nil {
-		logger.Error(err, "could not convert json to yaml")
-		return corev1.Container{}
-	}
-
 	// build container ports from service ports
 	ports, err := getConfigContainerPorts(logger, otelcol)
 	if err != nil {
@@ -139,16 +133,14 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha2.OpenTelem
 	}
 
 	var livenessProbe *corev1.Probe
-	if configFromString, err := adapters.ConfigFromString(configYaml); err == nil {
-		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
-			livenessProbe = probe
-		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
-			logger.Info("extensions not configured, skipping liveness probe creation")
-		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
-			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
-		} else {
-			logger.Error(err, "cannot create liveness probe.")
-		}
+	if probe, err := getLivenessProbe(otelcol.Spec.Config, otelcol.Spec.LivenessProbe); err == nil {
+		livenessProbe = probe
+	} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
+		logger.Info("extensions not configured, skipping liveness probe creation")
+	} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
+		logger.Info("healthcheck extension not configured, skipping liveness probe creation")
+	} else {
+		logger.Error(err, "cannot create liveness probe.")
 	}
 
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
@@ -196,7 +188,7 @@ func getConfigContainerPorts(logger logr.Logger, collector v1alpha2.OpenTelemetr
 		}
 	}
 
-	metricsPort, err := adapters.ConfigToMetricsPort(logger, c)
+	metricsPort, err := adapters.ConfigToMetricsPort(collector.Spec.Config.Service)
 	if err != nil {
 		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888
@@ -221,7 +213,7 @@ func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPo
 	return ports
 }
 
-func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha2.Probe) (*corev1.Probe, error) {
+func getLivenessProbe(config v1alpha2.Config, probeConfig *v1alpha2.Probe) (*corev1.Probe, error) {
 	probe, err := adapters.ConfigToContainerProbe(config)
 	if err != nil {
 		return nil, err

@@ -44,7 +44,7 @@ func BuilderFor(name string) parser.Builder {
 }
 
 // For returns a new parser for the given receiver name + config.
-func For(logger logr.Logger, name string, config map[interface{}]interface{}) (parser.ComponentPortParser, error) {
+func For(logger logr.Logger, name string, config map[string]interface{}) (parser.ComponentPortParser, error) {
 	builder := BuilderFor(name)
 	return builder(logger, name, config), nil
 }
@@ -102,7 +102,7 @@ func isScraperReceiver(name string) bool {
 	return exists
 }
 
-func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *v1.ServicePort {
+func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[string]interface{}) *v1.ServicePort {
 	var endpoint interface{}
 	switch {
 	// syslog receiver contains the endpoint
@@ -110,12 +110,12 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	// i.e. either in tcp or udp section with field key
 	// as `listen_address`
 	case name == "syslog":
-		var c map[interface{}]interface{}
+		var c map[string]interface{}
 		if udp, isUDP := config["udp"]; isUDP && udp != nil {
-			c = udp.(map[interface{}]interface{})
+			c = udp.(map[string]interface{})
 			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
 		} else if tcp, isTCP := config["tcp"]; isTCP && tcp != nil {
-			c = tcp.(map[interface{}]interface{})
+			c = tcp.(map[string]interface{})
 			endpoint = getAddressFromConfig(logger, name, listenAddressKey, c)
 		}
 
@@ -155,7 +155,7 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	return nil
 }
 
-func getAddressFromConfig(logger logr.Logger, name, key string, config map[interface{}]interface{}) interface{} {
+func getAddressFromConfig(logger logr.Logger, name, key string, config map[string]interface{}) interface{} {
 	endpoint, ok := config[key]
 	if !ok {
 		logger.V(2).Info("%s receiver doesn't have an %s", name, key)

@@ -24,7 +24,7 @@ import (
 const parserNameStatsd = "__statsd"
 
 // NewStatsdReceiverParser builds a new parser for Statsd receivers, from the contrib repository.
-func NewStatsdReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewStatsdReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:          logger,
 		name:            name,

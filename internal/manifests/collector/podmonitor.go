@@ -24,7 +24,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -78,18 +77,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 }
 
 func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha2.OpenTelemetryCollector) []monitoringv1.PodMetricsEndpoint {
-	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2603
-	cfgStr, err := otelcol.Spec.Config.Yaml()
-	if err != nil {
-		logger.V(2).Error(err, "Error while marshaling to YAML")
-		return []monitoringv1.PodMetricsEndpoint{}
-	}
-	config, err := adapters.ConfigFromString(cfgStr)
-	if err != nil {
-		logger.V(2).Error(err, "Error while parsing the configuration")
-		return []monitoringv1.PodMetricsEndpoint{}
-	}
-	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, config)
+	exporterPorts, err := otelcol.Spec.Config.Exporters.Ports(logger)
 	if err != nil {
 		logger.Error(err, "couldn't build endpoints to podMonitors from configuration")
 		return []monitoringv1.PodMetricsEndpoint{}

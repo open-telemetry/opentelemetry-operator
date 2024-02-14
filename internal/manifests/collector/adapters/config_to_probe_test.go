@@ -19,6 +19,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	go_yaml "gopkg.in/yaml.v3"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 func TestConfigToProbeShouldCreateProbeFor(t *testing.T) {
@@ -104,17 +107,20 @@ service:
 	}
 
 	for _, test := range tests {
-		// prepare
-		config, err := ConfigFromString(test.config)
-		require.NoError(t, err, test.desc)
-		require.NotEmpty(t, config, test.desc)
+		t.Run(test.desc, func(t *testing.T) {
+			// prepare
+			cfg := v1alpha2.Config{}
+			err := go_yaml.Unmarshal([]byte(test.config), &cfg)
+			require.NoError(t, err, test.desc)
+			require.NotEmpty(t, cfg, test.desc)
 
-		// test
-		actualProbe, err := ConfigToContainerProbe(config)
-		assert.NoError(t, err)
-		assert.Equal(t, test.expectedPath, actualProbe.HTTPGet.Path, test.desc)
-		assert.Equal(t, test.expectedPort, actualProbe.HTTPGet.Port.IntVal, test.desc)
-		assert.Equal(t, "", actualProbe.HTTPGet.Host, test.desc)
+			// test
+			actualProbe, err := ConfigToContainerProbe(cfg)
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedPath, actualProbe.HTTPGet.Path, test.desc)
+			assert.Equal(t, test.expectedPort, actualProbe.HTTPGet.Port.IntVal, test.desc)
+			assert.Equal(t, "", actualProbe.HTTPGet.Host, test.desc)
+		})
 	}
 }
 
@@ -132,56 +138,39 @@ service:
   extensions: [health_check]`,
 			expectedErr: errNoExtensionHealthCheck,
 		}, {
-			desc: "BadlyFormattedExtensions",
-			config: `extensions: [hi]
-service:
-  extensions: [health_check]`,
-			expectedErr: errExtensionsNotAMap,
-		}, {
 			desc: "NoExtensions",
 			config: `service:
   extensions: [health_check]`,
 			expectedErr: errNoExtensions,
 		}, {
 			desc: "NoHealthCheckInServiceExtensions",
-			config: `service:
+			config: `extensions:
+  health_check:
+service:
   extensions: [pprof]`,
 			expectedErr: ErrNoServiceExtensionHealthCheck,
 		}, {
-			desc: "BadlyFormattedServiceExtensions",
-			config: `service:
-  extensions:
-    this: should-not-be-a-map`,
-			expectedErr: errServiceExtensionsNotSlice,
-		}, {
 			desc: "NoServiceExtensions",
-			config: `service:
+			config: `extensions:
+  health_check:
+service:
   pipelines:
     traces:
       receivers: [otlp]`,
 			expectedErr: ErrNoServiceExtensions,
-		}, {
-			desc: "BadlyFormattedService",
-			config: `extensions:
-  health_check:
-service: [hi]`,
-			expectedErr: errServiceNotAMap,
-		}, {
-			desc: "NoService",
-			config: `extensions:
-  health_check:`,
-			expectedErr: errNoService,
 		},
 	}
-
 	for _, test := range tests {
-		// prepare
-		config, err := ConfigFromString(test.config)
-		require.NoError(t, err, test.desc)
-		require.NotEmpty(t, config, test.desc)
+		t.Run(test.desc, func(t *testing.T) {
+			// prepare
+			cfg := v1alpha2.Config{}
+			err := go_yaml.Unmarshal([]byte(test.config), &cfg)
+			require.NoError(t, err, test.desc)
+			require.NotEmpty(t, cfg, test.desc)
 
-		// test
-		_, err = ConfigToContainerProbe(config)
-		assert.Equal(t, test.expectedErr, err, test.desc)
+			// test
+			_, err = ConfigToContainerProbe(cfg)
+			assert.Equal(t, test.expectedErr, err, test.desc)
+		})
 	}
 }

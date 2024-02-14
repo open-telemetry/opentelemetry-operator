@@ -91,7 +91,7 @@ func TestReceiverParsePortFromEndpoint(t *testing.T) {
 
 func TestReceiverFailsWhenPortIsntString(t *testing.T) {
 	// prepare
-	config := map[interface{}]interface{}{
+	config := map[string]interface{}{
 		"endpoint": 123,
 	}
 
@@ -105,7 +105,7 @@ func TestReceiverFailsWhenPortIsntString(t *testing.T) {
 func TestIgnorekubeletstatsEndpoint(t *testing.T) {
 	// ignore "kubeletstats" receiver endpoint field, this is special case
 	// as this receiver gets parsed by generic receiver parser
-	builder := NewGenericReceiverParser(logger, "kubeletstats", map[interface{}]interface{}{
+	builder := NewGenericReceiverParser(logger, "kubeletstats", map[string]interface{}{
 		"endpoint": "0.0.0.0:9000",
 	})
 
@@ -119,7 +119,7 @@ func TestIgnorekubeletstatsEndpoint(t *testing.T) {
 
 func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
 	// test
-	p, err := For(logger, "myreceiver", map[interface{}]interface{}{})
+	p, err := For(logger, "myreceiver", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// test
@@ -129,13 +129,13 @@ func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
 func TestReceiverShouldFindRegisteredParser(t *testing.T) {
 	// prepare
 	builderCalled := false
-	Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+	Register("mock", func(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 		builderCalled = true
 		return &mockParser{}
 	})
 
 	// test
-	_, _ = For(logger, "mock", map[interface{}]interface{}{})
+	_, _ = For(logger, "mock", map[string]interface{}{})
 
 	// verify
 	assert.True(t, builderCalled)
@@ -154,7 +154,7 @@ func (m *mockParser) ParserName() string {
 
 func TestSkipPortsForScrapers(t *testing.T) {
 	for receiver := range scraperReceivers {
-		builder := NewGenericReceiverParser(logger, receiver, map[interface{}]interface{}{
+		builder := NewGenericReceiverParser(logger, receiver, map[string]interface{}{
 			"endpoint": "0.0.0.0:42069",
 		})
 		ports, err := builder.Ports()

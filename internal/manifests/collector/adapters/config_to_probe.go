@@ -20,20 +20,14 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 )
 
 var (
-	errNoService    = errors.New("no service available as part of the configuration")
-	errNoExtensions = errors.New("no extensions available as part of the configuration")
-
-	errServiceNotAMap    = errors.New("service property in the configuration doesn't contain valid services")
-	errExtensionsNotAMap = errors.New("extensions property in the configuration doesn't contain valid extensions")
-
-	errNoExtensionHealthCheck = errors.New("extensions property in the configuration does not contain the expected health_check extension")
-
-	ErrNoServiceExtensions = errors.New("service property in the configuration doesn't contain extensions")
-
-	errServiceExtensionsNotSlice     = errors.New("service extensions property in the configuration does not contain valid extensions")
+	errNoExtensions                  = errors.New("no extensions available as part of the configuration")
+	errNoExtensionHealthCheck        = errors.New("extensions property in the configuration does not contain the expected health_check extension")
+	ErrNoServiceExtensions           = errors.New("service property in the configuration doesn't contain extensions")
 	ErrNoServiceExtensionHealthCheck = errors.New("no healthcheck extension available in service extension configuration")
 )
 
@@ -48,53 +42,28 @@ const (
 )
 
 // ConfigToContainerProbe converts the incoming configuration object into a container probe or returns an error.
-func ConfigToContainerProbe(config map[interface{}]interface{}) (*corev1.Probe, error) {
-	serviceProperty, withService := config["service"]
-	if !withService {
-		return nil, errNoService
-	}
-	service, withSvcProperty := serviceProperty.(map[interface{}]interface{})
-	if !withSvcProperty {
-		return nil, errServiceNotAMap
-	}
-
-	serviceExtensionsProperty, withExtension := service["extensions"]
-	if !withExtension {
+func ConfigToContainerProbe(config v1alpha2.Config) (*corev1.Probe, error) {
+	if config.Extensions == nil {
+		return nil, errNoExtensions
+	} else if len(config.Service.Extensions) == 0 {
 		return nil, ErrNoServiceExtensions
 	}
-
-	serviceExtensions, withExtProperty := serviceExtensionsProperty.([]interface{})
-	if !withExtProperty {
-		return nil, errServiceExtensionsNotSlice
-	}
 	healthCheckServiceExtensions := make([]string, 0)
-	for _, ext := range serviceExtensions {
-		parsedExt, ok := ext.(string)
-		if ok && strings.HasPrefix(parsedExt, "health_check") {
-			healthCheckServiceExtensions = append(healthCheckServiceExtensions, parsedExt)
+	for _, ext := range config.Service.Extensions {
+		if strings.HasPrefix(ext, "health_check") {
+			healthCheckServiceExtensions = append(healthCheckServiceExtensions, ext)
 		}
 	}
-
 	if len(healthCheckServiceExtensions) == 0 {
 		return nil, ErrNoServiceExtensionHealthCheck
 	}
-
-	extensionsProperty, ok := config["extensions"]
-	if !ok {
-		return nil, errNoExtensions
-	}
-	extensions, ok := extensionsProperty.(map[interface{}]interface{})
-	if !ok {
-		return nil, errExtensionsNotAMap
-	}
 	// in the event of multiple health_check service extensions defined, we arbitrarily take the first one found
 	for _, healthCheckForProbe := range healthCheckServiceExtensions {
-		healthCheckExtension, ok := extensions[healthCheckForProbe]
+		healthCheckExtension, ok := config.Extensions.Object[healthCheckForProbe]
 		if ok {
 			return createProbeFromExtension(healthCheckExtension)
 		}
 	}
-
 	return nil, errNoExtensionHealthCheck
 }
 
@@ -111,7 +80,7 @@ func createProbeFromExtension(extension interface{}) (*corev1.Probe, error) {
 }
 
 func extractProbeConfigurationFromExtension(ext interface{}) probeConfiguration {
-	extensionCfg, ok := ext.(map[interface{}]interface{})
+	extensionCfg, ok := ext.(map[string]interface{})
 	if !ok {
 		return defaultProbeConfiguration()
 	}
@@ -128,7 +97,7 @@ func defaultProbeConfiguration() probeConfiguration {
 	}
 }
 
-func extractPathFromExtensionConfig(cfg map[interface{}]interface{}) string {
+func extractPathFromExtensionConfig(cfg map[string]interface{}) string {
 	if path, ok := cfg["path"]; ok {
 		if parsedPath, ok := path.(string); ok {
 			return parsedPath
@@ -137,7 +106,7 @@ func extractPathFromExtensionConfig(cfg map[interface{}]interface{}) string {
 	return defaultHealthCheckPath
 }
 
-func extractPortFromExtensionConfig(cfg map[interface{}]interface{}) intstr.IntOrString {
+func extractPortFromExtensionConfig(cfg map[string]interface{}) intstr.IntOrString {
 	endpoint, ok := cfg["endpoint"]
 	if !ok {
 		return defaultHealthCheckEndpoint()
@@ -154,5 +123,5 @@ func extractPortFromExtensionConfig(cfg map[interface{}]interface{}) intstr.IntO
 }
 
 func defaultHealthCheckEndpoint() intstr.IntOrString {
-	return intstr.FromInt(defaultHealthCheckPort)
+	return intstr.FromInt32(defaultHealthCheckPort)
 }

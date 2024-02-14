@@ -35,10 +35,7 @@ func TestDefaultAnnotations(t *testing.T) {
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			Config: v1alpha2.Config{
 				Service: v1alpha2.Service{
-					Extensions: func() *[]string {
-						res := []string{"test"}
-						return &res
-					}(),
+					Extensions: []string{"test"},
 				},
 			},
 		},
@@ -111,10 +108,7 @@ func TestUserAnnotations(t *testing.T) {
 		Spec: v1alpha2.OpenTelemetryCollectorSpec{
 			Config: v1alpha2.Config{
 				Service: v1alpha2.Service{
-					Extensions: func() *[]string {
-						res := []string{"test2"}
-						return &res
-					}(),
+					Extensions: []string{"test2"},
 				},
 			},
 		},

@@ -23,7 +23,7 @@ import (
 const parserNameOpenCensus = "__opencensus"
 
 // NewOpenCensusReceiverParser builds a new parser for OpenCensus receivers.
-func NewOpenCensusReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewOpenCensusReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	httpAppProtocol := "http"
 	return &GenericReceiver{
 		logger:             logger,
