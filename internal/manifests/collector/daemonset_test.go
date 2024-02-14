@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -34,13 +34,15 @@ func TestDaemonSetNewDefault(t *testing.T) {
 	// prepare
 	params := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Tolerations: testTolerationValues,
+			Spec: v1alpha2.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Tolerations: testTolerationValues,
+				},
 			},
 		},
 		Log: logger,
@@ -96,12 +98,12 @@ func TestDaemonSetNewDefault(t *testing.T) {
 func TestDaemonsetHostNetwork(t *testing.T) {
 	params1 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+			Spec: v1alpha2.OpenTelemetryCollectorSpec{},
 		},
 		Log: logger,
 	}
@@ -114,13 +116,15 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 	// verify custom
 	params2 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				HostNetwork: true,
+			Spec: v1alpha2.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					HostNetwork: true,
+				},
 			},
 		},
 		Log: logger,
@@ -134,12 +138,14 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 func TestDaemonsetPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodAnnotations: testPodAnnotationValues,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				PodAnnotations: testPodAnnotationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -176,15 +182,17 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodSecurityContext: &v1.PodSecurityContext{
-				RunAsNonRoot: &runAsNonRoot,
-				RunAsUser:    &runAsUser,
-				RunAsGroup:   &runasGroup,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				PodSecurityContext: &v1.PodSecurityContext{
+					RunAsNonRoot: &runAsNonRoot,
+					RunAsUser:    &runAsUser,
+					RunAsGroup:   &runasGroup,
+				},
 			},
 		},
 	}
@@ -211,12 +219,12 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 		"app.foo.bar": "1",
 	}
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "my-instance",
 			Labels: excludedLabels,
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{},
 	}
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
@@ -238,7 +246,7 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 
 func TestDaemonSetNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -258,14 +266,16 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
-			NodeSelector: map[string]string{
-				"node-key": "node-value",
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				HostNetwork: true,
+				NodeSelector: map[string]string{
+					"node-key": "node-value",
+				},
 			},
 		},
 	}
@@ -284,7 +294,7 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 }
 
 func TestDaemonSetPriorityClassName(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -304,12 +314,14 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 
 	priorityClassName := "test-class"
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PriorityClassName: priorityClassName,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				PriorityClassName: priorityClassName,
+			},
 		},
 	}
 
@@ -327,7 +339,7 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 }
 
 func TestDaemonSetAffinity(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -345,12 +357,14 @@ func TestDaemonSetAffinity(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Affinity: testAffinityValue,
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				Affinity: testAffinityValue,
+			},
 		},
 	}
 
@@ -370,15 +384,17 @@ func TestDaemonSetAffinity(t *testing.T) {
 
 func TestDaemonSetInitContainer(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			InitContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				InitContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -404,15 +420,17 @@ func TestDaemonSetInitContainer(t *testing.T) {
 
 func TestDaemonSetAdditionalContainer(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			AdditionalContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+				AdditionalContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -439,13 +457,13 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 
 func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			DaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "RollingUpdate",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
@@ -474,13 +492,13 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 
 func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1alpha2.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			DaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "OnDelete",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
@@ -510,11 +528,11 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 func TestDaemonsetShareProcessNamespace(t *testing.T) {
 	params1 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+			Spec: v1alpha2.OpenTelemetryCollectorSpec{},
 		},
 		Log: logger,
 	}
@@ -526,12 +544,14 @@ func TestDaemonsetShareProcessNamespace(t *testing.T) {
 	// verify custom
 	params2 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1alpha2.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance-with-shareprocessnamespace",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				ShareProcessNamespace: true,
+			Spec: v1alpha2.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					ShareProcessNamespace: true,
+				},
 			},
 		},
 		Log: logger,

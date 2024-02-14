@@ -24,6 +24,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	networkingv1 "k8s.io/api/networking/v1"
+	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -34,7 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -89,17 +89,13 @@ func BuildOpAMPBridge(params manifests.Params) ([]client.Object, error) {
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
 	ownedObjects := map[types.UID]client.Object{}
-	otelCol, err := convert.V1Alpha1to2(params.OtelCol)
-	if err != nil {
-		return nil, err
-	}
 
 	listOps := &client.ListOptions{
-		Namespace:     otelCol.Namespace,
-		LabelSelector: labels.SelectorFromSet(manifestutils.Labels(otelCol.ObjectMeta, naming.Collector(otelCol.Name), otelCol.Spec.Image, collector.ComponentOpenTelemetryCollector, params.Config.LabelsFilter())),
+		Namespace:     params.OtelCol.Namespace,
+		LabelSelector: labels.SelectorFromSet(manifestutils.Labels(params.OtelCol.ObjectMeta, naming.Collector(params.OtelCol.Name), params.OtelCol.Spec.Image, collector.ComponentOpenTelemetryCollector, params.Config.LabelsFilter())),
 	}
 	hpaList := &autoscalingv2.HorizontalPodAutoscalerList{}
-	err = r.List(ctx, hpaList, listOps)
+	err := r.List(ctx, hpaList, listOps)
 	if err != nil {
 		return nil, fmt.Errorf("Error listing HorizontalPodAutoscalers: %w", err)
 	}
@@ -107,7 +103,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
 	}
 
-	if otelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		servicemonitorList := &monitoringv1.ServiceMonitorList{}
 		err = r.List(ctx, servicemonitorList, listOps)
 		if err != nil {
@@ -117,7 +113,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 			ownedObjects[servicemonitorList.Items[i].GetUID()] = servicemonitorList.Items[i]
 		}
 
-		podMonitorList := &monitoringv1.ServiceMonitorList{}
+		podMonitorList := &monitoringv1.PodMonitorList{}
 		err = r.List(ctx, podMonitorList, listOps)
 		if err != nil {
 			return nil, fmt.Errorf("Error listing PodMonitors: %w", err)
@@ -145,6 +141,17 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
 		}
 	}
+	if params.OtelCol.Spec.PodDisruptionBudget != nil {
+		pdbList := &policyV1.PodDisruptionBudgetList{}
+		err := r.List(ctx, pdbList, listOps)
+		if err != nil {
+			return nil, fmt.Errorf("Error listing PodDisruptionBudgets: %w", err)
+		}
+		for i := range pdbList.Items {
+			ownedObjects[pdbList.Items[i].GetUID()] = &pdbList.Items[i]
+		}
+	}
+
 	return ownedObjects, nil
 }
 

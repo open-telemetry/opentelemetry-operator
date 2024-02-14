@@ -27,8 +27,6 @@ spec:
   targetAllocator:
     enabled: true
     serviceAccount: ta
-    prometheusCR:
-      enabled: true
   config: |
     receivers:
       jaeger:

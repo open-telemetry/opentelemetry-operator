@@ -34,10 +34,15 @@ const (
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.TAConfigMap(params.OtelCol.Name)
 	labels := Labels(params.OtelCol, name)
+	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2603
+	cfgStr, err := params.OtelCol.Spec.Config.Yaml()
+	if err != nil {
+		return &corev1.ConfigMap{}, err
+	}
 
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA ConfigMap should have a single "$", as it does not support env var substitution
-	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(params.OtelCol.Spec.Config)
+	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(cfgStr)
 	if err != nil {
 		return &corev1.ConfigMap{}, err
 	}

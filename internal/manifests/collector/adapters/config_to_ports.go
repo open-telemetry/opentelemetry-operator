@@ -160,6 +160,7 @@ func ConfigToMetricsPort(logger logr.Logger, config map[interface{}]interface{})
 	type cfg struct {
 		Service serviceCfg
 	}
+
 	var cOut cfg
 	err := mapstructure.Decode(config, &cOut)
 	if err != nil {

@@ -22,7 +22,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -39,7 +39,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	}
 	var pm monitoringv1.PodMonitor
 
-	if params.OtelCol.Spec.Mode != v1alpha1.ModeSidecar {
+	if params.OtelCol.Spec.Mode != v1alpha2.ModeSidecar {
 		return nil, nil
 	}
 
@@ -77,8 +77,14 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	return &pm, nil
 }
 
-func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) []monitoringv1.PodMetricsEndpoint {
-	config, err := adapters.ConfigFromString(otelcol.Spec.Config)
+func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1alpha2.OpenTelemetryCollector) []monitoringv1.PodMetricsEndpoint {
+	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2603
+	cfgStr, err := otelcol.Spec.Config.Yaml()
+	if err != nil {
+		logger.V(2).Error(err, "Error while marshaling to YAML")
+		return []monitoringv1.PodMetricsEndpoint{}
+	}
+	config, err := adapters.ConfigFromString(cfgStr)
 	if err != nil {
 		logger.V(2).Error(err, "Error while parsing the configuration")
 		return []monitoringv1.PodMetricsEndpoint{}

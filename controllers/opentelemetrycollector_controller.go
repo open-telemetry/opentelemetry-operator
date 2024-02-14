@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -59,15 +60,19 @@ type Params struct {
 	Config   config.Config
 }
 
-func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
+func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) (manifests.Params, error) {
+	otelCol, err := convert.V1Alpha1to2(instance)
+	if err != nil {
+		return manifests.Params{}, err
+	}
 	return manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
-		OtelCol:  instance,
+		OtelCol:  otelCol,
 		Log:      r.log,
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
-	}
+	}, nil
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -122,7 +127,11 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	params := r.getParams(instance)
+	params, err := r.getParams(instance)
+	if err != nil {
+		log.Error(err, "Failed to create manifest.Params")
+		return ctrl.Result{}, err
+	}
 
 	desiredObjects, buildErr := BuildCollector(params)
 	if buildErr != nil {
@@ -135,7 +144,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	err = reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects, ownedObjects)
-	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
+	return collectorStatus.HandleReconcileStatus(ctx, log, params, instance, err)
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
