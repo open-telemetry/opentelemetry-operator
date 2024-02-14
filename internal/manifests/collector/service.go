@@ -172,8 +172,25 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	}, nil
 }
 
-func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {
-	if portNumbers[candidate.Port] {
+type PortNumberKey struct {
+	Port     int32
+	Protocol corev1.Protocol
+}
+
+func newPortNumberKeyByPort(port int32) PortNumberKey {
+	return PortNumberKey{Port: port, Protocol: corev1.ProtocolTCP}
+}
+
+func newPortNumberKey(port int32, protocol corev1.Protocol) PortNumberKey {
+	if protocol == "" {
+		// K8s defaults to TCP if protocol is empty, so evaluate the port the same
+		protocol = corev1.ProtocolTCP
+	}
+	return PortNumberKey{Port: port, Protocol: protocol}
+}
+
+func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[PortNumberKey]bool, portNames map[string]bool) *corev1.ServicePort {
+	if portNumbers[newPortNumberKey(candidate.Port, candidate.Protocol)] {
 		return nil
 	}
 
@@ -198,12 +215,12 @@ func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers ma
 	return &candidate
 }
 
-func extractPortNumbersAndNames(ports []corev1.ServicePort) (map[int32]bool, map[string]bool) {
-	numbers := map[int32]bool{}
+func extractPortNumbersAndNames(ports []corev1.ServicePort) (map[PortNumberKey]bool, map[string]bool) {
+	numbers := map[PortNumberKey]bool{}
 	names := map[string]bool{}
 
 	for _, port := range ports {
-		numbers[port.Port] = true
+		numbers[newPortNumberKey(port.Port, port.Protocol)] = true
 		names[port.Name] = true
 	}
 
