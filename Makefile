@@ -197,18 +197,18 @@ generate: controller-gen
 
 # end-to-tests
 .PHONY: e2e
-e2e:
+e2e: chainsaw
 	chainsaw test --test-dir ./tests/e2e
 
 # end-to-end-test for testing autoscale
 .PHONY: e2e-autoscale
-e2e-autoscale:
-	chainsaw test --test-dir ./tests/e2e-autoscale
+e2e-autoscale: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-autoscale
 
 # instrumentation end-to-tests
 .PHONY: e2e-instrumentation
-e2e-instrumentation:
-	chainsaw test --test-dir ./tests/e2e-instrumentation
+e2e-instrumentation: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation
 
 .PHONY: e2e-log-operator
 e2e-log-operator:
@@ -217,35 +217,35 @@ e2e-log-operator:
 
 # end-to-tests for multi-instrumentation
 .PHONY: e2e-multi-instrumentation
-e2e-multi-instrumentation:
-	chainsaw test --test-dir ./tests/e2e-multi-instrumentation
+e2e-multi-instrumentation: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-multi-instrumentation
 
 # OpAMPBridge CR end-to-tests
 .PHONY: e2e-opampbridge
-e2e-opampbridge:
-	chainsaw test --test-dir ./tests/e2e-opampbridge
+e2e-opampbridge: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-opampbridge
 
 # end-to-end-test for testing pdb support
 .PHONY: e2e-pdb
-e2e-pdb:
-	chainsaw test --test-dir ./tests/e2e-pdb
+e2e-pdb: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-pdb
 
 # end-to-end-test for PrometheusCR E2E tests
 .PHONY: e2e-prometheuscr
-e2e-prometheuscr:
-	chainsaw test --test-dir ./tests/e2e-prometheuscr
+e2e-prometheuscr: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-prometheuscr
 
 # Target allocator end-to-tests
 .PHONY: e2e-targetallocator
-e2e-targetallocator:
-	chainsaw test --test-dir ./tests/e2e-targetallocator
+e2e-targetallocator: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
 
 # end-to-end-test for testing upgrading
 .PHONY: e2e-upgrade
-e2e-upgrade: undeploy
+e2e-upgrade: undeploy chainsaw
 	kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.86.0.yaml
 	go run hack/check-operator-ready.go
-	chainsaw test --test-dir ./tests/e2e-upgrade
+	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade
 
 .PHONY: prepare-e2e
 prepare-e2e: set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
@@ -367,8 +367,15 @@ CONTROLLER_TOOLS_VERSION ?= v0.12.0
 GOLANGCI_LINT_VERSION ?= v1.54.0
 KIND_VERSION ?= v0.20.0
 
+# Checks if chainsaw is in your PATH
+ifneq ($(shell which chainsaw),)
+CHAINSAW ?= $(shell which chainsaw)
+else
+CHAINSAW ?= $(LOCALBIN)/bin/chainsaw
+endif
+
 .PHONY: install-tools
-install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk
+install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
@@ -396,6 +403,18 @@ CRDOC = $(shell pwd)/bin/crdoc
 .PHONY: crdoc
 crdoc: ## Download crdoc locally if necessary.
 	$(call go-get-tool,$(CRDOC), fybrik.io/crdoc,v0.5.2)
+
+.PHONY: chainsaw
+chainsaw: ## Find or download chainsaw
+ifeq (, $(shell which chainsaw))
+	@{ \
+	set -e ;\
+	go install github.com/kyverno/chainsaw@v0.1.3 ;\
+	}
+CHAINSAW ?= $(GOBIN)/chainsaw
+else
+CHAINSAW ?= $(shell which chainsaw)
+endif
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

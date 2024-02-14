@@ -50,10 +50,10 @@ jobs:
       with:
         path: bin
         key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
-    - name: Install tools
-      run: make install-tools
     - name: Install chainsaw
       uses: kyverno/action-install-chainsaw@07b6c986572f2abaf6647c85d37cbecfddc4a6ab # v0.1.3
+    - name: Install tools
+      run: make install-tools
     - name: Prepare e2e tests
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
