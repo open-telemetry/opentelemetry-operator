@@ -198,7 +198,7 @@ generate: controller-gen
 # end-to-tests
 .PHONY: e2e
 e2e: chainsaw
-	chainsaw test --test-dir ./tests/e2e
+	$(CHAINSAW) test --test-dir ./tests/e2e
 
 # end-to-end-test for testing autoscale
 .PHONY: e2e-autoscale
@@ -248,10 +248,10 @@ e2e-upgrade: undeploy chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade
 
 .PHONY: prepare-e2e
-prepare-e2e: set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
 .PHONY: prepare-e2e-with-featuregates
-prepare-e2e-with-featuregates: enable-operator-featuregates prepare-e2e
+prepare-e2e-with-featuregates: chainsaw enable-operator-featuregates prepare-e2e
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -371,7 +371,7 @@ KIND_VERSION ?= v0.20.0
 ifneq ($(shell which chainsaw),)
 CHAINSAW ?= $(shell which chainsaw)
 else
-CHAINSAW ?= $(LOCALBIN)/bin/chainsaw
+CHAINSAW ?= $(LOCALBIN)/chainsaw
 endif
 
 .PHONY: install-tools
@@ -409,7 +409,7 @@ chainsaw: ## Find or download chainsaw
 ifeq (, $(shell which chainsaw))
 	@{ \
 	set -e ;\
-	go install github.com/kyverno/chainsaw@v0.1.3 ;\
+	go install github.com/kyverno/chainsaw@v0.1.4 ;\
 	}
 CHAINSAW ?= $(GOBIN)/chainsaw
 else
