@@ -50,6 +50,12 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 				Pods: m.Pods,
 			}
 		}
+		if copy.Spec.MaxReplicas != nil && copy.Spec.Autoscaler.MaxReplicas == nil {
+			copy.Spec.Autoscaler.MaxReplicas = copy.Spec.MaxReplicas
+		}
+		if copy.Spec.MinReplicas != nil && copy.Spec.Autoscaler.MinReplicas == nil {
+			copy.Spec.Autoscaler.MinReplicas = copy.Spec.MinReplicas
+		}
 		out.Spec.OpenTelemetryCommonFields.Autoscaler = &v1alpha2.AutoscalerSpec{
 			MinReplicas:             copy.Spec.Autoscaler.MinReplicas,
 			MaxReplicas:             copy.Spec.Autoscaler.MaxReplicas,
