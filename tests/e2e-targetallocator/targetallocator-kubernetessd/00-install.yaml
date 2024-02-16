@@ -13,7 +13,7 @@ automountServiceAccountToken: true
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: ta
+  name: targetallocator-kubernetessd
 rules:
 - apiGroups: [""]
   resources:
@@ -31,6 +31,7 @@ rules:
 - apiGroups: ["apps"]
   resources:
     - statefulsets
+    - daemonsets
     - services
     - endpoints
   verbs:
@@ -51,21 +52,13 @@ rules:
     - get
     - watch
     - list
-- apiGroups: ["monitoring.coreos.com"]
-  resources:
-    - servicemonitors
-    - podmonitors
-  verbs:
-    - get
-    - watch
-    - list
 - nonResourceURLs: ["/metrics"]
   verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: collector
+  name: collector-kubernetessd
 rules:
 - apiGroups: [""]
   resources:
@@ -74,7 +67,6 @@ rules:
     - nodes/metrics
     - services
     - endpoints
-    - namespaces
   verbs:
     - get
     - watch
@@ -92,27 +84,41 @@ rules:
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: kubectl create clusterrolebinding ta-$NAMESPACE --clusterrole=ta --serviceaccount=$NAMESPACE:ta
-  - command: kubectl create clusterrolebinding collector-$NAMESPACE --clusterrole=collector --serviceaccount=$NAMESPACE:collector
+  - command: kubectl create clusterrolebinding ta-$NAMESPACE --clusterrole=targetallocator-kubernetessd --serviceaccount=$NAMESPACE:ta
+  - command: kubectl create clusterrolebinding collector-$NAMESPACE --clusterrole=collector-kubernetessd --serviceaccount=$NAMESPACE:collector
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: prometheus-cr
+  name: prometheus-kubernetessd
 spec:
-  mode: statefulset
+  mode: daemonset
   serviceAccount: collector
   targetAllocator:
     enabled: true
+    allocationStrategy: "per-node"
     serviceAccount: ta
-    scrapeInterval: 1s
     prometheusCR:
-      enabled: true
+      enabled: false
   config: |
     receivers:
       prometheus:
         config:
-          scrape_configs: []
+          scrape_configs:
+          - job_name: kubelet
+            scheme: https
+            authorization:
+              credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+            honor_labels: true
+            kubernetes_sd_configs:
+              - role: node
+            metric_relabel_configs:
+              - action: keep
+                regex: "kubelet_running_pods"
+                source_labels: [__name__]
 
     processors:
 
@@ -125,14 +131,3 @@ spec:
           receivers: [prometheus]
           processors: []
           exporters: [prometheus]
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: prometheus-cr
-spec:
-  endpoints:
-  - port: monitoring
-  selector:
-    matchLabels:
-      app.kubernetes.io/managed-by: opentelemetry-operator

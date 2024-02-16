@@ -30,6 +30,7 @@ jobs:
          - e2e-autoscale
          - e2e-pdb
          - e2e-opampbridge
+         - e2e-targetallocator
          - e2e-prometheuscr
          - e2e-multi-instrumentation
        include:

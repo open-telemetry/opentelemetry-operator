@@ -71,6 +71,9 @@ func pod(name string) *v1.Pod {
 			Namespace: "test-ns",
 			Labels:    labelSet,
 		},
+		Spec: v1.PodSpec{
+			NodeName: "test-node",
+		},
 	}
 }
 
@@ -99,13 +102,16 @@ func Test_runWatch(t *testing.T) {
 			},
 			want: map[string]*allocation.Collector{
 				"test-pod1": {
-					Name: "test-pod1",
+					Name:     "test-pod1",
+					NodeName: "test-node",
 				},
 				"test-pod2": {
-					Name: "test-pod2",
+					Name:     "test-pod2",
+					NodeName: "test-node",
 				},
 				"test-pod3": {
-					Name: "test-pod3",
+					Name:     "test-pod3",
+					NodeName: "test-node",
 				},
 			},
 		},
@@ -121,19 +127,23 @@ func Test_runWatch(t *testing.T) {
 				},
 				collectorMap: map[string]*allocation.Collector{
 					"test-pod1": {
-						Name: "test-pod1",
+						Name:     "test-pod1",
+						NodeName: "test-node",
 					},
 					"test-pod2": {
-						Name: "test-pod2",
+						Name:     "test-pod2",
+						NodeName: "test-node",
 					},
 					"test-pod3": {
-						Name: "test-pod3",
+						Name:     "test-pod3",
+						NodeName: "test-node",
 					},
 				},
 			},
 			want: map[string]*allocation.Collector{
 				"test-pod1": {
-					Name: "test-pod1",
+					Name:     "test-pod1",
+					NodeName: "test-node",
 				},
 			},
 		},

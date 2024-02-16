@@ -18,6 +18,7 @@ package v1alpha2
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -120,7 +121,7 @@ type OpenTelemetryCollectorSpec struct {
 	OpenTelemetryCommonFields `json:",inline"`
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
-	TargetAllocator v1alpha1.OpenTelemetryTargetAllocator `json:"targetAllocator,omitempty"`
+	TargetAllocator TargetAllocatorEmbedded `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
 	// +optional
 	Mode Mode `json:"mode,omitempty"`
@@ -163,6 +164,84 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+}
+
+// TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the
+// OpenTelemetryCollector spec.
+type TargetAllocatorEmbedded struct {
+	// Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
+	// other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
+	// that can be run in a high availability mode is consistent-hashing.
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
+	// NodeSelector to schedule OpenTelemetry TargetAllocator pods.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Resources to set on the OpenTelemetryTargetAllocator containers.
+	// +optional
+	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	// AllocationStrategy determines which strategy the target allocator should use for allocation.
+	// The current options are least-weighted, consistent-hashing and per-node. The default is
+	// consistent-hashing.
+	// +optional
+	// +kubebuilder:default:=consistent-hashing
+	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
+	// FilterStrategy determines how to filter targets before allocating them among the collectors.
+	// The only current option is relabel-config (drops targets based on prom relabel_config).
+	// The default is relabel-config.
+	// +optional
+	// +kubebuilder:default:=relabel-config
+	FilterStrategy TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
+	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
+	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
+	// +optional
+	Image string `json:"image,omitempty"`
+	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+	// If specified, indicates the pod's scheduling constraints
+	// +optional
+	Affinity *v1.Affinity `json:"affinity,omitempty"`
+	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
+	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
+	// +optional
+	PrometheusCR TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// SecurityContext configures the container security context for
+	// the targetallocator.
+	// +optional
+	SecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
+	// PodSecurityContext configures the pod security context for the
+	// targetallocator.
+	// +optional
+	PodSecurityContext *v1.PodSecurityContext `json:"podSecurityContext,omitempty"`
+	// TopologySpreadConstraints embedded kubernetes pod configuration option,
+	// controls how pods are spread across your cluster among failure-domains
+	// such as regions, zones, nodes, and other user-defined topology domains
+	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+	// +optional
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// Toleration embedded kubernetes pod configuration option,
+	// controls how pods can be scheduled with matching taints
+	// +optional
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+	// ENV vars to set on the OpenTelemetry TargetAllocator's Pods. These can then in certain cases be
+	// consumed in the config file for the TargetAllocator.
+	// +optional
+	Env []v1.EnvVar `json:"env,omitempty"`
+	// ObservabilitySpec defines how telemetry data gets handled.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
+	Observability v1alpha1.ObservabilitySpec `json:"observability,omitempty"`
+	// PodDisruptionBudget specifies the pod disruption budget configuration to use
+	// for the target allocator workload.
+	//
+	// +optional
+	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 }
 
 // OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollector.
