@@ -97,7 +97,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	hpaList := &autoscalingv2.HorizontalPodAutoscalerList{}
 	err := r.List(ctx, hpaList, listOps)
 	if err != nil {
-		return nil, fmt.Errorf("Error listing HorizontalPodAutoscalers: %w", err)
+		return nil, fmt.Errorf("error listing HorizontalPodAutoscalers: %w", err)
 	}
 	for i := range hpaList.Items {
 		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
@@ -107,7 +107,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		servicemonitorList := &monitoringv1.ServiceMonitorList{}
 		err = r.List(ctx, servicemonitorList, listOps)
 		if err != nil {
-			return nil, fmt.Errorf("Error listing ServiceMonitors: %w", err)
+			return nil, fmt.Errorf("error listing ServiceMonitors: %w", err)
 		}
 		for i := range servicemonitorList.Items {
 			ownedObjects[servicemonitorList.Items[i].GetUID()] = servicemonitorList.Items[i]
@@ -116,7 +116,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		podMonitorList := &monitoringv1.PodMonitorList{}
 		err = r.List(ctx, podMonitorList, listOps)
 		if err != nil {
-			return nil, fmt.Errorf("Error listing PodMonitors: %w", err)
+			return nil, fmt.Errorf("error listing PodMonitors: %w", err)
 		}
 		for i := range podMonitorList.Items {
 			ownedObjects[podMonitorList.Items[i].GetUID()] = podMonitorList.Items[i]
@@ -125,7 +125,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	ingressList := &networkingv1.IngressList{}
 	err = r.List(ctx, ingressList, listOps)
 	if err != nil {
-		return nil, fmt.Errorf("Error listing Ingresses: %w", err)
+		return nil, fmt.Errorf("error listing Ingresses: %w", err)
 	}
 	for i := range ingressList.Items {
 		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
@@ -135,21 +135,20 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		routesList := &routev1.RouteList{}
 		err := r.List(ctx, routesList, listOps)
 		if err != nil {
-			return nil, fmt.Errorf("Error listing Routes: %w", err)
+			return nil, fmt.Errorf("error listing Routes: %w", err)
 		}
 		for i := range routesList.Items {
 			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
 		}
 	}
-	if params.OtelCol.Spec.PodDisruptionBudget != nil {
-		pdbList := &policyV1.PodDisruptionBudgetList{}
-		err := r.List(ctx, pdbList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("Error listing PodDisruptionBudgets: %w", err)
-		}
-		for i := range pdbList.Items {
-			ownedObjects[pdbList.Items[i].GetUID()] = &pdbList.Items[i]
-		}
+
+	pdbList := &policyV1.PodDisruptionBudgetList{}
+	err = r.List(ctx, pdbList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("error listing PodDisruptionBudgets: %w", err)
+	}
+	for i := range pdbList.Items {
+		ownedObjects[pdbList.Items[i].GetUID()] = &pdbList.Items[i]
 	}
 
 	return ownedObjects, nil
@@ -158,7 +157,6 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 // reconcileDesiredObjects runs the reconcile process using the mutateFn over the given list of objects.
 func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner metav1.Object, scheme *runtime.Scheme, desiredObjects []client.Object, ownedObjects map[types.UID]client.Object) error {
 	var errs []error
-	pruneObjects := ownedObjects
 	for _, desired := range desiredObjects {
 		l := logger.WithValues(
 			"object_name", desired.GetName(),
@@ -196,14 +194,14 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 
 		l.V(1).Info(fmt.Sprintf("desired has been %s", op))
 		// This object is still managed by the operator, remove it from the list of objects to prune
-		delete(pruneObjects, existing.GetUID())
+		delete(ownedObjects, existing.GetUID())
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to create objects for %s: %w", owner.GetName(), errors.Join(errs...))
 	}
 	// Pruning owned objects in the cluster which are not should not be present after the reconciliation.
 	pruneErrs := []error{}
-	for _, obj := range pruneObjects {
+	for _, obj := range ownedObjects {
 		l := logger.WithValues(
 			"object_name", obj.GetName(),
 			"object_kind", obj.GetObjectKind().GroupVersionKind(),
