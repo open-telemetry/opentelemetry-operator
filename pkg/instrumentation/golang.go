@@ -40,7 +40,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config) (corev1.
 	// skip instrumentation when more than one containers provided
 	containerNames := ""
 	ok := false
-	if cfg.MultiInstrumentation() {
+	if cfg.EnableMultiInstrumentation() {
 		containerNames, ok = pod.Annotations[annotationInjectGoContainersName]
 	} else {
 		containerNames, ok = pod.Annotations[annotationInjectContainerName]

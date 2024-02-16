@@ -43,7 +43,7 @@ type Config struct {
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	createRBACPermissions               bool
-	multiInstrumentation                bool
+	enableMultiInstrumentation          bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -76,7 +76,7 @@ func New(opts ...Option) Config {
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
 		createRBACPermissions:               o.createRBACPermissions,
-		multiInstrumentation:                o.multiInstrumentation,
+		enableMultiInstrumentation:          o.enableMultiInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -111,8 +111,8 @@ func (c *Config) CollectorImage() string {
 	return c.collectorImage
 }
 
-func (c *Config) MultiInstrumentation() bool {
-	return c.multiInstrumentation
+func (c *Config) EnableMultiInstrumentation() bool {
+	return c.enableMultiInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.

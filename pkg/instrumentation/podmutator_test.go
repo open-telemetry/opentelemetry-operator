@@ -2509,7 +2509,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithMultiInstrumentation(true)),
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 			setFeatureGates: func(t *testing.T) {
 				originalVal := featuregate.EnableGoAutoInstrumentationSupport.IsEnabled()
 
@@ -3857,7 +3857,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithMultiInstrumentation(true)),
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 		},
 		{
 			name: "multi instrumentation for multiple containers feature gate enabled, container-names not used",
@@ -4515,7 +4515,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithMultiInstrumentation(true)),
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 		},
 		{
 			name: "multi instrumentation for multiple containers feature gate disabled, multiple instrumentation annotations set",
@@ -4669,7 +4669,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithMultiInstrumentation(false)),
+			config: config.New(config.WithEnableMultiInstrumentation(false)),
 		},
 		{
 			name: "multi instrumentation feature gate enabled, multiple instrumentation annotations set, no containers",
@@ -4813,7 +4813,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithMultiInstrumentation(true)),
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 		},
 		{
 			name: "multi instrumentation feature gate enabled, single instrumentation annotation set, no containers",
@@ -4992,7 +4992,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithMultiInstrumentation(true)),
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 		},
 		{
 			name: "multi instrumentation feature gate disabled, instrumentation feature gate disabled and annotation set, multiple specific containers set",
@@ -5092,7 +5092,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithMultiInstrumentation(true)),
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 			setFeatureGates: func(t *testing.T) {
 				originalValDotNetInstr := featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled()
 				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), false))

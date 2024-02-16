@@ -42,7 +42,7 @@ type options struct {
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	createRBACPermissions               bool
-	multiInstrumentation                bool
+	enableMultiInstrumentation          bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
@@ -81,9 +81,9 @@ func WithCreateRBACPermissions(s bool) Option {
 		o.createRBACPermissions = s
 	}
 }
-func WithMultiInstrumentation(s bool) Option {
+func WithEnableMultiInstrumentation(s bool) Option {
 	return func(o *options) {
-		o.multiInstrumentation = s
+		o.enableMultiInstrumentation = s
 	}
 }
 func WithTargetAllocatorConfigMapEntry(s string) Option {

@@ -104,7 +104,7 @@ func main() {
 		pprofAddr                      string
 		enableLeaderElection           bool
 		createRBACPermissions          bool
-		multiInstrumentation           bool
+		enableMultiInstrumentation     bool
 		collectorImage                 string
 		targetAllocatorImage           string
 		operatorOpAMPBridgeImage       string
@@ -127,7 +127,7 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors")
-	pflag.BoolVar(&multiInstrumentation, "multi-instrumentation", false, "Enable MultiInstrumentation")
+	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", false, "Controls whether the operator supports multi instrumentation")
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&operatorOpAMPBridgeImage, "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:%s", v.OperatorOpAMPBridge), "The default OpenTelemetry Operator OpAMP Bridge image. This image is used when no image is specified in the CustomResource.")
@@ -165,7 +165,7 @@ func main() {
 		"go-arch", runtime.GOARCH,
 		"go-os", runtime.GOOS,
 		"labels-filter", labelsFilter,
-		"multi-instrumentation", multiInstrumentation,
+		"enable-multi-instrumentation", enableMultiInstrumentation,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
@@ -182,7 +182,7 @@ func main() {
 		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
 		config.WithCreateRBACPermissions(createRBACPermissions),
-		config.WithMultiInstrumentation(multiInstrumentation),
+		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
 		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
