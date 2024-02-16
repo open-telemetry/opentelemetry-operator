@@ -902,25 +902,23 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 	sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
 	assert.Equal(t, want_before.ScrapeConfigs, got.ScrapeConfigs)
 
-	require.Eventually(t, func() bool {
-		source.Modify(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{
-			Name: "labellednamespace",
-			Labels: map[string]string{
-				"label2": "label2",
-			},
-		}})
+	source.Modify(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{
+		Name: "labellednamespace",
+		Labels: map[string]string{
+			"label2": "label2",
+		},
+	}})
 
-		select {
-		case <-events:
-			got, err := w.LoadConfig(context.Background())
-			assert.NoError(t, err)
+	select {
+	case <-events:
+	case <-time.After(time.Second):
+	}
 
-			sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
-			return assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
-		default:
-			return false
-		}
-	}, time.Second, time.Millisecond)
+	got, err = w.LoadConfig(context.Background())
+	assert.NoError(t, err)
+
+	sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
+	assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
 }
 
 func TestRateLimit(t *testing.T) {
