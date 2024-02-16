@@ -5,6 +5,11 @@ metadata:
   creationTimestamp: null
   name: instrumentation-java-other-ns
 spec:
+  namespaceTemplate:
+    metadata:
+      annotations:
+        openshift.io/sa.scc.uid-range: 1000/1000
+        openshift.io/sa.scc.supplemental-groups: 2000/1000
   steps:
   - name: step-01
     try:
@@ -15,22 +20,6 @@ spec:
           name: my-other-ns
   - name: step-02
     try:
-    - command:
-        args:
-        - annotate
-        - namespace
-        - ${NAMESPACE}
-        - openshift.io/sa.scc.uid-range=1000/1000
-        - --overwrite
-        entrypoint: kubectl
-    - command:
-        args:
-        - annotate
-        - namespace
-        - ${NAMESPACE}
-        - openshift.io/sa.scc.supplemental-groups=2000/1000
-        - --overwrite
-        entrypoint: kubectl
     - apply:
         file: 02-install-collector.yaml
     - apply:
