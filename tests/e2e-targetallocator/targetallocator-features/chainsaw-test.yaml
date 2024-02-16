@@ -16,17 +16,8 @@ spec:
         selector: app.kubernetes.io/component=opentelemetry-targetallocator
     name: step-00
     try:
-    - command:
-        args:
-        - -n
-        - $NAMESPACE
-        - create
-        - clusterrolebinding
-        - default-view-$NAMESPACE
-        - --clusterrole=targetallocator-features
-        - --serviceaccount=$NAMESPACE:ta
-        entrypoint: kubectl
     - apply:
+        template: true
         file: 00-install.yaml
     - assert:
         file: 00-assert.yaml

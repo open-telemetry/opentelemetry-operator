@@ -64,6 +64,19 @@ rules:
   verbs:
   - get
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: simplest-targetallocator-create-sm-prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: create-sm-prometheus
+subjects:
+- kind: ServiceAccount
+  name: ta
+  namespace: create-sm-prometheus
+---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
