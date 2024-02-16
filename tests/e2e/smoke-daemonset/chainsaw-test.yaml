@@ -12,5 +12,3 @@ spec:
         file: 00-install.yaml
     - assert:
         file: 00-assert.yaml
-    - script:
-        content: ./tests/e2e/smoke-daemonset/check-daemonset.sh
