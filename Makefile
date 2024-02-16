@@ -451,6 +451,7 @@ reset: kustomize operator-sdk manifests
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version ${OPERATOR_VERSION} $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 	./hack/ignore-createdAt-bundle.sh
+	./hack/add-openshift-annotations.sh
 	git checkout config/manager/kustomization.yaml
 
 # Build the bundle image, used only for local dev purposes
