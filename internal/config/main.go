@@ -76,6 +76,7 @@ func New(opts ...Option) Config {
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
 		createRBACPermissions:               o.createRBACPermissions,
+		multiInstrumentation:                o.multiInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -113,6 +114,7 @@ func (c *Config) CollectorImage() string {
 func (c *Config) MultiInstrumentation() bool {
 	return c.multiInstrumentation
 }
+
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
 func (c *Config) CollectorConfigMapEntry() string {
 	return c.collectorConfigMapEntry

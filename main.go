@@ -165,6 +165,7 @@ func main() {
 		"go-arch", runtime.GOARCH,
 		"go-os", runtime.GOOS,
 		"labels-filter", labelsFilter,
+		"multi-instrumentation", multiInstrumentation,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
@@ -181,6 +182,7 @@ func main() {
 		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
 		config.WithCreateRBACPermissions(createRBACPermissions),
+		config.WithMultiInstrumentation(multiInstrumentation),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
 		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
@@ -294,7 +296,7 @@ func main() {
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator")),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator"), cfg),
 				}),
 		})
 
