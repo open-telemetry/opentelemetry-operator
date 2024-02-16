@@ -61,11 +61,13 @@ func TestLabelsPropagateDown(t *testing.T) {
 
 	// test
 	labels := Labels(otelcol, name)
+	selectorLabels := SelectorLabels(otelcol)
 
 	// verify
 	assert.Len(t, labels, 7)
 	assert.Equal(t, "mycomponent", labels["myapp"])
 	assert.Equal(t, "test", labels["app.kubernetes.io/name"])
+	assert.Equal(t, "test", selectorLabels["app.kubernetes.io/name"])
 }
 
 func TestSelectorLabels(t *testing.T) {

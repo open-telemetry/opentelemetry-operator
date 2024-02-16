@@ -28,8 +28,11 @@ func Labels(instance v1alpha1.OpenTelemetryCollector, name string) map[string]st
 // SelectorLabels return the selector labels for Target Allocator Pods.
 func SelectorLabels(instance v1alpha1.OpenTelemetryCollector) map[string]string {
 	selectorLabels := manifestutils.SelectorLabels(instance.ObjectMeta, ComponentOpenTelemetryTargetAllocator)
-	// TargetAllocator uses the name label as well for selection
-	// This is inconsistent with the Collector, but changing is a somewhat painful breaking change
-	selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)
+	// Don't override the app name if it already exists
+	if name, ok := instance.ObjectMeta.Labels["app.kubernetes.io/name"]; ok {
+		selectorLabels["app.kubernetes.io/name"] = name
+	} else {
+		selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)
+	}
 	return selectorLabels
 }
