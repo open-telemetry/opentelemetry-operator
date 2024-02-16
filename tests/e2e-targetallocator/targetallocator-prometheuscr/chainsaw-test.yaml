@@ -6,31 +6,16 @@ metadata:
   name: targetallocator-prometheuscr
 spec:
   steps:
-  - catch:
-    - podLogs:
-        selector: app.kubernetes.io/managed-by=opentelemetry-operator
-    name: step-00
+  - name: step-00
     try:
-    - command:
-        args:
-        - create
-        - clusterrolebinding
-        - ta-$NAMESPACE
-        - --clusterrole=targetallocator-prometheuscr
-        - --serviceaccount=$NAMESPACE:ta
-        entrypoint: kubectl
-    - command:
-        args:
-        - create
-        - clusterrolebinding
-        - collector-$NAMESPACE
-        - --clusterrole=collector-prometheuscr
-        - --serviceaccount=$NAMESPACE:collector
-        entrypoint: kubectl
     - apply:
+        template: true
         file: 00-install.yaml
     - assert:
         file: 00-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
   - name: step-01
     try:
     - apply:

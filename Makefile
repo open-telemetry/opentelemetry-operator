@@ -361,18 +361,13 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+CHAINSAW ?= $(LOCALBIN)/chainsaw
 
 KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
 GOLANGCI_LINT_VERSION ?= v1.54.0
 KIND_VERSION ?= v0.20.0
-
-# Checks if chainsaw is in your PATH
-ifneq ($(shell which chainsaw),)
-CHAINSAW ?= $(shell which chainsaw)
-else
-CHAINSAW ?= $(LOCALBIN)/chainsaw
-endif
+CHAINSAW_VERSION ?= v0.1.4
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw
@@ -406,15 +401,7 @@ crdoc: ## Download crdoc locally if necessary.
 
 .PHONY: chainsaw
 chainsaw: ## Find or download chainsaw
-ifeq (, $(shell which chainsaw))
-	@{ \
-	set -e ;\
-	go install github.com/kyverno/chainsaw@v0.1.4 ;\
-	}
-CHAINSAW ?= $(GOBIN)/chainsaw
-else
-CHAINSAW ?= $(shell which chainsaw)
-endif
+	$(call go-get-tool,$(CHAINSAW), github.com/kyverno/chainsaw,$(CHAINSAW_VERSION))
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

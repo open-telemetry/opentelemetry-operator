@@ -8,13 +8,8 @@ spec:
   steps:
   - name: step-00
     try:
-    - script:
-        content: |
-          kubectl -n $NAMESPACE \
-          create clusterrolebinding default-view-$NAMESPACE \
-          --clusterrole=promreceiver-allocatorconfig \
-          --serviceaccount=$NAMESPACE:ta
     - apply:
+        template: true
         file: 00-promreceiver-allocatorconfig.yaml
     - assert:
         file: 00-assert.yaml

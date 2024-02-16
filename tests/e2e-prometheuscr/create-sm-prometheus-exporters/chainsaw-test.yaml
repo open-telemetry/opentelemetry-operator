@@ -60,14 +60,6 @@ spec:
         file: 07-error.yaml
   - name: step-08
     try:
-    - command:
-        args:
-        - create
-        - clusterrolebinding
-        - simplest-targetallocator-create-sm-prometheus
-        - --clusterrole=create-sm-prometheus
-        - --serviceaccount=create-sm-prometheus:ta
-        entrypoint: kubectl
     - apply:
         file: 08-install.yaml
     - assert:
