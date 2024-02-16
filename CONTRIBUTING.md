@@ -120,11 +120,11 @@ KUBEBUILDER_ASSETS=$(./bin/setup-envtest use -p path 1.23) go test ./pkg...
 
 To run the end-to-end tests, you'll need [`kind`](https://kind.sigs.k8s.io) and [`chainsaw`](https://kyverno.github.io/chainsaw). Refer to their documentation for installation instructions.
 
-Once they are installed, the tests can be executed with `make prepare-e2e`, which will build an image to use with the tests, followed by `make e2e`. Each call to the `e2e` target will setup a fresh `kind` cluster, making it safe to be executed multiple times with a single `prepare-e2e` step.
+Once they are installed, the tests can be executed with `make prepare-e2e`, which will build an image to use with the tests, followed by `make e2e`. Each call to the `e2e` target will set up a fresh `kind` cluster, making it safe to be executed multiple times with a single `prepare-e2e` step.
 
 The tests are located under `tests/e2e` and are written to be used with `chainsaw`. Refer to their documentation to understand how tests are written.
 
-To evert the changes made by the `make prepare-e2e` run `make reset`.
+To revert the changes made by the `make prepare-e2e` run `make reset`.
 
 ### OpenShift End to End tests
 To run the end-to-end tests written for OpenShift, you'll need a OpenShift cluster. 
