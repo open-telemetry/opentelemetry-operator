@@ -4,7 +4,7 @@ Ex. Adding a feature - Explain what this achieves.-->
 
 **Link to tracking Issue(s):** <Issue number if applicable>
 
-- Resolves #issue-number
+- Resolves: #issue-number
 
 **Testing:** <Describe what testing was performed and which tests were added.>
 
