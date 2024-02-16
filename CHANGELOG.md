@@ -2,6 +2,37 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.94.0
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add new "per node" allocation strategy to target allocator. This strategy will allocate targets to nodes on which given target resides.  It should only be used conjunction with the daemonset mode. (#1828)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fixed handling of protocol in exposed ports. (#2619)
+  Make distinction not only on the port number, but also on protocol. This fix allows to have multiple exposed
+  ServicePorts with the same port number, but different protocols.
+  
+- `operator`: Fixed handling of exposed port protocol in syslog, tcplog and udplog receivers. (#767, #2619)
+  Please note that the operator currently exposes just one port (tcp or udp) of syslog receiver due to the current
+  receiver implementation (patches are welcome).
+  
+- `operator`: Fixing WATCH_NAMESPACE for a single namespace value (#2589)
+
+### Components
+
+* [OpenTelemetry Collector - v0.94.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.94.0)
+* [OpenTelemetry Contrib - v0.94.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.94.0)
+* [Java auto-instrumentation - 1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - 1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.2.0)
+* [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
+* [Python - 0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.43b0)
+* [Go - v0.10.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.1-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+
 ## 0.93.0
 
 ### 🛑 Breaking changes 🛑
