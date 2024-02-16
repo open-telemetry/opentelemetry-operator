@@ -1046,7 +1046,7 @@ spec:
     - jsonPath: .spec.sampler.argument
       name: Sampler Arg
       type: string
-    name: v1alpha2
+    name: v1beta1
     schema:
       openAPIV3Schema:
         properties:

@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha2
+package v1beta1
 
 import (
 	"context"
 	"fmt"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
+	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -76,4 +79,30 @@ func (c CollectorWebhook) validate(r *OpenTelemetryCollector) (admission.Warning
 		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility tooling (kustomize and kubectl edit) it is recommended to use empty obejects e.g. batch: {}.", strings.Join(nullObjects, ", ")))
 	}
 	return warnings, nil
+}
+
+var _ conversion.Convertible = &OpenTelemetryCollector{}
+
+func (c *OpenTelemetryCollector) ConvertTo(dst conversion.Hub) error {
+	fmt.Println("ConvertTo")
+	switch t := dst.(type) {
+	case *v2.ExternalJob:
+		colv1 := dst.(*v1alpha1.OpenTelemetryCollector)
+		c.ObjectMeta = colv1.ObjectMeta
+		return nil
+	default:
+		return fmt.Errorf("unsupported type %v", t)
+	}
+}
+
+func (c *OpenTelemetryCollector) ConvertFrom(src conversion.Hub) error {
+	fmt.Println("ConvertFrom")
+	switch t := src.(type) {
+	case *v1alpha1.OpenTelemetryCollector:
+		colv1 := src.(*v1alpha1.OpenTelemetryCollector)
+		c.ObjectMeta = colv1.ObjectMeta
+		return nil
+	default:
+		return fmt.Errorf("unsupported type %v", t)
+	}
 }

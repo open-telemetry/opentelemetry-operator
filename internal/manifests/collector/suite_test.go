@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -43,23 +43,23 @@ const (
 )
 
 func deploymentParams() manifests.Params {
-	return paramsWithMode(v1alpha2.ModeDeployment)
+	return paramsWithMode(v1beta1.ModeDeployment)
 }
 
-func paramsWithMode(mode v1alpha2.Mode) manifests.Params {
+func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	replicas := int32(2)
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	cfg := v1alpha2.Config{}
+	cfg := v1beta1.Config{}
 	err = go_yaml.Unmarshal(configYAML, &cfg)
 	if err != nil {
 		fmt.Printf("Error unmarshalling YAML: %v", err)
 	}
 	return manifests.Params{
 		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
-		OtelCol: v1alpha2.OpenTelemetryCollector{
+		OtelCol: v1beta1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -69,8 +69,8 @@ func paramsWithMode(mode v1alpha2.Mode) manifests.Params {
 				Namespace: "default",
 				UID:       instanceUID,
 			},
-			Spec: v1alpha2.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 
 					Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
 					Ports: []v1.ServicePort{{
@@ -107,7 +107,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 		return manifests.Params{}, fmt.Errorf("error getting yaml file: %w", err)
 	}
 
-	colCfg := v1alpha2.Config{}
+	colCfg := v1beta1.Config{}
 	err = go_yaml.Unmarshal(configYAML, &colCfg)
 	if err != nil {
 		return manifests.Params{}, fmt.Errorf("failed to unmarshal config: %w", err)
@@ -121,7 +121,7 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 
 	return manifests.Params{
 		Config: cfg,
-		OtelCol: v1alpha2.OpenTelemetryCollector{
+		OtelCol: v1beta1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
 				APIVersion: "v1",
@@ -131,8 +131,8 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 				Namespace: "default",
 				UID:       instanceUID,
 			},
-			Spec: v1alpha2.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 					Ports: []v1.ServicePort{{
 						Name: "web",
 						Port: 80,
@@ -145,8 +145,8 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 
 					Replicas: &replicas,
 				},
-				Mode: v1alpha2.ModeStatefulSet,
-				TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
+				Mode: v1beta1.ModeStatefulSet,
+				TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 					Enabled: true,
 					Image:   taContainerImage,
 				},

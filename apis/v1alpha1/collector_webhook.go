@@ -461,3 +461,5 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.R
 		WithDefaulter(cvw).
 		Complete()
 }
+
+func (*OpenTelemetryCollector) Hub() {}

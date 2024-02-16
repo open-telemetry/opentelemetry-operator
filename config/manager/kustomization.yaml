@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: docker.io/pavolloffay/opentelemetry-operator
-  newTag: dev-c10fe8a-1707917543
+  newTag: dev-b2ddcde-1708091123

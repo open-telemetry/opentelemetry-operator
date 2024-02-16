@@ -65,13 +65,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2024-02-02T16:02:46Z"
+    createdAt: "2024-02-16T13:45:29Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.93.0
+  name: opentelemetry-operator.v0.93.0-15-gb2ddcde
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -86,6 +86,9 @@ spec:
         name: ""
         version: v1
       version: v1alpha1
+    - kind: Instrumentation
+      name: instrumentations.opentelemetry.io
+      version: v1beta1
     - description: OpAMPBridge is the Schema for the opampbridges API.
       displayName: OpAMP Bridge
       kind: OpAMPBridge
@@ -154,6 +157,9 @@ spec:
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
       version: v1alpha1
+    - kind: OpenTelemetryCollector
+      name: opentelemetrycollectors.opentelemetry.io
+      version: v1beta1
   description: |-
     OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
 
@@ -402,7 +408,7 @@ spec:
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
                 - --feature-gates=+operator.autoinstrumentation.go,+operator.autoinstrumentation.nginx
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.93.0
+                image: docker.io/pavolloffay/opentelemetry-operator:dev-b2ddcde-1708091123
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -485,9 +491,9 @@ spec:
         serviceAccountName: opentelemetry-operator-controller-manager
     strategy: deployment
   installModes:
-  - supported: true
+  - supported: false
     type: OwnNamespace
-  - supported: true
+  - supported: false
     type: SingleNamespace
   - supported: false
     type: MultiNamespace
@@ -510,8 +516,20 @@ spec:
   minKubeVersion: 1.23.0
   provider:
     name: OpenTelemetry Community
-  version: 0.93.0
+  version: 0.93.0-15-gb2ddcde
   webhookdefinitions:
+  - admissionReviewVersions:
+    - v1alpha1
+    - v1beta1
+    containerPort: 443
+    conversionCRDs:
+    - opentelemetrycollectors.opentelemetry.io
+    deploymentName: opentelemetry-operator-controller-manager
+    generateName: copentelemetrycollectors.kb.io
+    sideEffects: None
+    targetPort: 9443
+    type: ConversionWebhook
+    webhookPath: /convert
   - admissionReviewVersions:
     - v1
     containerPort: 443

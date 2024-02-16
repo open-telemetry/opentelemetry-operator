@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -120,7 +120,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	// OpenShift uses HA proxy that uses appProtocol for its configuration.
 	for i := range ports {
 		h2c := "h2c"
-		if params.OtelCol.Spec.Ingress.Type == v1alpha2.IngressTypeRoute && ports[i].AppProtocol != nil && strings.EqualFold(*ports[i].AppProtocol, "grpc") {
+		if params.OtelCol.Spec.Ingress.Type == v1beta1.IngressTypeRoute && ports[i].AppProtocol != nil && strings.EqualFold(*ports[i].AppProtocol, "grpc") {
 			ports[i].AppProtocol = &h2c
 		}
 	}
@@ -152,7 +152,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	}
 
 	trafficPolicy := corev1.ServiceInternalTrafficPolicyCluster
-	if params.OtelCol.Spec.Mode == v1alpha2.ModeDaemonSet {
+	if params.OtelCol.Spec.Mode == v1beta1.ModeDaemonSet {
 		trafficPolicy = corev1.ServiceInternalTrafficPolicyLocal
 	}
 
