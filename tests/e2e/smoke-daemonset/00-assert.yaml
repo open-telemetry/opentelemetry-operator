@@ -10,3 +10,4 @@ spec:
     type: RollingUpdate
 status:
   numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true
