@@ -133,7 +133,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 
 	if params.Config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
 		routesList := &routev1.RouteList{}
-		err := r.List(ctx, routesList, listOps)
+		err = r.List(ctx, routesList, listOps)
 		if err != nil {
 			return nil, fmt.Errorf("error listing Routes: %w", err)
 		}
