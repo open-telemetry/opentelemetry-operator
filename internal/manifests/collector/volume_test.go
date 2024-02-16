@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -29,7 +29,7 @@ import (
 
 func TestVolumeNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{}
+	otelcol := v1beta1.OpenTelemetryCollector{}
 	cfg := config.New()
 
 	// test
@@ -44,9 +44,9 @@ func TestVolumeNewDefault(t *testing.T) {
 
 func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Volumes: []corev1.Volume{{
 					Name: "my-volume",
 				}},
@@ -67,8 +67,8 @@ func TestVolumeAllowsMoreToBeAdded(t *testing.T) {
 
 func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
 				Name:      "configmap-test",
 				MountPath: "/",

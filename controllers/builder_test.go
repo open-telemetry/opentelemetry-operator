@@ -34,7 +34,7 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -87,12 +87,12 @@ service:
       exporters: [logging]
 `
 
-	goodConfig := v1alpha2.Config{}
+	goodConfig := v1beta1.Config{}
 	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
 	one := int32(1)
 	type args struct {
-		instance v1alpha2.OpenTelemetryCollector
+		instance v1beta1.OpenTelemetryCollector
 	}
 	tests := []struct {
 		name    string
@@ -103,13 +103,13 @@ service:
 		{
 			name: "base case",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
@@ -342,19 +342,19 @@ service:
 		{
 			name: "ingress",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
 						Mode: "deployment",
-						Ingress: v1alpha2.Ingress{
-							Type:     v1alpha2.IngressTypeNginx,
+						Ingress: v1beta1.Ingress{
+							Type:     v1beta1.IngressTypeNginx,
 							Hostname: "example.com",
 							Annotations: map[string]string{
 								"something": "true",
@@ -627,13 +627,13 @@ service:
 		{
 			name: "specified service account case",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:          "test",
 							Replicas:       &one,
 							ServiceAccount: "my-special-sa",
@@ -1121,12 +1121,12 @@ service:
       exporters: [logging]
 `
 
-	goodConfig := v1alpha2.Config{}
+	goodConfig := v1beta1.Config{}
 	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
 	one := int32(1)
 	type args struct {
-		instance v1alpha2.OpenTelemetryCollector
+		instance v1beta1.OpenTelemetryCollector
 	}
 	tests := []struct {
 		name         string
@@ -1138,22 +1138,22 @@ service:
 		{
 			name: "base case",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
 						Mode:   "statefulset",
 						Config: goodConfig,
-						TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
+						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 							Enabled:        true,
 							FilterStrategy: "relabel-config",
-							PrometheusCR: v1alpha2.TargetAllocatorPrometheusCR{
+							PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
 						},
@@ -1530,21 +1530,21 @@ prometheus_cr:
 		{
 			name: "enable metrics case",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
 						Mode:   "statefulset",
 						Config: goodConfig,
-						TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
+						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 							Enabled: true,
-							PrometheusCR: v1alpha2.TargetAllocatorPrometheusCR{
+							PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
 							FilterStrategy: "relabel-config",

@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func sidecarParams() manifests.Params {
-	return paramsWithMode(v1alpha2.ModeSidecar)
+	return paramsWithMode(v1beta1.ModeSidecar)
 }
 
 func TestDesiredPodMonitors(t *testing.T) {
@@ -45,7 +45,7 @@ func TestDesiredPodMonitors(t *testing.T) {
 
 	params, err = newParams("", "testdata/prometheus-exporter.yaml")
 	assert.NoError(t, err)
-	params.OtelCol.Spec.Mode = v1alpha2.ModeSidecar
+	params.OtelCol.Spec.Mode = v1beta1.ModeSidecar
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
 	actual, err = PodMonitor(params)
 	assert.NoError(t, err)

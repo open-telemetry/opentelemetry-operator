@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -31,7 +31,7 @@ type Params struct {
 	Recorder    record.EventRecorder
 	Scheme      *runtime.Scheme
 	Log         logr.Logger
-	OtelCol     v1alpha2.OpenTelemetryCollector
+	OtelCol     v1beta1.OpenTelemetryCollector
 	OpAMPBridge v1alpha1.OpAMPBridge
 	Config      config.Config
 }

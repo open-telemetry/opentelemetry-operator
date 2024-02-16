@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 func Test_V1Alpha1to2(t *testing.T) {
@@ -72,7 +72,7 @@ service:
 		}
 
 		_, err := V1Alpha1to2(cfgV1)
-		assert.ErrorContains(t, err, "could not convert config json to v1alpha2.Config")
+		assert.ErrorContains(t, err, "could not convert config json to v1beta1.Config")
 	})
 }
 
@@ -174,17 +174,17 @@ func Test_TargetAllocator(t *testing.T) {
 		},
 	}
 
-	expected := v1alpha2.TargetAllocatorEmbedded{
+	expected := v1beta1.TargetAllocatorEmbedded{
 		Replicas:           input.Replicas,
 		NodeSelector:       input.NodeSelector,
 		Resources:          input.Resources,
-		AllocationStrategy: v1alpha2.TargetAllocatorAllocationStrategyConsistentHashing,
-		FilterStrategy:     v1alpha2.TargetAllocatorFilterStrategyRelabelConfig,
+		AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
+		FilterStrategy:     v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
 		ServiceAccount:     input.ServiceAccount,
 		Image:              input.Image,
 		Enabled:            input.Enabled,
 		Affinity:           input.Affinity,
-		PrometheusCR: v1alpha2.TargetAllocatorPrometheusCR{
+		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 			Enabled:        input.PrometheusCR.Enabled,
 			ScrapeInterval: input.PrometheusCR.ScrapeInterval,
 			PodMonitorSelector: &metav1.LabelSelector{
@@ -200,7 +200,7 @@ func Test_TargetAllocator(t *testing.T) {
 		Tolerations:               input.Tolerations,
 		Env:                       input.Env,
 		Observability:             input.Observability,
-		PodDisruptionBudget: &v1alpha2.PodDisruptionBudgetSpec{
+		PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
 			MinAvailable:   input.PodDisruptionBudget.MinAvailable,
 			MaxUnavailable: input.PodDisruptionBudget.MaxUnavailable,
 		},
