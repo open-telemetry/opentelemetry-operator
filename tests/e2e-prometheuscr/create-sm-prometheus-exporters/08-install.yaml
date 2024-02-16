@@ -8,7 +8,7 @@ automountServiceAccountToken: true
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: ta
+  name: create-sm-prometheus
 rules:
 - apiGroups: [""]
   resources:
@@ -60,7 +60,7 @@ rules:
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: kubectl create clusterrolebinding simplest-targetallocator-create-sm-prometheus --clusterrole=ta --serviceaccount=create-sm-prometheus:ta
+  - command: kubectl create clusterrolebinding simplest-targetallocator-create-sm-prometheus --clusterrole=create-sm-prometheus --serviceaccount=create-sm-prometheus:ta
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
