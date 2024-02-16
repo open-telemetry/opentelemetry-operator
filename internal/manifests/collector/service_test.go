@@ -24,7 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -156,8 +156,8 @@ func TestDesiredService(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha2.OpenTelemetryCollector{
-				Spec: v1alpha2.OpenTelemetryCollectorSpec{Config: v1alpha2.Config{}},
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{}},
 			},
 		}
 
@@ -195,7 +195,7 @@ func TestDesiredService(t *testing.T) {
 
 		params := deploymentParams()
 
-		params.OtelCol.Spec.Ingress.Type = v1alpha2.IngressTypeRoute
+		params.OtelCol.Spec.Ingress.Type = v1beta1.IngressTypeRoute
 		actual, err := Service(params)
 
 		ports := append(params.OtelCol.Spec.Ports, jaegerPort)
@@ -214,7 +214,7 @@ func TestDesiredService(t *testing.T) {
 			Port:        14250,
 			AppProtocol: &grpc,
 		}
-		p := paramsWithMode(v1alpha2.ModeDaemonSet)
+		p := paramsWithMode(v1beta1.ModeDaemonSet)
 		ports := append(p.OtelCol.Spec.Ports, jaegerPorts)
 		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
 
@@ -256,9 +256,9 @@ func TestMonitoringService(t *testing.T) {
 			Port: 9090,
 		}}
 		params := deploymentParams()
-		params.OtelCol.Spec.Config = v1alpha2.Config{
-			Service: v1alpha2.Service{
-				Telemetry: &v1alpha2.AnyConfig{
+		params.OtelCol.Spec.Config = v1beta1.Config{
+			Service: v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
 							"level":   "detailed",

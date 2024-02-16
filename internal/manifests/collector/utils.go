@@ -17,10 +17,10 @@ package collector
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func getDNSPolicy(otelcol v1alpha2.OpenTelemetryCollector) corev1.DNSPolicy {
+func getDNSPolicy(otelcol v1beta1.OpenTelemetryCollector) corev1.DNSPolicy {
 	dnsPolicy := corev1.DNSClusterFirst
 	if otelcol.Spec.HostNetwork {
 		dnsPolicy = corev1.DNSClusterFirstWithHostNet

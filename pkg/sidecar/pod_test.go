@@ -24,7 +24,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -130,7 +130,7 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha2.OpenTelemetryCollector{}
+	otelcol := v1beta1.OpenTelemetryCollector{}
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
@@ -219,7 +219,7 @@ func TestAddSidecarWithAditionalEnv(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha2.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample",
 			Namespace: "some-app",

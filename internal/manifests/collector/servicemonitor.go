@@ -22,7 +22,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -39,7 +39,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 	}
 	var sm monitoringv1.ServiceMonitor
 
-	if params.OtelCol.Spec.Mode == v1alpha2.ModeSidecar {
+	if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
 		return nil, nil
 	}
 	sm = monitoringv1.ServiceMonitor{
@@ -73,7 +73,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 	return &sm, nil
 }
 
-func endpointsFromConfig(logger logr.Logger, otelcol v1alpha2.OpenTelemetryCollector) []monitoringv1.Endpoint {
+func endpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) []monitoringv1.Endpoint {
 	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2603
 	cfgStr, err := otelcol.Spec.Config.Yaml()
 	if err != nil {

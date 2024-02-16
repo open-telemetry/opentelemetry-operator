@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.
-func Annotations(instance v1alpha2.OpenTelemetryCollector) (map[string]string, error) {
+func Annotations(instance v1beta1.OpenTelemetryCollector) (map[string]string, error) {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
@@ -54,7 +54,7 @@ func Annotations(instance v1alpha2.OpenTelemetryCollector) (map[string]string, e
 }
 
 // PodAnnotations return the spec annotations for OpenTelemetryCollector pod.
-func PodAnnotations(instance v1alpha2.OpenTelemetryCollector) (map[string]string, error) {
+func PodAnnotations(instance v1beta1.OpenTelemetryCollector) (map[string]string, error) {
 	// new map every time, so that we don't touch the instance's annotations
 	podAnnotations := map[string]string{}
 
@@ -84,7 +84,7 @@ func PodAnnotations(instance v1alpha2.OpenTelemetryCollector) (map[string]string
 	return podAnnotations, nil
 }
 
-func getConfigMapSHA(config v1alpha2.Config) (string, error) {
+func getConfigMapSHA(config v1beta1.Config) (string, error) {
 	b, err := json.Marshal(&config)
 	if err != nil {
 		return "", err
