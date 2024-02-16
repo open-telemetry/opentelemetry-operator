@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha2
+package v1beta1
 
 type (
 	// Mode represents how the collector should be deployed (deployment vs. daemonset)

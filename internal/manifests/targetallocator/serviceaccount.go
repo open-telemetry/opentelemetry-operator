@@ -18,13 +18,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
-func ServiceAccountName(instance v1alpha2.OpenTelemetryCollector) string {
+func ServiceAccountName(instance v1beta1.OpenTelemetryCollector) string {
 	if len(instance.Spec.TargetAllocator.ServiceAccount) == 0 {
 		return naming.TargetAllocatorServiceAccount(instance.Name)
 	}

@@ -14,7 +14,7 @@
 
 // +kubebuilder:skip
 
-package v1alpha2
+package v1beta1
 
 import (
 	appsv1 "k8s.io/api/apps/v1"

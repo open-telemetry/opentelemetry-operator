@@ -21,7 +21,7 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
 	"gopkg.in/yaml.v3"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -42,7 +42,7 @@ type Config struct {
 	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
 }
 
-func ReplaceConfig(instance v1alpha2.OpenTelemetryCollector) (string, error) {
+func ReplaceConfig(instance v1beta1.OpenTelemetryCollector) (string, error) {
 	cfgStr, err := instance.Spec.Config.Yaml()
 	if err != nil {
 		return "", err

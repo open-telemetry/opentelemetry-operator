@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha2
+package v1beta1
 
 type (
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
