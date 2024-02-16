@@ -17,22 +17,13 @@ spec:
     try:
     - apply:
         file: 01-promreceiver-labeldrop.yaml
-  - catch:
-    - podLogs:
-        selector: app.kubernetes.io/component=opentelemetry-targetallocator
-    - podLogs:
-        selector: app.kubernetes.io/component=opentelemetry-collector
-    - podLogs:
-        container: manager
-        namespace: opentelemetry-operator-system
-        selector: app.kubernetes.io/name=opentelemetry-operator
-    name: step-02
+  - name: step-02
     try:
     - apply:
         file: 02-promreceiver-allocatorconfig-extra.yaml
     - assert:
         file: 02-assert.yaml
-  - catch:
+    catch:
     - podLogs:
         selector: app.kubernetes.io/component=opentelemetry-targetallocator
     - podLogs:
@@ -41,9 +32,19 @@ spec:
         container: manager
         namespace: opentelemetry-operator-system
         selector: app.kubernetes.io/name=opentelemetry-operator
-    name: step-03
+  - name: step-03
     try:
     - apply:
         file: 03-promreceiver-nopromconfig.yaml
     - assert:
         file: 03-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-targetallocator
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
+    - podLogs:
+        container: manager
+        namespace: opentelemetry-operator-system
+        selector: app.kubernetes.io/name=opentelemetry-operator
+    
