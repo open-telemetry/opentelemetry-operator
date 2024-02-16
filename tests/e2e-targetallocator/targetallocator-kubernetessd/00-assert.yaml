@@ -13,6 +13,9 @@ metadata:
   name: prometheus-kubernetessd-targetallocator
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-kubernetessd-collector
 data:
   collector.yaml: |
     exporters:
@@ -33,6 +36,11 @@ data:
                 processors: []
                 receivers:
                     - prometheus
-kind: ConfigMap
+---
+apiVersion: apps/v1
+kind: DaemonSet
 metadata:
   name: prometheus-kubernetessd-collector
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true

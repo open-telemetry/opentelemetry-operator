@@ -13,8 +13,7 @@ spec:
         file: 00-install.yaml
     - assert:
         file: 00-assert.yaml
-    - script:
-        content: ./tests/e2e/smoke-daemonset/check-daemonset.sh
+    catch:
     - podLogs:
         selector: app.kubernetes.io/managed-by=opentelemetry-operator
   - name: step-01
