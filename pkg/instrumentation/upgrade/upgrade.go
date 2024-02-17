@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -52,6 +53,7 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstApacheHttpd string
 	DefaultAutoInstNginx       string
 	DefaultAutoInstGo          string
+    Config config.Config
 }
 
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
@@ -88,6 +90,21 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 	return nil
 }
 
+func (u *InstrumentationUpgrade) _upgrade(_ context.Context, inst v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
+	upgraded := inst.DeepCopy()
+    if u.Config.EnableApacheHTTPAutoInstrumentation() {
+        annoatation := constants.AnnotationDefaultAutoInstrumentationApacheHttpd
+		autoInst := upgraded.Annotations[annoatation]
+        if autoInst != "" {
+                    if inst.Spec.ApacheHttpd.Image == autoInst {
+                        upgraded.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
+                        upgraded.Annotations[annoatation] = u.DefaultAutoInstApacheHttpd
+                    }
+        }
+    }
+    return upgraded
+}
+
 func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
 	upgraded := inst.DeepCopy()
 	for annotation, gate := range defaultAnnotationToGate {
@@ -120,11 +137,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
 						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
 					}
-				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
-					if inst.Spec.ApacheHttpd.Image == autoInst {
-						upgraded.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
-						upgraded.Annotations[annotation] = u.DefaultAutoInstApacheHttpd
-					}
+				//case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
+					//if inst.Spec.ApacheHttpd.Image == autoInst {
+						//upgraded.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
+						//upgraded.Annotations[annotation] = u.DefaultAutoInstApacheHttpd
+					//}
 				case constants.AnnotationDefaultAutoInstrumentationNginx:
 					if inst.Spec.Nginx.Image == autoInst {
 						upgraded.Spec.Nginx.Image = u.DefaultAutoInstNginx
