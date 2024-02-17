@@ -111,6 +111,7 @@ func (c *Config) CollectorImage() string {
 	return c.collectorImage
 }
 
+// EnableMultiInstrumentation is true when the operator supports multi instrumentation.
 func (c *Config) EnableMultiInstrumentation() bool {
 	return c.enableMultiInstrumentation
 }
