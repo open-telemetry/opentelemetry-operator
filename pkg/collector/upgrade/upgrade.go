@@ -115,7 +115,7 @@ func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.Op
 
 	if instanceV.GreaterThan(&Latest.Version) {
 		// Update with the latest known version, which is what we have from versions.txt
-		u.Log.Info("no upgrade routines are needed for the OpenTelemetry instance", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version, "latest", Latest.Version.String())
+		u.Log.V(4).Info("no upgrade routines are needed for the OpenTelemetry instance", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version, "latest", Latest.Version.String())
 
 		otelColV, err := semver.NewVersion(u.Version.OpenTelemetryCollector)
 		if err != nil {
@@ -125,7 +125,7 @@ func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.Op
 			u.Log.Info("upgraded OpenTelemetry Collector version", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", otelcol.Status.Version)
 			otelcol.Status.Version = u.Version.OpenTelemetryCollector
 		} else {
-			u.Log.Info("skipping upgrade for OpenTelemetry Collector instance", "name", otelcol.Name, "namespace", otelcol.Namespace)
+			u.Log.V(4).Info("skipping upgrade for OpenTelemetry Collector instance", "name", otelcol.Name, "namespace", otelcol.Namespace)
 		}
 
 		return otelcol, nil

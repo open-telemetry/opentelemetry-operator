@@ -1,6 +1,0 @@
----
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-timeout: 30
-commands:
-- script: ./tests/e2e-openshift/multi-cluster/check_traces.sh

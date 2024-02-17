@@ -26,10 +26,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func HorizontalPodAutoscaler(params manifests.Params) client.Object {
+func HorizontalPodAutoscaler(params manifests.Params) (client.Object, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	annotations := Annotations(params.OtelCol)
+	annotations, err := Annotations(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
+
 	var result client.Object
 
 	objectMeta := metav1.ObjectMeta{
@@ -42,19 +46,7 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 	// defaulting webhook should always set this, but if unset then return nil.
 	if params.OtelCol.Spec.Autoscaler == nil {
 		params.Log.Info("hpa field is unset in Spec, skipping autoscaler creation")
-		return nil
-	}
-
-	if params.OtelCol.Spec.Autoscaler.MaxReplicas == nil {
-		params.OtelCol.Spec.Autoscaler.MaxReplicas = params.OtelCol.Spec.MaxReplicas
-	}
-
-	if params.OtelCol.Spec.Autoscaler.MinReplicas == nil {
-		if params.OtelCol.Spec.MinReplicas != nil {
-			params.OtelCol.Spec.Autoscaler.MinReplicas = params.OtelCol.Spec.MinReplicas
-		} else {
-			params.OtelCol.Spec.Autoscaler.MinReplicas = params.OtelCol.Spec.Replicas
-		}
+		return nil, nil
 	}
 
 	metrics := []autoscalingv2.MetricSpec{}
@@ -95,9 +87,14 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 				Kind:       "OpenTelemetryCollector",
 				Name:       naming.OpenTelemetryCollector(params.OtelCol.Name),
 			},
-			MinReplicas: params.OtelCol.Spec.Autoscaler.MinReplicas,
-			MaxReplicas: *params.OtelCol.Spec.Autoscaler.MaxReplicas,
-			Metrics:     metrics,
+			MinReplicas: params.OtelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MinReplicas,
+			MaxReplicas: func(max *int32) int32 {
+				if max == nil {
+					return 0
+				}
+				return *max
+			}(params.OtelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MaxReplicas),
+			Metrics: metrics,
 		},
 	}
 	if params.OtelCol.Spec.Autoscaler.Behavior != nil {
@@ -116,5 +113,5 @@ func HorizontalPodAutoscaler(params manifests.Params) client.Object {
 	}
 	result = &autoscaler
 
-	return result
+	return result, nil
 }

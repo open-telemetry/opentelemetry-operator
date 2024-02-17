@@ -15,6 +15,7 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -31,10 +32,10 @@ func NewLogger(logger logr.Logger) *Logger {
 	return &Logger{Logger: logger}
 }
 
-func (l *Logger) Debugf(format string, v ...interface{}) {
+func (l *Logger) Debugf(ctx context.Context, format string, v ...interface{}) {
 	l.Logger.V(4).Info(fmt.Sprintf(format, v...))
 }
 
-func (l *Logger) Errorf(format string, v ...interface{}) {
+func (l *Logger) Errorf(ctx context.Context, format string, v ...interface{}) {
 	l.Logger.V(0).Error(nil, fmt.Sprintf(format, v...))
 }

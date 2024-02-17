@@ -1,27 +1,9 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-- script: ./generate_certs.sh
-
----
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: otlp-receiver
   namespace: kuttl-multi-cluster-receive
 spec:
-  mode: "deployment"
-  ingress:
-    type: route
-    route:
-      termination: "passthrough"
-  volumes:
-    - name: kuttl-certs
-      configMap: 
-        name: kuttl-certs
-  volumeMounts:
-    - name: kuttl-certs
-      mountPath: /certs
   config: |
     receivers:
       otlp:
@@ -47,3 +29,15 @@ spec:
           receivers: [otlp]
           processors: []
           exporters: [otlp]
+  ingress:
+    route:
+      termination: passthrough
+    type: route
+  mode: deployment
+  volumeMounts:
+  - mountPath: /certs
+    name: kuttl-certs
+  volumes:
+  - configMap:
+      name: kuttl-certs
+    name: kuttl-certs

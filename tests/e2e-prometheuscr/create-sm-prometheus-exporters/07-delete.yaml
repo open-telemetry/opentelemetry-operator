@@ -1,8 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-delete:
-  - apiVersion: opentelemetry.io/v1alpha1
-    kind: OpenTelemetryCollector
-    metadata:
-      name: simplest
-      namespace: create-sm-prometheus

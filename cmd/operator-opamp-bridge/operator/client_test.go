@@ -248,10 +248,6 @@ func loadConfig(file string) ([]byte, error) {
 
 func TestClient_GetCollectorPods(t *testing.T) {
 	mockPodList := &v1.PodList{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "PodList",
-			APIVersion: "v1",
-		},
 		Items: []v1.Pod{
 			{
 				ObjectMeta: metav1.ObjectMeta{
@@ -266,10 +262,6 @@ func TestClient_GetCollectorPods(t *testing.T) {
 			},
 		}}
 	emptyList := &v1.PodList{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "PodList",
-			APIVersion: "v1",
-		},
 		Items: []v1.Pod{}}
 	type args struct {
 		selector  map[string]string

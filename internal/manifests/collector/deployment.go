@@ -25,12 +25,19 @@ import (
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(params manifests.Params) *appsv1.Deployment {
+func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
-	annotations := Annotations(params.OtelCol)
-	podAnnotations := PodAnnotations(params.OtelCol)
+	annotations, err := Annotations(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
+
+	podAnnotations, err := PodAnnotations(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,6 +51,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},
+			Strategy: params.OtelCol.Spec.DeploymentUpdateStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
@@ -56,6 +64,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 					Volumes:                       Volumes(params.Config, params.OtelCol),
 					DNSPolicy:                     getDNSPolicy(params.OtelCol),
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
+					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,
 					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
 					SecurityContext:               params.OtelCol.Spec.PodSecurityContext,
@@ -66,5 +75,5 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 				},
 			},
 		},
-	}
+	}, nil
 }

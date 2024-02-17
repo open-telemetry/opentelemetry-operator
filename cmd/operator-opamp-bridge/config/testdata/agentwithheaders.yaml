@@ -2,6 +2,8 @@ endpoint: ws://127.0.0.1:4320/v1/opamp
 headers:
   authentication: "access-12345-token"
   my-header-key: "my-header-value"
+  my-env-variable-1: "${MY_ENV_VAR_1}"
+  my-env-variable-2: "$MY_ENV_VAR_2"
 capabilities:
   AcceptsRemoteConfig: true
   ReportsEffectiveConfig: true

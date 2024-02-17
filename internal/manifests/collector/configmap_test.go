@@ -38,8 +38,7 @@ func TestDesiredConfigMap(t *testing.T) {
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
 
 		expectedData := map[string]string{
-			"collector.yaml": `processors:
-receivers:
+			"collector.yaml": `receivers:
   jaeger:
     protocols:
       grpc:
@@ -68,8 +67,10 @@ service:
 		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
-
+		assert.Equal(t, len(expectedData), len(actual.Data))
+		for k, expected := range expectedData {
+			assert.YAMLEq(t, expected, actual.Data[k])
+		}
 	})
 
 	t.Run("should return expected collector config map with http_sd_config if rewrite flag disabled", func(t *testing.T) {
@@ -83,8 +84,7 @@ service:
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
-  debug: null
-processors: null
+  debug:
 receivers:
   jaeger:
     protocols:
@@ -115,7 +115,10 @@ service:
 		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.GetName())
 		assert.Equal(t, expectedLables, actual.GetLabels())
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, len(expectedData), len(actual.Data))
+		for k, expected := range expectedData {
+			assert.YAMLEq(t, expected, actual.Data[k])
+		}
 
 	})
 
@@ -132,8 +135,7 @@ service:
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
-  debug: null
-processors: null
+  debug:
 receivers:
   prometheus:
     config:
@@ -166,7 +168,10 @@ service:
 		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, len(expectedData), len(actual.Data))
+		for k, expected := range expectedData {
+			assert.YAMLEq(t, expected, actual.Data[k])
+		}
 
 		// Reset the value
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
@@ -180,8 +185,7 @@ service:
 
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
-  debug: null
-processors: null
+  debug:
 receivers:
   prometheus:
     config: {}
@@ -208,7 +212,10 @@ service:
 		assert.NoError(t, err)
 		assert.Equal(t, "test-collector", actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, len(expectedData), len(actual.Data))
+		for k, expected := range expectedData {
+			assert.YAMLEq(t, expected, actual.Data[k])
+		}
 
 		// Reset the value
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"

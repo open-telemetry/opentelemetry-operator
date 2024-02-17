@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: prometheus-config-validation
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        template: true
+        file: 00-promreceiver-allocatorconfig.yaml
+    - assert:
+        file: 00-assert.yaml
+  - name: step-01
+    try:
+    - apply:
+        file: 01-promreceiver-labeldrop.yaml
+  - name: step-02
+    try:
+    - apply:
+        file: 02-promreceiver-allocatorconfig-extra.yaml
+    - assert:
+        file: 02-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-targetallocator
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
+    - podLogs:
+        container: manager
+        namespace: opentelemetry-operator-system
+        selector: app.kubernetes.io/name=opentelemetry-operator
+  - name: step-03
+    try:
+    - apply:
+        file: 03-promreceiver-nopromconfig.yaml
+    - assert:
+        file: 03-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-targetallocator
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
+    - podLogs:
+        container: manager
+        namespace: opentelemetry-operator-system
+        selector: app.kubernetes.io/name=opentelemetry-operator
+    

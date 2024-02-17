@@ -269,7 +269,8 @@ func LoadFromFile(cfg *Config, configFile string) error {
 	if err != nil {
 		return err
 	}
-	if err = yaml.Unmarshal(yamlFile, cfg); err != nil {
+	envExpandedYaml := []byte(os.ExpandEnv(string(yamlFile)))
+	if err = yaml.Unmarshal(envExpandedYaml, cfg); err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
 	return nil

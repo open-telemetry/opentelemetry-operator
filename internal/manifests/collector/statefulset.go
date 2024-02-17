@@ -25,12 +25,19 @@ import (
 )
 
 // StatefulSet builds the statefulset for the given instance.
-func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
+func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
-	annotations := Annotations(params.OtelCol)
-	podAnnotations := PodAnnotations(params.OtelCol)
+	annotations, err := Annotations(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
+
+	podAnnotations, err := PodAnnotations(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
 
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -56,6 +63,7 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 					Volumes:                   Volumes(params.Config, params.OtelCol),
 					DNSPolicy:                 getDNSPolicy(params.OtelCol),
 					HostNetwork:               params.OtelCol.Spec.HostNetwork,
+					ShareProcessNamespace:     &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:               params.OtelCol.Spec.Tolerations,
 					NodeSelector:              params.OtelCol.Spec.NodeSelector,
 					SecurityContext:           params.OtelCol.Spec.PodSecurityContext,
@@ -68,5 +76,5 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 			PodManagementPolicy:  "Parallel",
 			VolumeClaimTemplates: VolumeClaimTemplates(params.OtelCol),
 		},
-	}
+	}, nil
 }

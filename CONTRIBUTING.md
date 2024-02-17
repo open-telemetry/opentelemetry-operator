@@ -118,13 +118,13 @@ KUBEBUILDER_ASSETS=$(./bin/setup-envtest use -p path 1.23) go test ./pkg...
 
 ### End to end tests
 
-To run the end-to-end tests, you'll need [`kind`](https://kind.sigs.k8s.io) and [`kuttl`](https://kuttl.dev). Refer to their documentation for installation instructions.
+To run the end-to-end tests, you'll need [`kind`](https://kind.sigs.k8s.io) and [`chainsaw`](https://kyverno.github.io/chainsaw). Refer to their documentation for installation instructions.
 
-Once they are installed, the tests can be executed with `make prepare-e2e`, which will build an image to use with the tests, followed by `make e2e`. Each call to the `e2e` target will setup a fresh `kind` cluster, making it safe to be executed multiple times with a single `prepare-e2e` step.
+Once they are installed, the tests can be executed with `make prepare-e2e`, which will build an image to use with the tests, followed by `make e2e`. Each call to the `e2e` target will set up a fresh `kind` cluster, making it safe to be executed multiple times with a single `prepare-e2e` step.
 
-The tests are located under `tests/e2e` and are written to be used with `kuttl`. Refer to their documentation to understand how tests are written.
+The tests are located under `tests/e2e` and are written to be used with `chainsaw`. Refer to their documentation to understand how tests are written.
 
-To evert the changes made by the `make prepare-e2e` run `make reset`.
+To revert the changes made by the `make prepare-e2e` run `make reset`.
 
 ### OpenShift End to End tests
 To run the end-to-end tests written for OpenShift, you'll need a OpenShift cluster. 
@@ -133,7 +133,7 @@ To install the OpenTelemetry operator, please follow the instructions in  [Opera
 
 Once the operator is installed, the tests can be executed using `make e2e-openshift`, which will call to the `e2e-openshift` target. Note that `kind` is disabled for the TestSuite as the requirement is to use an OpenShift cluster for these test cases. 
 
-The tests are located under `tests/e2e-openshift` and are written to be used with `kuttl`.
+The tests are located under `tests/e2e-openshift` and are written to be used with `chainsaw`.
 
 ### Undeploying the operator from the local cluster
 

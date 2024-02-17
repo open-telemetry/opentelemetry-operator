@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
@@ -56,15 +57,19 @@ type Params struct {
 	Config   config.Config
 }
 
-func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) manifests.Params {
+func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) (manifests.Params, error) {
+	otelCol, err := convert.V1Alpha1to2(instance)
+	if err != nil {
+		return manifests.Params{}, err
+	}
 	return manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
-		OtelCol:  instance,
+		OtelCol:  otelCol,
 		Log:      r.log,
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
-	}
+	}, nil
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -84,7 +89,6 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings;clusterroles,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
@@ -120,14 +124,20 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	params := r.getParams(instance)
+	params, err := r.getParams(instance)
+	if err != nil {
+		log.Error(err, "Failed to create manifest.Params")
+		return ctrl.Result{}, err
+	}
 
 	desiredObjects, buildErr := BuildCollector(params)
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
-	err := reconcileDesiredObjects(ctx, r.Client, log, &params.OtelCol, params.Scheme, desiredObjects...)
-	return collectorStatus.HandleReconcileStatus(ctx, log, params, err)
+	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2620
+	// TODO: Change &instance to use params.OtelCol
+	err = reconcileDesiredObjects(ctx, r.Client, log, &instance, params.Scheme, desiredObjects...)
+	return collectorStatus.HandleReconcileStatus(ctx, log, params, instance, err)
 }
 
 // SetupWithManager tells the manager what our controller is interested in.
@@ -141,9 +151,12 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
-		Owns(&policyV1.PodDisruptionBudget{}).
-		Owns(&rbacv1.ClusterRoleBinding{}).
-		Owns(&rbacv1.ClusterRole{})
+		Owns(&policyV1.PodDisruptionBudget{})
+
+	if r.config.CreateRBACPermissions() {
+		builder.Owns(&rbacv1.ClusterRoleBinding{})
+		builder.Owns(&rbacv1.ClusterRole{})
+	}
 
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		builder.Owns(&monitoringv1.ServiceMonitor{})

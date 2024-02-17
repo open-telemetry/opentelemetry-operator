@@ -26,6 +26,7 @@ import (
 	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -215,51 +216,53 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func paramsWithMode(mode v1alpha1.Mode) manifests.Params {
+func testCollectorWithMode(mode v1alpha1.Mode) v1alpha1.OpenTelemetryCollector {
 	replicas := int32(2)
-	return paramsWithModeAndReplicas(mode, replicas)
+	return testCollectorWithModeAndReplicas(mode, replicas)
 }
 
-func paramsWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) manifests.Params {
+func testCollectorWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) v1alpha1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	return manifests.Params{
-		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
-		Client: k8sClient,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "opentelemetry.io",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				Replicas: &replicas,
-				Config:   string(configYAML),
-				Mode:     mode,
-			},
+	return v1alpha1.OpenTelemetryCollector{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "opentelemetry.io",
+			APIVersion: "v1",
 		},
-		Scheme:   testScheme,
-		Log:      logger,
-		Recorder: record.NewFakeRecorder(10),
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+			Ports: []v1.ServicePort{{
+				Name: "web",
+				Port: 80,
+				TargetPort: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 80,
+				},
+				NodePort: 0,
+			}},
+			Replicas: &replicas,
+			Config:   string(configYAML),
+			Mode:     mode,
+		},
 	}
 }
 
-func newParams(taContainerImage string, file string) (manifests.Params, error) {
+func testCollectorAssertNoErr(t *testing.T, taContainerImage string, file string) v1alpha1.OpenTelemetryCollector {
+	p, err := testCollectorWithConfigFile(taContainerImage, file)
+	assert.NoError(t, err)
+	if len(taContainerImage) == 0 {
+		p.Spec.TargetAllocator.Enabled = false
+	}
+	return p
+}
+
+func testCollectorWithConfigFile(taContainerImage string, file string) (v1alpha1.OpenTelemetryCollector, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -270,95 +273,76 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 		configYAML, err = os.ReadFile(file)
 	}
 	if err != nil {
-		return manifests.Params{}, fmt.Errorf("Error getting yaml file: %w", err)
+		return v1alpha1.OpenTelemetryCollector{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}
-
-	cfg := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
-
-	return manifests.Params{
-		Config: cfg,
-		Client: k8sClient,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "opentelemetry.io",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "default",
-			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Mode: v1alpha1.ModeStatefulSet,
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
-					Enabled: true,
-					Image:   taContainerImage,
-				},
-				Replicas: &replicas,
-				Config:   string(configYAML),
-			},
+	return v1alpha1.OpenTelemetryCollector{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "opentelemetry.io",
+			APIVersion: "v1",
 		},
-		Scheme: testScheme,
-		Log:    logger,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: v1alpha1.ModeStatefulSet,
+			Ports: []v1.ServicePort{{
+				Name: "web",
+				Port: 80,
+				TargetPort: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 80,
+				},
+				NodePort: 0,
+			}},
+			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+				Enabled: true,
+				Image:   taContainerImage,
+			},
+			Replicas: &replicas,
+			Config:   string(configYAML),
+		},
 	}, nil
 }
 
-func paramsWithHPA(minReps, maxReps int32) manifests.Params {
+func testCollectorWithHPA(minReps, maxReps int32) v1alpha1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-
 	cpuUtilization := int32(90)
 
-	configuration := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
-
-	return manifests.Params{
-		Config: configuration,
-		Client: k8sClient,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "opentelemetry.io",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hpatest",
-				Namespace: "default",
-				UID:       instanceUID,
-			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				Config: string(configYAML),
-				Autoscaler: &v1alpha1.AutoscalerSpec{
-					MinReplicas:          &minReps,
-					MaxReplicas:          &maxReps,
-					TargetCPUUtilization: &cpuUtilization,
+	return v1alpha1.OpenTelemetryCollector{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "opentelemetry.io",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hpatest",
+			Namespace: "default",
+			UID:       instanceUID,
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Ports: []v1.ServicePort{{
+				Name: "web",
+				Port: 80,
+				TargetPort: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 80,
 				},
+				NodePort: 0,
+			}},
+			Config: string(configYAML),
+			Autoscaler: &v1alpha1.AutoscalerSpec{
+				MinReplicas:          &minReps,
+				MaxReplicas:          &maxReps,
+				TargetCPUUtilization: &cpuUtilization,
 			},
 		},
-		Scheme:   testScheme,
-		Log:      logger,
-		Recorder: record.NewFakeRecorder(10),
 	}
 }
 
-func paramsWithPolicy(minAvailable, maxUnavailable int32) manifests.Params {
+func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
@@ -387,36 +371,29 @@ func paramsWithPolicy(minAvailable, maxUnavailable int32) manifests.Params {
 		}
 	}
 
-	return manifests.Params{
-		Config: configuration,
-		Client: k8sClient,
-		OtelCol: v1alpha1.OpenTelemetryCollector{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "opentelemetry.io",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "policytest",
-				Namespace: "default",
-				UID:       instanceUID,
-			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Ports: []v1.ServicePort{{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}},
-				Config:              string(configYAML),
-				PodDisruptionBudget: pdb,
-			},
+	return v1alpha1.OpenTelemetryCollector{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "opentelemetry.io",
+			APIVersion: "v1",
 		},
-		Scheme:   testScheme,
-		Log:      logger,
-		Recorder: record.NewFakeRecorder(10),
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "policytest",
+			Namespace: "default",
+			UID:       instanceUID,
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Ports: []v1.ServicePort{{
+				Name: "web",
+				Port: 80,
+				TargetPort: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 80,
+				},
+				NodePort: 0,
+			}},
+			Config:              string(configYAML),
+			PodDisruptionBudget: pdb,
+		},
 	}
 }
 

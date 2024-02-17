@@ -1,5 +1,0 @@
-# waiting for liveness probe to work
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-- command: sleep 35

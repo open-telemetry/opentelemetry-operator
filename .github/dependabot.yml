@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: gomod
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
     # Create a group of dependencies to be updated together in one pull request
     groups:
       golang-org-x:
@@ -29,7 +29,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
     groups:
       gha-docker:
         patterns:
@@ -38,14 +38,14 @@ updates:
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: docker
     directory: /cmd/otel-allocator
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: docker
     directory: /cmd/operator-opamp-bridge
     schedule:
-      interval: daily
+      interval: weekly

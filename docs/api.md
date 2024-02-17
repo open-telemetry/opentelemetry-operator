@@ -9643,6 +9643,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecdeploymentupdatestrategy">deploymentUpdateStrategy</a></b></td>
+        <td>object</td>
+        <td>
+          UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods https://kubernetes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -9819,6 +9826,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>string</td>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set, the operator will not automatically create a ServiceAccount for the collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>shareProcessNamespace</b></td>
+        <td>boolean</td>
+        <td>
+          ShareProcessNamespace indicates if the pod's containers should share process namespace.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14212,6 +14226,74 @@ target specifies the target value for the given metric
 </table>
 
 
+### OpenTelemetryCollector.spec.deploymentUpdateStrategy
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods https://kubernetes.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecdeploymentupdatestrategyrollingupdate">rollingUpdate</a></b></td>
+        <td>object</td>
+        <td>
+          Rolling update config params. Present only if DeploymentStrategyType = RollingUpdate. --- TODO: Update this to follow our convention for oneOf, whatever we decide it to be.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type of deployment. Can be "Recreate" or "RollingUpdate". Default is RollingUpdate.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.deploymentUpdateStrategy.rollingUpdate
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecdeploymentupdatestrategy)</sup></sup>
+
+
+
+Rolling update config params. Present only if DeploymentStrategyType = RollingUpdate. --- TODO: Update this to follow our convention for oneOf, whatever we decide it to be.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>maxSurge</b></td>
+        <td>int or string</td>
+        <td>
+          The maximum number of pods that can be scheduled above the desired number of pods. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxUnavailable</b></td>
+        <td>int or string</td>
+        <td>
+          The maximum number of pods that can be unavailable during the update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.env[index]
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
 
@@ -17730,6 +17812,13 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>DisablePrometheusAnnotations</b></td>
+        <td>boolean</td>
+        <td>
+          DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
@@ -18466,9 +18555,9 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td><b>allocationStrategy</b></td>
         <td>enum</td>
         <td>
-          AllocationStrategy determines which strategy the target allocator should use for allocation. The current options are least-weighted and consistent-hashing. The default option is consistent-hashing<br/>
+          AllocationStrategy determines which strategy the target allocator should use for allocation. The current options are least-weighted, consistent-hashing and per-node. The default is consistent-hashing.<br/>
           <br/>
-            <i>Enum</i>: least-weighted, consistent-hashing<br/>
+            <i>Enum</i>: least-weighted, consistent-hashing, per-node<br/>
             <i>Default</i>: consistent-hashing<br/>
         </td>
         <td>false</td>
@@ -18491,6 +18580,8 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td>string</td>
         <td>
           FilterStrategy determines how to filter targets before allocating them among the collectors. The only current option is relabel-config (drops targets based on prom relabel_config).<br/>
+          <br/>
+            <i>Default</i>: relabel-config<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20231,6 +20322,13 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>DisablePrometheusAnnotations</b></td>
+        <td>boolean</td>
+        <td>
+          DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>

@@ -9,7 +9,6 @@ body:
       description: Which component(s) does your feature request concern?
       multiple: true
       options:
-      - operator
       - collector
       - instrumentation
       - target allocator

@@ -58,16 +58,15 @@ data:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
-
+          grpc: null
+          http: null
     exporters:
-      debug:
-
+      debug: null
     service:
       pipelines:
         traces:
-          receivers: [otlp]
+          exporters:
+            - debug
           processors: []
-          exporters: [debug]
+          receivers:
+            - otlp

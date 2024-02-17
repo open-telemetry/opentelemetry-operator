@@ -1,6 +1,5 @@
-debug: null
-exporters: null
-processors: null
+exporters:
+  debug:
 receivers:
   prometheus:
     config:
