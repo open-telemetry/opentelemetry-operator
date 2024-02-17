@@ -19,7 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -64,7 +64,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	if len(params.OtelCol.Spec.TargetAllocator.AllocationStrategy) > 0 {
 		taConfig["allocation_strategy"] = params.OtelCol.Spec.TargetAllocator.AllocationStrategy
 	} else {
-		taConfig["allocation_strategy"] = v1alpha2.TargetAllocatorAllocationStrategyConsistentHashing
+		taConfig["allocation_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	}
 
 	taConfig["filter_strategy"] = params.OtelCol.Spec.TargetAllocator.FilterStrategy

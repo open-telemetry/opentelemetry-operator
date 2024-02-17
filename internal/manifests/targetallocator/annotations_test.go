@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -58,7 +58,7 @@ func TestConfigMapHash(t *testing.T) {
 
 func TestInvalidConfigNoHash(t *testing.T) {
 	instance := collectorInstance()
-	instance.Spec.Config = v1alpha2.Config{}
+	instance.Spec.Config = v1beta1.Config{}
 	annotations := Annotations(instance, nil)
 	require.NotContains(t, annotations, configMapHashAnnotationKey)
 }

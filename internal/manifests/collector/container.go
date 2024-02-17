@@ -25,7 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -36,7 +36,7 @@ import (
 const maxPortLen = 15
 
 // Container builds a container for the given collector.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha2.OpenTelemetryCollector, addConfig bool) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector, addConfig bool) corev1.Container {
 	image := otelcol.Spec.Image
 	if len(image) == 0 {
 		image = cfg.CollectorImage()
@@ -226,7 +226,7 @@ func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPo
 	return ports
 }
 
-func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1alpha2.Probe) (*corev1.Probe, error) {
+func getLivenessProbe(config map[interface{}]interface{}, probeConfig *v1beta1.Probe) (*corev1.Probe, error) {
 	probe, err := adapters.ConfigToContainerProbe(config)
 	if err != nil {
 		return nil, err

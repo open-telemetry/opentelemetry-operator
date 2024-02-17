@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -31,7 +31,7 @@ const (
 
 func TestLabelsCommonSet(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -50,7 +50,7 @@ func TestLabelsCommonSet(t *testing.T) {
 
 func TestLabelsPropagateDown(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				"myapp":                  "mycomponent",
@@ -70,7 +70,7 @@ func TestLabelsPropagateDown(t *testing.T) {
 
 func TestSelectorLabels(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,

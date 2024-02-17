@@ -1,32 +1,42 @@
 apiVersion: v1
+automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   name: ta
-automountServiceAccountToken: true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: smoke-targetallocator
 rules:
-- apiGroups: [""]
-  resources: [ "pods", "namespaces" ]
-  verbs: [ "get", "list", "watch"]
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
 ---
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - command: kubectl -n $NAMESPACE create clusterrolebinding default-view-$NAMESPACE --clusterrole=smoke-targetallocator --serviceaccount=$NAMESPACE:ta
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: (join('-', ['default-view', $namespace]))
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: smoke-targetallocator
+subjects:
+- kind: ServiceAccount
+  name: ta
+  namespace: ($namespace)
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: stateful
 spec:
-  mode: statefulset
-  targetAllocator:
-    enabled: true
-    serviceAccount: ta
   config: |
     receivers:
       jaeger:
@@ -52,3 +62,7 @@ spec:
           receivers: [jaeger]
           processors: []
           exporters: [debug]
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    serviceAccount: ta
