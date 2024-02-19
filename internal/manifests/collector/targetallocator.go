@@ -75,7 +75,7 @@ func TargetAllocator(params manifests.Params) (*v1beta1.TargetAllocator, error) 
 	}, nil
 }
 
-func getScrapeConfigs(otelcolConfig string) ([]v1beta1.ScrapeConfig, error) {
+func getScrapeConfigs(otelcolConfig string) ([]v1beta1.AnyConfig, error) {
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA Scrape Configs should have a single "$", as it does not support env var substitution
 	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(otelcolConfig)
@@ -88,10 +88,10 @@ func getScrapeConfigs(otelcolConfig string) ([]v1beta1.ScrapeConfig, error) {
 		return nil, err
 	}
 
-	v1beta1scrapeConfigs := make([]v1beta1.ScrapeConfig, len(scrapeConfigs))
+	v1beta1scrapeConfigs := make([]v1beta1.AnyConfig, len(scrapeConfigs))
 
 	for i, config := range scrapeConfigs {
-		v1beta1scrapeConfigs[i] = config
+		v1beta1scrapeConfigs[i] = v1beta1.AnyConfig{Object: config}
 	}
 
 	return v1beta1scrapeConfigs, nil

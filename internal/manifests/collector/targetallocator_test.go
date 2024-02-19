@@ -84,7 +84,7 @@ func TestTargetAllocator(t *testing.T) {
 					CollectorSelector: metav1.LabelSelector{
 						MatchLabels: manifestutils.SelectorLabels(objectMetadata, ComponentOpenTelemetryCollector),
 					},
-					ScrapeConfigs: []v1beta1.ScrapeConfig{},
+					ScrapeConfigs: []v1beta1.AnyConfig{},
 				},
 			},
 		},
@@ -107,7 +107,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 	testCases := []struct {
 		name    string
 		input   v1beta1.Config
-		want    []v1beta1.ScrapeConfig
+		want    []v1beta1.AnyConfig
 		wantErr error
 	}{
 		{
@@ -123,7 +123,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 					},
 				},
 			},
-			want: []v1beta1.ScrapeConfig{},
+			want: []v1beta1.AnyConfig{},
 		},
 		{
 			name: "no scrape configs key",
@@ -155,10 +155,8 @@ func TestGetScrapeConfigs(t *testing.T) {
 					},
 				},
 			},
-			want: []v1beta1.ScrapeConfig{
-				{
-					"job": "somejob",
-				},
+			want: []v1beta1.AnyConfig{
+				{Object: map[string]interface{}{"job": "somejob"}},
 			},
 		},
 	}

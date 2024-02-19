@@ -756,7 +756,7 @@ func (in *TargetAllocatorSpec) DeepCopyInto(out *TargetAllocatorSpec) {
 	in.CollectorSelector.DeepCopyInto(&out.CollectorSelector)
 	if in.ScrapeConfigs != nil {
 		in, out := &in.ScrapeConfigs, &out.ScrapeConfigs
-		*out = make([]ScrapeConfig, len(*in))
+		*out = make([]AnyConfig, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
