@@ -18,34 +18,35 @@ import (
 	"errors"
 
 	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryCollector, error) {
+func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
-	out := v1alpha2.OpenTelemetryCollector{
+	out := v1beta1.OpenTelemetryCollector{
 		TypeMeta:   copy.TypeMeta,
 		ObjectMeta: copy.ObjectMeta,
 	}
 
-	cfg := &v1alpha2.Config{}
+	cfg := &v1beta1.Config{}
 	if err := yaml.Unmarshal([]byte(in.Spec.Config), cfg); err != nil {
-		return v1alpha2.OpenTelemetryCollector{}, errors.New("could not convert config json to v1alpha2.Config")
+		return v1beta1.OpenTelemetryCollector{}, errors.New("could not convert config json to v1beta1.Config")
 	}
 	out.Spec.Config = *cfg
 
-	out.Spec.OpenTelemetryCommonFields.ManagementState = v1alpha2.ManagementStateType(copy.Spec.ManagementState)
+	out.Spec.OpenTelemetryCommonFields.ManagementState = v1beta1.ManagementStateType(copy.Spec.ManagementState)
 	out.Spec.OpenTelemetryCommonFields.Resources = copy.Spec.Resources
 	out.Spec.OpenTelemetryCommonFields.NodeSelector = copy.Spec.NodeSelector
 	out.Spec.OpenTelemetryCommonFields.Args = copy.Spec.NodeSelector
 	out.Spec.OpenTelemetryCommonFields.Replicas = copy.Spec.Replicas
 
 	if copy.Spec.Autoscaler != nil {
-		metrics := make([]v1alpha2.MetricSpec, len(copy.Spec.Autoscaler.Metrics))
+		metrics := make([]v1beta1.MetricSpec, len(copy.Spec.Autoscaler.Metrics))
 		for i, m := range copy.Spec.Autoscaler.Metrics {
-			metrics[i] = v1alpha2.MetricSpec{
+			metrics[i] = v1beta1.MetricSpec{
 				Type: m.Type,
 				Pods: m.Pods,
 			}
@@ -56,7 +57,7 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 		if copy.Spec.MinReplicas != nil && copy.Spec.Autoscaler.MinReplicas == nil {
 			copy.Spec.Autoscaler.MinReplicas = copy.Spec.MinReplicas
 		}
-		out.Spec.OpenTelemetryCommonFields.Autoscaler = &v1alpha2.AutoscalerSpec{
+		out.Spec.OpenTelemetryCommonFields.Autoscaler = &v1beta1.AutoscalerSpec{
 			MinReplicas:             copy.Spec.Autoscaler.MinReplicas,
 			MaxReplicas:             copy.Spec.Autoscaler.MaxReplicas,
 			Behavior:                copy.Spec.Autoscaler.Behavior,
@@ -67,7 +68,7 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 	}
 
 	if copy.Spec.PodDisruptionBudget != nil {
-		out.Spec.OpenTelemetryCommonFields.PodDisruptionBudget = &v1alpha2.PodDisruptionBudgetSpec{
+		out.Spec.OpenTelemetryCommonFields.PodDisruptionBudget = &v1beta1.PodDisruptionBudgetSpec{
 			MinAvailable:   copy.Spec.PodDisruptionBudget.MinAvailable,
 			MaxUnavailable: copy.Spec.PodDisruptionBudget.MaxUnavailable,
 		}
@@ -99,43 +100,20 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 	out.Spec.OpenTelemetryCommonFields.InitContainers = copy.Spec.InitContainers
 	out.Spec.OpenTelemetryCommonFields.AdditionalContainers = copy.Spec.AdditionalContainers
 
-	out.Spec.TargetAllocator.Replicas = copy.Spec.TargetAllocator.Replicas
-	out.Spec.TargetAllocator.NodeSelector = copy.Spec.TargetAllocator.NodeSelector
-	out.Spec.TargetAllocator.Resources = copy.Spec.TargetAllocator.Resources
-	out.Spec.TargetAllocator.AllocationStrategy = copy.Spec.TargetAllocator.AllocationStrategy
-	out.Spec.TargetAllocator.FilterStrategy = copy.Spec.TargetAllocator.FilterStrategy
-	out.Spec.TargetAllocator.ServiceAccount = copy.Spec.TargetAllocator.ServiceAccount
-	out.Spec.TargetAllocator.Image = copy.Spec.TargetAllocator.Image
-	out.Spec.TargetAllocator.Enabled = copy.Spec.TargetAllocator.Enabled
-	out.Spec.TargetAllocator.Affinity = copy.Spec.TargetAllocator.Affinity
-	out.Spec.TargetAllocator.PrometheusCR.Enabled = copy.Spec.TargetAllocator.PrometheusCR.Enabled
-	out.Spec.TargetAllocator.PrometheusCR.ScrapeInterval = copy.Spec.TargetAllocator.PrometheusCR.ScrapeInterval
-	out.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = copy.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
-	out.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = copy.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
-	out.Spec.TargetAllocator.SecurityContext = copy.Spec.TargetAllocator.SecurityContext
-	out.Spec.TargetAllocator.PodSecurityContext = copy.Spec.TargetAllocator.PodSecurityContext
-	out.Spec.TargetAllocator.TopologySpreadConstraints = copy.Spec.TargetAllocator.TopologySpreadConstraints
-	out.Spec.TargetAllocator.Tolerations = copy.Spec.TargetAllocator.Tolerations
-	out.Spec.TargetAllocator.Env = copy.Spec.TargetAllocator.Env
-	out.Spec.TargetAllocator.Observability = v1alpha1.ObservabilitySpec{
-		Metrics: v1alpha1.MetricsConfigSpec{
-			EnableMetrics: copy.Spec.TargetAllocator.Observability.Metrics.EnableMetrics,
-		},
-	}
-	out.Spec.TargetAllocator.PodDisruptionBudget = copy.Spec.TargetAllocator.PodDisruptionBudget
+	out.Spec.TargetAllocator = TargetAllocatorEmbedded(copy.Spec.TargetAllocator)
 
-	out.Spec.Mode = v1alpha2.Mode(copy.Spec.Mode)
-	out.Spec.UpgradeStrategy = v1alpha2.UpgradeStrategy(copy.Spec.UpgradeStrategy)
-	out.Spec.Ingress.Type = v1alpha2.IngressType(copy.Spec.Ingress.Type)
-	out.Spec.Ingress.RuleType = v1alpha2.IngressRuleType(copy.Spec.Ingress.RuleType)
+	out.Spec.Mode = v1beta1.Mode(copy.Spec.Mode)
+	out.Spec.UpgradeStrategy = v1beta1.UpgradeStrategy(copy.Spec.UpgradeStrategy)
+	out.Spec.Ingress.Type = v1beta1.IngressType(copy.Spec.Ingress.Type)
+	out.Spec.Ingress.RuleType = v1beta1.IngressRuleType(copy.Spec.Ingress.RuleType)
 	out.Spec.Ingress.Hostname = copy.Spec.Ingress.Hostname
 	out.Spec.Ingress.Annotations = copy.Spec.Ingress.Annotations
 	out.Spec.Ingress.TLS = copy.Spec.Ingress.TLS
 	out.Spec.Ingress.IngressClassName = copy.Spec.Ingress.IngressClassName
-	out.Spec.Ingress.Route.Termination = v1alpha2.TLSRouteTerminationType(copy.Spec.Ingress.Route.Termination)
+	out.Spec.Ingress.Route.Termination = v1beta1.TLSRouteTerminationType(copy.Spec.Ingress.Route.Termination)
 
 	if copy.Spec.LivenessProbe != nil {
-		out.Spec.LivenessProbe = &v1alpha2.Probe{
+		out.Spec.LivenessProbe = &v1beta1.Probe{
 			InitialDelaySeconds:           copy.Spec.LivenessProbe.InitialDelaySeconds,
 			TimeoutSeconds:                copy.Spec.LivenessProbe.TimeoutSeconds,
 			PeriodSeconds:                 copy.Spec.LivenessProbe.PeriodSeconds,
@@ -153,4 +131,43 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1alpha2.OpenTelemetryColl
 	out.Spec.DeploymentUpdateStrategy.RollingUpdate = copy.Spec.DeploymentUpdateStrategy.RollingUpdate
 
 	return out, nil
+}
+
+func TargetAllocatorEmbedded(in v1alpha1.OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedded {
+	out := v1beta1.TargetAllocatorEmbedded{}
+	out.Replicas = in.Replicas
+	out.NodeSelector = in.NodeSelector
+	out.Resources = in.Resources
+	out.AllocationStrategy = v1beta1.TargetAllocatorAllocationStrategy(in.AllocationStrategy)
+	out.FilterStrategy = v1beta1.TargetAllocatorFilterStrategy(in.FilterStrategy)
+	out.ServiceAccount = in.ServiceAccount
+	out.Image = in.Image
+	out.Enabled = in.Enabled
+	out.Affinity = in.Affinity
+	out.PrometheusCR.Enabled = in.PrometheusCR.Enabled
+	out.PrometheusCR.ScrapeInterval = in.PrometheusCR.ScrapeInterval
+	out.SecurityContext = in.SecurityContext
+	out.PodSecurityContext = in.PodSecurityContext
+	out.TopologySpreadConstraints = in.TopologySpreadConstraints
+	out.Tolerations = in.Tolerations
+	out.Env = in.Env
+	out.Observability = v1alpha1.ObservabilitySpec{
+		Metrics: v1alpha1.MetricsConfigSpec{
+			EnableMetrics: in.Observability.Metrics.EnableMetrics,
+		},
+	}
+
+	out.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
+		MatchLabels: in.PrometheusCR.PodMonitorSelector,
+	}
+	out.PrometheusCR.ServiceMonitorSelector = &metav1.LabelSelector{
+		MatchLabels: in.PrometheusCR.ServiceMonitorSelector,
+	}
+	if in.PodDisruptionBudget != nil {
+		out.PodDisruptionBudget = &v1beta1.PodDisruptionBudgetSpec{
+			MinAvailable:   in.PodDisruptionBudget.MinAvailable,
+			MaxUnavailable: in.PodDisruptionBudget.MaxUnavailable,
+		}
+	}
+	return out
 }
