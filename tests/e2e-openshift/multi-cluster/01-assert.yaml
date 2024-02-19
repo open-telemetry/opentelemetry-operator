@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: jaeger-allinone
     app.kubernetes.io/part-of: jaeger
   name: jaeger-allinone
-  namespace: kuttl-multi-cluster-receive
+  namespace: chainsaw-multi-cluster-receive
 status:
   availableReplicas: 1
   readyReplicas: 1
@@ -27,7 +27,7 @@ metadata:
     app.kubernetes.io/name: jaeger-allinone-collector
     app.kubernetes.io/part-of: jaeger
   name: jaeger-allinone-collector
-  namespace: kuttl-multi-cluster-receive
+  namespace: chainsaw-multi-cluster-receive
 spec:
   ports:
   - name: http-zipkin
@@ -79,7 +79,7 @@ metadata:
     app.kubernetes.io/name: jaeger-allinone-query
     app.kubernetes.io/part-of: jaeger
   name: jaeger-allinone-query
-  namespace: kuttl-multi-cluster-receive
+  namespace: chainsaw-multi-cluster-receive
 spec:
   ports:
   - name: http-query
@@ -115,7 +115,7 @@ metadata:
     app.kubernetes.io/name: jaeger-allinone
     app.kubernetes.io/part-of: jaeger
   name: jaeger-allinone
-  namespace: kuttl-multi-cluster-receive
+  namespace: chainsaw-multi-cluster-receive
 spec:
   port:
     targetPort: http-query

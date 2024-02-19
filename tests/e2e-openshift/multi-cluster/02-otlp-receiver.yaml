@@ -2,7 +2,7 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: otlp-receiver
-  namespace: kuttl-multi-cluster-receive
+  namespace: chainsaw-multi-cluster-receive
 spec:
   config: |
     receivers:
@@ -20,7 +20,7 @@ spec:
               client_ca_file: /certs/ca.crt
     exporters:
       otlp:
-        endpoint: "jaeger-allinone-collector.kuttl-multi-cluster-receive.svc:4317"
+        endpoint: "jaeger-allinone-collector.chainsaw-multi-cluster-receive.svc:4317"
         tls:
           insecure: true
     service:
@@ -36,8 +36,8 @@ spec:
   mode: deployment
   volumeMounts:
   - mountPath: /certs
-    name: kuttl-certs
+    name: chainsaw-certs
   volumes:
   - configMap:
-      name: kuttl-certs
-    name: kuttl-certs
+      name: chainsaw-certs
+    name: chainsaw-certs

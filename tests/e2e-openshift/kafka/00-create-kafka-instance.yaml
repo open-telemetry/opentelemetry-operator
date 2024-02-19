@@ -3,14 +3,14 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: kuttl-kafka
+  name: chainsaw-kafka
 
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: my-cluster
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 spec:
   entityOperator:
     topicOperator:
