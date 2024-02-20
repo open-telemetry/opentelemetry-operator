@@ -33,3 +33,9 @@ spec:
           name: telemetrygen-set-utilization
     - assert:
         file: 03-assert.yaml
+  - name: step-04
+    try:
+    - apply:
+        file: 04-install.yaml
+    - error:
+        file: 04-error.yaml
