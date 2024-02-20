@@ -41,12 +41,6 @@ func TestUpgrade(t *testing.T) {
 		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), originalVal))
 	})
 
-	originalVal = featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled()
-	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), true))
-	t.Cleanup(func() {
-		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableApacheHTTPAutoInstrumentationSupport.ID(), originalVal))
-	})
-
 	originalVal = featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled()
 	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNginxAutoInstrumentationSupport.ID(), true))
 	t.Cleanup(func() {
