@@ -25,6 +25,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -52,7 +53,7 @@ type sdkInjector struct {
 	logger logr.Logger
 }
 
-func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod) corev1.Pod {
+func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations, ns corev1.Namespace, pod corev1.Pod, cfg config.Config) corev1.Pod {
 	if len(pod.Spec.Containers) < 1 {
 		return pod
 	}
@@ -143,7 +144,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		// Go instrumentation supports only single container instrumentation.
 		index := getContainerIndex(goContainers, pod)
-		pod, err = injectGoSDK(otelinst.Spec.Go, pod)
+		pod, err = injectGoSDK(otelinst.Spec.Go, pod, cfg)
 		if err != nil {
 			i.logger.Info("Skipping Go SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 		} else {
