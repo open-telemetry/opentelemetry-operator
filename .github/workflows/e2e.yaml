@@ -36,7 +36,7 @@ jobs:
          - group: e2e-prometheuscr
            setup: "prepare-e2e-with-featuregates FEATUREGATES=+operator.observability.prometheus"
          - group: e2e-multi-instrumentation
-           setup: "prepare-e2e-with-featuregates FEATUREGATES=+operator.autoinstrumentation.multi-instrumentation"
+           setup: "add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation prepare-e2e"
 
     steps:
     - name: Check out code into the Go module directory

@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 const (
@@ -31,7 +31,7 @@ const (
 	kernelDebugVolumePath = "/sys/kernel/debug"
 )
 
-func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
+func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config) (corev1.Pod, error) {
 	// skip instrumentation if share process namespaces is explicitly disabled
 	if pod.Spec.ShareProcessNamespace != nil && !*pod.Spec.ShareProcessNamespace {
 		return pod, fmt.Errorf("shared process namespace has been explicitly disabled")
@@ -40,7 +40,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod) (corev1.Pod, error) {
 	// skip instrumentation when more than one containers provided
 	containerNames := ""
 	ok := false
-	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+	if cfg.EnableMultiInstrumentation() {
 		containerNames, ok = pod.Annotations[annotationInjectGoContainersName]
 	} else {
 		containerNames, ok = pod.Annotations[annotationInjectContainerName]
