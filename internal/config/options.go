@@ -43,7 +43,7 @@ type options struct {
 	collectorConfigMapEntry             string
 	createRBACPermissions               bool
 	enableMultiInstrumentation          bool
-	enableApacheHTTPInstrumentation          bool
+	enableApacheHTTPInstrumentation     bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string

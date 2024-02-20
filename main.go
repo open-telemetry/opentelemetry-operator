@@ -99,26 +99,26 @@ func main() {
 
 	// add flags related to this operator
 	var (
-		metricsAddr                    string
-		probeAddr                      string
-		pprofAddr                      string
-		enableLeaderElection           bool
-		createRBACPermissions          bool
-		enableMultiInstrumentation     bool
-		enableApacheHTTPInstrumentation     bool
-		collectorImage                 string
-		targetAllocatorImage           string
-		operatorOpAMPBridgeImage       string
-		autoInstrumentationJava        string
-		autoInstrumentationNodeJS      string
-		autoInstrumentationPython      string
-		autoInstrumentationDotNet      string
-		autoInstrumentationApacheHttpd string
-		autoInstrumentationNginx       string
-		autoInstrumentationGo          string
-		labelsFilter                   []string
-		webhookPort                    int
-		tlsOpt                         tlsConfig
+		metricsAddr                     string
+		probeAddr                       string
+		pprofAddr                       string
+		enableLeaderElection            bool
+		createRBACPermissions           bool
+		enableMultiInstrumentation      bool
+		enableApacheHTTPInstrumentation bool
+		collectorImage                  string
+		targetAllocatorImage            string
+		operatorOpAMPBridgeImage        string
+		autoInstrumentationJava         string
+		autoInstrumentationNodeJS       string
+		autoInstrumentationPython       string
+		autoInstrumentationDotNet       string
+		autoInstrumentationApacheHttpd  string
+		autoInstrumentationNginx        string
+		autoInstrumentationGo           string
+		labelsFilter                    []string
+		webhookPort                     int
+		tlsOpt                          tlsConfig
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -357,7 +357,6 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 			DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
 			Client:                     mgr.GetClient(),
 			Recorder:                   mgr.GetEventRecorderFor("opentelemetry-operator"),
-            Config: cfg,
 		}
 		return u.ManagedInstances(c)
 	}))

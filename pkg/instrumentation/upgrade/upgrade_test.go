@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -82,6 +83,7 @@ func TestUpgrade(t *testing.T) {
 			config.WithAutoInstrumentationGoImage("go:1"),
 			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:1"),
 			config.WithAutoInstrumentationNginxImage("nginx:1"),
+			config.WithEnableApacheHTTPInstrumentation(true),
 		),
 	).Default(context.Background(), inst)
 	assert.Nil(t, err)
@@ -95,17 +97,18 @@ func TestUpgrade(t *testing.T) {
 	err = k8sClient.Create(context.Background(), inst)
 	require.NoError(t, err)
 
-	up := &InstrumentationUpgrade{
-		Logger:                     logr.Discard(),
-		DefaultAutoInstJava:        "java:2",
-		DefaultAutoInstNodeJS:      "nodejs:2",
-		DefaultAutoInstPython:      "python:2",
-		DefaultAutoInstDotNet:      "dotnet:2",
-		DefaultAutoInstGo:          "go:2",
-		DefaultAutoInstApacheHttpd: "apache-httpd:2",
-		DefaultAutoInstNginx:       "nginx:2",
-		Client:                     k8sClient,
-	}
+	cfg := config.New(
+		config.WithAutoInstrumentationJavaImage("java:2"),
+		config.WithAutoInstrumentationNodeJSImage("nodejs:2"),
+		config.WithAutoInstrumentationPythonImage("python:2"),
+		config.WithAutoInstrumentationDotNetImage("dotnet:2"),
+		config.WithAutoInstrumentationGoImage("go:2"),
+		config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:2"),
+		config.WithAutoInstrumentationNginxImage("nginx:2"),
+		config.WithEnableApacheHTTPInstrumentation(true),
+	)
+	up := NewInstrumentationUpgrade(k8sClient, &record.FakeRecorder{}, cfg)
+
 	err = up.ManagedInstances(context.Background())
 	require.NoError(t, err)
 
