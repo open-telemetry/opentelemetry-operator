@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: monitoring
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-workload-monitoring.yaml
+    - script:
+        content: ./tests/e2e-openshift/monitoring/check_user_workload_monitoring.sh
+  - name: step-01
+    try:
+    - apply:
+        file: 01-otel-collector.yaml
+    - assert:
+        file: 01-assert.yaml
+  - name: step-02
+    try:
+    - apply:
+        file: 02-generate-traces.yaml
+    - assert:
+        file: 02-assert.yaml
+  - name: step-03
+    try:
+    - apply:
+        file: 03-create-monitoring-roles.yaml
+    - assert:
+        file: 03-assert.yaml
+    - script:
+        content: ./tests/e2e-openshift/monitoring/check_metrics.sh

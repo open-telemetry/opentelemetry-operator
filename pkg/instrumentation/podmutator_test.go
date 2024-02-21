@@ -28,12 +28,11 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestMutatePod(t *testing.T) {
-	mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100))
-	require.NotNil(t, mutator)
 
 	true := true
 	zero := int64(0)
@@ -46,6 +45,7 @@ func TestMutatePod(t *testing.T) {
 		inst            v1alpha1.Instrumentation
 		ns              corev1.Namespace
 		setFeatureGates func(t *testing.T)
+		config          config.Config
 	}{
 		{
 			name: "javaagent injection, true",
@@ -2509,16 +2509,13 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 			setFeatureGates: func(t *testing.T) {
 				originalVal := featuregate.EnableGoAutoInstrumentationSupport.IsEnabled()
-				mtVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
-
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
 
 				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), true))
 				t.Cleanup(func() {
 					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), originalVal))
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), mtVal))
 
 				})
 			},
@@ -3860,13 +3857,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalVal))
-				})
-			},
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 		},
 		{
 			name: "multi instrumentation for multiple containers feature gate enabled, container-names not used",
@@ -4524,13 +4515,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalVal))
-				})
-			},
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 		},
 		{
 			name: "multi instrumentation for multiple containers feature gate disabled, multiple instrumentation annotations set",
@@ -4684,13 +4669,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), false))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalVal))
-				})
-			},
+			config: config.New(config.WithEnableMultiInstrumentation(false)),
 		},
 		{
 			name: "multi instrumentation feature gate enabled, multiple instrumentation annotations set, no containers",
@@ -4834,13 +4813,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalVal))
-				})
-			},
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 		},
 		{
 			name: "multi instrumentation feature gate enabled, single instrumentation annotation set, no containers",
@@ -5019,13 +4992,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalVal))
-				})
-			},
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 		},
 		{
 			name: "multi instrumentation feature gate disabled, instrumentation feature gate disabled and annotation set, multiple specific containers set",
@@ -5125,13 +5092,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 			setFeatureGates: func(t *testing.T) {
-				originalValMultiInstr := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
 				originalValDotNetInstr := featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled()
 				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), false))
 				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalValMultiInstr))
 					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), originalValDotNetInstr))
 				})
 			},
@@ -5141,6 +5106,8 @@ func TestMutatePod(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100), test.config)
+			require.NotNil(t, mutator)
 			if test.setFeatureGates != nil {
 				test.setFeatureGates(t)
 			}

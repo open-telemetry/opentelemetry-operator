@@ -26,7 +26,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
@@ -53,9 +53,9 @@ func TestContainerNewDefault(t *testing.T) {
       metrics:
         receivers: [otlp]
         exporters: [debug]`
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Ports: []corev1.ServicePort{
 					{
 						Name:     "metrics",
@@ -79,9 +79,9 @@ func TestContainerNewDefault(t *testing.T) {
 
 func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Image: "overridden-image",
 			},
 		},
@@ -350,10 +350,10 @@ service:
 	for _, testCase := range tests {
 		t.Run(testCase.description, func(t *testing.T) {
 			// prepare
-			otelcol := v1alpha2.OpenTelemetryCollector{
-				Spec: v1alpha2.OpenTelemetryCollectorSpec{
+			otelcol := v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: mustUnmarshalToConfig(t, testCase.specConfig),
-					OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Ports: testCase.specPorts,
 					},
 				},
@@ -371,9 +371,9 @@ service:
 
 func TestContainerConfigFlagIsIgnored(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Args: map[string]string{
 					"key":    "value",
 					"config": "/some-custom-file.yaml",
@@ -394,9 +394,9 @@ func TestContainerConfigFlagIsIgnored(t *testing.T) {
 
 func TestContainerCustomVolumes(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				VolumeMounts: []corev1.VolumeMount{{
 					Name: "custom-volume-mount",
 				}},
@@ -415,8 +415,8 @@ func TestContainerCustomVolumes(t *testing.T) {
 
 func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
 				Name:      "test",
 				MountPath: "/",
@@ -441,7 +441,7 @@ func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 
 func TestContainerCustomSecurityContext(t *testing.T) {
 	// default config without security context
-	c1 := Container(config.New(), logger, v1alpha2.OpenTelemetryCollector{Spec: v1alpha2.OpenTelemetryCollectorSpec{}}, true)
+	c1 := Container(config.New(), logger, v1beta1.OpenTelemetryCollector{Spec: v1beta1.OpenTelemetryCollectorSpec{}}, true)
 
 	// verify
 	assert.Nil(t, c1.SecurityContext)
@@ -451,9 +451,9 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 	uid := int64(1234)
 
 	// test
-	c2 := Container(config.New(), logger, v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	c2 := Container(config.New(), logger, v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 
 				SecurityContext: &corev1.SecurityContext{
 					Privileged: &isPrivileged,
@@ -470,9 +470,9 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 }
 
 func TestContainerEnvVarsOverridden(t *testing.T) {
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Env: []corev1.EnvVar{
 					{
 						Name:  "foo",
@@ -495,8 +495,8 @@ func TestContainerEnvVarsOverridden(t *testing.T) {
 }
 
 func TestContainerDefaultEnvVars(t *testing.T) {
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{},
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
 	cfg := config.New()
@@ -513,8 +513,8 @@ func TestContainerProxyEnvVars(t *testing.T) {
 	err := os.Setenv("NO_PROXY", "localhost")
 	require.NoError(t, err)
 	defer os.Unsetenv("NO_PROXY")
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{},
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
 	cfg := config.New()
@@ -530,9 +530,9 @@ func TestContainerProxyEnvVars(t *testing.T) {
 }
 
 func TestContainerResourceRequirements(t *testing.T) {
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -560,8 +560,8 @@ func TestContainerResourceRequirements(t *testing.T) {
 }
 
 func TestContainerDefaultResourceRequirements(t *testing.T) {
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{},
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
 	cfg := config.New()
@@ -575,9 +575,9 @@ func TestContainerDefaultResourceRequirements(t *testing.T) {
 
 func TestContainerArgs(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Args: map[string]string{
 					"metrics-level": "detailed",
 					"log-level":     "debug",
@@ -597,9 +597,9 @@ func TestContainerArgs(t *testing.T) {
 
 func TestContainerOrderedArgs(t *testing.T) {
 	// prepare a scenario where the debug level and a feature gate has been enabled
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Args: map[string]string{
 					"log-level":     "debug",
 					"feature-gates": "+random-feature",
@@ -621,9 +621,9 @@ func TestContainerOrderedArgs(t *testing.T) {
 
 func TestContainerImagePullPolicy(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				ImagePullPolicy: corev1.PullIfNotPresent,
 			},
 		},
@@ -653,9 +653,9 @@ func TestContainerEnvFrom(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				EnvFrom: []corev1.EnvFromSource{
 					envFrom1,
 					envFrom2,
@@ -681,13 +681,13 @@ func TestContainerProbe(t *testing.T) {
 	successThreshold := int32(13)
 	failureThreshold := int32(14)
 	terminationGracePeriodSeconds := int64(15)
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Config: mustUnmarshalToConfig(t, `extensions:
   health_check:
 service:
   extensions: [health_check]`),
-			LivenessProbe: &v1alpha2.Probe{
+			LivenessProbe: &v1beta1.Probe{
 				InitialDelaySeconds:           &initialDelaySeconds,
 				TimeoutSeconds:                &timeoutSeconds,
 				PeriodSeconds:                 &periodSeconds,
@@ -718,13 +718,13 @@ service:
 func TestContainerProbeEmptyConfig(t *testing.T) {
 	// prepare
 
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Config: mustUnmarshalToConfig(t, `extensions:
   health_check:
 service:
   extensions: [health_check]`),
-			LivenessProbe: &v1alpha2.Probe{},
+			LivenessProbe: &v1beta1.Probe{},
 		},
 	}
 	cfg := config.New()
@@ -740,8 +740,8 @@ service:
 
 func TestContainerProbeNoConfig(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Config: mustUnmarshalToConfig(t, `extensions:
   health_check:
 service:
@@ -761,9 +761,9 @@ service:
 
 func TestContainerLifecycle(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
-		Spec: v1alpha2.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+	otelcol := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Lifecycle: &corev1.Lifecycle{
 					PostStart: &corev1.LifecycleHandler{
 						Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 100"}},
@@ -793,8 +793,8 @@ func TestContainerLifecycle(t *testing.T) {
 	assert.Equal(t, expectedLifecycleHooks, *c.Lifecycle)
 }
 
-func mustUnmarshalToConfig(t *testing.T, config string) v1alpha2.Config {
-	cfg := v1alpha2.Config{}
+func mustUnmarshalToConfig(t *testing.T, config string) v1beta1.Config {
+	cfg := v1beta1.Config{}
 	if err := yaml.Unmarshal([]byte(config), &cfg); err != nil {
 		t.Fatal(err)
 	}

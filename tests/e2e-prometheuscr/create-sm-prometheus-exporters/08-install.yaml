@@ -1,66 +1,81 @@
 apiVersion: v1
+automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   name: ta
   namespace: create-sm-prometheus
-automountServiceAccountToken: true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: create-sm-prometheus
 rules:
-- apiGroups: [""]
+- apiGroups:
+  - ""
   resources:
-    - pods
-    - nodes
-    - services
-    - endpoints
-    - configmaps
-    - secrets
-    - namespaces
+  - pods
+  - nodes
+  - services
+  - endpoints
+  - configmaps
+  - secrets
+  - namespaces
   verbs:
-    - get
-    - watch
-    - list
-- apiGroups: ["apps"]
+  - get
+  - watch
+  - list
+- apiGroups:
+  - apps
   resources:
-    - statefulsets
-    - services
-    - endpoints
+  - statefulsets
+  - services
+  - endpoints
   verbs:
-    - get
-    - watch
-    - list
-- apiGroups: ["discovery.k8s.io"]
+  - get
+  - watch
+  - list
+- apiGroups:
+  - discovery.k8s.io
   resources:
-    - endpointslices
+  - endpointslices
   verbs:
-    - get
-    - watch
-    - list
-- apiGroups: ["networking.k8s.io"]
+  - get
+  - watch
+  - list
+- apiGroups:
+  - networking.k8s.io
   resources:
-    - ingresses
+  - ingresses
   verbs:
-    - get
-    - watch
-    - list
-- apiGroups: ["monitoring.coreos.com"]
+  - get
+  - watch
+  - list
+- apiGroups:
+  - monitoring.coreos.com
   resources:
-    - servicemonitors
-    - podmonitors
+  - servicemonitors
+  - podmonitors
   verbs:
-    - get
-    - watch
-    - list
-- nonResourceURLs: ["/metrics"]
-  verbs: ["get"]
+  - get
+  - watch
+  - list
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
 ---
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - command: kubectl create clusterrolebinding simplest-targetallocator-create-sm-prometheus --clusterrole=create-sm-prometheus --serviceaccount=create-sm-prometheus:ta
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: simplest-targetallocator-create-sm-prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: create-sm-prometheus
+subjects:
+- kind: ServiceAccount
+  name: ta
+  namespace: create-sm-prometheus
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
@@ -68,15 +83,6 @@ metadata:
   name: simplest
   namespace: create-sm-prometheus
 spec:
-  mode: statefulset
-  targetAllocator:
-    serviceAccount: ta
-    enabled: true
-    prometheusCR:
-      enabled: true
-    observability:
-      metrics:
-        enableMetrics: true
   config: |
     receivers:
       prometheus:
@@ -94,6 +100,15 @@ spec:
           receivers: [prometheus]
           processors: []
           exporters: [prometheus]
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    observability:
+      metrics:
+        enableMetrics: true
+    prometheusCR:
+      enabled: true
+    serviceAccount: ta
 ---
 apiVersion: batch/v1
 kind: Job
@@ -103,11 +118,11 @@ metadata:
 spec:
   template:
     spec:
-      restartPolicy: OnFailure
       containers:
-        - name: check-metrics
-          image: curlimages/curl
-          args:
-            - /bin/sh
-            - -c
-            - curl -s http://simplest-targetallocator/jobs | grep "targetallocator"
+      - args:
+        - /bin/sh
+        - -c
+        - curl -s http://simplest-targetallocator/jobs | grep "targetallocator"
+        image: curlimages/curl
+        name: check-metrics
+      restartPolicy: OnFailure

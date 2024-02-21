@@ -19,13 +19,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 func TestInjectGoSDK(t *testing.T) {
@@ -36,10 +34,10 @@ func TestInjectGoSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.Go
-		pod             corev1.Pod
-		expected        corev1.Pod
-		err             error
-		setFeatureGates func(t *testing.T)
+		pod      corev1.Pod
+		expected corev1.Pod
+		err      error
+		config   config.Config
 	}{
 		{
 			name: "shared process namespace disabled",
@@ -73,14 +71,8 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured"),
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableMultiInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), true))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableMultiInstrumentationSupport.ID(), originalVal))
-				})
-			},
+			err:    fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured"),
+			config: config.New(config.WithEnableMultiInstrumentation(true)),
 		},
 		{
 			name: "using container-names",
@@ -287,10 +279,7 @@ func TestInjectGoSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if test.setFeatureGates != nil {
-				test.setFeatureGates(t)
-			}
-			pod, err := injectGoSDK(test.Go, test.pod)
+			pod, err := injectGoSDK(test.Go, test.pod, test.config)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

@@ -12,7 +12,6 @@ concurrency:
 
 jobs:
   e2e-tests:
-    name: End-to-end tests ${{ matrix.group }} on K8s ${{ matrix.kube-version }}
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -25,50 +24,55 @@ jobs:
          - "1.29"
        group:
          - e2e
-         - e2e-instrumentation
-         - e2e-upgrade
          - e2e-autoscale
-         - e2e-pdb
+         - e2e-instrumentation
          - e2e-opampbridge
-         - e2e-targetallocator
+         - e2e-pdb
          - e2e-prometheuscr
+         - e2e-targetallocator
+         - e2e-upgrade
          - e2e-multi-instrumentation
        include:
          - group: e2e-prometheuscr
            setup: "prepare-e2e-with-featuregates FEATUREGATES=+operator.observability.prometheus"
          - group: e2e-multi-instrumentation
-           setup: "prepare-e2e-with-featuregates FEATUREGATES=+operator.autoinstrumentation.multi-instrumentation"
+           setup: "add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation prepare-e2e"
 
     steps:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v4
-
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: "~1.21.3"
-
     - name: Cache tools
       uses: actions/cache@v4
       with:
         path: bin
         key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
-
+    - name: Install chainsaw
+      uses: kyverno/action-install-chainsaw@v0.1.4
     - name: Install tools
       run: make install-tools
-
-    - name: "run tests"
+    - name: Prepare e2e tests
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
       run: |
+        set -e
         make ${{ matrix.setup != '' && matrix.setup || 'prepare-e2e' }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
+    - name: Run e2e tests
+      env:
+        KUBE_VERSION: ${{ matrix.kube-version }}
+      run: |
+        set -e
         make ${{ matrix.group }}
-
     - name: "log operator if failed"
       if: ${{ failure() }}
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
-      run: make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
+      run: |
+        set -e
+        make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
 
   e2e-tests-check:
     runs-on: ubuntu-22.04

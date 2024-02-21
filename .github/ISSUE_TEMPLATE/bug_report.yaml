@@ -15,7 +15,6 @@ body:
       description: Which component(s) does your bug report concern?
       multiple: true
       options:
-      - operator
       - collector
       - instrumentation
       - target allocator

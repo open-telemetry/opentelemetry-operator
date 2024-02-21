@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 var defaultVolumeLimitSize = resource.MustParse("200Mi")
@@ -506,6 +507,7 @@ func TestInjectJava(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	config := config.New()
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -517,7 +519,7 @@ func TestInjectJava(t *testing.T) {
 					},
 				},
 			},
-		})
+		}, config)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
@@ -610,6 +612,7 @@ func TestInjectNodeJS(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	config := config.New()
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -621,7 +624,7 @@ func TestInjectNodeJS(t *testing.T) {
 					},
 				},
 			},
-		})
+		}, config)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
@@ -714,6 +717,7 @@ func TestInjectPython(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	config := config.New()
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -725,7 +729,7 @@ func TestInjectPython(t *testing.T) {
 					},
 				},
 			},
-		})
+		}, config)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
@@ -832,6 +836,7 @@ func TestInjectDotNet(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	config := config.New()
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -843,7 +848,7 @@ func TestInjectDotNet(t *testing.T) {
 					},
 				},
 			},
-		})
+		}, config)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Volumes: []corev1.Volume{
@@ -951,6 +956,7 @@ func TestInjectGo(t *testing.T) {
 		insts    languageInstrumentations
 		pod      corev1.Pod
 		expected corev1.Pod
+		config   config.Config
 	}{
 		{
 			name: "shared process namespace disabled",
@@ -1219,7 +1225,7 @@ func TestInjectGo(t *testing.T) {
 			inj := sdkInjector{
 				logger: logr.Discard(),
 			}
-			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod)
+			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, test.config)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1232,6 +1238,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 		insts    languageInstrumentations
 		pod      corev1.Pod
 		expected corev1.Pod
+		config   config.Config
 	}{
 		{
 			name: "injection enabled, exporter set",
@@ -1376,7 +1383,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 				logger: logr.Discard(),
 			}
 
-			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod)
+			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, test.config)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1389,6 +1396,7 @@ func TestInjectNginx(t *testing.T) {
 		insts    languageInstrumentations
 		pod      corev1.Pod
 		expected corev1.Pod
+		config   config.Config
 	}{
 		{
 			name: "injection enabled, exporter set",
@@ -1538,7 +1546,7 @@ func TestInjectNginx(t *testing.T) {
 			inj := sdkInjector{
 				logger: logr.Discard(),
 			}
-			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod)
+			pod := inj.inject(context.Background(), test.insts, corev1.Namespace{}, test.pod, test.config)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1559,6 +1567,7 @@ func TestInjectSdkOnly(t *testing.T) {
 	inj := sdkInjector{
 		logger: logr.Discard(),
 	}
+	config := config.New()
 	pod := inj.inject(context.Background(), insts,
 		corev1.Namespace{},
 		corev1.Pod{
@@ -1570,7 +1579,7 @@ func TestInjectSdkOnly(t *testing.T) {
 					},
 				},
 			},
-		})
+		}, config)
 	assert.Equal(t, corev1.Pod{
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
