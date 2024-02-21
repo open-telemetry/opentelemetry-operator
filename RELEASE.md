@@ -15,7 +15,8 @@ Steps to release a new version of the OpenTelemetry Operator:
 1. Add the changes to the changelog by running `make chlog-update VERSION=$VERSION`.
 1. Check the OpenTelemetry Collector's changelog and ensure migration steps are present in `pkg/collector/upgrade`
 1. Once the changes above are merged and available in `main`, one of the maintainers will tag the release.
-1. The GitHub Workflow will take it from here, creating a GitHub release with the generated artifacts (manifests) and publishing the images
+1. The GitHub Workflow will take it from here, creating a GitHub release with the generated artifacts (manifests) and publishing the images.
+1. Update the operator version in the Helm Chart, as per the [release guide](https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-operator/CONTRIBUTING.md)
 1. The GitHub Workflow, submits two pull requests to the Operator hub repositories. Make sure the pull requests are approved and merged.
    1. `community-operators-prod` is used by OLM on OpenShift. Example: [`operator-framework/community-operators-prod`](https://github.com/redhat-openshift-ecosystem/community-operators-prod/pull/494)
    1. `community-operators` is used by Operatorhub.io. Example: [`operator-framework/community-operators`](https://github.com/k8s-operatorhub/community-operators/pull/461)
