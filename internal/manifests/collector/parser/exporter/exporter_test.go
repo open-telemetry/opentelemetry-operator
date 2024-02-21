@@ -72,9 +72,7 @@ func TestPorts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-			if got, _ := tt.parser.Ports(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Ports(%v, = %v, want %v", tt.parser, got, tt.want)
-			}
+                        assert.Equal(t, tt.want, tt.parser.Ports())
 		})
 	}
 }
