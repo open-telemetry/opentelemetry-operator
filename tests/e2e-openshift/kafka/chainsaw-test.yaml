@@ -39,4 +39,4 @@ spec:
   - name: step-05
     try:
     - script:
-        content: ./tests/e2e-openshift/kafka/check_traces.sh
+        content: ./check_traces.sh

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  namespace: openshift-user-workload-monitoring
+(status.replicas == spec.replicas): true
+spec:
+  (replicas >= `1`): true
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus-user-workload
+  namespace: openshift-user-workload-monitoring
+(status.replicas == spec.replicas): true
+spec:
+  (replicas >= `1`): true
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-ruler-user-workload
+  namespace: openshift-user-workload-monitoring
+(status.replicas == spec.replicas): true
+spec:
+  (replicas >= `1`): true

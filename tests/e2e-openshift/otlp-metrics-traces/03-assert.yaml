@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: kuttl-cluster-monitoring-metrics-api
+  name: chainsaw-otlp-metrics-traces-api
 rules:
 - apiGroups:
   - monitoring.coreos.com
@@ -16,11 +16,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: kuttl-cluster-monitoring-metrics-api
+  name: chainsaw-otlp-metrics-traces-api
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: kuttl-cluster-monitoring-metrics-api
+  name: chainsaw-otlp-metrics-traces-api
 subjects:
 - kind: ServiceAccount
   name: prometheus-user-workload

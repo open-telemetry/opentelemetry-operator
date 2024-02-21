@@ -3,13 +3,13 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-kafka.kafka-exporter
+    app.kubernetes.io/instance: chainsaw-kafka.kafka-exporter
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: kafka-exporter-collector
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
   name: kafka-exporter-collector
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 status:
   availableReplicas: 1
   readyReplicas: 1
@@ -21,11 +21,11 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-kafka.kafka-exporter
+    app.kubernetes.io/instance: chainsaw-kafka.kafka-exporter
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: kafka-exporter-collector
   name: kafka-exporter-collector
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 spec:
   ports:
   - appProtocol: grpc
@@ -40,7 +40,7 @@ spec:
     targetPort: 4318
   selector:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-kafka.kafka-exporter
+    app.kubernetes.io/instance: chainsaw-kafka.kafka-exporter
     app.kubernetes.io/managed-by: opentelemetry-operator
   sessionAffinity: None
 
@@ -50,12 +50,12 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-kafka.kafka-exporter
+    app.kubernetes.io/instance: chainsaw-kafka.kafka-exporter
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: kafka-exporter-collector
     operator.opentelemetry.io/collector-headless-service: Exists
   name: kafka-exporter-collector-headless
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 spec:
   ports:
   - appProtocol: grpc
@@ -70,6 +70,6 @@ spec:
     targetPort: 4318
   selector:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-kafka.kafka-exporter
+    app.kubernetes.io/instance: chainsaw-kafka.kafka-exporter
     app.kubernetes.io/managed-by: opentelemetry-operator
   type: ClusterIP

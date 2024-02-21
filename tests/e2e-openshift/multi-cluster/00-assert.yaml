@@ -1,13 +1,13 @@
 apiVersion: project.openshift.io/v1
 kind: Project
 metadata:
-  name: kuttl-multi-cluster-send
+  name: chainsaw-multi-cluster-send
 status:
   phase: Active
 
 apiVersion: project.openshift.io/v1
 kind: Project
 metadata:
-  name: kuttl-multi-cluster-receive
+  name: chainsaw-multi-cluster-receive
 status:
   phase: Active

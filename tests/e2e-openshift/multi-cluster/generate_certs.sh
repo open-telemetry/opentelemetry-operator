@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Create a directory to store certificates
-CERT_DIR="/tmp/kuttl-certs"
+CERT_DIR="/tmp/chainsaw-certs"
 rm -rf "$CERT_DIR"
 mkdir -p "$CERT_DIR"
 
@@ -42,17 +42,17 @@ openssl req -new -x509 -days 365 -key "$CERT_DIR/server.key" -out "$CERT_DIR/ca.
 echo "Certificates generated successfully in $CERT_DIR directory."
 
 # Delete any existing ConfigMaps
-kubectl delete configmap -n kuttl-multi-cluster-send kuttl-certs
-kubectl delete configmap -n kuttl-multi-cluster-receive kuttl-certs
+kubectl delete configmap -n chainsaw-multi-cluster-send chainsaw-certs
+kubectl delete configmap -n chainsaw-multi-cluster-receive chainsaw-certs
 
-# Create a Kubernetes ConfigMap for the server certificate, private key, and CA certificate in kuttl-multi-cluster-send namespace
-kubectl create configmap kuttl-certs -n kuttl-multi-cluster-send \
+# Create a Kubernetes ConfigMap for the server certificate, private key, and CA certificate in chainsaw-multi-cluster-send namespace
+kubectl create configmap chainsaw-certs -n chainsaw-multi-cluster-send \
   --from-file=server.crt="$CERT_DIR/server.crt" \
   --from-file=server.key="$CERT_DIR/server.key" \
   --from-file=ca.crt="$CERT_DIR/ca.crt"
 
-# Create a Kubernetes ConfigMap for the server certificate, private key, and CA certificate in kuttl-multi-cluster-receive namespace
-kubectl create configmap kuttl-certs -n kuttl-multi-cluster-receive \
+# Create a Kubernetes ConfigMap for the server certificate, private key, and CA certificate in chainsaw-multi-cluster-receive namespace
+kubectl create configmap chainsaw-certs -n chainsaw-multi-cluster-receive \
   --from-file=server.crt="$CERT_DIR/server.crt" \
   --from-file=server.key="$CERT_DIR/server.key" \
   --from-file=ca.crt="$CERT_DIR/ca.crt"
