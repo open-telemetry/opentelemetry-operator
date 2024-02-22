@@ -346,18 +346,12 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		u := &instrumentationupgrade.InstrumentationUpgrade{
-			Logger:                     ctrl.Log.WithName("instrumentation-upgrade"),
-			DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
-			DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
-			DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
-			DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
-			DefaultAutoInstGo:          cfg.AutoInstrumentationDotNetImage(),
-			DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
-			DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
-			Client:                     mgr.GetClient(),
-			Recorder:                   mgr.GetEventRecorderFor("opentelemetry-operator"),
-		}
+		u := instrumentationupgrade.NewInstrumentationUpgrade(
+			mgr.GetClient(),
+			ctrl.Log.WithName("instrumentation-upgrade"),
+			mgr.GetEventRecorderFor("opentelemetry-operator"),
+			cfg,
+		)
 		return u.ManagedInstances(c)
 	}))
 	if err != nil {

@@ -22,7 +22,6 @@ import (
 	"github.com/go-logr/logr"
 	featuregate2 "go.opentelemetry.io/collector/featuregate"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -61,14 +60,14 @@ type InstrumentationUpgrade struct {
 	defaultAnnotationToConfig  map[string]autoInstConfig
 }
 
-func NewInstrumentationUpgrade(client client.Client, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
+func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: autoInstConfig{constants.ApacheHttpd, cfg.EnableApacheHTTPAutoInstrumentation()},
 	}
 
 	return &InstrumentationUpgrade{
 		Client:                     client,
-		Logger:                     ctrl.Log.WithName("instrumentation-upgrade"),
+		Logger:                     logger,
 		DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
 		DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
 		DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),

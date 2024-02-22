@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -101,7 +102,7 @@ func TestUpgrade(t *testing.T) {
 		config.WithAutoInstrumentationNginxImage("nginx:2"),
 		config.WithEnableApacheHTTPInstrumentation(true),
 	)
-	up := NewInstrumentationUpgrade(k8sClient, &record.FakeRecorder{}, cfg)
+	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), &record.FakeRecorder{}, cfg)
 
 	err = up.ManagedInstances(context.Background())
 	require.NoError(t, err)
