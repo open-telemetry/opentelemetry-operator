@@ -15,8 +15,9 @@
 package exporter
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -72,7 +73,8 @@ func TestPorts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-                        assert.Equal(t, tt.want, tt.parser.Ports())
+			ports, _ := tt.parser.Ports()
+			assert.Equal(t, tt.want, ports)
 		})
 	}
 }
