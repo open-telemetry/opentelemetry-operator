@@ -5,7 +5,7 @@ change_type: breaking
 component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note:  remove featuregate "EnableApacheHTTPAutoInstrumentationSupport" in replacement of command line flag --enable-apache-http-instrumentation
+note:  remove featuregate "EnableApacheHTTPAutoInstrumentationSupport" in replacement of command line flag --enable-apache-httpd-instrumentation
 
 # One or more tracking issues related to the change
 issues: [2582]
