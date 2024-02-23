@@ -35,5 +35,5 @@ const (
 	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
 	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
 
-	ApacheHttpd = "apache-httpd"
+	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
 )
