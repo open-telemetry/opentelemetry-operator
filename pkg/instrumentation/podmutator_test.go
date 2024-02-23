@@ -2751,7 +2751,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableApacheHTTPInstrumentation(true)),
+			config: config.New(config.WithEnableApacheHttpdInstrumentation(true)),
 		},
 		{
 			name: "apache httpd injection feature gate disabled",
@@ -2826,7 +2826,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableApacheHTTPInstrumentation(false)),
+			config: config.New(config.WithEnableApacheHttpdInstrumentation(false)),
 		},
 
 		{

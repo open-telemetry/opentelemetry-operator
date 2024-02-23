@@ -43,7 +43,7 @@ type options struct {
 	collectorConfigMapEntry             string
 	createRBACPermissions               bool
 	enableMultiInstrumentation          bool
-	enableApacheHTTPInstrumentation     bool
+	enableApacheHttpdInstrumentation    bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
@@ -87,9 +87,9 @@ func WithEnableMultiInstrumentation(s bool) Option {
 		o.enableMultiInstrumentation = s
 	}
 }
-func WithEnableApacheHTTPInstrumentation(s bool) Option {
+func WithEnableApacheHttpdInstrumentation(s bool) Option {
 	return func(o *options) {
-		o.enableApacheHTTPInstrumentation = s
+		o.enableApacheHttpdInstrumentation = s
 	}
 }
 func WithTargetAllocatorConfigMapEntry(s string) Option {
