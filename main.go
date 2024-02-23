@@ -169,7 +169,7 @@ func main() {
 		"go-os", runtime.GOOS,
 		"labels-filter", labelsFilter,
 		"enable-multi-instrumentation", enableMultiInstrumentation,
-		"enable-apache-http-instrumentation", enableApacheHttpdInstrumentation,
+		"enable-apache-httpd-instrumentation", enableApacheHttpdInstrumentation,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
