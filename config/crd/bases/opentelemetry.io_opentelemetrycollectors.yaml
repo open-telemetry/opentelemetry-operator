@@ -3864,7 +3864,7 @@ spec:
                   metrics:
                     description: Metrics defines the metrics configuration for operands.
                     properties:
-                      DisablePrometheusAnnotations:
+                      disablePrometheusAnnotations:
                         description: DisablePrometheusAnnotations controls the automatic
                           addition of default Prometheus annotations ('prometheus.io/scrape',
                           'prometheus.io/port', and 'prometheus.io/path')
@@ -5208,7 +5208,7 @@ spec:
                         description: Metrics defines the metrics configuration for
                           operands.
                         properties:
-                          DisablePrometheusAnnotations:
+                          disablePrometheusAnnotations:
                             description: DisablePrometheusAnnotations controls the
                               automatic addition of default Prometheus annotations
                               ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')

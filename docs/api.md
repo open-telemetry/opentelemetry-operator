@@ -17812,7 +17812,7 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>DisablePrometheusAnnotations</b></td>
+        <td><b>disablePrometheusAnnotations</b></td>
         <td>boolean</td>
         <td>
           DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
@@ -20322,7 +20322,7 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>DisablePrometheusAnnotations</b></td>
+        <td><b>disablePrometheusAnnotations</b></td>
         <td>boolean</td>
         <td>
           DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
