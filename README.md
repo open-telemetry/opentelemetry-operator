@@ -259,14 +259,14 @@ EOF
 The values for `propagators` are added to the `OTEL_PROPAGATORS` environment variable.
 Valid values for `propagators` are defined by the [OpenTelemetry Specification for OTEL_PROPAGATORS](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_propagators).
 
-The value for `sampler.type` is added to the `OTEL_TRACES_SAMPLER` envrionment variable.
+The value for `sampler.type` is added to the `OTEL_TRACES_SAMPLER` environment variable.
 Valid values for `sampler.type` are defined by the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler).
 The value for `sampler.argument` is added to the `OTEL_TRACES_SAMPLER_ARG` environment variable. Valid values for `sampler.argument` will depend on the chosen sampler. See the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER_ARG](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler_arg) for more details.
 
 The above CR can be queried by `kubectl get otelinst`.
 
 Then add an annotation to a pod to enable injection. The annotation can be added to a namespace, so that all pods within
-that namespace wil get instrumentation, or by adding the annotation to individual PodSpec objects, available as part of
+that namespace will get instrumentation, or by adding the annotation to individual PodSpec objects, available as part of
 Deployment, Statefulset, and other resources.
 
 Java:
@@ -334,7 +334,7 @@ The possible values for the annotation can be
 * `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
 
->**Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitely.
+>**Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitly.
 
 #### Multi-container pods with single instrumentation
 
