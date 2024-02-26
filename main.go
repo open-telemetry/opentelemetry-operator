@@ -19,6 +19,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"runtime"
 	"strings"
@@ -195,6 +196,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	var watchNamespaces []string
+	var namespaces map[string]cache.Config
+	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
+	if found {
+		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
+		namespaces = map[string]cache.Config{}
+		watchNamespaces = strings.Split(watchNamespace, ",")
+		for _, ns := range watchNamespaces {
+			namespaces[ns] = cache.Config{}
+		}
+	} else {
+		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
+		watchNamespaces = []string{metav1.NamespaceAll}
+	}
+
 	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),
 		config.WithVersion(v),
@@ -217,22 +233,11 @@ func main() {
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 		config.WithAnnotationFilters(annotationsFilter),
+		config.WithNamespaces(watchNamespaces),
 	)
 	err = cfg.AutoDetect()
 	if err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
-	}
-
-	var namespaces map[string]cache.Config
-	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
-	if found {
-		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
-		namespaces = map[string]cache.Config{}
-		for _, ns := range strings.Split(watchNamespace, ",") {
-			namespaces[ns] = cache.Config{}
-		}
-	} else {
-		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
 	}
 
 	// see https://github.com/openshift/library-go/blob/4362aa519714a4b62b00ab8318197ba2bba51cb7/pkg/config/leaderelection/leaderelection.go#L104

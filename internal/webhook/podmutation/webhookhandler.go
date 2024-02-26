@@ -18,13 +18,14 @@ package podmutation
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"slices"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
@@ -89,7 +90,12 @@ func (p *podMutationWebhook) Handle(ctx context.Context, req admission.Request) 
 		return res
 	}
 
-	for _, m := range p.podMutators {
+	var mutators []PodMutator
+	// mutate only in case the namespace is marked to be watched
+	if slices.Contains(p.config.Namespaces(), ns.Name) || slices.Contains(p.config.Namespaces(), metav1.NamespaceAll) {
+		mutators = p.podMutators
+	}
+	for _, m := range mutators {
 		pod, err = m.Mutate(ctx, ns, pod)
 		if err != nil {
 			res := admission.Errored(http.StatusInternalServerError, err)

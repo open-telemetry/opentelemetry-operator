@@ -54,6 +54,7 @@ type options struct {
 	openshiftRoutesAvailability         openshift.RoutesAvailability
 	labelsFilter                        []string
 	annotationsFilter                   []string
+	namespaces                          []string
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -223,5 +224,11 @@ func WithAnnotationFilters(annotationFilters []string) Option {
 			filters = append(filters, result.String())
 		}
 		o.annotationsFilter = filters
+	}
+}
+
+func WithNamespaces(namespaces []string) Option {
+	return func(o *options) {
+		o.namespaces = namespaces
 	}
 }
