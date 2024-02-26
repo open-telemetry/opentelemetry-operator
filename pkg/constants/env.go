@@ -31,7 +31,8 @@ const (
 	AnnotationDefaultAutoInstrumentationApacheHttpd = InstrumentationPrefix + "default-auto-instrumentation-apache-httpd-image"
 	AnnotationDefaultAutoInstrumentationNginx       = InstrumentationPrefix + "default-auto-instrumentation-nginx-image"
 
-	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
-	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
-	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
+	EnvPodName        = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
+	EnvPodUID         = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
+	EnvNodeName       = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
+	ReservedNamespace = "resource.opentelemetry.io/"
 )
