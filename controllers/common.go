@@ -20,14 +20,8 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	routev1 "github.com/openshift/api/route/v1"
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	networkingv1 "k8s.io/api/networking/v1"
-	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -35,14 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func isNamespaceScoped(obj client.Object) bool {
@@ -85,73 +75,6 @@ func BuildOpAMPBridge(params manifests.Params) ([]client.Object, error) {
 		resources = append(resources, objs...)
 	}
 	return resources, nil
-}
-
-func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
-	ownedObjects := map[types.UID]client.Object{}
-
-	listOps := &client.ListOptions{
-		Namespace:     params.OtelCol.Namespace,
-		LabelSelector: labels.SelectorFromSet(manifestutils.Labels(params.OtelCol.ObjectMeta, naming.Collector(params.OtelCol.Name), params.OtelCol.Spec.Image, collector.ComponentOpenTelemetryCollector, params.Config.LabelsFilter())),
-	}
-	hpaList := &autoscalingv2.HorizontalPodAutoscalerList{}
-	err := r.List(ctx, hpaList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing HorizontalPodAutoscalers: %w", err)
-	}
-	for i := range hpaList.Items {
-		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
-	}
-
-	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
-		servicemonitorList := &monitoringv1.ServiceMonitorList{}
-		err = r.List(ctx, servicemonitorList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("error listing ServiceMonitors: %w", err)
-		}
-		for i := range servicemonitorList.Items {
-			ownedObjects[servicemonitorList.Items[i].GetUID()] = servicemonitorList.Items[i]
-		}
-
-		podMonitorList := &monitoringv1.PodMonitorList{}
-		err = r.List(ctx, podMonitorList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("error listing PodMonitors: %w", err)
-		}
-		for i := range podMonitorList.Items {
-			ownedObjects[podMonitorList.Items[i].GetUID()] = podMonitorList.Items[i]
-		}
-	}
-	ingressList := &networkingv1.IngressList{}
-	err = r.List(ctx, ingressList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing Ingresses: %w", err)
-	}
-	for i := range ingressList.Items {
-		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
-	}
-
-	if params.Config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
-		routesList := &routev1.RouteList{}
-		err = r.List(ctx, routesList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("error listing Routes: %w", err)
-		}
-		for i := range routesList.Items {
-			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
-		}
-	}
-
-	pdbList := &policyV1.PodDisruptionBudgetList{}
-	err = r.List(ctx, pdbList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing PodDisruptionBudgets: %w", err)
-	}
-	for i := range pdbList.Items {
-		ownedObjects[pdbList.Items[i].GetUID()] = &pdbList.Items[i]
-	}
-
-	return ownedObjects, nil
 }
 
 // reconcileDesiredObjects runs the reconcile process using the mutateFn over the given list of objects.

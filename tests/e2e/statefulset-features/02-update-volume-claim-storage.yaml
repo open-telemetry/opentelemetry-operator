@@ -4,7 +4,7 @@ metadata:
   name: stateful
 spec:
   mode: statefulset
-  replicas: 3
+  replicas: 2
   volumes:
   - name: testvolume
   volumeMounts:
@@ -17,7 +17,7 @@ spec:
       accessModes: [ "ReadWriteMany" ] # change accessMode to trigger statefulset recreation.
       resources:
         requests:
-          storage: 1Gi
+          storage: 2Gi
   config: |
     receivers:
       jaeger:
