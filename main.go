@@ -52,6 +52,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
@@ -99,25 +100,26 @@ func main() {
 
 	// add flags related to this operator
 	var (
-		metricsAddr                    string
-		probeAddr                      string
-		pprofAddr                      string
-		enableLeaderElection           bool
-		createRBACPermissions          bool
-		enableMultiInstrumentation     bool
-		collectorImage                 string
-		targetAllocatorImage           string
-		operatorOpAMPBridgeImage       string
-		autoInstrumentationJava        string
-		autoInstrumentationNodeJS      string
-		autoInstrumentationPython      string
-		autoInstrumentationDotNet      string
-		autoInstrumentationApacheHttpd string
-		autoInstrumentationNginx       string
-		autoInstrumentationGo          string
-		labelsFilter                   []string
-		webhookPort                    int
-		tlsOpt                         tlsConfig
+		metricsAddr                      string
+		probeAddr                        string
+		pprofAddr                        string
+		enableLeaderElection             bool
+		createRBACPermissions            bool
+		enableMultiInstrumentation       bool
+		enableApacheHttpdInstrumentation bool
+		collectorImage                   string
+		targetAllocatorImage             string
+		operatorOpAMPBridgeImage         string
+		autoInstrumentationJava          string
+		autoInstrumentationNodeJS        string
+		autoInstrumentationPython        string
+		autoInstrumentationDotNet        string
+		autoInstrumentationApacheHttpd   string
+		autoInstrumentationNginx         string
+		autoInstrumentationGo            string
+		labelsFilter                     []string
+		webhookPort                      int
+		tlsOpt                           tlsConfig
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -128,6 +130,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors")
 	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", false, "Controls whether the operator supports multi instrumentation")
+	pflag.BoolVar(&enableApacheHttpdInstrumentation, constants.FlagApacheHttpd, true, "controls whether the operator supports Apache HTTPD auto-instrumentation")
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&operatorOpAMPBridgeImage, "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:%s", v.OperatorOpAMPBridge), "The default OpenTelemetry Operator OpAMP Bridge image. This image is used when no image is specified in the CustomResource.")
@@ -166,6 +169,7 @@ func main() {
 		"go-os", runtime.GOOS,
 		"labels-filter", labelsFilter,
 		"enable-multi-instrumentation", enableMultiInstrumentation,
+		"enable-apache-httpd-instrumentation", enableApacheHttpdInstrumentation,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
@@ -183,6 +187,7 @@ func main() {
 		config.WithCollectorImage(collectorImage),
 		config.WithCreateRBACPermissions(createRBACPermissions),
 		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
+		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
 		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
@@ -342,18 +347,12 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		u := &instrumentationupgrade.InstrumentationUpgrade{
-			Logger:                     ctrl.Log.WithName("instrumentation-upgrade"),
-			DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
-			DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
-			DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
-			DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
-			DefaultAutoInstGo:          cfg.AutoInstrumentationDotNetImage(),
-			DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
-			DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
-			Client:                     mgr.GetClient(),
-			Recorder:                   mgr.GetEventRecorderFor("opentelemetry-operator"),
-		}
+		u := instrumentationupgrade.NewInstrumentationUpgrade(
+			mgr.GetClient(),
+			ctrl.Log.WithName("instrumentation-upgrade"),
+			mgr.GetEventRecorderFor("opentelemetry-operator"),
+			cfg,
+		)
 		return u.ManagedInstances(c)
 	}))
 	if err != nil {

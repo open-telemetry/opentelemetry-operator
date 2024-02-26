@@ -290,7 +290,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnableApacheHttpdAutoInstrumentation() || inst == nil {
 		insts.ApacheHttpd.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
