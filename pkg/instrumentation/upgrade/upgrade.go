@@ -25,21 +25,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
 	defaultAnnotationToGate = map[string]*featuregate2.Gate{
-		constants.AnnotationDefaultAutoInstrumentationJava:        featuregate.EnableJavaAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationNodeJS:      featuregate.EnableNodeJSAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationPython:      featuregate.EnablePythonAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationDotNet:      featuregate.EnableDotnetAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationGo:          featuregate.EnableGoAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: featuregate.EnableApacheHTTPAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationNginx:       featuregate.EnableNginxAutoInstrumentationSupport,
+		constants.AnnotationDefaultAutoInstrumentationJava:   featuregate.EnableJavaAutoInstrumentationSupport,
+		constants.AnnotationDefaultAutoInstrumentationNodeJS: featuregate.EnableNodeJSAutoInstrumentationSupport,
+		constants.AnnotationDefaultAutoInstrumentationPython: featuregate.EnablePythonAutoInstrumentationSupport,
+		constants.AnnotationDefaultAutoInstrumentationDotNet: featuregate.EnableDotnetAutoInstrumentationSupport,
+		constants.AnnotationDefaultAutoInstrumentationGo:     featuregate.EnableGoAutoInstrumentationSupport,
+		constants.AnnotationDefaultAutoInstrumentationNginx:  featuregate.EnableNginxAutoInstrumentationSupport,
 	}
 )
+
+type autoInstConfig struct {
+	id      string
+	enabled bool
+}
 
 type InstrumentationUpgrade struct {
 	Client                     client.Client
@@ -52,6 +57,28 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstApacheHttpd string
 	DefaultAutoInstNginx       string
 	DefaultAutoInstGo          string
+	defaultAnnotationToConfig  map[string]autoInstConfig
+}
+
+func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
+	defaultAnnotationToConfig := map[string]autoInstConfig{
+		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: autoInstConfig{constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
+	}
+
+	return &InstrumentationUpgrade{
+		Client:                     client,
+		Logger:                     logger,
+		DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
+		DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
+		DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
+		DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
+		DefaultAutoInstGo:          cfg.AutoInstrumentationGoImage(),
+		DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
+		DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
+		Recorder:                   recorder,
+		defaultAnnotationToConfig:  defaultAnnotationToConfig,
+	}
+
 }
 
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
@@ -90,6 +117,24 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 
 func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
 	upgraded := inst.DeepCopy()
+	for annotation, config := range u.defaultAnnotationToConfig {
+		autoInst := upgraded.Annotations[annotation]
+		if autoInst != "" {
+			if config.enabled {
+				switch annotation {
+				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
+					if inst.Spec.ApacheHttpd.Image == autoInst {
+						upgraded.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
+						upgraded.Annotations[annotation] = u.DefaultAutoInstApacheHttpd
+					}
+				}
+			} else {
+				u.Logger.Error(nil, "autoinstrumentation not enabled for this language", "flag", config.id)
+				u.Recorder.Event(upgraded, "Warning", "InstrumentationUpgradeRejected", fmt.Sprintf("support for is not enabled for %s", config.id))
+			}
+		}
+	}
+
 	for annotation, gate := range defaultAnnotationToGate {
 		autoInst := upgraded.Annotations[annotation]
 		if autoInst != "" {
@@ -119,11 +164,6 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if inst.Spec.Go.Image == autoInst {
 						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
 						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
-					}
-				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
-					if inst.Spec.ApacheHttpd.Image == autoInst {
-						upgraded.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
-						upgraded.Annotations[annotation] = u.DefaultAutoInstApacheHttpd
 					}
 				case constants.AnnotationDefaultAutoInstrumentationNginx:
 					if inst.Spec.Nginx.Image == autoInst {

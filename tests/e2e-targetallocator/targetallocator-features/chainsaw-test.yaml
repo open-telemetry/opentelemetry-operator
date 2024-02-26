@@ -39,3 +39,9 @@ spec:
         duration: 35s
     - assert:
         file: 01-assert.yaml
+  - name: step-02
+    try:
+    - apply:
+        file: 02-install.yaml
+    - assert:
+        file: 02-assert.yaml
