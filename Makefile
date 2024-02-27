@@ -60,7 +60,7 @@ endif
 
 START_KIND_CLUSTER ?= true
 
-KUBE_VERSION ?= 1.24
+KUBE_VERSION ?= 1.29
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "otel-operator"
 
