@@ -51,6 +51,22 @@ func TestDesiredIngresses(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("should return nil, no ingress set", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: "Deployment",
+				},
+			},
+		}
+
+		actual, err := Ingress(params)
+		assert.Nil(t, actual)
+		assert.NoError(t, err)
+	})
+
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},

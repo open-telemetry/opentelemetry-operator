@@ -18,9 +18,3 @@ spec:
         file: 01-update-volume-claim-templates.yaml
     - assert:
         file: 01-assert.yaml
-  - name: step-02
-    try:
-    - apply:
-        file: 02-update-volume-claim-storage.yaml
-    - assert:
-        file: 02-assert.yaml

@@ -43,7 +43,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -71,7 +70,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 
 	listOps := &client.ListOptions{
 		Namespace:     params.OtelCol.Namespace,
-		LabelSelector: labels.SelectorFromSet(manifestutils.Labels(params.OtelCol.ObjectMeta, naming.Collector(params.OtelCol.Name), params.OtelCol.Spec.Image, collector.ComponentOpenTelemetryCollector, params.Config.LabelsFilter())),
+		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
 	}
 	hpaList := &autoscalingv2.HorizontalPodAutoscalerList{}
 	err := r.List(ctx, hpaList, listOps)
@@ -119,7 +118,6 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
 		}
 	}
-
 	pdbList := &policyV1.PodDisruptionBudgetList{}
 	err = r.List(ctx, pdbList, listOps)
 	if err != nil {
