@@ -120,6 +120,9 @@ func TestDesiredIngresses(t *testing.T) {
 					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/component":  "opentelemetry-collector",
+					"app.kubernetes.io/part-of":    "opentelemetry",
+					"app.kubernetes.io/version":    "latest",
 				},
 			},
 			Spec: networkingv1.IngressSpec{
