@@ -81,7 +81,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	for i := range hpaList.Items {
 		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
 	}
-	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		servicemonitorList := &monitoringv1.ServiceMonitorList{}
 		err = r.List(ctx, servicemonitorList, listOps)
 		if err != nil {
