@@ -35,8 +35,10 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
 		changed.Status.Version = version.OpenTelemetryCollector()
 	}
+
 	mode := changed.Spec.Mode
-	if mode != v1alpha1.ModeDeployment && mode != v1alpha1.ModeStatefulSet {
+
+	if mode == v1alpha1.ModeSidecar {
 		changed.Status.Scale.Replicas = 0
 		changed.Status.Scale.Selector = ""
 		return nil
@@ -91,6 +93,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 		}
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 	}
+
 	changed.Status.Scale.Replicas = replicas
 	changed.Status.Image = statusImage
 	changed.Status.Scale.StatusReplicas = statusReplicas
