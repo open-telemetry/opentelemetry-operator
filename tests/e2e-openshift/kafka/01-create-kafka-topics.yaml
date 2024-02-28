@@ -4,7 +4,7 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
   name: otlp-spans
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 spec:
   config:
     retention.ms: 300000

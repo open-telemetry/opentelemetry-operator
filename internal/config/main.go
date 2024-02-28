@@ -43,6 +43,8 @@ type Config struct {
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	createRBACPermissions               bool
+	enableMultiInstrumentation          bool
+	enableApacheHttpdInstrumentation    bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -75,6 +77,8 @@ func New(opts ...Option) Config {
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
 		createRBACPermissions:               o.createRBACPermissions,
+		enableMultiInstrumentation:          o.enableMultiInstrumentation,
+		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -107,6 +111,15 @@ func (c *Config) AutoDetect() error {
 // CollectorImage represents the flag to override the OpenTelemetry Collector container image.
 func (c *Config) CollectorImage() string {
 	return c.collectorImage
+}
+
+// EnableMultiInstrumentation is true when the operator supports multi instrumentation.
+func (c *Config) EnableMultiInstrumentation() bool {
+	return c.enableMultiInstrumentation
+}
+
+func (c *Config) EnableApacheHttpdAutoInstrumentation() bool {
+	return c.enableApacheHttpdInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.

@@ -16,8 +16,8 @@ spec:
     try:
     - apply:
         file: 01-workload-monitoring.yaml
-    - script:
-        content: ./tests/e2e-openshift/otlp-metrics-traces/check_user_workload_monitoring.sh
+    - assert:
+        file: 01-assert.yaml
   - name: step-02
     try:
     - apply:
@@ -33,8 +33,10 @@ spec:
   - name: step-04
     try:
     - script:
-        content: ./tests/e2e-openshift/otlp-metrics-traces/check_traces.sh
+        timeout: 5m
+        content: ./check_traces.sh
   - name: step-05
     try:
     - script:
-        content: ./tests/e2e-openshift/otlp-metrics-traces/check_metrics.sh
+        timeout: 5m
+        content: ./check_metrics.sh

@@ -488,9 +488,25 @@ chlog-preview: chlog-install
 	$(CHLOGGEN) update --dry
 
 .PHONY: chlog-update
-chlog-update: chlog-install
+chlog-update: chlog-install chlog-insert-components
 	$(CHLOGGEN) update --version $(VERSION)
 
+.PHONY: chlog-insert-components
+chlog-insert-components:
+	@echo "### Components" > components.md
+	@echo "" >>components.md
+	@echo "* [OpenTelemetry Collector - v${OTELCOL_VERSION}](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v${OTELCOL_VERSION})" >>components.md
+	@echo "* [OpenTelemetry Contrib - v${OTELCOL_VERSION}](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v${OTELCOL_VERSION})" >>components.md
+	@echo "* [Java auto-instrumentation - ${AUTO_INSTRUMENTATION_JAVA_VERSION}](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v${AUTO_INSTRUMENTATION_JAVA_VERSION})" >>components.md
+	@echo "* [.NET auto-instrumentation - ${AUTO_INSTRUMENTATION_DOTNET_VERSION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/${AUTO_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
+	@echo "* [Node.JS - ${AUTO_INSTRUMENTATION_NODEJS_VERSION}](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-${AUTO_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
+	@echo "* [Python - ${AUTO_INSTRUMENTATION_PYTHON_VERSION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/${AUTO_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
+	@echo "* [Go - v${AUTO_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v${AUTO_INSTRUMENTATION_GO_VERSION})" >>components.md
+	@echo "* [ApacheHTTPD - ${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
+	@echo "* [Nginx - ${AUTO_INSTRUMENTATION_NGINX_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_NGINX_VERSION})" >>components.md
+	@sed -i '/<!-- next version -->/rcomponents.md' CHANGELOG.md
+	@sed -i '/<!-- next version -->/G' CHANGELOG.md
+	@rm components.md
 
 .PHONY: opm
 OPM = ./bin/opm

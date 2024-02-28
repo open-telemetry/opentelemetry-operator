@@ -43,4 +43,5 @@ spec:
   - name: step-05
     try:
     - script:
-        content: ./tests/e2e-openshift/multi-cluster/check_traces.sh
+        timeout: 5m
+        content: ./check_traces.sh
