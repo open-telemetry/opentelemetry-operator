@@ -5,11 +5,7 @@ metadata:
   name: otel-simplest
 spec:
   mode: deployment
-  ingress:
-    type: ingress
-    hostname: "example.com"
-    annotations:
-      something.com: "true"
+  ingress: ~
   config: |
     receivers:
       otlp:

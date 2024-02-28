@@ -51,6 +51,22 @@ func TestDesiredIngresses(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("should return nil, no ingress set", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: "Deployment",
+				},
+			},
+		}
+
+		actual, err := Ingress(params)
+		assert.Nil(t, actual)
+		assert.NoError(t, err)
+	})
+
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
@@ -104,6 +120,9 @@ func TestDesiredIngresses(t *testing.T) {
 					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/component":  "opentelemetry-collector",
+					"app.kubernetes.io/part-of":    "opentelemetry",
+					"app.kubernetes.io/version":    "latest",
 				},
 			},
 			Spec: networkingv1.IngressSpec{

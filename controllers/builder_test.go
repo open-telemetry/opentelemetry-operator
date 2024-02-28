@@ -590,6 +590,9 @@ service:
 							"app.kubernetes.io/instance":   "test.test",
 							"app.kubernetes.io/managed-by": "opentelemetry-operator",
 							"app.kubernetes.io/name":       "test-ingress",
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
 							"something": "true",

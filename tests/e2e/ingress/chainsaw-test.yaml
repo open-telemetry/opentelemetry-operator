@@ -2,13 +2,26 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  creationTimestamp: null
   name: ingress
 spec:
+  skip: false
+  concurrent: false
+  skipDelete: false
+  timeouts:
+    apply: 10s
+    assert: 10s
+    error: 10s
   steps:
-  - name: step-00
-    try:
-    - apply:
-        file: 00-install.yaml
-    - assert:
-        file: 00-assert.yaml
+    - name: step-00
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+    # Applying the same OpenTelemetryCollector from the previous step, but this time without the spec.ingress, which should inform the controller to delete the ingress resource. So, we should get an error checking if the ingress still exists.
+    - name: step-01
+      try:
+      - patch:
+          file: 01-remove-ingress.yaml
+      - error:
+          file: 01-error.yaml

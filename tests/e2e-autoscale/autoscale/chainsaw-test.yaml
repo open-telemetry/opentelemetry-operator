@@ -33,3 +33,10 @@ spec:
           name: telemetrygen-set-utilization
     - assert:
         file: 03-assert.yaml
+  # applying the same OpenTelemetryCollector from the 00-step, but this time without the spec.autoscaler, which should inform the controller to delete the HPAs resources. So, we should get an error checking if the HPAs still exist
+  - name: step-04
+    try:
+      - apply:
+          file: 04-install.yaml
+      - error:
+          file: 04-error.yaml
