@@ -17,8 +17,7 @@ spec:
       try:
         - apply:
             file: 01-install.yaml
-        - try:
-          - sleep:
-              duration: 3s
+        - sleep:
+            duration: 5s
         - error:
             file: 01-error.yaml
