@@ -8,6 +8,8 @@ rules:
   - ""
   resources:
   - configmaps
+  - persistentvolumeclaims
+  - persistentvolumes
   - pods
   - serviceaccounts
   - services

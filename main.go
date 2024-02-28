@@ -28,6 +28,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+	networkingv1 "k8s.io/api/networking/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -75,6 +76,7 @@ func init() {
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(routev1.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
+	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

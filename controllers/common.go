@@ -23,6 +23,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,7 +78,7 @@ func BuildOpAMPBridge(params manifests.Params) ([]client.Object, error) {
 }
 
 // reconcileDesiredObjects runs the reconcile process using the mutateFn over the given list of objects.
-func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner metav1.Object, scheme *runtime.Scheme, desiredObjects ...client.Object) error {
+func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logger logr.Logger, owner metav1.Object, scheme *runtime.Scheme, desiredObjects []client.Object, ownedObjects map[types.UID]client.Object) error {
 	var errs []error
 	for _, desired := range desiredObjects {
 		l := logger.WithValues(
@@ -91,7 +92,6 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 				continue
 			}
 		}
-
 		// existing is an object the controller runtime will hydrate for us
 		// we obtain the existing object by deep copying the desired object because it's the most convenient way
 		existing := desired.DeepCopyObject().(client.Object)
@@ -116,9 +116,29 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 		}
 
 		l.V(1).Info(fmt.Sprintf("desired has been %s", op))
+		// This object is still managed by the operator, remove it from the list of objects to prune
+		delete(ownedObjects, existing.GetUID())
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("failed to create objects for %s: %w", owner.GetName(), errors.Join(errs...))
+	}
+	// Pruning owned objects in the cluster which are not should not be present after the reconciliation.
+	pruneErrs := []error{}
+	for _, obj := range ownedObjects {
+		l := logger.WithValues(
+			"object_name", obj.GetName(),
+			"object_kind", obj.GetObjectKind().GroupVersionKind(),
+		)
+
+		l.Info("pruning unmanaged resource")
+		err := kubeClient.Delete(ctx, obj)
+		if err != nil {
+			l.Error(err, "failed to delete resource")
+			pruneErrs = append(pruneErrs, err)
+		}
+	}
+	if len(pruneErrs) > 0 {
+		return fmt.Errorf("failed to prune objects for %s: %w", owner.GetName(), errors.Join(pruneErrs...))
 	}
 	return nil
 }

@@ -17,24 +17,32 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
+	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -55,6 +63,71 @@ type Params struct {
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	Config   config.Config
+}
+
+func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
+	ownedObjects := map[types.UID]client.Object{}
+
+	listOps := &client.ListOptions{
+		Namespace:     params.OtelCol.Namespace,
+		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
+	}
+	hpaList := &autoscalingv2.HorizontalPodAutoscalerList{}
+	err := r.List(ctx, hpaList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("error listing HorizontalPodAutoscalers: %w", err)
+	}
+	for i := range hpaList.Items {
+		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
+	}
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+		servicemonitorList := &monitoringv1.ServiceMonitorList{}
+		err = r.List(ctx, servicemonitorList, listOps)
+		if err != nil {
+			return nil, fmt.Errorf("error listing ServiceMonitors: %w", err)
+		}
+		for i := range servicemonitorList.Items {
+			ownedObjects[servicemonitorList.Items[i].GetUID()] = servicemonitorList.Items[i]
+		}
+
+		podMonitorList := &monitoringv1.PodMonitorList{}
+		err = r.List(ctx, podMonitorList, listOps)
+		if err != nil {
+			return nil, fmt.Errorf("error listing PodMonitors: %w", err)
+		}
+		for i := range podMonitorList.Items {
+			ownedObjects[podMonitorList.Items[i].GetUID()] = podMonitorList.Items[i]
+		}
+	}
+	ingressList := &networkingv1.IngressList{}
+	err = r.List(ctx, ingressList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("error listing Ingresses: %w", err)
+	}
+	for i := range ingressList.Items {
+		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
+	}
+
+	if params.Config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+		routesList := &routev1.RouteList{}
+		err = r.List(ctx, routesList, listOps)
+		if err != nil {
+			return nil, fmt.Errorf("error listing Routes: %w", err)
+		}
+		for i := range routesList.Items {
+			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
+		}
+	}
+	pdbList := &policyV1.PodDisruptionBudgetList{}
+	err = r.List(ctx, pdbList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("error listing PodDisruptionBudgets: %w", err)
+	}
+	for i := range pdbList.Items {
+		ownedObjects[pdbList.Items[i].GetUID()] = &pdbList.Items[i]
+	}
+
+	return ownedObjects, nil
 }
 
 func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) (manifests.Params, error) {
@@ -84,7 +157,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	return r
 }
 
-// +kubebuilder:rbac:groups="",resources=pods;configmaps;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods;configmaps;services;serviceaccounts;persistentvolumeclaims;persistentvolumes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
@@ -134,9 +207,13 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	if buildErr != nil {
 		return ctrl.Result{}, buildErr
 	}
-	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2620
-	// TODO: Change &instance to use params.OtelCol
-	err = reconcileDesiredObjects(ctx, r.Client, log, &instance, params.Scheme, desiredObjects...)
+
+	ownedObjects, err := r.findOtelOwnedObjects(ctx, params)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = reconcileDesiredObjects(ctx, r.Client, log, &instance, params.Scheme, desiredObjects, ownedObjects)
 	return collectorStatus.HandleReconcileStatus(ctx, log, params, instance, err)
 }
 
@@ -150,6 +227,9 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.StatefulSet{}).
+		Owns(&corev1.PersistentVolume{}).
+		Owns(&corev1.PersistentVolumeClaim{}).
+		Owns(&networkingv1.Ingress{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
 		Owns(&policyV1.PodDisruptionBudget{})
 
@@ -161,6 +241,9 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 		builder.Owns(&monitoringv1.PodMonitor{})
+	}
+	if r.config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+		builder.Owns(&routev1.Route{})
 	}
 
 	return builder.Complete(r)

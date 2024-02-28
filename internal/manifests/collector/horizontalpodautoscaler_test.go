@@ -19,7 +19,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -95,10 +94,8 @@ func TestHPA(t *testing.T) {
 					},
 					Log: logger,
 				}
-				raw, err := HorizontalPodAutoscaler(params)
+				hpa, err := HorizontalPodAutoscaler(params)
 				require.NoError(t, err)
-
-				hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
 
 				// verify
 				assert.Equal(t, "my-instance-collector", hpa.Name)

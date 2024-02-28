@@ -60,7 +60,7 @@ endif
 
 START_KIND_CLUSTER ?= true
 
-KUBE_VERSION ?= 1.24
+KUBE_VERSION ?= 1.29
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "otel-operator"
 
@@ -367,7 +367,7 @@ KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
 GOLANGCI_LINT_VERSION ?= v1.54.0
 KIND_VERSION ?= v0.20.0
-CHAINSAW_VERSION ?= v0.1.6
+CHAINSAW_VERSION ?= v0.1.7
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw

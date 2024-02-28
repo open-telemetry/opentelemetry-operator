@@ -1,0 +1,28 @@
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: simplest-collector
+spec:
+  maxReplicas: 2
+  scaleTargetRef:
+    apiVersion: opentelemetry.io/v1alpha1
+    kind: OpenTelemetryCollector
+    name: simplest
+status:
+  currentMetrics: null
+  currentReplicas: 1
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: simplest-set-utilization-collector
+spec:
+  maxReplicas: 2
+  scaleTargetRef:
+    apiVersion: opentelemetry.io/v1alpha1
+    kind: OpenTelemetryCollector
+    name: simplest-set-utilization
+status:
+  currentMetrics: null
+  currentReplicas: 1

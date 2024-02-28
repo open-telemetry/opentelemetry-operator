@@ -26,8 +26,10 @@ import (
 	"time"
 
 	routev1 "github.com/openshift/api/route/v1"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -104,7 +106,7 @@ func TestMain(m *testing.M) {
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
-		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD},
+		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "config", "webhook")},
 		},
@@ -114,12 +116,18 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to start testEnv: %v", err)
 		os.Exit(1)
 	}
-
+	if err = monitoringv1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+	if err = networkingv1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
 	if err = routev1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}
-
 	if err = v1alpha1.AddToScheme(testScheme); err != nil {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)

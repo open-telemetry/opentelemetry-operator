@@ -25,10 +25,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
+	name := naming.Ingress(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeNginx {
 		return nil, nil
 	}
@@ -58,11 +61,7 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 			Name:        naming.Ingress(params.OtelCol.Name),
 			Namespace:   params.OtelCol.Namespace,
 			Annotations: params.OtelCol.Spec.Ingress.Annotations,
-			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			},
+			Labels:      labels,
 		},
 		Spec: networkingv1.IngressSpec{
 			TLS:              params.OtelCol.Spec.Ingress.TLS,
