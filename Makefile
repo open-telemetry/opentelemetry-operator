@@ -198,7 +198,7 @@ generate: controller-gen
 # end-to-tests
 .PHONY: e2e
 e2e: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e
+	$(CHAINSAW) test --test-dir ./tests/e2e/ingress
 
 # end-to-end-test for testing autoscale
 .PHONY: e2e-autoscale
@@ -367,7 +367,7 @@ KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
 GOLANGCI_LINT_VERSION ?= v1.54.0
 KIND_VERSION ?= v0.20.0
-CHAINSAW_VERSION ?= v0.1.4
+CHAINSAW_VERSION ?= v0.1.7
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw
