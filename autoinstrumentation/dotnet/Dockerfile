@@ -14,7 +14,7 @@
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be availabe in the image.
 
-FROM busybox
+FROM busybox as downloader
 
 ARG version
 
@@ -27,3 +27,7 @@ RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc.zip &&\
     unzip opentelemetry-dotnet-instrumentation-linux-musl.zip "linux-musl-x64/*" -d . &&\
     rm opentelemetry-dotnet-instrumentation-linux-glibc.zip opentelemetry-dotnet-instrumentation-linux-musl.zip &&\
     chmod -R go+r .
+
+FROM busybox
+
+COPY --from=downloader /autoinstrumentation /autoinstrumentation
