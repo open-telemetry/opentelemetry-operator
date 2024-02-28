@@ -198,7 +198,7 @@ generate: controller-gen
 # end-to-tests
 .PHONY: e2e
 e2e: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e/ingress
+	$(CHAINSAW) test --test-dir ./tests/e2e
 
 # end-to-end-test for testing autoscale
 .PHONY: e2e-autoscale
