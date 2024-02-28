@@ -53,11 +53,20 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 		rules = createSubdomainIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)
 	}
 
+	ingressAnnotations := params.OtelCol.Spec.Ingress.Annotations
+	if ingressAnnotations == nil {
+		ingressAnnotations = make(map[string]string)
+	}
+
+	if _, ok := ingressAnnotations["nginx.ingress.kubernetes.io/rewrite-target"]; !ok {
+		ingressAnnotations["nginx.ingress.kubernetes.io/rewrite-target"] = "/$2"
+	}
+
 	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Ingress(params.OtelCol.Name),
 			Namespace:   params.OtelCol.Namespace,
-			Annotations: params.OtelCol.Spec.Ingress.Annotations,
+			Annotations: ingressAnnotations,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
@@ -78,7 +87,7 @@ func createPathIngressRules(otelcol string, hostname string, ports []corev1.Serv
 	for i, port := range ports {
 		portName := naming.PortName(port.Name, port.Port)
 		paths[i] = networkingv1.HTTPIngressPath{
-			Path:     "/" + port.Name,
+			Path:     "/" + port.Name + "(/|$)(.*)",
 			PathType: &pathType,
 			Backend: networkingv1.IngressBackend{
 				Service: &networkingv1.IngressServiceBackend{
