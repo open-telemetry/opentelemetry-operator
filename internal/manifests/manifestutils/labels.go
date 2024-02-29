@@ -23,9 +23,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func isFilteredLabel(label string, filterLabels []string) bool {
-	for _, pattern := range filterLabels {
-		match, _ := regexp.MatchString(pattern, label)
+func isFilteredSet(sourceSet string, filterSet []string) bool {
+	for _, pattern := range filterSet {
+		match, _ := regexp.MatchString(pattern, sourceSet)
 		return match
 	}
 	return false
@@ -38,7 +38,7 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 	base := map[string]string{}
 	if nil != instance.Labels {
 		for k, v := range instance.Labels {
-			if !isFilteredLabel(k, filterLabels) {
+			if !isFilteredSet(k, filterLabels) {
 				base[k] = v
 			}
 		}

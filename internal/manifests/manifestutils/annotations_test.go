@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package collector
+package manifestutils
 
 import (
 	"testing"
@@ -45,9 +45,9 @@ func TestDefaultAnnotations(t *testing.T) {
 	}
 
 	// test
-	annotations, err := Annotations(otelcol)
+	annotations, err := Annotations(otelcol, []string{})
 	require.NoError(t, err)
-	podAnnotations, err := PodAnnotations(otelcol)
+	podAnnotations, err := PodAnnotations(otelcol, []string{})
 	require.NoError(t, err)
 
 	//verify
@@ -79,9 +79,9 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 	}
 
 	// test
-	annotations, err := Annotations(otelcol)
+	annotations, err := Annotations(otelcol, []string{})
 	require.NoError(t, err)
-	podAnnotations, err := PodAnnotations(otelcol)
+	podAnnotations, err := PodAnnotations(otelcol, []string{})
 	require.NoError(t, err)
 
 	//verify
@@ -121,9 +121,9 @@ func TestUserAnnotations(t *testing.T) {
 	}
 
 	// test
-	annotations, err := Annotations(otelcol)
+	annotations, err := Annotations(otelcol, []string{})
 	require.NoError(t, err)
-	podAnnotations, err := PodAnnotations(otelcol)
+	podAnnotations, err := PodAnnotations(otelcol, []string{})
 	require.NoError(t, err)
 
 	//verify
@@ -148,9 +148,9 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 	}
 
 	// test
-	annotations, err := Annotations(otelcol)
+	annotations, err := Annotations(otelcol, []string{})
 	require.NoError(t, err)
-	podAnnotations, err := PodAnnotations(otelcol)
+	podAnnotations, err := PodAnnotations(otelcol, []string{})
 	require.NoError(t, err)
 
 	// verify
@@ -158,4 +158,27 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 	assert.Equal(t, "mycomponent", annotations["myapp"])
 	assert.Equal(t, "mycomponent", podAnnotations["myapp"])
 	assert.Equal(t, "pod_annotation_value", podAnnotations["pod_annotation"])
+}
+
+func TestAnnotationsFilter(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{"test.bar.io": "foo",
+				"test.io/port": "1234",
+				"test.io/path": "/test",
+			},
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: "deployment",
+		},
+	}
+
+	// This requires the filter to be in regex match form and not the other simpler wildcard one.
+	annotations, err := Annotations(otelcol, []string{".*.bar.io"})
+
+	// verify
+	require.NoError(t, err)
+	assert.Len(t, annotations, 6)
+	assert.NotContains(t, annotations, "test.bar.io")
+	assert.Equal(t, "1234", annotations["test.io/port"])
 }

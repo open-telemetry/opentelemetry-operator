@@ -237,7 +237,7 @@ func TestDeploymentFilterLabels(t *testing.T) {
 		Spec: v1alpha1.OpAMPBridgeSpec{},
 	}
 
-	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
+	cfg := config.New(config.WithSetFilters([]string{"foo*", "app.*.bar"}, "labels"))
 
 	params := manifests.Params{
 		Config:      cfg,
