@@ -2343,13 +2343,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), false))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), originalVal))
-				})
-			},
+			config: config.New(config.WithEnableDotnetInstrumentation(true)),
 		},
 		{
 			name: "go injection, true",
@@ -5080,14 +5074,10 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(true)),
-			setFeatureGates: func(t *testing.T) {
-				originalValDotNetInstr := featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), false))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableDotnetAutoInstrumentationSupport.ID(), originalValDotNetInstr))
-				})
-			},
+			config: config.New(
+				config.WithEnableMultiInstrumentation(true),
+				config.WithEnableDotnetInstrumentation(true),
+			),
 		},
 	}
 
