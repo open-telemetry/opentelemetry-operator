@@ -89,6 +89,6 @@ func SelectorMatchLabels(instance metav1.ObjectMeta, component string) map[strin
 		"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, instance.Namespace, instance.Name),
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/component":  component,
-		"app.kubernetes.io/name":       naming.ServiceMonitorSelectorName(instance.Name),
+		"app.kubernetes.io/name":       naming.MonitoringService(instance.Name),
 	}
 }

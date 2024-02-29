@@ -20,7 +20,6 @@ package naming
 import (
 	"fmt"
 	"regexp"
-	"strings"
 )
 
 var regexpEndReplace, regexpBeginReplace *regexp.Regexp
@@ -72,14 +71,4 @@ func Truncate(format string, max int, values ...interface{}) string {
 func trimNonAlphaNumeric(text string) string {
 	newText := regexpEndReplace.ReplaceAllString(text, "")
 	return regexpBeginReplace.ReplaceAllString(newText, "")
-}
-
-// checkCollectorPrefix adds -collecto suffix in case the ObjectName doesn't contain it
-// used on ServiceMonitor selector labels to filter the monitoring service out.
-func checkCollectorPrefix(text string) string {
-	if !strings.Contains(text, "-collector") {
-		var newText = text + "-collector"
-		return newText
-	}
-	return text
 }
