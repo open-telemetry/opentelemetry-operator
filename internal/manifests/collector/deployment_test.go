@@ -334,7 +334,7 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 
 	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "my-instance",
+			Name:        "my-instance",
 			Annotations: excludedAnnotations,
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
