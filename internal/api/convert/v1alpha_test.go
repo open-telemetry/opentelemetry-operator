@@ -52,12 +52,16 @@ service:
 		cfgV1 := v1alpha1.OpenTelemetryCollector{
 			Spec: v1alpha1.OpenTelemetryCollectorSpec{
 				Config: config,
+				Args: map[string]string{
+					"test": "something",
+				},
 			},
 		}
 
 		cfgV2, err := V1Alpha1to2(cfgV1)
 		assert.Nil(t, err)
 		assert.NotNil(t, cfgV2)
+		assert.Equal(t, cfgV1.Spec.Args, cfgV2.Spec.Args)
 
 		yamlCfg, err := yaml.Marshal(&cfgV2.Spec.Config)
 		assert.Nil(t, err)
