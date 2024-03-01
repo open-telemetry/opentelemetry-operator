@@ -5,7 +5,7 @@ change_type: bug_fix
 component: instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: "Not preserve the ownership of the files from the autoinstrumenation when copied to the volume. This avoids isues when instrumenting workloads runned as non-root"
+note: "Don't preserve ownership of files copied from the autoinstrumenation image. This avoids issues when instrumenting workloads running as non-root"
 
 # One or more tracking issues related to the change
 issues: [2655]
