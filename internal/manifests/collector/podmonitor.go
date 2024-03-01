@@ -43,7 +43,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 		return nil, nil
 	}
 	name := naming.PodMonitor(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, nil)
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	pm = monitoringv1.PodMonitor{
 		ObjectMeta: metav1.ObjectMeta{
