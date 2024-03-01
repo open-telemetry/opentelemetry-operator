@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: multi-cluster
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-create-namespaces.yaml
+    - assert:
+        file: 00-assert.yaml
+  - name: step-01
+    try:
+    - apply:
+        file: 01-create-jaeger.yaml
+    - assert:
+        file: 01-assert.yaml
+  - name: step-02
+    try:
+    - script:
+        content: ./generate_certs.sh
+    - apply:
+        file: 02-otlp-receiver.yaml
+    - assert:
+        file: 02-assert.yaml
+  - name: step-03
+    try:
+    - script:
+        content: ./create_otlp_sender.sh
+    - apply:
+        file: 03-otlp-sender.yaml
+    - assert:
+        file: 03-assert.yaml
+  - name: step-04
+    try:
+    - apply:
+        file: 04-generate-traces.yaml
+    - assert:
+        file: 04-assert.yaml
+  - name: step-05
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_traces.sh

@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
 metadata:
   name: otlp-spans
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 spec:
   config:
     retention.ms: 300000

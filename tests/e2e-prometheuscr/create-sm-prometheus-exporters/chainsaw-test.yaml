@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: create-sm-prometheus-exporters
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install.yaml
+  - name: step-01
+    try:
+    - apply:
+        file: 01-install.yaml
+    - assert:
+        file: 01-assert.yaml
+  - name: step-02
+    try:
+    - apply:
+        file: 02-install.yaml
+    - assert:
+        file: 02-assert.yaml
+  - name: step-03
+    try:
+    - apply:
+        file: 03-install.yaml
+    - assert:
+        file: 03-assert.yaml
+  - name: step-04
+    try:
+    - apply:
+        file: 04-error.yaml
+    - apply:
+        file: 04-install.yaml
+  - name: step-05
+    try:
+    - apply:
+        file: 05-error.yaml
+    - apply:
+        file: 05-install.yaml
+    - assert:
+        file: 05-assert.yaml
+  - name: step-06
+    try:
+    - apply:
+        file: 06-install.yaml
+    - assert:
+        file: 06-assert.yaml
+  - name: step-07
+    try:
+    - delete:
+        ref:
+          apiVersion: opentelemetry.io/v1alpha1
+          kind: OpenTelemetryCollector
+          name: simplest
+          namespace: create-sm-prometheus
+    - error:
+        file: 07-error.yaml
+  - name: step-08
+    try:
+    - apply:
+        file: 08-install.yaml
+    - assert:
+        file: 08-assert.yaml

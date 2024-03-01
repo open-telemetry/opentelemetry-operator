@@ -18,12 +18,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -33,20 +34,23 @@ func TestDaemonSetNewDefault(t *testing.T) {
 	// prepare
 	params := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1beta1.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Tolerations: testTolerationValues,
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					Tolerations: testTolerationValues,
+				},
 			},
 		},
 		Log: logger,
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 
 	// verify
 	assert.Equal(t, "my-instance-collector", d.Name)
@@ -60,7 +64,7 @@ func TestDaemonSetNewDefault(t *testing.T) {
 
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
 		"prometheus.io/path":                   "/metrics",
 		"prometheus.io/port":                   "8888",
 		"prometheus.io/scrape":                 "true",
@@ -94,35 +98,39 @@ func TestDaemonSetNewDefault(t *testing.T) {
 func TestDaemonsetHostNetwork(t *testing.T) {
 	params1 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1beta1.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{},
 		},
 		Log: logger,
 	}
 	// test
-	d1 := DaemonSet(params1)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
 	assert.False(t, d1.Spec.Template.Spec.HostNetwork)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// verify custom
 	params2 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1beta1.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-instance",
 				Namespace: "my-namespace",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				HostNetwork: true,
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					HostNetwork: true,
+				},
 			},
 		},
 		Log: logger,
 	}
-	d2 := DaemonSet(params2)
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
 	assert.True(t, d2.Spec.Template.Spec.HostNetwork)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -130,12 +138,14 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 func TestDaemonsetPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodAnnotations: testPodAnnotationValues,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodAnnotations: testPodAnnotationValues,
+			},
 		},
 	}
 	cfg := config.New()
@@ -147,14 +157,15 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	}
 
 	// test
-	ds := DaemonSet(params)
+	ds, err := DaemonSet(params)
+	require.NoError(t, err)
 
 	// Add sha256 podAnnotation
-	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d"
 
 	expectedAnnotations := map[string]string{
 		"annotation-key":                       "annotation-value",
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
 		"prometheus.io/path":                   "/metrics",
 		"prometheus.io/port":                   "8888",
 		"prometheus.io/scrape":                 "true",
@@ -171,15 +182,17 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodSecurityContext: &v1.PodSecurityContext{
-				RunAsNonRoot: &runAsNonRoot,
-				RunAsUser:    &runAsUser,
-				RunAsGroup:   &runasGroup,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodSecurityContext: &v1.PodSecurityContext{
+					RunAsNonRoot: &runAsNonRoot,
+					RunAsUser:    &runAsUser,
+					RunAsGroup:   &runasGroup,
+				},
 			},
 		},
 	}
@@ -192,7 +205,8 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 		Log:     logger,
 	}
 
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
@@ -205,12 +219,12 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 		"app.foo.bar": "1",
 	}
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "my-instance",
 			Labels: excludedLabels,
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
@@ -221,7 +235,8 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 		Log:     logger,
 	}
 
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 
 	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
@@ -231,7 +246,7 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 
 func TestDaemonSetNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -245,19 +260,22 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := DaemonSet(params1)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
-			NodeSelector: map[string]string{
-				"node-key": "node-value",
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostNetwork: true,
+				NodeSelector: map[string]string{
+					"node-key": "node-value",
+				},
 			},
 		},
 	}
@@ -270,12 +288,13 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := DaemonSet(params2)
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
 func TestDaemonSetPriorityClassName(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -289,17 +308,20 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := DaemonSet(params1)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
 	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PriorityClassName: priorityClassName,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PriorityClassName: priorityClassName,
+			},
 		},
 	}
 
@@ -311,12 +333,13 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := DaemonSet(params2)
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
 
 func TestDaemonSetAffinity(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -330,15 +353,18 @@ func TestDaemonSetAffinity(t *testing.T) {
 		Log:     logger,
 	}
 
-	d1 := DaemonSet(params1)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Affinity: testAffinityValue,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Affinity: testAffinityValue,
+			},
 		},
 	}
 
@@ -350,22 +376,25 @@ func TestDaemonSetAffinity(t *testing.T) {
 		Log:     logger,
 	}
 
-	d2 := DaemonSet(params2)
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
 
 func TestDaemonSetInitContainer(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			InitContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				InitContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -379,7 +408,8 @@ func TestDaemonSetInitContainer(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
@@ -390,15 +420,17 @@ func TestDaemonSetInitContainer(t *testing.T) {
 
 func TestDaemonSetAdditionalContainer(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			AdditionalContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				AdditionalContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
@@ -412,7 +444,8 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
@@ -424,13 +457,13 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 
 func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			DaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "RollingUpdate",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
@@ -448,7 +481,8 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("RollingUpdate"), d.Spec.UpdateStrategy.Type)
@@ -458,13 +492,13 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 
 func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			DaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: "OnDelete",
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
@@ -482,7 +516,8 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 	}
 
 	// test
-	d := DaemonSet(params)
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
 	assert.Equal(t, appsv1.DaemonSetUpdateStrategyType("OnDelete"), d.Spec.UpdateStrategy.Type)
@@ -493,31 +528,35 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 func TestDaemonsetShareProcessNamespace(t *testing.T) {
 	params1 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1beta1.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{},
 		},
 		Log: logger,
 	}
 	// test
-	d1 := DaemonSet(params1)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
 	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
 
 	// verify custom
 	params2 := manifests.Params{
 		Config: config.New(),
-		OtelCol: v1alpha1.OpenTelemetryCollector{
+		OtelCol: v1beta1.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance-with-shareprocessnamespace",
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				ShareProcessNamespace: true,
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					ShareProcessNamespace: true,
+				},
 			},
 		},
 		Log: logger,
 	}
-	d2 := DaemonSet(params2)
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
 	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
 }

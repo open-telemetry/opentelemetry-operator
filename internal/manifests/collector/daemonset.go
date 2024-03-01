@@ -25,12 +25,19 @@ import (
 )
 
 // DaemonSet builds the deployment for the given instance.
-func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
+func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
-	annotations := Annotations(params.OtelCol)
-	podAnnotations := PodAnnotations(params.OtelCol)
+	annotations, err := Annotations(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
+	podAnnotations, err := PodAnnotations(params.OtelCol)
+	if err != nil {
+		return nil, err
+	}
+
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Collector(params.OtelCol.Name),
@@ -62,7 +69,7 @@ func DaemonSet(params manifests.Params) *appsv1.DaemonSet {
 					Affinity:              params.OtelCol.Spec.Affinity,
 				},
 			},
-			UpdateStrategy: params.OtelCol.Spec.UpdateStrategy,
+			UpdateStrategy: params.OtelCol.Spec.DaemonSetUpdateStrategy,
 		},
-	}
+	}, nil
 }

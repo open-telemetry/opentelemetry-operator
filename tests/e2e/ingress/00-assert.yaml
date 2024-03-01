@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: simplest-collector
+  name: otel-simplest-collector
 status:
   readyReplicas: 1
 ---
@@ -13,14 +13,14 @@ metadata:
     something.com: "true"
   labels:
     app.kubernetes.io/managed-by: opentelemetry-operator
-    app.kubernetes.io/name: simplest-ingress
-  name: simplest-ingress
+    app.kubernetes.io/name: otel-simplest-ingress
+  name: otel-simplest-ingress
   ownerReferences:
   - apiVersion: opentelemetry.io/v1alpha1
     blockOwnerDeletion: true
     controller: true
     kind: OpenTelemetryCollector
-    name: simplest
+    name: otel-simplest
 spec:
   rules:
   - host: example.com
@@ -28,14 +28,14 @@ spec:
       paths:
       - backend:
           service:
-            name: simplest-collector
+            name: otel-simplest-collector
             port:
               name: otlp-grpc
         path: /otlp-grpc
         pathType: Prefix
       - backend:
           service:
-            name: simplest-collector
+            name: otel-simplest-collector
             port:
               name: otlp-http
         path: /otlp-http

@@ -49,6 +49,10 @@ var (
 		Name: "opentelemetry_allocator_targets_remaining",
 		Help: "Number of targets kept after filtering.",
 	})
+	TargetsUnassigned = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "opentelemetry_allocator_targets_unassigned",
+		Help: "Number of targets that could not be assigned due to missing node label.",
+	})
 )
 
 type AllocationOption func(Allocator)
@@ -106,6 +110,7 @@ var _ consistent.Member = Collector{}
 // This struct can be extended with information like annotations and labels in the future.
 type Collector struct {
 	Name       string
+	NodeName   string
 	NumTargets int
 }
 
@@ -117,8 +122,8 @@ func (c Collector) String() string {
 	return c.Name
 }
 
-func NewCollector(name string) *Collector {
-	return &Collector{Name: name}
+func NewCollector(name, node string) *Collector {
+	return &Collector{Name: name, NodeName: node}
 }
 
 func init() {
@@ -127,6 +132,10 @@ func init() {
 		panic(err)
 	}
 	err = Register(consistentHashingStrategyName, newConsistentHashingAllocator)
+	if err != nil {
+		panic(err)
+	}
+	err = Register(perNodeStrategyName, newPerNodeAllocator)
 	if err != nil {
 		panic(err)
 	}

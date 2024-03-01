@@ -15,7 +15,7 @@ spec:
             - --otlp-insecure
             # High duration to ensure the trace creation doesn't stop.
             # It'll be stopped in step 4
-            - --duration=1m
+            - --duration=6m
             - --workers=20
             - traces
       restartPolicy: Never
