@@ -17815,7 +17815,14 @@ Metrics defines the metrics configuration for operands.
         <td><b>DisablePrometheusAnnotations</b></td>
         <td>boolean</td>
         <td>
-          DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
+          DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>disableAutomaticPrometheusAnnotations</b></td>
+        <td>boolean</td>
+        <td>
+          DisableAutomaticPrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20325,7 +20332,14 @@ Metrics defines the metrics configuration for operands.
         <td><b>DisablePrometheusAnnotations</b></td>
         <td>boolean</td>
         <td>
-          DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
+          DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>disableAutomaticPrometheusAnnotations</b></td>
+        <td>boolean</td>
+        <td>
+          DisableAutomaticPrometheusAnnotations controls the automatic addition of default Prometheus annotations ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')<br/>
         </td>
         <td>false</td>
       </tr><tr>

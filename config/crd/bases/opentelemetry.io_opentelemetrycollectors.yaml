@@ -3867,7 +3867,12 @@ spec:
                       DisablePrometheusAnnotations:
                         description: DisablePrometheusAnnotations controls the automatic
                           addition of default Prometheus annotations ('prometheus.io/scrape',
-                          'prometheus.io/port', and 'prometheus.io/path')
+                          'prometheus.io/port', and 'prometheus.
+                        type: boolean
+                      disableAutomaticPrometheusAnnotations:
+                        description: DisableAutomaticPrometheusAnnotations controls
+                          the automatic addition of default Prometheus annotations
+                          ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
                         type: boolean
                       enableMetrics:
                         description: EnableMetrics specifies if ServiceMonitor or
@@ -5211,6 +5216,11 @@ spec:
                           DisablePrometheusAnnotations:
                             description: DisablePrometheusAnnotations controls the
                               automatic addition of default Prometheus annotations
+                              ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.
+                            type: boolean
+                          disableAutomaticPrometheusAnnotations:
+                            description: DisableAutomaticPrometheusAnnotations controls
+                              the automatic addition of default Prometheus annotations
                               ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
                             type: boolean
                           enableMetrics:
