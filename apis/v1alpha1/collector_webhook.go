@@ -260,6 +260,10 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 		maxReplicas = r.Spec.MaxReplicas
 	}
 
+	if r.Spec.Observability.Metrics.DisablePrometheusAnnotations {
+		warnings = append(warnings, "DisablePrometheusAnnotations is deprecated, use DisableAutomaticPrometheusAnnotations instead")
+	}
+
 	var minReplicas *int32
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil {
 		minReplicas = r.Spec.Autoscaler.MinReplicas

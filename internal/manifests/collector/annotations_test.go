@@ -72,6 +72,7 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 			Observability: v1beta1.ObservabilitySpec{
 				Metrics: v1beta1.MetricsConfigSpec{
 					DisablePrometheusAnnotations: true,
+					DisableAutomaticPrometheusAnnotations: true,
 				},
 			},
 		},

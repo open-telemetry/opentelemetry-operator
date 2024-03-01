@@ -527,7 +527,14 @@ type MetricsConfigSpec struct {
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
+	// Deprecated: use Spec.Observability.Metrics.DisableAutomaticPrometheusAnnotations instead.
 	DisablePrometheusAnnotations bool `json:"DisablePrometheusAnnotations,omitempty"`
+	// DisableAutomaticPrometheusAnnotations controls the automatic addition of default Prometheus annotations
+	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	DisableAutomaticPrometheusAnnotations bool `json:"disableAutomaticPrometheusAnnotations,omitempty"`
 }
 
 // ObservabilitySpec defines how telemetry data gets handled.

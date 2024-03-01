@@ -27,8 +27,8 @@ func Annotations(instance v1beta1.OpenTelemetryCollector) (map[string]string, er
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
-	// Enable Prometheus annotations by default if DisablePrometheusAnnotations is nil or true
-	if !instance.Spec.Observability.Metrics.DisablePrometheusAnnotations {
+	// Enable Prometheus annotations by default if DisablePrometheusAnnotations|DisableAutomaticPrometheusAnnotations is nil or true
+	if !instance.Spec.Observability.Metrics.DisablePrometheusAnnotations || !instance.Spec.Observability.Metrics.DisableAutomaticPrometheusAnnotations {
 		// Set default Prometheus annotations
 		annotations["prometheus.io/scrape"] = "true"
 		annotations["prometheus.io/port"] = "8888"
