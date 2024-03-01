@@ -19,6 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 
 	policyV1 "k8s.io/api/policy/v1"
@@ -41,9 +42,8 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 	}
 
 	name := naming.TAPodDisruptionBudget(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name)
-
-	annotations := Annotations(params.OtelCol, nil)
+	labels := manifestutils.TALabels(params.OtelCol, name, ComponentOpenTelemetryTargetAllocator)
+	annotations := Annotations(params.OtelCol, nil, params.Config.AnnotationsFilter())
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        name,
@@ -58,7 +58,7 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 			MinAvailable:   params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget.MinAvailable,
 			MaxUnavailable: params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget.MaxUnavailable,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(params.OtelCol),
+				MatchLabels: manifestutils.TASelectorLabels(params.OtelCol, ComponentOpenTelemetryTargetAllocator),
 			},
 		},
 	}, nil

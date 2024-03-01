@@ -19,6 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -163,7 +164,8 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 func TestAnnotationsFilter(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{"test.bar.io": "foo",
+			Annotations: map[string]string{
+				"test.bar.io":  "foo",
 				"test.io/port": "1234",
 				"test.io/path": "/test",
 			},
@@ -174,7 +176,7 @@ func TestAnnotationsFilter(t *testing.T) {
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	annotations, err := Annotations(otelcol, []string{".*.bar.io"})
+	annotations, err := Annotations(otelcol, []string{".*\\.bar\\.io"})
 
 	// verify
 	require.NoError(t, err)

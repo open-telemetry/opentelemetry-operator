@@ -19,13 +19,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // ServiceMonitor returns the service monitor for the given instance.
 func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
 	name := naming.TargetAllocator(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name)
+	labels := manifestutils.TALabels(params.OtelCol, name, ComponentOpenTelemetryTargetAllocator)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,7 +45,7 @@ func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
-				MatchLabels: SelectorLabels(params.OtelCol),
+				MatchLabels: manifestutils.TASelectorLabels(params.OtelCol, ComponentOpenTelemetryTargetAllocator),
 			},
 		},
 	}

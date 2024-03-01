@@ -20,14 +20,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func Service(params manifests.Params) *corev1.Service {
 	name := naming.TAService(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name)
-
-	selector := SelectorLabels(params.OtelCol)
+	labels := manifestutils.TALabels(params.OtelCol, name, ComponentOpenTelemetryTargetAllocator)
+	selector := manifestutils.TASelectorLabels(params.OtelCol, ComponentOpenTelemetryTargetAllocator)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

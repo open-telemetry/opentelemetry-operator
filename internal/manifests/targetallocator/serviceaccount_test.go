@@ -23,6 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
 func TestServiceAccountDefaultName(t *testing.T) {
@@ -72,7 +73,7 @@ func TestServiceAccountDefault(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "my-instance-targetallocator",
 			Namespace:   params.OtelCol.Namespace,
-			Labels:      Labels(params.OtelCol, "my-instance-targetallocator"),
+			Labels:      manifestutils.TALabels(params.OtelCol, "my-instance-targetallocator", ComponentOpenTelemetryTargetAllocator),
 			Annotations: params.OtelCol.Annotations,
 		},
 	}

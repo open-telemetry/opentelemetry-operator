@@ -162,11 +162,11 @@ func WithOpenShiftRoutesAvailability(os openshift.RoutesAvailability) Option {
 	}
 }
 
-func WithSetFilters(setFilters []string, setType string) Option {
+func WithLabelFilters(labelFilters []string) Option {
 	return func(o *options) {
 
 		filters := []string{}
-		for _, pattern := range setFilters {
+		for _, pattern := range labelFilters {
 			var result strings.Builder
 
 			for i, literal := range strings.Split(pattern, "*") {
@@ -181,12 +181,29 @@ func WithSetFilters(setFilters []string, setType string) Option {
 			}
 			filters = append(filters, result.String())
 		}
-		switch filterType := setType; filterType {
-		case "labels":
-			o.labelsFilter = filters
-		case "annotations":
-			o.annotationsFilter = filters
-		}
+		o.labelsFilter = filters
+	}
+}
 
+func WithAnnotationFilters(annotationFilters []string) Option {
+	return func(o *options) {
+
+		filters := []string{}
+		for _, pattern := range annotationFilters {
+			var result strings.Builder
+
+			for i, literal := range strings.Split(pattern, "*") {
+
+				// Replace * with .*
+				if i > 0 {
+					result.WriteString(".*")
+				}
+				// Quote any regular expression meta characters in the
+				// literal text.
+				result.WriteString(regexp.QuoteMeta(literal))
+			}
+			filters = append(filters, result.String())
+		}
+		o.annotationsFilter = filters
 	}
 }

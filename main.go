@@ -203,8 +203,8 @@ func main() {
 		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
 		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
 		config.WithAutoDetect(ad),
-		config.WithSetFilters(labelsFilter, "labels"),
-		config.WithSetFilters(annotationsFilter, "annotations"),
+		config.WithLabelFilters(labelsFilter),
+		config.WithAnnotationFilters(annotationsFilter),
 	)
 	err = cfg.AutoDetect()
 	if err != nil {

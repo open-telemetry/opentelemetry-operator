@@ -319,7 +319,7 @@ func TestStatefulSetFilterLabels(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithSetFilters([]string{"foo*", "app.*.bar"}, "labels"))
+	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
 
 	params := manifests.Params{
 		OtelCol: otelcol,
@@ -350,7 +350,7 @@ func TestStatefulSetFilterAnnotations(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithSetFilters([]string{"foo*", "app.*.bar"}, "annotations"))
+	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", "app.*.bar"}))
 
 	params := manifests.Params{
 		OtelCol: otelcol,

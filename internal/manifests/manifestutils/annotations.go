@@ -38,7 +38,7 @@ func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []st
 	// allow override of prometheus annotations
 	if nil != instance.ObjectMeta.Annotations {
 		for k, v := range instance.ObjectMeta.Annotations {
-			if !isFilteredSet(k, filterAnnotations) {
+			if !IsFilteredSet(k, filterAnnotations) {
 				annotations[k] = v
 			}
 		}
@@ -61,7 +61,7 @@ func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations [
 	podAnnotations := map[string]string{}
 	if nil != instance.Spec.PodAnnotations {
 		for k, v := range instance.Spec.PodAnnotations {
-			if !isFilteredSet(k, filterAnnotations) {
+			if !IsFilteredSet(k, filterAnnotations) {
 				podAnnotations[k] = v
 			}
 		}
