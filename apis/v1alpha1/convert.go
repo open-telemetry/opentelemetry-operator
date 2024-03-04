@@ -26,8 +26,17 @@ import (
 func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
 	out := v1beta1.OpenTelemetryCollector{
-		TypeMeta:   copy.TypeMeta,
 		ObjectMeta: copy.ObjectMeta,
+
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Scale: v1beta1.ScaleSubresourceStatus{
+				Selector:       in.Status.Scale.Selector,
+				Replicas:       in.Status.Scale.Replicas,
+				StatusReplicas: in.Status.Scale.StatusReplicas,
+			},
+			Version: in.Status.Version,
+			Image:   in.Spec.Image,
+		},
 	}
 
 	cfg := &v1beta1.Config{}
