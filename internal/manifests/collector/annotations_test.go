@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
@@ -70,8 +69,8 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 			Namespace: "my-ns",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Observability: v1alpha1.ObservabilitySpec{
-				Metrics: v1alpha1.MetricsConfigSpec{
+			Observability: v1beta1.ObservabilitySpec{
+				Metrics: v1beta1.MetricsConfigSpec{
 					DisablePrometheusAnnotations: true,
 				},
 			},

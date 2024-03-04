@@ -21,8 +21,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 // Probe defines the OpenTelemetry's pod probe config. Only Liveness probe is supported currently.
@@ -148,12 +146,12 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
-	Observability v1alpha1.ObservabilitySpec `json:"observability,omitempty"`
+	Observability ObservabilitySpec `json:"observability,omitempty"`
 
 	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
 	// object, which shall be mounted into the Collector Pods.
 	// Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.
-	ConfigMaps []v1alpha1.ConfigMapsSpec `json:"configmaps,omitempty"`
+	ConfigMaps []ConfigMapsSpec `json:"configmaps,omitempty"`
 	// UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
 	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
 	// This is only applicable to Daemonset mode.
@@ -236,7 +234,7 @@ type TargetAllocatorEmbedded struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
-	Observability v1alpha1.ObservabilitySpec `json:"observability,omitempty"`
+	Observability ObservabilitySpec `json:"observability,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the target allocator workload.
 	//
@@ -248,7 +246,7 @@ type TargetAllocatorEmbedded struct {
 type OpenTelemetryCollectorStatus struct {
 	// Scale is the OpenTelemetryCollector's scale subresource status.
 	// +optional
-	Scale v1alpha1.ScaleSubresourceStatus `json:"scale,omitempty"`
+	Scale ScaleSubresourceStatus `json:"scale,omitempty"`
 
 	// Version of the managed OpenTelemetry Collector (operand)
 	// +optional
@@ -257,21 +255,75 @@ type OpenTelemetryCollectorStatus struct {
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	Image string `json:"image,omitempty"`
-
-	// Messages about actions performed by the operator on this resource.
-	// +optional
-	// +listType=atomic
-	// Deprecated: use Kubernetes events instead.
-	Messages []string `json:"messages,omitempty"`
-
-	// Replicas is currently not being set and might be removed in the next version.
-	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
-	Replicas int32 `json:"replicas,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// ObservabilitySpec defines how telemetry data gets handled.
+type ObservabilitySpec struct {
+	// Metrics defines the metrics configuration for operands.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metrics Config"
+	Metrics MetricsConfigSpec `json:"metrics,omitempty"`
+}
+
+// MetricsConfigSpec defines a metrics config.
+type MetricsConfigSpec struct {
+	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
+	// The operator.observability.prometheus feature gate must be enabled to use this feature.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
+	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
+	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	DisablePrometheusAnnotations bool `json:"disablePrometheusAnnotations,omitempty"`
+}
+
+// ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's
+// scale subresource.
+type ScaleSubresourceStatus struct {
+	// The selector used to match the OpenTelemetryCollector's
+	// deployment or statefulSet pods.
+	// +optional
+	Selector string `json:"selector,omitempty"`
+
+	// The total number non-terminated pods targeted by this
+	// OpenTelemetryCollector's deployment or statefulSet.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition /
+	// Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector).
+	// Deployment, Daemonset, StatefulSet.
+	// +optional
+	StatusReplicas string `json:"statusReplicas,omitempty"`
+}
+
+type ConfigMapsSpec struct {
+	// Configmap defines name and path where the configMaps should be mounted.
+	Name      string `json:"name"`
+	MountPath string `json:"mountpath"`
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=otelcol;otelcols
+// +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
+// +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="OpenTelemetry Version"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.scale.statusReplicas"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Image",type="string",JSONPath=".status.image"
+// +kubebuilder:printcolumn:name="Management",type="string",JSONPath=".spec.managementState",description="Management State"
+// +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
+// This annotation provides a hint for OLM which resources are managed by OpenTelemetryCollector kind.
+// It's not mandatory to list all resources.
+// +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{DaemonSets,apps/v1},{StatefulSets,apps/v1},{ConfigMaps,v1},{Service,v1}}
 
 // OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
 type OpenTelemetryCollector struct {

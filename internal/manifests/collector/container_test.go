@@ -25,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -417,7 +416,7 @@ func TestContainerCustomConfigMapsVolumes(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
+			ConfigMaps: []v1beta1.ConfigMapsSpec{{
 				Name:      "test",
 				MountPath: "/",
 			}, {

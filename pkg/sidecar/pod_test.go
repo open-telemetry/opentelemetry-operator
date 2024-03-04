@@ -25,7 +25,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/api/convert"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -48,7 +47,7 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Volumes: []corev1.Volume{{}},
 		},
 	}
-	otelcol, err := convert.V1Alpha1to2(
+	otelcol, err := v1alpha1.Tov1beta1(
 		v1alpha1.OpenTelemetryCollector{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-characters",
