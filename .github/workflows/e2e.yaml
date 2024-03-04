@@ -39,7 +39,7 @@ jobs:
          - group: e2e-multi-instrumentation
            setup: "add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation prepare-e2e"
          - group: e2e-metadata-filters
-           setup: "add-operator-arg OPERATOR_ARG=--annotations-filter=*filter.out --annotations=*filter.out"
+           setup: "add-operator-arg OPERATOR_ARG=--annotations-filter=*filter.out --labels=*filter.out"
 
     steps:
     - name: Check out code into the Go module directory
