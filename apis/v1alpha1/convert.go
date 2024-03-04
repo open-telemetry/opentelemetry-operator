@@ -194,6 +194,15 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 
 	return &OpenTelemetryCollector{
 		ObjectMeta: copy.ObjectMeta,
+		Status: OpenTelemetryCollectorStatus{
+			Scale: ScaleSubresourceStatus{
+				Selector:       in.Status.Scale.Selector,
+				Replicas:       in.Status.Scale.Replicas,
+				StatusReplicas: in.Status.Scale.StatusReplicas,
+			},
+			Version: in.Status.Version,
+			Image:   in.Status.Image,
+		},
 
 		Spec: OpenTelemetryCollectorSpec{
 			Config:               configYaml,
