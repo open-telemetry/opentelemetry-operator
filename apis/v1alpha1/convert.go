@@ -35,7 +35,7 @@ func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				StatusReplicas: in.Status.Scale.StatusReplicas,
 			},
 			Version: in.Status.Version,
-			Image:   in.Spec.Image,
+			Image:   in.Status.Image,
 		},
 	}
 
@@ -132,6 +132,7 @@ func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 	}
 
 	out.Spec.Observability.Metrics.EnableMetrics = copy.Spec.Observability.Metrics.EnableMetrics
+	out.Spec.Observability.Metrics.DisablePrometheusAnnotations = copy.Spec.Observability.Metrics.DisablePrometheusAnnotations
 
 	for _, cm := range copy.Spec.ConfigMaps {
 		out.Spec.ConfigMaps = append(out.Spec.ConfigMaps, v1beta1.ConfigMapsSpec{
@@ -205,24 +206,23 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 		},
 
 		Spec: OpenTelemetryCollectorSpec{
-			Config:               configYaml,
 			ManagementState:      ManagementStateType(copy.Spec.ManagementState),
-			Mode:                 Mode(copy.Spec.Mode),
-			UpgradeStrategy:      UpgradeStrategy(copy.Spec.UpgradeStrategy),
-			TargetAllocator:      tov1alpha1TA(in.Spec.TargetAllocator),
-			Autoscaler:           tov1alpha1Autoscaler(copy.Spec.Autoscaler),
-			PodDisruptionBudget:  tov1alpha1PodDisruptionBudget(copy.Spec.PodDisruptionBudget),
-			LivenessProbe:        tov1alpha1Probe(copy.Spec.LivenessProbe),
-			ConfigMaps:           tov1alpha1ConfigMaps(copy.Spec.ConfigMaps),
 			Resources:            copy.Spec.Resources,
 			NodeSelector:         copy.Spec.NodeSelector,
 			Args:                 copy.Spec.Args,
+			Replicas:             copy.Spec.Replicas,
+			Autoscaler:           tov1alpha1Autoscaler(copy.Spec.Autoscaler),
+			PodDisruptionBudget:  tov1alpha1PodDisruptionBudget(copy.Spec.PodDisruptionBudget),
 			SecurityContext:      copy.Spec.SecurityContext,
 			PodSecurityContext:   copy.Spec.PodSecurityContext,
 			PodAnnotations:       copy.Spec.PodAnnotations,
+			TargetAllocator:      tov1alpha1TA(in.Spec.TargetAllocator),
+			Mode:                 Mode(copy.Spec.Mode),
 			ServiceAccount:       copy.Spec.ServiceAccount,
 			Image:                copy.Spec.Image,
+			UpgradeStrategy:      UpgradeStrategy(copy.Spec.UpgradeStrategy),
 			ImagePullPolicy:      copy.Spec.ImagePullPolicy,
+			Config:               configYaml,
 			VolumeMounts:         copy.Spec.VolumeMounts,
 			Ports:                copy.Spec.Ports,
 			Env:                  copy.Spec.Env,
@@ -247,6 +247,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			Affinity:                      copy.Spec.Affinity,
 			Lifecycle:                     copy.Spec.Lifecycle,
 			TerminationGracePeriodSeconds: copy.Spec.TerminationGracePeriodSeconds,
+			LivenessProbe:                 tov1alpha1Probe(copy.Spec.LivenessProbe),
 			InitContainers:                copy.Spec.InitContainers,
 			AdditionalContainers:          copy.Spec.AdditionalContainers,
 			Observability: ObservabilitySpec{
@@ -256,6 +257,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 				},
 			},
 			TopologySpreadConstraints: copy.Spec.TopologySpreadConstraints,
+			ConfigMaps:                tov1alpha1ConfigMaps(copy.Spec.ConfigMaps),
 			UpdateStrategy:            copy.Spec.DaemonSetUpdateStrategy,
 			DeploymentUpdateStrategy:  copy.Spec.DeploymentUpdateStrategy,
 		},
@@ -327,7 +329,7 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 	}
 	var serviceMonitorSelector map[string]string
 	if in.PrometheusCR.ServiceMonitorSelector != nil {
-		podMonitorSelector = in.PrometheusCR.ServiceMonitorSelector.MatchLabels
+		serviceMonitorSelector = in.PrometheusCR.ServiceMonitorSelector.MatchLabels
 	}
 
 	return OpenTelemetryTargetAllocator{
