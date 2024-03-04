@@ -257,17 +257,6 @@ type OpenTelemetryCollectorStatus struct {
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	Image string `json:"image,omitempty"`
-
-	// Messages about actions performed by the operator on this resource.
-	// +optional
-	// +listType=atomic
-	// Deprecated: use Kubernetes events instead.
-	Messages []string `json:"messages,omitempty"`
-
-	// Replicas is currently not being set and might be removed in the next version.
-	// +optional
-	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
-	Replicas int32 `json:"replicas,omitempty"`
 }
 
 //+kubebuilder:object:root=true
