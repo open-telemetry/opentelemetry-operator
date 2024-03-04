@@ -29,6 +29,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
+	promconfig.OpenMetricsText1_0_0,
+	promconfig.OpenMetricsText0_0_1,
+	promconfig.PrometheusText0_0_4,
+}
+
 func TestLoad(t *testing.T) {
 	type args struct {
 		file string
@@ -59,17 +65,20 @@ func TestLoad(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
+						ScrapeProtocols:    defaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
-							JobName:         "prometheus",
-							HonorTimestamps: true,
-							ScrapeInterval:  model.Duration(60 * time.Second),
-							ScrapeTimeout:   model.Duration(10 * time.Second),
-							MetricsPath:     "/metrics",
-							Scheme:          "http",
+							JobName:           "prometheus",
+							EnableCompression: true,
+							HonorTimestamps:   true,
+							ScrapeInterval:    model.Duration(60 * time.Second),
+							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeTimeout:     model.Duration(10 * time.Second),
+							MetricsPath:       "/metrics",
+							Scheme:            "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
 								FollowRedirects: true,
 								EnableHTTP2:     true,
@@ -137,17 +146,20 @@ func TestLoad(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
+						ScrapeProtocols:    defaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
-							JobName:         "prometheus",
-							HonorTimestamps: true,
-							ScrapeInterval:  model.Duration(60 * time.Second),
-							ScrapeTimeout:   model.Duration(10 * time.Second),
-							MetricsPath:     "/metrics",
-							Scheme:          "http",
+							JobName:           "prometheus",
+							EnableCompression: true,
+							HonorTimestamps:   true,
+							ScrapeInterval:    model.Duration(60 * time.Second),
+							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeTimeout:     model.Duration(10 * time.Second),
+							MetricsPath:       "/metrics",
+							Scheme:            "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
 								FollowRedirects: true,
 								EnableHTTP2:     true,

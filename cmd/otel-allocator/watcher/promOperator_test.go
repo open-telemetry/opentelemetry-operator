@@ -45,7 +45,14 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
 
+var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
+	promconfig.OpenMetricsText1_0_0,
+	promconfig.OpenMetricsText0_0_1,
+	promconfig.PrometheusText0_0_4,
+}
+
 func TestLoadConfig(t *testing.T) {
+
 	tests := []struct {
 		name            string
 		serviceMonitors []*monitoringv1.ServiceMonitor
@@ -99,6 +106,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/simple/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -114,11 +122,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 					{
 						JobName:         "podMonitor/test/simple/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -134,7 +144,8 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 				},
 			},
@@ -188,6 +199,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/auth/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -211,6 +223,7 @@ func TestLoadConfig(t *testing.T) {
 								Password: "password",
 							},
 						},
+						EnableCompression: true,
 					},
 				},
 			},
@@ -254,6 +267,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/bearer/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -277,6 +291,7 @@ func TestLoadConfig(t *testing.T) {
 								Credentials: "bearer-token",
 							},
 						},
+						EnableCompression: true,
 					},
 				},
 			},
@@ -348,6 +363,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -363,11 +379,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -383,7 +401,8 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 				},
 			},
@@ -455,6 +474,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -470,11 +490,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -490,7 +512,8 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 				},
 			},
@@ -544,6 +567,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/sm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -559,7 +583,8 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 				},
 			},
@@ -613,6 +638,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/pm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -628,7 +654,8 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 				},
 			},
@@ -681,6 +708,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/labellednamespace/sm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -696,7 +724,8 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 				},
 			},
@@ -749,6 +778,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/labellednamespace/pm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -764,7 +794,8 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig: config.DefaultHTTPClientConfig,
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
 					},
 				},
 			},
@@ -851,6 +882,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 			{
 				JobName:         "podMonitor/labellednamespace/pm-1/0",
 				ScrapeInterval:  model.Duration(30 * time.Second),
+				ScrapeProtocols: defaultScrapeProtocols,
 				ScrapeTimeout:   model.Duration(10 * time.Second),
 				HonorTimestamps: true,
 				HonorLabels:     false,
@@ -866,7 +898,8 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 						HTTPClientConfig: config.DefaultHTTPClientConfig,
 					},
 				},
-				HTTPClientConfig: config.DefaultHTTPClientConfig,
+				HTTPClientConfig:  config.DefaultHTTPClientConfig,
+				EnableCompression: true,
 			},
 		},
 	}

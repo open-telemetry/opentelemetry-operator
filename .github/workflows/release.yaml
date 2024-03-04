@@ -1,21 +1,45 @@
-name: "Prepare the release"
+name: "Create the release"
 on:
   push:
-    tags: [ 'v*' ]
+    branches:
+      - 'release/**'
+      - 'main'
+    paths:
+      - 'versions.txt'
 
 jobs:
+  get-versions:
+    runs-on: ubuntu-22.04
+    outputs:
+      current_version: ${{ steps.get-versions.outputs.current_version }}
+      desired_version: ${{ steps.get-versions.outputs.desired_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Get versions from versions.txt"
+        id: get-versions
+        run: |
+          echo "desired_version=$(grep -v '#' versions.txt | grep operator= | awk -F= '{print $2}')" >> $GITHUB_OUTPUT
+          echo "current_version=$(git describe --tags --abbrev=0 | sed 's/^v//')" >> $GITHUB_OUTPUT
+
   release:
     runs-on: ubuntu-22.04
+    needs: get-versions
+    if: needs.get-versions.outputs.desired_version != needs.get-versions.outputs.current_version
+    env:
+      CURRENT_VERSION: ${{ needs.get-versions.outputs.current_version }}
+      DESIRED_VERSION: ${{ needs.get-versions.outputs.desired_version }}
     steps:
+    - uses: actions/checkout@v4
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: "~1.21.1"
 
-    - uses: actions/checkout@v4
-
     - name: "generate release resources"
-      run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator"
+      run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator" VERSION=${DESIRED_VERSION}
 
     - name: "create the release in GitHub"
       env:
@@ -24,23 +48,4 @@ jobs:
 
     - name: "refresh go proxy module info on release"
       run: |
-        OPERATOR_VERSION=$(git describe --tags)
-        curl https://proxy.golang.org/github.com/open-telemetry/opentelemetry-operator/@v/${OPERATOR_VERSION}.info
-
-  operator-hub-prod-release:
-    needs: release
-    uses: ./.github/workflows/reusable-operator-hub-release.yaml
-    with:
-      org: redhat-openshift-ecosystem
-      repo: community-operators-prod
-    secrets:
-      OPENTELEMETRYBOT_GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
-
-  operator-hub-community-release:
-    needs: release
-    uses: ./.github/workflows/reusable-operator-hub-release.yaml
-    with:
-      org: k8s-operatorhub
-      repo: community-operators
-    secrets:
-      OPENTELEMETRYBOT_GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+        curl https://proxy.golang.org/github.com/open-telemetry/opentelemetry-operator/@v/${DESIRED_VERSION}.info

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package convert
+package v1alpha1
 
 import (
 	"testing"
@@ -25,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
@@ -49,15 +48,19 @@ service:
       processors: [resourcedetection]
       exporters: [otlp]
 `
-		cfgV1 := v1alpha1.OpenTelemetryCollector{
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		cfgV1 := OpenTelemetryCollector{
+			Spec: OpenTelemetryCollectorSpec{
 				Config: config,
+				Args: map[string]string{
+					"test": "something",
+				},
 			},
 		}
 
-		cfgV2, err := V1Alpha1to2(cfgV1)
+		cfgV2, err := Tov1beta1(cfgV1)
 		assert.Nil(t, err)
 		assert.NotNil(t, cfgV2)
+		assert.Equal(t, cfgV1.Spec.Args, cfgV2.Spec.Args)
 
 		yamlCfg, err := yaml.Marshal(&cfgV2.Spec.Config)
 		assert.Nil(t, err)
@@ -65,13 +68,13 @@ service:
 	})
 	t.Run("invalid config", func(t *testing.T) {
 		config := `!!!`
-		cfgV1 := v1alpha1.OpenTelemetryCollector{
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
+		cfgV1 := OpenTelemetryCollector{
+			Spec: OpenTelemetryCollectorSpec{
 				Config: config,
 			},
 		}
 
-		_, err := V1Alpha1to2(cfgV1)
+		_, err := Tov1beta1(cfgV1)
 		assert.ErrorContains(t, err, "could not convert config json to v1beta1.Config")
 	})
 }
@@ -82,7 +85,7 @@ func Test_TargetAllocator(t *testing.T) {
 	privileged := true
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
-	input := v1alpha1.OpenTelemetryTargetAllocator{
+	input := OpenTelemetryTargetAllocator{
 		Replicas:     &replicas,
 		NodeSelector: map[string]string{"key": "value"},
 		Resources: v1.ResourceRequirements{
@@ -95,7 +98,7 @@ func Test_TargetAllocator(t *testing.T) {
 				v1.ResourceMemory: resource.MustParse("128Mi"),
 			},
 		},
-		AllocationStrategy: v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing,
+		AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing,
 		FilterStrategy:     "relabel-config",
 		ServiceAccount:     "serviceAccountName",
 		Image:              "custom_image",
@@ -117,7 +120,7 @@ func Test_TargetAllocator(t *testing.T) {
 				},
 			},
 		},
-		PrometheusCR: v1alpha1.OpenTelemetryTargetAllocatorPrometheusCR{
+		PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
 			Enabled:                true,
 			ScrapeInterval:         &metav1.Duration{Duration: time.Second},
 			PodMonitorSelector:     map[string]string{"podmonitorkey": "podmonitorvalue"},
@@ -161,12 +164,12 @@ func Test_TargetAllocator(t *testing.T) {
 				},
 			},
 		},
-		Observability: v1alpha1.ObservabilitySpec{
-			Metrics: v1alpha1.MetricsConfigSpec{
+		Observability: ObservabilitySpec{
+			Metrics: MetricsConfigSpec{
 				EnableMetrics: true,
 			},
 		},
-		PodDisruptionBudget: &v1alpha1.PodDisruptionBudgetSpec{
+		PodDisruptionBudget: &PodDisruptionBudgetSpec{
 			MaxUnavailable: &intstr.IntOrString{
 				Type:   intstr.Int,
 				IntVal: 1,
@@ -199,7 +202,12 @@ func Test_TargetAllocator(t *testing.T) {
 		TopologySpreadConstraints: input.TopologySpreadConstraints,
 		Tolerations:               input.Tolerations,
 		Env:                       input.Env,
-		Observability:             input.Observability,
+		Observability: v1beta1.ObservabilitySpec{
+			Metrics: v1beta1.MetricsConfigSpec{
+				EnableMetrics:                input.Observability.Metrics.EnableMetrics,
+				DisablePrometheusAnnotations: input.Observability.Metrics.DisablePrometheusAnnotations,
+			},
+		},
 		PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
 			MinAvailable:   input.PodDisruptionBudget.MinAvailable,
 			MaxUnavailable: input.PodDisruptionBudget.MaxUnavailable,

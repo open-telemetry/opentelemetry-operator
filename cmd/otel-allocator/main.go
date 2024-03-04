@@ -89,8 +89,12 @@ func main() {
 	srv := server.NewServer(log, allocator, cfg.ListenAddr)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
-	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger())
-	discovery.RegisterMetrics() // discovery manager metrics need to be enabled explicitly
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)
+	if err != nil {
+		setupLog.Error(err, "Unable to register metrics for Prometheus service discovery")
+		os.Exit(1)
+	}
+	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger(), prometheus.DefaultRegisterer, sdMetrics)
 
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
 	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cfg.ClusterConfig)
