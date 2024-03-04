@@ -114,10 +114,19 @@ func Test_tov1beta1AndBack(t *testing.T) {
 		},
 		Spec: OpenTelemetryCollectorSpec{
 			ManagementState: ManagementStateManaged,
-			Resources:       v1.ResourceRequirements{},
-			NodeSelector:    map[string]string{"aaa": "ccc"},
-			Args:            map[string]string{"foo": "bar"},
-			Replicas:        &one,
+			Resources: v1.ResourceRequirements{
+				Limits: v1.ResourceList{
+					v1.ResourceCPU:    resource.MustParse("500m"),
+					v1.ResourceMemory: resource.MustParse("128Mi"),
+				},
+				Requests: v1.ResourceList{
+					v1.ResourceCPU:    resource.MustParse("500m"),
+					v1.ResourceMemory: resource.MustParse("128Mi"),
+				},
+			},
+			NodeSelector: map[string]string{"aaa": "ccc"},
+			Args:         map[string]string{"foo": "bar"},
+			Replicas:     &one,
 			Autoscaler: &AutoscalerSpec{
 				MinReplicas: &one,
 				MaxReplicas: &one,
