@@ -1,2 +1,9 @@
 resources:
 - manager.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patches:
+- patch: '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--annotations-filter=*filter.out
+    --labels-filter=*filter.out"}]'
+  target:
+    kind: Deployment
