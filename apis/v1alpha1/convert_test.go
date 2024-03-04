@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -28,9 +29,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func Test_V1Alpha1to2(t *testing.T) {
-	t.Run("valid config", func(t *testing.T) {
-		config := `---
+const collectorCfg = `---
 receivers:
   otlp:
     protocols:
@@ -48,9 +47,12 @@ service:
       processors: [resourcedetection]
       exporters: [otlp]
 `
+
+func Test_v1alpha1tov1beta1(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
 		cfgV1 := OpenTelemetryCollector{
 			Spec: OpenTelemetryCollectorSpec{
-				Config: config,
+				Config: collectorCfg,
 				Args: map[string]string{
 					"test": "something",
 				},
@@ -64,7 +66,7 @@ service:
 
 		yamlCfg, err := yaml.Marshal(&cfgV2.Spec.Config)
 		assert.Nil(t, err)
-		assert.YAMLEq(t, config, string(yamlCfg))
+		assert.YAMLEq(t, collectorCfg, string(yamlCfg))
 	})
 	t.Run("invalid config", func(t *testing.T) {
 		config := `!!!`
@@ -214,5 +216,20 @@ func Test_TargetAllocator(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expected, TargetAllocatorEmbedded(input))
+	assert.Equal(t, expected, tov1beta1TA(input))
+}
+
+func Test_v1beta1tov1alpha1(t *testing.T) {
+	cfg := v1beta1.Config{}
+	err := yaml.Unmarshal([]byte(collectorCfg), &cfg)
+	require.NoError(t, err)
+
+	beta1Col := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: cfg,
+		},
+	}
+	alpha1Col, err := tov1alpha1(beta1Col)
+	require.NoError(t, err)
+	assert.YAMLEq(t, collectorCfg, alpha1Col.Spec.Config)
 }
