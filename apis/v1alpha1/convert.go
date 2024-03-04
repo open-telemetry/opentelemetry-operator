@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package convert
+package v1alpha1
 
 import (
 	"errors"
@@ -20,11 +20,10 @@ import (
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
+func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
 	out := v1beta1.OpenTelemetryCollector{
 		TypeMeta:   copy.TypeMeta,
@@ -40,7 +39,7 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1beta1.OpenTelemetryColle
 	out.Spec.OpenTelemetryCommonFields.ManagementState = v1beta1.ManagementStateType(copy.Spec.ManagementState)
 	out.Spec.OpenTelemetryCommonFields.Resources = copy.Spec.Resources
 	out.Spec.OpenTelemetryCommonFields.NodeSelector = copy.Spec.NodeSelector
-	out.Spec.OpenTelemetryCommonFields.Args = copy.Spec.NodeSelector
+	out.Spec.OpenTelemetryCommonFields.Args = copy.Spec.Args
 	out.Spec.OpenTelemetryCommonFields.Replicas = copy.Spec.Replicas
 
 	if copy.Spec.Autoscaler != nil {
@@ -125,7 +124,12 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1beta1.OpenTelemetryColle
 
 	out.Spec.Observability.Metrics.EnableMetrics = copy.Spec.Observability.Metrics.EnableMetrics
 
-	out.Spec.ConfigMaps = copy.Spec.ConfigMaps
+	for _, cm := range copy.Spec.ConfigMaps {
+		out.Spec.ConfigMaps = append(out.Spec.ConfigMaps, v1beta1.ConfigMapsSpec{
+			Name:      cm.Name,
+			MountPath: cm.MountPath,
+		})
+	}
 	out.Spec.DaemonSetUpdateStrategy = copy.Spec.UpdateStrategy
 	out.Spec.DeploymentUpdateStrategy.Type = copy.Spec.DeploymentUpdateStrategy.Type
 	out.Spec.DeploymentUpdateStrategy.RollingUpdate = copy.Spec.DeploymentUpdateStrategy.RollingUpdate
@@ -133,7 +137,7 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1beta1.OpenTelemetryColle
 	return out, nil
 }
 
-func TargetAllocatorEmbedded(in v1alpha1.OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedded {
+func TargetAllocatorEmbedded(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedded {
 	out := v1beta1.TargetAllocatorEmbedded{}
 	out.Replicas = in.Replicas
 	out.NodeSelector = in.NodeSelector
@@ -151,8 +155,8 @@ func TargetAllocatorEmbedded(in v1alpha1.OpenTelemetryTargetAllocator) v1beta1.T
 	out.TopologySpreadConstraints = in.TopologySpreadConstraints
 	out.Tolerations = in.Tolerations
 	out.Env = in.Env
-	out.Observability = v1alpha1.ObservabilitySpec{
-		Metrics: v1alpha1.MetricsConfigSpec{
+	out.Observability = v1beta1.ObservabilitySpec{
+		Metrics: v1beta1.MetricsConfigSpec{
 			EnableMetrics: in.Observability.Metrics.EnableMetrics,
 		},
 	}
