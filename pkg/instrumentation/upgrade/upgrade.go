@@ -121,8 +121,6 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		autoInst := upgraded.Annotations[annotation]
 		if autoInst != "" {
 			if config.enabled {
-				u.Logger.Info(annotation)
-				fmt.Println("This is the annotation:" + annotation)
 				switch annotation {
 				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
 					if inst.Spec.ApacheHttpd.Image == autoInst {
