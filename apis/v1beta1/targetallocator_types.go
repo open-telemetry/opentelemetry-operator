@@ -74,12 +74,6 @@ type TargetAllocatorStatus struct {
 	// Image indicates the container image to use for the Target Allocator.
 	// +optional
 	Image string `json:"image,omitempty"`
-
-	// Messages about actions performed by the operator on this resource.
-	// +optional
-	// +listType=atomic
-	// Deprecated: use Kubernetes events instead.
-	Messages []string `json:"messages,omitempty"`
 }
 
 //+kubebuilder:object:root=true
