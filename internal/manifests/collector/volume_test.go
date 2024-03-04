@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -69,7 +68,7 @@ func TestVolumeWithMoreConfigMaps(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			ConfigMaps: []v1alpha1.ConfigMapsSpec{{
+			ConfigMaps: []v1beta1.ConfigMapsSpec{{
 				Name:      "configmap-test",
 				MountPath: "/",
 			}, {

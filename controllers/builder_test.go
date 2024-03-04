@@ -1551,8 +1551,8 @@ prometheus_cr:
 								Enabled: true,
 							},
 							FilterStrategy: "relabel-config",
-							Observability: v1alpha1.ObservabilitySpec{
-								Metrics: v1alpha1.MetricsConfigSpec{
+							Observability: v1beta1.ObservabilitySpec{
+								Metrics: v1beta1.MetricsConfigSpec{
 									EnableMetrics: true,
 								},
 							},

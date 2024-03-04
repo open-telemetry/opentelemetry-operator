@@ -51,7 +51,7 @@ jobs:
         path: bin
         key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
     - name: Install chainsaw
-      uses: kyverno/action-install-chainsaw@v0.1.6
+      uses: kyverno/action-install-chainsaw@v0.1.7
     - name: Install tools
       run: make install-tools
     - name: Prepare e2e tests
