@@ -292,7 +292,7 @@ type MetricsConfigSpec struct {
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
-	DisablePrometheusAnnotations bool `json:"DisablePrometheusAnnotations,omitempty"`
+	DisablePrometheusAnnotations bool `json:"disablePrometheusAnnotations,omitempty"`
 }
 
 // ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's
