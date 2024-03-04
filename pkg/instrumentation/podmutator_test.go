@@ -1811,7 +1811,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotnetInstrumentation(true)),
+			config: config.New(config.WithEnableDotNetInstrumentation(true)),
 		},
 		{
 			name: "dotnet injection, by namespace annotations",
@@ -1991,7 +1991,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotnetInstrumentation(true)),
+			config: config.New(config.WithEnableDotNetInstrumentation(true)),
 		},
 		{
 			name: "dotnet injection multiple containers, true",
@@ -2267,7 +2267,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotnetInstrumentation(true)),
+			config: config.New(config.WithEnableDotNetInstrumentation(true)),
 		},
 		{
 			name: "dotnet injection feature gate disabled",
@@ -2346,7 +2346,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotnetInstrumentation(false)),
+			config: config.New(config.WithEnableDotNetInstrumentation(false)),
 		},
 		{
 			name: "go injection, true",
@@ -3844,7 +3844,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
-				config.WithEnableDotnetInstrumentation(true),
+				config.WithEnableDotNetInstrumentation(true),
 			),
 		},
 		{
@@ -4505,7 +4505,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
-				config.WithEnableDotnetInstrumentation(true),
+				config.WithEnableDotNetInstrumentation(true),
 			),
 		},
 		{
@@ -4985,7 +4985,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
-				config.WithEnableDotnetInstrumentation(true),
+				config.WithEnableDotNetInstrumentation(true),
 			),
 		},
 		{
@@ -5088,7 +5088,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
-				config.WithEnableDotnetInstrumentation(false),
+				config.WithEnableDotNetInstrumentation(false),
 			),
 		},
 	}

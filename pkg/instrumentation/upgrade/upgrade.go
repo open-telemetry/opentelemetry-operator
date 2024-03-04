@@ -62,7 +62,7 @@ type InstrumentationUpgrade struct {
 func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotnetAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
 	}
 
 	return &InstrumentationUpgrade{
