@@ -61,7 +61,8 @@ type InstrumentationUpgrade struct {
 
 func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
-		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: autoInstConfig{constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotnetAutoInstrumentation()},
 	}
 
 	return &InstrumentationUpgrade{
@@ -120,11 +121,18 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		autoInst := upgraded.Annotations[annotation]
 		if autoInst != "" {
 			if config.enabled {
+				u.Logger.Info(annotation)
+				fmt.Println("This is the annotation:" + annotation)
 				switch annotation {
 				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
 					if inst.Spec.ApacheHttpd.Image == autoInst {
 						upgraded.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
 						upgraded.Annotations[annotation] = u.DefaultAutoInstApacheHttpd
+					}
+				case constants.AnnotationDefaultAutoInstrumentationDotNet:
+					if inst.Spec.DotNet.Image == autoInst {
+						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
+						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
 					}
 				}
 			} else {
@@ -153,11 +161,6 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if inst.Spec.Python.Image == autoInst {
 						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
 						upgraded.Annotations[annotation] = u.DefaultAutoInstPython
-					}
-				case constants.AnnotationDefaultAutoInstrumentationDotNet:
-					if inst.Spec.DotNet.Image == autoInst {
-						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
-						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
 					}
 				case constants.AnnotationDefaultAutoInstrumentationGo:
 					if inst.Spec.Go.Image == autoInst {
