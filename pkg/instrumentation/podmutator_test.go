@@ -1811,6 +1811,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnableDotnetInstrumentation(true)),
 		},
 		{
 			name: "dotnet injection, by namespace annotations",
@@ -1990,6 +1991,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnableDotnetInstrumentation(true)),
 		},
 		{
 			name: "dotnet injection multiple containers, true",
@@ -2265,6 +2267,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnableDotnetInstrumentation(true)),
 		},
 		{
 			name: "dotnet injection feature gate disabled",
@@ -2343,7 +2346,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotnetInstrumentation(true)),
+			config: config.New(config.WithEnableDotnetInstrumentation(false)),
 		},
 		{
 			name: "go injection, true",
@@ -3839,7 +3842,10 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(true)),
+			config: config.New(
+				config.WithEnableMultiInstrumentation(true),
+				config.WithEnableDotnetInstrumentation(true),
+			),
 		},
 		{
 			name: "multi instrumentation for multiple containers feature gate enabled, container-names not used",
@@ -4497,7 +4503,10 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(true)),
+			config: config.New(
+				config.WithEnableMultiInstrumentation(true),
+				config.WithEnableDotnetInstrumentation(true),
+			),
 		},
 		{
 			name: "multi instrumentation for multiple containers feature gate disabled, multiple instrumentation annotations set",
@@ -4974,7 +4983,10 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(true)),
+			config: config.New(
+				config.WithEnableMultiInstrumentation(true),
+				config.WithEnableDotnetInstrumentation(true),
+			),
 		},
 		{
 			name: "multi instrumentation feature gate disabled, instrumentation feature gate disabled and annotation set, multiple specific containers set",
@@ -5076,7 +5088,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
-				config.WithEnableDotnetInstrumentation(true),
+				config.WithEnableDotnetInstrumentation(false),
 			),
 		},
 	}
