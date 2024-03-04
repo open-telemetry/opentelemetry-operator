@@ -41,11 +41,19 @@ spec:
     - --config=env:OTEL_CONFIG
     name: otc-container
   initContainers:
-  - args:
-    - cp -r /usr/local/apache2/conf/* /opt/opentelemetry-webserver/source-conf
-    name: otel-agent-source-container-clone
-  - args:
-    - cp -r /opt/opentelemetry/* /opt/opentelemetry-webserver/agent && export agentLogDir=$(echo "/opt/opentelemetry-webserver/agent/logs" | sed 's,/,\\/,g') && cat /opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml.template | sed 's/__agent_log_dir__/'${agentLogDir}'/g'  > /opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml &&echo "$OTEL_APACHE_AGENT_CONF" > /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && sed -i 's/<<SID-PLACEHOLDER>>/'${APACHE_SERVICE_INSTANCE_ID}'/g' /opt/opentelemetry-webserver/source-conf/opentemetry_agent.conf && echo 'Include /usr/local/apache2/conf/opentemetry_agent.conf' >> /opt/opentelemetry-webserver/source-conf/httpd.conf
-    name: otel-agent-attach-apache
+  - name: otel-agent-source-container-clone
+  - name: otel-agent-attach-apache
 status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: otel-agent-source-container-clone
+    ready: true
+  - name: otel-agent-attach-apache
+    ready: true
   phase: Running
