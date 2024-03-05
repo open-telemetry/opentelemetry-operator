@@ -79,6 +79,7 @@ func TestUpgrade(t *testing.T) {
 			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:1"),
 			config.WithAutoInstrumentationNginxImage("nginx:1"),
 			config.WithEnableApacheHttpdInstrumentation(true),
+			config.WithEnableDotNetInstrumentation(true),
 		),
 	).Default(context.Background(), inst)
 	assert.Nil(t, err)
@@ -101,6 +102,7 @@ func TestUpgrade(t *testing.T) {
 		config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:2"),
 		config.WithAutoInstrumentationNginxImage("nginx:2"),
 		config.WithEnableApacheHttpdInstrumentation(true),
+		config.WithEnableDotNetInstrumentation(true),
 	)
 	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), &record.FakeRecorder{}, cfg)
 

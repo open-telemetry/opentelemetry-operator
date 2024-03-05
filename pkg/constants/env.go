@@ -36,4 +36,5 @@ const (
 	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
 
 	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
+	FlagDotNet      = "enable-dotnet-instrumentation"
 )

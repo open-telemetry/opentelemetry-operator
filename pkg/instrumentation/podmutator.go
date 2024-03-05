@@ -265,7 +265,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnableDotNetAutoInstrumentation() || inst == nil {
 		insts.DotNet.Instrumentation = inst
 		insts.DotNet.AdditionalAnnotations = map[string]string{annotationDotNetRuntime: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationDotNetRuntime)}
 	} else {
