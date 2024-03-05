@@ -38,6 +38,9 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	if err != nil {
 		return nil, err
 	}
+	if getDNSPolicy(params.OtelCol) == "None" && params.OtelCol.Spec.PodDNSConfig.Nameservers == nil {
+		return nil, ErrorDNSPolicy
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -63,6 +66,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
 					Volumes:                       Volumes(params.Config, params.OtelCol),
 					DNSPolicy:                     getDNSPolicy(params.OtelCol),
+					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,

@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: smoke-pod-dns-config
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+  - name: step-01
+    try:
+    - script:
+        content: kubectl exec -it poddnsconfig-collector -- cat /etc/resolv.conf | jq  --raw-input . | jq --slurp
+        outputs:
+        - name: resolvconf
+          value: (json_parse($stdout))
+    - assert:
+        resource:
+          ($resolvconf):
+            nameserver: 8.8.8.8

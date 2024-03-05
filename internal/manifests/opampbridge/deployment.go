@@ -28,7 +28,9 @@ import (
 func Deployment(params manifests.Params) *appsv1.Deployment {
 	name := naming.OpAMPBridge(params.OpAMPBridge.Name)
 	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, params.Config.LabelsFilter())
-
+	if getDNSPolicy(params.OpAMPBridge) == "None" && params.OpAMPBridge.Spec.PodDNSConfig.Nameservers == nil {
+		return nil
+	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -51,6 +53,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OpAMPBridge)},
 					Volumes:                   Volumes(params.Config, params.OpAMPBridge),
 					DNSPolicy:                 getDNSPolicy(params.OpAMPBridge),
+					DNSConfig:                 &params.OpAMPBridge.Spec.PodDNSConfig,
 					HostNetwork:               params.OpAMPBridge.Spec.HostNetwork,
 					Tolerations:               params.OpAMPBridge.Spec.Tolerations,
 					NodeSelector:              params.OpAMPBridge.Spec.NodeSelector,

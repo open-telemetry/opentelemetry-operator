@@ -15,10 +15,14 @@
 package collector
 
 import (
+	"errors"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
+
+var ErrorDNSPolicy = errors.New("When a dnsPolicy is set to None, the dnsConfig field has to be specified")
 
 func getDNSPolicy(otelcol v1beta1.OpenTelemetryCollector) corev1.DNSPolicy {
 	dnsPolicy := corev1.DNSClusterFirst

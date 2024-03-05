@@ -37,6 +37,9 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 	if err != nil {
 		return nil, err
 	}
+	if getDNSPolicy(params.OtelCol) == "None" && params.OtelCol.Spec.PodDNSConfig.Nameservers == nil {
+		return nil, ErrorDNSPolicy
+	}
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -64,6 +67,7 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 					HostNetwork:           params.OtelCol.Spec.HostNetwork,
 					ShareProcessNamespace: &params.OtelCol.Spec.ShareProcessNamespace,
 					DNSPolicy:             getDNSPolicy(params.OtelCol),
+					DNSConfig:             &params.OtelCol.Spec.PodDNSConfig,
 					SecurityContext:       params.OtelCol.Spec.PodSecurityContext,
 					PriorityClassName:     params.OtelCol.Spec.PriorityClassName,
 					Affinity:              params.OtelCol.Spec.Affinity,

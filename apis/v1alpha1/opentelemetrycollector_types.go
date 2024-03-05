@@ -289,6 +289,9 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+	//PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
+	//https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1PodDNSConfig.md
+	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.

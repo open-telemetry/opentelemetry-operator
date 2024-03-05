@@ -1,0 +1,10 @@
+# skipping test, see https://github.com/open-telemetry/opentelemetry-operator/issues/1936
+apiVersion: v1
+kind: Pod
+metadata:
+  name: poddnsconfig-collector
+spec:
+  containers:
+    - name: otc-container
+status:
+  phase: Running

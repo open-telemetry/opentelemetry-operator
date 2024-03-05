@@ -3740,6 +3740,13 @@ OpAMPBridgeSpec defines the desired state of OpAMPBridge.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opampbridgespecpoddnsconfig">podDnsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy. https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1PodDNSConfig.md<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opampbridgespecpodsecuritycontext">podSecurityContext</a></b></td>
         <td>object</td>
         <td>
@@ -5539,6 +5546,81 @@ The Secret to select from
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.podDnsConfig
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy. https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1PodDNSConfig.md
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>nameservers</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS name server IP addresses. This will be appended to the base nameservers generated from DNSPolicy. Duplicated nameservers will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecpoddnsconfigoptionsindex">options</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of DNS resolver options. This will be merged with the base options generated from DNSPolicy. Duplicated entries will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>searches</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS search domains for host-name lookup. This will be appended to the base search paths generated from DNSPolicy. Duplicated search paths will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.podDnsConfig.options[index]
+<sup><sup>[↩ Parent](#opampbridgespecpoddnsconfig)</sup></sup>
+
+
+
+PodDNSConfigOption defines DNS resolver options of a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9775,6 +9857,13 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td>object</td>
         <td>
           PodDisruptionBudget specifies the pod disruption budget configuration to use for the OpenTelemetryCollector workload.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpoddnsconfig">podDnsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy. https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1PodDNSConfig.md<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17857,6 +17946,81 @@ PodDisruptionBudget specifies the pod disruption budget configuration to use for
         <td>int or string</td>
         <td>
           An eviction is allowed if at least "minAvailable" pods selected by "selector" will still be available after the eviction, i.e. even in the absence of the evicted pod.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.podDnsConfig
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy. https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1PodDNSConfig.md
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>nameservers</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS name server IP addresses. This will be appended to the base nameservers generated from DNSPolicy. Duplicated nameservers will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpoddnsconfigoptionsindex">options</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of DNS resolver options. This will be merged with the base options generated from DNSPolicy. Duplicated entries will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>searches</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS search domains for host-name lookup. This will be appended to the base search paths generated from DNSPolicy. Duplicated search paths will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.podDnsConfig.options[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecpoddnsconfig)</sup></sup>
+
+
+
+PodDNSConfigOption defines DNS resolver options of a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>

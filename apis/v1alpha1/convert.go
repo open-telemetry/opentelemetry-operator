@@ -50,6 +50,7 @@ func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 	out.Spec.OpenTelemetryCommonFields.NodeSelector = copy.Spec.NodeSelector
 	out.Spec.OpenTelemetryCommonFields.Args = copy.Spec.Args
 	out.Spec.OpenTelemetryCommonFields.Replicas = copy.Spec.Replicas
+	out.Spec.OpenTelemetryCommonFields.PodDNSConfig = copy.Spec.PodDNSConfig
 
 	if copy.Spec.Autoscaler != nil {
 		metrics := make([]v1beta1.MetricSpec, len(copy.Spec.Autoscaler.Metrics))
