@@ -21,6 +21,7 @@ spec:
   - name: step-02
     try:
     - script:
+        timeout: 60s
         content: ./generate_certs.sh
     - apply:
         file: 02-otlp-receiver.yaml

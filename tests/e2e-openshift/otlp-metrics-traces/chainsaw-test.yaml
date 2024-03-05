@@ -5,6 +5,8 @@ metadata:
   creationTimestamp: null
   name: otlp-metrics-traces
 spec:
+  # Avoid running this test case in parallel to prevent the deletion of shared resources used by multiple tests, specifically in the context of OpenShift user workload monitoring.
+  concurrent: false
   steps:
   - name: step-00
     try:
