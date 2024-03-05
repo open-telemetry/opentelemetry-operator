@@ -28,7 +28,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
 * [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
 * [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
-* [Python - 0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.44b0)
+* [Python - v0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.44b0)
 * [Go - vv0.10.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/vv0.10.1-alpha)
 * [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
 * [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
@@ -58,7 +58,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
 * [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
 * [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
-* [Python - 0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.43b0)
+* [Python - v0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.43b0)
 * [Go - v0.10.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.1-alpha)
 * [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
 * [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
@@ -93,7 +93,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
 * [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
 * [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
-* [Python - 0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.43b0)
+* [Python - v0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.43b0)
 * [Go - v0.10.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.0-alpha)
 * [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
 * [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)]
@@ -137,7 +137,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
 * [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
 * [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
-* [Python - 0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.43b0)
+* [Python - v0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.43b0)
 * [Go - v0.10.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.0-alpha)
 * [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
 * [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)]
@@ -173,7 +173,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
 * [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
 * [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
-* [Python - 0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.43b0)
+* [Python - v0.43b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.43b0)
 * [Go - v0.8.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.8.0-alpha)
 * [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
 * [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)]
@@ -210,7 +210,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.32.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.0)
 * [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
 * [Node.JS - 0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.44.0)
-* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Python - v0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.41b0)
 * [Go - v0.8.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.8.0-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 * [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
@@ -252,7 +252,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.31.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.31.0)
 * [.NET auto-instrumentation - v1.1.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.1.0)
 * [Node.JS - 0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.44.0)
-* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Python - v0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.41b0)
 * [Go - v0.8.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.8.0-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 * [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
@@ -285,7 +285,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.31.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.31.0)
 * [.NET auto-instrumentation - v1.1.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.1.0)
 * [Node.JS - 0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.44.0)
-* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Python - v0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.41b0)
 * [Go - v0.7.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.7.0-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 * [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
@@ -321,7 +321,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.30.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.30.0)
 * [.NET auto-instrumentation - v1.0.2](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.0.2)
 * [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
-* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Python - v0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.41b0)
 * [Go - v0.7.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.7.0-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 * [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
@@ -363,7 +363,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.30.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.30.0)
 * [.NET auto-instrumentation - v1.0.2](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.0.2)
 * [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
-* [Python - 0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.41b0)
+* [Python - v0.41b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.41b0)
 * [Go - v0.3.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.3.0-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 * [Nginx - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)]
@@ -388,7 +388,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.30.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.30.0)
 * [.NET auto-instrumentation - v1.0.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.0.0)
 * [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
-* [Python - 0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.40b0)
+* [Python - v0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.40b0)
 * [Go - v0.3.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.3.0-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 
@@ -419,7 +419,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.29.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.29.0)
 * [.NET auto-instrumentation - v1.0.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.0.0)
 * [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
-* [Python - 0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.40b0)
+* [Python - v0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.40b0)
 * [Go - v0.2.2-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.2-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 ## 0.83.0
@@ -455,7 +455,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.29.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.29.0)
 * [.NET auto-instrumentation - v1.0.0-rc.2](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.0.0-rc.2)
 * [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
-* [Python - 0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.40b0)
+* [Python - v0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.40b0)
 * [Go - v0.2.2-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.2-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 
@@ -498,7 +498,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.28.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.28.0)
 * [.NET auto-instrumentation - v1.0.0-rc.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.0.0-rc.1)
 * [Node.JS - 0.41.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.41.1)
-* [Python - 0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.40b0)
+* [Python - v0.40b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.40b0)
 * [Go - v0.2.2-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.2-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 
@@ -520,7 +520,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.26.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.26.0)
 * [.NET auto-instrumentation - v0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
 * [Node.JS - 0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.40.0)
-* [Python - 0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
+* [Python - v0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
 * [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 
@@ -555,7 +555,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.26.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.26.0)
 * [.NET auto-instrumentation - v0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
 * [Node.JS - 0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.40.0)
-* [Python - 0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
+* [Python - v0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
 * [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
 * [ApacheHTTPD - 1.0.3](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.3)
 
@@ -579,7 +579,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.26.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.26.0)
 * [.NET auto-instrumentation - v0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
 * [Node.JS - 0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.39.1)
-* [Python - 0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
+* [Python - v0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
 * [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
 * [ApacheHTTPD - 1.0.2](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.2)
 
@@ -609,7 +609,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.26.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.26.0)
 * [.NET auto-instrumentation - v0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
 * [Node.JS - 0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.39.1)
-* [Python - 0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
+* [Python - v0.39b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.39b0)
 * [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
 * [ApacheHTTPD - 1.0.2](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.2)
 
@@ -633,7 +633,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0)
 * [.NET auto-instrumentation - v0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
 * [Node.JS - 0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.38.0)
-* [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
+* [Python - v0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
 * [Go - 0.2.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.2.1-alpha)
 
 ## 0.76.1
@@ -666,7 +666,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0)
 * [.NET auto-instrumentation - v0.7.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.7.0)
 * [Node.JS - 0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.38.0)
-* [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
+* [Python - v0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
 
 ## 0.75.0
 
@@ -684,7 +684,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.24.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.24.0)
 * [.NET auto-instrumentation - v0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
 * [Node.JS - 0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.37.0)
-* [Python - 0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
+* [Python - v0.38b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.38b0)
 
 ## 0.74.0
 
@@ -695,7 +695,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.23.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.23.0)
 * [.NET auto-instrumentation - v0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
 * [Node.JS - 0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.34.0)
-* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
+* [Python - v0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
 
 ## 0.73.0
 
@@ -710,7 +710,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.23.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.23.0)
 * [.NET auto-instrumentation - v0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
 * [Node.JS - 0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.34.0)
-* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
+* [Python - v0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
 
 
 ## 0.72.0
@@ -739,7 +739,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.23.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.23.0)
 * [.NET auto-instrumentation - v0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0)
 * [Node.JS - 0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.34.0)
-* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
+* [Python - v0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
 
 0.71.0
 ------------------
@@ -772,7 +772,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.23.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.23.0)
 * [.NET auto-instrumentation - v0.5.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.5.0)
 * [Node.JS - 0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.34.0)
-* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
+* [Python - v0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
 
 0.69.0
 ------------------
@@ -797,7 +797,7 @@ Changes by Version
 * [Java auto-instrumentation - v1.22.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.22.1)
 * [.NET auto-instrumentation - v0.5.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.5.0)
 * [Node.JS - 0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-v0.34.0)
-* [Python - 0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
+* [Python - v0.36b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.36b0)
 
 0.68.0
 ------------------
