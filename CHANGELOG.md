@@ -6,6 +6,7 @@ Changes by Version
 
 ### 🛑 Breaking changes 🛑
 
+- The operator now requires CRUD permissions for PersistentVolume and PersistentVolumeClaim. See #2575 for details. The official kustomize manifests and Helm Chart will include this change, otherwise it will need to be applied manually.
 - `operator`: remove featuregate `EnableApacheHTTPAutoInstrumentationSupport`. Use command line flag `--enable-apache-httpd-instrumentation` instead (#2582, #2670)
 - `operator`: change multi instrumentation feature gate into command line flag --enable-multi-instrumentation (#2582)
 
