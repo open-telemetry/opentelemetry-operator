@@ -2,6 +2,36 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.95.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: remove featuregate `EnableApacheHTTPAutoInstrumentationSupport`. Use command line flag `--enable-apache-httpd-instrumentation` instead (#2582, #2670)
+- `operator`: change multi instrumentation feature gate into command line flag --enable-multi-instrumentation (#2582)
+
+### 💡 Enhancements 💡
+
+- `operator`: Allow for label selectors on the daemonset through update status (#2605)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: propagate otel name label down to selector of ta resources (#2598)
+- `operator`: fixes an error in conversion from v1alpha1 to v1beta1 (#2689)
+- `operator`: Fixes a panic on exporter prometheus endpoint not valid (#2628)
+- `operator`: Fixed HPA deletion (#2568, #2587, #2651)
+
+### Components
+
+* [OpenTelemetry Collector - v0.95.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.95.0)
+* [OpenTelemetry Contrib - v0.95.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.95.0)
+* [Java auto-instrumentation - 1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - 1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/1.2.0)
+* [Node.JS - 0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/releases/tag/auto-instrumentations-node-0.46.0)
+* [Python - 0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/0.44b0)
+* [Go - vv0.10.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/vv0.10.1-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.94.0
 
 ### 💡 Enhancements 💡
