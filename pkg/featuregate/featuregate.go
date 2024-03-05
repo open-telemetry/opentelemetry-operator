@@ -25,12 +25,6 @@ const (
 )
 
 var (
-	EnableDotnetAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.dotnet",
-		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports .NET auto-instrumentation"),
-		featuregate.WithRegisterFromVersion("v0.76.1"),
-	)
 	EnablePythonAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.python",
 		featuregate.StageBeta,
