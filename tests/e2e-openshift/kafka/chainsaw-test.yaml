@@ -39,4 +39,5 @@ spec:
   - name: step-05
     try:
     - script:
+        timeout: 2m
         content: ./check_traces.sh
