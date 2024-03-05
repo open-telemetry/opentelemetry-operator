@@ -62,7 +62,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		cfgV2, err := Tov1beta1(cfgV1)
+		cfgV2, err := tov1beta1(cfgV1)
 		assert.Nil(t, err)
 		assert.NotNil(t, cfgV2)
 		assert.Equal(t, cfgV1.Spec.Args, cfgV2.Spec.Args)
@@ -79,7 +79,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		_, err := Tov1beta1(cfgV1)
+		_, err := tov1beta1(cfgV1)
 		assert.ErrorContains(t, err, "could not convert config json to v1beta1.Config")
 	})
 }
@@ -310,7 +310,7 @@ func Test_tov1beta1AndBack(t *testing.T) {
 		},
 	}
 
-	colbeta1, err := Tov1beta1(*colalpha1)
+	colbeta1, err := tov1beta1(*colalpha1)
 	require.NoError(t, err)
 	colalpha1Converted, err := tov1alpha1(colbeta1)
 	require.NoError(t, err)
@@ -420,4 +420,72 @@ func createTA() OpenTelemetryTargetAllocator {
 			},
 		},
 	}
+}
+
+func TestConvertTo(t *testing.T) {
+	col := OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			ServiceAccount: "otelcol",
+		},
+		Status: OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}
+	colbeta1 := v1beta1.OpenTelemetryCollector{}
+	err := col.ConvertTo(&colbeta1)
+	require.NoError(t, err)
+	assert.Equal(t, v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ServiceAccount: "otelcol",
+			},
+			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+					PodMonitorSelector:     &metav1.LabelSelector{},
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}, colbeta1)
+}
+
+func TestConvertFrom(t *testing.T) {
+	colbeta1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ServiceAccount: "otelcol",
+			},
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}
+	col := OpenTelemetryCollector{}
+	err := col.ConvertFrom(&colbeta1)
+	require.NoError(t, err)
+	// set config to empty. The v1beta1 marshals config with empty receivers, exporters..
+	col.Spec.Config = ""
+	assert.Equal(t, OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			ServiceAccount: "otelcol",
+		},
+		Status: OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}, col)
 }

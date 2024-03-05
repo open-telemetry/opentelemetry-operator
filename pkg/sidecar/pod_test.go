@@ -47,33 +47,35 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Volumes: []corev1.Volume{{}},
 		},
 	}
-	otelcol, err := v1alpha1.Tov1beta1(
-		v1alpha1.OpenTelemetryCollector{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-characters",
-				Namespace: "some-app",
+
+	v1alpha1Col := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-characters",
+			Namespace: "some-app",
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     8888,
+					Protocol: corev1.ProtocolTCP,
+				},
 			},
-			Spec: v1alpha1.OpenTelemetryCollectorSpec{
-				Ports: []corev1.ServicePort{
-					{
-						Name:     "metrics",
-						Port:     8888,
-						Protocol: corev1.ProtocolTCP,
-					},
+			InitContainers: []corev1.Container{
+				{
+					Name: "test",
 				},
-				InitContainers: []corev1.Container{
-					{
-						Name: "test",
-					},
-				},
-				Config: `
+			},
+			Config: `
 receivers:
 exporters:
 processors:
 `,
-			},
 		},
-	)
+	}
+
+	otelcol := v1beta1.OpenTelemetryCollector{}
+	err := v1alpha1Col.ConvertTo(&otelcol)
 	require.NoError(t, err)
 	otelcolYaml, err := otelcol.Spec.Config.Yaml()
 	require.NoError(t, err)
