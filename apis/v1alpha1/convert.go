@@ -16,13 +16,51 @@ package v1alpha1
 
 import (
 	"errors"
+	"fmt"
 
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
+
+var _ conversion.Convertible = &OpenTelemetryCollector{}
+
+func (src *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
+	switch t := dstRaw.(type) {
+	case *v1beta1.OpenTelemetryCollector:
+		dst := dstRaw.(*v1beta1.OpenTelemetryCollector)
+		convertedSrc, err := Tov1beta1(*src)
+		if err != nil {
+			return fmt.Errorf("failed to convert to v1beta1: %w", err)
+		}
+		dst.ObjectMeta = convertedSrc.ObjectMeta
+		dst.Spec = convertedSrc.Spec
+		dst.Status = convertedSrc.Status
+	default:
+		return fmt.Errorf("unsupported type %v", t)
+	}
+	return nil
+}
+
+func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
+	switch t := srcRaw.(type) {
+	case *v1beta1.OpenTelemetryCollector:
+		src := srcRaw.(*v1beta1.OpenTelemetryCollector)
+		srcConverted, err := tov1alpha1(*src)
+		if err != nil {
+			return fmt.Errorf("failed to convert to v1alpha1: %w", err)
+		}
+		dst.ObjectMeta = srcConverted.ObjectMeta
+		dst.Spec = srcConverted.Spec
+		dst.Status = srcConverted.Status
+	default:
+		return fmt.Errorf("unsupported type %v", t)
+	}
+	return nil
+}
 
 func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
