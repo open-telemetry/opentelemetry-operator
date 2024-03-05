@@ -421,3 +421,65 @@ func createTA() OpenTelemetryTargetAllocator {
 		},
 	}
 }
+
+func TestConvertTo(t *testing.T) {
+	col := OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			ServiceAccount: "otelcol",
+		},
+		Status: OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}
+	colbeta1 := v1beta1.OpenTelemetryCollector{}
+	err := col.ConvertTo(&colbeta1)
+	require.NoError(t, err)
+	assert.Equal(t, v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ServiceAccount: "otelcol",
+			},
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}, colbeta1)
+}
+
+func TestConvertFrom(t *testing.T) {
+	colbeta1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ServiceAccount: "otelcol",
+			},
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}
+	col := OpenTelemetryCollector{}
+	err := col.ConvertFrom(&colbeta1)
+	require.NoError(t, err)
+	// set config to empty. The v1beta1 marshals config with empty receivers, exporters..
+	col.Spec.Config = ""
+	assert.Equal(t, OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			ServiceAccount: "otelcol",
+		},
+		Status: OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}, col)
+}

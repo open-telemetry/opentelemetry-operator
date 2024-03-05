@@ -17,7 +17,6 @@ package sidecar
 import (
 	"context"
 	"errors"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -28,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 )

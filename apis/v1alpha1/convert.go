@@ -156,14 +156,10 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
 		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
-			Enabled:        in.PrometheusCR.Enabled,
-			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
-			PodMonitorSelector: &metav1.LabelSelector{
-				MatchLabels: in.PrometheusCR.PodMonitorSelector,
-			},
-			ServiceMonitorSelector: &metav1.LabelSelector{
-				MatchLabels: in.PrometheusCR.ServiceMonitorSelector,
-			},
+			Enabled:                in.PrometheusCR.Enabled,
+			ScrapeInterval:         in.PrometheusCR.ScrapeInterval,
+			PodMonitorSelector:     toLabelSelector(in.PrometheusCR.PodMonitorSelector),
+			ServiceMonitorSelector: toLabelSelector(in.PrometheusCR.ServiceMonitorSelector),
 		},
 		SecurityContext:           in.SecurityContext,
 		PodSecurityContext:        in.PodSecurityContext,
@@ -177,6 +173,15 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 			},
 		},
 		PodDisruptionBudget: tov1beta1PodDisruptionBudget(in.PodDisruptionBudget),
+	}
+}
+
+func toLabelSelector(selector map[string]string) *metav1.LabelSelector {
+	if selector == nil {
+		return nil
+	}
+	return &metav1.LabelSelector{
+		MatchLabels: selector,
 	}
 }
 
