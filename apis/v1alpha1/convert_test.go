@@ -445,6 +445,12 @@ func TestConvertTo(t *testing.T) {
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				ServiceAccount: "otelcol",
 			},
+			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+					PodMonitorSelector:     &metav1.LabelSelector{},
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
 		},
 		Status: v1beta1.OpenTelemetryCollectorStatus{
 			Image: "otel/col",
