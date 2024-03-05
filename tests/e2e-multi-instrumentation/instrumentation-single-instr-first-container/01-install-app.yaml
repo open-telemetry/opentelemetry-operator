@@ -15,11 +15,26 @@ spec:
         instrumentation.opentelemetry.io/inject-nodejs: "true"
         sidecar.opentelemetry.io/inject: "true"
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
       containers:
         - name: nodejsapp
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+          - name: NODE_PATH
+            value: /usr/local/lib/node_modules
         - name: pythonapp
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           env:
             - name: TEST
               value: test
