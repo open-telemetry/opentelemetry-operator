@@ -17,6 +17,7 @@ package sidecar
 import (
 	"context"
 	"errors"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -97,7 +98,8 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// we should add the sidecar.
 	logger.V(1).Info("injecting sidecar into pod", "otelcol-namespace", otelcol.Namespace, "otelcol-name", otelcol.Name)
 
-	otc, err := v1alpha1.Tov1beta1(otelcol)
+	otc := v1beta1.OpenTelemetryCollector{}
+	err = otelcol.ConvertTo(&otc)
 	if err != nil {
 		return corev1.Pod{}, err
 	}

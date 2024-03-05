@@ -62,7 +62,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		cfgV2, err := Tov1beta1(cfgV1)
+		cfgV2, err := tov1beta1(cfgV1)
 		assert.Nil(t, err)
 		assert.NotNil(t, cfgV2)
 		assert.Equal(t, cfgV1.Spec.Args, cfgV2.Spec.Args)
@@ -79,7 +79,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		_, err := Tov1beta1(cfgV1)
+		_, err := tov1beta1(cfgV1)
 		assert.ErrorContains(t, err, "could not convert config json to v1beta1.Config")
 	})
 }
@@ -310,7 +310,7 @@ func Test_tov1beta1AndBack(t *testing.T) {
 		},
 	}
 
-	colbeta1, err := Tov1beta1(*colalpha1)
+	colbeta1, err := tov1beta1(*colalpha1)
 	require.NoError(t, err)
 	colalpha1Converted, err := tov1alpha1(colbeta1)
 	require.NoError(t, err)

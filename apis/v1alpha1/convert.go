@@ -32,7 +32,7 @@ func (src *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
 	switch t := dstRaw.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		dst := dstRaw.(*v1beta1.OpenTelemetryCollector)
-		convertedSrc, err := Tov1beta1(*src)
+		convertedSrc, err := tov1beta1(*src)
 		if err != nil {
 			return fmt.Errorf("failed to convert to v1beta1: %w", err)
 		}
@@ -62,7 +62,7 @@ func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
+func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
 	cfg := &v1beta1.Config{}
 	if err := yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
