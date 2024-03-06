@@ -136,14 +136,24 @@ func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelem
 	if err != nil {
 		return manifests.Params{}, err
 	}
-	return manifests.Params{
+	params := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
 		OtelCol:  otelCol,
 		Log:      r.log,
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
-	}, nil
+	}
+
+	// generate the target allocator CR from the collector CR
+	targetAllocator, err := collector.TargetAllocator(params)
+	if err != nil {
+		return params, err
+	}
+	if targetAllocator != nil {
+		params.TargetAllocator = *targetAllocator
+	}
+	return params, nil
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.

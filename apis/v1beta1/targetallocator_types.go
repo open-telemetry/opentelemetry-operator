@@ -24,6 +24,8 @@ import (
 type TargetAllocatorSpec struct {
 	// Common defines fields that are common to all OpenTelemetry CRD workloads.
 	OpenTelemetryCommonFields `json:",inline"`
+	// CollectorSelector is the selector for Collector Pods the target allocator will allocate targets to.
+	CollectorSelector metav1.LabelSelector `json:"collectorSelector,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted and consistent-hashing. The default option is consistent-hashing
 	// +optional
@@ -35,8 +37,13 @@ type TargetAllocatorSpec struct {
 	// +optional
 	// +kubebuilder:default:=relabel-config
 	FilterStrategy TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
-	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
-	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
+	// ScrapeConfigs define static Prometheus scrape configurations for the target allocator.
+	// To use dynamic configurations from ServiceMonitors and PodMonitors, see the PrometheusCR section.
+	// For the exact format, see https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
+	// +optional
+	// +listType=atomic
+	ScrapeConfigs []AnyConfig `json:"scrapeConfigs,omitempty"`
+	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 ).
 	// +optional
 	PrometheusCR TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
 }
