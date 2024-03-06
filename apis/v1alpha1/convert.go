@@ -181,9 +181,13 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 	}
 }
 
+// The conversion takes into account deprecated v1alpha1 spec.minReplicas and spec.maxReplicas.
 func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *v1beta1.AutoscalerSpec {
-	if in == nil {
+	if in == nil && minReplicas == nil && maxReplicas == nil {
 		return nil
+	}
+	if in == nil {
+		in = &AutoscalerSpec{}
 	}
 
 	var metrics []v1beta1.MetricSpec
