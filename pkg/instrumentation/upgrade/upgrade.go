@@ -35,7 +35,6 @@ var (
 		constants.AnnotationDefaultAutoInstrumentationJava:   featuregate.EnableJavaAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNodeJS: featuregate.EnableNodeJSAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationPython: featuregate.EnablePythonAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationDotNet: featuregate.EnableDotnetAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationGo:     featuregate.EnableGoAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNginx:  featuregate.EnableNginxAutoInstrumentationSupport,
 	}
@@ -62,7 +61,8 @@ type InstrumentationUpgrade struct {
 
 func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
-		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: autoInstConfig{constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
 	}
 
 	return &InstrumentationUpgrade{
@@ -127,6 +127,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.ApacheHttpd.Image = u.DefaultAutoInstApacheHttpd
 						upgraded.Annotations[annotation] = u.DefaultAutoInstApacheHttpd
 					}
+				case constants.AnnotationDefaultAutoInstrumentationDotNet:
+					if inst.Spec.DotNet.Image == autoInst {
+						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
+						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
+					}
 				}
 			} else {
 				u.Logger.Error(nil, "autoinstrumentation not enabled for this language", "flag", config.id)
@@ -154,11 +159,6 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if inst.Spec.Python.Image == autoInst {
 						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
 						upgraded.Annotations[annotation] = u.DefaultAutoInstPython
-					}
-				case constants.AnnotationDefaultAutoInstrumentationDotNet:
-					if inst.Spec.DotNet.Image == autoInst {
-						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
-						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
 					}
 				case constants.AnnotationDefaultAutoInstrumentationGo:
 					if inst.Spec.Go.Image == autoInst {

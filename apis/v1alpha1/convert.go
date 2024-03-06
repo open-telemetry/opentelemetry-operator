@@ -16,18 +16,61 @@ package v1alpha1
 
 import (
 	"errors"
+	"fmt"
 
 	"gopkg.in/yaml.v3"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
-	copy := in.DeepCopy()
-	out := v1beta1.OpenTelemetryCollector{
-		ObjectMeta: copy.ObjectMeta,
+var _ conversion.Convertible = &OpenTelemetryCollector{}
 
+func (src *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
+	switch t := dstRaw.(type) {
+	case *v1beta1.OpenTelemetryCollector:
+		dst := dstRaw.(*v1beta1.OpenTelemetryCollector)
+		convertedSrc, err := tov1beta1(*src)
+		if err != nil {
+			return fmt.Errorf("failed to convert to v1beta1: %w", err)
+		}
+		dst.ObjectMeta = convertedSrc.ObjectMeta
+		dst.Spec = convertedSrc.Spec
+		dst.Status = convertedSrc.Status
+	default:
+		return fmt.Errorf("unsupported type %v", t)
+	}
+	return nil
+}
+
+func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
+	switch t := srcRaw.(type) {
+	case *v1beta1.OpenTelemetryCollector:
+		src := srcRaw.(*v1beta1.OpenTelemetryCollector)
+		srcConverted, err := tov1alpha1(*src)
+		if err != nil {
+			return fmt.Errorf("failed to convert to v1alpha1: %w", err)
+		}
+		dst.ObjectMeta = srcConverted.ObjectMeta
+		dst.Spec = srcConverted.Spec
+		dst.Status = srcConverted.Status
+	default:
+		return fmt.Errorf("unsupported type %v", t)
+	}
+	return nil
+}
+
+func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
+	copy := in.DeepCopy()
+	cfg := &v1beta1.Config{}
+	if err := yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
+		return v1beta1.OpenTelemetryCollector{}, errors.New("could not convert config json to v1beta1.Config")
+	}
+
+	return v1beta1.OpenTelemetryCollector{
+		ObjectMeta: copy.ObjectMeta,
 		Status: v1beta1.OpenTelemetryCollectorStatus{
 			Scale: v1beta1.ScaleSubresourceStatus{
 				Selector:       in.Status.Scale.Selector,
@@ -35,152 +78,346 @@ func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				StatusReplicas: in.Status.Scale.StatusReplicas,
 			},
 			Version: in.Status.Version,
-			Image:   in.Spec.Image,
+			Image:   in.Status.Image,
 		},
-	}
-
-	cfg := &v1beta1.Config{}
-	if err := yaml.Unmarshal([]byte(in.Spec.Config), cfg); err != nil {
-		return v1beta1.OpenTelemetryCollector{}, errors.New("could not convert config json to v1beta1.Config")
-	}
-	out.Spec.Config = *cfg
-
-	out.Spec.OpenTelemetryCommonFields.ManagementState = v1beta1.ManagementStateType(copy.Spec.ManagementState)
-	out.Spec.OpenTelemetryCommonFields.Resources = copy.Spec.Resources
-	out.Spec.OpenTelemetryCommonFields.NodeSelector = copy.Spec.NodeSelector
-	out.Spec.OpenTelemetryCommonFields.Args = copy.Spec.Args
-	out.Spec.OpenTelemetryCommonFields.Replicas = copy.Spec.Replicas
-
-	if copy.Spec.Autoscaler != nil {
-		metrics := make([]v1beta1.MetricSpec, len(copy.Spec.Autoscaler.Metrics))
-		for i, m := range copy.Spec.Autoscaler.Metrics {
-			metrics[i] = v1beta1.MetricSpec{
-				Type: m.Type,
-				Pods: m.Pods,
-			}
-		}
-		if copy.Spec.MaxReplicas != nil && copy.Spec.Autoscaler.MaxReplicas == nil {
-			copy.Spec.Autoscaler.MaxReplicas = copy.Spec.MaxReplicas
-		}
-		if copy.Spec.MinReplicas != nil && copy.Spec.Autoscaler.MinReplicas == nil {
-			copy.Spec.Autoscaler.MinReplicas = copy.Spec.MinReplicas
-		}
-		out.Spec.OpenTelemetryCommonFields.Autoscaler = &v1beta1.AutoscalerSpec{
-			MinReplicas:             copy.Spec.Autoscaler.MinReplicas,
-			MaxReplicas:             copy.Spec.Autoscaler.MaxReplicas,
-			Behavior:                copy.Spec.Autoscaler.Behavior,
-			Metrics:                 metrics,
-			TargetCPUUtilization:    copy.Spec.Autoscaler.TargetCPUUtilization,
-			TargetMemoryUtilization: copy.Spec.Autoscaler.TargetMemoryUtilization,
-		}
-	}
-
-	if copy.Spec.PodDisruptionBudget != nil {
-		out.Spec.OpenTelemetryCommonFields.PodDisruptionBudget = &v1beta1.PodDisruptionBudgetSpec{
-			MinAvailable:   copy.Spec.PodDisruptionBudget.MinAvailable,
-			MaxUnavailable: copy.Spec.PodDisruptionBudget.MaxUnavailable,
-		}
-	}
-	if copy.Spec.SecurityContext != nil {
-		out.Spec.OpenTelemetryCommonFields.SecurityContext = copy.Spec.SecurityContext
-	}
-	if copy.Spec.PodSecurityContext != nil {
-		out.Spec.OpenTelemetryCommonFields.PodSecurityContext = copy.Spec.PodSecurityContext
-	}
-	out.Spec.OpenTelemetryCommonFields.PodAnnotations = copy.Spec.PodAnnotations
-	out.Spec.OpenTelemetryCommonFields.ServiceAccount = copy.Spec.ServiceAccount
-	out.Spec.OpenTelemetryCommonFields.Image = copy.Spec.Image
-	out.Spec.OpenTelemetryCommonFields.ImagePullPolicy = copy.Spec.ImagePullPolicy
-	out.Spec.OpenTelemetryCommonFields.VolumeMounts = copy.Spec.VolumeMounts
-	out.Spec.OpenTelemetryCommonFields.Ports = copy.Spec.Ports
-	out.Spec.OpenTelemetryCommonFields.Env = copy.Spec.Env
-	out.Spec.OpenTelemetryCommonFields.EnvFrom = copy.Spec.EnvFrom
-	out.Spec.OpenTelemetryCommonFields.VolumeClaimTemplates = copy.Spec.VolumeClaimTemplates
-	out.Spec.OpenTelemetryCommonFields.Tolerations = copy.Spec.Tolerations
-	out.Spec.OpenTelemetryCommonFields.Volumes = copy.Spec.Volumes
-	out.Spec.OpenTelemetryCommonFields.Affinity = copy.Spec.Affinity
-	out.Spec.OpenTelemetryCommonFields.Lifecycle = copy.Spec.Lifecycle
-	out.Spec.OpenTelemetryCommonFields.TerminationGracePeriodSeconds = copy.Spec.TerminationGracePeriodSeconds
-	out.Spec.OpenTelemetryCommonFields.TopologySpreadConstraints = copy.Spec.TopologySpreadConstraints
-	out.Spec.OpenTelemetryCommonFields.HostNetwork = copy.Spec.HostNetwork
-	out.Spec.OpenTelemetryCommonFields.ShareProcessNamespace = copy.Spec.ShareProcessNamespace
-	out.Spec.OpenTelemetryCommonFields.PriorityClassName = copy.Spec.PriorityClassName
-	out.Spec.OpenTelemetryCommonFields.InitContainers = copy.Spec.InitContainers
-	out.Spec.OpenTelemetryCommonFields.AdditionalContainers = copy.Spec.AdditionalContainers
-
-	out.Spec.TargetAllocator = TargetAllocatorEmbedded(copy.Spec.TargetAllocator)
-
-	out.Spec.Mode = v1beta1.Mode(copy.Spec.Mode)
-	out.Spec.UpgradeStrategy = v1beta1.UpgradeStrategy(copy.Spec.UpgradeStrategy)
-	out.Spec.Ingress.Type = v1beta1.IngressType(copy.Spec.Ingress.Type)
-	out.Spec.Ingress.RuleType = v1beta1.IngressRuleType(copy.Spec.Ingress.RuleType)
-	out.Spec.Ingress.Hostname = copy.Spec.Ingress.Hostname
-	out.Spec.Ingress.Annotations = copy.Spec.Ingress.Annotations
-	out.Spec.Ingress.TLS = copy.Spec.Ingress.TLS
-	out.Spec.Ingress.IngressClassName = copy.Spec.Ingress.IngressClassName
-	out.Spec.Ingress.Route.Termination = v1beta1.TLSRouteTerminationType(copy.Spec.Ingress.Route.Termination)
-
-	if copy.Spec.LivenessProbe != nil {
-		out.Spec.LivenessProbe = &v1beta1.Probe{
-			InitialDelaySeconds:           copy.Spec.LivenessProbe.InitialDelaySeconds,
-			TimeoutSeconds:                copy.Spec.LivenessProbe.TimeoutSeconds,
-			PeriodSeconds:                 copy.Spec.LivenessProbe.PeriodSeconds,
-			SuccessThreshold:              copy.Spec.LivenessProbe.SuccessThreshold,
-			FailureThreshold:              copy.Spec.LivenessProbe.FailureThreshold,
-			TerminationGracePeriodSeconds: copy.Spec.LivenessProbe.TerminationGracePeriodSeconds,
-		}
-	}
-
-	out.Spec.Observability.Metrics.EnableMetrics = copy.Spec.Observability.Metrics.EnableMetrics
-
-	for _, cm := range copy.Spec.ConfigMaps {
-		out.Spec.ConfigMaps = append(out.Spec.ConfigMaps, v1beta1.ConfigMapsSpec{
-			Name:      cm.Name,
-			MountPath: cm.MountPath,
-		})
-	}
-	out.Spec.DaemonSetUpdateStrategy = copy.Spec.UpdateStrategy
-	out.Spec.DeploymentUpdateStrategy.Type = copy.Spec.DeploymentUpdateStrategy.Type
-	out.Spec.DeploymentUpdateStrategy.RollingUpdate = copy.Spec.DeploymentUpdateStrategy.RollingUpdate
-
-	return out, nil
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ManagementState:               v1beta1.ManagementStateType(copy.Spec.ManagementState),
+				Resources:                     copy.Spec.Resources,
+				NodeSelector:                  copy.Spec.NodeSelector,
+				Args:                          copy.Spec.Args,
+				Replicas:                      copy.Spec.Replicas,
+				Autoscaler:                    tov1beta1Autoscaler(copy.Spec.Autoscaler, copy.Spec.MinReplicas, copy.Spec.MaxReplicas),
+				PodDisruptionBudget:           tov1beta1PodDisruptionBudget(copy.Spec.PodDisruptionBudget),
+				SecurityContext:               copy.Spec.SecurityContext,
+				PodSecurityContext:            copy.Spec.PodSecurityContext,
+				PodAnnotations:                copy.Spec.PodAnnotations,
+				ServiceAccount:                copy.Spec.ServiceAccount,
+				Image:                         copy.Spec.Image,
+				ImagePullPolicy:               copy.Spec.ImagePullPolicy,
+				VolumeMounts:                  copy.Spec.VolumeMounts,
+				Ports:                         copy.Spec.Ports,
+				Env:                           copy.Spec.Env,
+				EnvFrom:                       copy.Spec.EnvFrom,
+				VolumeClaimTemplates:          copy.Spec.VolumeClaimTemplates,
+				Tolerations:                   copy.Spec.Tolerations,
+				Volumes:                       copy.Spec.Volumes,
+				Affinity:                      copy.Spec.Affinity,
+				Lifecycle:                     copy.Spec.Lifecycle,
+				TerminationGracePeriodSeconds: copy.Spec.TerminationGracePeriodSeconds,
+				TopologySpreadConstraints:     copy.Spec.TopologySpreadConstraints,
+				HostNetwork:                   copy.Spec.HostNetwork,
+				ShareProcessNamespace:         copy.Spec.ShareProcessNamespace,
+				PriorityClassName:             copy.Spec.PriorityClassName,
+				InitContainers:                copy.Spec.InitContainers,
+				AdditionalContainers:          copy.Spec.AdditionalContainers,
+			},
+			TargetAllocator: tov1beta1TA(copy.Spec.TargetAllocator),
+			Mode:            v1beta1.Mode(copy.Spec.Mode),
+			UpgradeStrategy: v1beta1.UpgradeStrategy(copy.Spec.UpgradeStrategy),
+			Config:          *cfg,
+			Ingress: v1beta1.Ingress{
+				Type:             v1beta1.IngressType(copy.Spec.Ingress.Type),
+				RuleType:         v1beta1.IngressRuleType(copy.Spec.Ingress.RuleType),
+				Hostname:         copy.Spec.Ingress.Hostname,
+				Annotations:      copy.Spec.Ingress.Annotations,
+				TLS:              copy.Spec.Ingress.TLS,
+				IngressClassName: copy.Spec.Ingress.IngressClassName,
+				Route: v1beta1.OpenShiftRoute{
+					Termination: v1beta1.TLSRouteTerminationType(copy.Spec.Ingress.Route.Termination),
+				},
+			},
+			LivenessProbe: tov1beta1Probe(copy.Spec.LivenessProbe),
+			Observability: v1beta1.ObservabilitySpec{
+				Metrics: v1beta1.MetricsConfigSpec{
+					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
+					DisablePrometheusAnnotations: copy.Spec.Observability.Metrics.DisablePrometheusAnnotations,
+				},
+			},
+			ConfigMaps:              tov1beta1ConfigMaps(copy.Spec.ConfigMaps),
+			DaemonSetUpdateStrategy: copy.Spec.UpdateStrategy,
+			DeploymentUpdateStrategy: appsv1.DeploymentStrategy{
+				Type:          copy.Spec.DeploymentUpdateStrategy.Type,
+				RollingUpdate: copy.Spec.DeploymentUpdateStrategy.RollingUpdate,
+			},
+		},
+	}, nil
 }
 
-func TargetAllocatorEmbedded(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedded {
-	out := v1beta1.TargetAllocatorEmbedded{}
-	out.Replicas = in.Replicas
-	out.NodeSelector = in.NodeSelector
-	out.Resources = in.Resources
-	out.AllocationStrategy = v1beta1.TargetAllocatorAllocationStrategy(in.AllocationStrategy)
-	out.FilterStrategy = v1beta1.TargetAllocatorFilterStrategy(in.FilterStrategy)
-	out.ServiceAccount = in.ServiceAccount
-	out.Image = in.Image
-	out.Enabled = in.Enabled
-	out.Affinity = in.Affinity
-	out.PrometheusCR.Enabled = in.PrometheusCR.Enabled
-	out.PrometheusCR.ScrapeInterval = in.PrometheusCR.ScrapeInterval
-	out.SecurityContext = in.SecurityContext
-	out.PodSecurityContext = in.PodSecurityContext
-	out.TopologySpreadConstraints = in.TopologySpreadConstraints
-	out.Tolerations = in.Tolerations
-	out.Env = in.Env
-	out.Observability = v1beta1.ObservabilitySpec{
-		Metrics: v1beta1.MetricsConfigSpec{
-			EnableMetrics: in.Observability.Metrics.EnableMetrics,
+func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedded {
+	return v1beta1.TargetAllocatorEmbedded{
+		Replicas:           in.Replicas,
+		NodeSelector:       in.NodeSelector,
+		Resources:          in.Resources,
+		AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategy(in.AllocationStrategy),
+		FilterStrategy:     v1beta1.TargetAllocatorFilterStrategy(in.FilterStrategy),
+		ServiceAccount:     in.ServiceAccount,
+		Image:              in.Image,
+		Enabled:            in.Enabled,
+		Affinity:           in.Affinity,
+		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+			Enabled:        in.PrometheusCR.Enabled,
+			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
+			// prometheus_cr.pod_monitor_selector shouldn't be nil when selector is empty
+			PodMonitorSelector: &metav1.LabelSelector{
+				MatchLabels: in.PrometheusCR.PodMonitorSelector,
+			},
+			ServiceMonitorSelector: &metav1.LabelSelector{
+				MatchLabels: in.PrometheusCR.ServiceMonitorSelector,
+			},
 		},
+		SecurityContext:           in.SecurityContext,
+		PodSecurityContext:        in.PodSecurityContext,
+		TopologySpreadConstraints: in.TopologySpreadConstraints,
+		Tolerations:               in.Tolerations,
+		Env:                       in.Env,
+		Observability: v1beta1.ObservabilitySpec{
+			Metrics: v1beta1.MetricsConfigSpec{
+				EnableMetrics:                in.Observability.Metrics.EnableMetrics,
+				DisablePrometheusAnnotations: in.Observability.Metrics.DisablePrometheusAnnotations,
+			},
+		},
+		PodDisruptionBudget: tov1beta1PodDisruptionBudget(in.PodDisruptionBudget),
+	}
+}
+
+func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *v1beta1.AutoscalerSpec {
+	if in == nil {
+		return nil
 	}
 
-	out.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
-		MatchLabels: in.PrometheusCR.PodMonitorSelector,
+	var metrics []v1beta1.MetricSpec
+	for _, m := range in.Metrics {
+		metrics = append(metrics, v1beta1.MetricSpec{
+			Type: m.Type,
+			Pods: m.Pods,
+		})
 	}
-	out.PrometheusCR.ServiceMonitorSelector = &metav1.LabelSelector{
-		MatchLabels: in.PrometheusCR.ServiceMonitorSelector,
+	if maxReplicas != nil && in.MaxReplicas == nil {
+		in.MaxReplicas = maxReplicas
 	}
-	if in.PodDisruptionBudget != nil {
-		out.PodDisruptionBudget = &v1beta1.PodDisruptionBudgetSpec{
-			MinAvailable:   in.PodDisruptionBudget.MinAvailable,
-			MaxUnavailable: in.PodDisruptionBudget.MaxUnavailable,
-		}
+	if minReplicas != nil && in.MinReplicas == nil {
+		in.MinReplicas = minReplicas
 	}
-	return out
+
+	return &v1beta1.AutoscalerSpec{
+		MinReplicas:             in.MinReplicas,
+		MaxReplicas:             in.MaxReplicas,
+		Behavior:                in.Behavior,
+		Metrics:                 metrics,
+		TargetCPUUtilization:    in.TargetCPUUtilization,
+		TargetMemoryUtilization: in.TargetMemoryUtilization,
+	}
+}
+
+func tov1beta1PodDisruptionBudget(in *PodDisruptionBudgetSpec) *v1beta1.PodDisruptionBudgetSpec {
+	if in == nil {
+		return nil
+	}
+	return &v1beta1.PodDisruptionBudgetSpec{
+		MinAvailable:   in.MinAvailable,
+		MaxUnavailable: in.MaxUnavailable,
+	}
+}
+
+func tov1beta1Probe(in *Probe) *v1beta1.Probe {
+	if in == nil {
+		return nil
+	}
+	return &v1beta1.Probe{
+		InitialDelaySeconds:           in.InitialDelaySeconds,
+		TimeoutSeconds:                in.TimeoutSeconds,
+		PeriodSeconds:                 in.PeriodSeconds,
+		SuccessThreshold:              in.SuccessThreshold,
+		FailureThreshold:              in.FailureThreshold,
+		TerminationGracePeriodSeconds: in.TerminationGracePeriodSeconds,
+	}
+}
+
+func tov1beta1ConfigMaps(in []ConfigMapsSpec) []v1beta1.ConfigMapsSpec {
+	var mapsSpecs []v1beta1.ConfigMapsSpec
+	for _, m := range in {
+		mapsSpecs = append(mapsSpecs, v1beta1.ConfigMapsSpec{
+			Name:      m.Name,
+			MountPath: m.MountPath,
+		})
+	}
+	return mapsSpecs
+}
+
+func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, error) {
+	copy := in.DeepCopy()
+	configYaml, err := copy.Spec.Config.Yaml()
+	if err != nil {
+		return nil, err
+	}
+
+	return &OpenTelemetryCollector{
+		ObjectMeta: copy.ObjectMeta,
+		Status: OpenTelemetryCollectorStatus{
+			Scale: ScaleSubresourceStatus{
+				Selector:       in.Status.Scale.Selector,
+				Replicas:       in.Status.Scale.Replicas,
+				StatusReplicas: in.Status.Scale.StatusReplicas,
+			},
+			Version: in.Status.Version,
+			Image:   in.Status.Image,
+		},
+
+		Spec: OpenTelemetryCollectorSpec{
+			ManagementState:      ManagementStateType(copy.Spec.ManagementState),
+			Resources:            copy.Spec.Resources,
+			NodeSelector:         copy.Spec.NodeSelector,
+			Args:                 copy.Spec.Args,
+			Replicas:             copy.Spec.Replicas,
+			Autoscaler:           tov1alpha1Autoscaler(copy.Spec.Autoscaler),
+			PodDisruptionBudget:  tov1alpha1PodDisruptionBudget(copy.Spec.PodDisruptionBudget),
+			SecurityContext:      copy.Spec.SecurityContext,
+			PodSecurityContext:   copy.Spec.PodSecurityContext,
+			PodAnnotations:       copy.Spec.PodAnnotations,
+			TargetAllocator:      tov1alpha1TA(copy.Spec.TargetAllocator),
+			Mode:                 Mode(copy.Spec.Mode),
+			ServiceAccount:       copy.Spec.ServiceAccount,
+			Image:                copy.Spec.Image,
+			UpgradeStrategy:      UpgradeStrategy(copy.Spec.UpgradeStrategy),
+			ImagePullPolicy:      copy.Spec.ImagePullPolicy,
+			Config:               configYaml,
+			VolumeMounts:         copy.Spec.VolumeMounts,
+			Ports:                copy.Spec.Ports,
+			Env:                  copy.Spec.Env,
+			EnvFrom:              copy.Spec.EnvFrom,
+			VolumeClaimTemplates: copy.Spec.VolumeClaimTemplates,
+			Tolerations:          copy.Spec.Tolerations,
+			Volumes:              copy.Spec.Volumes,
+			Ingress: Ingress{
+				Type:             IngressType(copy.Spec.Ingress.Type),
+				RuleType:         IngressRuleType(copy.Spec.Ingress.RuleType),
+				Hostname:         copy.Spec.Ingress.Hostname,
+				Annotations:      copy.Spec.Ingress.Annotations,
+				TLS:              copy.Spec.Ingress.TLS,
+				IngressClassName: copy.Spec.Ingress.IngressClassName,
+				Route: OpenShiftRoute{
+					Termination: TLSRouteTerminationType(copy.Spec.Ingress.Route.Termination),
+				},
+			},
+			HostNetwork:                   copy.Spec.HostNetwork,
+			ShareProcessNamespace:         copy.Spec.ShareProcessNamespace,
+			PriorityClassName:             copy.Spec.PriorityClassName,
+			Affinity:                      copy.Spec.Affinity,
+			Lifecycle:                     copy.Spec.Lifecycle,
+			TerminationGracePeriodSeconds: copy.Spec.TerminationGracePeriodSeconds,
+			LivenessProbe:                 tov1alpha1Probe(copy.Spec.LivenessProbe),
+			InitContainers:                copy.Spec.InitContainers,
+			AdditionalContainers:          copy.Spec.AdditionalContainers,
+			Observability: ObservabilitySpec{
+				Metrics: MetricsConfigSpec{
+					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
+					DisablePrometheusAnnotations: copy.Spec.Observability.Metrics.DisablePrometheusAnnotations,
+				},
+			},
+			TopologySpreadConstraints: copy.Spec.TopologySpreadConstraints,
+			ConfigMaps:                tov1alpha1ConfigMaps(copy.Spec.ConfigMaps),
+			UpdateStrategy:            copy.Spec.DaemonSetUpdateStrategy,
+			DeploymentUpdateStrategy:  copy.Spec.DeploymentUpdateStrategy,
+		},
+	}, nil
+}
+
+func tov1alpha1PodDisruptionBudget(in *v1beta1.PodDisruptionBudgetSpec) *PodDisruptionBudgetSpec {
+	if in == nil {
+		return nil
+	}
+	return &PodDisruptionBudgetSpec{
+		MinAvailable:   in.MinAvailable,
+		MaxUnavailable: in.MaxUnavailable,
+	}
+}
+
+func tov1alpha1Probe(in *v1beta1.Probe) *Probe {
+	if in == nil {
+		return nil
+	}
+	return &Probe{
+		InitialDelaySeconds:           in.InitialDelaySeconds,
+		TimeoutSeconds:                in.TimeoutSeconds,
+		PeriodSeconds:                 in.PeriodSeconds,
+		SuccessThreshold:              in.SuccessThreshold,
+		FailureThreshold:              in.FailureThreshold,
+		TerminationGracePeriodSeconds: in.TerminationGracePeriodSeconds,
+	}
+}
+
+func tov1alpha1Autoscaler(in *v1beta1.AutoscalerSpec) *AutoscalerSpec {
+	if in == nil {
+		return nil
+	}
+
+	var metrics []MetricSpec
+	for _, m := range in.Metrics {
+		metrics = append(metrics, MetricSpec{
+			Type: m.Type,
+			Pods: m.Pods,
+		})
+	}
+
+	return &AutoscalerSpec{
+		MinReplicas:             in.MinReplicas,
+		MaxReplicas:             in.MaxReplicas,
+		Behavior:                in.Behavior,
+		Metrics:                 metrics,
+		TargetCPUUtilization:    in.TargetCPUUtilization,
+		TargetMemoryUtilization: in.TargetMemoryUtilization,
+	}
+}
+
+func tov1alpha1ConfigMaps(in []v1beta1.ConfigMapsSpec) []ConfigMapsSpec {
+	var mapsSpecs []ConfigMapsSpec
+	for _, m := range in {
+		mapsSpecs = append(mapsSpecs, ConfigMapsSpec{
+			Name:      m.Name,
+			MountPath: m.MountPath,
+		})
+	}
+	return mapsSpecs
+}
+
+func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocator {
+	var podMonitorSelector map[string]string
+	if in.PrometheusCR.PodMonitorSelector != nil {
+		podMonitorSelector = in.PrometheusCR.PodMonitorSelector.MatchLabels
+	}
+	var serviceMonitorSelector map[string]string
+	if in.PrometheusCR.ServiceMonitorSelector != nil {
+		serviceMonitorSelector = in.PrometheusCR.ServiceMonitorSelector.MatchLabels
+	}
+
+	return OpenTelemetryTargetAllocator{
+		Replicas:           in.Replicas,
+		NodeSelector:       in.NodeSelector,
+		Resources:          in.Resources,
+		AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategy(in.AllocationStrategy),
+		FilterStrategy:     string(in.FilterStrategy),
+		ServiceAccount:     in.ServiceAccount,
+		Image:              in.Image,
+		Enabled:            in.Enabled,
+		Affinity:           in.Affinity,
+		PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
+			Enabled:                in.PrometheusCR.Enabled,
+			ScrapeInterval:         in.PrometheusCR.ScrapeInterval,
+			PodMonitorSelector:     podMonitorSelector,
+			ServiceMonitorSelector: serviceMonitorSelector,
+		},
+		SecurityContext:           in.SecurityContext,
+		PodSecurityContext:        in.PodSecurityContext,
+		TopologySpreadConstraints: in.TopologySpreadConstraints,
+		Tolerations:               in.Tolerations,
+		Env:                       in.Env,
+		Observability: ObservabilitySpec{
+			Metrics: MetricsConfigSpec{
+				EnableMetrics:                in.Observability.Metrics.EnableMetrics,
+				DisablePrometheusAnnotations: in.Observability.Metrics.DisablePrometheusAnnotations,
+			},
+		},
+		PodDisruptionBudget: tov1alpha1PodDisruptionBudget(in.PodDisruptionBudget),
+	}
 }

@@ -19,8 +19,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -28,9 +32,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func Test_V1Alpha1to2(t *testing.T) {
-	t.Run("valid config", func(t *testing.T) {
-		config := `---
+const collectorCfg = `---
 receivers:
   otlp:
     protocols:
@@ -48,23 +50,26 @@ service:
       processors: [resourcedetection]
       exporters: [otlp]
 `
+
+func Test_tov1beta1_config(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
 		cfgV1 := OpenTelemetryCollector{
 			Spec: OpenTelemetryCollectorSpec{
-				Config: config,
+				Config: collectorCfg,
 				Args: map[string]string{
 					"test": "something",
 				},
 			},
 		}
 
-		cfgV2, err := Tov1beta1(cfgV1)
+		cfgV2, err := tov1beta1(cfgV1)
 		assert.Nil(t, err)
 		assert.NotNil(t, cfgV2)
 		assert.Equal(t, cfgV1.Spec.Args, cfgV2.Spec.Args)
 
 		yamlCfg, err := yaml.Marshal(&cfgV2.Spec.Config)
 		assert.Nil(t, err)
-		assert.YAMLEq(t, config, string(yamlCfg))
+		assert.YAMLEq(t, collectorCfg, string(yamlCfg))
 	})
 	t.Run("invalid config", func(t *testing.T) {
 		config := `!!!`
@@ -74,18 +79,257 @@ service:
 			},
 		}
 
-		_, err := Tov1beta1(cfgV1)
+		_, err := tov1beta1(cfgV1)
 		assert.ErrorContains(t, err, "could not convert config json to v1beta1.Config")
 	})
 }
 
-func Test_TargetAllocator(t *testing.T) {
+func Test_tov1alpha1_config(t *testing.T) {
+	cfg := v1beta1.Config{}
+	err := yaml.Unmarshal([]byte(collectorCfg), &cfg)
+	require.NoError(t, err)
+
+	beta1Col := v1beta1.OpenTelemetryCollector{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Config: cfg,
+		},
+	}
+	alpha1Col, err := tov1alpha1(beta1Col)
+	require.NoError(t, err)
+	assert.YAMLEq(t, collectorCfg, alpha1Col.Spec.Config)
+}
+
+func Test_tov1beta1AndBack(t *testing.T) {
+	one := int32(1)
+	two := int64(2)
+	intstrAAA := intstr.FromString("aaa")
+	boolTrue := true
+	ingressClass := "someClass"
+	colalpha1 := &OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "otel",
+			Namespace:   "observability",
+			Labels:      map[string]string{"foo": "bar"},
+			Annotations: map[string]string{"bax": "foo"},
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			ManagementState: ManagementStateManaged,
+			Resources: v1.ResourceRequirements{
+				Limits: v1.ResourceList{
+					v1.ResourceCPU:    resource.MustParse("500m"),
+					v1.ResourceMemory: resource.MustParse("128Mi"),
+				},
+				Requests: v1.ResourceList{
+					v1.ResourceCPU:    resource.MustParse("500m"),
+					v1.ResourceMemory: resource.MustParse("128Mi"),
+				},
+			},
+			NodeSelector: map[string]string{"aaa": "ccc"},
+			Args:         map[string]string{"foo": "bar"},
+			Replicas:     &one,
+			Autoscaler: &AutoscalerSpec{
+				MinReplicas: &one,
+				MaxReplicas: &one,
+				Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+					ScaleUp: &autoscalingv2.HPAScalingRules{
+						Policies: []autoscalingv2.HPAScalingPolicy{
+							{
+								Type:          "aaa",
+								Value:         2,
+								PeriodSeconds: 4,
+							},
+						},
+					},
+				},
+				Metrics: []MetricSpec{
+					{
+						Type: autoscalingv2.ContainerResourceMetricSourceType,
+						Pods: &autoscalingv2.PodsMetricSource{
+							Metric: autoscalingv2.MetricIdentifier{
+								Name: "rrrrt",
+							},
+						},
+					},
+				},
+				TargetCPUUtilization:    &one,
+				TargetMemoryUtilization: &one,
+			},
+			PodDisruptionBudget: &PodDisruptionBudgetSpec{
+				MinAvailable:   &intstrAAA,
+				MaxUnavailable: &intstrAAA,
+			},
+			SecurityContext: &v1.SecurityContext{
+				RunAsUser: &two,
+			},
+			PodSecurityContext: &v1.PodSecurityContext{
+				RunAsNonRoot: &boolTrue,
+			},
+			PodAnnotations:  map[string]string{"foo": "bar"},
+			TargetAllocator: createTA(),
+			Mode:            ModeDeployment,
+			ServiceAccount:  "foo",
+			Image:           "baz/bar:1.0",
+			UpgradeStrategy: UpgradeStrategyAutomatic,
+			ImagePullPolicy: v1.PullAlways,
+			Config:          collectorCfg,
+			VolumeMounts: []v1.VolumeMount{
+				{
+					Name: "aaa",
+				},
+			},
+			Ports: []v1.ServicePort{
+				{
+					Name: "otlp",
+				},
+			},
+			Env: []v1.EnvVar{
+				{
+					Name:  "foo",
+					Value: "bar",
+					ValueFrom: &v1.EnvVarSource{
+						ResourceFieldRef: &v1.ResourceFieldSelector{
+							ContainerName: "bbb",
+							Resource:      "aaa",
+							Divisor:       resource.Quantity{},
+						},
+					},
+				},
+			},
+			EnvFrom: []v1.EnvFromSource{
+				{
+					Prefix: "aa",
+					ConfigMapRef: &v1.ConfigMapEnvSource{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "bbb",
+						},
+					},
+				},
+			},
+			VolumeClaimTemplates: []v1.PersistentVolumeClaim{
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.PersistentVolumeClaimSpec{
+						VolumeName: "aaaa",
+					},
+				},
+			},
+			Tolerations: []v1.Toleration{
+				{
+					Key:      "11",
+					Operator: "33",
+					Value:    "44",
+					Effect:   "55",
+				},
+			},
+			Volumes: []v1.Volume{
+				{
+					Name:         "cfg",
+					VolumeSource: v1.VolumeSource{},
+				},
+			},
+			Ingress: Ingress{
+				Type:        IngressTypeRoute,
+				RuleType:    IngressRuleTypePath,
+				Hostname:    "foo.com",
+				Annotations: map[string]string{"aa": "bb"},
+				TLS: []networkingv1.IngressTLS{
+					{
+						Hosts:      []string{"foo"},
+						SecretName: "bar",
+					},
+				},
+				IngressClassName: &ingressClass,
+				Route: OpenShiftRoute{
+					Termination: TLSRouteTerminationTypeEdge,
+				},
+			},
+			HostNetwork:           true,
+			ShareProcessNamespace: true,
+			PriorityClassName:     "foobar",
+			Affinity: &v1.Affinity{
+				NodeAffinity: &v1.NodeAffinity{
+					PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{{
+						Weight: 444,
+					}},
+				},
+			},
+			Lifecycle: &v1.Lifecycle{
+				PostStart: &v1.LifecycleHandler{
+					Exec: &v1.ExecAction{
+						Command: []string{"/bin"},
+					},
+				},
+			},
+			TerminationGracePeriodSeconds: &two,
+			LivenessProbe: &Probe{
+				PeriodSeconds: &one,
+			},
+			InitContainers: []v1.Container{
+				{
+					Name: "init",
+				},
+			},
+			AdditionalContainers: []v1.Container{
+				{
+					Name: "some",
+				},
+			},
+			Observability: ObservabilitySpec{
+				Metrics: MetricsConfigSpec{
+					EnableMetrics:                true,
+					DisablePrometheusAnnotations: true,
+				},
+			},
+			TopologySpreadConstraints: []v1.TopologySpreadConstraint{
+				{
+					TopologyKey: "key",
+				},
+			},
+			ConfigMaps: []ConfigMapsSpec{
+				{
+					Name:      "aaa",
+					MountPath: "bbb",
+				},
+			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+			},
+			DeploymentUpdateStrategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RecreateDeploymentStrategyType,
+			},
+		},
+		Status: OpenTelemetryCollectorStatus{
+			Scale: ScaleSubresourceStatus{
+				Selector:       "bar",
+				Replicas:       1,
+				StatusReplicas: "foo",
+			},
+			Version: "1.0",
+			Image:   "foo/bar:1.0",
+		},
+	}
+
+	colbeta1, err := tov1beta1(*colalpha1)
+	require.NoError(t, err)
+	colalpha1Converted, err := tov1alpha1(colbeta1)
+	require.NoError(t, err)
+
+	assert.YAMLEq(t, colalpha1.Spec.Config, colalpha1Converted.Spec.Config)
+
+	// empty the config to enable assertion on the entire objects
+	colalpha1.Spec.Config = ""
+	colalpha1Converted.Spec.Config = ""
+	assert.Equal(t, colalpha1, colalpha1Converted)
+}
+
+func createTA() OpenTelemetryTargetAllocator {
 	replicas := int32(2)
 	runAsNonRoot := true
 	privileged := true
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
-	input := OpenTelemetryTargetAllocator{
+	return OpenTelemetryTargetAllocator{
 		Replicas:     &replicas,
 		NodeSelector: map[string]string{"key": "value"},
 		Resources: v1.ResourceRequirements{
@@ -176,43 +420,72 @@ func Test_TargetAllocator(t *testing.T) {
 			},
 		},
 	}
+}
 
-	expected := v1beta1.TargetAllocatorEmbedded{
-		Replicas:           input.Replicas,
-		NodeSelector:       input.NodeSelector,
-		Resources:          input.Resources,
-		AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
-		FilterStrategy:     v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
-		ServiceAccount:     input.ServiceAccount,
-		Image:              input.Image,
-		Enabled:            input.Enabled,
-		Affinity:           input.Affinity,
-		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
-			Enabled:        input.PrometheusCR.Enabled,
-			ScrapeInterval: input.PrometheusCR.ScrapeInterval,
-			PodMonitorSelector: &metav1.LabelSelector{
-				MatchLabels: input.PrometheusCR.PodMonitorSelector,
-			},
-			ServiceMonitorSelector: &metav1.LabelSelector{
-				MatchLabels: input.PrometheusCR.ServiceMonitorSelector,
-			},
+func TestConvertTo(t *testing.T) {
+	col := OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
 		},
-		SecurityContext:           input.SecurityContext,
-		PodSecurityContext:        input.PodSecurityContext,
-		TopologySpreadConstraints: input.TopologySpreadConstraints,
-		Tolerations:               input.Tolerations,
-		Env:                       input.Env,
-		Observability: v1beta1.ObservabilitySpec{
-			Metrics: v1beta1.MetricsConfigSpec{
-				EnableMetrics:                input.Observability.Metrics.EnableMetrics,
-				DisablePrometheusAnnotations: input.Observability.Metrics.DisablePrometheusAnnotations,
-			},
+		Spec: OpenTelemetryCollectorSpec{
+			ServiceAccount: "otelcol",
 		},
-		PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-			MinAvailable:   input.PodDisruptionBudget.MinAvailable,
-			MaxUnavailable: input.PodDisruptionBudget.MaxUnavailable,
+		Status: OpenTelemetryCollectorStatus{
+			Image: "otel/col",
 		},
 	}
+	colbeta1 := v1beta1.OpenTelemetryCollector{}
+	err := col.ConvertTo(&colbeta1)
+	require.NoError(t, err)
+	assert.Equal(t, v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ServiceAccount: "otelcol",
+			},
+			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+					PodMonitorSelector:     &metav1.LabelSelector{},
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}, colbeta1)
+}
 
-	assert.Equal(t, expected, TargetAllocatorEmbedded(input))
+func TestConvertFrom(t *testing.T) {
+	colbeta1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ServiceAccount: "otelcol",
+			},
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}
+	col := OpenTelemetryCollector{}
+	err := col.ConvertFrom(&colbeta1)
+	require.NoError(t, err)
+	// set config to empty. The v1beta1 marshals config with empty receivers, exporters..
+	col.Spec.Config = ""
+	assert.Equal(t, OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			ServiceAccount: "otelcol",
+		},
+		Status: OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}, col)
 }
