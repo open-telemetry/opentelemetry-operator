@@ -31,7 +31,7 @@ func TestAllocationPerNode(t *testing.T) {
 	// prepare allocator with initial targets and collectors
 	s, _ := New("per-node", loggerPerNode)
 
-	cols := MakeNCollectors(3, 0)
+	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)
 	firstLabels := model.LabelSet{
 		"test":                            "test1",
@@ -45,14 +45,23 @@ func TestAllocationPerNode(t *testing.T) {
 	thirdLabels := model.LabelSet{
 		"test": "test3",
 	}
+	// endpointslice target kind and name
+	fourthLabels := model.LabelSet{
+		"test": "test4",
+		"__meta_kubernetes_endpointslice_address_target_kind": "Node",
+		"__meta_kubernetes_endpointslice_address_target_name": "node-3",
+	}
+
 	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
 	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
 	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "")
+	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "")
 
 	targetList := map[string]*target.Item{
 		firstTarget.Hash():  firstTarget,
 		secondTarget.Hash(): secondTarget,
 		thirdTarget.Hash():  thirdTarget,
+		fourthTarget.Hash(): fourthTarget,
 	}
 
 	// test that targets and collectors are added properly
