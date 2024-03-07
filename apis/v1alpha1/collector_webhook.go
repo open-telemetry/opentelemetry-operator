@@ -359,7 +359,6 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	if r.Spec.TargetAllocator.AllocationStrategy == OpenTelemetryTargetAllocatorAllocationStrategyPerNode && r.Spec.Mode != ModeDaemonSet {
 		return nil, fmt.Errorf("target allocation strategy %s is only supported in OpenTelemetry Collector mode %s", OpenTelemetryTargetAllocatorAllocationStrategyPerNode, ModeDaemonSet)
 	}
-
 	// validate Prometheus config for target allocation
 	promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
 	if err != nil {

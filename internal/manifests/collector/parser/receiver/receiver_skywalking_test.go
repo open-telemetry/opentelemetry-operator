@@ -27,7 +27,7 @@ func TestSkywalkingSelfRegisters(t *testing.T) {
 
 func TestSkywalkingIsFoundByName(t *testing.T) {
 	// test
-	p, err := For(logger, "skywalking", map[interface{}]interface{}{})
+	p, err := For(logger, "skywalking", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
@@ -36,12 +36,12 @@ func TestSkywalkingIsFoundByName(t *testing.T) {
 
 func TestSkywalkingPortsOverridden(t *testing.T) {
 	// prepare
-	builder := NewSkywalkingReceiverParser(logger, "skywalking", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{
+	builder := NewSkywalkingReceiverParser(logger, "skywalking", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{
 				"endpoint": "0.0.0.0:1234",
 			},
-			"http": map[interface{}]interface{}{
+			"http": map[string]interface{}{
 				"endpoint": "0.0.0.0:1235",
 			},
 		},
@@ -75,10 +75,10 @@ func TestSkywalkingPortsOverridden(t *testing.T) {
 
 func TestSkywalkingExposeDefaultPorts(t *testing.T) {
 	// prepare
-	builder := NewSkywalkingReceiverParser(logger, "skywalking", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{},
-			"http": map[interface{}]interface{}{},
+	builder := NewSkywalkingReceiverParser(logger, "skywalking", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{},
+			"http": map[string]interface{}{},
 		},
 	})
 

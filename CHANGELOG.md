@@ -124,7 +124,7 @@ Changes by Version
 - `operator`: Automate the creation of the permissions needed by the resourcedetection processor (#2393)
 - `operator`: Automate the creation of the permissions needed by the k8sattributes processor (#2395)
 - `target allocator`: Change default allocation and filtering strategy (#2477)
-- `operator`: Introduce common fields to the v1alpha2 types that can be reused for any CRDs. (#901)
+- `operator`: Introduce common fields to the v1beta1 types that can be reused for any CRDs. (#901)
 - `target allocator`: Use Pod securityContext for target allocator (#2495)
   Bring back PodSecurityContext as it was removed in the previous changes.
 - `bridge`: Sets pods in the component health map (#2489)

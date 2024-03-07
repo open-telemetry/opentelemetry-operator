@@ -23,7 +23,7 @@ import (
 const parserNameZipkinScribe = "__zipkinscribe"
 
 // NewZipkinScribeReceiverParser builds a new parser for ZipkinScribe receivers.
-func NewZipkinScribeReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewZipkinScribeReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

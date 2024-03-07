@@ -25,17 +25,7 @@ import (
 )
 
 func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
-	confStr, err := params.OtelCol.Spec.Config.Yaml()
-	if err != nil {
-		return nil, err
-	}
-
-	configFromString, err := adapters.ConfigFromString(confStr)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil, nil
-	}
-	rules := adapters.ConfigToRBAC(params.Log, configFromString)
+	rules := adapters.ConfigToRBAC(params.Log, params.OtelCol.Spec.Config)
 
 	if len(rules) == 0 {
 		return nil, nil
@@ -55,16 +45,7 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 }
 
 func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, error) {
-	confStr, err := params.OtelCol.Spec.Config.Yaml()
-	if err != nil {
-		return nil, err
-	}
-	configFromString, err := adapters.ConfigFromString(confStr)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil, nil
-	}
-	rules := adapters.ConfigToRBAC(params.Log, configFromString)
+	rules := adapters.ConfigToRBAC(params.Log, params.OtelCol.Spec.Config)
 
 	if len(rules) == 0 {
 		return nil, nil

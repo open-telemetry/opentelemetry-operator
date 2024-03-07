@@ -23,7 +23,7 @@ import (
 const parserNameSAPM = "__sapm"
 
 // NewSAPMReceiverParser builds a new parser for SAPM receivers, from the contrib repository.
-func NewSAPMReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewSAPMReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

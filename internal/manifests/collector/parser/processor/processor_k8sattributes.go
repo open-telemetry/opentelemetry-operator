@@ -30,13 +30,13 @@ const (
 
 // PrometheusExporterParser parses the configuration for k8sattributes processor.
 type K8sAttributesParser struct {
-	config map[interface{}]interface{}
+	config map[string]interface{}
 	logger logr.Logger
 	name   string
 }
 
 // NewK8sAttributesParser builds a new parser k8sattributes processor.
-func NewK8sAttributesParser(logger logr.Logger, name string, config map[interface{}]interface{}) ProcessorParser {
+func NewK8sAttributesParser(logger logr.Logger, name string, config map[string]interface{}) ProcessorParser {
 	return &K8sAttributesParser{
 		logger: logger,
 		name:   name,
@@ -57,7 +57,7 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 		return prs
 	}
 
-	metadataCfg, ok := extractCfg.(map[interface{}]interface{})["metadata"]
+	metadataCfg, ok := extractCfg.(map[string]interface{})["metadata"]
 	if !ok {
 		return prs
 	}

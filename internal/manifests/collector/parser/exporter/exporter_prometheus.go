@@ -32,13 +32,13 @@ const (
 
 // PrometheusExporterParser parses the configuration for OTLP receivers.
 type PrometheusExporterParser struct {
-	config map[interface{}]interface{}
+	config map[string]interface{}
 	logger logr.Logger
 	name   string
 }
 
 // NewPrometheusExporterParser builds a new parser for OTLP receivers.
-func NewPrometheusExporterParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewPrometheusExporterParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &PrometheusExporterParser{
 		logger: logger,
 		name:   name,

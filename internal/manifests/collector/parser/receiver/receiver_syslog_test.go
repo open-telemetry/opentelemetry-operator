@@ -28,7 +28,7 @@ func TestSyslogSelfRegisters(t *testing.T) {
 
 func TestSyslogIsFoundByName(t *testing.T) {
 	// test
-	p, err := For(logger, "syslog", map[interface{}]interface{}{})
+	p, err := For(logger, "syslog", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
@@ -38,15 +38,15 @@ func TestSyslogIsFoundByName(t *testing.T) {
 func TestSyslogConfiguration(t *testing.T) {
 	for _, tt := range []struct {
 		desc     string
-		config   map[interface{}]interface{}
+		config   map[string]interface{}
 		expected []corev1.ServicePort
 	}{
-		{"Empty configuration", map[interface{}]interface{}{}, []corev1.ServicePort{}},
+		{"Empty configuration", map[string]interface{}{}, []corev1.ServicePort{}},
 		{"UDP port configuration",
-			map[interface{}]interface{}{"udp": map[interface{}]interface{}{"listen_address": "0.0.0.0:1234"}},
+			map[string]interface{}{"udp": map[string]interface{}{"listen_address": "0.0.0.0:1234"}},
 			[]corev1.ServicePort{{Name: "syslog", Port: 1234, Protocol: corev1.ProtocolUDP}}},
 		{"TCP port configuration",
-			map[interface{}]interface{}{"tcp": map[interface{}]interface{}{"listen_address": "0.0.0.0:1234"}},
+			map[string]interface{}{"tcp": map[string]interface{}{"listen_address": "0.0.0.0:1234"}},
 			[]corev1.ServicePort{{Name: "syslog", Port: 1234, Protocol: corev1.ProtocolTCP}}},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {

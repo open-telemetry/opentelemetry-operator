@@ -30,13 +30,13 @@ const parserNameUdpLog = "__udplog"
 
 // UdpLogReceiverParser parses the configuration for UDP log receivers.
 type UdpLogReceiverParser struct {
-	config map[interface{}]interface{}
+	config map[string]interface{}
 	logger logr.Logger
 	name   string
 }
 
 // NewUdpLogReceiverParser builds a new parser for UDP log receivers.
-func NewUdpLogReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewUdpLogReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &UdpLogReceiverParser{
 		logger: logger,
 		name:   name,

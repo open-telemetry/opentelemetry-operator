@@ -23,7 +23,7 @@ import (
 const parserNameSignalFx = "__signalfx"
 
 // NewSignalFxReceiverParser builds a new parser for SignalFx receivers, from the contrib repository.
-func NewSignalFxReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewSignalFxReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

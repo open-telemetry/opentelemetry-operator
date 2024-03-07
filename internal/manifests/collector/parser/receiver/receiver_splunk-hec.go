@@ -23,7 +23,7 @@ import (
 const parserNameSplunkHec = "__splunk_hec"
 
 // NewSplunkHecReceiverParser builds a new parser for Splunk Hec receivers, from the contrib repository.
-func NewSplunkHecReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewSplunkHecReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

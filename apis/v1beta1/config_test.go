@@ -139,10 +139,12 @@ func TestConfigYaml(t *testing.T) {
 			},
 		},
 		Service: Service{
-			Extensions: &[]string{"addon"},
+			Extensions: []string{"addon"},
 			Telemetry: &AnyConfig{
 				Object: map[string]interface{}{
-					"insights": "yeah!",
+					"metrics": map[string]interface{}{
+						"address": "0.0.0.0:9000",
+					},
 				},
 			},
 			Pipelines: AnyConfig{
@@ -171,7 +173,8 @@ service:
   extensions:
     - addon
   telemetry:
-    insights: yeah!
+    metrics:
+      address: 0.0.0.0:9000
   pipelines:
     exporters:
       - otlp/exporter

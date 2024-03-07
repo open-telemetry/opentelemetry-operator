@@ -37,14 +37,14 @@ const (
 
 // JaegerReceiverParser parses the configuration for Jaeger-specific receivers.
 type JaegerReceiverParser struct {
-	config map[interface{}]interface{}
+	config map[string]interface{}
 	logger logr.Logger
 	name   string
 }
 
 // NewJaegerReceiverParser builds a new parser for Jaeger receivers.
-func NewJaegerReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
-	if protocols, ok := config["protocols"].(map[interface{}]interface{}); ok {
+func NewJaegerReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
+	if protocols, ok := config["protocols"].(map[string]interface{}); ok {
 		return &JaegerReceiverParser{
 			logger: logger,
 			name:   name,
@@ -54,7 +54,7 @@ func NewJaegerReceiverParser(logger logr.Logger, name string, config map[interfa
 
 	return &JaegerReceiverParser{
 		name:   name,
-		config: map[interface{}]interface{}{},
+		config: map[string]interface{}{},
 	}
 }
 
@@ -98,7 +98,7 @@ func (j *JaegerReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			var protocolPort *corev1.ServicePort
 
 			// do we have a configuration block for the protocol?
-			settings, ok := receiverProtocol.(map[interface{}]interface{})
+			settings, ok := receiverProtocol.(map[string]interface{})
 			if ok {
 				protocolPort = singlePortFromConfigEndpoint(j.logger, nameWithProtocol, settings)
 			}

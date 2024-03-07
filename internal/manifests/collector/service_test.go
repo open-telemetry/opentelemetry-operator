@@ -261,8 +261,8 @@ func TestMonitoringService(t *testing.T) {
 				Telemetry: &v1beta1.AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
-							"level":   "detailed",
 							"address": "0.0.0.0:9090",
+							"level":   "detailed",
 						},
 					},
 				},

@@ -36,14 +36,14 @@ const (
 
 // LokiReceiverParser parses the configuration for Loki receivers.
 type LokiReceiverParser struct {
-	config map[interface{}]interface{}
+	config map[string]interface{}
 	logger logr.Logger
 	name   string
 }
 
 // NewLokiReceiverParser builds a new parser for Loki receivers.
-func NewLokiReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
-	if protocols, ok := config["protocols"].(map[interface{}]interface{}); ok {
+func NewLokiReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
+	if protocols, ok := config["protocols"].(map[string]interface{}); ok {
 		return &LokiReceiverParser{
 			logger: logger,
 			name:   name,
@@ -53,7 +53,7 @@ func NewLokiReceiverParser(logger logr.Logger, name string, config map[interface
 
 	return &LokiReceiverParser{
 		name:   name,
-		config: map[interface{}]interface{}{},
+		config: map[string]interface{}{},
 	}
 }
 
@@ -95,7 +95,7 @@ func (o *LokiReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			var protocolPort *corev1.ServicePort
 
 			// do we have a configuration block for the protocol?
-			settings, ok := receiverProtocol.(map[interface{}]interface{})
+			settings, ok := receiverProtocol.(map[string]interface{})
 			if ok {
 				protocolPort = singlePortFromConfigEndpoint(o.logger, nameWithProtocol, settings)
 			}

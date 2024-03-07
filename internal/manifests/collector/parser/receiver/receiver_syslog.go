@@ -30,13 +30,13 @@ const parserNameSyslog = "__syslog"
 
 // SyslogReceiverParser parses the configuration for TCP log receivers.
 type SyslogReceiverParser struct {
-	config map[interface{}]interface{}
+	config map[string]interface{}
 	logger logr.Logger
 	name   string
 }
 
 // NewSyslogReceiverParser builds a new parser for TCP log receivers.
-func NewSyslogReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewSyslogReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &SyslogReceiverParser{
 		logger: logger,
 		name:   name,
@@ -48,19 +48,19 @@ func (o *SyslogReceiverParser) Ports() ([]corev1.ServicePort, error) {
 	var endpoint interface{}
 	var endpointName string
 	var protocol corev1.Protocol
-	var c map[interface{}]interface{}
+	var c map[string]interface{}
 
 	// syslog receiver contains the endpoint
 	// that needs to be exposed one level down inside config
 	// i.e. either in tcp or udp section with field key
 	// as `listen_address`
 	if tcp, isTCP := o.config["tcp"]; isTCP && tcp != nil {
-		c = tcp.(map[interface{}]interface{})
+		c = tcp.(map[string]interface{})
 		endpointName = "tcp"
 		endpoint = getAddressFromConfig(o.logger, o.name, listenAddressKey, c)
 		protocol = corev1.ProtocolTCP
 	} else if udp, isUDP := o.config["udp"]; isUDP && udp != nil {
-		c = udp.(map[interface{}]interface{})
+		c = udp.(map[string]interface{})
 		endpointName = "udp"
 		endpoint = getAddressFromConfig(o.logger, o.name, listenAddressKey, c)
 		protocol = corev1.ProtocolUDP

@@ -30,13 +30,13 @@ const parserNameTcpLog = "__tcplog"
 
 // TcpLogReceiverParser parses the configuration for TCP log receivers.
 type TcpLogReceiverParser struct {
-	config map[interface{}]interface{}
+	config map[string]interface{}
 	logger logr.Logger
 	name   string
 }
 
 // NewTcpLogReceiverParser builds a new parser for TCP log receivers.
-func NewTcpLogReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewTcpLogReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &TcpLogReceiverParser{
 		logger: logger,
 		name:   name,

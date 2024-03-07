@@ -41,14 +41,14 @@ var (
 
 // OTLPReceiverParser parses the configuration for OTLP receivers.
 type OTLPReceiverParser struct {
-	config map[interface{}]interface{}
+	config map[string]interface{}
 	logger logr.Logger
 	name   string
 }
 
 // NewOTLPReceiverParser builds a new parser for OTLP receivers.
-func NewOTLPReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
-	if protocols, ok := config["protocols"].(map[interface{}]interface{}); ok {
+func NewOTLPReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
+	if protocols, ok := config["protocols"].(map[string]interface{}); ok {
 		return &OTLPReceiverParser{
 			logger: logger,
 			name:   name,
@@ -58,7 +58,7 @@ func NewOTLPReceiverParser(logger logr.Logger, name string, config map[interface
 
 	return &OTLPReceiverParser{
 		name:   name,
-		config: map[interface{}]interface{}{},
+		config: map[string]interface{}{},
 	}
 }
 
@@ -100,7 +100,7 @@ func (o *OTLPReceiverParser) Ports() ([]corev1.ServicePort, error) {
 			var protocolPort *corev1.ServicePort
 
 			// do we have a configuration block for the protocol?
-			settings, ok := receiverProtocol.(map[interface{}]interface{})
+			settings, ok := receiverProtocol.(map[string]interface{})
 			if ok {
 				protocolPort = singlePortFromConfigEndpoint(o.logger, nameWithProtocol, settings)
 			}
