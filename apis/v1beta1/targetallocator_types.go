@@ -82,6 +82,12 @@ type TargetAllocatorSpec struct {
 	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 ).
 	// +optional
 	PrometheusCR TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// ObservabilitySpec defines how telemetry data gets handled.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
+	Observability ObservabilitySpec `json:"observability,omitempty"`
 }
 
 // TargetAllocatorPrometheusCR configures Prometheus CustomResource handling in the Target Allocator.
