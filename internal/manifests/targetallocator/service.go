@@ -25,14 +25,14 @@ import (
 )
 
 func Service(params manifests.Params) *corev1.Service {
-	name := naming.TAService(params.OtelCol.Name)
-	labels := manifestutils.TALabels(params.OtelCol, name, ComponentOpenTelemetryTargetAllocator)
-	selector := manifestutils.TASelectorLabels(params.OtelCol, ComponentOpenTelemetryTargetAllocator)
+	name := naming.TAService(params.TargetAllocator.Name)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	selector := manifestutils.TASelectorLabels(params.TargetAllocator, ComponentOpenTelemetryTargetAllocator)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(params.OtelCol.Name),
-			Namespace: params.OtelCol.Namespace,
+			Name:      naming.TAService(params.TargetAllocator.Name),
+			Namespace: params.TargetAllocator.Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{

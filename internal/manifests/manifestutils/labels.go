@@ -83,13 +83,8 @@ func SelectorLabels(instance metav1.ObjectMeta, component string) map[string]str
 	}
 }
 
-// Labels return the common labels to all TargetAllocator objects that are part of a managed OpenTelemetryCollector.
-func TALabels(instance v1beta1.OpenTelemetryCollector, name string, component string) map[string]string {
-	return Labels(instance.ObjectMeta, name, instance.Spec.TargetAllocator.Image, component, nil)
-}
-
 // SelectorLabels return the selector labels for Target Allocator Pods.
-func TASelectorLabels(instance v1beta1.OpenTelemetryCollector, component string) map[string]string {
+func TASelectorLabels(instance v1beta1.TargetAllocator, component string) map[string]string {
 	selectorLabels := SelectorLabels(instance.ObjectMeta, component)
 
 	// TargetAllocator uses the name label as well for selection

@@ -37,6 +37,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -1353,6 +1354,7 @@ collector_selector:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
 config:
   scrape_configs:
   - job_name: example
@@ -1411,7 +1413,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "59307aaa5652c8723f7803aa2d2b631389d1a0267444a4a8dc559878b5c4aa2c",
+									"opentelemetry-targetallocator-config/hash": "ba38217bad7e399f1210b90a464252159a8c4e17060c246799b8e4cb29a6f18f",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1750,6 +1752,7 @@ collector_selector:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
 config:
   scrape_configs:
   - job_name: example
@@ -1808,7 +1811,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "59307aaa5652c8723f7803aa2d2b631389d1a0267444a4a8dc559878b5c4aa2c",
+									"opentelemetry-targetallocator-config/hash": "ba38217bad7e399f1210b90a464252159a8c4e17060c246799b8e4cb29a6f18f",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1975,10 +1978,13 @@ prometheus_cr:
 				Config:  cfg,
 				OtelCol: tt.args.instance,
 			}
+			targetAllocator, err := collector.TargetAllocator(params)
+			require.NoError(t, err)
+			params.TargetAllocator = *targetAllocator
 			if len(tt.featuregates) > 0 {
 				fg := strings.Join(tt.featuregates, ",")
 				flagset := featuregate.Flags(colfeaturegate.GlobalRegistry())
-				if err := flagset.Set(featuregate.FeatureGatesFlag, fg); err != nil {
+				if err = flagset.Set(featuregate.FeatureGatesFlag, fg); err != nil {
 					t.Errorf("featuregate setting error = %v", err)
 					return
 				}

@@ -25,29 +25,28 @@ import (
 )
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
-func ServiceAccountName(instance v1beta1.OpenTelemetryCollector) string {
-	if len(instance.Spec.TargetAllocator.ServiceAccount) == 0 {
+func ServiceAccountName(instance v1beta1.TargetAllocator) string {
+	if len(instance.Spec.ServiceAccount) == 0 {
 		return naming.TargetAllocatorServiceAccount(instance.Name)
 	}
 
-	return instance.Spec.TargetAllocator.ServiceAccount
+	return instance.Spec.ServiceAccount
 }
 
 // ServiceAccount returns the service account for the given instance.
 func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
-	if len(params.OtelCol.Spec.TargetAllocator.ServiceAccount) > 0 {
+	if len(params.TargetAllocator.Spec.ServiceAccount) > 0 {
 		return nil
 	}
-
-	name := naming.TargetAllocatorServiceAccount(params.OtelCol.Name)
-	labels := manifestutils.TALabels(params.OtelCol, name, ComponentOpenTelemetryTargetAllocator)
+	name := naming.TargetAllocatorServiceAccount(params.TargetAllocator.Name)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   params.OtelCol.Namespace,
+			Namespace:   params.TargetAllocator.Namespace,
 			Labels:      labels,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: params.TargetAllocator.Annotations,
 		},
 	}
 }

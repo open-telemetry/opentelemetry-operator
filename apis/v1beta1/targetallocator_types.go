@@ -20,10 +20,48 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func init() {
+	SchemeBuilder.Register(&TargetAllocator{}, &TargetAllocatorList{})
+}
+
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+
+// TargetAllocator is the Schema for the targetallocators API.
+type TargetAllocator struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   TargetAllocatorSpec   `json:"spec,omitempty"`
+	Status TargetAllocatorStatus `json:"status,omitempty"`
+}
+
+//+kubebuilder:object:root=true
+
+// TargetAllocatorList contains a list of TargetAllocator.
+type TargetAllocatorList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []OpenTelemetryCollector `json:"items"`
+}
+
+// TargetAllocatorStatus defines the observed state of Target Allocator.
+type TargetAllocatorStatus struct {
+	// Version of the managed Target Allocator (operand)
+	// +optional
+	Version string `json:"version,omitempty"`
+
+	// Image indicates the container image to use for the Target Allocator.
+	// +optional
+	Image string `json:"image,omitempty"`
+}
+
 // TargetAllocatorSpec defines the desired state of TargetAllocator.
 type TargetAllocatorSpec struct {
 	// Common defines fields that are common to all OpenTelemetry CRD workloads.
 	OpenTelemetryCommonFields `json:",inline"`
+	// CollectorSelector is the selector for Collector Pods the target allocator will allocate targets to.
+	CollectorSelector metav1.LabelSelector `json:"collectorSelector,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted and consistent-hashing. The default option is consistent-hashing
 	// +optional
@@ -35,10 +73,21 @@ type TargetAllocatorSpec struct {
 	// +optional
 	// +kubebuilder:default:=relabel-config
 	FilterStrategy TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
-	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
-	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
+	// ScrapeConfigs define static Prometheus scrape configurations for the target allocator.
+	// To use dynamic configurations from ServiceMonitors and PodMonitors, see the PrometheusCR section.
+	// For the exact format, see https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
+	// +optional
+	// +listType=atomic
+	ScrapeConfigs []AnyConfig `json:"scrapeConfigs,omitempty"`
+	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 ).
 	// +optional
 	PrometheusCR TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	// ObservabilitySpec defines how telemetry data gets handled.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
+	Observability ObservabilitySpec `json:"observability,omitempty"`
 }
 
 // TargetAllocatorPrometheusCR configures Prometheus CustomResource handling in the Target Allocator.
@@ -63,40 +112,4 @@ type TargetAllocatorPrometheusCR struct {
 	// ServiceMonitor's meta labels. The requirements are ANDed.
 	// +optional
 	ServiceMonitorSelector *metav1.LabelSelector `json:"serviceMonitorSelector,omitempty"`
-}
-
-// TargetAllocatorStatus defines the observed state of Target Allocator.
-type TargetAllocatorStatus struct {
-	// Version of the managed Target Allocator (operand)
-	// +optional
-	Version string `json:"version,omitempty"`
-
-	// Image indicates the container image to use for the Target Allocator.
-	// +optional
-	Image string `json:"image,omitempty"`
-}
-
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-
-// TargetAllocator is the Schema for the targetallocators API.
-type TargetAllocator struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   TargetAllocatorSpec   `json:"spec,omitempty"`
-	Status TargetAllocatorStatus `json:"status,omitempty"`
-}
-
-//+kubebuilder:object:root=true
-
-// TargetAllocatorList contains a list of TargetAllocator.
-type TargetAllocatorList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []OpenTelemetryCollector `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&TargetAllocator{}, &TargetAllocatorList{})
 }

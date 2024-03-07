@@ -28,7 +28,7 @@ import (
 
 func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget, error) {
 	// defaulting webhook should set this if the strategy is compatible, but if unset then return nil.
-	if params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget == nil {
+	if params.TargetAllocator.Spec.PodDisruptionBudget == nil {
 		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
 		return nil, nil
 	}
@@ -36,18 +36,23 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 	// defaulter doesn't set PodDisruptionBudget if the strategy isn't valid,
 	// if PodDisruptionBudget != nil and stategy isn't correct, users have set
 	// it wrongly
-	if params.OtelCol.Spec.TargetAllocator.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyConsistentHashing {
+	if params.TargetAllocator.Spec.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyConsistentHashing {
 		params.Log.V(4).Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
 		return nil, fmt.Errorf("target allocator pdb has been configured but the allocation strategy isn't not compatible")
 	}
 
-	name := naming.TAPodDisruptionBudget(params.OtelCol.Name)
-	labels := manifestutils.TALabels(params.OtelCol, name, ComponentOpenTelemetryTargetAllocator)
-	annotations := Annotations(params.OtelCol, nil, params.Config.AnnotationsFilter())
+	name := naming.TAPodDisruptionBudget(params.TargetAllocator.Name)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	configMap, err := ConfigMap(params)
+	if err != nil {
+		params.Log.Info("failed to construct target allocator config map for annotations")
+		configMap = nil
+	}
+	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter())
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        name,
-		Namespace:   params.OtelCol.Namespace,
+		Namespace:   params.TargetAllocator.Namespace,
 		Labels:      labels,
 		Annotations: annotations,
 	}
@@ -55,10 +60,10 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 	return &policyV1.PodDisruptionBudget{
 		ObjectMeta: objectMeta,
 		Spec: policyV1.PodDisruptionBudgetSpec{
-			MinAvailable:   params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget.MinAvailable,
-			MaxUnavailable: params.OtelCol.Spec.TargetAllocator.PodDisruptionBudget.MaxUnavailable,
+			MinAvailable:   params.TargetAllocator.Spec.PodDisruptionBudget.MinAvailable,
+			MaxUnavailable: params.TargetAllocator.Spec.PodDisruptionBudget.MaxUnavailable,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: manifestutils.TASelectorLabels(params.OtelCol, ComponentOpenTelemetryTargetAllocator),
+				MatchLabels: manifestutils.TASelectorLabels(params.TargetAllocator, ComponentOpenTelemetryTargetAllocator),
 			},
 		},
 	}, nil

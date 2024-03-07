@@ -161,14 +161,15 @@ func TestSelectorLabels(t *testing.T) {
 		"app.kubernetes.io/component":  "opentelemetry-collector",
 		"app.kubernetes.io/instance":   "my-namespace.my-opentelemetry-collector",
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/name":       "my-opentelemetry-collector-targetallocator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	tainstance := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-opentelemetry-collector", Namespace: "my-namespace"},
 	}
 
 	// test
-	result := SelectorLabels(otelcol.ObjectMeta, "opentelemetry-collector")
+	result := TASelectorLabels(tainstance, "opentelemetry-collector")
 
 	// verify
 	assert.Equal(t, expected, result)
@@ -176,7 +177,7 @@ func TestSelectorLabels(t *testing.T) {
 
 func TestLabelsTACommonSet(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
+	tainstance := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      taname,
 			Namespace: tanamespace,
@@ -184,7 +185,7 @@ func TestLabelsTACommonSet(t *testing.T) {
 	}
 
 	// test
-	labels := TALabels(otelcol, taname, "opentelemetry-targetallocator")
+	labels := Labels(tainstance.ObjectMeta, taname, tainstance.Spec.Image, "opentelemetry-targetallocator", nil)
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
@@ -195,7 +196,7 @@ func TestLabelsTACommonSet(t *testing.T) {
 
 func TestLabelsTAPropagateDown(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
+	tainstance := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				"myapp":                  "mycomponent",
@@ -205,8 +206,9 @@ func TestLabelsTAPropagateDown(t *testing.T) {
 	}
 
 	// test
-	labels := TALabels(otelcol, taname, "opentelemetry-targetallocator")
-	selectorLabels := TASelectorLabels(otelcol, "opentelemetry-targetallocator")
+	labels := Labels(tainstance.ObjectMeta, taname, tainstance.Spec.Image, "opentelemetry-targetallocator", nil)
+
+	selectorLabels := TASelectorLabels(tainstance, "opentelemetry-targetallocator")
 
 	// verify
 	assert.Len(t, labels, 7)
@@ -217,7 +219,7 @@ func TestLabelsTAPropagateDown(t *testing.T) {
 
 func TestSelectorTALabels(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
+	tainstance := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      taname,
 			Namespace: tanamespace,
@@ -225,10 +227,10 @@ func TestSelectorTALabels(t *testing.T) {
 	}
 
 	// test
-	labels := TASelectorLabels(otelcol, "opentelemetry-targetallocator")
+	labels := TASelectorLabels(tainstance, "opentelemetry-targetallocator")
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-targetallocator", labels["app.kubernetes.io/component"])
-	assert.Equal(t, naming.TargetAllocator(otelcol.Name), labels["app.kubernetes.io/name"])
+	assert.Equal(t, naming.TargetAllocator(tainstance.Name), labels["app.kubernetes.io/name"])
 }

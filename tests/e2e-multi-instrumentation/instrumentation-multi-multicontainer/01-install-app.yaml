@@ -23,17 +23,48 @@ spec:
         instrumentation.opentelemetry.io/python-container-names: "pythonapp"
         sidecar.opentelemetry.io/inject: "true"
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
       containers:
         - name: dotnetapp
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+          - name: ASPNETCORE_URLS
+            value: "http://+:8083"
         - name: javaapp
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
         - name: nodejsapp
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+          - name: NODE_PATH
+            value: /usr/local/lib/node_modules
         - name: pythonapp
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+          command: ["flask", "run", "-p", "8087"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
         - name: shouldnt-be-instrumented
           image: rabbitmq:3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           env:
             - name: TEST
               value: test

@@ -25,12 +25,12 @@ import (
 
 // ServiceMonitor returns the service monitor for the given instance.
 func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
-	name := naming.TargetAllocator(params.OtelCol.Name)
-	labels := manifestutils.TALabels(params.OtelCol, name, ComponentOpenTelemetryTargetAllocator)
+	name := naming.TargetAllocator(params.TargetAllocator.Name)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: params.OtelCol.Namespace,
+			Namespace: params.TargetAllocator.Namespace,
 			Name:      name,
 			Labels:    labels,
 		},
@@ -42,10 +42,10 @@ func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
 			},
 
 			NamespaceSelector: monitoringv1.NamespaceSelector{
-				MatchNames: []string{params.OtelCol.Namespace},
+				MatchNames: []string{params.TargetAllocator.Namespace},
 			},
 			Selector: metav1.LabelSelector{
-				MatchLabels: manifestutils.TASelectorLabels(params.OtelCol, ComponentOpenTelemetryTargetAllocator),
+				MatchLabels: manifestutils.TASelectorLabels(params.TargetAllocator, ComponentOpenTelemetryTargetAllocator),
 			},
 		},
 	}
