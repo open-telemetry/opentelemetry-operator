@@ -14,6 +14,8 @@
 
 package v1beta1
 
+import networkingv1 "k8s.io/api/networking/v1"
+
 type (
 	// IngressType represents how a collector should be exposed (ingress vs route).
 	// +kubebuilder:validation:Enum=ingress;route
@@ -61,3 +63,55 @@ const (
 	// receiver port. The port name is used as a subdomain for the host defined in the Ingress e.g. otlp-http.example.com.
 	IngressRuleTypeSubdomain IngressRuleType = "subdomain"
 )
+
+// Ingress is used to specify how OpenTelemetry Collector is exposed. This
+// functionality is only available if one of the valid modes is set.
+// Valid modes are: deployment, daemonset and statefulset.
+// NOTE: If this feature is activated, all specified receivers are exposed.
+// Currently, this has a few limitations. Depending on the ingress controller
+// there are problems with TLS and gRPC.
+// SEE: https://github.com/open-telemetry/opentelemetry-operator/issues/1306.
+// NOTE: As a workaround, port name and appProtocol could be specified directly
+// in the CR.
+// SEE: OpenTelemetryCollector.spec.ports[index].
+type Ingress struct {
+	// Type default value is: ""
+	// Supported types are: ingress, route
+	Type IngressType `json:"type,omitempty"`
+
+	// RuleType defines how Ingress exposes collector receivers.
+	// IngressRuleTypePath ("path") exposes each receiver port on a unique path on single domain defined in Hostname.
+	// IngressRuleTypeSubdomain ("subdomain") exposes each receiver port on a unique subdomain of Hostname.
+	// Default is IngressRuleTypePath ("path").
+	RuleType IngressRuleType `json:"ruleType,omitempty"`
+
+	// Hostname by which the ingress proxy can be reached.
+	// +optional
+	Hostname string `json:"hostname,omitempty"`
+
+	// Annotations to add to ingress.
+	// e.g. 'cert-manager.io/cluster-issuer: "letsencrypt"'
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// TLS configuration.
+	// +optional
+	TLS []networkingv1.IngressTLS `json:"tls,omitempty"`
+
+	// IngressClassName is the name of an IngressClass cluster resource. Ingress
+	// controller implementations use this field to know whether they should be
+	// serving this Ingress resource.
+	// +optional
+	IngressClassName *string `json:"ingressClassName,omitempty"`
+
+	// Route is an OpenShift specific section that is only considered when
+	// type "route" is used.
+	// +optional
+	Route OpenShiftRoute `json:"route,omitempty"`
+}
+
+// OpenShiftRoute defines openshift route specific settings.
+type OpenShiftRoute struct {
+	// Termination indicates termination type. By default "edge" is used.
+	Termination TLSRouteTerminationType `json:"termination,omitempty"`
+}
