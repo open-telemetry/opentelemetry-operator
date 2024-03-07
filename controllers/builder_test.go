@@ -1949,7 +1949,11 @@ prometheus_cr:
 						},
 						Selector: v1.LabelSelector{
 							MatchLabels: map[string]string{
-								"operator.opentelemetry.io/collector-monitoring-service": "Exists",
+								"app.kubernetes.io/component":  "opentelemetry-targetallocator",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/name":       "test-targetallocator",
+								"app.kubernetes.io/part-of":    "opentelemetry",
 							},
 						},
 						NamespaceSelector: monitoringv1.NamespaceSelector{

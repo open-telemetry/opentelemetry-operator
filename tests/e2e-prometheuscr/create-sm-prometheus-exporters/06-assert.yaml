@@ -16,4 +16,7 @@ spec:
     - create-sm-prometheus
   selector:
     matchLabels:
+      app.kubernetes.io/instance: create-sm-prometheus.simplest
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: simplest-collector
       operator.opentelemetry.io/collector-monitoring-service: "Exists"
