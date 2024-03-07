@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: instrumentation-java-other-ns
+spec:
+  steps:
+  - name: step-01
+    try:
+    # In OpenShift, when a namespace is created, all necessary SCC annotations are automatically added. However, if a namespace is created using a resource file with only selected SCCs, the other auto-added SCCs are not included. Therefore, the UID-range and supplemental groups SCC annotations must be set after the namespace is created.
+    - command:
+        entrypoint: kubectl
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.uid-range=1000/1000
+        - --overwrite
+    - command:
+        entrypoint: kubectl
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.supplemental-groups=2000/1000
+        - --overwrite
+    - delete:
+        ref:
+          apiVersion: v1
+          kind: Namespace
+          name: my-other-ns
+  - name: step-02
+    try:
+    - apply:
+        file: 02-install-collector.yaml
+    - apply:
+        file: 02-install-instrumentation.yaml
+  - name: step-03
+    try:
+    - apply:
+        file: 03-install-app.yaml
+    - assert:
+        file: 03-assert.yaml
+  - name: step-04
+    try:
+    - delete:
+        ref:
+          apiVersion: v1
+          kind: Namespace
+          name: my-other-ns

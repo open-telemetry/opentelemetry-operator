@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -96,7 +96,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	// OpenShift uses HA proxy that uses appProtocol for its configuration.
 	for i := range ports {
 		h2c := "h2c"
-		if params.OtelCol.Spec.Ingress.Type == v1alpha2.IngressTypeRoute && ports[i].AppProtocol != nil && strings.EqualFold(*ports[i].AppProtocol, "grpc") {
+		if params.OtelCol.Spec.Ingress.Type == v1beta1.IngressTypeRoute && ports[i].AppProtocol != nil && strings.EqualFold(*ports[i].AppProtocol, "grpc") {
 			ports[i].AppProtocol = &h2c
 		}
 	}
@@ -128,7 +128,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	}
 
 	trafficPolicy := corev1.ServiceInternalTrafficPolicyCluster
-	if params.OtelCol.Spec.Mode == v1alpha2.ModeDaemonSet {
+	if params.OtelCol.Spec.Mode == v1beta1.ModeDaemonSet {
 		trafficPolicy = corev1.ServiceInternalTrafficPolicyLocal
 	}
 
@@ -148,8 +148,25 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	}, nil
 }
 
-func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[int32]bool, portNames map[string]bool) *corev1.ServicePort {
-	if portNumbers[candidate.Port] {
+type PortNumberKey struct {
+	Port     int32
+	Protocol corev1.Protocol
+}
+
+func newPortNumberKeyByPort(port int32) PortNumberKey {
+	return PortNumberKey{Port: port, Protocol: corev1.ProtocolTCP}
+}
+
+func newPortNumberKey(port int32, protocol corev1.Protocol) PortNumberKey {
+	if protocol == "" {
+		// K8s defaults to TCP if protocol is empty, so evaluate the port the same
+		protocol = corev1.ProtocolTCP
+	}
+	return PortNumberKey{Port: port, Protocol: protocol}
+}
+
+func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[PortNumberKey]bool, portNames map[string]bool) *corev1.ServicePort {
+	if portNumbers[newPortNumberKey(candidate.Port, candidate.Protocol)] {
 		return nil
 	}
 
@@ -174,12 +191,12 @@ func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers ma
 	return &candidate
 }
 
-func extractPortNumbersAndNames(ports []corev1.ServicePort) (map[int32]bool, map[string]bool) {
-	numbers := map[int32]bool{}
+func extractPortNumbersAndNames(ports []corev1.ServicePort) (map[PortNumberKey]bool, map[string]bool) {
+	numbers := map[PortNumberKey]bool{}
 	names := map[string]bool{}
 
 	for _, port := range ports {
-		numbers[port.Port] = true
+		numbers[newPortNumberKey(port.Port, port.Protocol)] = true
 		names[port.Name] = true
 	}
 

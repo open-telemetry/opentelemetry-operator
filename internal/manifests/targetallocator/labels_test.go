@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -31,7 +31,7 @@ const (
 
 func TestLabelsCommonSet(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
+	allocator := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -39,7 +39,7 @@ func TestLabelsCommonSet(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol, name)
+	labels := Labels(allocator, name)
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
@@ -50,7 +50,7 @@ func TestLabelsCommonSet(t *testing.T) {
 
 func TestLabelsPropagateDown(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
+	allocator := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				"myapp":                  "mycomponent",
@@ -60,17 +60,19 @@ func TestLabelsPropagateDown(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol, name)
+	labels := Labels(allocator, name)
+	selectorLabels := SelectorLabels(allocator)
 
 	// verify
 	assert.Len(t, labels, 7)
 	assert.Equal(t, "mycomponent", labels["myapp"])
 	assert.Equal(t, "test", labels["app.kubernetes.io/name"])
+	assert.Equal(t, "test", selectorLabels["app.kubernetes.io/name"])
 }
 
 func TestSelectorLabels(t *testing.T) {
 	// prepare
-	otelcol := v1alpha2.OpenTelemetryCollector{
+	otelcol := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,

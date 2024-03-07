@@ -9,11 +9,10 @@ body:
       description: Which component(s) does your feature request concern?
       multiple: true
       options:
-      - operator
       - collector
-      - instrumentation
+      - auto-instrumentation
       - target allocator
-      - opamp bridge
+      - opamp
   - type: textarea
     attributes:
       label: Is your feature request related to a problem? Please describe.

@@ -25,12 +25,6 @@ const (
 )
 
 var (
-	EnableDotnetAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.dotnet",
-		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports .NET auto-instrumentation"),
-		featuregate.WithRegisterFromVersion("v0.76.1"),
-	)
 	EnablePythonAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.python",
 		featuregate.StageBeta,
@@ -55,25 +49,12 @@ var (
 		featuregate.WithRegisterDescription("controls whether the operator supports Golang auto-instrumentation"),
 		featuregate.WithRegisterFromVersion("v0.77.0"),
 	)
-	EnableApacheHTTPAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.apache-httpd",
-		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports Apache HTTPD auto-instrumentation"),
-		featuregate.WithRegisterFromVersion("v0.80.0"),
-	)
 	EnableNginxAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.nginx",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator supports Nginx auto-instrumentation"),
 		featuregate.WithRegisterFromVersion("v0.86.0"),
 	)
-
-	EnableMultiInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.multi-instrumentation",
-		featuregate.StageAlpha,
-		featuregate.WithRegisterFromVersion("0.86.0"),
-		featuregate.WithRegisterDescription("controls whether the operator supports multi instrumentation"))
-
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
 	// automatically be rewritten when the target allocator is enabled.
 	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
@@ -95,7 +76,6 @@ var (
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
 func Flags(reg *featuregate.Registry) *flag.FlagSet {
 	flagSet := new(flag.FlagSet)
-	flagSet.Var(featuregate.NewFlag(reg), FeatureGatesFlag,
-		"Comma-delimited list of feature gate identifiers. Prefix with '-' to disable the feature. '+' or no prefix will enable the feature.")
+	reg.RegisterFlags(flagSet)
 	return flagSet
 }

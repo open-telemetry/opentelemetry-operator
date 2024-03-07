@@ -43,6 +43,9 @@ type Config struct {
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	createRBACPermissions               bool
+	enableMultiInstrumentation          bool
+	enableApacheHttpdInstrumentation    bool
+	enableDotNetInstrumentation         bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -75,6 +78,9 @@ func New(opts ...Option) Config {
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
 		createRBACPermissions:               o.createRBACPermissions,
+		enableMultiInstrumentation:          o.enableMultiInstrumentation,
+		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
+		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -107,6 +113,21 @@ func (c *Config) AutoDetect() error {
 // CollectorImage represents the flag to override the OpenTelemetry Collector container image.
 func (c *Config) CollectorImage() string {
 	return c.collectorImage
+}
+
+// EnableMultiInstrumentation is true when the operator supports multi instrumentation.
+func (c *Config) EnableMultiInstrumentation() bool {
+	return c.enableMultiInstrumentation
+}
+
+// EnableApacheHttpdAutoInstrumentation is true when the operator supports ApacheHttpd auto instrumentation.
+func (c *Config) EnableApacheHttpdAutoInstrumentation() bool {
+	return c.enableApacheHttpdInstrumentation
+}
+
+// EnableDotNetAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnableDotNetAutoInstrumentation() bool {
+	return c.enableDotNetInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.

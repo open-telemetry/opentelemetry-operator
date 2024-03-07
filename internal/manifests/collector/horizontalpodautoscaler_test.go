@@ -19,11 +19,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -41,14 +40,14 @@ func TestHPA(t *testing.T) {
 	var cpuUtilization int32 = 66
 	var memoryUtilization int32 = 77
 
-	otelcols := []v1alpha2.OpenTelemetryCollector{
+	otelcols := []v1beta1.OpenTelemetryCollector{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
-			Spec: v1alpha2.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
-					Autoscaler: &v1alpha2.AutoscalerSpec{
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					Autoscaler: &v1beta1.AutoscalerSpec{
 						MinReplicas:             &minReplicas,
 						MaxReplicas:             &maxReplicas,
 						TargetCPUUtilization:    &cpuUtilization,
@@ -61,9 +60,9 @@ func TestHPA(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
-			Spec: v1alpha2.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
-					Autoscaler: &v1alpha2.AutoscalerSpec{
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					Autoscaler: &v1beta1.AutoscalerSpec{
 						MinReplicas:             &minReplicas,
 						MaxReplicas:             &maxReplicas,
 						TargetCPUUtilization:    &cpuUtilization,
@@ -80,11 +79,11 @@ func TestHPA(t *testing.T) {
 				configuration := config.New()
 				params := manifests.Params{
 					Config: configuration,
-					OtelCol: v1alpha2.OpenTelemetryCollector{
+					OtelCol: v1beta1.OpenTelemetryCollector{
 						ObjectMeta: otelcol.ObjectMeta,
-						Spec: v1alpha2.OpenTelemetryCollectorSpec{
-							OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
-								Autoscaler: &v1alpha2.AutoscalerSpec{
+						Spec: v1beta1.OpenTelemetryCollectorSpec{
+							OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+								Autoscaler: &v1beta1.AutoscalerSpec{
 									MinReplicas:             otelcol.Spec.Autoscaler.MinReplicas,
 									MaxReplicas:             otelcol.Spec.Autoscaler.MaxReplicas,
 									TargetCPUUtilization:    otelcol.Spec.OpenTelemetryCommonFields.Autoscaler.TargetCPUUtilization,
@@ -95,10 +94,8 @@ func TestHPA(t *testing.T) {
 					},
 					Log: logger,
 				}
-				raw, err := HorizontalPodAutoscaler(params)
+				hpa, err := HorizontalPodAutoscaler(params)
 				require.NoError(t, err)
-
-				hpa := raw.(*autoscalingv2.HorizontalPodAutoscaler)
 
 				// verify
 				assert.Equal(t, "my-instance-collector", hpa.Name)

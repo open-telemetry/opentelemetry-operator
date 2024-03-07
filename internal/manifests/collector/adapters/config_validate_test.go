@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 func TestConfigValidate(t *testing.T) {
@@ -55,7 +55,7 @@ service:
       exporters: [debug]
 `
 	// // prepare
-	cfg := v1alpha2.Config{}
+	cfg := v1beta1.Config{}
 	err := yaml.Unmarshal([]byte(configStr), &cfg)
 	require.NoError(t, err)
 
@@ -96,7 +96,7 @@ service:
       exporters: []
 `
 	// // prepare
-	cfg := v1alpha2.Config{}
+	cfg := v1beta1.Config{}
 	err := yaml.Unmarshal([]byte(configStr), &cfg)
 	require.NoError(t, err)
 

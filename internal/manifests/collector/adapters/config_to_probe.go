@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 var (
@@ -42,7 +42,7 @@ const (
 )
 
 // ConfigToContainerProbe converts the incoming configuration object into a container probe or returns an error.
-func ConfigToContainerProbe(config v1alpha2.Config) (*corev1.Probe, error) {
+func ConfigToContainerProbe(config v1beta1.Config) (*corev1.Probe, error) {
 	if config.Extensions == nil {
 		return nil, errNoExtensions
 	} else if len(config.Service.Extensions) == 0 {

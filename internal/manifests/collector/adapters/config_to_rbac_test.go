@@ -23,7 +23,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 func TestConfigRBAC(t *testing.T) {
@@ -90,7 +90,7 @@ service:
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			cfg := v1alpha2.Config{}
+			cfg := v1beta1.Config{}
 			err := yaml.Unmarshal([]byte(tt.config), &cfg)
 			require.NoError(t, err)
 

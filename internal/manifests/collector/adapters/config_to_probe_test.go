@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 	go_yaml "gopkg.in/yaml.v3"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 func TestConfigToProbeShouldCreateProbeFor(t *testing.T) {
@@ -109,7 +109,7 @@ service:
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			// prepare
-			cfg := v1alpha2.Config{}
+			cfg := v1beta1.Config{}
 			err := go_yaml.Unmarshal([]byte(test.config), &cfg)
 			require.NoError(t, err, test.desc)
 			require.NotEmpty(t, cfg, test.desc)
@@ -163,7 +163,7 @@ service:
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			// prepare
-			cfg := v1alpha2.Config{}
+			cfg := v1beta1.Config{}
 			err := go_yaml.Unmarshal([]byte(test.config), &cfg)
 			require.NoError(t, err, test.desc)
 			require.NotEmpty(t, cfg, test.desc)

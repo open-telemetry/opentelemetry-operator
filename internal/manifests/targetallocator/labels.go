@@ -15,21 +15,27 @@
 package targetallocator
 
 import (
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Labels return the common labels to all TargetAllocator objects that are part of a managed OpenTelemetryCollector.
-func Labels(instance v1alpha2.OpenTelemetryCollector, name string) map[string]string {
-	return manifestutils.Labels(instance.ObjectMeta, name, instance.Spec.TargetAllocator.Image, ComponentOpenTelemetryTargetAllocator, nil)
+func Labels(instance v1beta1.TargetAllocator, name string) map[string]string {
+	return manifestutils.Labels(instance.ObjectMeta, name, instance.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 }
 
 // SelectorLabels return the selector labels for Target Allocator Pods.
-func SelectorLabels(instance v1alpha2.OpenTelemetryCollector) map[string]string {
+func SelectorLabels(instance v1beta1.TargetAllocator) map[string]string {
 	selectorLabels := manifestutils.SelectorLabels(instance.ObjectMeta, ComponentOpenTelemetryTargetAllocator)
+
 	// TargetAllocator uses the name label as well for selection
 	// This is inconsistent with the Collector, but changing is a somewhat painful breaking change
-	selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)
+	// Don't override the app name if it already exists
+	if name, ok := instance.ObjectMeta.Labels["app.kubernetes.io/name"]; ok {
+		selectorLabels["app.kubernetes.io/name"] = name
+	} else {
+		selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)
+	}
 	return selectorLabels
 }

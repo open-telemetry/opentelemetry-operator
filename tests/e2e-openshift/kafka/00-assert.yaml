@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: kuttl-kafka
+  name: chainsaw-kafka
 
 ---
 apiVersion: apps/v1
@@ -17,7 +17,7 @@ metadata:
     strimzi.io/kind: Kafka
     strimzi.io/name: my-cluster-entity-operator
   name: my-cluster-entity-operator
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 status:
   availableReplicas: 1
   readyReplicas: 1
@@ -28,7 +28,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: my-cluster-kafka-0
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 status:
   phase: Running
 
@@ -37,7 +37,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: my-cluster-zookeeper-0
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 status:
   phase: Running
 
@@ -56,7 +56,7 @@ metadata:
     strimzi.io/kind: Kafka
     strimzi.io/name: my-cluster-kafka
   name: my-cluster-kafka-bootstrap
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 spec:
   ports:
   - name: tcp-replication
@@ -90,7 +90,7 @@ metadata:
     strimzi.io/kind: Kafka
     strimzi.io/name: my-cluster-kafka
   name: my-cluster-kafka-brokers
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 spec:
   ports:
   - name: tcp-ctrlplane
@@ -133,7 +133,7 @@ metadata:
     strimzi.io/kind: Kafka
     strimzi.io/name: my-cluster-zookeeper
   name: my-cluster-zookeeper-client
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 spec:
   ports:
   - name: tcp-clients
@@ -159,7 +159,7 @@ metadata:
     strimzi.io/kind: Kafka
     strimzi.io/name: my-cluster-zookeeper
   name: my-cluster-zookeeper-nodes
-  namespace: kuttl-kafka
+  namespace: chainsaw-kafka
 spec:
   ports:
   - name: tcp-clients

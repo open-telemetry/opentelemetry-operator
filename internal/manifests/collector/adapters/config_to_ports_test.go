@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
@@ -80,7 +80,7 @@ service:
 
 func TestExtractPortsFromConfig(t *testing.T) {
 	// prepare
-	cfg := v1alpha2.Config{}
+	cfg := v1beta1.Config{}
 	if err := yaml.Unmarshal([]byte(portConfigStr), &cfg); err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestInvalidReceivers(t *testing.T) {
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// prepare
-			cfg := v1alpha2.Config{}
+			cfg := v1beta1.Config{}
 			if err := yaml.Unmarshal([]byte(tt.configStr), &cfg); err != nil {
 				t.Fatal(err)
 			}
@@ -156,14 +156,14 @@ func TestParserFailed(t *testing.T) {
 		return mockParser
 	})
 
-	cfg := v1alpha2.Config{
-		Receivers: v1alpha2.AnyConfig{
+	cfg := v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{
 			Object: map[string]interface{}{
 				"mock": map[string]interface{}{},
 			},
 		},
-		Service: v1alpha2.Service{
-			Pipelines: v1alpha2.AnyConfig{
+		Service: v1beta1.Service{
+			Pipelines: v1beta1.AnyConfig{
 				Object: map[string]interface{}{
 					"metrics": map[string]interface{}{
 						"receivers": []interface{}{"mock"},
@@ -184,9 +184,9 @@ func TestParserFailed(t *testing.T) {
 
 func TestConfigToMetricsPort(t *testing.T) {
 	t.Run("custom port specified", func(t *testing.T) {
-		config := v1alpha2.Service{
-			Telemetry: &v1alpha2.Telemetry{
-				Metrics: v1alpha2.MetricsConfig{
+		config := v1beta1.Service{
+			Telemetry: &v1beta1.Telemetry{
+				Metrics: v1beta1.MetricsConfig{
 					Address: "0.0.0.0:9090",
 				},
 			},
@@ -199,13 +199,13 @@ func TestConfigToMetricsPort(t *testing.T) {
 
 	for _, tt := range []struct {
 		desc   string
-		config v1alpha2.Service
+		config v1beta1.Service
 	}{
 		{
 			"bad address",
-			v1alpha2.Service{
-				Telemetry: &v1alpha2.Telemetry{
-					Metrics: v1alpha2.MetricsConfig{
+			v1beta1.Service{
+				Telemetry: &v1beta1.Telemetry{
+					Metrics: v1beta1.MetricsConfig{
 						Address: "0.0.0.0",
 					},
 				},
@@ -213,9 +213,9 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 		{
 			"missing address",
-			v1alpha2.Service{
-				Telemetry: &v1alpha2.Telemetry{
-					Metrics: v1alpha2.MetricsConfig{
+			v1beta1.Service{
+				Telemetry: &v1beta1.Telemetry{
+					Metrics: v1beta1.MetricsConfig{
 						Level: "detailed",
 					},
 				},
@@ -223,13 +223,13 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 		{
 			"missing metrics",
-			v1alpha2.Service{
-				Telemetry: &v1alpha2.Telemetry{},
+			v1beta1.Service{
+				Telemetry: &v1beta1.Telemetry{},
 			},
 		},
 		{
 			"missing telemetry",
-			v1alpha2.Service{},
+			v1beta1.Service{},
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {

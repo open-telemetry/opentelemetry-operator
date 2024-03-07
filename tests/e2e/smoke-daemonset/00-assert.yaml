@@ -4,17 +4,10 @@ metadata:
   name: daemonset-test-collector
 spec:
   updateStrategy:
-    type: RollingUpdate
     rollingUpdate:
       maxSurge: 0
       maxUnavailable: 1
+    type: RollingUpdate
 status:
   numberMisscheduled: 0
-
----
-# This KUTTL assert uses the check-daemonset.sh script to ensure the number of ready pods in a daemonset matches the desired count, retrying until successful or a timeout occurs. The script is needed as the number of Kubernetes cluster nodes can vary and we cannot statically set desiredNumberScheduled and numberReady in the assert for daemonset status. 
-
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-commands:
-- script: ./tests/e2e/smoke-daemonset/check-daemonset.sh
+  (desiredNumberScheduled == numberReady): true

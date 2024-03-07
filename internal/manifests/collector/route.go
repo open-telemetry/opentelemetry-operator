@@ -21,31 +21,31 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func Routes(params manifests.Params) ([]*routev1.Route, error) {
-	if params.OtelCol.Spec.Ingress.Type != v1alpha2.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability() != openshift.RoutesAvailable {
+	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability() != openshift.RoutesAvailable {
 		return nil, nil
 	}
 
-	if params.OtelCol.Spec.Mode == v1alpha2.ModeSidecar {
+	if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
 		params.Log.V(3).Info("ingress settings are not supported in sidecar mode")
 		return nil, nil
 	}
 
 	var tlsCfg *routev1.TLSConfig
 	switch params.OtelCol.Spec.Ingress.Route.Termination {
-	case v1alpha2.TLSRouteTerminationTypeInsecure:
+	case v1beta1.TLSRouteTerminationTypeInsecure:
 		// NOTE: insecure, no tls cfg.
-	case v1alpha2.TLSRouteTerminationTypeEdge:
+	case v1beta1.TLSRouteTerminationTypeEdge:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationEdge}
-	case v1alpha2.TLSRouteTerminationTypePassthrough:
+	case v1beta1.TLSRouteTerminationTypePassthrough:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationPassthrough}
-	case v1alpha2.TLSRouteTerminationTypeReencrypt:
+	case v1beta1.TLSRouteTerminationTypeReencrypt:
 		tlsCfg = &routev1.TLSConfig{Termination: routev1.TLSTerminationReencrypt}
 	default: // NOTE: if unsupported, end here.
 		return nil, nil

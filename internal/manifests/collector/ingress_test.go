@@ -26,7 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -37,11 +37,27 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha2.OpenTelemetryCollector{
-				Spec: v1alpha2.OpenTelemetryCollectorSpec{
-					Ingress: v1alpha2.Ingress{
-						Type: v1alpha2.IngressType("unknown"),
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressType("unknown"),
 					},
+				},
+			},
+		}
+
+		actual, err := Ingress(params)
+		assert.Nil(t, actual)
+		assert.NoError(t, err)
+	})
+
+	t.Run("should return nil, no ingress set", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: "Deployment",
 				},
 			},
 		}
@@ -55,11 +71,11 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha2.OpenTelemetryCollector{
-				Spec: v1alpha2.OpenTelemetryCollectorSpec{
-					Config: v1alpha2.Config{},
-					Ingress: v1alpha2.Ingress{
-						Type: v1alpha2.IngressTypeNginx,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{},
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressTypeNginx,
 					},
 				},
 			},
@@ -83,8 +99,8 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1alpha2.Ingress{
-			Type:             v1alpha2.IngressTypeNginx,
+		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
+			Type:             v1beta1.IngressTypeNginx,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,
@@ -104,6 +120,9 @@ func TestDesiredIngresses(t *testing.T) {
 					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/component":  "opentelemetry-collector",
+					"app.kubernetes.io/part-of":    "opentelemetry",
+					"app.kubernetes.io/version":    "latest",
 				},
 			},
 			Spec: networkingv1.IngressSpec{
@@ -171,9 +190,9 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1alpha2.Ingress{
-			Type:             v1alpha2.IngressTypeNginx,
-			RuleType:         v1alpha2.IngressRuleTypeSubdomain,
+		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
+			Type:             v1beta1.IngressTypeNginx,
+			RuleType:         v1beta1.IngressRuleTypeSubdomain,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,

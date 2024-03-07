@@ -25,7 +25,7 @@ import (
 // ServiceMonitor returns the service monitor for the given instance.
 func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
 	name := naming.TargetAllocator(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name)
+	labels := Labels(params.TargetAllocator, name)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,7 +44,7 @@ func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
-				MatchLabels: SelectorLabels(params.OtelCol),
+				MatchLabels: SelectorLabels(params.TargetAllocator),
 			},
 		},
 	}

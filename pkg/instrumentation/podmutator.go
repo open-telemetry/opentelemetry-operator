@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -41,6 +42,7 @@ type instPodMutator struct {
 	sdkInjector *sdkInjector
 	Logger      logr.Logger
 	Recorder    record.EventRecorder
+	config      config.Config
 }
 
 type instrumentationWithContainers struct {
@@ -193,7 +195,7 @@ func (langInsts *languageInstrumentations) setInstrumentationLanguageContainers(
 
 var _ podmutation.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder) *instPodMutator {
+func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder, cfg config.Config) *instPodMutator {
 	return &instPodMutator{
 		Logger: logger,
 		Client: client,
@@ -202,6 +204,7 @@ func NewMutator(logger logr.Logger, client client.Client, recorder record.EventR
 			client: client,
 		},
 		Recorder: recorder,
+		config:   cfg,
 	}
 }
 
@@ -262,7 +265,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableDotnetAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnableDotNetAutoInstrumentation() || inst == nil {
 		insts.DotNet.Instrumentation = inst
 		insts.DotNet.AdditionalAnnotations = map[string]string{annotationDotNetRuntime: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationDotNetRuntime)}
 	} else {
@@ -287,7 +290,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableApacheHTTPAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnableApacheHttpdAutoInstrumentation() || inst == nil {
 		insts.ApacheHttpd.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
@@ -323,7 +326,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 
 	// We retrieve the annotation for podname
-	if featuregate.EnableMultiInstrumentationSupport.IsEnabled() {
+	if pm.config.EnableMultiInstrumentation() {
 		// We use annotations specific for instrumentation language
 		insts.Java.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectJavaContainersName)
 		insts.NodeJS.Containers = annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationInjectNodeJSContainersName)
@@ -357,7 +360,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	// once it's been determined that instrumentation is desired, none exists yet, and we know which instance it should talk to,
 	// we should inject the instrumentation.
 	modifiedPod := pod
-	modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod)
+	modifiedPod = pm.sdkInjector.inject(ctx, insts, ns, modifiedPod, pm.config)
 
 	return modifiedPod, nil
 }

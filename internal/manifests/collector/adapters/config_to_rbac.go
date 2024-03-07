@@ -18,12 +18,12 @@ import (
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/processor"
 )
 
 // ConfigToRBAC parses the OpenTelemetry Collector configuration and checks what RBAC resources are needed to be created.
-func ConfigToRBAC(logger logr.Logger, config v1alpha2.Config) []rbacv1.PolicyRule {
+func ConfigToRBAC(logger logr.Logger, config v1beta1.Config) []rbacv1.PolicyRule {
 	var policyRules []rbacv1.PolicyRule
 	if config.Processors == nil {
 		return policyRules

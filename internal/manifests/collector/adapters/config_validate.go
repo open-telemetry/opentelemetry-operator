@@ -17,12 +17,12 @@ package adapters
 import (
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 // Following Otel Doc: Configuring a receiver does not enable it. The receivers are enabled via pipelines within the service section.
 // getEnabledComponents returns all enabled components as a true flag set. If it can't find any receiver, it will return a nil interface.
-func getEnabledComponents(config v1alpha2.Service, componentType ComponentType) map[string]bool {
+func getEnabledComponents(config v1beta1.Service, componentType ComponentType) map[string]bool {
 	availableComponents := map[string]bool{}
 	componentTypePlural := fmt.Sprintf("%ss", componentType.String())
 	for pipelineID, pipelineCfg := range config.Pipelines.Object {

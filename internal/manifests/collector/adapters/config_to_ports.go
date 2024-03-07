@@ -23,7 +23,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	exporterParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/exporter"
 	receiverParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
@@ -41,17 +41,17 @@ func (c ComponentType) String() string {
 	return [...]string{"receiver", "exporter", "processor"}[c]
 }
 
-func PortsForExporters(l logr.Logger, c v1alpha2.Config) ([]corev1.ServicePort, error) {
+func PortsForExporters(l logr.Logger, c v1beta1.Config) ([]corev1.ServicePort, error) {
 	compEnabled := getEnabledComponents(c.Service, ComponentTypeExporter)
 	return componentPorts(l, c.Exporters, exporterParser.BuilderFor, compEnabled)
 }
 
-func PortsForReceivers(l logr.Logger, c v1alpha2.Config) ([]corev1.ServicePort, error) {
+func PortsForReceivers(l logr.Logger, c v1beta1.Config) ([]corev1.ServicePort, error) {
 	compEnabled := getEnabledComponents(c.Service, ComponentTypeReceiver)
 	return componentPorts(l, c.Receivers, receiverParser.BuilderFor, compEnabled)
 }
 
-func componentPorts(l logr.Logger, c v1alpha2.AnyConfig, p parser.BuilderFor, enabledComponents map[string]bool) ([]corev1.ServicePort, error) {
+func componentPorts(l logr.Logger, c v1beta1.AnyConfig, p parser.BuilderFor, enabledComponents map[string]bool) ([]corev1.ServicePort, error) {
 	var ports []corev1.ServicePort
 	for cmptName, val := range c.Object {
 		if !enabledComponents[cmptName] {
@@ -77,7 +77,7 @@ func componentPorts(l logr.Logger, c v1alpha2.AnyConfig, p parser.BuilderFor, en
 	return ports, nil
 }
 
-func ConfigToPorts(logger logr.Logger, config v1alpha2.Config) ([]corev1.ServicePort, error) {
+func ConfigToPorts(logger logr.Logger, config v1beta1.Config) ([]corev1.ServicePort, error) {
 	ports, err := PortsForReceivers(logger, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
@@ -100,7 +100,7 @@ func ConfigToPorts(logger logr.Logger, config v1alpha2.Config) ([]corev1.Service
 }
 
 // ConfigToMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
-func ConfigToMetricsPort(config v1alpha2.Service) (int32, error) {
+func ConfigToMetricsPort(config v1beta1.Service) (int32, error) {
 	if config.Telemetry == nil {
 		// telemetry isn't set, use the default
 		return 8888, nil

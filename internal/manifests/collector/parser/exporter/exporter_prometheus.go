@@ -59,9 +59,9 @@ func (o *PrometheusExporterParser) Ports() ([]corev1.ServicePort, error) {
 			},
 		)
 	} else {
-		ports = append(
-			ports, *singlePortFromConfigEndpoint(o.logger, o.name, o.config),
-		)
+		if port := singlePortFromConfigEndpoint(o.logger, o.name, o.config); port != nil {
+			ports = append(ports, *port)
+		}
 	}
 
 	return ports, nil

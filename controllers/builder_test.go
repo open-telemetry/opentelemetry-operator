@@ -34,9 +34,10 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha2"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -87,12 +88,12 @@ service:
       exporters: [logging]
 `
 
-	goodConfig := v1alpha2.Config{}
+	goodConfig := v1beta1.Config{}
 	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
 	one := int32(1)
 	type args struct {
-		instance v1alpha2.OpenTelemetryCollector
+		instance v1beta1.OpenTelemetryCollector
 	}
 	tests := []struct {
 		name    string
@@ -103,13 +104,13 @@ service:
 		{
 			name: "base case",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
@@ -342,19 +343,19 @@ service:
 		{
 			name: "ingress",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
 						Mode: "deployment",
-						Ingress: v1alpha2.Ingress{
-							Type:     v1alpha2.IngressTypeNginx,
+						Ingress: v1beta1.Ingress{
+							Type:     v1beta1.IngressTypeNginx,
 							Hostname: "example.com",
 							Annotations: map[string]string{
 								"something": "true",
@@ -590,6 +591,9 @@ service:
 							"app.kubernetes.io/instance":   "test.test",
 							"app.kubernetes.io/managed-by": "opentelemetry-operator",
 							"app.kubernetes.io/name":       "test-ingress",
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
 							"something": "true",
@@ -627,13 +631,13 @@ service:
 		{
 			name: "specified service account case",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:          "test",
 							Replicas:       &one,
 							ServiceAccount: "my-special-sa",
@@ -1121,12 +1125,12 @@ service:
       exporters: [logging]
 `
 
-	goodConfig := v1alpha2.Config{}
+	goodConfig := v1beta1.Config{}
 	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
 	one := int32(1)
 	type args struct {
-		instance v1alpha2.OpenTelemetryCollector
+		instance v1beta1.OpenTelemetryCollector
 	}
 	tests := []struct {
 		name         string
@@ -1138,22 +1142,22 @@ service:
 		{
 			name: "base case",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
 						Mode:   "statefulset",
 						Config: goodConfig,
-						TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
+						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 							Enabled:        true,
 							FilterStrategy: "relabel-config",
-							PrometheusCR: v1alpha2.TargetAllocatorPrometheusCR{
+							PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
 						},
@@ -1347,6 +1351,7 @@ collector_selector:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
 config:
   scrape_configs:
   - job_name: example
@@ -1405,7 +1410,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "59307aaa5652c8723f7803aa2d2b631389d1a0267444a4a8dc559878b5c4aa2c",
+									"opentelemetry-targetallocator-config/hash": "ba38217bad7e399f1210b90a464252159a8c4e17060c246799b8e4cb29a6f18f",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1530,26 +1535,26 @@ prometheus_cr:
 		{
 			name: "enable metrics case",
 			args: args{
-				instance: v1alpha2.OpenTelemetryCollector{
+				instance: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
 					},
-					Spec: v1alpha2.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1alpha2.OpenTelemetryCommonFields{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
 						Mode:   "statefulset",
 						Config: goodConfig,
-						TargetAllocator: v1alpha2.TargetAllocatorEmbedded{
+						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 							Enabled: true,
-							PrometheusCR: v1alpha2.TargetAllocatorPrometheusCR{
+							PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
 							FilterStrategy: "relabel-config",
-							Observability: v1alpha1.ObservabilitySpec{
-								Metrics: v1alpha1.MetricsConfigSpec{
+							Observability: v1beta1.ObservabilitySpec{
+								Metrics: v1beta1.MetricsConfigSpec{
 									EnableMetrics: true,
 								},
 							},
@@ -1744,6 +1749,7 @@ collector_selector:
     app.kubernetes.io/instance: test.test
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
 config:
   scrape_configs:
   - job_name: example
@@ -1802,7 +1808,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "59307aaa5652c8723f7803aa2d2b631389d1a0267444a4a8dc559878b5c4aa2c",
+									"opentelemetry-targetallocator-config/hash": "ba38217bad7e399f1210b90a464252159a8c4e17060c246799b8e4cb29a6f18f",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1969,10 +1975,13 @@ prometheus_cr:
 				Config:  cfg,
 				OtelCol: tt.args.instance,
 			}
+			targetAllocator, err := collector.TargetAllocator(params)
+			require.NoError(t, err)
+			params.TargetAllocator = *targetAllocator
 			if len(tt.featuregates) > 0 {
 				fg := strings.Join(tt.featuregates, ",")
 				flagset := featuregate.Flags(colfeaturegate.GlobalRegistry())
-				if err := flagset.Set(featuregate.FeatureGatesFlag, fg); err != nil {
+				if err = flagset.Set(featuregate.FeatureGatesFlag, fg); err != nil {
 					t.Errorf("featuregate setting error = %v", err)
 					return
 				}
