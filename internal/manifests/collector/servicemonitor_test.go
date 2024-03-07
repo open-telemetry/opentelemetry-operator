@@ -60,11 +60,7 @@ func TestDesiredServiceMonitorsWithPrometheus(t *testing.T) {
 	assert.Equal(t, "prometheus-dev", actual.Spec.Endpoints[1].Port)
 	assert.Equal(t, "prometheus-prod", actual.Spec.Endpoints[2].Port)
 	expectedSelectorLabels := map[string]string{
-		"app.kubernetes.io/component":  "opentelemetry-collector",
-		"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/name":       naming.MonitoringService(params.OtelCol.Name),
+		"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 	}
 	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
 }

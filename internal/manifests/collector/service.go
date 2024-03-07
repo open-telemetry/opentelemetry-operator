@@ -29,10 +29,12 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// headless label is to differentiate the headless service from the clusterIP service.
+// headless and monitoring labels are to differentiate the headless/monitoring services from the clusterIP service.
 const (
-	headlessLabel  = "operator.opentelemetry.io/collector-headless-service"
-	headlessExists = "Exists"
+	headlessLabel    = "operator.opentelemetry.io/collector-headless-service"
+	headlessExists   = "Exists"
+	monitoringLabel  = "operator.opentelemetry.io/collector-monitoring-service"
+	monitoringExists = "Exists"
 )
 
 func HeadlessService(params manifests.Params) (*corev1.Service, error) {
@@ -44,7 +46,7 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 	h.Name = naming.HeadlessService(params.OtelCol.Name)
 	h.Labels[headlessLabel] = headlessExists
 
-	// copy to avoid modifying params.OtelCol.Annotations
+	// copy to avoid modifying params.OtelCol.annotations
 	annotations := map[string]string{
 		"service.beta.openshift.io/serving-cert-secret-name": fmt.Sprintf("%s-tls", h.Name),
 	}
@@ -61,6 +63,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 
 	name := naming.MonitoringService(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels[monitoringLabel] = monitoringExists
 
 	out, err := params.OtelCol.Spec.Config.Yaml()
 	if err != nil {

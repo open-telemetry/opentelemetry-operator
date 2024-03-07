@@ -44,7 +44,6 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 	}
 	name := naming.ServiceMonitor(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
-	selectorMatchLabels := manifestutils.SelectorMatchLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	sm = monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: params.OtelCol.Namespace,
@@ -61,7 +60,9 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
-				MatchLabels: selectorMatchLabels,
+				MatchLabels: map[string]string{
+					"operator.opentelemetry.io/collector-monitoring-service": "Exists",
+				},
 			},
 		},
 	}
