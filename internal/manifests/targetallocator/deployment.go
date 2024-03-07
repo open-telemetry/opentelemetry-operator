@@ -25,26 +25,26 @@ import (
 
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
-	name := naming.TargetAllocator(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name)
+	name := naming.TargetAllocator(params.TargetAllocator.Name)
+	labels := Labels(params.TargetAllocator, name)
 
 	configMap, err := ConfigMap(params)
 	if err != nil {
 		params.Log.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(params.OtelCol, configMap)
+	annotations := Annotations(params.TargetAllocator, configMap)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: params.OtelCol.Namespace,
+			Namespace: params.TargetAllocator.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: params.OtelCol.Spec.TargetAllocator.Replicas,
+			Replicas: params.TargetAllocator.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(params.OtelCol),
+				MatchLabels: SelectorLabels(params.TargetAllocator),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -52,14 +52,14 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:        ServiceAccountName(params.OtelCol),
-					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OtelCol)},
-					Volumes:                   Volumes(params.Config, params.OtelCol),
-					NodeSelector:              params.OtelCol.Spec.TargetAllocator.NodeSelector,
-					Tolerations:               params.OtelCol.Spec.TargetAllocator.Tolerations,
-					TopologySpreadConstraints: params.OtelCol.Spec.TargetAllocator.TopologySpreadConstraints,
-					Affinity:                  params.OtelCol.Spec.TargetAllocator.Affinity,
-					SecurityContext:           params.OtelCol.Spec.TargetAllocator.PodSecurityContext,
+					ServiceAccountName:        ServiceAccountName(params.TargetAllocator),
+					Containers:                []corev1.Container{Container(params.Config, params.Log, params.TargetAllocator)},
+					Volumes:                   Volumes(params.Config, params.TargetAllocator),
+					NodeSelector:              params.TargetAllocator.Spec.NodeSelector,
+					Tolerations:               params.TargetAllocator.Spec.Tolerations,
+					TopologySpreadConstraints: params.TargetAllocator.Spec.TopologySpreadConstraints,
+					Affinity:                  params.TargetAllocator.Spec.Affinity,
+					SecurityContext:           params.TargetAllocator.Spec.PodSecurityContext,
 				},
 			},
 		},

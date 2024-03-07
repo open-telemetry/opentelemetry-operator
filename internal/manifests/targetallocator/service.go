@@ -24,15 +24,15 @@ import (
 )
 
 func Service(params manifests.Params) *corev1.Service {
-	name := naming.TAService(params.OtelCol.Name)
-	labels := Labels(params.OtelCol, name)
+	name := naming.TAService(params.TargetAllocator.Name)
+	labels := Labels(params.TargetAllocator, name)
 
-	selector := SelectorLabels(params.OtelCol)
+	selector := SelectorLabels(params.TargetAllocator)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(params.OtelCol.Name),
-			Namespace: params.OtelCol.Namespace,
+			Name:      naming.TAService(params.TargetAllocator.Name),
+			Namespace: params.TargetAllocator.Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{

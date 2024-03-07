@@ -21,12 +21,12 @@ import (
 )
 
 // Labels return the common labels to all TargetAllocator objects that are part of a managed OpenTelemetryCollector.
-func Labels(instance v1beta1.OpenTelemetryCollector, name string) map[string]string {
-	return manifestutils.Labels(instance.ObjectMeta, name, instance.Spec.TargetAllocator.Image, ComponentOpenTelemetryTargetAllocator, nil)
+func Labels(instance v1beta1.TargetAllocator, name string) map[string]string {
+	return manifestutils.Labels(instance.ObjectMeta, name, instance.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 }
 
 // SelectorLabels return the selector labels for Target Allocator Pods.
-func SelectorLabels(instance v1beta1.OpenTelemetryCollector) map[string]string {
+func SelectorLabels(instance v1beta1.TargetAllocator) map[string]string {
 	selectorLabels := manifestutils.SelectorLabels(instance.ObjectMeta, ComponentOpenTelemetryTargetAllocator)
 
 	// TargetAllocator uses the name label as well for selection
