@@ -30,5 +30,5 @@ type ComponentPortParser interface {
 // Builder specifies the signature required for parser builders.
 type Builder func(logr.Logger, string, map[string]interface{}) ComponentPortParser
 
-// BuilderFor returns a builder for a given component
-type BuilderFor func(component string) Builder
+// For returns a builder for a given component if found, otherwise it returns an error
+type For func(logger logr.Logger, name string, config map[string]interface{}) (ComponentPortParser, error)

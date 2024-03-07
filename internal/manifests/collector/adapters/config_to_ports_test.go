@@ -185,9 +185,11 @@ func TestParserFailed(t *testing.T) {
 func TestConfigToMetricsPort(t *testing.T) {
 	t.Run("custom port specified", func(t *testing.T) {
 		config := v1beta1.Service{
-			Telemetry: &v1beta1.Telemetry{
-				Metrics: v1beta1.MetricsConfig{
-					Address: "0.0.0.0:9090",
+			Telemetry: &v1beta1.AnyConfig{
+				Object: map[string]interface{}{
+					"metrics": map[string]interface{}{
+						"address": "0.0.0.0:9090",
+					},
 				},
 			},
 		}
@@ -204,9 +206,11 @@ func TestConfigToMetricsPort(t *testing.T) {
 		{
 			"bad address",
 			v1beta1.Service{
-				Telemetry: &v1beta1.Telemetry{
-					Metrics: v1beta1.MetricsConfig{
-						Address: "0.0.0.0",
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "0.0.0.0",
+						},
 					},
 				},
 			},
@@ -214,9 +218,11 @@ func TestConfigToMetricsPort(t *testing.T) {
 		{
 			"missing address",
 			v1beta1.Service{
-				Telemetry: &v1beta1.Telemetry{
-					Metrics: v1beta1.MetricsConfig{
-						Level: "detailed",
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"level": "detailed",
+						},
 					},
 				},
 			},
@@ -224,7 +230,7 @@ func TestConfigToMetricsPort(t *testing.T) {
 		{
 			"missing metrics",
 			v1beta1.Service{
-				Telemetry: &v1beta1.Telemetry{},
+				Telemetry: &v1beta1.AnyConfig{},
 			},
 		},
 		{

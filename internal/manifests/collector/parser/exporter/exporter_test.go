@@ -33,7 +33,7 @@ func TestPorts(t *testing.T) {
 			testName: "Valid Configuration",
 			parser: &PrometheusExporterParser{
 				name: "test-exporter",
-				config: map[interface{}]interface{}{
+				config: map[string]interface{}{
 					"endpoint": "http://myprometheus.io:9090",
 				},
 			},
@@ -63,7 +63,7 @@ func TestPorts(t *testing.T) {
 			testName: "Invalid Endpoint No Port",
 			parser: &PrometheusExporterParser{
 				name: "test-exporter",
-				config: map[interface{}]interface{}{
+				config: map[string]interface{}{
 					"endpoint": "invalidendpoint",
 				},
 			},

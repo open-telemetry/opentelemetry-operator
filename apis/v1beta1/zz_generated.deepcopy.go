@@ -585,8 +585,7 @@ func (in *Service) DeepCopyInto(out *Service) {
 	}
 	if in.Telemetry != nil {
 		in, out := &in.Telemetry, &out.Telemetry
-		*out = new(Telemetry)
-		(*in).DeepCopyInto(*out)
+		*out = (*in).DeepCopy()
 	}
 	in.Pipelines.DeepCopyInto(&out.Pipelines)
 }

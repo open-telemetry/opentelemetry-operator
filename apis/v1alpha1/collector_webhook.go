@@ -30,7 +30,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -357,28 +359,27 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	if r.Spec.TargetAllocator.AllocationStrategy == OpenTelemetryTargetAllocatorAllocationStrategyPerNode && r.Spec.Mode != ModeDaemonSet {
 		return nil, fmt.Errorf("target allocation strategy %s is only supported in OpenTelemetry Collector mode %s", OpenTelemetryTargetAllocatorAllocationStrategyPerNode, ModeDaemonSet)
 	}
-	// TODO: Fix cycle
-	//// validate Prometheus config for target allocation
-	//promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
-	//if err != nil {
-	//	return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-	//}
-	//err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
-	//if err != nil {
-	//	return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-	//}
-	//err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
-	//if err != nil {
-	//	return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
-	//}
-	//// if the prometheusCR is enabled, it needs a suite of permissions to function
-	//if r.Spec.TargetAllocator.PrometheusCR.Enabled {
-	//	if subjectAccessReviews, err := c.reviewer.CheckPolicyRules(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorCRPolicyRules...); err != nil {
-	//		return nil, fmt.Errorf("unable to check rbac rules %w", err)
-	//	} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
-	//		return warningsGroupedByResource(deniedReviews), nil
-	//	}
-	//}
+	// validate Prometheus config for target allocation
+	promCfg, err := ta.ConfigToPromConfig(r.Spec.Config)
+	if err != nil {
+		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+	}
+	err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
+	if err != nil {
+		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+	}
+	err = ta.ValidateTargetAllocatorConfig(r.Spec.TargetAllocator.PrometheusCR.Enabled, promCfg)
+	if err != nil {
+		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
+	}
+	// if the prometheusCR is enabled, it needs a suite of permissions to function
+	if r.Spec.TargetAllocator.PrometheusCR.Enabled {
+		if subjectAccessReviews, err := c.reviewer.CheckPolicyRules(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorCRPolicyRules...); err != nil {
+			return nil, fmt.Errorf("unable to check rbac rules %w", err)
+		} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
+			return warningsGroupedByResource(deniedReviews), nil
+		}
+	}
 
 	return nil, nil
 }

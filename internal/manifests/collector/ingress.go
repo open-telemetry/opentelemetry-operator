@@ -24,6 +24,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -135,7 +136,7 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 }
 
 func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
-	ports, err := otelcol.Spec.Config.Receivers.Ports(logger)
+	ports, err := adapters.PortsForReceivers(logger, otelcol.Spec.Config)
 	if err != nil {
 		logger.Error(err, "couldn't build the ingress for this instance")
 		return nil, err

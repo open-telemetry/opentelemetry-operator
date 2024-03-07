@@ -43,15 +43,15 @@ func (c ComponentType) String() string {
 
 func PortsForExporters(l logr.Logger, c v1beta1.Config) ([]corev1.ServicePort, error) {
 	compEnabled := getEnabledComponents(c.Service, ComponentTypeExporter)
-	return componentPorts(l, c.Exporters, exporterParser.BuilderFor, compEnabled)
+	return componentPorts(l, c.Exporters, exporterParser.For, compEnabled)
 }
 
 func PortsForReceivers(l logr.Logger, c v1beta1.Config) ([]corev1.ServicePort, error) {
 	compEnabled := getEnabledComponents(c.Service, ComponentTypeReceiver)
-	return componentPorts(l, c.Receivers, receiverParser.BuilderFor, compEnabled)
+	return componentPorts(l, c.Receivers, receiverParser.For, compEnabled)
 }
 
-func componentPorts(l logr.Logger, c v1beta1.AnyConfig, p parser.BuilderFor, enabledComponents map[string]bool) ([]corev1.ServicePort, error) {
+func componentPorts(l logr.Logger, c v1beta1.AnyConfig, p parser.For, enabledComponents map[string]bool) ([]corev1.ServicePort, error) {
 	var ports []corev1.ServicePort
 	for cmptName, val := range c.Object {
 		if !enabledComponents[cmptName] {
@@ -61,8 +61,11 @@ func componentPorts(l logr.Logger, c v1beta1.AnyConfig, p parser.BuilderFor, ena
 		if !ok {
 			component = map[string]interface{}{}
 		}
-		builder := p(cmptName)
-		componentParser := builder(l, cmptName, component)
+		componentParser, err := p(l, cmptName, component)
+		if err != nil {
+			l.V(2).Info("no parser found for '%s'", cmptName)
+			continue
+		}
 		componentPorts, err := componentParser.Ports()
 		if err != nil {
 			l.Error(err, "parser for '%s' has returned an error: %w", cmptName, err)
@@ -101,11 +104,11 @@ func ConfigToPorts(logger logr.Logger, config v1beta1.Config) ([]corev1.ServiceP
 
 // ConfigToMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
 func ConfigToMetricsPort(config v1beta1.Service) (int32, error) {
-	if config.Telemetry == nil {
+	if config.GetTelemetry() == nil {
 		// telemetry isn't set, use the default
 		return 8888, nil
 	}
-	_, port, netErr := net.SplitHostPort(config.Telemetry.Metrics.Address)
+	_, port, netErr := net.SplitHostPort(config.GetTelemetry().Metrics.Address)
 	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
 		return 8888, nil
 	} else if netErr != nil {

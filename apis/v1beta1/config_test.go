@@ -140,9 +140,11 @@ func TestConfigYaml(t *testing.T) {
 		},
 		Service: Service{
 			Extensions: []string{"addon"},
-			Telemetry: &Telemetry{
-				Metrics: MetricsConfig{
-					Address: "0.0.0.0:9000",
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"metrics": map[string]interface{}{
+						"address": "0.0.0.0:9000",
+					},
 				},
 			},
 			Pipelines: AnyConfig{

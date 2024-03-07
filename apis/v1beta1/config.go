@@ -124,9 +124,28 @@ type Telemetry struct {
 type Service struct {
 	Extensions []string `json:"extensions,omitempty" yaml:"extensions,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Telemetry *Telemetry `json:"telemetry,omitempty" yaml:"telemetry,omitempty"`
+	Telemetry *AnyConfig `json:"telemetry,omitempty" yaml:"telemetry,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Pipelines AnyConfig `json:"pipelines" yaml:"pipelines"`
+}
+
+// GetTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.
+// This exists to avoid needing to worry extra fields in the telemetry struct.
+func (s *Service) GetTelemetry() *Telemetry {
+	if s.Telemetry == nil {
+		return nil
+	}
+	// Convert map to JSON bytes
+	jsonData, err := json.Marshal(s.Telemetry)
+	if err != nil {
+		return nil
+	}
+	t := &Telemetry{}
+	// Unmarshal JSON into the provided struct
+	if err := json.Unmarshal(jsonData, t); err != nil {
+		return nil
+	}
+	return t
 }
 
 // Returns null objects in the config.
