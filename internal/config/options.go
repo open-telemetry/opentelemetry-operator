@@ -51,6 +51,7 @@ type options struct {
 	operatorOpAMPBridgeImage            string
 	openshiftRoutesAvailability         openshift.RoutesAvailability
 	labelsFilter                        []string
+	annotationsFilter                   []string
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -180,14 +181,35 @@ func WithLabelFilters(labelFilters []string) Option {
 				if i > 0 {
 					result.WriteString(".*")
 				}
-
 				// Quote any regular expression meta characters in the
 				// literal text.
 				result.WriteString(regexp.QuoteMeta(literal))
 			}
 			filters = append(filters, result.String())
 		}
-
 		o.labelsFilter = filters
+	}
+}
+
+func WithAnnotationFilters(annotationFilters []string) Option {
+	return func(o *options) {
+
+		filters := []string{}
+		for _, pattern := range annotationFilters {
+			var result strings.Builder
+
+			for i, literal := range strings.Split(pattern, "*") {
+
+				// Replace * with .*
+				if i > 0 {
+					result.WriteString(".*")
+				}
+				// Quote any regular expression meta characters in the
+				// literal text.
+				result.WriteString(regexp.QuoteMeta(literal))
+			}
+			filters = append(filters, result.String())
+		}
+		o.annotationsFilter = filters
 	}
 }

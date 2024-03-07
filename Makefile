@@ -240,6 +240,11 @@ e2e-prometheuscr: chainsaw
 e2e-targetallocator: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
 
+# end-to-end-test for Annotations/Labels Filters 
+.PHONY: e2e-metadata-filters
+e2e-metadata-filters: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-metadata-filters
+
 # end-to-end-test for testing upgrading
 .PHONY: e2e-upgrade
 e2e-upgrade: undeploy chainsaw

@@ -336,6 +336,37 @@ func TestStatefulSetFilterLabels(t *testing.T) {
 	}
 }
 
+func TestStatefulSetFilterAnnotations(t *testing.T) {
+	excludedAnnotations := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+	}
+
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-instance",
+			Annotations: excludedAnnotations,
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", "app.*.bar"}))
+
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	d, err := StatefulSet(params)
+	require.NoError(t, err)
+
+	assert.Len(t, d.ObjectMeta.Annotations, 4)
+	for k := range excludedAnnotations {
+		assert.NotContains(t, d.ObjectMeta.Annotations, k)
+	}
+}
+
 func TestStatefulSetNodeSelector(t *testing.T) {
 	// Test default
 	otelcol1 := v1beta1.OpenTelemetryCollector{

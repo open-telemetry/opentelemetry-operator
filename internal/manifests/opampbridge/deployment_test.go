@@ -253,6 +253,36 @@ func TestDeploymentFilterLabels(t *testing.T) {
 	}
 }
 
+func TestDeploymentFilterAnnotations(t *testing.T) {
+	excludedAnnotations := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+		"opampbridge": "true",
+	}
+
+	opampBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-instance",
+			Annotations: excludedAnnotations,
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{},
+	}
+
+	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", "app.*.bar"}))
+
+	params := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opampBridge,
+		Log:         logger,
+	}
+
+	d := Deployment(params)
+
+	assert.Len(t, d.ObjectMeta.Annotations, 2)
+	assert.NotContains(t, d.ObjectMeta.Annotations, "foo")
+	assert.NotContains(t, d.ObjectMeta.Annotations, "app.foo.bar")
+}
+
 func TestDeploymentNodeSelector(t *testing.T) {
 	// Test default
 	opampBridge1 := v1alpha1.OpAMPBridge{

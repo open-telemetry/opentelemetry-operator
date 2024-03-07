@@ -29,12 +29,12 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
-	annotations, err := Annotations(params.OtelCol)
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	podAnnotations, err := PodAnnotations(params.OtelCol)
+	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
 		return nil, err
 	}
