@@ -27,14 +27,14 @@ import (
 
 func TestServiceAccountDefaultName(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
+	targetAllocator := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
 	}
 
 	// test
-	saName := ServiceAccountName(otelcol)
+	saName := ServiceAccountName(targetAllocator)
 
 	// verify
 	assert.Equal(t, "my-instance-targetallocator", saName)
@@ -42,19 +42,19 @@ func TestServiceAccountDefaultName(t *testing.T) {
 
 func TestServiceAccountOverrideName(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{
+	targetAllocator := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+		Spec: v1beta1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				ServiceAccount: "my-special-sa",
 			},
 		},
 	}
 
 	// test
-	sa := ServiceAccountName(otelcol)
+	sa := ServiceAccountName(targetAllocator)
 
 	// verify
 	assert.Equal(t, "my-special-sa", sa)
@@ -62,7 +62,7 @@ func TestServiceAccountOverrideName(t *testing.T) {
 
 func TestServiceAccountDefault(t *testing.T) {
 	params := manifests.Params{
-		OtelCol: v1beta1.OpenTelemetryCollector{
+		TargetAllocator: v1beta1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
@@ -72,26 +72,26 @@ func TestServiceAccountDefault(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "my-instance-targetallocator",
 			Namespace:   params.OtelCol.Namespace,
-			Labels:      Labels(params.OtelCol, "my-instance-targetallocator"),
+			Labels:      Labels(params.TargetAllocator, "my-instance-targetallocator"),
 			Annotations: params.OtelCol.Annotations,
 		},
 	}
 
-	saName := ServiceAccountName(params.OtelCol)
+	saName := ServiceAccountName(params.TargetAllocator)
 	sa := ServiceAccount(params)
 
-	assert.Equal(t, sa.Name, saName)
+	assert.Equal(t, saName, sa.Name)
 	assert.Equal(t, expected, sa)
 }
 
 func TestServiceAccountOverride(t *testing.T) {
 	params := manifests.Params{
-		OtelCol: v1beta1.OpenTelemetryCollector{
+		TargetAllocator: v1beta1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
-			Spec: v1beta1.OpenTelemetryCollectorSpec{
-				TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+			Spec: v1beta1.TargetAllocatorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 					ServiceAccount: "my-special-sa",
 				},
 			},

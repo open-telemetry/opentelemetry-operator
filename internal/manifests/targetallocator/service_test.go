@@ -26,13 +26,13 @@ import (
 )
 
 func TestServicePorts(t *testing.T) {
-	otelcol := collectorInstance()
+	targetAllocator := targetAllocatorInstance()
 	cfg := config.New()
 
 	params := manifests.Params{
-		OtelCol: otelcol,
-		Config:  cfg,
-		Log:     logger,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logger,
 	}
 
 	ports := []v1.ServicePort{{Name: "targetallocation", Port: 80, TargetPort: intstr.FromString("http")}}

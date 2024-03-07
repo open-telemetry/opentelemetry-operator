@@ -26,7 +26,7 @@ import (
 
 func TestVolumeNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.OpenTelemetryCollector{}
+	otelcol := v1beta1.TargetAllocator{}
 	cfg := config.New()
 
 	// test
