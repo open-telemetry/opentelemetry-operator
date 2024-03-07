@@ -28,13 +28,18 @@ import (
 func Deployment(params manifests.Params) *appsv1.Deployment {
 	name := naming.OpAMPBridge(params.OpAMPBridge.Name)
 	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, params.Config.LabelsFilter())
-
+	configMap, err := ConfigMap(params)
+	if err != nil {
+		params.Log.Info("failed to construct OpAMPBridge ConfigMap for annotations")
+		configMap = nil
+	}
+	annotations := Annotations(params.OpAMPBridge, configMap, params.Config.AnnotationsFilter())
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   params.OpAMPBridge.Namespace,
 			Labels:      labels,
-			Annotations: params.OpAMPBridge.Annotations,
+			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: params.OpAMPBridge.Spec.Replicas,

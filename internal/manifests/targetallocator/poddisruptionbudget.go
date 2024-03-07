@@ -19,6 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 
 	policyV1 "k8s.io/api/policy/v1"
@@ -41,9 +42,13 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 	}
 
 	name := naming.TAPodDisruptionBudget(params.TargetAllocator.Name)
-	labels := Labels(params.TargetAllocator, name)
-
-	annotations := Annotations(params.TargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	configMap, err := ConfigMap(params)
+	if err != nil {
+		params.Log.Info("failed to construct target allocator config map for annotations")
+		configMap = nil
+	}
+	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter())
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        name,
@@ -58,7 +63,7 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 			MinAvailable:   params.TargetAllocator.Spec.PodDisruptionBudget.MinAvailable,
 			MaxUnavailable: params.TargetAllocator.Spec.PodDisruptionBudget.MaxUnavailable,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(params.TargetAllocator),
+				MatchLabels: manifestutils.TASelectorLabels(params.TargetAllocator, ComponentOpenTelemetryTargetAllocator),
 			},
 		},
 	}, nil

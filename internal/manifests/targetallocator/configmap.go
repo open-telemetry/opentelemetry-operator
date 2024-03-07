@@ -21,6 +21,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -31,7 +32,7 @@ const (
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	instance := params.TargetAllocator
 	name := naming.TAConfigMap(instance.Name)
-	labels := Labels(instance, name)
+	labels := manifestutils.Labels(instance.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 	taSpec := instance.Spec
 
 	taConfig := make(map[interface{}]interface{})
