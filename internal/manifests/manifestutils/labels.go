@@ -18,14 +18,15 @@ import (
 	"regexp"
 	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func isFilteredLabel(label string, filterLabels []string) bool {
-	for _, pattern := range filterLabels {
-		match, _ := regexp.MatchString(pattern, label)
+func IsFilteredSet(sourceSet string, filterSet []string) bool {
+	for _, pattern := range filterSet {
+		match, _ := regexp.MatchString(pattern, sourceSet)
 		return match
 	}
 	return false
@@ -38,7 +39,7 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 	base := map[string]string{}
 	if nil != instance.Labels {
 		for k, v := range instance.Labels {
-			if !isFilteredLabel(k, filterLabels) {
+			if !IsFilteredSet(k, filterLabels) {
 				base[k] = v
 			}
 		}
@@ -80,4 +81,19 @@ func SelectorLabels(instance metav1.ObjectMeta, component string) map[string]str
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/component":  component,
 	}
+}
+
+// SelectorLabels return the selector labels for Target Allocator Pods.
+func TASelectorLabels(instance v1beta1.TargetAllocator, component string) map[string]string {
+	selectorLabels := SelectorLabels(instance.ObjectMeta, component)
+
+	// TargetAllocator uses the name label as well for selection
+	// This is inconsistent with the Collector, but changing is a somewhat painful breaking change
+	// Don't override the app name if it already exists
+	if name, ok := instance.ObjectMeta.Labels["app.kubernetes.io/name"]; ok {
+		selectorLabels["app.kubernetes.io/name"] = name
+	} else {
+		selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)
+	}
+	return selectorLabels
 }

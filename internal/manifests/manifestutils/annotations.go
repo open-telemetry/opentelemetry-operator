@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package collector
+package manifestutils
 
 import (
 	"crypto/sha256"
@@ -23,7 +23,7 @@ import (
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.
-func Annotations(instance v1beta1.OpenTelemetryCollector) (map[string]string, error) {
+func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []string) (map[string]string, error) {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
@@ -36,9 +36,11 @@ func Annotations(instance v1beta1.OpenTelemetryCollector) (map[string]string, er
 	}
 
 	// allow override of prometheus annotations
-	if nil != instance.Annotations {
-		for k, v := range instance.Annotations {
-			annotations[k] = v
+	if nil != instance.ObjectMeta.Annotations {
+		for k, v := range instance.ObjectMeta.Annotations {
+			if !IsFilteredSet(k, filterAnnotations) {
+				annotations[k] = v
+			}
 		}
 	}
 
@@ -54,16 +56,18 @@ func Annotations(instance v1beta1.OpenTelemetryCollector) (map[string]string, er
 }
 
 // PodAnnotations return the spec annotations for OpenTelemetryCollector pod.
-func PodAnnotations(instance v1beta1.OpenTelemetryCollector) (map[string]string, error) {
+func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []string) (map[string]string, error) {
 	// new map every time, so that we don't touch the instance's annotations
 	podAnnotations := map[string]string{}
-
-	// allow override of pod annotations
-	for k, v := range instance.Spec.PodAnnotations {
-		podAnnotations[k] = v
+	if nil != instance.Spec.PodAnnotations {
+		for k, v := range instance.Spec.PodAnnotations {
+			if !IsFilteredSet(k, filterAnnotations) {
+				podAnnotations[k] = v
+			}
+		}
 	}
 
-	annotations, err := Annotations(instance)
+	annotations, err := Annotations(instance, filterAnnotations)
 	if err != nil {
 		return nil, err
 	}
