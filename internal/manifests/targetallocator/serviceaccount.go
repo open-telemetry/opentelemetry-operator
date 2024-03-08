@@ -20,6 +20,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -37,9 +38,8 @@ func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
 	if len(params.TargetAllocator.Spec.ServiceAccount) > 0 {
 		return nil
 	}
-
 	name := naming.TargetAllocatorServiceAccount(params.TargetAllocator.Name)
-	labels := Labels(params.TargetAllocator, name)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{

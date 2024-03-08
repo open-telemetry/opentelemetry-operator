@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package targetallocator
+package opampbridge
 
 import (
 	"crypto/sha256"
@@ -20,14 +20,14 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
-const configMapHashAnnotationKey = "opentelemetry-targetallocator-config/hash"
+const configMapHashAnnotationKey = "opentelemetry-opampbridge-config/hash"
 
-// Annotations returns the annotations for the TargetAllocator Pod.
-func Annotations(instance v1beta1.TargetAllocator, configMap *v1.ConfigMap, filterAnnotations []string) map[string]string {
+// Annotations returns the annotations for the OPAmpBridge Pod.
+func Annotations(instance v1alpha1.OpAMPBridge, configMap *v1.ConfigMap, filterAnnotations []string) map[string]string {
 	// Make a copy of PodAnnotations to be safe
 	annotations := make(map[string]string, len(instance.Spec.PodAnnotations))
 	for key, value := range instance.Spec.PodAnnotations {
@@ -50,9 +50,9 @@ func Annotations(instance v1beta1.TargetAllocator, configMap *v1.ConfigMap, filt
 	return annotations
 }
 
-// getConfigMapSHA returns the hash of the content of the TA ConfigMap.
+// getConfigMapSHA returns the hash of the content of the OpAMPBridge ConfigMap.
 func getConfigMapSHA(configMap *v1.ConfigMap) string {
-	configString, ok := configMap.Data[targetAllocatorFilename]
+	configString, ok := configMap.Data[OpAMPBridgeFilename]
 	if !ok {
 		return ""
 	}

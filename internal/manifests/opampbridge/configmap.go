@@ -27,6 +27,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
+const (
+	OpAMPBridgeFilename = "remoteconfiguration.yaml"
+)
+
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.OpAMPBridgeConfigMap(params.OpAMPBridge.Name)
 	version := strings.Split(params.OpAMPBridge.Spec.Image, ":")
@@ -69,7 +73,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 			Annotations: params.OpAMPBridge.Annotations,
 		},
 		Data: map[string]string{
-			"remoteconfiguration.yaml": string(configYAML),
+			OpAMPBridgeFilename: string(configYAML),
 		},
 	}, nil
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package targetallocator
+package opampbridge
 
 import (
 	"crypto/sha256"
@@ -23,42 +23,39 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
-func TestPodAnnotations(t *testing.T) {
-	instance := targetAllocatorInstance()
-	instance.Spec.PodAnnotations = map[string]string{
-		"key": "value",
-	}
-	annotations := Annotations(instance, nil, []string{".*\\.bar\\.io"})
-	assert.Subset(t, annotations, instance.Spec.PodAnnotations)
-}
-
 func TestConfigMapHash(t *testing.T) {
 	cfg := config.New()
-	collector := collectorInstance()
-	targetAllocator := targetAllocatorInstance()
+	excludedAnnotations := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+		"opampbridge": "true",
+	}
+	opampBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-instance",
+			Annotations: excludedAnnotations,
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{},
+	}
 	params := manifests.Params{
-		OtelCol:         collector,
-		TargetAllocator: targetAllocator,
-		Config:          cfg,
-		Log:             logr.Discard(),
+		OpAMPBridge: opampBridge,
+		Config:      cfg,
+		Log:         logr.Discard(),
 	}
 	expectedConfigMap, err := ConfigMap(params)
 	require.NoError(t, err)
-	expectedConfig := expectedConfigMap.Data[targetAllocatorFilename]
+	expectedConfig := expectedConfigMap.Data[OpAMPBridgeFilename]
 	require.NotEmpty(t, expectedConfig)
 	expectedHash := sha256.Sum256([]byte(expectedConfig))
-	annotations := Annotations(targetAllocator, expectedConfigMap, []string{".*\\.bar\\.io"})
+	annotations := Annotations(opampBridge, expectedConfigMap, []string{".*\\.bar\\.io"})
 	require.Contains(t, annotations, configMapHashAnnotationKey)
 	cmHash := annotations[configMapHashAnnotationKey]
 	assert.Equal(t, fmt.Sprintf("%x", expectedHash), cmHash)
-}
-
-func TestInvalidConfigNoHash(t *testing.T) {
-	instance := targetAllocatorInstance()
-	annotations := Annotations(instance, nil, []string{".*\\.bar\\.io"})
-	require.NotContains(t, annotations, configMapHashAnnotationKey)
 }

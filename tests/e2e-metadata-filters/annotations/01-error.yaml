@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: test-annotations-collector
+  annotations:
+    annotation.filter.out: "true"
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true
