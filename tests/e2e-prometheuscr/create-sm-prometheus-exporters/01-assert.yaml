@@ -58,6 +58,7 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: simplest-collector-monitoring
     app.kubernetes.io/part-of: opentelemetry
+    operator.opentelemetry.io/collector-monitoring-service: "Exists"
   name: simplest-collector-monitoring
   namespace: create-sm-prometheus
 spec:
