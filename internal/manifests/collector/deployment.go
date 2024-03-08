@@ -28,13 +28,12 @@ import (
 func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-
-	annotations, err := Annotations(params.OtelCol)
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	podAnnotations, err := PodAnnotations(params.OtelCol)
+	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
 					Volumes:                       Volumes(params.Config, params.OtelCol),
 					DNSPolicy:                     getDNSPolicy(params.OtelCol),
-					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,
+					DNSConfig:                     params.OtelCol.Spec.PodDNSConfig,
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,

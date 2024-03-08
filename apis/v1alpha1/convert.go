@@ -16,15 +16,53 @@ package v1alpha1
 
 import (
 	"errors"
+	"fmt"
 
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func Tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
+var _ conversion.Convertible = &OpenTelemetryCollector{}
+
+func (src *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
+	switch t := dstRaw.(type) {
+	case *v1beta1.OpenTelemetryCollector:
+		dst := dstRaw.(*v1beta1.OpenTelemetryCollector)
+		convertedSrc, err := tov1beta1(*src)
+		if err != nil {
+			return fmt.Errorf("failed to convert to v1beta1: %w", err)
+		}
+		dst.ObjectMeta = convertedSrc.ObjectMeta
+		dst.Spec = convertedSrc.Spec
+		dst.Status = convertedSrc.Status
+	default:
+		return fmt.Errorf("unsupported type %v", t)
+	}
+	return nil
+}
+
+func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
+	switch t := srcRaw.(type) {
+	case *v1beta1.OpenTelemetryCollector:
+		src := srcRaw.(*v1beta1.OpenTelemetryCollector)
+		srcConverted, err := tov1alpha1(*src)
+		if err != nil {
+			return fmt.Errorf("failed to convert to v1alpha1: %w", err)
+		}
+		dst.ObjectMeta = srcConverted.ObjectMeta
+		dst.Spec = srcConverted.Spec
+		dst.Status = srcConverted.Status
+	default:
+		return fmt.Errorf("unsupported type %v", t)
+	}
+	return nil
+}
+
+func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
 	cfg := &v1beta1.Config{}
 	if err := yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
@@ -121,6 +159,7 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 			Enabled:        in.PrometheusCR.Enabled,
 			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
+			// prometheus_cr.pod_monitor_selector shouldn't be nil when selector is empty
 			PodMonitorSelector: &metav1.LabelSelector{
 				MatchLabels: in.PrometheusCR.PodMonitorSelector,
 			},
@@ -143,9 +182,13 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 	}
 }
 
+// The conversion takes into account deprecated v1alpha1 spec.minReplicas and spec.maxReplicas.
 func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *v1beta1.AutoscalerSpec {
-	if in == nil {
+	if in == nil && minReplicas == nil && maxReplicas == nil {
 		return nil
+	}
+	if in == nil {
+		in = &AutoscalerSpec{}
 	}
 
 	var metrics []v1beta1.MetricSpec
@@ -237,7 +280,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			SecurityContext:      copy.Spec.SecurityContext,
 			PodSecurityContext:   copy.Spec.PodSecurityContext,
 			PodAnnotations:       copy.Spec.PodAnnotations,
-			TargetAllocator:      tov1alpha1TA(in.Spec.TargetAllocator),
+			TargetAllocator:      tov1alpha1TA(copy.Spec.TargetAllocator),
 			Mode:                 Mode(copy.Spec.Mode),
 			ServiceAccount:       copy.Spec.ServiceAccount,
 			Image:                copy.Spec.Image,

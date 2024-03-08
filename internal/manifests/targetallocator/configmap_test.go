@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -27,7 +28,7 @@ import (
 )
 
 func TestDesiredConfigMap(t *testing.T) {
-	expectedLables := map[string]string{
+	expectedLabels := map[string]string{
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/instance":   "default.my-instance",
 		"app.kubernetes.io/part-of":    "opentelemetry",
@@ -35,17 +36,18 @@ func TestDesiredConfigMap(t *testing.T) {
 	}
 
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "my-instance-targetallocator"
+		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
+		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
 
 		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: consistent-hashing
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_selector:
   matchlabels:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: default.my-instance
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -65,33 +67,36 @@ prometheus_cr:
   service_monitor_selector: null
 `,
 		}
-		instance := collectorInstance()
+		collector := collectorInstance()
+		targetAllocator := targetAllocatorInstance()
 		cfg := config.New()
 		params := manifests.Params{
-			OtelCol: instance,
-			Config:  cfg,
-			Log:     logr.Discard(),
+			OtelCol:         collector,
+			TargetAllocator: targetAllocator,
+			Config:          cfg,
+			Log:             logr.Discard(),
 		}
 		actual, err := ConfigMap(params)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
-		assert.Equal(t, expectedData, actual.Data)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 
 	})
 	t.Run("should return expected target allocator config map with label selectors", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "my-instance-targetallocator"
+		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
+		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
 
 		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: consistent-hashing
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_selector:
   matchlabels:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: default.my-instance
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -121,43 +126,43 @@ service_monitor_selector:
   release: my-instance
 `,
 		}
-		instance := collectorInstance()
-		instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
 			},
 		}
-		instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector = &metav1.LabelSelector{
+		targetAllocator.Spec.PrometheusCR.ServiceMonitorSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
-			},
-		}
+			}}
 		cfg := config.New()
 		params := manifests.Params{
-			OtelCol: instance,
-			Config:  cfg,
-			Log:     logr.Discard(),
+			TargetAllocator: targetAllocator,
+			Config:          cfg,
+			Log:             logr.Discard(),
 		}
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
 	})
 	t.Run("should return expected target allocator config map with scrape interval set", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLables["app.kubernetes.io/name"] = "my-instance-targetallocator"
+		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
+		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
 
 		expectedData := map[string]string{
-			"targetallocator.yaml": `allocation_strategy: consistent-hashing
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_selector:
   matchlabels:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: default.my-instance
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
 config:
   scrape_configs:
   - job_name: otel-collector
@@ -179,19 +184,19 @@ prometheus_cr:
 `,
 		}
 
-		collector := collectorInstance()
-		collector.Spec.TargetAllocator.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
 		cfg := config.New()
 		params := manifests.Params{
-			OtelCol: collector,
-			Config:  cfg,
-			Log:     logr.Discard(),
+			TargetAllocator: targetAllocator,
+			Config:          cfg,
+			Log:             logr.Discard(),
 		}
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
-		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
 
 	})

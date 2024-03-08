@@ -31,12 +31,18 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 	if getDNSPolicy(params.OpAMPBridge) == "None" && params.OpAMPBridge.Spec.PodDNSConfig.Nameservers == nil {
 		return nil
 	}
+	configMap, err := ConfigMap(params)
+	if err != nil {
+		params.Log.Info("failed to construct OpAMPBridge ConfigMap for annotations")
+		configMap = nil
+	}
+	annotations := Annotations(params.OpAMPBridge, configMap, params.Config.AnnotationsFilter())
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   params.OpAMPBridge.Namespace,
 			Labels:      labels,
-			Annotations: params.OpAMPBridge.Annotations,
+			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: params.OpAMPBridge.Spec.Replicas,

@@ -27,11 +27,12 @@ import (
 
 // Params holds the reconciliation-specific parameters.
 type Params struct {
-	Client      client.Client
-	Recorder    record.EventRecorder
-	Scheme      *runtime.Scheme
-	Log         logr.Logger
-	OtelCol     v1beta1.OpenTelemetryCollector
-	OpAMPBridge v1alpha1.OpAMPBridge
-	Config      config.Config
+	Client          client.Client
+	Recorder        record.EventRecorder
+	Scheme          *runtime.Scheme
+	Log             logr.Logger
+	OtelCol         v1beta1.OpenTelemetryCollector
+	TargetAllocator v1beta1.TargetAllocator
+	OpAMPBridge     v1alpha1.OpAMPBridge
+	Config          config.Config
 }

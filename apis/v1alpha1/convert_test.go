@@ -62,7 +62,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		cfgV2, err := Tov1beta1(cfgV1)
+		cfgV2, err := tov1beta1(cfgV1)
 		assert.Nil(t, err)
 		assert.NotNil(t, cfgV2)
 		assert.Equal(t, cfgV1.Spec.Args, cfgV2.Spec.Args)
@@ -79,7 +79,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		_, err := Tov1beta1(cfgV1)
+		_, err := tov1beta1(cfgV1)
 		assert.ErrorContains(t, err, "could not convert config json to v1beta1.Config")
 	})
 }
@@ -310,7 +310,7 @@ func Test_tov1beta1AndBack(t *testing.T) {
 		},
 	}
 
-	colbeta1, err := Tov1beta1(*colalpha1)
+	colbeta1, err := tov1beta1(*colalpha1)
 	require.NoError(t, err)
 	colalpha1Converted, err := tov1alpha1(colbeta1)
 	require.NoError(t, err)
@@ -321,6 +321,90 @@ func Test_tov1beta1AndBack(t *testing.T) {
 	colalpha1.Spec.Config = ""
 	colalpha1Converted.Spec.Config = ""
 	assert.Equal(t, colalpha1, colalpha1Converted)
+}
+
+func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
+	t.Run("nil-selectors", func(t *testing.T) {
+		colalpha1 := OpenTelemetryCollector{
+			Spec: OpenTelemetryCollectorSpec{
+				TargetAllocator: OpenTelemetryTargetAllocator{
+					PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
+						// nil or empty map means select everything
+						PodMonitorSelector:     nil,
+						ServiceMonitorSelector: nil,
+					},
+				},
+			},
+		}
+
+		colbeta1 := v1beta1.OpenTelemetryCollector{}
+		err := colalpha1.ConvertTo(&colbeta1)
+		require.NoError(t, err)
+
+		// nil LabelSelector means select nothing
+		// empty LabelSelector mean select everything
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
+		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector))
+		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector))
+
+		err = colalpha1.ConvertFrom(&colbeta1)
+		require.NoError(t, err)
+		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
+		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
+	})
+	t.Run("empty-selectors", func(t *testing.T) {
+		colalpha1 := OpenTelemetryCollector{
+			Spec: OpenTelemetryCollectorSpec{
+				TargetAllocator: OpenTelemetryTargetAllocator{
+					PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
+						// nil or empty map means select everything
+						PodMonitorSelector:     map[string]string{},
+						ServiceMonitorSelector: map[string]string{},
+					},
+				},
+			},
+		}
+
+		colbeta1 := v1beta1.OpenTelemetryCollector{}
+		err := colalpha1.ConvertTo(&colbeta1)
+		require.NoError(t, err)
+
+		// nil LabelSelector means select nothing
+		// empty LabelSelector mean select everything
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
+
+		err = colalpha1.ConvertFrom(&colbeta1)
+		require.NoError(t, err)
+		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
+		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
+	})
+}
+
+func Test_tov1beta1AndBack_deprecated_replicas(t *testing.T) {
+	one := int32(1)
+	two := int32(2)
+	colalpha1 := OpenTelemetryCollector{
+		Spec: OpenTelemetryCollectorSpec{
+			MinReplicas: &one,
+			MaxReplicas: &two,
+		},
+	}
+
+	colbeta1 := v1beta1.OpenTelemetryCollector{}
+	err := colalpha1.ConvertTo(&colbeta1)
+	require.NoError(t, err)
+
+	assert.Equal(t, one, *colbeta1.Spec.Autoscaler.MinReplicas)
+	assert.Equal(t, two, *colbeta1.Spec.Autoscaler.MaxReplicas)
+
+	err = colalpha1.ConvertFrom(&colbeta1)
+	require.NoError(t, err)
+	assert.Nil(t, colalpha1.Spec.MinReplicas)
+	assert.Nil(t, colalpha1.Spec.MaxReplicas)
+	assert.Equal(t, one, *colalpha1.Spec.Autoscaler.MinReplicas)
+	assert.Equal(t, two, *colalpha1.Spec.Autoscaler.MaxReplicas)
 }
 
 func createTA() OpenTelemetryTargetAllocator {
@@ -420,4 +504,72 @@ func createTA() OpenTelemetryTargetAllocator {
 			},
 		},
 	}
+}
+
+func TestConvertTo(t *testing.T) {
+	col := OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			ServiceAccount: "otelcol",
+		},
+		Status: OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}
+	colbeta1 := v1beta1.OpenTelemetryCollector{}
+	err := col.ConvertTo(&colbeta1)
+	require.NoError(t, err)
+	assert.Equal(t, v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ServiceAccount: "otelcol",
+			},
+			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+					PodMonitorSelector:     &metav1.LabelSelector{},
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}, colbeta1)
+}
+
+func TestConvertFrom(t *testing.T) {
+	colbeta1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ServiceAccount: "otelcol",
+			},
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}
+	col := OpenTelemetryCollector{}
+	err := col.ConvertFrom(&colbeta1)
+	require.NoError(t, err)
+	// set config to empty. The v1beta1 marshals config with empty receivers, exporters..
+	col.Spec.Config = ""
+	assert.Equal(t, OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "otel",
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			ServiceAccount: "otelcol",
+		},
+		Status: OpenTelemetryCollectorStatus{
+			Image: "otel/col",
+		},
+	}, col)
 }
