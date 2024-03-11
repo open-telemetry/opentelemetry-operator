@@ -67,7 +67,7 @@ var (
 	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
 	PrometheusOperatorIsAvailable = featuregate.GlobalRegistry().MustRegister(
 		"operator.observability.prometheus",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"),
 		featuregate.WithRegisterFromVersion("v0.82.0"),
 	)
