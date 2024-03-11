@@ -129,7 +129,7 @@ to collector instance pods by default.
 
 ### RBAC
 
-Before the TargetAllocator can start scraping, you need to set up a Kubernetes RBAC (role-based access controls). This means that you need to have a `ServiceAccount` and corresponding cluster roles so that the TargetAllocator has access to all of the necessary resources to pull metrics from.
+Before the TargetAllocator can start scraping, you need to set up Kubernetes RBAC (role-based access controls) resources. This means that you need to have a `ServiceAccount` and corresponding cluster roles so that the TargetAllocator has access to all of the necessary resources to pull metrics from.
 
 You can create your own `ServiceAccount`, and reference it in `spec.targetAllocator.serviceAccount` in your `OpenTelemetryCollector` CR. You’ll then need to configure the `ClusterRole` and `ClusterRoleBinding` for this `ServiceAccount`, as per below.
 
