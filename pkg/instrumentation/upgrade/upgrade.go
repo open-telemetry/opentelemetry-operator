@@ -132,7 +132,6 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
 						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
 					}
-				}
 				case constants.AnnotationDefaultAutoInstrumentationGo:
 					if inst.Spec.Go.Image == autoInst {
 					upgraded.Spec.Go.Image = u.DefaultAutoInstGo
