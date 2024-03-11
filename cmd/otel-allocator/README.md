@@ -144,7 +144,7 @@ You can create your own `ServiceAccount`, and reference it in `spec.targetAlloca
 > 🚨 **Note**: The Collector part of this same CR *also* has a serviceAccount key which only affects the collector and *not*
 the TargetAllocator.
 
-If you omit the `ServiceAccount` name, the TargetAllocator creates a `ServiceAccount` for you. The `ServiceAccount`’s default name is a concatenation of the Collector name and the `-collector` suffix. By default, this `ServiceAccount` has no defined policy, so you’ll need to create your own `ClusterRole` and `ClusterRoleBinding` for it, as per below.
+If you omit the `ServiceAccount` name, the TargetAllocator creates a `ServiceAccount` for you. The `ServiceAccount`’s default name is a concatenation of the Collector name and the `-targetallocator` suffix. By default, this `ServiceAccount` has no defined policy, so you’ll need to create your own `ClusterRole` and `ClusterRoleBinding` for it, as per below.
 
 The role below will provide the minimum access required for the Target Allocator to query all the targets it needs based on any Prometheus configurations:
 
