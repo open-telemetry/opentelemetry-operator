@@ -14,6 +14,7 @@ spec:
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/otel-python-auto-runtime: "linux-musl-x64"
     spec:
       securityContext:
         runAsUser: 1000
