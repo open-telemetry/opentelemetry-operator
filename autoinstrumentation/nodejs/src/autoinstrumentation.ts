@@ -1,4 +1,5 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { KafkaJsInstrumentation } from 'opentelemetry-instrumentation-kafkajs';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
@@ -32,9 +33,12 @@ function getMetricReader() {
     }
 }
 
+const instrumentations = getNodeAutoInstrumentations()
+instrumentations.push(new KafkaJsInstrumentation())
+
 const sdk = new NodeSDK({
     autoDetectResources: true,
-    instrumentations: [getNodeAutoInstrumentations()],
+    instrumentations: instrumentations,
     traceExporter: new OTLPTraceExporter(),
     metricReader: getMetricReader(),
     resourceDetectors:
