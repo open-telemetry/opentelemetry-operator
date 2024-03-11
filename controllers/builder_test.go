@@ -53,10 +53,6 @@ var (
 )
 
 var (
-	prometheusFeatureGate = featuregate.PrometheusOperatorIsAvailable.ID()
-)
-
-var (
 	opampbridgeSelectorLabels = map[string]string{
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
@@ -1951,7 +1947,7 @@ prometheus_cr:
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						Endpoints: []monitoringv1.Endpoint{
-							monitoringv1.Endpoint{Port: "targetallocation"},
+							{Port: "targetallocation"},
 						},
 						Selector: v1.LabelSelector{
 							MatchLabels: map[string]string{
@@ -1969,7 +1965,7 @@ prometheus_cr:
 				},
 			},
 			wantErr:      false,
-			featuregates: []string{prometheusFeatureGate},
+			featuregates: []string{},
 		},
 	}
 	for _, tt := range tests {
