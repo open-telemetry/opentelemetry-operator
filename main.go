@@ -180,7 +180,7 @@ func main() {
 		"enable-multi-instrumentation", enableMultiInstrumentation,
 		"enable-apache-httpd-instrumentation", enableApacheHttpdInstrumentation,
 		"enable-dotnet-instrumentation", enableDotNetInstrumentation,
-		"enable-python-instrumentation", enableDotNetInstrumentation,
+		"enable-python-instrumentation", enablePythonInstrumentation,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
