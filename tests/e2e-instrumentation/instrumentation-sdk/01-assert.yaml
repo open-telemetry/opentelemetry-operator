@@ -2,26 +2,49 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    sidecar.opentelemetry.io/inject: "true"
     instrumentation.opentelemetry.io/inject-sdk: "true"
+    sidecar.opentelemetry.io/inject: "true"
   labels:
-    app: my-pod-with-sidecar
+    app: my-sdk
 spec:
   containers:
-  - name: myapp
-    env:
+  - env:
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
     - name: OTEL_SERVICE_NAME
+      value: my-sdk
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.25"
     - name: OTEL_RESOURCE_ATTRIBUTES
-  - name: otc-container
+    name: myapp
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
 status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
   phase: Running

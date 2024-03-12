@@ -20,14 +20,15 @@ jobs:
 
     - name: Set up Go
       uses: actions/setup-go@v5
+      id: setup-go
       with:
-        go-version: "~1.22.1"
+        go-version: "~1.21.1"
 
     - name: Cache tools
       uses: actions/cache@v4
       with:
         path: bin
-        key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
 
     - name: Install tools
       run: make install-tools
@@ -45,13 +46,14 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: "~1.22.1"
+        go-version: "~1.21.1"
 
     - name: Cache tools
       uses: actions/cache@v4
+      id: setup-go
       with:
         path: bin
-        key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
 
     - name: Install tools
       run: make install-tools
@@ -79,7 +81,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: "~1.22.1"
+        go-version: "~1.21.1"
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
