@@ -229,5 +229,4 @@ status:
     ready: true
   - name: opentelemetry-auto-instrumentation-dotnet
     ready: true
-    started: false
   phase: Running
