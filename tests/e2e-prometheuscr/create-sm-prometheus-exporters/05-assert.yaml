@@ -17,5 +17,27 @@ spec:
     - create-sm-prometheus
   selector:
     matchLabels:
-      app.kubernetes.io/managed-by: opentelemetry-operator
       app.kubernetes.io/instance: create-sm-prometheus.simplest
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+      app.kubernetes.io/component: opentelemetry-collector
+      operator.opentelemetry.io/collector-monitoring-service: "Exists"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: create-sm-prometheus.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-collector-monitoring
+    app.kubernetes.io/part-of: opentelemetry
+    operator.opentelemetry.io/collector-monitoring-service: "Exists"
+  name: simplest-collector-monitoring
+  namespace: create-sm-prometheus
+spec:
+  ports:
+  - name: monitoring
+    port: 8888
+    protocol: TCP
+    targetPort: 8888

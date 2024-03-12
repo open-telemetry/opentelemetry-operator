@@ -42,3 +42,4 @@ spec:
     matchLabels:
       app.kubernetes.io/managed-by: opentelemetry-operator
       app.kubernetes.io/instance: create-pm-prometheus.simplest
+
