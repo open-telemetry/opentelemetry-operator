@@ -1,23 +1,30 @@
-# skipping test, see https://github.com/open-telemetry/opentelemetry-operator/issues/1936
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-nginx-multi
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+
+---
 apiVersion: v1
 kind: Pod
 metadata:
   annotations:
+    instrumentation.opentelemetry.io/container-names: myapp
     instrumentation.opentelemetry.io/inject-nginx: "true"
     sidecar.opentelemetry.io/inject: "true"
   labels:
-    app: my-nginx
+    app: my-nginx-multi
 spec:
-  securityContext:
-    runAsUser: 1000
-    runAsGroup: 3000
-    fsGroup: 3000
   containers:
   - env:
     - name: LD_LIBRARY_PATH
       value: /opt:/opt/opentelemetry-webserver/agent/sdk_lib/lib
     - name: OTEL_SERVICE_NAME
-      value: my-nginx
+      value: my-nginx-multi
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -40,35 +47,36 @@ spec:
     name: myapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
     - mountPath: /opt/opentelemetry-webserver/agent
       name: otel-nginx-agent
     - mountPath: /etc/nginx
       name: otel-nginx-conf-dir
-  - env:
-    - name: OTEL_SERVICE_NAME
-      value: my-nginx
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
-    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
-    - name: OTEL_PROPAGATORS
-      value: jaeger,b3
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.25"
-    - name: OTEL_RESOURCE_ATTRIBUTES
+  - image: rabbitmq
     name: myrabbit
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
   - args:
     - --config=env:OTEL_CONFIG
     name: otc-container
+  initContainers:
+  - name: otel-agent-source-container-clone
+  - name: otel-agent-attach-nginx
 status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: myrabbit
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: otel-agent-source-container-clone
+    ready: true
+  - name: otel-agent-attach-nginx
+    ready: true
   phase: Running

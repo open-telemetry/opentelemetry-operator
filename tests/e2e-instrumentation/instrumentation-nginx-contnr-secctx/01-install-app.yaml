@@ -1,27 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-nginx
+  name: my-nginx-contnr-secctx
 spec:
   selector:
     matchLabels:
-      app: my-nginx
+      app: my-nginx-contnr-secctx
   replicas: 1
   template:
     metadata:
       labels:
-        app: my-nginx
+        app: my-nginx-contnr-secctx
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-nginx: "true"
     spec:
       containers:
       - name: myapp
-        image: nginxinc/nginx-unprivileged:1.23.1
+        image: nginxinc/nginx-unprivileged:1.25.3
         imagePullPolicy: Always
         securityContext:
           runAsUser: 1000
           runAsGroup: 3000
+          fsGroup: 3000
         ports:
         - containerPort: 8765
         env:
