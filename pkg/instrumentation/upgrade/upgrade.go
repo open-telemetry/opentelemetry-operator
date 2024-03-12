@@ -34,7 +34,6 @@ var (
 	defaultAnnotationToGate = map[string]*featuregate2.Gate{
 		constants.AnnotationDefaultAutoInstrumentationJava:   featuregate.EnableJavaAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNodeJS: featuregate.EnableNodeJSAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationPython: featuregate.EnablePythonAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationGo:     featuregate.EnableGoAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNginx:  featuregate.EnableNginxAutoInstrumentationSupport,
 	}
@@ -63,6 +62,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 	defaultAnnotationToConfig := map[string]autoInstConfig{
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
 	}
 
 	return &InstrumentationUpgrade{

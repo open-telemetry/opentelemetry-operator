@@ -45,6 +45,7 @@ type options struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enablePythonInstrumentation         bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
@@ -97,6 +98,11 @@ func WithEnableApacheHttpdInstrumentation(s bool) Option {
 func WithEnableDotNetInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enableDotNetInstrumentation = s
+	}
+}
+func WithEnablePythonInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enablePythonInstrumentation = s
 	}
 }
 func WithTargetAllocatorConfigMapEntry(s string) Option {
