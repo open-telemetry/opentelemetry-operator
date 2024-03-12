@@ -134,10 +134,10 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					}
 				case constants.AnnotationDefaultAutoInstrumentationGo:
 					if inst.Spec.Go.Image == autoInst {
-					upgraded.Spec.Go.Image = u.DefaultAutoInstGo
-					upgraded.Annotations[annotation] = u.DefaultAutoInstGo
+						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
+						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
+					}
 				}
-			}
 			} else {
 				u.Logger.Error(nil, "autoinstrumentation not enabled for this language", "flag", config.id)
 				u.Recorder.Event(upgraded, "Warning", "InstrumentationUpgradeRejected", fmt.Sprintf("support for is not enabled for %s", config.id))
