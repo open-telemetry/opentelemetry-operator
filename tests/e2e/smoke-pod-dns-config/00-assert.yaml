@@ -1,10 +1,14 @@
-# skipping test, see https://github.com/open-telemetry/opentelemetry-operator/issues/1936
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: poddnsconfig-collector
 spec:
-  containers:
-    - name: otc-container
+  template:
+    spec:
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8
+        searches:
+          - my.dns.search.suffix
 status:
-  phase: Running
+  readyReplicas: 1

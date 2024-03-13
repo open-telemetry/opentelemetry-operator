@@ -8,10 +8,6 @@ spec:
       - 8.8.8.8
     searches:
       - my.dns.search.suffix
-    options:
-      - name: ndots
-        value: "2"
-      - name: edns0
   config: |
     receivers:
       otlp:

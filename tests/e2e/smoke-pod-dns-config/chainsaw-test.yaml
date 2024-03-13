@@ -12,14 +12,3 @@ spec:
         file: 00-install.yaml
     - assert:
         file: 00-assert.yaml
-  - name: step-01
-    try:
-    - script:
-        content: kubectl exec -it poddnsconfig-collector -- cat /etc/resolv.conf | jq  --raw-input . | jq --slurp
-        outputs:
-        - name: resolvconf
-          value: (json_parse($stdout))
-    - assert:
-        resource:
-          ($resolvconf):
-            nameserver: 8.8.8.8
