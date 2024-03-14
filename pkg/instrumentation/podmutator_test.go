@@ -1266,6 +1266,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnablePythonInstrumentation(true)),
 		},
 		{
 			name: "python injection multiple containers, true",
@@ -1533,6 +1534,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnablePythonInstrumentation(true)),
 		},
 		{
 			name: "python injection feature gate disabled",
@@ -1618,13 +1620,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 				},
-			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnablePythonAutoInstrumentationSupport.ID(), false))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnablePythonAutoInstrumentationSupport.ID(), originalVal))
-				})
 			},
 		},
 		{
@@ -3844,6 +3839,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
+				config.WithEnablePythonInstrumentation(true),
 				config.WithEnableDotNetInstrumentation(true),
 			),
 		},
@@ -4506,6 +4502,7 @@ func TestMutatePod(t *testing.T) {
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
 				config.WithEnableDotNetInstrumentation(true),
+				config.WithEnablePythonInstrumentation(true),
 			),
 		},
 		{
