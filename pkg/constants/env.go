@@ -37,4 +37,5 @@ const (
 
 	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
 	FlagDotNet      = "enable-dotnet-instrumentation"
+	FlagGo          = "enable-go-instrumentation"
 )

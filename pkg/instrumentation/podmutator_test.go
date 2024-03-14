@@ -2506,16 +2506,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(true)),
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableGoAutoInstrumentationSupport.IsEnabled()
-
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), true))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), originalVal))
-
-				})
-			},
+			config: config.New(config.WithEnableGoInstrumentation(true)),
 		},
 		{
 			name: "go injection feature gate disabled",
@@ -2596,6 +2587,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnableGoInstrumentation(false)),
 		},
 		{
 			name: "apache httpd injection, true",
