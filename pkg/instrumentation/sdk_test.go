@@ -557,7 +557,7 @@ func TestInjectJava(t *testing.T) {
 					Env: []corev1.EnvVar{
 						{
 							Name:  "JAVA_TOOL_OPTIONS",
-							Value: javaJVMArgument,
+							Value: javaAgent,
 						},
 						{
 							Name:  "OTEL_SERVICE_NAME",

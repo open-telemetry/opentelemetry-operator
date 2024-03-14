@@ -76,7 +76,69 @@ func TestInjectJavaagent(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaJVMArgument,
+									Value: javaAgent,
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "add extensions to JAVA_TOOL_OPTIONS",
+			Java: v1alpha1.Java{Image: "foo/bar:1", Extensions: &v1alpha1.Extensions{Image: "ex/ex:1", Dir: "/ex"}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-java",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation-java/javaagent.jar"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-extensions",
+							Image:   "ex/ex:1",
+							Command: []string{"cp", "-r", "/ex", "/otel-auto-instrumentation-java/extensions"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: javaAgent + " -Dotel.javaagent.extensions=/otel-auto-instrumentation-java/extensions",
 								},
 							},
 						},
@@ -137,7 +199,7 @@ func TestInjectJavaagent(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: "-Dbaz=bar" + javaJVMArgument,
+									Value: "-Dbaz=bar" + javaAgent,
 								},
 							},
 						},

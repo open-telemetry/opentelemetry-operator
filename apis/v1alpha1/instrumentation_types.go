@@ -133,6 +133,18 @@ type Java struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Extensions defines java specific extensions.
+	// +optional
+	Extensions *Extensions `json:"extensions,omitempty"`
+}
+
+type Extensions struct {
+	// Image is a container image with extensions auto-instrumentation JAR.
+	Image string `json:"image"`
+
+	// Dir is a directory with extensions auto-instrumentation JAR.
+	Dir string `json:"dir"`
 }
 
 // NodeJS defines NodeJS SDK and instrumentation configuration.
