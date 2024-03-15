@@ -374,8 +374,8 @@ func (in *Java) DeepCopyInto(out *Java) {
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.Extensions != nil {
 		in, out := &in.Extensions, &out.Extensions
-		*out = new(Extensions)
-		**out = **in
+		*out = make([]Extensions, len(*in))
+		copy(*out, *in)
 	}
 }
 

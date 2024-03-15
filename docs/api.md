@@ -1907,8 +1907,8 @@ Java defines configuration for java auto-instrumentation.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#instrumentationspecjavaextensions">extensions</a></b></td>
-        <td>object</td>
+        <td><b><a href="#instrumentationspecjavaextensionsindex">extensions</a></b></td>
+        <td>[]object</td>
         <td>
           Extensions defines java specific extensions.<br/>
         </td>
@@ -2195,12 +2195,12 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 </table>
 
 
-### Instrumentation.spec.java.extensions
+### Instrumentation.spec.java.extensions[index]
 <sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
 
 
 
-Extensions defines java specific extensions.
+
 
 <table>
     <thead>

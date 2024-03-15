@@ -87,7 +87,10 @@ func TestInjectJavaagent(t *testing.T) {
 		},
 		{
 			name: "add extensions to JAVA_TOOL_OPTIONS",
-			Java: v1alpha1.Java{Image: "foo/bar:1", Extensions: &v1alpha1.Extensions{Image: "ex/ex:1", Dir: "/ex"}},
+			Java: v1alpha1.Java{Image: "foo/bar:1", Extensions: []v1alpha1.Extensions{
+				{Image: "ex/ex:0", Dir: "/ex0"},
+				{Image: "ex/ex:1", Dir: "/ex1"},
+			}},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -118,9 +121,18 @@ func TestInjectJavaagent(t *testing.T) {
 							}},
 						},
 						{
-							Name:    "opentelemetry-auto-instrumentation-extensions",
+							Name:    "opentelemetry-auto-instrumentation-extension-0",
+							Image:   "ex/ex:0",
+							Command: []string{"cp", "-r", "/ex0/.", "/otel-auto-instrumentation-java/extensions"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+						{
+							Name:    "opentelemetry-auto-instrumentation-extension-1",
 							Image:   "ex/ex:1",
-							Command: []string{"cp", "-r", "/ex", "/otel-auto-instrumentation-java/extensions"},
+							Command: []string{"cp", "-r", "/ex1/.", "/otel-auto-instrumentation-java/extensions"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-java",
 								MountPath: "/otel-auto-instrumentation-java",

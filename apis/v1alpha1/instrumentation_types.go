@@ -136,7 +136,7 @@ type Java struct {
 
 	// Extensions defines java specific extensions.
 	// +optional
-	Extensions *Extensions `json:"extensions,omitempty"`
+	Extensions []Extensions `json:"extensions,omitempty"`
 }
 
 type Extensions struct {
