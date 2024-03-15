@@ -51,6 +51,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -104,14 +105,6 @@ func TestMain(m *testing.M) {
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()
 
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
-		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD},
-		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "config", "webhook")},
-		},
-	}
-	cfg, err = testEnv.Start()
 	if err != nil {
 		fmt.Printf("failed to start testEnv: %v", err)
 		os.Exit(1)
@@ -132,6 +125,19 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to register scheme: %v", err)
 		os.Exit(1)
 	}
+	if err = v1beta1.AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+
+	testEnv = &envtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD},
+		WebhookInstallOptions: envtest.WebhookInstallOptions{
+			Paths: []string{filepath.Join("..", "config", "webhook")},
+		},
+	}
+	cfg, err = testEnv.Start()
 	// +kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: testScheme})
@@ -165,6 +171,10 @@ func TestMain(m *testing.M) {
 	reviewer := rbac.NewReviewer(clientset)
 
 	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
+		os.Exit(1)
+	}
+	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
