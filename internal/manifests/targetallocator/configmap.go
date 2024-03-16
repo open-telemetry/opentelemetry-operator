@@ -38,25 +38,38 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	taSpec := instance.Spec
 
 	taConfig := make(map[interface{}]interface{})
-
-	taConfig["collector_selector"] = metav1.LabelSelector{
-		MatchLabels: manifestutils.SelectorLabels(params.Collector.ObjectMeta, collector.ComponentOpenTelemetryCollector),
-	}
-
 	// Set config if global or scrape configs set
 	config := map[string]interface{}{}
-	globalConfig, err := getGlobalConfig(taSpec.GlobalConfig, params.Collector.Spec.Config)
-	if err != nil {
-		return nil, err
+	var (
+		globalConfig      map[string]any
+		scrapeConfigs     []v1beta1.AnyConfig
+		collectorSelector *metav1.LabelSelector
+		err               error
+	)
+	if params.Collector != nil {
+		collectorSelector = &metav1.LabelSelector{
+			MatchLabels: manifestutils.SelectorLabels(params.Collector.ObjectMeta, collector.ComponentOpenTelemetryCollector),
+		}
+
+		globalConfig, err = getGlobalConfig(taSpec.GlobalConfig, params.Collector.Spec.Config)
+		if err != nil {
+			return nil, err
+		}
+
+		scrapeConfigs, err = getScrapeConfigs(taSpec.ScrapeConfigs, params.Collector.Spec.Config)
+		if err != nil {
+			return nil, err
+		}
+	} else { // if there's no collector, just use what's in the TargetAllocator CR
+		collectorSelector = nil
+		globalConfig = taSpec.GlobalConfig.Object
+		scrapeConfigs = taSpec.ScrapeConfigs
 	}
+
 	if len(globalConfig) > 0 {
 		config["global"] = globalConfig
 	}
 
-	scrapeConfigs, err := getScrapeConfigs(taSpec.ScrapeConfigs, params.Collector.Spec.Config)
-	if err != nil {
-		return nil, err
-	}
 	if len(scrapeConfigs) > 0 {
 		config["scrape_configs"] = scrapeConfigs
 	}
@@ -64,6 +77,8 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	if len(config) != 0 {
 		taConfig["config"] = config
 	}
+
+	taConfig["collector_selector"] = collectorSelector
 
 	if len(taSpec.AllocationStrategy) > 0 {
 		taConfig["allocation_strategy"] = taSpec.AllocationStrategy
