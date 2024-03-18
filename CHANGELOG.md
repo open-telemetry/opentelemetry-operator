@@ -2,6 +2,50 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.97.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: remove featuregate `operator.autoinstrumentation.python`. Use command line flag `--enable-python-instrumentation` instead (#2582, #2672)
+
+### 🚀 New components 🚀
+
+- `collector`: Enable reconciliation of Collector v1beta1 CRD. (#2620)
+  Users are expected to migrate to `otelcol.v1beta1.opentelemetry.io`. 
+  The support for `otelcol.v1alpha1.opentelemetry.io` will be removed in the future.
+  Follow [migration guide](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#upgrade-existing-objects-to-a-new-stored-version) for upgrading already created collector instances.
+  After all `otelcol.v1alpha1.opentelemetry.io` are stored as `v1beta1` update the collector CRD to store only `v1beta1`
+  `kubectl patch customresourcedefinitions opentelemetrycollectors.opentelemetry.io  --subresource='status' --type='merge' -p '{"status":{"storedVersions":["v1beta1"]}}'`.
+  **Only `AllNamespaces` install mode is now supported** due to the conversion webhook from `v1beta1` to `v1alpha1`.
+  See [OLM docs](https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/) and
+  [OLM operator groups docs](https://olm.operatorframework.io/docs/advanced-tasks/operator-scoping-with-operatorgroups/).
+  
+
+### 💡 Enhancements 💡
+
+- `auto-instrumentation`: Bump NodeJS autoinstrumentations dependency to a version that supports enabling selected instrumentations via environment variable. (#2622)
+  See [the documentation](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-node#usage-auto-instrumentation) for details.
+  Usage example: `export OTEL_NODE_ENABLED_INSTRUMENTATIONS="http,nestjs-core"`.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Added missing label for Service/Pod Monitors (#2251)
+- `instrumentation`: Don't preserve ownership of files copied from the autoinstrumenation image. This avoids issues when instrumenting workloads running as non-root (#2655)
+- `opamp bridge`: Fix opamp bridge configmap "app.kubernetes.io/version" label to be generated in the same way as other resource version labels (#2583)
+
+### Components
+
+* [OpenTelemetry Collector - v0.97.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.97.0)
+* [OpenTelemetry Contrib - v0.97.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.97.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/{AUTO_INSTRUMENTATION_DOTNET_VERSION})
+* [Node.JS - v0.49.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.49.1)
+* [Python - v0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.44b0)
+* [Go - v0.10.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.1-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.96.0
 
 ### 🛑 Breaking changes 🛑
