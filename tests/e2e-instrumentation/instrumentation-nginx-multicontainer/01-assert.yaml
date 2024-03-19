@@ -50,6 +50,14 @@ spec:
     - mountPath: /etc/nginx
       name: otel-nginx-conf-dir
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: OTEL_SERVICE_NAME
       value: my-nginx-multi
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
