@@ -21,7 +21,7 @@ spec:
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
-          fieldPath: spec.podIP
+          fieldPath: status.podIP
     - name: OTEL_GO_AUTO_TARGET_EXE
       value: /usr/src/app/productcatalogservice
     - name: OTEL_TRACES_EXPORTER

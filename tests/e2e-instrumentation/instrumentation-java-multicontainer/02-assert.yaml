@@ -28,7 +28,7 @@ spec:
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
-          fieldPath: spec.podIP
+          fieldPath: status.podIP
     - name: OTEL_JAVAAGENT_DEBUG
       value: "true"
     - name: OTEL_INSTRUMENTATION_JDBC_ENABLED

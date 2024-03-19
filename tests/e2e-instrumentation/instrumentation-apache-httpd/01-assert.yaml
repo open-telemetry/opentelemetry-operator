@@ -16,7 +16,7 @@ spec:
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
-          fieldPath: spec.podIP
+          fieldPath: status.podIP
     - name: OTEL_SERVICE_NAME
       value: my-apache
     - name: OTEL_EXPORTER_OTLP_ENDPOINT

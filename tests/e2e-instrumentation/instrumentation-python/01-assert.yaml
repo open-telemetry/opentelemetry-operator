@@ -16,7 +16,7 @@ spec:
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
-          fieldPath: spec.podIP
+          fieldPath: status.podIP
     - name: OTEL_LOG_LEVEL
       value: debug
     - name: OTEL_TRACES_EXPORTER

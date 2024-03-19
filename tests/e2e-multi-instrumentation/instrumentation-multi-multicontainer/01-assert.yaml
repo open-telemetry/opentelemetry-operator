@@ -24,7 +24,7 @@ spec:
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
-          fieldPath: spec.podIP
+          fieldPath: status.podIP
     - name: ASPNETCORE_URLS
       value: http://+:8083
     - name: OTEL_SERVICE_NAME
@@ -76,7 +76,7 @@ spec:
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
-          fieldPath: spec.podIP
+          fieldPath: status.podIP
     - name: OTEL_SERVICE_NAME
       value: javaapp
     - name: JAVA_TOOL_OPTIONS
@@ -114,7 +114,7 @@ spec:
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
-          fieldPath: spec.podIP
+          fieldPath: status.podIP
     - name: NODE_PATH
       value: /usr/local/lib/node_modules
     - name: OTEL_SERVICE_NAME
@@ -159,7 +159,7 @@ spec:
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
-          fieldPath: spec.podIP
+          fieldPath: status.podIP
     - name: OTEL_SERVICE_NAME
       value: pythonapp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
