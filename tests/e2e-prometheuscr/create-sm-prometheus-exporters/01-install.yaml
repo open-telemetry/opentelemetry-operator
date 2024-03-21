@@ -7,7 +7,6 @@ spec:
   observability:
     metrics:
       enableMetrics: true
-      jobLabel: app.kubernetes.io/name
   config: |
     receivers:
       otlp:
