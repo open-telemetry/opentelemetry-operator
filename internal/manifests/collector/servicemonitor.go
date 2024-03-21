@@ -54,6 +54,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 			Labels:    labels,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
+			JobLabel: params.OtelCol.Spec.Observability.Metrics.JobLabel,
 			Endpoints: append([]monitoringv1.Endpoint{
 				{
 					Port: "monitoring",

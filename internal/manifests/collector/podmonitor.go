@@ -45,6 +45,10 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	name := naming.PodMonitor(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, nil)
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
+	jobLabel := params.OtelCol.Spec.Observability.Metrics.JobLabel
+	if len(jobLabel) == 0 {
+		jobLabel = "app.kubernetes.io/instance"
+	}
 	pm = monitoringv1.PodMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: params.OtelCol.Namespace,
@@ -52,7 +56,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 			Labels:    labels,
 		},
 		Spec: monitoringv1.PodMonitorSpec{
-			JobLabel:        "app.kubernetes.io/instance",
+			JobLabel:        jobLabel,
 			PodTargetLabels: []string{"app.kubernetes.io/name", "app.kubernetes.io/instance", "app.kubernetes.io/managed-by"},
 			NamespaceSelector: monitoringv1.NamespaceSelector{
 				MatchNames: []string{params.OtelCol.Namespace},

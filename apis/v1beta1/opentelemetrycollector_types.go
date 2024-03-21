@@ -261,6 +261,14 @@ type MetricsConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
 	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// JobLabel specifies the label to use for the job in the ServiceMonitor or PodMonitor(for sidecar mode).
+	// The operator.observability.prometheus feature gate must be enabled to use this feature.
+	// EnableMetrics must be true to set this.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Job Label for generated ServiceMonitors"
+	JobLabel string `json:"jobLabel,omitempty"`
 	// DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
 	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
 	//

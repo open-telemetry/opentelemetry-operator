@@ -137,6 +137,12 @@ spec:
           this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
+      - description: JobLabel specifies the label to use for the job in the ServiceMonitor
+          or PodMonitor(for sidecar mode). The operator.observability.prometheus feature
+          gate must be enabled to use this feature. EnableMetrics must be true to
+          set this.
+        displayName: Job Label for generated ServiceMonitors
+        path: observability.metrics.jobLabel
       - description: ObservabilitySpec defines how telemetry data gets handled.
         displayName: Observability
         path: targetAllocator.observability
@@ -149,6 +155,12 @@ spec:
           this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
+      - description: JobLabel specifies the label to use for the job in the ServiceMonitor
+          or PodMonitor(for sidecar mode). The operator.observability.prometheus feature
+          gate must be enabled to use this feature. EnableMetrics must be true to
+          set this.
+        displayName: Job Label for generated ServiceMonitors
+        path: targetAllocator.observability.metrics.jobLabel
       version: v1alpha1
   description: |-
     OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.

@@ -36,6 +36,7 @@ func TestDesiredPodMonitors(t *testing.T) {
 	assert.Nil(t, actual)
 
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
+	params.OtelCol.Spec.Observability.Metrics.JobLabel = "app.kubernetes.io/name"
 	actual, err = PodMonitor(params)
 	assert.NoError(t, err)
 	assert.NotNil(t, actual)
@@ -49,6 +50,7 @@ func TestDesiredPodMonitors(t *testing.T) {
 		"app.kubernetes.io/part-of":    "opentelemetry",
 	}
 	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
+	assert.Equal(t, "app.kubernetes.io/name", actual.Spec.JobLabel)
 }
 
 func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
@@ -71,4 +73,5 @@ func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
 		"app.kubernetes.io/component":  "opentelemetry-collector",
 	}
 	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
+	assert.Equal(t, "app.kubernetes.io/instance", actual.Spec.JobLabel)
 }

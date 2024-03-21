@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2024-03-11T13:32:19Z"
+    createdAt: "2024-03-21T17:09:59Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -175,6 +175,12 @@ spec:
           this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
+      - description: JobLabel specifies the label to use for the job in the ServiceMonitor
+          or PodMonitor(for sidecar mode). The operator.observability.prometheus feature
+          gate must be enabled to use this feature. EnableMetrics must be true to
+          set this.
+        displayName: Job Label for generated ServiceMonitors
+        path: observability.metrics.jobLabel
       - description: ObservabilitySpec defines how telemetry data gets handled.
         displayName: Observability
         path: targetAllocator.observability
@@ -187,6 +193,12 @@ spec:
           this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
+      - description: JobLabel specifies the label to use for the job in the ServiceMonitor
+          or PodMonitor(for sidecar mode). The operator.observability.prometheus feature
+          gate must be enabled to use this feature. EnableMetrics must be true to
+          set this.
+        displayName: Job Label for generated ServiceMonitors
+        path: targetAllocator.observability.metrics.jobLabel
       version: v1alpha1
     - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
         API.

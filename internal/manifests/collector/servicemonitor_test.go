@@ -29,6 +29,7 @@ func TestDesiredServiceMonitors(t *testing.T) {
 	assert.Nil(t, actual)
 
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
+	params.OtelCol.Spec.Observability.Metrics.JobLabel = "app.kubernetes.io/name"
 	actual, err = ServiceMonitor(params)
 	assert.NoError(t, err)
 	assert.NotNil(t, actual)
@@ -43,6 +44,7 @@ func TestDesiredServiceMonitors(t *testing.T) {
 		"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 	}
 	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
+	assert.Equal(t, "app.kubernetes.io/name", actual.Spec.JobLabel)
 }
 
 func TestDesiredServiceMonitorsWithPrometheus(t *testing.T) {

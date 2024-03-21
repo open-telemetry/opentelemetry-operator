@@ -131,6 +131,7 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 			Observability: v1beta1.ObservabilitySpec{
 				Metrics: v1beta1.MetricsConfigSpec{
 					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
+					JobLabel:                     copy.Spec.Observability.Metrics.JobLabel,
 					DisablePrometheusAnnotations: copy.Spec.Observability.Metrics.DisablePrometheusAnnotations,
 				},
 			},
@@ -174,6 +175,7 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		Observability: v1beta1.ObservabilitySpec{
 			Metrics: v1beta1.MetricsConfigSpec{
 				EnableMetrics:                in.Observability.Metrics.EnableMetrics,
+				JobLabel:                     in.Observability.Metrics.JobLabel,
 				DisablePrometheusAnnotations: in.Observability.Metrics.DisablePrometheusAnnotations,
 			},
 		},
@@ -316,6 +318,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			Observability: ObservabilitySpec{
 				Metrics: MetricsConfigSpec{
 					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
+					JobLabel:                     copy.Spec.Observability.Metrics.JobLabel,
 					DisablePrometheusAnnotations: copy.Spec.Observability.Metrics.DisablePrometheusAnnotations,
 				},
 			},
@@ -419,6 +422,7 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		Observability: ObservabilitySpec{
 			Metrics: MetricsConfigSpec{
 				EnableMetrics:                in.Observability.Metrics.EnableMetrics,
+				JobLabel:                     in.Observability.Metrics.JobLabel,
 				DisablePrometheusAnnotations: in.Observability.Metrics.DisablePrometheusAnnotations,
 			},
 		},

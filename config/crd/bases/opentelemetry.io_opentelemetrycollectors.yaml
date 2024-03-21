@@ -2212,6 +2212,8 @@ spec:
                         type: boolean
                       enableMetrics:
                         type: boolean
+                      jobLabel:
+                        type: string
                     type: object
                 type: object
               podAnnotations:
@@ -2919,6 +2921,8 @@ spec:
                             type: boolean
                           enableMetrics:
                             type: boolean
+                          jobLabel:
+                            type: string
                         type: object
                     type: object
                   podDisruptionBudget:
@@ -6504,6 +6508,8 @@ spec:
                         type: boolean
                       enableMetrics:
                         type: boolean
+                      jobLabel:
+                        type: string
                     type: object
                 type: object
               podAnnotations:
@@ -7213,6 +7219,8 @@ spec:
                             type: boolean
                           enableMetrics:
                             type: boolean
+                          jobLabel:
+                            type: string
                         type: object
                     type: object
                   podDisruptionBudget:

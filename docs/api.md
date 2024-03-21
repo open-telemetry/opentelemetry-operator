@@ -17809,6 +17809,13 @@ Resource Types:
           <br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>jobLabel</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -20311,6 +20318,13 @@ Resource Types:
       </tr><tr>
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>jobLabel</b></td>
+        <td>string</td>
         <td>
           <br/>
         </td>
@@ -33688,6 +33702,13 @@ Resource Types:
           <br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>jobLabel</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -36191,6 +36212,13 @@ Resource Types:
       </tr><tr>
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>jobLabel</b></td>
+        <td>string</td>
         <td>
           <br/>
         </td>
