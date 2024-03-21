@@ -8,6 +8,7 @@ metadata:
   name: simplest-collector
   namespace: create-sm-prometheus
 spec:
+  jobLabel: app.kubernetes.io/name
   endpoints:
   - port: monitoring
   - port: prometheus-prod
