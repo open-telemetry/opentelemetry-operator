@@ -22,6 +22,10 @@ import (
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
 type InstrumentationSpec struct {
+	// Selector is the selector label of injected Object
+	// +optional
+	Selector map[string]string `json:"selector,omitempty"`
+
 	// Exporter defines exporter configuration.
 	// +optional
 	Exporter `json:"exporter,omitempty"`

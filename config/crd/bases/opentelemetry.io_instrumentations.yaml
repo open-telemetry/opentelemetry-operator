@@ -1025,6 +1025,10 @@ spec:
                     - xray
                     type: string
                 type: object
+              selector:
+                additionalProperties:
+                  type: string
+                type: object
             type: object
           status:
             type: object

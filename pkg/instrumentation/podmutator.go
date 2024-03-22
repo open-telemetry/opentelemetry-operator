@@ -33,8 +33,7 @@ import (
 )
 
 var (
-	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
-	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available")
+	errNoInstancesAvailable = errors.New("no OpenTelemetry Instrumentation instances available")
 )
 
 type instPodMutator struct {
@@ -373,7 +372,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	}
 
 	if strings.EqualFold(instValue, "true") {
-		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
+		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns, pod)
 	}
 
 	var instNamespacedName types.NamespacedName
@@ -392,18 +391,32 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace, pod corev1.Pod) (*v1alpha1.Instrumentation, error) {
 	var otelInsts v1alpha1.InstrumentationList
 	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
 		return nil, err
 	}
 
-	switch s := len(otelInsts.Items); {
+	// selector
+	var availableInstrument []v1alpha1.Instrumentation
+	for _, ins := range otelInsts.Items {
+		isMatch := true
+		if len(ins.Spec.Selector) != 0 {
+			for k, v := range ins.Spec.Selector {
+				if !strings.EqualFold(v, pod.Labels[k]) {
+					isMatch = false
+				}
+			}
+		}
+		if isMatch {
+			availableInstrument = append(availableInstrument, ins)
+		}
+	}
+
+	switch s := len(availableInstrument); {
 	case s == 0:
 		return nil, errNoInstancesAvailable
-	case s > 1:
-		return nil, errMultipleInstancesPossible
 	default:
-		return &otelInsts.Items[0], nil
+		return &availableInstrument[len(availableInstrument)-1], nil
 	}
 }
