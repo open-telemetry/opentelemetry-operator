@@ -58,6 +58,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - batch
+  resources:
+    - jobs
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
   - autoscaling
   resources:
   - horizontalpodautoscalers
