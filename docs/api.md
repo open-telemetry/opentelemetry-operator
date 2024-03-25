@@ -1826,6 +1826,13 @@ Resource Types:
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecjavaextensionsindex">extensions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Extensions defines java specific extensions.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
@@ -2092,6 +2099,40 @@ Resource Types:
           <br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.extensions[index]
+<sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>dir</b></td>
+        <td>string</td>
+        <td>
+          Dir is a directory with extensions auto-instrumentation JAR.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image is a container image with extensions auto-instrumentation JAR.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
