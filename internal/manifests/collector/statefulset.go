@@ -25,12 +25,19 @@ import (
 )
 
 // StatefulSet builds the statefulset for the given instance.
-func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
+func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
-	annotations := Annotations(params.OtelCol)
-	podAnnotations := PodAnnotations(params.OtelCol)
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
 
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -69,5 +76,5 @@ func StatefulSet(params manifests.Params) *appsv1.StatefulSet {
 			PodManagementPolicy:  "Parallel",
 			VolumeClaimTemplates: VolumeClaimTemplates(params.OtelCol),
 		},
-	}
+	}, nil
 }

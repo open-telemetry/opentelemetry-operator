@@ -3,13 +3,13 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-multi-cluster-send.otel-sender
+    app.kubernetes.io/instance: chainsaw-multi-cluster-send.otel-sender
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: otel-sender-collector
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
   name: otel-sender-collector
-  namespace: kuttl-multi-cluster-send
+  namespace: chainsaw-multi-cluster-send
 status:
   availableReplicas: 1
   readyReplicas: 1
@@ -21,13 +21,13 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-multi-cluster-send.otel-sender
+    app.kubernetes.io/instance: chainsaw-multi-cluster-send.otel-sender
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: otel-sender-collector
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
   name: otel-sender-collector
-  namespace: kuttl-multi-cluster-send
+  namespace: chainsaw-multi-cluster-send
 spec:
   ports:
   - appProtocol: grpc
@@ -42,7 +42,7 @@ spec:
     targetPort: 4318
   selector:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-multi-cluster-send.otel-sender
+    app.kubernetes.io/instance: chainsaw-multi-cluster-send.otel-sender
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
   type: ClusterIP
@@ -53,14 +53,14 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-multi-cluster-send.otel-sender
+    app.kubernetes.io/instance: chainsaw-multi-cluster-send.otel-sender
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: otel-sender-collector
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
     operator.opentelemetry.io/collector-headless-service: Exists
   name: otel-sender-collector-headless
-  namespace: kuttl-multi-cluster-send
+  namespace: chainsaw-multi-cluster-send
 spec:
   ports:
   - appProtocol: grpc
@@ -75,7 +75,7 @@ spec:
     targetPort: 4318
   selector:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-multi-cluster-send.otel-sender
+    app.kubernetes.io/instance: chainsaw-multi-cluster-send.otel-sender
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
   type: ClusterIP
@@ -86,13 +86,13 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-multi-cluster-send.otel-sender
+    app.kubernetes.io/instance: chainsaw-multi-cluster-send.otel-sender
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: otel-sender-collector-monitoring
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
   name: otel-sender-collector-monitoring
-  namespace: kuttl-multi-cluster-send
+  namespace: chainsaw-multi-cluster-send
 spec:
   ports:
   - name: monitoring
@@ -101,7 +101,7 @@ spec:
     targetPort: 8888
   selector:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: kuttl-multi-cluster-send.otel-sender
+    app.kubernetes.io/instance: chainsaw-multi-cluster-send.otel-sender
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
   type: ClusterIP

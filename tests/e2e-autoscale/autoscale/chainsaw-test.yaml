@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: autoscale
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+  - name: step-01
+    try:
+    - apply:
+        file: 01-install.yaml
+    - assert:
+        file: 01-assert.yaml
+  - name: step-02
+    try:
+    - apply:
+        file: 02-install.yaml
+    - assert:
+        file: 02-assert.yaml
+  - name: step-03
+    try:
+    - delete:
+        ref:
+          apiVersion: batch/v1
+          kind: Job
+          name: telemetrygen-set-utilization
+    - assert:
+        file: 03-assert.yaml
+  # applying the same OpenTelemetryCollector from the 00-step, but this time without the spec.autoscaler, which should inform the controller to delete the HPAs resources. So, we should get an error checking if the HPAs still exist
+  - name: step-04
+    try:
+      - apply:
+          file: 04-install.yaml
+      - error:
+          file: 04-error.yaml

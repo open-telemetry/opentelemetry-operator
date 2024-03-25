@@ -28,6 +28,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+	networkingv1 "k8s.io/api/networking/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -45,6 +46,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -52,6 +54,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
@@ -72,8 +75,10 @@ type tlsConfig struct {
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
 	utilruntime.Must(routev1.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
+	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -99,24 +104,29 @@ func main() {
 
 	// add flags related to this operator
 	var (
-		metricsAddr                    string
-		probeAddr                      string
-		pprofAddr                      string
-		enableLeaderElection           bool
-		createRBACPermissions          bool
-		collectorImage                 string
-		targetAllocatorImage           string
-		operatorOpAMPBridgeImage       string
-		autoInstrumentationJava        string
-		autoInstrumentationNodeJS      string
-		autoInstrumentationPython      string
-		autoInstrumentationDotNet      string
-		autoInstrumentationApacheHttpd string
-		autoInstrumentationNginx       string
-		autoInstrumentationGo          string
-		labelsFilter                   []string
-		webhookPort                    int
-		tlsOpt                         tlsConfig
+		metricsAddr                      string
+		probeAddr                        string
+		pprofAddr                        string
+		enableLeaderElection             bool
+		createRBACPermissions            bool
+		enableMultiInstrumentation       bool
+		enableApacheHttpdInstrumentation bool
+		enableDotNetInstrumentation      bool
+		enablePythonInstrumentation      bool
+		collectorImage                   string
+		targetAllocatorImage             string
+		operatorOpAMPBridgeImage         string
+		autoInstrumentationJava          string
+		autoInstrumentationNodeJS        string
+		autoInstrumentationPython        string
+		autoInstrumentationDotNet        string
+		autoInstrumentationApacheHttpd   string
+		autoInstrumentationNginx         string
+		autoInstrumentationGo            string
+		labelsFilter                     []string
+		annotationsFilter                []string
+		webhookPort                      int
+		tlsOpt                           tlsConfig
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -126,6 +136,10 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors")
+	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", false, "Controls whether the operator supports multi instrumentation")
+	pflag.BoolVar(&enableApacheHttpdInstrumentation, constants.FlagApacheHttpd, true, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
+	pflag.BoolVar(&enableDotNetInstrumentation, constants.FlagDotNet, true, "Controls whether the operator supports dotnet auto-instrumentation")
+	pflag.BoolVar(&enablePythonInstrumentation, constants.FlagPython, true, "Controls whether the operator supports python auto-instrumentation")
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&operatorOpAMPBridgeImage, "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:%s", v.OperatorOpAMPBridge), "The default OpenTelemetry Operator OpAMP Bridge image. This image is used when no image is specified in the CustomResource.")
@@ -136,7 +150,8 @@ func main() {
 	stringFlagOrEnv(&autoInstrumentationGo, "auto-instrumentation-go-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_GO", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:%s", v.AutoInstrumentationGo), "The default OpenTelemetry Go instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationApacheHttpd, "auto-instrumentation-apache-httpd-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_APACHE_HTTPD", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd), "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationNginx, "auto-instrumentation-nginx-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NGINX", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationNginx), "The default OpenTelemetry Nginx instrumentation image. This image is used when no image is specified in the CustomResource.")
-	pflag.StringArrayVar(&labelsFilter, "labels", []string{}, "Labels to filter away from propagating onto deploys")
+	pflag.StringArrayVar(&labelsFilter, "label", []string{}, "Labels to filter away from propagating onto deploys")
+	pflag.StringArrayVar(&annotationsFilter, "annotations-filter", []string{}, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=*filter.out will filter out annotations that looks like: annotation.filter.out: true")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
 	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
@@ -163,6 +178,11 @@ func main() {
 		"go-arch", runtime.GOARCH,
 		"go-os", runtime.GOOS,
 		"labels-filter", labelsFilter,
+		"annotations-filter", annotationsFilter,
+		"enable-multi-instrumentation", enableMultiInstrumentation,
+		"enable-apache-httpd-instrumentation", enableApacheHttpdInstrumentation,
+		"enable-dotnet-instrumentation", enableDotNetInstrumentation,
+		"enable-python-instrumentation", enablePythonInstrumentation,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
@@ -179,6 +199,10 @@ func main() {
 		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
 		config.WithCreateRBACPermissions(createRBACPermissions),
+		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
+		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
+		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),
+		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
 		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
@@ -190,15 +214,21 @@ func main() {
 		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
+		config.WithAnnotationFilters(annotationsFilter),
 	)
 	err = cfg.AutoDetect()
 	if err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
 
+	var namespaces map[string]cache.Config
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if found {
 		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
+		namespaces = map[string]cache.Config{}
+		for _, ns := range strings.Split(watchNamespace, ",") {
+			namespaces[ns] = cache.Config{}
+		}
 	} else {
 		setupLog.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
 	}
@@ -210,13 +240,6 @@ func main() {
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
 		func(config *tls.Config) { tlsConfigSetting(config, tlsOpt) },
-	}
-	var namespaces map[string]cache.Config
-	if strings.Contains(watchNamespace, ",") {
-		namespaces = map[string]cache.Config{}
-		for _, ns := range strings.Split(watchNamespace, ",") {
-			namespaces[ns] = cache.Config{}
-		}
 	}
 
 	mgrOptions := ctrl.Options{
@@ -285,6 +308,10 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
+		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+			os.Exit(1)
+		}
 		if err = otelv1alpha1.SetupInstrumentationWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
@@ -294,7 +321,7 @@ func main() {
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
 					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator")),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator"), cfg),
 				}),
 		})
 
@@ -340,18 +367,12 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		u := &instrumentationupgrade.InstrumentationUpgrade{
-			Logger:                     ctrl.Log.WithName("instrumentation-upgrade"),
-			DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
-			DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
-			DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
-			DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
-			DefaultAutoInstGo:          cfg.AutoInstrumentationDotNetImage(),
-			DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
-			DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
-			Client:                     mgr.GetClient(),
-			Recorder:                   mgr.GetEventRecorderFor("opentelemetry-operator"),
-		}
+		u := instrumentationupgrade.NewInstrumentationUpgrade(
+			mgr.GetClient(),
+			ctrl.Log.WithName("instrumentation-upgrade"),
+			mgr.GetEventRecorderFor("opentelemetry-operator"),
+			cfg,
+		)
 		return u.ManagedInstances(c)
 	}))
 	if err != nil {

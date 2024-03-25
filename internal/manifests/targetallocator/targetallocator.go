@@ -39,7 +39,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(PodDisruptionBudget),
 	}
 
-	if params.OtelCol.Spec.TargetAllocator.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if params.TargetAllocator.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 

@@ -20,14 +20,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) corev1.Container {
-	image := otelcol.Spec.TargetAllocator.Image
+func Container(cfg config.Config, logger logr.Logger, instance v1beta1.TargetAllocator) corev1.Container {
+	image := instance.Spec.Image
 	if len(image) == 0 {
 		image = cfg.TargetAllocatorImage()
 	}
@@ -44,8 +44,8 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		MountPath: "/conf",
 	}}
 
-	var envVars = otelcol.Spec.TargetAllocator.Env
-	if otelcol.Spec.TargetAllocator.Env == nil {
+	var envVars = instance.Spec.Env
+	if envVars == nil {
 		envVars = []corev1.EnvVar{}
 	}
 
@@ -67,7 +67,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 	}
 
 	var args []string
-	if otelcol.Spec.TargetAllocator.PrometheusCR.Enabled {
+	if instance.Spec.PrometheusCR.Enabled {
 		args = append(args, "--enable-prometheus-cr-watcher")
 	}
 	readinessProbe := &corev1.Probe{
@@ -94,10 +94,10 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelem
 		Ports:           ports,
 		Env:             envVars,
 		VolumeMounts:    volumeMounts,
-		Resources:       otelcol.Spec.TargetAllocator.Resources,
+		Resources:       instance.Spec.Resources,
 		Args:            args,
 		LivenessProbe:   livenessProbe,
 		ReadinessProbe:  readinessProbe,
-		SecurityContext: otelcol.Spec.TargetAllocator.SecurityContext,
+		SecurityContext: instance.Spec.SecurityContext,
 	}
 }

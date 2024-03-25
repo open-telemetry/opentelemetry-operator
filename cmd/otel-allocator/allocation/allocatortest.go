@@ -51,6 +51,7 @@ func MakeNCollectors(n int, startingIndex int) map[string]*Collector {
 		toReturn[collector] = &Collector{
 			Name:       collector,
 			NumTargets: 0,
+			NodeName:   fmt.Sprintf("node-%d", i),
 		}
 	}
 	return toReturn
@@ -60,8 +61,9 @@ func MakeNNewTargetsWithEmptyCollectors(n int, startingIndex int) map[string]*ta
 	toReturn := map[string]*target.Item{}
 	for i := startingIndex; i < n+startingIndex; i++ {
 		label := model.LabelSet{
-			"i":     model.LabelValue(strconv.Itoa(i)),
-			"total": model.LabelValue(strconv.Itoa(n + startingIndex)),
+			"i":                               model.LabelValue(strconv.Itoa(i)),
+			"total":                           model.LabelValue(strconv.Itoa(n + startingIndex)),
+			"__meta_kubernetes_pod_node_name": model.LabelValue("node-0"),
 		}
 		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), fmt.Sprintf("test-url-%d", i), label, "")
 		toReturn[newTarget.Hash()] = newTarget

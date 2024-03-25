@@ -20,7 +20,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 
@@ -28,28 +28,29 @@ import (
 )
 
 func TestDesiredServiceMonitors(t *testing.T) {
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	ta := v1beta1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Mode:        v1alpha1.ModeStatefulSet,
-			Tolerations: testTolerationValues,
+		Spec: v1beta1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Tolerations: testTolerationValues,
+			},
 		},
 	}
 	cfg := config.New()
 
 	params := manifests.Params{
-		OtelCol: otelcol,
-		Config:  cfg,
-		Log:     logger,
+		TargetAllocator: ta,
+		Config:          cfg,
+		Log:             logger,
 	}
 
 	actual := ServiceMonitor(params)
 	assert.NotNil(t, actual)
-	assert.Equal(t, fmt.Sprintf("%s-targetallocator", params.OtelCol.Name), actual.Name)
-	assert.Equal(t, params.OtelCol.Namespace, actual.Namespace)
+	assert.Equal(t, fmt.Sprintf("%s-targetallocator", params.TargetAllocator.Name), actual.Name)
+	assert.Equal(t, params.TargetAllocator.Namespace, actual.Namespace)
 	assert.Equal(t, "targetallocation", actual.Spec.Endpoints[0].Port)
 
 }

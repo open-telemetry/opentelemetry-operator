@@ -8,31 +8,62 @@ metadata:
     app: pod-single-instr-first-container
 spec:
   containers:
-    - name: nodejsapp
-      env:
-        - name: OTEL_SERVICE_NAME
-          value: nodejsapp
-        - name: NODE_OPTIONS
-          value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
-        - name: OTEL_TRACES_SAMPLER
-          value: parentbased_traceidratio
-        - name: OTEL_TRACES_SAMPLER_ARG
-          value: "0.85"
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: http://localhost:4317
-        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-        - name: OTEL_PROPAGATORS
-          value: jaeger,b3
-        - name: OTEL_RESOURCE_ATTRIBUTES
-      volumeMounts:
-        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-        - mountPath: /otel-auto-instrumentation-nodejs
-          name: opentelemetry-auto-instrumentation-nodejs
-    - name: pythonapp
-      env:
-        - name: TEST
-          value: test
-    - name: otc-container
+  - env:
+    - name: NODE_PATH
+      value: /usr/local/lib/node_modules
+    - name: OTEL_SERVICE_NAME
+      value: nodejsapp
+    - name: NODE_OPTIONS
+      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4317
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    name: nodejsapp
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+    - mountPath: /otel-auto-instrumentation-nodejs
+      name: opentelemetry-auto-instrumentation-nodejs
+  - env:
+    - name: TEST
+      value: test
+    name: pythonapp
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
+  initContainers:
+  - name: opentelemetry-auto-instrumentation-nodejs
 status:
+  containerStatuses:
+  - name: nodejsapp
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  - name: pythonapp
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-nodejs
+    ready: true
   phase: Running

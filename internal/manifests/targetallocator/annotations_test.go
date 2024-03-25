@@ -28,36 +28,37 @@ import (
 )
 
 func TestPodAnnotations(t *testing.T) {
-	instance := collectorInstance()
+	instance := targetAllocatorInstance()
 	instance.Spec.PodAnnotations = map[string]string{
 		"key": "value",
 	}
-	annotations := Annotations(instance, nil)
+	annotations := Annotations(instance, nil, []string{".*\\.bar\\.io"})
 	assert.Subset(t, annotations, instance.Spec.PodAnnotations)
 }
 
 func TestConfigMapHash(t *testing.T) {
 	cfg := config.New()
-	instance := collectorInstance()
+	collector := collectorInstance()
+	targetAllocator := targetAllocatorInstance()
 	params := manifests.Params{
-		OtelCol: instance,
-		Config:  cfg,
-		Log:     logr.Discard(),
+		OtelCol:         collector,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logr.Discard(),
 	}
 	expectedConfigMap, err := ConfigMap(params)
 	require.NoError(t, err)
 	expectedConfig := expectedConfigMap.Data[targetAllocatorFilename]
 	require.NotEmpty(t, expectedConfig)
 	expectedHash := sha256.Sum256([]byte(expectedConfig))
-	annotations := Annotations(instance, expectedConfigMap)
+	annotations := Annotations(targetAllocator, expectedConfigMap, []string{".*\\.bar\\.io"})
 	require.Contains(t, annotations, configMapHashAnnotationKey)
 	cmHash := annotations[configMapHashAnnotationKey]
 	assert.Equal(t, fmt.Sprintf("%x", expectedHash), cmHash)
 }
 
 func TestInvalidConfigNoHash(t *testing.T) {
-	instance := collectorInstance()
-	instance.Spec.Config = ""
-	annotations := Annotations(instance, nil)
+	instance := targetAllocatorInstance()
+	annotations := Annotations(instance, nil, []string{".*\\.bar\\.io"})
 	require.NotContains(t, annotations, configMapHashAnnotationKey)
 }

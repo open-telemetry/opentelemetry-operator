@@ -9,14 +9,34 @@ metadata:
     app: pod-multi-instr-no-containers
 spec:
   containers:
-    - name: nodejsapp
-      env:
-        - name: TEST
-          value: test
-    - name: pythonapp
-      env:
-        - name: TEST
-          value: test
-    - name: otc-container
+  - env:
+    - name: TEST
+      value: test
+    - name: NODE_PATH
+      value: /usr/local/lib/node_modules
+    name: nodejsapp
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  - env:
+    - name: TEST
+      value: test
+    name: pythonapp
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
 status:
+  containerStatuses:
+  - name: nodejsapp
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  - name: pythonapp
+    ready: true
+    started: true
   phase: Running

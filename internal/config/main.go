@@ -43,6 +43,10 @@ type Config struct {
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	createRBACPermissions               bool
+	enableMultiInstrumentation          bool
+	enableApacheHttpdInstrumentation    bool
+	enableDotNetInstrumentation         bool
+	enablePythonInstrumentation         bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -53,6 +57,7 @@ type Config struct {
 	autoInstrumentationJavaImage        string
 	openshiftRoutesAvailability         openshift.RoutesAvailability
 	labelsFilter                        []string
+	annotationsFilter                   []string
 }
 
 // New constructs a new configuration based on the given options.
@@ -75,6 +80,10 @@ func New(opts ...Option) Config {
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
 		createRBACPermissions:               o.createRBACPermissions,
+		enableMultiInstrumentation:          o.enableMultiInstrumentation,
+		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
+		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
+		enablePythonInstrumentation:         o.enablePythonInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -89,6 +98,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		labelsFilter:                        o.labelsFilter,
+		annotationsFilter:                   o.annotationsFilter,
 	}
 }
 
@@ -107,6 +117,26 @@ func (c *Config) AutoDetect() error {
 // CollectorImage represents the flag to override the OpenTelemetry Collector container image.
 func (c *Config) CollectorImage() string {
 	return c.collectorImage
+}
+
+// EnableMultiInstrumentation is true when the operator supports multi instrumentation.
+func (c *Config) EnableMultiInstrumentation() bool {
+	return c.enableMultiInstrumentation
+}
+
+// EnableApacheHttpdAutoInstrumentation is true when the operator supports ApacheHttpd auto instrumentation.
+func (c *Config) EnableApacheHttpdAutoInstrumentation() bool {
+	return c.enableApacheHttpdInstrumentation
+}
+
+// EnableDotNetAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnableDotNetAutoInstrumentation() bool {
+	return c.enableDotNetInstrumentation
+}
+
+// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnablePythonAutoInstrumentation() bool {
+	return c.enablePythonInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
@@ -182,4 +212,9 @@ func (c *Config) AutoInstrumentationNginxImage() string {
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
+}
+
+// AnnotationsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+func (c *Config) AnnotationsFilter() []string {
+	return c.annotationsFilter
 }

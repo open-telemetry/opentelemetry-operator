@@ -96,6 +96,7 @@ func TestPrometheusParser(t *testing.T) {
 		// Set up the test scenario
 		paramTa, err := newParams("test/test-img", "testdata/http_sd_config_ta_test.yaml")
 		require.NoError(t, err)
+
 		paramTa.OtelCol.Spec.TargetAllocator.Enabled = true
 
 		actualConfig, err := ReplaceConfig(paramTa.OtelCol)
@@ -120,6 +121,7 @@ func TestPrometheusParser(t *testing.T) {
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
 		param.OtelCol.Spec.TargetAllocator.Enabled = false
+
 		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
@@ -166,7 +168,7 @@ func TestReplaceConfig(t *testing.T) {
 		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
-		assert.Equal(t, expectedConfig, actualConfig)
+		assert.YAMLEq(t, expectedConfig, actualConfig)
 	})
 
 	t.Run("should rewrite scrape configs with SD config when TargetAllocator is enabled and feature flag is not set", func(t *testing.T) {
@@ -185,7 +187,7 @@ func TestReplaceConfig(t *testing.T) {
 		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
-		assert.Equal(t, expectedConfig, actualConfig)
+		assert.YAMLEq(t, expectedConfig, actualConfig)
 	})
 
 	t.Run("should remove scrape configs if TargetAllocator is enabled and feature flag is set", func(t *testing.T) {
@@ -198,6 +200,6 @@ func TestReplaceConfig(t *testing.T) {
 		actualConfig, err := ReplaceConfig(param.OtelCol)
 		assert.NoError(t, err)
 
-		assert.Equal(t, expectedConfig, actualConfig)
+		assert.YAMLEq(t, expectedConfig, actualConfig)
 	})
 }

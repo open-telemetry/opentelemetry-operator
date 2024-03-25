@@ -25,12 +25,18 @@ import (
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(params manifests.Params) *appsv1.Deployment {
+func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
 
-	annotations := Annotations(params.OtelCol)
-	podAnnotations := PodAnnotations(params.OtelCol)
+	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -68,5 +74,5 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 				},
 			},
 		},
-	}
+	}, nil
 }

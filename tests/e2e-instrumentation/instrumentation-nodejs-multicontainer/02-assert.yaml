@@ -1,19 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-nodejs-multi
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+
+---
 apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    sidecar.opentelemetry.io/inject: "true"
-    instrumentation.opentelemetry.io/container-names: myrabbit
+    instrumentation.opentelemetry.io/container-names: myapp
     instrumentation.opentelemetry.io/inject-nodejs: "true"
+    sidecar.opentelemetry.io/inject: "true"
   labels:
-    app: my-pod-with-sidecar
+    app: my-nodejs-multi
 spec:
   containers:
-  - name: myapp
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-  - name: myrabbit
-    env:
+  - env:
+    - name: NODE_PATH
+      value: /usr/local/lib/node_modules
     - name: NODE_OPTIONS
       value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_EXPORTER
@@ -29,16 +38,48 @@ spec:
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
     - name: OTEL_SERVICE_NAME
-      value: my-deployment-with-sidecar
+      value: my-nodejs-multi
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
+    name: myapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
     - mountPath: /otel-auto-instrumentation-nodejs
       name: opentelemetry-auto-instrumentation-nodejs
-  - name: otc-container
+  - image: rabbitmq:3
+    name: myrabbit
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
+  initContainers:
+  - name: opentelemetry-auto-instrumentation-nodejs
 status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: myrabbit
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-nodejs
+    ready: true
   phase: Running

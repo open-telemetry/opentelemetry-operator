@@ -22,14 +22,17 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
-	if params.OtelCol.Spec.Ingress.Type != v1alpha1.IngressTypeNginx {
+	name := naming.Ingress(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeNginx {
 		return nil, nil
 	}
 
@@ -47,9 +50,9 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 
 	var rules []networkingv1.IngressRule
 	switch params.OtelCol.Spec.Ingress.RuleType {
-	case v1alpha1.IngressRuleTypePath, "":
+	case v1beta1.IngressRuleTypePath, "":
 		rules = []networkingv1.IngressRule{createPathIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)}
-	case v1alpha1.IngressRuleTypeSubdomain:
+	case v1beta1.IngressRuleTypeSubdomain:
 		rules = createSubdomainIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)
 	}
 
@@ -58,11 +61,7 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 			Name:        naming.Ingress(params.OtelCol.Name),
 			Namespace:   params.OtelCol.Namespace,
 			Annotations: params.OtelCol.Spec.Ingress.Annotations,
-			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			},
+			Labels:      labels,
 		},
 		Spec: networkingv1.IngressSpec{
 			TLS:              params.OtelCol.Spec.Ingress.TLS,
@@ -136,8 +135,12 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 	return rules
 }
 
-func servicePortsFromCfg(logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
-	configFromString, err := adapters.ConfigFromString(otelcol.Spec.Config)
+func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
+	out, err := otelcol.Spec.Config.Yaml()
+	if err != nil {
+		return nil, err
+	}
+	configFromString, err := adapters.ConfigFromString(out)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration from the context")
 		return nil, err

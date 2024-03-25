@@ -21,8 +21,8 @@ func ConfigMap(otelcol string) string {
 }
 
 // TAConfigMap returns the name for the config map used in the TargetAllocator.
-func TAConfigMap(otelcol string) string {
-	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
+func TAConfigMap(targetAllocator string) string {
+	return DNSName(Truncate("%s-targetallocator", 63, targetAllocator))
 }
 
 // OpAMPBridgeConfigMap builds the name for the config map used in the OpAMPBridge containers.

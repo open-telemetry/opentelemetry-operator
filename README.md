@@ -68,6 +68,8 @@ The `config` node holds the `YAML` that should be passed down as-is to the under
 
 > 🚨 **NOTE:** At this point, the Operator does *not* validate the contents of the configuration file: if the configuration is invalid, the instance will still be created but the underlying OpenTelemetry Collector might crash.
 
+> 🚨 **Note:** For private GKE clusters, you will need to either add a firewall rule that allows master nodes access to port `9443/tcp` on worker nodes, or change the existing rule that allows access to port `80/tcp`, `443/tcp` and `10254/tcp` to also allow access to port `9443/tcp`. More information can be found in the [Official GCP Documentation](https://cloud.google.com/load-balancing/docs/tcp/setting-up-tcp#config-hc-firewall). See the [GKE documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#add_firewall_rules) on adding rules and the [Kubernetes issue](https://github.com/kubernetes/kubernetes/issues/79739) for more detail.
+
 The Operator does examine the configuration file to discover configured receivers and their ports. If it finds receivers with ports, it creates a pair of kubernetes services, one headless, exposing those ports within the cluster. The headless service contains a `service.beta.openshift.io/serving-cert-secret-name` annotation that will cause OpenShift to create a secret containing a certificate and key. This secret can be mounted as a volume and the certificate and key used in those receivers' TLS configurations.
 
 ### Upgrades
@@ -187,6 +189,27 @@ EOF
 
 When using sidecar mode the OpenTelemetry collector container will have the environment variable `OTEL_RESOURCE_ATTRIBUTES`set with Kubernetes resource attributes, ready to be consumed by the [resourcedetection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) processor.
 
+### Using imagePullSecrets
+
+The OpenTelemetry Collector defines a ServiceAccount field which could be set to run collector instances with a specific Service and their properties (e.g. imagePullSecrets). Therefore, if you have a constraint to run your collector with a private container registry, you should follow the procedure below:
+
+* Create Service Account.
+````bash
+kubectl create serviceaccount <service-account-name>
+````
+
+* Create an imagePullSecret.
+````bash
+kubectl create secret docker-registry <secret-name> --docker-server=<registry name> \
+        --docker-username=DUMMY_USERNAME --docker-password=DUMMY_DOCKER_PASSWORD \
+        --docker-email=DUMMY_DOCKER_EMAIL
+````
+
+* Add image pull secret to service account
+````bash
+kubectl patch serviceaccount <service-account-name> -p '{"imagePullSecrets": [{"name": "<secret-name>"}]}'
+````
+
 ### OpenTelemetry auto-instrumentation injection
 
 The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
@@ -236,14 +259,14 @@ EOF
 The values for `propagators` are added to the `OTEL_PROPAGATORS` environment variable.
 Valid values for `propagators` are defined by the [OpenTelemetry Specification for OTEL_PROPAGATORS](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_propagators).
 
-The value for `sampler.type` is added to the `OTEL_TRACES_SAMPLER` envrionment variable.
+The value for `sampler.type` is added to the `OTEL_TRACES_SAMPLER` environment variable.
 Valid values for `sampler.type` are defined by the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler).
 The value for `sampler.argument` is added to the `OTEL_TRACES_SAMPLER_ARG` environment variable. Valid values for `sampler.argument` will depend on the chosen sampler. See the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER_ARG](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler_arg) for more details.
 
 The above CR can be queried by `kubectl get otelinst`.
 
 Then add an annotation to a pod to enable injection. The annotation can be added to a namespace, so that all pods within
-that namespace wil get instrumentation, or by adding the annotation to individual PodSpec objects, available as part of
+that namespace will get instrumentation, or by adding the annotation to individual PodSpec objects, available as part of
 Deployment, Statefulset, and other resources.
 
 Java:
@@ -311,7 +334,10 @@ The possible values for the annotation can be
 * `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 * `"false"` - do not inject
 
+>**Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitly.
+
 #### Multi-container pods with single instrumentation
+
 
 If nothing else is specified, instrumentation is performed on the first container available in the pod spec.
 In some cases (for example in the case of the injection of an Istio sidecar) it becomes necessary to specify on which container(s) this injection must be performed.
@@ -568,7 +594,6 @@ spec:
             metric_relabel_configs:
             - action: labeldrop
               regex: (id|name)
-              replacement: $$1
             - action: labelmap
               regex: label_(.+)
               replacement: $$1
@@ -620,7 +645,6 @@ The OpenTelemetry Operator will also convert the Target Allocator's Prometheus c
         metric_relabel_configs:
         - action: labeldrop
           regex: (id|name)
-          replacement: $1
         - action: labelmap
           regex: label_(.+)
           replacement: $1
@@ -686,6 +710,10 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes           | Cert-Manager        |
 |------------------------|----------------------|---------------------|
+| v0.96.0                | v1.23 to v1.29       | v1                  |
+| v0.95.0                | v1.23 to v1.29       | v1                  |
+| v0.94.0                | v1.23 to v1.29       | v1                  |
+| v0.93.0                | v1.23 to v1.29       | v1                  |
 | v0.92.0                | v1.23 to v1.29       | v1                  |
 | v0.91.0                | v1.23 to v1.29       | v1                  |
 | v0.90.0                | v1.23 to v1.28       | v1                  |
@@ -705,10 +733,6 @@ The OpenTelemetry Operator *might* work on versions outside of the given range, 
 | v0.76.1                | v1.19 to v1.26       | v1                  |
 | v0.75.0                | v1.19 to v1.26       | v1                  |
 | v0.74.0                | v1.19 to v1.26       | v1                  |
-| v0.73.0                | v1.19 to v1.26       | v1                  |
-| v0.72.0                | v1.19 to v1.26       | v1                  |
-| v0.71.0                | v1.19 to v1.25       | v1                  |
-| v0.70.0                | v1.19 to v1.25       | v1                  |
 
 ## Contributing and Developing
 

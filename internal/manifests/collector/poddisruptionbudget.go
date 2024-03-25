@@ -23,16 +23,19 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget {
+func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget, error) {
 	// defaulting webhook should always set this, but if unset then return nil.
 	if params.OtelCol.Spec.PodDisruptionBudget == nil {
 		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
-		return nil
+		return nil, nil
 	}
 
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	annotations := Annotations(params.OtelCol)
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        naming.PodDisruptionBudget(params.OtelCol.Name),
@@ -50,5 +53,5 @@ func PodDisruptionBudget(params manifests.Params) *policyV1.PodDisruptionBudget 
 				MatchLabels: objectMeta.Labels,
 			},
 		},
-	}
+	}, nil
 }

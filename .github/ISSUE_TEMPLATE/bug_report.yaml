@@ -15,11 +15,10 @@ body:
       description: Which component(s) does your bug report concern?
       multiple: true
       options:
-      - operator
       - collector
-      - instrumentation
+      - auto-instrumentation
       - target allocator
-      - opamp bridge
+      - opamp
   - type: textarea
     attributes:
       label: What happened?

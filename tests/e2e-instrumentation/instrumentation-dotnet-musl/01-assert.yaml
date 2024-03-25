@@ -2,19 +2,19 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    sidecar.opentelemetry.io/inject: "true"
     instrumentation.opentelemetry.io/inject-dotnet: "true"
-    instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl-x64"
+    sidecar.opentelemetry.io/inject: "true"
   labels:
-    app: my-pod-with-sidecar
+    app: my-dotnet-musl
 spec:
   containers:
-  - name: myapp
-    env:
+  - env:
+    - name: ASPNETCORE_URLS
+      value: http://+:8080
     - name: CORECLR_ENABLE_PROFILING
       value: "1"
     - name: CORECLR_PROFILER
-      value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
+      value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
     - name: CORECLR_PROFILER_PATH
       value: /otel-auto-instrumentation-dotnet/linux-musl-x64/OpenTelemetry.AutoInstrumentation.Native.so
     - name: DOTNET_STARTUP_HOOKS
@@ -38,29 +38,40 @@ spec:
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
     - name: OTEL_SERVICE_NAME
-      value: my-deployment-with-sidecar
+      value: my-dotnet-musl
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
       value: jaeger,b3multi
     - name: OTEL_RESOURCE_ATTRIBUTES
+    name: myapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
     - mountPath: /otel-auto-instrumentation-dotnet
       name: opentelemetry-auto-instrumentation-dotnet
-  - name: otc-container
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation-dotnet
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
-    resources:
-      limits:
-        cpu: "500m"
-        memory: "128Mi"
-      requests:
-        cpu: "50m"
-        memory: "128Mi"
 status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-dotnet
+    ready: true
   phase: Running

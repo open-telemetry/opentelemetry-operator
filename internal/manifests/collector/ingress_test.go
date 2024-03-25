@@ -26,7 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -37,10 +37,10 @@ func TestDesiredIngresses(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressType("unknown"),
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressType("unknown"),
 					},
 				},
 			},
@@ -51,44 +51,39 @@ func TestDesiredIngresses(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("should return nil unable to parse config", func(t *testing.T) {
+	t.Run("should return nil, no ingress set", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Config: "!!!",
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeNginx,
-					},
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: "Deployment",
 				},
 			},
 		}
 
 		actual, err := Ingress(params)
-		fmt.Printf("error1: %+v", err)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "couldn't parse the opentelemetry-collector configuration")
+		assert.NoError(t, err)
 	})
 
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
 			Log:    logger,
-			OtelCol: v1alpha1.OpenTelemetryCollector{
-				Spec: v1alpha1.OpenTelemetryCollectorSpec{
-					Config: "---",
-					Ingress: v1alpha1.Ingress{
-						Type: v1alpha1.IngressTypeNginx,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{},
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressTypeNginx,
 					},
 				},
 			},
 		}
 
 		actual, err := Ingress(params)
-		fmt.Printf("error2: %+v", err)
 		assert.Nil(t, actual)
-		assert.ErrorContains(t, err, "no receivers available as part of the configuration")
+		assert.NoError(t, err)
 	})
 
 	t.Run("path per port", func(t *testing.T) {
@@ -104,8 +99,8 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
-			Type:             v1alpha1.IngressTypeNginx,
+		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
+			Type:             v1beta1.IngressTypeNginx,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,
@@ -125,6 +120,9 @@ func TestDesiredIngresses(t *testing.T) {
 					"app.kubernetes.io/name":       naming.Ingress(params.OtelCol.Name),
 					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
 					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/component":  "opentelemetry-collector",
+					"app.kubernetes.io/part-of":    "opentelemetry",
+					"app.kubernetes.io/version":    "latest",
 				},
 			},
 			Spec: networkingv1.IngressSpec{
@@ -192,9 +190,9 @@ func TestDesiredIngresses(t *testing.T) {
 		}
 
 		params.OtelCol.Namespace = ns
-		params.OtelCol.Spec.Ingress = v1alpha1.Ingress{
-			Type:             v1alpha1.IngressTypeNginx,
-			RuleType:         v1alpha1.IngressRuleTypeSubdomain,
+		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
+			Type:             v1beta1.IngressTypeNginx,
+			RuleType:         v1beta1.IngressRuleTypeSubdomain,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,

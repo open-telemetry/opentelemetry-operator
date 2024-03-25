@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -46,31 +46,32 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Volumes: []corev1.Volume{{}},
 		},
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample-with-a-name-that-is-longer-than-sixty-three-characters",
 			Namespace: "some-app",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:     "metrics",
-					Port:     8888,
-					Protocol: corev1.ProtocolTCP,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Ports: []corev1.ServicePort{
+					{
+						Name:     "metrics",
+						Port:     8888,
+						Protocol: corev1.ProtocolTCP,
+					},
+				},
+				InitContainers: []corev1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
-			InitContainers: []corev1.Container{
-				{
-					Name: "test",
-				},
-			},
-			Config: `
-receivers:
-exporters:
-processors:
-`,
 		},
 	}
+
+	otelcolYaml, err := otelcol.Spec.Config.Yaml()
+	require.NoError(t, err)
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
@@ -98,7 +99,7 @@ processors:
 			},
 			{
 				Name:  "OTEL_CONFIG",
-				Value: otelcol.Spec.Config,
+				Value: string(otelcolYaml),
 			},
 		},
 		Ports: []corev1.ContainerPort{
@@ -123,7 +124,7 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{}
+	otelcol := v1beta1.OpenTelemetryCollector{}
 	cfg := config.New(config.WithCollectorImage("some-default-image"))
 
 	// test
@@ -212,7 +213,7 @@ func TestAddSidecarWithAditionalEnv(t *testing.T) {
 			},
 		},
 	}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otelcol-sample",
 			Namespace: "some-app",
