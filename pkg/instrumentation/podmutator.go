@@ -36,7 +36,8 @@ import (
 )
 
 var (
-	errNoInstancesAvailable = errors.New("no OpenTelemetry Instrumentation instances available")
+	errMultipleInstancesPossible = errors.New("multiple OpenTelemetry Instrumentation instances available, cannot determine which one to select")
+	errNoInstancesAvailable      = errors.New("no OpenTelemetry Instrumentation instances available")
 )
 
 type instPodMutator struct {
@@ -424,7 +425,9 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	switch s := len(availableInstrument); {
 	case s == 0:
 		return nil, errNoInstancesAvailable
+	case s > 1:
+		return nil, errMultipleInstancesPossible
 	default:
-		return &availableInstrument[len(availableInstrument)-1], nil
+		return &otelInsts.Items[0], nil
 	}
 }
