@@ -35,7 +35,6 @@ var (
 		constants.AnnotationDefaultAutoInstrumentationJava:   featuregate.EnableJavaAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNodeJS: featuregate.EnableNodeJSAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationGo:     featuregate.EnableGoAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationNginx:  featuregate.EnableNginxAutoInstrumentationSupport,
 	}
 )
 
@@ -62,6 +61,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 	defaultAnnotationToConfig := map[string]autoInstConfig{
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
 	}
 
@@ -132,6 +132,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
 						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
 					}
+				case constants.AnnotationDefaultAutoInstrumentationNginx:
+					if inst.Spec.Nginx.Image == autoInst {
+						upgraded.Spec.Nginx.Image = u.DefaultAutoInstNginx
+						upgraded.Annotations[annotation] = u.DefaultAutoInstNginx
+					}
 				case constants.AnnotationDefaultAutoInstrumentationPython:
 					if inst.Spec.Python.Image == autoInst {
 						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
@@ -169,11 +174,6 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if inst.Spec.Go.Image == autoInst {
 						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
 						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
-					}
-				case constants.AnnotationDefaultAutoInstrumentationNginx:
-					if inst.Spec.Nginx.Image == autoInst {
-						upgraded.Spec.Nginx.Image = u.DefaultAutoInstNginx
-						upgraded.Annotations[annotation] = u.DefaultAutoInstNginx
 					}
 				}
 			} else {

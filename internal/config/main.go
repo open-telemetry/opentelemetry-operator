@@ -46,6 +46,7 @@ type Config struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
@@ -83,6 +84,7 @@ func New(opts ...Option) Config {
 		enableMultiInstrumentation:          o.enableMultiInstrumentation,
 		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
+		enableNginxInstrumentation:          o.enableNginxInstrumentation,
 		enablePythonInstrumentation:         o.enablePythonInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
@@ -132,6 +134,11 @@ func (c *Config) EnableApacheHttpdAutoInstrumentation() bool {
 // EnableDotNetAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
 func (c *Config) EnableDotNetAutoInstrumentation() bool {
 	return c.enableDotNetInstrumentation
+}
+
+// EnableNginxAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+func (c *Config) EnableNginxAutoInstrumentation() bool {
+	return c.enableNginxInstrumentation
 }
 
 // EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.

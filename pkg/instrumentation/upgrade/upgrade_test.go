@@ -42,12 +42,6 @@ func TestUpgrade(t *testing.T) {
 		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), originalVal))
 	})
 
-	originalVal = featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled()
-	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNginxAutoInstrumentationSupport.ID(), true))
-	t.Cleanup(func() {
-		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNginxAutoInstrumentationSupport.ID(), originalVal))
-	})
-
 	nsName := strings.ToLower(t.Name())
 	err := k8sClient.Create(context.Background(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -80,6 +74,7 @@ func TestUpgrade(t *testing.T) {
 			config.WithAutoInstrumentationNginxImage("nginx:1"),
 			config.WithEnableApacheHttpdInstrumentation(true),
 			config.WithEnableDotNetInstrumentation(true),
+			config.WithEnableNginxInstrumentation(true),
 			config.WithEnablePythonInstrumentation(true),
 		),
 	).Default(context.Background(), inst)
@@ -104,6 +99,7 @@ func TestUpgrade(t *testing.T) {
 		config.WithAutoInstrumentationNginxImage("nginx:2"),
 		config.WithEnableApacheHttpdInstrumentation(true),
 		config.WithEnableDotNetInstrumentation(true),
+		config.WithEnableNginxInstrumentation(true),
 		config.WithEnablePythonInstrumentation(true),
 	)
 	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), &record.FakeRecorder{}, cfg)
