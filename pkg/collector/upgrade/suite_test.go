@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -57,15 +58,8 @@ var (
 func TestMain(m *testing.M) {
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()
-
-	if err = v1alpha1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
-	if err = v1beta1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
+	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
+	utilruntime.Must(v1beta1.AddToScheme(testScheme))
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
