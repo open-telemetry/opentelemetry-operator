@@ -236,15 +236,16 @@ func testCollectorWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) v1alph
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-			Ports: []v1.ServicePort{{
-				Name: "web",
-				Port: 80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 80,
-				},
-				NodePort: 0,
-			}},
+			Ports: []v1alpha1.PortsSpec{{
+				ServicePort: v1.ServicePort{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}}},
 			Replicas: &replicas,
 			Config:   string(configYAML),
 			Mode:     mode,
@@ -285,15 +286,16 @@ func testCollectorWithConfigFile(taContainerImage string, file string) (v1alpha1
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Mode: v1alpha1.ModeStatefulSet,
-			Ports: []v1.ServicePort{{
-				Name: "web",
-				Port: 80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 80,
-				},
-				NodePort: 0,
-			}},
+			Ports: []v1alpha1.PortsSpec{{
+				ServicePort: v1.ServicePort{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}}},
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Enabled: true,
 				Image:   taContainerImage,
@@ -322,15 +324,16 @@ func testCollectorWithHPA(minReps, maxReps int32) v1alpha1.OpenTelemetryCollecto
 			UID:       instanceUID,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Ports: []v1.ServicePort{{
-				Name: "web",
-				Port: 80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 80,
-				},
-				NodePort: 0,
-			}},
+			Ports: []v1alpha1.PortsSpec{{
+				ServicePort: v1.ServicePort{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}}},
 			Config: string(configYAML),
 			Autoscaler: &v1alpha1.AutoscalerSpec{
 				MinReplicas:          &minReps,
@@ -381,15 +384,16 @@ func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelem
 			UID:       instanceUID,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Ports: []v1.ServicePort{{
-				Name: "web",
-				Port: 80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 80,
-				},
-				NodePort: 0,
-			}},
+			Ports: []v1alpha1.PortsSpec{{
+				ServicePort: v1.ServicePort{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}}},
 			Config:              string(configYAML),
 			PodDisruptionBudget: pdb,
 		},

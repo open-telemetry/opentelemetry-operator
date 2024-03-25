@@ -4181,7 +4181,8 @@ spec:
                   Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator
                   will attempt to infer the required ports by parsing the .Spec.
                 items:
-                  description: ServicePort contains information on service's port.
+                  description: PortsSpec defines the OpenTelemetryCollector's container/service
+                    ports additional specifications.
                   properties:
                     appProtocol:
                       description: |-
@@ -4189,6 +4190,11 @@ spec:
                         This is used as a hint for implementations to offer richer behavior for protocols that they understand.
                         This field follows standard Kubernetes label syntax.
                       type: string
+                    hostPort:
+                      description: Allows defining which port to bind to the host
+                        in the Container.
+                      format: int32
+                      type: integer
                     name:
                       description: |-
                         The name of this port within the service. This must be a DNS_LABEL.

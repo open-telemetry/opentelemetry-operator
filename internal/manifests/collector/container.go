@@ -59,6 +59,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 			Name:          p.Name,
 			ContainerPort: p.Port,
 			Protocol:      p.Protocol,
+			HostPort:      p.HostPort,
 		}
 	}
 
