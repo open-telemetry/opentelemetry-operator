@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -54,11 +55,13 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				Ports: []corev1.ServicePort{
-					{
-						Name:     "metrics",
-						Port:     8888,
-						Protocol: corev1.ProtocolTCP,
+				Ports: []v1beta1.PortsSpec{
+					v1beta1.PortsSpec{
+						ServicePort: v1.ServicePort{
+							Name:     "metrics",
+							Port:     8888,
+							Protocol: corev1.ProtocolTCP,
+						},
 					},
 				},
 				InitContainers: []corev1.Container{

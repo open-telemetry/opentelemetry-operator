@@ -186,7 +186,7 @@ type OpenTelemetryCollectorSpec struct {
 	// used to open additional ports that can't be inferred by the operator, like for custom receivers.
 	// +optional
 	// +listType=atomic
-	Ports []v1.ServicePort `json:"ports,omitempty"`
+	Ports []PortsSpec `json:"ports,omitempty"`
 	// ENV vars to set on the OpenTelemetry Collector's Pods. These can then in certain cases be
 	// consumed in the config file for the Collector.
 	// +optional
@@ -289,6 +289,16 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+}
+
+// PortsSpec defines the OpenTelemetryCollector's container/service ports additional specifications.
+type PortsSpec struct {
+	// Allows defining which port to bind to the host in the Container.
+	// +optional
+	HostPort int32 `json:"hostPort,omitempty"`
+
+	// Maintain previous fields in new struct
+	v1.ServicePort `json:",inline"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.

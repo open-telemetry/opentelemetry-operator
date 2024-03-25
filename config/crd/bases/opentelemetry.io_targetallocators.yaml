@@ -2199,6 +2199,9 @@ spec:
                   properties:
                     appProtocol:
                       type: string
+                    hostPort:
+                      format: int32
+                      type: integer
                     name:
                       type: string
                     nodePort:

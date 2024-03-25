@@ -95,6 +95,11 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	targetPort4317 := intstr.IntOrString{Type: 0, IntVal: 4317, StrVal: ""}
 	targetPort4318 := intstr.IntOrString{Type: 0, IntVal: 4318, StrVal: ""}
 
+	svcPorts := []corev1.ServicePort{}
+	for _, p := range ports {
+		svcPorts = append(svcPorts, p.ServicePort)
+	}
+
 	expectedPorts := []corev1.ServicePort{
 		{Name: "examplereceiver", Port: 12345},
 		{Name: "port-12346", Port: 12346},
@@ -107,7 +112,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 		{Name: "otlp-http", AppProtocol: &httpAppProtocol, Port: 4318, TargetPort: targetPort4318},
 		{Name: "zipkin", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: 9411},
 	}
-	assert.ElementsMatch(t, expectedPorts, ports)
+	assert.ElementsMatch(t, expectedPorts, svcPorts)
 }
 
 func TestNoPortsParsed(t *testing.T) {

@@ -84,6 +84,16 @@ type PodDisruptionBudgetSpec struct {
 	MaxUnavailable *intstr.IntOrString `json:"maxUnavailable,omitempty"`
 }
 
+// PortsSpec defines the OpenTelemetryCollector's container/service ports additional specifications.
+type PortsSpec struct {
+	// Allows defining which port to bind to the host in the Container.
+	// +optional
+	HostPort int32 `json:"hostPort,omitempty"`
+
+	// Maintain previous fields in new struct
+	v1.ServicePort `json:",inline"`
+}
+
 type OpenTelemetryCommonFields struct {
 	// ManagementState defines if the CR should be managed by the operator or not.
 	// Default is managed.
@@ -151,12 +161,12 @@ type OpenTelemetryCommonFields struct {
 	// +optional
 	// +listType=atomic
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
-	// Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator
+	// Ports allows a set of ports to be exposed by the underlying v1.Service & v1.ContainerPort. By default, the operator
 	// will attempt to infer the required ports by parsing the .Spec.Config property but this property can be
 	// used to open additional ports that can't be inferred by the operator, like for custom receivers.
 	// +optional
 	// +listType=atomic
-	Ports []v1.ServicePort `json:"ports,omitempty"`
+	Ports []PortsSpec `json:"ports,omitempty"`
 	// Environment variables to set on the generated pods.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`

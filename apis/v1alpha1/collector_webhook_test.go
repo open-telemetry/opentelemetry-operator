@@ -475,15 +475,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
       thrift_http:
         endpoint: 0.0.0.0:15268
 `,
-					Ports: []v1.ServicePort{
+					Ports: []PortsSpec{
 						{
-							Name: "port1",
-							Port: 5555,
+							ServicePort: v1.ServicePort{
+								Name: "port1",
+								Port: 5555,
+							},
 						},
 						{
-							Name:     "port2",
-							Port:     5554,
-							Protocol: v1.ProtocolUDP,
+							ServicePort: v1.ServicePort{
+								Name:     "port2",
+								Port:     5554,
+								Protocol: v1.ProtocolUDP,
+							},
 						},
 					},
 					Autoscaler: &AutoscalerSpec{
@@ -533,15 +537,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
       thrift_http:
         endpoint: 0.0.0.0:15268
 `,
-					Ports: []v1.ServicePort{
+					Ports: []PortsSpec{
 						{
-							Name: "port1",
-							Port: 5555,
+							ServicePort: v1.ServicePort{
+								Name: "port1",
+								Port: 5555,
+							},
 						},
 						{
-							Name:     "port2",
-							Port:     5554,
-							Protocol: v1.ProtocolUDP,
+							ServicePort: v1.ServicePort{
+								Name:     "port2",
+								Port:     5554,
+								Protocol: v1.ProtocolUDP,
+							},
 						},
 					},
 					Autoscaler: &AutoscalerSpec{
@@ -601,15 +609,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
       thrift_http:
         endpoint: 0.0.0.0:15268
 `,
-					Ports: []v1.ServicePort{
+					Ports: []PortsSpec{
 						{
-							Name: "port1",
-							Port: 5555,
+							ServicePort: v1.ServicePort{
+								Name: "port1",
+								Port: 5555,
+							},
 						},
 						{
-							Name:     "port2",
-							Port:     5554,
-							Protocol: v1.ProtocolUDP,
+							ServicePort: v1.ServicePort{
+								Name:     "port2",
+								Port:     5554,
+								Protocol: v1.ProtocolUDP,
+							},
 						},
 					},
 					Autoscaler: &AutoscalerSpec{
@@ -687,12 +699,14 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid port name",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Ports: []v1.ServicePort{
+					Ports: []PortsSpec{
 						{
-							// this port name contains a non alphanumeric character, which is invalid.
-							Name:     "-test🦄port",
-							Port:     12345,
-							Protocol: v1.ProtocolTCP,
+							ServicePort: v1.ServicePort{
+								// this port name contains a non alphanumeric character, which is invalid.
+								Name:     "-test🦄port",
+								Port:     12345,
+								Protocol: v1.ProtocolTCP,
+							},
 						},
 					},
 				},
@@ -703,10 +717,12 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid port name, too long",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Ports: []v1.ServicePort{
+					Ports: []PortsSpec{
 						{
-							Name: "aaaabbbbccccdddd", // len: 16, too long
-							Port: 5555,
+							ServicePort: v1.ServicePort{
+								Name: "aaaabbbbccccdddd", // len: 16, too long
+								Port: 5555,
+							},
 						},
 					},
 				},
@@ -717,10 +733,12 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid port num",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					Ports: []v1.ServicePort{
+					Ports: []PortsSpec{
 						{
-							Name: "aaaabbbbccccddd", // len: 15
-							// no port set means it's 0, which is invalid
+							ServicePort: v1.ServicePort{
+								Name: "aaaabbbbccccddd", // len: 15
+								// no port set means it's 0, which is invalid
+							},
 						},
 					},
 				},
