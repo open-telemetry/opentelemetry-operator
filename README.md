@@ -263,6 +263,8 @@ The value for `sampler.type` is added to the `OTEL_TRACES_SAMPLER` environment v
 Valid values for `sampler.type` are defined by the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler).
 The value for `sampler.argument` is added to the `OTEL_TRACES_SAMPLER_ARG` environment variable. Valid values for `sampler.argument` will depend on the chosen sampler. See the [OpenTelemetry Specification for OTEL_TRACES_SAMPLER_ARG](https://opentelemetry.io/docs/concepts/sdk-configuration/general-sdk-configuration/#otel_traces_sampler_arg) for more details.
 
+The instrumentation will automatically inject `OTEL_NODE_IP` and `OTEL_POD_IP` environment variables should you need to reference either value in an endpoint.
+
 The above CR can be queried by `kubectl get otelinst`.
 
 Then add an annotation to a pod to enable injection. The annotation can be added to a namespace, so that all pods within

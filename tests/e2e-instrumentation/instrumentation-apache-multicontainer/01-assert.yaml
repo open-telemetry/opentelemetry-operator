@@ -10,6 +10,14 @@ metadata:
 spec:
   containers:
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: OTEL_SERVICE_NAME
       value: my-apache-multi
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -33,6 +41,14 @@ spec:
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: OTEL_SERVICE_NAME
       value: my-apache-multi
     - name: OTEL_EXPORTER_OTLP_ENDPOINT

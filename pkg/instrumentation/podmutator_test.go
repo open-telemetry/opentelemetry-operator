@@ -155,6 +155,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "app",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_JAVAAGENT_DEBUG",
 									Value: "true",
 								},
@@ -343,6 +359,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "app1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_JAVAAGENT_DEBUG",
 									Value: "true",
 								},
@@ -417,6 +449,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "app2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_JAVAAGENT_DEBUG",
 									Value: "true",
@@ -689,6 +737,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "app",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_NODEJS_DEBUG",
 									Value: "true",
 								},
@@ -861,6 +925,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "app1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_NODEJS_DEBUG",
 									Value: "true",
 								},
@@ -927,6 +1007,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "app2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_NODEJS_DEBUG",
 									Value: "true",
@@ -1188,6 +1284,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "app",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -1377,6 +1489,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "app1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -1455,6 +1583,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "app2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -1720,6 +1864,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "app",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -1899,6 +2059,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "app",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -2089,6 +2265,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "app1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -2175,6 +2367,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "app2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -2434,6 +2642,22 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_GO_AUTO_TARGET_EXE",
 									Value: "/app",
@@ -2711,6 +2935,22 @@ func TestMutatePod(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "app",
 								},
@@ -2943,6 +3183,22 @@ func TestMutatePod(t *testing.T) {
 								},
 							},
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "LD_LIBRARY_PATH",
 									Value: "/opt/opentelemetry-webserver/agent/sdk_lib/lib",
@@ -3382,6 +3638,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "dotnet1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -3452,6 +3724,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "dotnet2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -3524,6 +3812,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "java1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -3570,6 +3874,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "java2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -3618,6 +3938,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "nodejs1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -3665,6 +4001,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "nodejs2",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -3711,6 +4063,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "python1",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -3774,6 +4142,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "python2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -4038,6 +4422,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "dotnet1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -4108,6 +4508,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "dotnet2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -4180,6 +4596,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "java1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -4226,6 +4658,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "java2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -4274,6 +4722,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "nodejs1",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -4321,6 +4785,22 @@ func TestMutatePod(t *testing.T) {
 							Name: "nodejs2",
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
 								},
@@ -4367,6 +4847,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "python1",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -4430,6 +4926,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "python2",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",
@@ -4906,6 +5418,22 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name: "dotnet1",
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_LOG_LEVEL",
 									Value: "debug",

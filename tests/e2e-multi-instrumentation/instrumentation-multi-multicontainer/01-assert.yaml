@@ -17,6 +17,14 @@ metadata:
 spec:
   containers:
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: ASPNETCORE_URLS
       value: http://+:8083
     - name: OTEL_SERVICE_NAME
@@ -61,6 +69,14 @@ spec:
     - mountPath: /otel-auto-instrumentation-dotnet
       name: opentelemetry-auto-instrumentation-dotnet
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: OTEL_SERVICE_NAME
       value: javaapp
     - name: JAVA_TOOL_OPTIONS
@@ -91,6 +107,14 @@ spec:
     - mountPath: /otel-auto-instrumentation-java
       name: opentelemetry-auto-instrumentation-java
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: NODE_PATH
       value: /usr/local/lib/node_modules
     - name: OTEL_SERVICE_NAME
@@ -128,6 +152,14 @@ spec:
     - -p
     - "8087"
     env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: OTEL_SERVICE_NAME
       value: pythonapp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT

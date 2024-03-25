@@ -21,6 +21,14 @@ metadata:
 spec:
   containers:
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: ASPNETCORE_URLS
       value: http://+:8080
     - name: OTEL_LOG_LEVEL

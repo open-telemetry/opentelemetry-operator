@@ -14,6 +14,14 @@ spec:
     - --config=env:OTEL_CONFIG
     name: otc-container
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: OTEL_GO_AUTO_TARGET_EXE
       value: /usr/src/app/productcatalogservice
     - name: OTEL_TRACES_EXPORTER

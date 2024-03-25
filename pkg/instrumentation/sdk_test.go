@@ -556,6 +556,22 @@ func TestInjectJava(t *testing.T) {
 					},
 					Env: []corev1.EnvVar{
 						{
+							Name: "OTEL_NODE_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.hostIP",
+								},
+							},
+						},
+						{
+							Name: "OTEL_POD_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.podIP",
+								},
+							},
+						},
+						{
 							Name:  "JAVA_TOOL_OPTIONS",
 							Value: javaJVMArgument,
 						},
@@ -661,6 +677,22 @@ func TestInjectNodeJS(t *testing.T) {
 					},
 					Env: []corev1.EnvVar{
 						{
+							Name: "OTEL_NODE_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.hostIP",
+								},
+							},
+						},
+						{
+							Name: "OTEL_POD_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.podIP",
+								},
+							},
+						},
+						{
 							Name:  "NODE_OPTIONS",
 							Value: nodeRequireArgument,
 						},
@@ -764,6 +796,22 @@ func TestInjectPython(t *testing.T) {
 						},
 					},
 					Env: []corev1.EnvVar{
+						{
+							Name: "OTEL_NODE_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.hostIP",
+								},
+							},
+						},
+						{
+							Name: "OTEL_POD_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.podIP",
+								},
+							},
+						},
 						{
 							Name:  "PYTHONPATH",
 							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
@@ -883,6 +931,22 @@ func TestInjectDotNet(t *testing.T) {
 						},
 					},
 					Env: []corev1.EnvVar{
+						{
+							Name: "OTEL_NODE_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.hostIP",
+								},
+							},
+						},
+						{
+							Name: "OTEL_POD_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.podIP",
+								},
+							},
+						},
 						{
 							Name:  envDotNetCoreClrEnableProfiling,
 							Value: dotNetCoreClrEnableProfilingEnabled,
@@ -1073,6 +1137,22 @@ func TestInjectGo(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_GO_AUTO_TARGET_EXE",
 									Value: "foo",
 								},
@@ -1173,6 +1253,22 @@ func TestInjectGo(t *testing.T) {
 								},
 							},
 							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
 								{
 									Name:  "OTEL_GO_AUTO_TARGET_EXE",
 									Value: "foo",
@@ -1343,6 +1439,22 @@ func TestInjectApacheHttpd(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "app",
 								},
@@ -1511,6 +1623,22 @@ func TestInjectNginx(t *testing.T) {
 							},
 							Env: []corev1.EnvVar{
 								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
 									Name:  "LD_LIBRARY_PATH",
 									Value: "/opt/opentelemetry-webserver/agent/sdk_lib/lib",
 								},
@@ -1587,6 +1715,22 @@ func TestInjectSdkOnly(t *testing.T) {
 					Name:  "app",
 					Image: "app:latest",
 					Env: []corev1.EnvVar{
+						{
+							Name: "OTEL_NODE_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.hostIP",
+								},
+							},
+						},
+						{
+							Name: "OTEL_POD_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.podIP",
+								},
+							},
+						},
 						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",

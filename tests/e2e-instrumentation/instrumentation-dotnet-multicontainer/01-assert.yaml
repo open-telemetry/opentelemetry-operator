@@ -10,6 +10,14 @@ metadata:
 spec:
   containers:
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: ASPNETCORE_URLS
       value: http://+:8080
     - name: OTEL_LOG_LEVEL
@@ -62,6 +70,14 @@ spec:
     - mountPath: /otel-auto-instrumentation-dotnet
       name: opentelemetry-auto-instrumentation-dotnet
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: OTEL_LOG_LEVEL
       value: debug
     - name: CORECLR_ENABLE_PROFILING
