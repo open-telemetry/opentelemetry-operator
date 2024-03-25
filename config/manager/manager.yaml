@@ -33,6 +33,7 @@ spec:
         - "--zap-log-level=info"
         - "--zap-time-encoding=rfc3339nano"
         - "--feature-gates=+operator.autoinstrumentation.go"
+        - "--enable-nginx-instrumentation=true"
         image: controller
         name: manager
         livenessProbe:
