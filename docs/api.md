@@ -173,8 +173,8 @@ Resource Types:
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>selector</b></td>
-        <td>map[string]string</td>
+        <td><b><a href="#instrumentationspecselector">selector</a></b></td>
+        <td>object</td>
         <td>
           <br/>
         </td>
@@ -3581,6 +3581,81 @@ Resource Types:
           <br/>
           <br/>
             <i>Enum</i>: always_on, always_off, traceidratio, parentbased_always_on, parentbased_always_off, parentbased_traceidratio, jaeger_remote, xray<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.selector
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#instrumentationspecselector)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>

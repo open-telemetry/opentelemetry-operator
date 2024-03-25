@@ -24,7 +24,7 @@ import (
 type InstrumentationSpec struct {
 	// Selector is the selector label of injected Object
 	// +optional
-	Selector map[string]string `json:"selector,omitempty"`
+	Selector *metav1.LabelSelector `json:"selector,omitempty"`
 
 	// Exporter defines exporter configuration.
 	// +optional

@@ -20,8 +20,11 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/labels"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -401,13 +404,18 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	var availableInstrument []v1alpha1.Instrumentation
 	for _, ins := range otelInsts.Items {
 		isMatch := true
-		if len(ins.Spec.Selector) != 0 {
-			for k, v := range ins.Spec.Selector {
-				if !strings.EqualFold(v, pod.Labels[k]) {
-					isMatch = false
-				}
+		if ins.Spec.Selector != nil {
+			labelSelector, err := v1.LabelSelectorAsSelector(ins.Spec.Selector)
+			if err != nil {
+				return nil, err
+			}
+			set := labels.Set(pod.GetLabels())
+			// selector not match
+			if !labelSelector.Matches(set) {
+				isMatch = false
 			}
 		}
+
 		if isMatch {
 			availableInstrument = append(availableInstrument, ins)
 		}
