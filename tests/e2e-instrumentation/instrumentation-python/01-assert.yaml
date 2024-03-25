@@ -2,22 +2,21 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    sidecar.opentelemetry.io/inject: "true"
     instrumentation.opentelemetry.io/inject-python: "true"
+    sidecar.opentelemetry.io/inject: "true"
   labels:
-    app: my-pod-with-sidecar
+    app: my-python
 spec:
   containers:
-  - name: myapp
-    env:
+  - env:
     - name: OTEL_LOG_LEVEL
-      value: "debug"
+      value: debug
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4318
     - name: PYTHONPATH
-      value: "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python"
+      value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
     - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
       value: http/protobuf
     - name: OTEL_METRICS_EXPORTER
@@ -33,29 +32,40 @@ spec:
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
     - name: OTEL_SERVICE_NAME
-      value: my-deployment-with-sidecar
+      value: my-python
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
+    name: myapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
     - mountPath: /otel-auto-instrumentation-python
       name: opentelemetry-auto-instrumentation-python
-  - name: otc-container
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation-python
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
-    resources:
-      limits:
-        cpu: "500m"
-        memory: "32Mi"
-      requests:
-        cpu: "50m"
-        memory: "32Mi"
 status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-python
+    ready: true
   phase: Running

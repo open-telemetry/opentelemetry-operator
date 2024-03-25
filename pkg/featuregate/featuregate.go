@@ -25,12 +25,6 @@ const (
 )
 
 var (
-	EnablePythonAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.python",
-		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports Python auto-instrumentation"),
-		featuregate.WithRegisterFromVersion("v0.76.1"),
-	)
 	EnableJavaAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.autoinstrumentation.java",
 		featuregate.StageBeta,
@@ -67,7 +61,7 @@ var (
 	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
 	PrometheusOperatorIsAvailable = featuregate.GlobalRegistry().MustRegister(
 		"operator.observability.prometheus",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"),
 		featuregate.WithRegisterFromVersion("v0.82.0"),
 	)

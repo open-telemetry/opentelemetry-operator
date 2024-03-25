@@ -1,27 +1,28 @@
-# skipping test, see https://github.com/open-telemetry/opentelemetry-operator/issues/1936
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-apache
+  name: my-apache-multi
 spec:
   selector:
     matchLabels:
-      app: my-apache
+      app: my-apache-multi
   replicas: 1
   template:
     metadata:
       labels:
-        app: my-apache
+        app: my-apache-multi
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-apache-httpd: "true"
         instrumentation.opentelemetry.io/container-names: "myapp,myrabbit"
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
       containers:
         - name: myapp
-          image: docker.io/chrlic/apache-test@sha256:fad58c6ce7a4f477b455bece2a1980741fa6f81cef1e1093a3b72f9b2ffa7b8e
-          # image source at https://github.com/cisco-open/appdynamics-k8s-webhook-instrumentor/tree/main/testWorkloads/apache-httpd
-          # licensed under Apache 2.0
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-apache-httpd:main
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -32,5 +33,13 @@ spec:
             requests:
               cpu: 250m
               memory: 100Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
         - name: myrabbit
           image: rabbitmq
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

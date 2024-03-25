@@ -23,7 +23,7 @@ spec:
         - annotate
         - namespace
         - ${NAMESPACE}
-        - openshift.io/sa.scc.supplemental-groups=2000/1000
+        - openshift.io/sa.scc.supplemental-groups=3000/3000
         - --overwrite
     - apply:
         file: 00-install-collector.yaml
@@ -35,3 +35,6 @@ spec:
         file: 01-install-app.yaml
     - assert:
         file: 01-assert.yaml
+    catch:
+      - podLogs:
+          selector: app=my-dotnet

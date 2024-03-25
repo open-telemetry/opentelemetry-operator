@@ -51,12 +51,14 @@ extensions:
       enabled: false
       exporter_failure_threshold: 5
       interval: 5m
+exporters:
+  debug: {}
 service:
   extensions: [health_check]
   pipelines:
     metrics:
       receivers: [otlp]
-      exporters: [nop]
+      exporters: [debug]
 `,
 		},
 	}
@@ -70,9 +72,10 @@ service:
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
 
-	upgradedInstance, err := versionUpgrade.ManagedInstance(context.Background(), collectorInstance)
+	upgradedInstanceV1beta1, err := versionUpgrade.ManagedInstance(context.Background(), convertTov1beta1(t, collectorInstance))
 	assert.NoError(t, err)
-	assert.Equal(t, `extensions:
+	upgradedInstance := convertTov1alpha1(t, upgradedInstanceV1beta1)
+	assert.YAMLEq(t, `extensions:
   health_check:
     check_collector_pipeline:
       enabled: false
@@ -84,13 +87,15 @@ receivers:
     protocols:
       http:
         endpoint: mysite.local:55690
+exporters:
+  debug: {}
 service:
   extensions:
   - health_check
   pipelines:
     metrics:
       exporters:
-      - nop
+      - debug
       receivers:
       - otlp
 `, upgradedInstance.Spec.Config)

@@ -18,8 +18,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"strings"
-
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -27,16 +25,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
+const (
+	OpAMPBridgeFilename = "remoteconfiguration.yaml"
+)
+
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.OpAMPBridgeConfigMap(params.OpAMPBridge.Name)
-	version := strings.Split(params.OpAMPBridge.Spec.Image, ":")
 	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, []string{})
-
-	if len(version) > 1 {
-		labels["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
-		labels["app.kubernetes.io/version"] = "latest"
-	}
 
 	config := make(map[interface{}]interface{})
 
@@ -69,7 +64,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 			Annotations: params.OpAMPBridge.Annotations,
 		},
 		Data: map[string]string{
-			"remoteconfiguration.yaml": string(configYAML),
+			OpAMPBridgeFilename: string(configYAML),
 		},
 	}, nil
 }

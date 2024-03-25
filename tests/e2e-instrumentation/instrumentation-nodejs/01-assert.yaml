@@ -2,18 +2,19 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    sidecar.opentelemetry.io/inject: "true"
     instrumentation.opentelemetry.io/inject-nodejs: "true"
+    sidecar.opentelemetry.io/inject: "true"
   labels:
-    app: my-pod-with-sidecar
+    app: my-nodejs
 spec:
   containers:
-  - name: myapp
-    env:
+  - env:
+    - name: NODE_PATH
+      value: /usr/local/lib/node_modules
     - name: OTEL_NODEJS_DEBUG
       value: "true"
     - name: NODE_OPTIONS
-      value: " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
+      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -29,30 +30,40 @@ spec:
     - name: OTEL_METRICS_EXPORTER
       value: prometheus
     - name: OTEL_SERVICE_NAME
-      value: my-deployment-with-sidecar
+      value: my-nodejs
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
+    name: myapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
     - mountPath: /otel-auto-instrumentation-nodejs
       name: opentelemetry-auto-instrumentation-nodejs
-  - name: otc-container
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation-nodejs
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
-    resources:
-      limits:
-        cpu: "500m"
-        memory: "128Mi"
-      requests:
-        cpu: "50m"
-        memory: "128Mi"
-
 status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-nodejs
+    ready: true
   phase: Running

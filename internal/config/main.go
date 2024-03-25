@@ -46,6 +46,7 @@ type Config struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enablePythonInstrumentation         bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -56,6 +57,7 @@ type Config struct {
 	autoInstrumentationJavaImage        string
 	openshiftRoutesAvailability         openshift.RoutesAvailability
 	labelsFilter                        []string
+	annotationsFilter                   []string
 }
 
 // New constructs a new configuration based on the given options.
@@ -81,6 +83,7 @@ func New(opts ...Option) Config {
 		enableMultiInstrumentation:          o.enableMultiInstrumentation,
 		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
+		enablePythonInstrumentation:         o.enablePythonInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -95,6 +98,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		labelsFilter:                        o.labelsFilter,
+		annotationsFilter:                   o.annotationsFilter,
 	}
 }
 
@@ -128,6 +132,11 @@ func (c *Config) EnableApacheHttpdAutoInstrumentation() bool {
 // EnableDotNetAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
 func (c *Config) EnableDotNetAutoInstrumentation() bool {
 	return c.enableDotNetInstrumentation
+}
+
+// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnablePythonAutoInstrumentation() bool {
+	return c.enablePythonInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
@@ -203,4 +212,9 @@ func (c *Config) AutoInstrumentationNginxImage() string {
 // LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 func (c *Config) LabelsFilter() []string {
 	return c.labelsFilter
+}
+
+// AnnotationsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+func (c *Config) AnnotationsFilter() []string {
+	return c.annotationsFilter
 }

@@ -19,7 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -28,7 +28,7 @@ import (
 func HorizontalPodAutoscaler(params manifests.Params) (*autoscalingv2.HorizontalPodAutoscaler, error) {
 	name := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	annotations, err := Annotations(params.OtelCol)
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func HorizontalPodAutoscaler(params manifests.Params) (*autoscalingv2.Horizontal
 		ObjectMeta: objectMeta,
 		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
-				APIVersion: v1alpha1.GroupVersion.String(),
+				APIVersion: v1beta1.GroupVersion.String(),
 				Kind:       "OpenTelemetryCollector",
 				Name:       naming.OpenTelemetryCollector(params.OtelCol.Name),
 			},

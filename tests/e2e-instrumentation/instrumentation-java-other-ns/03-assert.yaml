@@ -2,14 +2,13 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
+    instrumentation.opentelemetry.io/inject-java: my-other-ns/java
     sidecar.opentelemetry.io/inject: "true"
-    instrumentation.opentelemetry.io/inject-java: "my-other-ns/java"
   labels:
-    app: my-pod-with-sidecar
+    app: my-java-other-ns
 spec:
   containers:
-  - name: myapp
-    env:
+  - env:
     - name: OTEL_JAVAAGENT_DEBUG
       value: "true"
     - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
@@ -17,7 +16,7 @@ spec:
     - name: SPLUNK_PROFILER_ENABLED
       value: "false"
     - name: JAVA_TOOL_OPTIONS
-      value: " -javaagent:/otel-auto-instrumentation-java/javaagent.jar"
+      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -31,22 +30,40 @@ spec:
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
     - name: OTEL_SERVICE_NAME
-      value: my-deployment-with-sidecar
+      value: my-java-other-ns
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
     - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
+    name: myapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
     - mountPath: /otel-auto-instrumentation-java
       name: opentelemetry-auto-instrumentation-java
-  - name: otc-container
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation-java
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
 status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-java
+    ready: true
   phase: Running

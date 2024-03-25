@@ -641,7 +641,7 @@ func TestInjectNodeJS(t *testing.T) {
 				{
 					Name:    nodejsInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      nodejsVolumeName,
 						MountPath: nodejsInstrMountPath,
@@ -746,7 +746,7 @@ func TestInjectPython(t *testing.T) {
 				{
 					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      pythonVolumeName,
 						MountPath: pythonInstrMountPath,
@@ -865,7 +865,7 @@ func TestInjectDotNet(t *testing.T) {
 				{
 					Name:    dotnetInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+					Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      dotnetVolumeName,
 						MountPath: dotnetInstrMountPath,

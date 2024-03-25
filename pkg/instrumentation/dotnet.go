@@ -127,7 +127,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      dotnetInitContainerName,
 			Image:     dotNetSpec.Image,
-			Command:   []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+			Command:   []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 			Resources: dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      dotnetVolumeName,

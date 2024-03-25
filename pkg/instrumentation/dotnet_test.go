@@ -60,7 +60,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-dotnet",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-dotnet",
 								MountPath: "/otel-auto-instrumentation-dotnet",
@@ -165,7 +165,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-dotnet",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-dotnet",
 								MountPath: "/otel-auto-instrumentation-dotnet",
@@ -394,7 +394,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: "/otel-auto-instrumentation-dotnet",
@@ -473,7 +473,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: "/otel-auto-instrumentation-dotnet",

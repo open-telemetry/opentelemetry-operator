@@ -26,6 +26,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
@@ -107,7 +108,7 @@ func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 			}
 			// test
-			res, err := up.ManagedInstance(context.Background(), existing)
+			res, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
 
 			// verify
 			assert.NoError(t, err)
@@ -147,7 +148,7 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 			}
 
 			// test
-			res, err := up.ManagedInstance(context.Background(), existing)
+			res, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
 			if tt.failureExpected {
 				assert.Error(t, err)
 			} else {
@@ -160,10 +161,28 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 	}
 }
 
+const collectorCfg = `---
+receivers:
+  otlp:
+    protocols:
+      grpc: {}
+processors:
+  batch: {}
+exporters:
+  otlp:
+    endpoint: "otlp:4317"
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlp]
+`
+
 func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementStateType) v1alpha1.OpenTelemetryCollector {
 	return v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			ManagementState: managementState,
+			Config:          collectorCfg,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
@@ -173,4 +192,18 @@ func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementSt
 			},
 		},
 	}
+}
+
+func convertTov1beta1(t *testing.T, collector v1alpha1.OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
+	betacollector := v1beta1.OpenTelemetryCollector{}
+	err := collector.ConvertTo(&betacollector)
+	require.NoError(t, err)
+	return betacollector
+}
+
+func convertTov1alpha1(t *testing.T, collector v1beta1.OpenTelemetryCollector) v1alpha1.OpenTelemetryCollector {
+	alphacollector := v1alpha1.OpenTelemetryCollector{}
+	err := alphacollector.ConvertFrom(&collector)
+	require.NoError(t, err)
+	return alphacollector
 }

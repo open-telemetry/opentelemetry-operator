@@ -34,7 +34,6 @@ var (
 	defaultAnnotationToGate = map[string]*featuregate2.Gate{
 		constants.AnnotationDefaultAutoInstrumentationJava:   featuregate.EnableJavaAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNodeJS: featuregate.EnableNodeJSAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationPython: featuregate.EnablePythonAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationGo:     featuregate.EnableGoAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNginx:  featuregate.EnableNginxAutoInstrumentationSupport,
 	}
@@ -63,6 +62,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 	defaultAnnotationToConfig := map[string]autoInstConfig{
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
 	}
 
 	return &InstrumentationUpgrade{
@@ -131,6 +131,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if inst.Spec.DotNet.Image == autoInst {
 						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
 						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
+					}
+				case constants.AnnotationDefaultAutoInstrumentationPython:
+					if inst.Spec.Python.Image == autoInst {
+						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
+						upgraded.Annotations[annotation] = u.DefaultAutoInstPython
 					}
 				}
 			} else {

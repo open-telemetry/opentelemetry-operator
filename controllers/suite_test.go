@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -51,6 +52,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -104,6 +106,17 @@ func TestMain(m *testing.M) {
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()
 
+	if err != nil {
+		fmt.Printf("failed to start testEnv: %v", err)
+		os.Exit(1)
+	}
+
+	utilruntime.Must(monitoringv1.AddToScheme(testScheme))
+	utilruntime.Must(networkingv1.AddToScheme(testScheme))
+	utilruntime.Must(routev1.AddToScheme(testScheme))
+	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
+	utilruntime.Must(v1beta1.AddToScheme(testScheme))
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
 		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD},
@@ -112,26 +125,6 @@ func TestMain(m *testing.M) {
 		},
 	}
 	cfg, err = testEnv.Start()
-	if err != nil {
-		fmt.Printf("failed to start testEnv: %v", err)
-		os.Exit(1)
-	}
-	if err = monitoringv1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
-	if err = networkingv1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
-	if err = routev1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
-	if err = v1alpha1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
 	// +kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: testScheme})
@@ -165,6 +158,10 @@ func TestMain(m *testing.M) {
 	reviewer := rbac.NewReviewer(clientset)
 
 	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
+		os.Exit(1)
+	}
+	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}

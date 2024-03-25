@@ -8,6 +8,25 @@ spec:
   steps:
   - name: step-00
     try:
+    # In OpenShift, when a namespace is created, all necessary SCC annotations are automatically added. However, if a namespace is created using a resource file with only selected SCCs, the other auto-added SCCs are not included. Therefore, the UID-range and supplemental groups SCC annotations must be set after the namespace is created.
+    - command:
+        entrypoint: kubectl
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.uid-range=1000/1000
+        - --overwrite
+    - command:
+        entrypoint: kubectl
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.supplemental-groups=3000/3000
+        - --overwrite
+  - name: step-00
+    try:
     - apply:
         file: 00-install-collector.yaml
     - apply:
@@ -18,9 +37,15 @@ spec:
         file: 01-install-app.yaml
     - assert:
         file: 01-assert.yaml
+    catch:
+      - podLogs:
+          selector: app=my-python-multi
   - name: step-02
     try:
     - apply:
         file: 02-install-app.yaml
     - assert:
         file: 02-assert.yaml
+    catch:
+      - podLogs:
+          selector: app=my-python-multi

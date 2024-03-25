@@ -1,0 +1,6 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: test-annotations
+  annotations:
+    annotation.filter.out: "false"

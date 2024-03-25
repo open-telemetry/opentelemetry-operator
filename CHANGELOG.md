@@ -2,6 +2,35 @@ Changes by Version
 ==================
 <!-- next version -->
 
+## 0.96.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: change dotnet instrumentation feature gate into command line flag --enable-dotnet-instrumentation (#2582, #2671)
+
+### 💡 Enhancements 💡
+
+- `operator`: Created ability to filter out Annotations (#2627)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Fix per-node target allocation for targets from endpointslices (#2718)
+  The per-node target allocation strategy was not matching endpointslice entries for with a `kind` of Node, such as those for the kubelet metrics created by the prometheus operator
+- `operator`: Removes UPDATE from pod mutating admission webhook since it only needs to mutate on pod CREATE events. (#1514)
+  The pod webhook currently modifies the pod spec in invalid ways on UPDATE events, and UPDATES are not necessary in the webhook.
+
+### Components
+
+* [OpenTelemetry Collector - v0.96.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.96.0)
+* [OpenTelemetry Contrib - v0.96.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.96.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/{AUTO_INSTRUMENTATION_DOTNET_VERSION})
+* [Node.JS - v0.46.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.46.0)
+* [Python - v0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.44b0)
+* [Go - v0.10.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.1-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.95.0
 
 ### 🛑 Breaking changes 🛑

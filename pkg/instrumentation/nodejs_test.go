@@ -58,7 +58,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-nodejs",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-nodejs",
 								MountPath: "/otel-auto-instrumentation-nodejs",
@@ -118,7 +118,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-nodejs",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-nodejs",
 								MountPath: "/otel-auto-instrumentation-nodejs",

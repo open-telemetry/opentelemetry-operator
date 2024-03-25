@@ -677,7 +677,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    nodejsInitContainerName,
 							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nodejsVolumeName,
 								MountPath: nodejsInstrMountPath,
@@ -849,7 +849,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    nodejsInitContainerName,
 							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nodejsVolumeName,
 								MountPath: nodejsInstrMountPath,
@@ -1176,7 +1176,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
@@ -1266,6 +1266,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnablePythonInstrumentation(true)),
 		},
 		{
 			name: "python injection multiple containers, true",
@@ -1364,7 +1365,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
@@ -1533,6 +1534,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnablePythonInstrumentation(true)),
 		},
 		{
 			name: "python injection feature gate disabled",
@@ -1618,13 +1620,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 				},
-			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnablePythonAutoInstrumentationSupport.ID(), false))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnablePythonAutoInstrumentationSupport.ID(), originalVal))
-				})
 			},
 		},
 		{
@@ -1713,7 +1708,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -1893,7 +1888,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -2082,7 +2077,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -3357,7 +3352,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    nodejsInitContainerName,
 							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nodejsVolumeName,
 								MountPath: nodejsInstrMountPath,
@@ -3366,7 +3361,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
@@ -3375,7 +3370,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -3844,6 +3839,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
+				config.WithEnablePythonInstrumentation(true),
 				config.WithEnableDotNetInstrumentation(true),
 			),
 		},
@@ -4012,7 +4008,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    nodejsInitContainerName,
 							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", nodejsInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nodejsVolumeName,
 								MountPath: nodejsInstrMountPath,
@@ -4021,7 +4017,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", pythonInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
@@ -4030,7 +4026,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,
@@ -4506,6 +4502,7 @@ func TestMutatePod(t *testing.T) {
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
 				config.WithEnableDotNetInstrumentation(true),
+				config.WithEnablePythonInstrumentation(true),
 			),
 		},
 		{
@@ -4898,7 +4895,7 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    dotnetInitContainerName,
 							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", dotnetInstrMountPath},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      dotnetVolumeName,
 								MountPath: dotnetInstrMountPath,

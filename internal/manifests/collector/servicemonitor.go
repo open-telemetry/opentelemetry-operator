@@ -15,7 +15,6 @@
 package collector
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -25,6 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -42,15 +42,16 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 	if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
 		return nil, nil
 	}
+	name := naming.ServiceMonitor(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
+	selectorLabels[monitoringLabel] = valueExists
+
 	sm = monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: params.OtelCol.Namespace,
-			Name:      naming.ServiceMonitor(params.OtelCol.Name),
-			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.ServiceMonitor(params.OtelCol.Name),
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			},
+			Name:      name,
+			Labels:    labels,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: append([]monitoringv1.Endpoint{
@@ -62,10 +63,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				},
+				MatchLabels: selectorLabels,
 			},
 		},
 	}

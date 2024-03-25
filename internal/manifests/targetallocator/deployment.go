@@ -20,20 +20,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	name := naming.TargetAllocator(params.TargetAllocator.Name)
-	labels := Labels(params.TargetAllocator, name)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
 	configMap, err := ConfigMap(params)
 	if err != nil {
 		params.Log.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(params.TargetAllocator, configMap)
+	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter())
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,7 +45,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 		Spec: appsv1.DeploymentSpec{
 			Replicas: params.TargetAllocator.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(params.TargetAllocator),
+				MatchLabels: manifestutils.TASelectorLabels(params.TargetAllocator, ComponentOpenTelemetryTargetAllocator),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

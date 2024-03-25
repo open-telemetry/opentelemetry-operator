@@ -53,10 +53,6 @@ var (
 )
 
 var (
-	prometheusFeatureGate = featuregate.PrometheusOperatorIsAvailable.ID()
-)
-
-var (
 	opampbridgeSelectorLabels = map[string]string{
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
@@ -318,12 +314,13 @@ service:
 						Name:      "test-collector-monitoring",
 						Namespace: "test",
 						Labels: map[string]string{
-							"app.kubernetes.io/component":  "opentelemetry-collector",
-							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector-monitoring",
-							"app.kubernetes.io/part-of":    "opentelemetry",
-							"app.kubernetes.io/version":    "latest",
+							"app.kubernetes.io/component":                            "opentelemetry-collector",
+							"app.kubernetes.io/instance":                             "test.test",
+							"app.kubernetes.io/managed-by":                           "opentelemetry-operator",
+							"app.kubernetes.io/name":                                 "test-collector-monitoring",
+							"app.kubernetes.io/part-of":                              "opentelemetry",
+							"app.kubernetes.io/version":                              "latest",
+							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
 						Annotations: nil,
 					},
@@ -564,12 +561,13 @@ service:
 						Name:      "test-collector-monitoring",
 						Namespace: "test",
 						Labels: map[string]string{
-							"app.kubernetes.io/component":  "opentelemetry-collector",
-							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector-monitoring",
-							"app.kubernetes.io/part-of":    "opentelemetry",
-							"app.kubernetes.io/version":    "latest",
+							"app.kubernetes.io/component":                            "opentelemetry-collector",
+							"app.kubernetes.io/instance":                             "test.test",
+							"app.kubernetes.io/managed-by":                           "opentelemetry-operator",
+							"app.kubernetes.io/name":                                 "test-collector-monitoring",
+							"app.kubernetes.io/part-of":                              "opentelemetry",
+							"app.kubernetes.io/version":                              "latest",
+							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
 						Annotations: nil,
 					},
@@ -831,12 +829,13 @@ service:
 						Name:      "test-collector-monitoring",
 						Namespace: "test",
 						Labels: map[string]string{
-							"app.kubernetes.io/component":  "opentelemetry-collector",
-							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector-monitoring",
-							"app.kubernetes.io/part-of":    "opentelemetry",
-							"app.kubernetes.io/version":    "latest",
+							"app.kubernetes.io/component":                            "opentelemetry-collector",
+							"app.kubernetes.io/instance":                             "test.test",
+							"app.kubernetes.io/managed-by":                           "opentelemetry-operator",
+							"app.kubernetes.io/name":                                 "test-collector-monitoring",
+							"app.kubernetes.io/part-of":                              "opentelemetry",
+							"app.kubernetes.io/version":                              "latest",
+							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
 						Annotations: nil,
 					},
@@ -930,6 +929,9 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 							"app.kubernetes.io/name":       "test-opamp-bridge",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{
+							"opentelemetry-opampbridge-config/hash": "bd5cfc0df684966e25597a2847d5a3bae2c2b037d8bf10e7ea402ebe4d41c9f0",
 						},
 					},
 					Spec: appsv1.DeploymentSpec{
@@ -1310,12 +1312,13 @@ service:
 						Name:      "test-collector-monitoring",
 						Namespace: "test",
 						Labels: map[string]string{
-							"app.kubernetes.io/component":  "opentelemetry-collector",
-							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector-monitoring",
-							"app.kubernetes.io/part-of":    "opentelemetry",
-							"app.kubernetes.io/version":    "latest",
+							"app.kubernetes.io/component":                            "opentelemetry-collector",
+							"app.kubernetes.io/instance":                             "test.test",
+							"app.kubernetes.io/managed-by":                           "opentelemetry-operator",
+							"app.kubernetes.io/name":                                 "test-collector-monitoring",
+							"app.kubernetes.io/part-of":                              "opentelemetry",
+							"app.kubernetes.io/version":                              "latest",
+							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
 						Annotations: nil,
 					},
@@ -1708,12 +1711,13 @@ prometheus_cr:
 						Name:      "test-collector-monitoring",
 						Namespace: "test",
 						Labels: map[string]string{
-							"app.kubernetes.io/component":  "opentelemetry-collector",
-							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector-monitoring",
-							"app.kubernetes.io/part-of":    "opentelemetry",
-							"app.kubernetes.io/version":    "latest",
+							"app.kubernetes.io/component":                            "opentelemetry-collector",
+							"app.kubernetes.io/instance":                             "test.test",
+							"app.kubernetes.io/managed-by":                           "opentelemetry-operator",
+							"app.kubernetes.io/name":                                 "test-collector-monitoring",
+							"app.kubernetes.io/part-of":                              "opentelemetry",
+							"app.kubernetes.io/version":                              "latest",
+							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
 						Annotations: nil,
 					},
@@ -1943,7 +1947,7 @@ prometheus_cr:
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						Endpoints: []monitoringv1.Endpoint{
-							monitoringv1.Endpoint{Port: "targetallocation"},
+							{Port: "targetallocation"},
 						},
 						Selector: v1.LabelSelector{
 							MatchLabels: map[string]string{
@@ -1961,7 +1965,7 @@ prometheus_cr:
 				},
 			},
 			wantErr:      false,
-			featuregates: []string{prometheusFeatureGate},
+			featuregates: []string{},
 		},
 	}
 	for _, tt := range tests {

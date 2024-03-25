@@ -76,8 +76,9 @@ service:
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	res, err := up.ManagedInstance(context.Background(), existing)
+	resV1beta1, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
 	assert.NoError(t, err)
+	res := convertTov1alpha1(t, resV1beta1)
 
 	// verify
 	assert.Equal(t, map[string]string{
@@ -86,7 +87,7 @@ service:
 	}, res.Spec.Args)
 
 	// verify
-	assert.Equal(t, `exporters:
+	assert.YAMLEq(t, `exporters:
   otlp:
     endpoint: example.com
 receivers:
@@ -140,11 +141,12 @@ service:
 		"--arg1":        "",
 	}
 
-	res, err = up.ManagedInstance(context.Background(), existing)
+	resV1beta1, err = up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
 	assert.NoError(t, err)
+	res = convertTov1alpha1(t, resV1beta1)
 
 	// verify
-	assert.Equal(t, configWithLogging, res.Spec.Config)
+	assert.YAMLEq(t, configWithLogging, res.Spec.Config)
 	assert.Equal(t, map[string]string{
 		"--hii":  "hello",
 		"--arg1": "",

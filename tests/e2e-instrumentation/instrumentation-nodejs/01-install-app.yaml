@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-deployment-with-sidecar
+  name: my-nodejs
 spec:
   selector:
     matchLabels:
-      app: my-pod-with-sidecar
+      app: my-nodejs
   replicas: 1
   template:
     metadata:
       labels:
-        app: my-pod-with-sidecar
+        app: my-nodejs
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-nodejs: "true"
@@ -18,7 +18,7 @@ spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000
-        fsGroup: 2000
+        fsGroup: 3000
       containers:
       - name: myapp
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
@@ -26,3 +26,6 @@ spec:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+        env:
+        - name: NODE_PATH
+          value: /usr/local/lib/node_modules

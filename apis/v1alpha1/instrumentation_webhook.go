@@ -31,11 +31,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
-const (
-	envPrefix       = "OTEL_"
-	envSplunkPrefix = "SPLUNK_"
-)
-
 var (
 	_                                  admission.CustomValidator = &InstrumentationWebhook{}
 	_                                  admission.CustomDefaulter = &InstrumentationWebhook{}
@@ -245,42 +240,7 @@ func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings
 	default:
 		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
 	}
-
-	// validate env vars
-	if err := w.validateEnv(r.Spec.Env); err != nil {
-		return warnings, err
-	}
-	if err := w.validateEnv(r.Spec.Java.Env); err != nil {
-		return warnings, err
-	}
-	if err := w.validateEnv(r.Spec.NodeJS.Env); err != nil {
-		return warnings, err
-	}
-	if err := w.validateEnv(r.Spec.Python.Env); err != nil {
-		return warnings, err
-	}
-	if err := w.validateEnv(r.Spec.DotNet.Env); err != nil {
-		return warnings, err
-	}
-	if err := w.validateEnv(r.Spec.Go.Env); err != nil {
-		return warnings, err
-	}
-	if err := w.validateEnv(r.Spec.ApacheHttpd.Env); err != nil {
-		return warnings, err
-	}
-	if err := w.validateEnv(r.Spec.Nginx.Env); err != nil {
-		return warnings, err
-	}
 	return warnings, nil
-}
-
-func (w InstrumentationWebhook) validateEnv(envs []corev1.EnvVar) error {
-	for _, env := range envs {
-		if !strings.HasPrefix(env.Name, envPrefix) && !strings.HasPrefix(env.Name, envSplunkPrefix) {
-			return fmt.Errorf("env name should start with \"OTEL_\" or \"SPLUNK_\": %s", env.Name)
-		}
-	}
-	return nil
 }
 
 func validateJaegerRemoteSamplerArgument(argument string) error {

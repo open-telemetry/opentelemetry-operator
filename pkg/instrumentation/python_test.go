@@ -58,7 +58,7 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -134,7 +134,7 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -211,7 +211,7 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -287,7 +287,7 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",

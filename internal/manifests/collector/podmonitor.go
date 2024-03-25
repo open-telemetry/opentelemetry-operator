@@ -15,7 +15,6 @@
 package collector
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -25,10 +24,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// ServiceMonitor returns the service monitor for the given instance.
+// PodMonitor returns the pod monitor for the given instance.
 func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		params.Log.V(2).Info("Metrics disabled for this OTEL Collector",
@@ -42,16 +42,14 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	if params.OtelCol.Spec.Mode != v1beta1.ModeSidecar {
 		return nil, nil
 	}
-
+	name := naming.PodMonitor(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, nil)
+	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	pm = monitoringv1.PodMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: params.OtelCol.Namespace,
-			Name:      naming.PodMonitor(params.OtelCol.Name),
-			Labels: map[string]string{
-				"app.kubernetes.io/name":       naming.PodMonitor(params.OtelCol.Name),
-				"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			},
+			Name:      name,
+			Labels:    labels,
 		},
 		Spec: monitoringv1.PodMonitorSpec{
 			JobLabel:        "app.kubernetes.io/instance",
@@ -60,10 +58,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
 			Selector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
-				},
+				MatchLabels: selectorLabels,
 			},
 			PodMetricsEndpoints: append(
 				[]monitoringv1.PodMetricsEndpoint{

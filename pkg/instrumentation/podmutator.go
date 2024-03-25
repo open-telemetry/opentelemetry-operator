@@ -253,7 +253,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnablePythonAutoInstrumentation() || inst == nil {
 		insts.Python.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Python auto instrumentation is not enabled")
