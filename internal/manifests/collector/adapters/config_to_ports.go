@@ -100,7 +100,7 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 		}
 
 		if err != nil {
-			logger.V(2).Info("no parser found for '%s'", cmptName)
+			logger.V(2).Info("no parser found for", "component", cmptName)
 			continue
 		}
 

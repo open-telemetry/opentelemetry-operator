@@ -52,7 +52,7 @@ func ConfigToRBAC(logger logr.Logger, config map[interface{}]interface{}) []rbac
 		processorName := key.(string)
 		processorParser, err := processor.For(logger, processorName, processorCfg)
 		if err != nil {
-			logger.V(2).Info("no parser found for '%s'", processorName)
+			logger.V(2).Info("no parser found for", "processor", processorName)
 			continue
 		}
 
