@@ -49,3 +49,19 @@ updates:
     directory: /cmd/operator-opamp-bridge
     schedule:
       interval: weekly
+
+  - package-ecosystem: npm
+    directory: /autoinstrumentation/nodejs
+    versioning-strategy: increase
+    schedule:
+      interval: "weekly"
+    groups:
+      js-patch:
+        update-types:
+        - "patch"
+      js-minor:
+        update-types:
+        - "minor"
+      js-major:
+        update-types:
+        - "major"
