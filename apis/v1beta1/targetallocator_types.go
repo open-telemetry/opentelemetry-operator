@@ -63,7 +63,9 @@ type TargetAllocatorSpec struct {
 	// CollectorSelector is the selector for Collector Pods the target allocator will allocate targets to.
 	CollectorSelector metav1.LabelSelector `json:"collectorSelector,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
-	// The current options are least-weighted and consistent-hashing. The default option is consistent-hashing
+	// The current options are least-weighted, consistent-hashing and per-node. The default is
+	// consistent-hashing.
+	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
 	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
