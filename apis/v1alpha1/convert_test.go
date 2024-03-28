@@ -177,11 +177,12 @@ func Test_tov1beta1AndBack(t *testing.T) {
 					Name: "aaa",
 				},
 			},
-			Ports: []v1.ServicePort{
-				{
+			Ports: []PortsSpec{{
+				ServicePort: v1.ServicePort{
 					Name: "otlp",
 				},
-			},
+				HostPort: 0,
+			}},
 			Env: []v1.EnvVar{
 				{
 					Name:  "foo",

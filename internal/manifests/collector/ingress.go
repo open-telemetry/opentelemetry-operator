@@ -161,7 +161,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 		// in the first case, we remove the port we inferred from the list
 		// in the second case, we rename our inferred port to something like "port-%d"
 		portNumbers, portNames := extractPortNumbersAndNames(otelcol.Spec.Ports)
-		var resultingInferredPorts []corev1.ServicePort
+		var resultingInferredPorts []v1beta1.PortsSpec
 		for _, inferred := range ports {
 			if filtered := filterPort(logger, inferred, portNumbers, portNames); filtered != nil {
 				resultingInferredPorts = append(resultingInferredPorts, *filtered)
@@ -169,5 +169,11 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 		}
 		ports = append(otelcol.Spec.Ports, resultingInferredPorts...)
 	}
-	return ports, err
+
+	svcPorts := []corev1.ServicePort{}
+	for _, p := range ports {
+		svcPorts = append(svcPorts, p.ServicePort)
+	}
+
+	return svcPorts, err
 }
