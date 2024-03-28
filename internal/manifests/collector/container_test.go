@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -58,7 +57,7 @@ func TestContainerNewDefault(t *testing.T) {
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Ports: []v1beta1.PortsSpec{
 					{
-						ServicePort: v1.ServicePort{
+						ServicePort: corev1.ServicePort{
 							Name:     "metrics",
 							Port:     8888,
 							Protocol: corev1.ProtocolTCP,
@@ -120,7 +119,7 @@ service:
 			specConfig:  "",
 			specPorts: []v1beta1.PortsSpec{
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
 						Port:     8888,
 						Protocol: corev1.ProtocolTCP,
@@ -145,14 +144,14 @@ service:
 			description: "ports in spec ContainerPorts",
 			specPorts: []v1beta1.PortsSpec{
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
 						Port:     8888,
 						Protocol: corev1.ProtocolTCP,
 					},
 				},
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name: "testport1",
 						Port: 12345,
 					},
@@ -171,13 +170,13 @@ service:
 			specConfig:  goodConfig,
 			specPorts: []v1beta1.PortsSpec{
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name: "testport1",
 						Port: 12345,
 					},
 				},
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name:     "testport2",
 						Port:     54321,
 						Protocol: corev1.ProtocolUDP,
@@ -206,13 +205,13 @@ service:
 			specConfig:  goodConfig,
 			specPorts: []v1beta1.PortsSpec{
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name: "testport1",
 						Port: 12345,
 					},
 				},
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name: "testport1",
 						Port: 11111,
 					},
@@ -244,14 +243,14 @@ service:
 `,
 			specPorts: []v1beta1.PortsSpec{
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
 						Port:     8888,
 						Protocol: corev1.ProtocolTCP,
 					},
 				},
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name: "prometheus",
 						Port: 9090,
 					},
@@ -284,20 +283,20 @@ service:
 `,
 			specPorts: []v1beta1.PortsSpec{
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
 						Port:     8888,
 						Protocol: corev1.ProtocolTCP,
 					},
 				},
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name: "prometheus-dev",
 						Port: 9091,
 					},
 				},
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name: "prometheus-prod",
 						Port: 9090,
 					},
@@ -322,7 +321,7 @@ service:
         endpoint: http://prometheus-server.monitoring/api/v1/write`,
 			specPorts: []v1beta1.PortsSpec{
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
 						Port:     8888,
 						Protocol: corev1.ProtocolTCP,
@@ -348,20 +347,20 @@ service:
       exporters: [prometheus/prod, prometheus/dev, prometheusremotewrite/prometheus, debug]`,
 			specPorts: []v1beta1.PortsSpec{
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
 						Port:     8888,
 						Protocol: corev1.ProtocolTCP,
 					},
 				},
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name: "prometheus-dev",
 						Port: 9091,
 					},
 				},
 				{
-					ServicePort: v1.ServicePort{
+					ServicePort: corev1.ServicePort{
 						Name: "prometheus-prod",
 						Port: 9090,
 					},
