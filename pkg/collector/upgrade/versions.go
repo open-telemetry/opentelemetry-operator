@@ -18,17 +18,12 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-// Deprecated use upgradeFuncV1beta1.
 type upgradeFunc func(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error)
-type upgradeFuncV1beta1 func(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error)
 
 type otelcolVersion struct {
-	// deprecated use upgradeV1beta1.
-	upgrade        upgradeFunc
-	upgradeV1beta1 upgradeFuncV1beta1
+	upgrade upgradeFunc
 	semver.Version
 }
 

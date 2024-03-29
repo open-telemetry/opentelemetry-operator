@@ -3,10 +3,3 @@ receivers:
   jaeger:
     protocols:
       grpc:
-exporters:
-  debug: {}
-service:
-  pipelines:
-    traces:
-      receivers: ["jaeger"]
-      exporters: ["debug"]

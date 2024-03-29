@@ -42,29 +42,26 @@ func Test0_39_0Upgrade(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Config: `
 receivers:
-  httpd/mtls:
-    protocols:
-      http:
-        endpoint: mysite.local:55690
+ httpd/mtls:
+   protocols:
+     http:
+       endpoint: mysite.local:55690
 
-  httpd:
+ httpd:
 
 processors:
-  memory_limiter:
-  memory_limiter/with-settings:
-    check_interval: 5s
-    limit_mib: 4000
-    spike_limit_mib: 500
-    ballast_size_mib: 2000
-
-exporters:
-  debug: {}
+ memory_limiter:
+ memory_limiter/with-settings:
+   check_interval: 5s
+   limit_mib: 4000
+   spike_limit_mib: 500
+   ballast_size_mib: 2000
 
 service:
-  pipelines:
-    metrics:
-      receivers: [httpd/mtls, httpd]
-      exporters: [debug]
+ pipelines:
+   metrics:
+     receivers: [httpd/mtls, httpd]
+     exporters: [nop]
 `,
 		},
 	}
@@ -78,11 +75,10 @@ service:
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	resV1beta1, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
-	res := convertTov1alpha1(t, resV1beta1)
 
-	assert.YAMLEq(t, `processors:
+	assert.Equal(t, `processors:
   memory_limiter:
   memory_limiter/with-settings:
     check_interval: 5s
@@ -94,13 +90,11 @@ receivers:
     protocols:
       http:
         endpoint: mysite.local:55690
-exporters:
-  debug: {}
 service:
   pipelines:
     metrics:
       exporters:
-      - debug
+      - nop
       receivers:
       - apache/mtls
       - apache
@@ -125,25 +119,21 @@ processors:
     spike_limit_mib: 500
     ballast_size_mib: 2000
 
-exporters:
-  debug: {}
-
 service:
   pipelines:
     traces:
       receivers: [otlp/mtls, otlp]
-      exporters: [debug]
+      exporters: [nop]
 `,
 		},
 	}
 
 	existing1.Status.Version = "0.38.0"
-	resV1beta1, err = up.ManagedInstance(context.Background(), convertTov1beta1(t, existing1))
+	res, err = up.ManagedInstance(context.Background(), existing1)
 	assert.NoError(t, err)
-	res = convertTov1alpha1(t, resV1beta1)
 
 	// verify
-	assert.YAMLEq(t, `processors:
+	assert.Equal(t, `processors:
   memory_limiter:
   memory_limiter/with-settings:
     check_interval: 5s
@@ -155,15 +145,11 @@ receivers:
     protocols:
       http:
         endpoint: mysite.local:55690
-
-exporters:
-  debug: {}
-
 service:
   pipelines:
     traces:
       exporters:
-      - debug
+      - nop
       receivers:
       - otlp/mtls
       - otlp

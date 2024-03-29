@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +kubebuilder:skip
+
 package v1beta1
 
 import (
@@ -26,7 +28,6 @@ func init() {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelcol;otelcols
-// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"

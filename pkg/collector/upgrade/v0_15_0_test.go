@@ -61,7 +61,7 @@ func TestRemoveMetricsTypeFlags(t *testing.T) {
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	res, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
 
 	// verify

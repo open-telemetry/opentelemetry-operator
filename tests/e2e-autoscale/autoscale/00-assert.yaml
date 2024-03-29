@@ -20,7 +20,7 @@ spec:
   scaleTargetRef:
     kind: OpenTelemetryCollector
     name: simplest
-    apiVersion: opentelemetry.io/v1beta1
+    apiVersion: opentelemetry.io/v1alpha1
   minReplicas: 1
   maxReplicas: 2
   metrics:
@@ -57,7 +57,7 @@ spec:
   scaleTargetRef:
     kind: OpenTelemetryCollector
     name: simplest-set-utilization
-    apiVersion: opentelemetry.io/v1beta1
+    apiVersion: opentelemetry.io/v1alpha1
   minReplicas: 1
   maxReplicas: 2
   metrics:
