@@ -53,9 +53,10 @@ var (
 	// automatically be rewritten when the target allocator is enabled.
 	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.rewritetargetallocator",
-		featuregate.StageBeta,
+		featuregate.StageStable,
 		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"),
 		featuregate.WithRegisterFromVersion("v0.76.1"),
+		featuregate.WithRegisterToVersion("v0.98.0"),
 	)
 
 	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
