@@ -52,6 +52,14 @@ func (o *K8sAttributesParser) ParserName() string {
 func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 	var prs []rbacv1.PolicyRule
 
+	// This one needs to be added always
+	policy := rbacv1.PolicyRule{
+		APIGroups: []string{""},
+		Resources: []string{"pods", "namespaces"},
+		Verbs:     []string{"get", "watch", "list"},
+	}
+	prs = append(prs, policy)
+
 	extractCfg, ok := o.config["extract"]
 	if !ok {
 		return prs
@@ -66,14 +74,6 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 	if !ok {
 		return prs
 	}
-
-	// This one needs to be added always
-	policy := rbacv1.PolicyRule{
-		APIGroups: []string{""},
-		Resources: []string{"pods", "namespaces"},
-		Verbs:     []string{"get", "watch", "list"},
-	}
-	prs = append(prs, policy)
 
 	for _, m := range metadata {
 		metadataField := fmt.Sprint(m)
