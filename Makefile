@@ -267,6 +267,13 @@ generate: controller-gen
 e2e: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e
 
+# e2e-native-sidecar
+# NOTE: make sure the k8s featuregate "SidecarContainers" is set to true.
+# NOTE: make sure the operator featuregate "operator.sidecarcontainers.native" is enabled.
+.PHONY: e2e-native-sidecar
+e2e-native-sidecar: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-native-sidecar
+
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
 e2e-automatic-rbac: chainsaw

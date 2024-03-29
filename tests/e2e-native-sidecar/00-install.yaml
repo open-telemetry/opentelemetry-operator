@@ -1,0 +1,41 @@
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: a-sidecar
+spec:
+  mode: sidecar
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
+
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http: {}
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          exporters: [debug]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp
+  annotations:
+    sidecar.opentelemetry.io/inject: "true"
+spec:
+  containers:
+  - name: myapp
+    image: jaegertracing/vertx-create-span:operator-e2e-tests
+    ports:
+      - containerPort: 8080
+        protocol: TCP

@@ -25,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -47,7 +48,17 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCol
 		container.Env = append(container.Env, attributes...)
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, otelcol.Spec.InitContainers...)
-	pod.Spec.Containers = append(pod.Spec.Containers, container)
+
+	if featuregate.EnableNativeSidecarContainers.IsEnabled() {
+		policy := corev1.ContainerRestartPolicyAlways
+		container.RestartPolicy = &policy
+		// NOTE: Use ReadinessProbe as startup probe.
+		// See https://github.com/open-telemetry/opentelemetry-operator/pull/2801#discussion_r1547571121
+		container.StartupProbe = container.ReadinessProbe
+		pod.Spec.InitContainers = append(pod.Spec.InitContainers, container)
+	} else {
+		pod.Spec.Containers = append(pod.Spec.Containers, container)
+	}
 	pod.Spec.Volumes = append(pod.Spec.Volumes, otelcol.Spec.Volumes...)
 
 	if pod.Labels == nil {
@@ -71,12 +82,29 @@ func remove(pod corev1.Pod) corev1.Pod {
 		}
 	}
 	pod.Spec.Containers = containers
+
+	// NOTE: we also remove init containers (native sidecars) since k8s 1.28.
+	// This should have no side effects.
+	var initContainers []corev1.Container
+	for _, initContainer := range pod.Spec.InitContainers {
+		if initContainer.Name != naming.Container() {
+			initContainers = append(initContainers, initContainer)
+		}
+	}
+	pod.Spec.InitContainers = initContainers
 	return pod
 }
 
 // existsIn checks whether a sidecar container exists in the given pod.
 func existsIn(pod corev1.Pod) bool {
 	for _, container := range pod.Spec.Containers {
+		if container.Name == naming.Container() {
+			return true
+		}
+	}
+	// NOTE: we also check init containers (native sidecars) since k8s 1.28.
+	// This should have no side effects.
+	for _, container := range pod.Spec.InitContainers {
 		if container.Name == naming.Container() {
 			return true
 		}
