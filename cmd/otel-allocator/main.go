@@ -111,6 +111,17 @@ func main() {
 			setupLog.Error(err, "Can't start the prometheus watcher")
 			os.Exit(1)
 		}
+		// apply the initial configuration
+		promConfig, loadErr := promWatcher.LoadConfig(ctx)
+		if loadErr != nil {
+			setupLog.Error(err, "Can't load initial Prometheus configuration from Prometheus CRs")
+			os.Exit(1)
+		}
+		loadErr = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, promConfig.ScrapeConfigs)
+		if loadErr != nil {
+			setupLog.Error(err, "Can't load initial scrape targets from Prometheus CRs")
+			os.Exit(1)
+		}
 		runGroup.Add(
 			func() error {
 				promWatcherErr := promWatcher.Watch(eventChan, errChan)
