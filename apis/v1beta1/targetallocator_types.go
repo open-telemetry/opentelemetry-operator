@@ -78,6 +78,7 @@ type TargetAllocatorSpec struct {
 	// For the exact format, see https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
 	// +optional
 	// +listType=atomic
+	// +kubebuilder:pruning:PreserveUnknownFields
 	ScrapeConfigs []AnyConfig `json:"scrapeConfigs,omitempty"`
 	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 ).
 	// +optional
