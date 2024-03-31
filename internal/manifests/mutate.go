@@ -32,6 +32,8 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 var (
@@ -56,6 +58,7 @@ var (
 // - HorizontalPodAutoscaler
 // - Route
 // - Secret
+// - TargetAllocator
 // In order for the operator to reconcile other types, they must be added here.
 // The function returned takes no arguments but instead uses the existing and desired inputs here. Existing is expected
 // to be set by the controller-runtime package through a client get call.
@@ -177,6 +180,11 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			wantIssuer := desired.(*cmv1.Issuer)
 			mutateIssuer(issuer, wantIssuer)
 
+		case *v1alpha1.TargetAllocator:
+			ta := existing.(*v1alpha1.TargetAllocator)
+			wantTa := desired.(*v1alpha1.TargetAllocator)
+			mutateTargetAllocator(ta, wantTa)
+
 		default:
 			t := reflect.TypeOf(existing).String()
 			return fmt.Errorf("missing mutate implementation for resource type: %s", t)
@@ -265,6 +273,12 @@ func mutateServiceMonitor(existing, desired *monitoringv1.ServiceMonitor) {
 }
 
 func mutatePodMonitor(existing, desired *monitoringv1.PodMonitor) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
+}
+
+func mutateTargetAllocator(existing, desired *v1alpha1.TargetAllocator) {
 	existing.Annotations = desired.Annotations
 	existing.Labels = desired.Labels
 	existing.Spec = desired.Spec

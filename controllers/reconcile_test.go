@@ -22,7 +22,6 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
@@ -41,13 +40,13 @@ import (
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -496,10 +495,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							// Check the TA doesn't exist
-							exists, err = populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.TargetAllocator(params.Name), params.Namespace))
-							assert.NoError(t, err)
-							assert.False(t, exists)
-							exists, err = populateObjectIfExists(t, &appsv1.Deployment{}, namespacedObjectName(naming.TargetAllocator(params.Name), params.Namespace))
+							exists, err = populateObjectIfExists(t, &v1alpha1.TargetAllocator{}, namespacedObjectName(naming.TargetAllocator(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.False(t, exists)
 						},
@@ -516,34 +512,35 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.ConfigMap(params.Name, configHash), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							actual := v1.ConfigMap{}
-							exists, err = populateObjectIfExists(t, &appsv1.Deployment{}, namespacedObjectName(naming.TargetAllocator(params.Name), params.Namespace))
-							assert.NoError(t, err)
-							assert.True(t, exists)
-							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.TargetAllocator(params.Name), params.Namespace))
-							assert.NoError(t, err)
-							assert.True(t, exists)
-							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(naming.TargetAllocatorServiceAccount(params.Name), params.Namespace))
-							assert.NoError(t, err)
-							assert.True(t, exists)
-							promConfig, err := ta.ConfigToPromConfig(testCollectorAssertNoErr(t, "test-stateful-ta", baseTaImage, promFile).Spec.Config)
-							assert.NoError(t, err)
-
-							taConfig := make(map[interface{}]interface{})
-							taConfig["collector_selector"] = metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									"app.kubernetes.io/instance":   "default.test-stateful-ta",
-									"app.kubernetes.io/managed-by": "opentelemetry-operator",
-									"app.kubernetes.io/component":  "opentelemetry-collector",
-									"app.kubernetes.io/part-of":    "opentelemetry",
+							actual := v1alpha1.TargetAllocator{}
+							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(params.Name, params.Namespace))
+							require.NoError(t, err)
+							require.True(t, exists)
+							expected := v1alpha1.TargetAllocator{
+								ObjectMeta: metav1.ObjectMeta{
+									Name:      params.Name,
+									Namespace: params.Namespace,
+									Labels:    nil,
+								},
+								Spec: v1alpha1.TargetAllocatorSpec{
+									OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{},
+									AllocationStrategy:        "consistent-hashing",
+									FilterStrategy:            "relabel-config",
+									PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+										ScrapeInterval:         &metav1.Duration{Duration: time.Second * 30},
+										ServiceMonitorSelector: &metav1.LabelSelector{},
+										PodMonitorSelector:     &metav1.LabelSelector{},
+									},
 								},
 							}
-							taConfig["config"] = promConfig["config"]
-							taConfig["allocation_strategy"] = "consistent-hashing"
-							taConfig["filter_strategy"] = "relabel-config"
-							taConfigYAML, _ := yaml.Marshal(taConfig)
-							assert.Equal(t, string(taConfigYAML), actual.Data["targetallocator.yaml"])
-							assert.NotContains(t, actual.Data["targetallocator.yaml"], "0.0.0.0:10100")
+							assert.Equal(t, expected.Name, actual.Name)
+							assert.Equal(t, expected.Namespace, actual.Namespace)
+							assert.Equal(t, expected.Labels, actual.Labels)
+							assert.Equal(t, baseTaImage, actual.Spec.Image)
+							assert.Equal(t, expected.Spec.AllocationStrategy, actual.Spec.AllocationStrategy)
+							assert.Equal(t, expected.Spec.FilterStrategy, actual.Spec.FilterStrategy)
+							assert.Equal(t, expected.Spec.ScrapeConfigs, actual.Spec.ScrapeConfigs)
+
 						},
 					},
 					wantErr:     assert.NoError,
@@ -558,14 +555,11 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.ConfigMap(params.Name, configHash), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							actual := v1.ConfigMap{}
-							exists, err = populateObjectIfExists(t, &appsv1.Deployment{}, namespacedObjectName(naming.TargetAllocator(params.Name), params.Namespace))
-							assert.NoError(t, err)
-							assert.True(t, exists)
-							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.TargetAllocator(params.Name), params.Namespace))
-							assert.NoError(t, err)
-							assert.True(t, exists)
-							assert.Contains(t, actual.Data["targetallocator.yaml"], "0.0.0.0:10100")
+							actual := v1alpha1.TargetAllocator{}
+							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(params.Name, params.Namespace))
+							require.NoError(t, err)
+							require.True(t, exists)
+							assert.Nil(t, actual.Spec.ScrapeConfigs)
 						},
 					},
 					wantErr:     assert.NoError,
@@ -575,11 +569,11 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check[v1alpha1.OpenTelemetryCollector]{
 						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
-							actual := appsv1.Deployment{}
-							exists, err := populateObjectIfExists(t, &actual, namespacedObjectName(naming.TargetAllocator(params.Name), params.Namespace))
-							assert.NoError(t, err)
-							assert.True(t, exists)
-							assert.Equal(t, actual.Spec.Template.Spec.Containers[0].Image, updatedTaImage)
+							actual := v1alpha1.TargetAllocator{}
+							exists, err := populateObjectIfExists(t, &actual, namespacedObjectName(params.Name, params.Namespace))
+							require.NoError(t, err)
+							require.True(t, exists)
+							assert.Equal(t, actual.Spec.Image, updatedTaImage)
 						},
 					},
 					wantErr:     assert.NoError,

@@ -135,6 +135,7 @@ rules:
   - opentelemetry.io
   resources:
   - opampbridges
+  - targetallocators
   verbs:
   - create
   - delete
@@ -155,6 +156,7 @@ rules:
   - opampbridges/status
   - opentelemetrycollectors/finalizers
   - opentelemetrycollectors/status
+  - targetallocators/status
   verbs:
   - get
   - patch
