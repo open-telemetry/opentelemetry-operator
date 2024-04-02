@@ -43,19 +43,14 @@ var (
 		featuregate.WithRegisterDescription("controls whether the operator supports Golang auto-instrumentation"),
 		featuregate.WithRegisterFromVersion("v0.77.0"),
 	)
-	EnableNginxAutoInstrumentationSupport = featuregate.GlobalRegistry().MustRegister(
-		"operator.autoinstrumentation.nginx",
-		featuregate.StageAlpha,
-		featuregate.WithRegisterDescription("controls whether the operator supports Nginx auto-instrumentation"),
-		featuregate.WithRegisterFromVersion("v0.86.0"),
-	)
 	// EnableTargetAllocatorRewrite is the feature gate that controls whether the collector's configuration should
 	// automatically be rewritten when the target allocator is enabled.
 	EnableTargetAllocatorRewrite = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.rewritetargetallocator",
-		featuregate.StageBeta,
+		featuregate.StageStable,
 		featuregate.WithRegisterDescription("controls whether the operator should configure the collector's targetAllocator configuration"),
 		featuregate.WithRegisterFromVersion("v0.76.1"),
+		featuregate.WithRegisterToVersion("v0.98.0"),
 	)
 
 	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
