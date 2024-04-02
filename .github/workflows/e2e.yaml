@@ -34,6 +34,8 @@ jobs:
          - e2e-multi-instrumentation
          - e2e-metadata-filters
        include:
+         - group: e2e-autoscale
+           setup: "add-operator-arg OPERATOR_ARG=--enable-go-instrumentation prepare-e2e"
          - group: e2e-multi-instrumentation
            setup: "add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation prepare-e2e"
          - group: e2e-metadata-filters
@@ -53,7 +55,7 @@ jobs:
         path: bin
         key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
     - name: Install chainsaw
-      uses: kyverno/action-install-chainsaw@v0.1.8
+      uses: kyverno/action-install-chainsaw@v0.1.9
     - name: Install tools
       run: make install-tools
     - name: Prepare e2e tests

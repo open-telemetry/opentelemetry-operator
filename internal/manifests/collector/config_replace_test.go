@@ -18,56 +18,16 @@ import (
 	"os"
 	"testing"
 
-	"github.com/prometheus/prometheus/discovery/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"gopkg.in/yaml.v2"
 
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestPrometheusParser(t *testing.T) {
 	param, err := newParams("test/test-img", "testdata/http_sd_config_test.yaml")
 	assert.NoError(t, err)
-
-	t.Run("should update config with http_sd_config", func(t *testing.T) {
-		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
-		require.NoError(t, err)
-		t.Cleanup(func() {
-			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
-		})
-		actualConfig, err := ReplaceConfig(param.OtelCol)
-		assert.NoError(t, err)
-
-		// prepare
-		var cfg Config
-		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
-		assert.NoError(t, err)
-
-		promCfg, err := yaml.Marshal(promCfgMap)
-		assert.NoError(t, err)
-
-		err = yaml.UnmarshalStrict(promCfg, &cfg)
-		assert.NoError(t, err)
-
-		// test
-		expectedMap := map[string]bool{
-			"prometheus": false,
-			"service-x":  false,
-		}
-		for _, scrapeConfig := range cfg.PromConfig.ScrapeConfigs {
-			assert.Len(t, scrapeConfig.ServiceDiscoveryConfigs, 1)
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].Name(), "http")
-			assert.Equal(t, scrapeConfig.ServiceDiscoveryConfigs[0].(*http.SDConfig).URL, "http://test-targetallocator:80/jobs/"+scrapeConfig.JobName+"/targets?collector_id=$POD_NAME")
-			expectedMap[scrapeConfig.JobName] = true
-		}
-		for k := range expectedMap {
-			assert.True(t, expectedMap[k], k)
-		}
-		assert.True(t, cfg.TargetAllocConfig == nil)
-	})
 
 	t.Run("should update config with targetAllocator block if block not present", func(t *testing.T) {
 		// Set up the test scenario
@@ -171,26 +131,7 @@ func TestReplaceConfig(t *testing.T) {
 		assert.YAMLEq(t, expectedConfig, actualConfig)
 	})
 
-	t.Run("should rewrite scrape configs with SD config when TargetAllocator is enabled and feature flag is not set", func(t *testing.T) {
-		err := colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), false)
-		require.NoError(t, err)
-		t.Cleanup(func() {
-			_ = colfeaturegate.GlobalRegistry().Set(featuregate.EnableTargetAllocatorRewrite.ID(), true)
-		})
-
-		param.OtelCol.Spec.TargetAllocator.Enabled = true
-
-		expectedConfigBytes, err := os.ReadFile("testdata/relabel_config_expected_with_sd_config.yaml")
-		assert.NoError(t, err)
-		expectedConfig := string(expectedConfigBytes)
-
-		actualConfig, err := ReplaceConfig(param.OtelCol)
-		assert.NoError(t, err)
-
-		assert.YAMLEq(t, expectedConfig, actualConfig)
-	})
-
-	t.Run("should remove scrape configs if TargetAllocator is enabled and feature flag is set", func(t *testing.T) {
+	t.Run("should remove scrape configs if TargetAllocator is enabled", func(t *testing.T) {
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
 
 		expectedConfigBytes, err := os.ReadFile("testdata/config_expected_targetallocator.yaml")

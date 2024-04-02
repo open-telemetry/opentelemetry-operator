@@ -34,8 +34,6 @@ var (
 	defaultAnnotationToGate = map[string]*featuregate2.Gate{
 		constants.AnnotationDefaultAutoInstrumentationJava:   featuregate.EnableJavaAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNodeJS: featuregate.EnableNodeJSAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationPython: featuregate.EnablePythonAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationNginx:  featuregate.EnableNginxAutoInstrumentationSupport,
 	}
 )
 
@@ -63,6 +61,8 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationGo:          {constants.FlagGo, cfg.EnableGoAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
 	}
 
 	return &InstrumentationUpgrade{
@@ -137,6 +137,16 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
 						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
 					}
+				case constants.AnnotationDefaultAutoInstrumentationNginx:
+					if inst.Spec.Nginx.Image == autoInst {
+						upgraded.Spec.Nginx.Image = u.DefaultAutoInstNginx
+						upgraded.Annotations[annotation] = u.DefaultAutoInstNginx
+					}
+				case constants.AnnotationDefaultAutoInstrumentationPython:
+					if inst.Spec.Python.Image == autoInst {
+						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
+						upgraded.Annotations[annotation] = u.DefaultAutoInstPython
+					}
 				}
 			} else {
 				u.Logger.Error(nil, "autoinstrumentation not enabled for this language", "flag", config.id)
@@ -169,11 +179,6 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if inst.Spec.Go.Image == autoInst {
 						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
 						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
-					}
-				case constants.AnnotationDefaultAutoInstrumentationNginx:
-					if inst.Spec.Nginx.Image == autoInst {
-						upgraded.Spec.Nginx.Image = u.DefaultAutoInstNginx
-						upgraded.Annotations[annotation] = u.DefaultAutoInstNginx
 					}
 				}
 			} else {

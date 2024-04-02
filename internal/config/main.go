@@ -47,6 +47,8 @@ type Config struct {
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
 	enableGoInstrumentation             bool
+	enableNginxInstrumentation          bool
+	enablePythonInstrumentation         bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -84,6 +86,8 @@ func New(opts ...Option) Config {
 		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
 		enableGoInstrumentation:             o.enableGoInstrumentation,
+		enableNginxInstrumentation:          o.enableNginxInstrumentation,
+		enablePythonInstrumentation:         o.enablePythonInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -137,6 +141,16 @@ func (c *Config) EnableDotNetAutoInstrumentation() bool {
 // EnableGoAutoInstrumentation is true when the operator supports Go auto instrumentation.
 func (c *Config) EnableGoAutoInstrumentation() bool {
 	return c.enableGoInstrumentation
+}
+
+// EnableNginxAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+func (c *Config) EnableNginxAutoInstrumentation() bool {
+	return c.enableNginxInstrumentation
+}
+
+// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnablePythonAutoInstrumentation() bool {
+	return c.enablePythonInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
