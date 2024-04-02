@@ -5,7 +5,7 @@ change_type: enhancement
 component: instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Add node and pod ips as env vars automatically
+note: Instrumentation now automatically add node and pod ips as env vars `OTEL_NODE_IP` and `OTEL_POD_IP` to instrumented containers.
 
 # One or more tracking issues related to the change
 issues: [2769]
