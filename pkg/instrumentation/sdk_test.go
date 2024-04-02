@@ -1968,3 +1968,103 @@ func TestParentResourceLabels(t *testing.T) {
 		})
 	}
 }
+
+func TestChooseServiceName(t *testing.T) {
+	tests := []struct {
+		name                string
+		resources           map[string]string
+		index               int
+		expectedServiceName string
+	}{
+		{
+			name:                "first container",
+			resources:           map[string]string{},
+			index:               0,
+			expectedServiceName: "1st",
+		},
+		{
+			name:                "second container",
+			resources:           map[string]string{},
+			index:               1,
+			expectedServiceName: "2nd",
+		},
+		{
+			name: "from pod",
+			resources: map[string]string{
+				string(semconv.K8SPodNameKey): "my-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-pod",
+		},
+		{
+			name: "from replicaset",
+			resources: map[string]string{
+				string(semconv.K8SReplicaSetNameKey): "my-rs",
+				string(semconv.K8SPodNameKey):        "my-rs-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-rs",
+		},
+		{
+			name: "from deployment",
+			resources: map[string]string{
+				string(semconv.K8SDeploymentNameKey): "my-deploy",
+				string(semconv.K8SReplicaSetNameKey): "my-deploy-rs",
+				string(semconv.K8SPodNameKey):        "my-deploy-rs-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-deploy",
+		},
+		{
+			name: "from cronjob",
+			resources: map[string]string{
+				string(semconv.K8SCronJobNameKey): "my-cronjob",
+				string(semconv.K8SJobNameKey):     "my-cronjob-job",
+				string(semconv.K8SPodNameKey):     "my-cronjob-job-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-cronjob",
+		},
+		{
+			name: "from job",
+			resources: map[string]string{
+				string(semconv.K8SJobNameKey): "my-job",
+				string(semconv.K8SPodNameKey): "my-job-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-job",
+		},
+		{
+			name: "from statefulset",
+			resources: map[string]string{
+				string(semconv.K8SStatefulSetNameKey): "my-statefulset",
+				string(semconv.K8SPodNameKey):         "my-statefulset-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-statefulset",
+		},
+		{
+			name: "from daemonset",
+			resources: map[string]string{
+				string(semconv.K8SDaemonSetNameKey): "my-daemonset",
+				string(semconv.K8SPodNameKey):       "my-daemonset-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-daemonset",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			serviceName := chooseServiceName(corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "1st"},
+						{Name: "2nd"},
+					},
+				},
+			}, test.resources, test.index)
+
+			assert.Equal(t, test.expectedServiceName, serviceName)
+		})
+	}
+}
