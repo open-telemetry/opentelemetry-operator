@@ -6,10 +6,3 @@ receivers:
     remote_sampling:
       strategy_file: "/etc/strategy.json"
       strategy_file_reload_interval: 10s
-exporters:
-  debug: {}
-service:
-  pipelines:
-    traces:
-      receivers: ["jaeger"]
-      exporters: ["debug"]

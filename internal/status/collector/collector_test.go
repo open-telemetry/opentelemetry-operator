@@ -25,20 +25,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
 func TestUpdateCollectorStatusUnsupported(t *testing.T) {
 	ctx := context.TODO()
 	cli := client.Client(fake.NewFakeClient())
 
-	changed := &v1beta1.OpenTelemetryCollector{
+	changed := &v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-sidecar",
 			Namespace: "default",
 		},
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Mode: v1beta1.ModeSidecar,
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: v1alpha1.ModeSidecar,
 		},
 	}
 
@@ -79,13 +79,13 @@ func TestUpdateCollectorStatusDeploymentMode(t *testing.T) {
 	ctx := context.TODO()
 	cli := createMockKubernetesClientDeployment()
 
-	changed := &v1beta1.OpenTelemetryCollector{
+	changed := &v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-deployment",
 			Namespace: "default",
 		},
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Mode: v1beta1.ModeDeployment,
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: v1alpha1.ModeDeployment,
 		},
 	}
 
@@ -127,13 +127,13 @@ func TestUpdateCollectorStatusStatefulset(t *testing.T) {
 	ctx := context.TODO()
 	cli := createMockKubernetesClientStatefulset()
 
-	changed := &v1beta1.OpenTelemetryCollector{
+	changed := &v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-statefulset",
 			Namespace: "default",
 		},
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Mode: v1beta1.ModeStatefulSet,
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: v1alpha1.ModeStatefulSet,
 		},
 	}
 
@@ -171,7 +171,7 @@ func TestUpdateCollectorStatusDaemonsetMode(t *testing.T) {
 	ctx := context.TODO()
 	cli := createMockKubernetesClientDaemonset()
 
-	changed := &v1beta1.OpenTelemetryCollector{
+	changed := &v1alpha1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-daemonset",
 			Namespace: "default",
@@ -179,8 +179,8 @@ func TestUpdateCollectorStatusDaemonsetMode(t *testing.T) {
 				"customLabel": "customValue",
 			},
 		},
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Mode: v1beta1.ModeDaemonSet,
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Mode: v1alpha1.ModeDaemonSet,
 		},
 	}
 
