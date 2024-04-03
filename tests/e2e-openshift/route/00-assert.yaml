@@ -16,7 +16,7 @@ metadata:
     app.kubernetes.io/name: otlp-grpc-simplest-route
   name: otlp-grpc-simplest-route
   ownerReferences:
-  - apiVersion: opentelemetry.io/v1beta1
+  - apiVersion: opentelemetry.io/v1alpha1
     blockOwnerDeletion: true
     controller: true
     kind: OpenTelemetryCollector
@@ -39,7 +39,7 @@ metadata:
     app.kubernetes.io/name: otlp-http-simplest-route
   name: otlp-http-simplest-route
   ownerReferences:
-    - apiVersion: opentelemetry.io/v1beta1
+    - apiVersion: opentelemetry.io/v1alpha1
       blockOwnerDeletion: true
       controller: true
       kind: OpenTelemetryCollector

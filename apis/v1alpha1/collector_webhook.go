@@ -451,7 +451,7 @@ func warningsGroupedByResource(reviews []*v1.SubjectAccessReview) []string {
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer) error {
 	cvw := &CollectorWebhook{
 		reviewer: reviewer,
-		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1alpha1"),
+		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook"),
 		scheme:   mgr.GetScheme(),
 		cfg:      cfg,
 	}
