@@ -31,6 +31,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -398,16 +399,19 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) s
 	if name := resources[string(semconv.K8SDeploymentNameKey)]; name != "" {
 		return name
 	}
+	if name := resources[string(semconv.K8SReplicaSetNameKey)]; name != "" {
+		return name
+	}
 	if name := resources[string(semconv.K8SStatefulSetNameKey)]; name != "" {
 		return name
 	}
 	if name := resources[string(semconv.K8SDaemonSetNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[string(semconv.K8SJobNameKey)]; name != "" {
+	if name := resources[string(semconv.K8SCronJobNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[string(semconv.K8SCronJobNameKey)]; name != "" {
+	if name := resources[string(semconv.K8SJobNameKey)]; name != "" {
 		return name
 	}
 	if name := resources[string(semconv.K8SPodNameKey)]; name != "" {
@@ -526,6 +530,26 @@ func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns 
 			if uid {
 				resources[semconv.K8SJobUIDKey] = string(owner.UID)
 			}
+
+			// parent of Job can be CronJob which we are interested to know
+			j := batchv1.Job{}
+			nsn := types.NamespacedName{Namespace: ns.Name, Name: owner.Name}
+			backOff := wait.Backoff{Duration: 10 * time.Millisecond, Factor: 1.5, Jitter: 0.1, Steps: 20, Cap: 2 * time.Second}
+
+			checkError := func(err error) bool {
+				return apierrors.IsNotFound(err)
+			}
+
+			getJob := func() error {
+				return i.client.Get(ctx, nsn, &j)
+			}
+
+			// use a retry loop to get the Job. A single call to client.get fails occasionally
+			err := retry.OnError(backOff, checkError, getJob)
+			if err != nil {
+				i.logger.Error(err, "failed to get job", "job", nsn.Name, "namespace", nsn.Namespace)
+			}
+			i.addParentResourceLabels(ctx, uid, ns, j.ObjectMeta, resources)
 		case "cronjob":
 			resources[semconv.K8SCronJobNameKey] = owner.Name
 			if uid {

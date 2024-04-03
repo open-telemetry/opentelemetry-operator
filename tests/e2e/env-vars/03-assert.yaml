@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-sdk: "true"
+    sidecar.opentelemetry.io/inject: "true"
+  labels:
+    job-name: my-job
+  ownerReferences:
+    - apiVersion: batch/v1
+      kind: Job
+      name: my-job
+spec:
+  (containers[?name == 'myapp']):
+    - name: myapp
+      env:
+        - name: OTEL_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: OTEL_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: OTEL_SERVICE_NAME
+          value: my-job
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value:
+            ( contains(@, 'k8s.container.name=myapp') ): true
+            ( contains(@, 'k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)') ): true
+            ( contains(@, 'k8s.job.name=my-job') ): true
+            ( contains(@, concat('k8s.namespace.name=', $namespace)) ): true
+            ( contains(@, 'k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME)') ): true
+            ( contains(@, 'service.version=main') ): true
