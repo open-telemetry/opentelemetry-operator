@@ -14,6 +14,16 @@ spec:
   (containers[?name == 'myapp']):
     - name: myapp
       env:
+        - name: OTEL_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: OTEL_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
         - name: OTEL_SERVICE_NAME
           value: my-cron-job
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
