@@ -48,6 +48,8 @@ import (
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -76,15 +78,6 @@ func init() {
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
-	// accept errors for the following custom resources:
-	err := monitoringv1.AddToScheme(scheme)
-	if err != nil {
-		setupLog.Error(err, "failed to add prometheus CRDs")
-	}
-	err = routev1.Install(scheme)
-	if err != nil {
-		setupLog.Error(err, "failed to add openshift CRDs")
-	}
 }
 
 // stringFlagOrEnv defines a string flag which can be set by an environment variable.
@@ -228,6 +221,13 @@ func main() {
 	err = cfg.AutoDetect()
 	if err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
+	}
+	// Only add these to the scheme if they are available
+	if cfg.PrometheusCRAvailability() == prometheus.Available {
+		utilruntime.Must(monitoringv1.AddToScheme(scheme))
+	}
+	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+		utilruntime.Must(routev1.Install(scheme))
 	}
 
 	var namespaces map[string]cache.Config

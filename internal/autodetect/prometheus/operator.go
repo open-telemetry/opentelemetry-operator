@@ -14,7 +14,7 @@
 
 package prometheus
 
-// Availability represents what CRDs are available from the prometheus operator
+// Availability represents what CRDs are available from the prometheus operator.
 type Availability int
 
 const (
