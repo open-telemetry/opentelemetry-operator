@@ -119,6 +119,7 @@ func main() {
 		enableNginxInstrumentation       bool
 		enableNodeJSInstrumentation      bool
 		enableJavaInstrumentation        bool
+		enableCRMetrics                  bool
 		collectorImage                   string
 		targetAllocatorImage             string
 		operatorOpAMPBridgeImage         string
@@ -154,6 +155,8 @@ func main() {
 	pflag.BoolVar(&enableNginxInstrumentation, constants.FlagNginx, false, "Controls whether the operator supports nginx auto-instrumentation")
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
+	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether the CR metrics is enabled")
+
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&operatorOpAMPBridgeImage, "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:%s", v.OperatorOpAMPBridge), "The default OpenTelemetry Operator OpAMP Bridge image. This image is used when no image is specified in the CustomResource.")
@@ -334,6 +337,13 @@ func main() {
 			}
 		}
 	}
+
+	if enableCRMetrics {
+		if metricsErr := otelv1beta1.BootstrapMetrics(); metricsErr != nil {
+			setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
+		}
+	}
+
 	if cfg.LabelsFilter() != nil {
 		for _, basePattern := range cfg.LabelsFilter() {
 			_, compileErr := regexp.Compile(basePattern)

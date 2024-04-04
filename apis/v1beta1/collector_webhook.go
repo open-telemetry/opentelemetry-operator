@@ -166,15 +166,48 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 	if !ok {
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
 	}
-	return c.validate(ctx, otelcol)
+
+	warnings, err := c.validate(ctx, otelcol)
+	if err != nil {
+		return warnings, err
+	}
+
+	err = IncCounters(ctx, otelcol)
+	if err != nil {
+		return warnings, err
+	}
+
+	return warnings, nil
 }
 
-func (c CollectorWebhook) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
+func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	otelcol, ok := newObj.(*OpenTelemetryCollector)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", newObj)
 	}
-	return c.validate(ctx, otelcol)
+
+	otelcolOld, ok := oldObj.(*OpenTelemetryCollector)
+	if !ok {
+		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", oldObj)
+	}
+
+	warnings, err := c.validate(ctx, otelcol)
+	if err != nil {
+		return warnings, err
+	}
+
+	// Decrease all metrics related to old CR
+	err = DecCounters(ctx, otelcolOld)
+	if err != nil {
+		return warnings, err
+	}
+
+	// Increase all metrics related to new CR
+	err = IncCounters(ctx, otelcolOld)
+	if err != nil {
+		return warnings, err
+	}
+	return warnings, nil
 }
 
 func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
@@ -182,7 +215,17 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object
 	if !ok || otelcol == nil {
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
 	}
-	return c.validate(ctx, otelcol)
+
+	warnings, err := c.validate(ctx, otelcol)
+	if err != nil {
+		return warnings, err
+	}
+	err = DecCounters(ctx, otelcol)
+	if err != nil {
+		return warnings, err
+	}
+
+	return warnings, nil
 }
 
 func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollector) (admission.Warnings, error) {
