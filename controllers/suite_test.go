@@ -54,6 +54,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
@@ -92,6 +93,14 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
+	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
+}
+
+func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
+	if m.PrometheusCRsAvailabilityFunc != nil {
+		return m.PrometheusCRsAvailabilityFunc()
+	}
+	return prometheus.NotAvailable, nil
 }
 
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {

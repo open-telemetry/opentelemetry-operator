@@ -74,10 +74,17 @@ type tlsConfig struct {
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(routev1.AddToScheme(scheme))
-	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+	// accept errors for the following custom resources:
+	err := monitoringv1.AddToScheme(scheme)
+	if err != nil {
+		setupLog.Error(err, "failed to add prometheus CRDs")
+	}
+	err = routev1.Install(scheme)
+	if err != nil {
+		setupLog.Error(err, "failed to add openshift CRDs")
+	}
 }
 
 // stringFlagOrEnv defines a string flag which can be set by an environment variable.

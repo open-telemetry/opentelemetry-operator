@@ -19,6 +19,8 @@ import (
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 
 	"github.com/stretchr/testify/assert"
@@ -71,4 +73,14 @@ func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
 		"app.kubernetes.io/component":  "opentelemetry-collector",
 	}
 	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
+}
+
+func TestDesiredPodMonitorsPrometheusNotAvailable(t *testing.T) {
+	params, err := newParams("", "testdata/prometheus-exporter.yaml", config.WithPrometheusCRAvailability(prometheus.NotAvailable))
+	assert.NoError(t, err)
+	params.OtelCol.Spec.Mode = v1beta1.ModeSidecar
+	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
+	actual, err := PodMonitor(params)
+	assert.NoError(t, err)
+	assert.Nil(t, actual)
 }

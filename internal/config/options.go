@@ -22,6 +22,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -52,6 +53,7 @@ type options struct {
 	targetAllocatorImage                string
 	operatorOpAMPBridgeImage            string
 	openshiftRoutesAvailability         openshift.RoutesAvailability
+	prometheusCRAvailability            prometheus.Availability
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }
@@ -177,6 +179,12 @@ func WithAutoInstrumentationNginxImage(s string) Option {
 func WithOpenShiftRoutesAvailability(os openshift.RoutesAvailability) Option {
 	return func(o *options) {
 		o.openshiftRoutesAvailability = os
+	}
+}
+
+func WithPrometheusCRAvailability(pcrd prometheus.Availability) Option {
+	return func(o *options) {
+		o.prometheusCRAvailability = pcrd
 	}
 }
 

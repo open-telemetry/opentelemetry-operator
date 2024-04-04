@@ -22,6 +22,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -31,12 +32,14 @@ func TestNewConfig(t *testing.T) {
 		config.WithCollectorImage("some-image"),
 		config.WithCollectorConfigMapEntry("some-config.yaml"),
 		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
+		config.WithPrometheusCRAvailability(prometheus.Available),
 	)
 
 	// test
 	assert.Equal(t, "some-image", cfg.CollectorImage())
 	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry())
 	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability())
+	assert.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability())
 }
 
 func TestConfigChangesOnAutoDetect(t *testing.T) {
@@ -45,6 +48,9 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		OpenShiftRoutesAvailabilityFunc: func() (openshift.RoutesAvailability, error) {
 			return openshift.RoutesAvailable, nil
 		},
+		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
+			return prometheus.Available, nil
+		},
 	}
 	cfg := config.New(
 		config.WithAutoDetect(mock),
@@ -52,6 +58,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 
 	// sanity check
 	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability())
+	require.Equal(t, prometheus.NotAvailable, cfg.PrometheusCRAvailability())
 
 	// test
 	err := cfg.AutoDetect()
@@ -59,12 +66,14 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 
 	// verify
 	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability())
+	require.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability())
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
+	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
 }
 
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
@@ -72,4 +81,11 @@ func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailabi
 		return m.OpenShiftRoutesAvailabilityFunc()
 	}
 	return openshift.RoutesNotAvailable, nil
+}
+
+func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
+	if m.PrometheusCRsAvailabilityFunc != nil {
+		return m.PrometheusCRsAvailabilityFunc()
+	}
+	return prometheus.NotAvailable, nil
 }
