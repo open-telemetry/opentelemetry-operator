@@ -18,14 +18,15 @@ package podmutation
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"slices"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"slices"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
