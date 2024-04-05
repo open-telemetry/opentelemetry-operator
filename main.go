@@ -224,10 +224,16 @@ func main() {
 	}
 	// Only add these to the scheme if they are available
 	if cfg.PrometheusCRAvailability() == prometheus.Available {
+		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
+	} else {
+		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
 	}
 	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
 		utilruntime.Must(routev1.Install(scheme))
+	} else {
+		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
 	}
 
 	var namespaces map[string]cache.Config

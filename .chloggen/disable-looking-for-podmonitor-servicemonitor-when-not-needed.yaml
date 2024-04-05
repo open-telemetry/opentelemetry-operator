@@ -5,7 +5,7 @@ change_type: bug_fix
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: resolves a problem for trying to use a scheme that isn't present.
+note: Introduces ability to detect presence of Prometheus CRDs to dynamically add to scheme to prevent startup issues.
 
 # One or more tracking issues related to the change
 issues: [2180]
