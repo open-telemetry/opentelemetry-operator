@@ -44,7 +44,7 @@ func HorizontalPodAutoscaler(params manifests.Params) (*autoscalingv2.Horizontal
 
 	// defaulting webhook should always set this, but if unset then return nil.
 	if params.OtelCol.Spec.Autoscaler == nil {
-		params.Log.Info("hpa field is unset in Spec, skipping autoscaler creation")
+		params.Log.V(4).Info("hpa field is unset in Spec, skipping autoscaler creation")
 		return nil, nil
 	}
 
