@@ -8,6 +8,21 @@ We gratefully welcome improvements to documentation as well as to code.
 
 ## Getting Started
 
+### Pre-requisites
+
+* [Go](https://golang.org/doc/install).
+* Docker version 23.0.0 or greater.
+
+### Local development cheat sheet
+
+* `make test` to run unit tests
+* `make lint` to run linters
+* `make fmt` to format Go code
+* `make vet` to run `go vet`
+* `make generate` to generate code and manifests based on Go struct definitions for CRDs.
+
+`make precommit` includes all of the above.
+
 ### Workflow
 
 It is recommended to follow the ["GitHub Workflow"](https://guides.github.com/introduction/flow/). When using [GitHub's CLI](https://github.com/cli/cli), here's how it typically looks like:
@@ -36,13 +51,6 @@ The following `make` target is run on CI to verify the project structure:
 make ensure-generate-is-noop
 ```
 
-### Pre-requisites
-* Install [Go](https://golang.org/doc/install).
-* Install [Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/).
-* Install [Operator SDK](https://sdk.operatorframework.io/docs/installation/).
-* Have a Kubernetes cluster ready for development. We recommend `minikube` or `kind`.
-* Docker version 23.0.0 or greater.
-
 ### Adding new components - webhook, API
 
 The repository structure MUST be compliant with `operator-sdk` scaffolding, which uses `kubebuilder` behind the scenes. This is to ensure a valid bundle generation and it makes it easy to maintain the project and add new components.
@@ -52,6 +60,7 @@ Refer to the [Operator SDK documentation](https://sdk.operatorframework.io/docs/
 ### Local run
 
 Build the manifests, install the CRD and run the operator as a local process:
+
 ```bash
 make install run
 ```
@@ -98,13 +107,6 @@ kubectl create secret docker-registry regcred --docker-server=<registry> --docke
 
 ## Testing
 
-With an existing cluster (such as `minikube`), run:
-```bash
-USE_EXISTING_CLUSTER=true make test
-```
-
-Tests can also be run without an existing cluster. For that, install [`kubebuilder`](https://book.kubebuilder.io/quick-start.html#installation). In this case, the tests will bootstrap `etcd` and `kubernetes-api-server` for the tests. Run against an existing cluster whenever possible, though.
-
 ### Unit tests
 
 Some unit tests use [envtest](https://book.kubebuilder.io/reference/envtest.html) which requires Kubernetes binaries (e.g. `api-server`, `etcd` and `kubectl`) to be present on the host filesystem. Makefile takes care of installing all dependent binaries, however running the tests from IDE or via `go test` might not work out-of-the-box. The `envtest` uses env variable `KUBEBUILDER_ASSETS` that points to a directory with these binaries. To make the test work in IDE or `go test` the environment variable has to be correctly set.
@@ -118,20 +120,20 @@ KUBEBUILDER_ASSETS=$(./bin/setup-envtest use -p path 1.23) go test ./pkg...
 
 ### End to end tests
 
-To run the end-to-end tests, you'll need [`kind`](https://kind.sigs.k8s.io) and [`chainsaw`](https://kyverno.github.io/chainsaw). Refer to their documentation for installation instructions.
+To run the end-to-end tests, you'll need [`kind`](https://kind.sigs.k8s.io) and [`chainsaw`](https://kyverno.github.io/chainsaw). They will be installed automatically in the project's local `bin/` directory.
 
-Once they are installed, the tests can be executed with `make prepare-e2e`, which will build an image to use with the tests, followed by `make e2e`. Each call to the `e2e` target will set up a fresh `kind` cluster, making it safe to be executed multiple times with a single `prepare-e2e` step.
+Once they are installed, the tests can be executed with `make prepare-e2e`, which will build an image to use with the tests, followed by `make e2e`. Keep in mind that you need to call `make prepare-e2e` again after you make changes to operator code or manifests.
 
 The tests are located under `tests/e2e` and are written to be used with `chainsaw`. Refer to their documentation to understand how tests are written.
 
 To revert the changes made by the `make prepare-e2e` run `make reset`.
 
 ### OpenShift End to End tests
-To run the end-to-end tests written for OpenShift, you'll need a OpenShift cluster. 
+To run the end-to-end tests written for OpenShift, you'll need a OpenShift cluster.
 
 To install the OpenTelemetry operator, please follow the instructions in  [Operator Lifecycle Manager (OLM)](https://github.com/open-telemetry/opentelemetry-operator/blob/main/CONTRIBUTING.md#operator-lifecycle-manager-olm)
 
-Once the operator is installed, the tests can be executed using `make e2e-openshift`, which will call to the `e2e-openshift` target. Note that `kind` is disabled for the TestSuite as the requirement is to use an OpenShift cluster for these test cases. 
+Once the operator is installed, the tests can be executed using `make e2e-openshift`, which will call to the `e2e-openshift` target. Note that `kind` is disabled for the TestSuite as the requirement is to use an OpenShift cluster for these test cases.
 
 The tests are located under `tests/e2e-openshift` and are written to be used with `chainsaw`.
 
