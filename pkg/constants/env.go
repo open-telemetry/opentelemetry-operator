@@ -33,9 +33,12 @@ const (
 
 	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
 	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
+	EnvPodIP    = "OTEL_POD_IP"
 	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
+	EnvNodeIP   = "OTEL_NODE_IP"
 
 	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
 	FlagDotNet      = "enable-dotnet-instrumentation"
 	FlagPython      = "enable-python-instrumentation"
+	FlagNginx       = "enable-nginx-instrumentation"
 )

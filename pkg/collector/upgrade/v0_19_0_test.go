@@ -42,26 +42,13 @@ func TestRemoveQueuedRetryProcessor(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: `
-processors:
- queued_retry:
- otherprocessor:
- queued_retry/second:
-   compression: "on"
-   reconnection_delay: 15
-   num_workers: 123
-
-receivers:
-  otlp: {}
-exporters:
-  debug: {}
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      exporters: [otlp]
-`,
+			Config: `processors:
+  queued_retry:
+  otherprocessor:
+  queued_retry/second:
+    compression: "on"
+    reconnection_delay: 15
+    num_workers: 123`,
 		},
 	}
 	existing.Status.Version = "0.18.0"
@@ -78,9 +65,8 @@ service:
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	resV1beta1, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
-	res := convertTov1alpha1(t, resV1beta1)
 
 	// verify
 	assert.NotContains(t, res.Spec.Config, "queued_retry:")
@@ -101,21 +87,9 @@ func TestMigrateResourceType(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: `
-processors:
+			Config: `processors:
   resource:
     type: some-type
-
-receivers:
-  otlp: {}
-exporters:
-  debug: {}
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      exporters: [otlp]
 `,
 		},
 	}
@@ -128,28 +102,16 @@ service:
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	resV1beta1, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
-	res := convertTov1alpha1(t, resV1beta1)
 
 	// verify
-	assert.YAMLEq(t, `processors:
+	assert.Equal(t, `processors:
   resource:
     attributes:
     - action: upsert
       key: opencensus.type
       value: some-type
-
-receivers:
-  otlp: {}
-exporters:
-  debug: {}
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      exporters: [otlp]
 `, res.Spec.Config)
 }
 
@@ -165,24 +127,11 @@ func TestMigrateLabels(t *testing.T) {
 			},
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Config: `
-processors:
+			Config: `processors:
   resource:
     labels:
       cloud.zone: zone-1
       host.name: k8s-node
-
-receivers:
- otlp: {}
-exporters:
- debug: {}
-
-service:
- pipelines:
-   traces:
-     receivers: [otlp]
-     exporters: [otlp]
-     processors: [resource]
 `,
 		},
 	}
@@ -195,9 +144,8 @@ service:
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	resV1beta1, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
-	res := convertTov1alpha1(t, resV1beta1)
 
 	actual, err := adapters.ConfigFromString(res.Spec.Config)
 	require.NoError(t, err)

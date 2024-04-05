@@ -19,13 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
 var (
@@ -33,16 +28,8 @@ var (
 	_ admission.CustomDefaulter = &CollectorWebhook{}
 )
 
-// +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1beta1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1beta1,name=mopentelemetrycollectorbeta.kb.io,sideEffects=none,admissionReviewVersions=v1
-// +kubebuilder:webhook:verbs=create;update,path=/validate-opentelemetry-io-v1beta1-opentelemetrycollector,mutating=false,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1beta1,name=vopentelemetrycollectorcreateupdatebeta.kb.io,sideEffects=none,admissionReviewVersions=v1
-// +kubebuilder:webhook:verbs=delete,path=/validate-opentelemetry-io-v1beta1-opentelemetrycollector,mutating=false,failurePolicy=ignore,groups=opentelemetry.io,resources=opentelemetrycollectors,versions=v1beta1,name=vopentelemetrycollectordeletebeta.kb.io,sideEffects=none,admissionReviewVersions=v1
 // +kubebuilder:object:generate=false
-
 type CollectorWebhook struct {
-	logger   logr.Logger
-	cfg      config.Config
-	scheme   *runtime.Scheme
-	reviewer *rbac.Reviewer
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -89,18 +76,4 @@ func (c CollectorWebhook) validate(r *OpenTelemetryCollector) (admission.Warning
 		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility tooling (kustomize and kubectl edit) it is recommended to use empty obejects e.g. batch: {}.", strings.Join(nullObjects, ", ")))
 	}
 	return warnings, nil
-}
-
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer) error {
-	cvw := &CollectorWebhook{
-		reviewer: reviewer,
-		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"),
-		scheme:   mgr.GetScheme(),
-		cfg:      cfg,
-	}
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&OpenTelemetryCollector{}).
-		WithValidator(cvw).
-		WithDefaulter(cvw).
-		Complete()
 }

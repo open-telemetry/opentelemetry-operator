@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 )
 
 var _ AutoDetect = (*autoDetect)(nil)
@@ -27,6 +28,7 @@ var _ AutoDetect = (*autoDetect)(nil)
 // AutoDetect provides an assortment of routines that auto-detect traits based on the runtime.
 type AutoDetect interface {
 	OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error)
+	PrometheusCRsAvailability() (prometheus.Availability, error)
 }
 
 type autoDetect struct {
@@ -46,6 +48,23 @@ func New(restConfig *rest.Config) (AutoDetect, error) {
 	return &autoDetect{
 		dcl: dcl,
 	}, nil
+}
+
+// PrometheusCRsAvailability checks if Prometheus CRDs are available.
+func (a *autoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return prometheus.NotAvailable, err
+	}
+
+	apiGroups := apiList.Groups
+	for i := 0; i < len(apiGroups); i++ {
+		if apiGroups[i].Name == "monitoring.coreos.com" {
+			return prometheus.Available, nil
+		}
+	}
+
+	return prometheus.NotAvailable, nil
 }
 
 // OpenShiftRoutesAvailability checks if OpenShift Route are available.

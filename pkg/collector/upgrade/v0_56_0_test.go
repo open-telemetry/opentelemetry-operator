@@ -43,7 +43,6 @@ func Test0_56_0Upgrade(t *testing.T) {
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Replicas:    &one,
 			MaxReplicas: &three,
-			Config:      collectorCfg,
 		},
 	}
 
@@ -54,8 +53,7 @@ func Test0_56_0Upgrade(t *testing.T) {
 		Client:   k8sClient,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	upgradedInstanceV1beta1, err := versionUpgrade.ManagedInstance(context.Background(), convertTov1beta1(t, collectorInstance))
+	upgradedInstance, err := versionUpgrade.ManagedInstance(context.Background(), collectorInstance)
 	assert.NoError(t, err)
-	upgradedInstance := convertTov1alpha1(t, upgradedInstanceV1beta1)
-	assert.Equal(t, one, *upgradedInstance.Spec.Autoscaler.MinReplicas)
+	assert.Equal(t, one, *upgradedInstance.Spec.MinReplicas)
 }

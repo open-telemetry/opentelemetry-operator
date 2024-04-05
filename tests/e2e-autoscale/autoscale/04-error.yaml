@@ -6,7 +6,7 @@ metadata:
 spec:
   maxReplicas: 2
   scaleTargetRef:
-    apiVersion: opentelemetry.io/v1beta1
+    apiVersion: opentelemetry.io/v1alpha1
     kind: OpenTelemetryCollector
     name: simplest
 status:
@@ -20,7 +20,7 @@ metadata:
 spec:
   maxReplicas: 2
   scaleTargetRef:
-    apiVersion: opentelemetry.io/v1beta1
+    apiVersion: opentelemetry.io/v1alpha1
     kind: OpenTelemetryCollector
     name: simplest-set-utilization
 status:

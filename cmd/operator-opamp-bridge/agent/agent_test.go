@@ -139,10 +139,20 @@ func getConfigHash(key, file string) string {
 	return fmt.Sprintf("%s%d", key, size)
 }
 
+var _ client.OpAMPClient = &mockOpampClient{}
+
 type mockOpampClient struct {
 	lastStatus          *protobufs.RemoteConfigStatus
 	lastEffectiveConfig *protobufs.EffectiveConfig
 	settings            types.StartSettings
+}
+
+func (m *mockOpampClient) SetCustomCapabilities(customCapabilities *protobufs.CustomCapabilities) error {
+	return nil
+}
+
+func (m *mockOpampClient) SendCustomMessage(message *protobufs.CustomMessage) (messageSendingChannel chan struct{}, err error) {
+	return nil, nil
 }
 
 func (m *mockOpampClient) RequestConnectionSettings(request *protobufs.ConnectionSettingsRequest) error {
