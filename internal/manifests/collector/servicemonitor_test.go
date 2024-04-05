@@ -19,6 +19,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 func TestDesiredServiceMonitors(t *testing.T) {
@@ -65,4 +68,13 @@ func TestDesiredServiceMonitorsWithPrometheus(t *testing.T) {
 		"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 	}
 	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
+}
+
+func TestDesiredServiceMonitorsPrometheusNotAvailable(t *testing.T) {
+	params, err := newParams("", "testdata/prometheus-exporter.yaml", config.WithPrometheusCRAvailability(prometheus.NotAvailable))
+	assert.NoError(t, err)
+	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
+	actual, err := ServiceMonitor(params)
+	assert.NoError(t, err)
+	assert.Nil(t, actual)
 }

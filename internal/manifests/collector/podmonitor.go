@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -32,6 +33,12 @@ import (
 func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		params.Log.V(2).Info("Metrics disabled for this OTEL Collector",
+			"params.OtelCol.name", params.OtelCol.Name,
+			"params.OtelCol.namespace", params.OtelCol.Namespace,
+		)
+		return nil, nil
+	} else if params.Config.PrometheusCRAvailability() == prometheus.NotAvailable {
+		params.Log.V(1).Info("Cannot enable PodMonitor when prometheus CRDs are unavailable",
 			"params.OtelCol.name", params.OtelCol.Name,
 			"params.OtelCol.namespace", params.OtelCol.Namespace,
 		)

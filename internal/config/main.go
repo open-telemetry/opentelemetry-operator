@@ -23,6 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -57,6 +58,7 @@ type Config struct {
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
 	openshiftRoutesAvailability         openshift.RoutesAvailability
+	prometheusCRAvailability            prometheus.Availability
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }
@@ -65,6 +67,7 @@ type Config struct {
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
+		prometheusCRAvailability:          prometheus.NotAvailable,
 		openshiftRoutesAvailability:       openshift.RoutesNotAvailable,
 		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
@@ -92,6 +95,7 @@ func New(opts ...Option) Config {
 		operatorOpAMPBridgeConfigMapEntry:   o.operatorOpAMPBridgeConfigMapEntry,
 		logger:                              o.logger,
 		openshiftRoutesAvailability:         o.openshiftRoutesAvailability,
+		prometheusCRAvailability:            o.prometheusCRAvailability,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
@@ -113,6 +117,12 @@ func (c *Config) AutoDetect() error {
 		return err
 	}
 	c.openshiftRoutesAvailability = ora
+
+	pcrd, err := c.autoDetect.PrometheusCRsAvailability()
+	if err != nil {
+		return err
+	}
+	c.prometheusCRAvailability = pcrd
 	return nil
 }
 
@@ -179,6 +189,11 @@ func (c *Config) OperatorOpAMPBridgeConfigMapEntry() string {
 // OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
 func (c *Config) OpenShiftRoutesAvailability() openshift.RoutesAvailability {
 	return c.openshiftRoutesAvailability
+}
+
+// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
+func (c *Config) PrometheusCRAvailability() prometheus.Availability {
+	return c.prometheusCRAvailability
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
