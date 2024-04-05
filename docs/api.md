@@ -10312,7 +10312,7 @@ for the OpenTelemetryCollector workload.<br/>
         <td><b>config</b></td>
         <td>string</td>
         <td>
-          Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.<br/>
+          Config is the raw YAML to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.<br/>
         </td>
         <td>false</td>
       </tr><tr>
