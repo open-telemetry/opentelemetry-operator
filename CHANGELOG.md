@@ -2,6 +2,24 @@
 
 <!-- next version -->
 
+## 0.97.1
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Introduces ability to detect presence of Prometheus CRDs to dynamically add to scheme to prevent startup issues. (#2180)
+
+### Components
+
+* [OpenTelemetry Collector - v0.97.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.97.0)
+* [OpenTelemetry Contrib - v0.97.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.97.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/{AUTO_INSTRUMENTATION_DOTNET_VERSION})
+* [Node.JS - v0.49.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.49.1)
+* [Python - v0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.44b0)
+* [Go - v0.10.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.1-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.97.0
 
 ### 🛑 Breaking changes 🛑
