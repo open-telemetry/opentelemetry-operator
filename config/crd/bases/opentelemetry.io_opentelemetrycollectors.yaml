@@ -2236,7 +2236,7 @@ spec:
                     type: integer
                 type: object
               config:
-                description: Config is the raw JSON to be used as the collector's
+                description: Config is the raw YAML to be used as the collector's
                   configuration. Refer to the OpenTelemetry Collector documentation
                   for details.
                 type: string
