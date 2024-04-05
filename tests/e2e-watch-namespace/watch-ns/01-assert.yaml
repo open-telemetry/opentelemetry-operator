@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-java: "opentelemetry-operator-system/deployment"
+  labels:
+    app: my-deploy
+spec:
+  initContainers:
+    - name: opentelemetry-auto-instrumentation-java
+      (volumeMounts[?name == 'opentelemetry-auto-instrumentation-java']):
+        - name: opentelemetry-auto-instrumentation-java
+          mountPath: /otel-auto-instrumentation-java
+  (containers[?name == 'myapp']):
+  - name: myapp
+    env:
+    - name: OTEL_NODE_IP
+    - name: OTEL_POD_IP
+    - name: JAVA_TOOL_OPTIONS
+    - name: OTEL_SERVICE_NAME
+      value: my-deploy
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://deployment-collector.opentelemetry-operator-system:4317
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    (volumeMounts[?name == 'opentelemetry-auto-instrumentation-java']):
+      - name: opentelemetry-auto-instrumentation-java
+        mountPath: /otel-auto-instrumentation-java
+  (volumes[?name == 'opentelemetry-auto-instrumentation-java']):
+    - name: opentelemetry-auto-instrumentation-java
+      emptyDir: {}

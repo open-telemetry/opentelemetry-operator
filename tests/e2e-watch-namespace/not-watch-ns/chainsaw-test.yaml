@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: not-watch-ns
+spec:
+  namespace: not-watch-ns
+  steps:
+    - name: step-00
+      skipDelete: true
+      try:
+        # when running in parallel it seems to conflict a bit on both tests creating the collector
+        # opentelemetrycollectors.opentelemetry.io "deployment" already exists
+        - sleep:
+            duration: 5s
+
+        - apply:
+            file: ../00-install-collector.yaml
+        - apply:
+            file: ../00-install-instrumentation.yaml
+        # wait not working :-(
+        - sleep:
+            duration: 10s
+    # Deployment
+    - name: step-01
+      try:
+        - apply:
+            file: ../01-deployment.yaml
+        - assert:
+            timeout: 60s
+            file: 01-assert.yaml
+      catch:
+        - podLogs:
+            selector: app=my-deploy

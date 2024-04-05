@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-java: "opentelemetry-operator-system/deployment"
+  labels:
+    app: my-deploy
+spec:
+  (initContainers == null): true
+  (length(containers)): 1
+  containers:
+    - name: myapp
+      (env == null): true
+

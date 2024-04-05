@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: watch-ns
+spec:
+  namespace: watch-ns
+  steps:
+    - name: step-00
+      skipDelete: true
+      try:
+        - apply:
+            file: ../00-install-collector.yaml
+        - apply:
+            file: ../00-install-instrumentation.yaml
+        # wait not working :-(
+        - sleep:
+            duration: 10s
+#        - command:
+#            entrypoint: kubectl
+#            args:
+#              - wait
+#              - pods
+#              - --for
+#              - condition=Ready="true"
+#              - -l
+#              - app.kubernetes.io/name=deployment-collector
+#              - -n
+#              - opentelemetry-operator-system
+#              - --timeout
+#              - 10s
+##              - 1m
+#              - -v
+#              - '8'
+#        - wait:
+#            resource: pods
+#            selector: 'app.kubernetes.io/name=deployment-collector'
+#            timeout: 10s
+#            namespace: opentelemetry-operator-system
+#            for:
+#              condition:
+#                name: Ready
+#                value: 'true'
+    # Deployment
+    - name: step-01
+      try:
+        - apply:
+            file: ../01-deployment.yaml
+        - assert:
+            timeout: 60s
+            file: 01-assert.yaml
+      catch:
+        - podLogs:
+            selector: app=my-deploy

@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+spec:
+  selector:
+    matchLabels:
+      app: my-deploy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-deploy
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "opentelemetry-operator-system/deployment"
+    spec:
+      containers:
+      - name: myapp
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main

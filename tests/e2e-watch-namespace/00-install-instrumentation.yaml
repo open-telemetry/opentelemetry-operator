@@ -1,0 +1,8 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: deployment
+  namespace: opentelemetry-operator-system
+spec:
+  exporter:
+    endpoint: http://deployment-collector.opentelemetry-operator-system:4317

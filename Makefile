@@ -265,6 +265,19 @@ prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-o
 .PHONY: prepare-e2e-with-featuregates
 prepare-e2e-with-featuregates: chainsaw enable-operator-featuregates prepare-e2e
 
+.PHONY: enable-watch-namespace
+enable-watch-namespace: PATCH = [{"op":"add","path":"/spec/template/spec/containers/0/env","value": [ {"name": "K8S_NAMESPACE", "valueFrom": {"fieldRef": { "fieldPath": "metadata.namespace" } } }, {"name": "WATCH_NAMESPACE", "value": "$$(K8S_NAMESPACE),watch-ns"} ] }]
+enable-watch-namespace: manifests kustomize
+	cd config/manager && $(KUSTOMIZE) edit add patch --kind Deployment --patch '$(PATCH)'
+
+.PHONY: prepare-e2e-watch-namespace
+prepare-e2e-watch-namespace: chainsaw enable-watch-namespace prepare-e2e
+
+# end-to-tests
+.PHONY: e2e-watch-namespace
+e2e-watch-namespace: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-watch-namespace
+
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
 	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
