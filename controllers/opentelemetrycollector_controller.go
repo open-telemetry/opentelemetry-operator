@@ -39,6 +39,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -80,7 +81,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	for i := range hpaList.Items {
 		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
 	}
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
 		servicemonitorList := &monitoringv1.ServiceMonitorList{}
 		err = r.List(ctx, servicemonitorList, listOps)
 		if err != nil {
@@ -249,7 +250,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		builder.Owns(&rbacv1.ClusterRole{})
 	}
 
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 		builder.Owns(&monitoringv1.PodMonitor{})
 	}
