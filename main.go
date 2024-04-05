@@ -29,6 +29,7 @@ import (
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -275,6 +276,9 @@ func main() {
 		}),
 		Cache: cache.Options{
 			DefaultNamespaces: namespaces,
+			DefaultLabelSelector: labels.SelectorFromSet(map[string]string{
+				"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			}),
 		},
 	}
 
