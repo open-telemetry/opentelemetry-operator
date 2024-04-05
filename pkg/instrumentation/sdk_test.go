@@ -36,7 +36,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
-var someNamespace = corev1.Namespace{
+var testNamespace = corev1.Namespace{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: "ns",
 	},
@@ -519,7 +519,7 @@ func TestInjectJava(t *testing.T) {
 	}
 	config := config.New()
 	pod := inj.inject(context.Background(), insts,
-		someNamespace,
+		testNamespace,
 		corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -640,7 +640,7 @@ func TestInjectNodeJS(t *testing.T) {
 	}
 	config := config.New()
 	pod := inj.inject(context.Background(), insts,
-		someNamespace,
+		testNamespace,
 		corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -761,7 +761,7 @@ func TestInjectPython(t *testing.T) {
 	}
 	config := config.New()
 	pod := inj.inject(context.Background(), insts,
-		someNamespace,
+		testNamespace,
 		corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -896,7 +896,7 @@ func TestInjectDotNet(t *testing.T) {
 	}
 	config := config.New()
 	pod := inj.inject(context.Background(), insts,
-		someNamespace,
+		testNamespace,
 		corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -1331,7 +1331,7 @@ func TestInjectGo(t *testing.T) {
 			inj := sdkInjector{
 				logger: logr.Discard(),
 			}
-			pod := inj.inject(context.Background(), test.insts, someNamespace, test.pod, test.config)
+			pod := inj.inject(context.Background(), test.insts, testNamespace, test.pod, test.config)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1505,7 +1505,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 				logger: logr.Discard(),
 			}
 
-			pod := inj.inject(context.Background(), test.insts, someNamespace, test.pod, test.config)
+			pod := inj.inject(context.Background(), test.insts, testNamespace, test.pod, test.config)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1684,7 +1684,7 @@ func TestInjectNginx(t *testing.T) {
 			inj := sdkInjector{
 				logger: logr.Discard(),
 			}
-			pod := inj.inject(context.Background(), test.insts, someNamespace, test.pod, test.config)
+			pod := inj.inject(context.Background(), test.insts, testNamespace, test.pod, test.config)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -1707,7 +1707,7 @@ func TestInjectSdkOnly(t *testing.T) {
 	}
 	config := config.New()
 	pod := inj.inject(context.Background(), insts,
-		someNamespace,
+		testNamespace,
 		corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
