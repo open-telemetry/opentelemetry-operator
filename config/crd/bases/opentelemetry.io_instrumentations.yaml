@@ -564,16 +564,11 @@ spec:
                       type: object
                     type: array
                   extensions:
-                    description: Extensions defines java specific extensions.
                     items:
                       properties:
                         dir:
-                          description: Dir is a directory with extensions auto-instrumentation
-                            JAR.
                           type: string
                         image:
-                          description: Image is a container image with extensions
-                            auto-instrumentation JAR.
                           type: string
                       required:
                       - dir

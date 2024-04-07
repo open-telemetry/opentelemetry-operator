@@ -135,6 +135,7 @@ type Java struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Extensions defines java specific extensions.
+	// All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.
 	// +optional
 	Extensions []Extensions `json:"extensions,omitempty"`
 }
