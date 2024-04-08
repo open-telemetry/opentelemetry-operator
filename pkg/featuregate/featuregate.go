@@ -60,6 +60,14 @@ var (
 		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"),
 		featuregate.WithRegisterFromVersion("v0.82.0"),
 	)
+
+	// EnableCacheOptions is the feature gate that sets a cache label selector to improve operator performance.
+	EnableCacheOptions = featuregate.GlobalRegistry().MustRegister(
+		"operator.cache.selector",
+		featuregate.StageBeta, // TODO: this is temporary and will be reverted prior to an e2e run
+		featuregate.WithRegisterDescription("enables the operator's cache to only select a subset of objects"),
+		featuregate.WithRegisterFromVersion("v0.98.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
